@@ -8,7 +8,7 @@
 #ifndef RAVL2_ARRAYACCESS_HH_
 #define RAVL2_ARRAYACCESS_HH_
 
-
+#include <array>
 #include "Ravl2/RefCounter.hh"
 #include "Ravl2/Index.hh"
 #include "Ravl2/Buffer.hh"
@@ -92,7 +92,8 @@ namespace Ravl2
   template<typename DataT,unsigned N>
   class ArrayAccess
   {
-  public:
+  protected:
+    //! Generate strides
     void make_strides(const IndexRange<N> &range)
     {
       int s = 1;
@@ -103,14 +104,44 @@ namespace Ravl2
       }
     }
 
+    int compute_origin_offset(const IndexRange<N> &range)
+    {
+      int off = 0;
+      for(unsigned i = 0;i < N;i++) {
+        off -= range[i].min() * m_strides[i];
+      }
+      return off;
+    }
+  public:
     //! Create an array of the given size.
     ArrayAccess(const IndexRange<N> &range)
      : m_buffer(new BufferVector<DataT>(range.elements())),
        m_range(range)
     {
-      m_data = m_buffer->data();
       make_strides(range);
+      m_data = &(m_buffer->data()[compute_origin_offset(range)]);
     }
+
+    //! Create an sub array with the requested 'range'
+    //! Range must be entirely contained in the original array.
+    ArrayAccess(ArrayAccess<DataT,N> &original,const IndexRange<N> &range)
+     : m_buffer(original.buffer()),
+       m_range(range)
+    {
+      if(!original.range().contains(range))
+        throw std::out_of_range("requested range is outside that of the original array");
+      m_data = original.origin_address();
+    }
+
+    //! Access address of origin element
+    //! Note: this may not point to a valid element
+    DataT *origin_address()
+    { return m_data; }
+
+    //! Access address of origin element
+    //! Note: this may not point to a valid element
+    const DataT *origin_address() const
+    { return m_data; }
 
     //! Access next dimension of array.
     ArrayAccessRef<DataT,N-1> operator[](int i)
@@ -151,14 +182,18 @@ namespace Ravl2
     }
 
     //! access range of first index array
-    const IndexRange<1> &range() const
+    const IndexRange<N> &range() const
     { return m_range[0]; }
+
+    //! Is array empty ?
+    bool empty() const noexcept
+    { return m_range.empty(); }
 
   protected:
     DataT *m_data;
     std::shared_ptr<Buffer<DataT> > m_buffer;
     IndexRange<N> m_range;
-    int m_strides[N];
+    std::array<int,N> m_strides;
   };
 
   //! Access for an N dimensional element of an array.
@@ -167,6 +202,17 @@ namespace Ravl2
   class ArrayAccess<DataT,1>
   {
   public:
+    //! Create an sub array with the requested 'range'
+    //! Range must be entirely contained in the original array.
+    ArrayAccess(ArrayAccess<DataT,1> &original,const IndexRange<1> &range)
+     : m_buffer(original.buffer()),
+       m_range(range)
+    {
+      if(!original.range().contains(range))
+        throw std::out_of_range("requested range is outside that of the original array");
+      m_data = original.origin_address();
+    }
+
     ArrayAccess(std::vector<DataT> &&vec)
      : m_buffer(new BufferVector<DataT>(std::move(vec))),
        m_range(m_buffer->size())
@@ -186,8 +232,18 @@ namespace Ravl2
      : m_buffer(new BufferVector<DataT>(range.elements())),
        m_range(range)
     {
-      m_data = m_buffer->data();
+      m_data = &m_buffer->data()[-range.min()];
     }
+
+    //! Access address of origin element
+    //! Note: this may not point to a valid element
+    DataT *origin_address()
+    { return m_data; }
+
+    //! Access address of origin element
+    //! Note: this may not point to a valid element
+    const DataT *origin_address() const
+    { return m_data; }
 
     //! Access next dimension of array.
     DataT &operator[](int i)
@@ -220,6 +276,14 @@ namespace Ravl2
     //! Access range of array
     const IndexRange<1> &range() const
     { return m_range; }
+
+    //! Is array empty ?
+    bool empty() const noexcept
+    { return m_range.empty(); }
+
+    //! Access buffer.
+    std::shared_ptr<Buffer<DataT> > &buffer()
+    { return m_buffer; }
 
   protected:
     DataT *m_data;

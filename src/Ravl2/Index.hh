@@ -64,6 +64,7 @@ namespace Ravl2
     {
       for(int i = 0;i < N;i++)
         m_index[i] += ind[i];
+      return *this;
     }
 
     //! Subtract index in place
@@ -71,6 +72,7 @@ namespace Ravl2
     {
       for(int i = 0;i < N;i++)
         m_index[i] -= ind[i];
+      return *this;
     }
 
     //! Add two index's together.
@@ -204,6 +206,14 @@ namespace Ravl2
     bool contains(const IndexRange<1> &range) const noexcept
     { return (contains(range.m_min) && contains(range.m_max)); }
 
+    //! Shrink the range in from both ends by amount.
+    IndexRange<1> shrink(int amount) const
+    { return IndexRange<1>(m_min + amount,m_max - amount); }
+
+    //! Shrink the range in from both ends by amount.
+    IndexRange<1> expand(int amount) const
+    { return IndexRange<1>(m_min - amount,m_max + amount); }
+
     //! Shift range by given values.
     IndexRange<1> &operator+=(int ind)
     {
@@ -278,6 +288,22 @@ namespace Ravl2
     IndexRange()
     {}
 
+    //! Build a new range given two parts
+    IndexRange(const IndexRange<N-1> &start,const IndexRange<1> &extra)
+    {
+      for(unsigned i = 0;i < N-1;i++)
+        m_range[i] = start[i];
+      m_range[N-1] = extra;
+    }
+
+    //! Build a new range given two parts
+    IndexRange(const IndexRange<N-1> &start,int extraSize)
+    {
+      for(unsigned i = 0;i < N-1;i++)
+        m_range[i] = start[i];
+      m_range[N-1] = IndexRange<1>(extraSize);
+    }
+
     //! Default constructor
     IndexRange(const Index<N> &min,const Index<N> &max)
     {
@@ -285,7 +311,8 @@ namespace Ravl2
         m_range[i] = IndexRange<1>(min[i],max[i]);
     }
 
-    //! Default constructor
+    //! Construct from sizes for each dimension.
+    //! The ranges will have a zero origin.
     IndexRange(std::initializer_list<int> sizes)
     {
       assert(sizes.size() == N);
@@ -293,7 +320,8 @@ namespace Ravl2
         m_range[i] = IndexRange<1>(sizes.begin()[i]);
     }
 
-    //! Default constructor
+    //! Construct from ranges for each dimension.
+
     IndexRange(std::initializer_list<std::initializer_list<int> > sizes)
     {
       assert(sizes.size() == N);
@@ -305,7 +333,6 @@ namespace Ravl2
     //! Make size of range 0.
     void clear() noexcept
     { m_range[0].clear(); }
-
 
     //! Get the size of the range in each dimension.
     Index<N> size() const noexcept
@@ -320,13 +347,22 @@ namespace Ravl2
     int size(unsigned n) const noexcept
     { return m_range[n].size(); }
 
-    //! Get number of elements covered by range.
+    //! Get total number of elements covered by range.
     size_t elements() const
     {
       size_t n = 1;
       for(unsigned i = 0;i < N;i++)
         n *= m_range[i].size();
       return n;
+    }
+
+    //! Is range empty ?
+    bool empty() const noexcept
+    {
+      for(unsigned i = 0;i < N;i++)
+        if(m_range[i].empty())
+          return true;
+      return false;
     }
 
     //! Test if an index is contained within the range.
@@ -345,6 +381,42 @@ namespace Ravl2
         if(m_range[i].contains(range.m_range[i]))
           return false;
       return true;
+    }
+
+    //! Shrink the range in from both ends by amount.
+    IndexRange<N> shrink(int amount) const
+    {
+      IndexRange<N> ret;
+      for(unsigned i = 0;i < N;i++)
+        ret[i] = m_range[i].shink(amount);
+      return ret;
+    }
+
+    //! Shrink the range in from both ends by amount.
+    IndexRange<N> shrink(const Index<N> &ind) const
+    {
+      IndexRange<N> ret;
+      for(unsigned i = 0;i < N;i++)
+        ret[i] = m_range[i].shink(ind[i]);
+      return ret;
+    }
+
+    //! Shrink the range in from both ends by amount.
+    IndexRange<N> expand(int amount) const
+    {
+      IndexRange<N> ret;
+      for(unsigned i = 0;i < N;i++)
+        ret[i] = m_range[i].expand(amount);
+      return ret;
+    }
+
+    //! Shrink the range in from both ends by amount.
+    IndexRange<N> expand(const Index<N> &ind) const
+    {
+      IndexRange<N> ret;
+      for(unsigned i = 0;i < N;i++)
+        ret[i] = m_range[i].expand(ind[i]);
+      return ret;
     }
 
     //! Shift range by given values.

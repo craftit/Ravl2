@@ -69,7 +69,7 @@ namespace Ravl2
     //! Move from a vector.
     BufferVector(std::vector<DataT> &&vec)
       : Buffer<DataT>(0),
-        m_values(vec)
+        m_values(std::move(vec))
     {
       if(this->m_size > 0)
         this->m_data = &m_values[0];

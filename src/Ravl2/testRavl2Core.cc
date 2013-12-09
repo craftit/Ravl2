@@ -11,15 +11,17 @@
 #include "Ravl2/Index.hh"
 #include "Ravl2/ArrayAccess.hh"
 #include "Ravl2/UnitTest.hh"
-
+#include "Ravl2/EdgeSobel.hh"
 
 int testIndexRange();
 int testArrayAccess();
+int testEdgeSobel();
 
 int main(int nargs,char **argv)
 {
   RAVL_RUN_TEST(testIndexRange());
   RAVL_RUN_TEST(testArrayAccess());
+  RAVL_RUN_TEST(testEdgeSobel());
 
   std::cout << "Tests passed ok. " << std::endl;
   return 0;
@@ -205,8 +207,13 @@ int testArrayAccess()
     }
   }
 
-
   return 0;
 }
 
+
+int testEdgeSobel()
+{
+
+  return 0;
+}
 
