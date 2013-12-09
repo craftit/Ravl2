@@ -19,8 +19,8 @@ int testArrayAccess();
 int main(int nargs,char **argv)
 {
   RAVL_RUN_TEST(testIndexRange());
+  RAVL_RUN_TEST(testArrayAccess());
 
-  //testArrayAccess();
   std::cout << "Tests passed ok. " << std::endl;
   return 0;
 }
@@ -70,11 +70,11 @@ int testIndexRange()
     RAVL_TEST_EQUALS(range2B[1].min(),3);
     RAVL_TEST_EQUALS(range2B[1].max(),7);
 
-    std::cout << "Range: " << range2B << " \n";
+    //std::cout << "Range: " << range2B << " \n";
     int count = 0;
     for(auto at : range2B) {
       count++;
-      std::cout << at << " \n";
+      //std::cout << at << " \n";
       RAVL_TEST_TRUE(range2B.contains(at));
     }
     RAVL_TEST_EQUALS(range2B.elements(),count);
@@ -82,25 +82,105 @@ int testIndexRange()
   return 0;
 }
 
-std::vector<int> makeVector()
-{
-  std::vector<int> ret {1,2,3};
-  return ret;
-}
 
 int testArrayAccess()
 {
-  Ravl2::ArrayAccess<int,1> val(Ravl2::IndexRange<1>(10));
+  {
+    // Test creation of 1 dimensional array.
 
-  val[1] = 0;
-  val[2] = 0;
-  std::vector<int> vals = makeVector();
-  Ravl2::ArrayAccess<int,1> anAccess(vals);
+    Ravl2::IndexRange<1> aRange(10);
+    Ravl2::ArrayAccess<int,1> val(aRange);
 
-  for(int i = 0;i < anAccess.range().size();i++) {
-    if(anAccess[i] != vals[i])
-      return __LINE__;
+    int c = 0;
+    for(auto a : aRange) {
+      val[a] = c++;
+    }
+
+    c = 0;
+    for(auto a : aRange) {
+      RAVL_TEST_EQUALS(val[a],c++);
+    }
+
+    RAVL_TEST_EQUALS(c,10);
   }
+
+  {
+    // Test creation of 2 dimensional array.
+
+    Ravl2::IndexRange<2> aRange {10,11};
+    Ravl2::ArrayAccess<int,2> val(aRange);
+
+    // Write some data
+    int c = 0;
+    for(auto a : aRange) {
+      val[a] = c++;
+    }
+
+    // Check what we wrote is still there.
+    c = 0;
+    for(auto a : aRange) {
+      RAVL_TEST_EQUALS(val[a],c++);
+    }
+
+    // Index dimensions individually
+    c = 0;
+    for(auto i : aRange[0]) {
+      for(auto j : aRange[1]) {
+        RAVL_TEST_EQUALS(val[i][j],c++);
+      }
+    }
+
+    RAVL_TEST_EQUALS(c,110);
+  }
+
+  {
+    // Test creation of 3 dimensional array.
+
+    Ravl2::IndexRange<3> aRange {10,11,12};
+    Ravl2::ArrayAccess<int,3> val(aRange);
+
+    // Write some data
+    int c = 0;
+    for(auto a : aRange) {
+      val[a] = c++;
+    }
+
+    // Check what we wrote is still there.
+    c = 0;
+    for(auto a : aRange) {
+      RAVL_TEST_EQUALS(val[a],c++);
+    }
+
+    // Index dimensions individually
+    c = 0;
+    for(auto i : aRange[0]) {
+      for(auto j : aRange[1]) {
+        for(auto k : aRange[2]) {
+          RAVL_TEST_EQUALS(val[i][j][k],c++);
+        }
+      }
+    }
+
+    RAVL_TEST_EQUALS(c,1320);
+  }
+
+  {
+    // Test conversion from a c++ vector
+
+    std::vector<int> acvec {1,2,3};
+    Ravl2::ArrayAccess<int,1> anAccess(acvec);
+
+    RAVL_TEST_EQUALS(anAccess.range().size(),3);
+
+    RAVL_TEST_EQUALS(acvec[0],1);
+    RAVL_TEST_EQUALS(acvec[1],2);
+    RAVL_TEST_EQUALS(acvec[2],3);
+
+    for(auto a : anAccess.range()) {
+      //std::cout << " " << acvec[a] << "\n";
+    }
+  }
+
 
   return 0;
 }

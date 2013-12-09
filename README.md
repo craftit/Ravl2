@@ -1,4 +1,4 @@
-Ravl2
+RAVL2
 =====
 
-Recognition and Vision Library 2
+Recognition And Vision Library 2

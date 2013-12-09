@@ -5,8 +5,8 @@
  *      Author: charlesgalambos
  */
 
-#ifndef RAVL2_RANGE_HH_
-#define RAVL2_RANGE_HH_
+#ifndef RAVL2_INDEX_HH_
+#define RAVL2_INDEX_HH_
 
 #include <assert.h>
 #include <vector>
@@ -15,7 +15,7 @@
 
 namespace Ravl2
 {
-  // N-dimensional index.
+  //! N-dimensional index.
 
   template<unsigned N>
   class Index
@@ -130,6 +130,9 @@ namespace Ravl2
 
   template<unsigned N> class IndexRangeIterator;
   template<unsigned N> class IndexRange;
+
+
+  //! Specialisation for 1 dimensional range.
 
   template<>
   class IndexRange<1>
@@ -424,6 +427,8 @@ namespace Ravl2
     return strm;
   }
 
+  //! Iterator through a 1 dimensional range.
+
   template<>
   class IndexRangeIterator<1>
   {
@@ -476,6 +481,8 @@ namespace Ravl2
   IndexRangeIterator<1> IndexRange<1>::end() const
   { return m_max+1; }
 
+  //! Iterate through an N dimensional range.
+
   template<unsigned N>
   class IndexRangeIterator
   {
@@ -513,7 +520,6 @@ namespace Ravl2
     Index<N> m_at;
   };
 
-#if 1
   //! Start of the range.
   template<unsigned N>
   IndexRangeIterator<N> IndexRange<N>::begin() const
@@ -527,7 +533,6 @@ namespace Ravl2
     end[0] = m_range[0].max()+1;
     return IndexRangeIterator<N>(*this,end);
   }
-#endif
 
 }
 

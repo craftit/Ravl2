@@ -14,7 +14,7 @@ include_directories ("..")
 #PROTOBUF_GENERATE_CPP(PROTO_SRCS PROTO_HDRS AvatarModel.proto)
 
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --std=c++11")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --std=c++11 " )
 
 add_library (Ravl2 RefCounter.cc Index.cc) 
 
