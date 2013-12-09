@@ -101,6 +101,11 @@ int testArrayAccess()
       RAVL_TEST_EQUALS(val[a],c++);
     }
 
+    c = 0;
+    for(int i = aRange.min();i <= aRange.max();i++) {
+      RAVL_TEST_EQUALS(val[i],c++);
+    }
+
     RAVL_TEST_EQUALS(c,10);
   }
 
@@ -130,6 +135,15 @@ int testArrayAccess()
       }
     }
 
+    // Using plain c style indexing.
+    c = 0;
+    for(int i = aRange[0].min();i <= aRange[0].max();i++) {
+      for(int j = aRange[1].min();j <= aRange[1].max();j++) {
+        RAVL_TEST_EQUALS(val[i][j],c++);
+      }
+    }
+
+
     RAVL_TEST_EQUALS(c,110);
   }
 
@@ -156,6 +170,16 @@ int testArrayAccess()
     for(auto i : aRange[0]) {
       for(auto j : aRange[1]) {
         for(auto k : aRange[2]) {
+          RAVL_TEST_EQUALS(val[i][j][k],c++);
+        }
+      }
+    }
+
+    // Using plain c style indexing.
+    c = 0;
+    for(int i = aRange[0].min();i <= aRange[0].max();i++) {
+      for(int j = aRange[1].min();j <= aRange[1].max();j++) {
+        for(int k = aRange[2].min();k <= aRange[2].max();k++) {
           RAVL_TEST_EQUALS(val[i][j][k],c++);
         }
       }
