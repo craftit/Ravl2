@@ -285,11 +285,11 @@ namespace Ravl2
   {
   public:
     //! Default constructor
-    IndexRange()
+    IndexRange() noexcept
     {}
 
     //! Build a new range given two parts
-    IndexRange(const IndexRange<N-1> &start,const IndexRange<1> &extra)
+    IndexRange(const IndexRange<N-1> &start,const IndexRange<1> &extra) noexcept
     {
       for(unsigned i = 0;i < N-1;i++)
         m_range[i] = start[i];
@@ -297,7 +297,7 @@ namespace Ravl2
     }
 
     //! Build a new range given two parts
-    IndexRange(const IndexRange<N-1> &start,int extraSize)
+    IndexRange(const IndexRange<N-1> &start,int extraSize) noexcept
     {
       for(unsigned i = 0;i < N-1;i++)
         m_range[i] = start[i];
@@ -305,7 +305,7 @@ namespace Ravl2
     }
 
     //! Default constructor
-    IndexRange(const Index<N> &min,const Index<N> &max)
+    IndexRange(const Index<N> &min,const Index<N> &max) noexcept
     {
       for(unsigned i = 0;i < N;i++)
         m_range[i] = IndexRange<1>(min[i],max[i]);
@@ -313,7 +313,7 @@ namespace Ravl2
 
     //! Construct from sizes for each dimension.
     //! The ranges will have a zero origin.
-    IndexRange(std::initializer_list<int> sizes)
+    IndexRange(std::initializer_list<int> sizes) noexcept
     {
       assert(sizes.size() == N);
       for(unsigned i = 0;i < N;i++)
@@ -322,7 +322,7 @@ namespace Ravl2
 
     //! Construct from ranges for each dimension.
 
-    IndexRange(std::initializer_list<std::initializer_list<int> > sizes)
+    IndexRange(std::initializer_list<std::initializer_list<int> > sizes) noexcept
     {
       assert(sizes.size() == N);
       for(unsigned i = 0;i < N;i++) {
@@ -384,7 +384,7 @@ namespace Ravl2
     }
 
     //! Shrink the range in from both ends by amount.
-    IndexRange<N> shrink(int amount) const
+    IndexRange<N> shrink(int amount) const noexcept
     {
       IndexRange<N> ret;
       for(unsigned i = 0;i < N;i++)
@@ -393,7 +393,7 @@ namespace Ravl2
     }
 
     //! Shrink the range in from both ends by amount.
-    IndexRange<N> shrink(const Index<N> &ind) const
+    IndexRange<N> shrink(const Index<N> &ind) const noexcept
     {
       IndexRange<N> ret;
       for(unsigned i = 0;i < N;i++)
@@ -402,7 +402,7 @@ namespace Ravl2
     }
 
     //! Shrink the range in from both ends by amount.
-    IndexRange<N> expand(int amount) const
+    IndexRange<N> expand(int amount) const noexcept
     {
       IndexRange<N> ret;
       for(unsigned i = 0;i < N;i++)
@@ -411,7 +411,7 @@ namespace Ravl2
     }
 
     //! Shrink the range in from both ends by amount.
-    IndexRange<N> expand(const Index<N> &ind) const
+    IndexRange<N> expand(const Index<N> &ind) const noexcept
     {
       IndexRange<N> ret;
       for(unsigned i = 0;i < N;i++)
@@ -420,7 +420,7 @@ namespace Ravl2
     }
 
     //! Shift range by given values.
-    IndexRange<N> &operator+=(const Index<N> &ind)
+    IndexRange<N> &operator+=(const Index<N> &ind) noexcept
     {
       for(unsigned i = 0;i < N;i++)
         m_range[i] += ind[i];

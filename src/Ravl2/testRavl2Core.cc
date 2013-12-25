@@ -115,6 +115,8 @@ int testArrayAccess()
     // Test creation of 2 dimensional array.
 
     Ravl2::IndexRange<2> aRange {10,11};
+
+    // Create a 2 dimensional array of objects.
     Ravl2::ArrayAccess<int,2> val(aRange);
 
     // Write some data

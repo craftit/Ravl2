@@ -9,6 +9,7 @@
 #define RAVL2_REFCOUNTER_HH_
 
 #include <atomic>
+#include <utility>
 #include <assert.h>
 
 namespace Ravl2
@@ -89,12 +90,20 @@ namespace Ravl2
     SmartPtr()
     {}
 
-    //! Default constructor
+    //! Construct from a pointer
     SmartPtr(DataT *obj)
      : m_ptr(obj)
     {
       if(obj != nullptr)
         intrusive_ptr_add_ref(obj);
+    }
+
+    //! Construct from a pointer
+    SmartPtr(const DataT *obj)
+     : m_ptr(const_cast<DataT *>(obj))
+    {
+      if(obj != nullptr)
+        intrusive_ptr_add_ref(m_ptr);
     }
 
     //! Default constructor
@@ -126,7 +135,7 @@ namespace Ravl2
       if(ptr != nullptr)
         intrusive_ptr_add_ref(const_cast<DataT *>(ptr));
       DataT *oldPtr = m_ptr;
-      m_ptr = ptr;
+      m_ptr = const_cast<DataT *>(ptr);
       if(oldPtr != nullptr)
         intrusive_ptr_release(oldPtr);
       return *this;
@@ -134,10 +143,17 @@ namespace Ravl2
 
     //! Assign to another pointer
     SmartPtr<DataT> &operator=(const SmartPtr<DataT> &ptr)
-    { return (*this) = ptr.pointer(); }
+    { return (*this) = ptr.get(); }
 
     //! Access object
     DataT *operator->()
+    {
+      assert(m_ptr != nullptr);
+      return m_ptr;
+    }
+
+    //! Access object
+    const DataT *operator->() const
     {
       assert(m_ptr != nullptr);
       return m_ptr;
@@ -185,6 +201,9 @@ namespace Ravl2
   template<typename DataT>
   void swap(SmartPtr<DataT> &ptr1,SmartPtr<DataT> &ptr2)
   { ptr1.swap(ptr2); }
+
+
+
 }
 
 
