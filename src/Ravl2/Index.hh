@@ -142,6 +142,8 @@ namespace Ravl2
   public:
     //! Default constructor
     IndexRange()
+       : m_min(0), // gcc-4.7.2 doesn't appear to initialise these correctly.
+         m_max(-1)
     {}
 
     //! Default constructor
@@ -478,6 +480,7 @@ namespace Ravl2
       IndexRange<N> ret;
       for(unsigned i = 0;i < N;i++)
         ret[i] = m_range[i].clip(range[i]);
+      return ret;
     }
 
     //! Start of the range.
@@ -594,12 +597,12 @@ namespace Ravl2
 
   //! Start of the range.
   template<unsigned N>
-  IndexRangeIterator<N> IndexRange<N>::begin() const
+  inline IndexRangeIterator<N> IndexRange<N>::begin() const
   { return IndexRangeIterator<N>(*this,min()); }
 
   //! One passed the end of the range.
   template<unsigned N>
-  IndexRangeIterator<N> IndexRange<N>::end() const
+  inline IndexRangeIterator<N> IndexRange<N>::end() const
   {
     Index<N> end = min();
     end[0] = m_range[0].max()+1;
