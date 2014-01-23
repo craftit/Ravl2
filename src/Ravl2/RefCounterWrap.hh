@@ -31,6 +31,8 @@ namespace Ravl2
      : SmartPtr<RefCounter>(obj)
     {}
 
+    using SmartPtr<RefCounter>::get;
+
     //! Get value
     template<typename DataT>
     bool get(DataT &data);
