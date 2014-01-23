@@ -183,7 +183,7 @@ namespace Ravl2
 
     //! access range of first index array
     const IndexRange<N> &range() const
-    { return m_range[0]; }
+    { return m_range; }
 
     //! Is array empty ?
     bool empty() const noexcept
