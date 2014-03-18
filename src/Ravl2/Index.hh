@@ -212,6 +212,11 @@ namespace Ravl2
     IndexRange<1> shrink(int amount) const
     { return IndexRange<1>(m_min + amount,m_max - amount); }
 
+    //! Shrink the range by given size,
+    //! min is increased by min of amount.min(), and max decreased by amount.max()
+    IndexRange<1> shrink(const IndexRange<1> &amount) const
+    { return IndexRange<1>(m_min + amount.min(),m_max - amount.max()); }
+
     //! Shrink the range in from both ends by amount.
     IndexRange<1> expand(int amount) const
     { return IndexRange<1>(m_min - amount,m_max + amount); }
@@ -390,7 +395,7 @@ namespace Ravl2
     {
       IndexRange<N> ret;
       for(unsigned i = 0;i < N;i++)
-        ret[i] = m_range[i].shink(amount);
+        ret[i] = m_range[i].shrink(amount);
       return ret;
     }
 
@@ -399,7 +404,17 @@ namespace Ravl2
     {
       IndexRange<N> ret;
       for(unsigned i = 0;i < N;i++)
-        ret[i] = m_range[i].shink(ind[i]);
+        ret[i] = m_range[i].shrink(ind[i]);
+      return ret;
+    }
+
+    //! Shrink the range by given size,
+    //! min is increased by min of amount.min(), and max decreased by amount.max()
+    IndexRange<N> shrink(const IndexRange<N> &amount) const
+    {
+      IndexRange<N> ret;
+      for(unsigned i = 0;i < N;i++)
+        ret[i] = m_range[i].shrink(amount[i]);
       return ret;
     }
 
