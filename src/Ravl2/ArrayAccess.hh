@@ -31,14 +31,14 @@ namespace Ravl2
     {}
 
     //! Access indexed element
-    DataT &operator[](int i)
+    inline DataT &operator[](int i) noexcept
     {
       assert((*m_ranges).contains(i));
       return m_data[i];
     }
 
     //! Access indexed element.
-    const DataT &operator[](int i) const
+    inline const DataT &operator[](int i) const noexcept
     {
       assert((*m_ranges).contains(i));
       return m_data[i];
@@ -79,6 +79,16 @@ namespace Ravl2
     const IndexRange<1> &range() const
     { return *m_ranges; }
 
+    //! Is array empty ?
+    bool empty() const noexcept
+    {
+      if(m_ranges == 0) return true;
+      for(int i = 0;i < N;i++)
+        if(m_ranges[i].empty())
+          return true;
+      return false;
+    }
+
   protected:
     const IndexRange<1> *m_ranges {0};
     DataT *m_data {0};
@@ -113,13 +123,26 @@ namespace Ravl2
       return off;
     }
   public:
-    //! Create an array of the given size.
+    //! Create an empty array
+    ArrayAccess()
+    {}
+
+    //! Create an array of the given range.
     ArrayAccess(const IndexRange<N> &range)
      : m_buffer(new BufferVector<DataT>(range.elements())),
        m_range(range)
     {
       make_strides(range);
       m_data = &(m_buffer->data()[compute_origin_offset(range)]);
+    }
+
+    //! Create an array from a set of sizes.
+    ArrayAccess(std::initializer_list<int> sizes)
+     : m_range(sizes)
+    {
+      make_strides(m_range);
+      m_buffer = std::shared_ptr<Buffer<DataT> >(new BufferVector<DataT>(m_range.elements()));
+      m_data = &(m_buffer->data()[compute_origin_offset(m_range)]);
     }
 
     //! Create an sub array with the requested 'range'
@@ -154,7 +177,7 @@ namespace Ravl2
     ArrayAccessRef<const DataT,N-1> operator[](int i) const
     {
       assert(m_range[0].contains(i));
-      return ArrayAccessRef<DataT,N-1>(&m_range[1],m_data + i * m_strides[0],&m_strides[1]);
+      return ArrayAccessRef<const DataT,N-1>(&m_range[1],m_data + i * m_strides[0],&m_strides[1]);
     }
 
     //! Access next dimension of array.
@@ -170,7 +193,7 @@ namespace Ravl2
     }
 
     //! Access next dimension of array.
-    const DataT &operator[](const Index<1> &ind) const
+    const DataT &operator[](const Index<N> &ind) const
     {
       int dind = 0;
       for(unsigned i = 0;i < N-1;i++) {
@@ -189,6 +212,9 @@ namespace Ravl2
     bool empty() const noexcept
     { return m_range.empty(); }
 
+    //! Access stride size for given dimension
+    int stride(int dim) const
+    { return m_strides[dim]; }
   protected:
     DataT *m_data;
     std::shared_ptr<Buffer<DataT> > m_buffer;
