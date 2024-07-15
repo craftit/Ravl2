@@ -1,9 +1,17 @@
 
 #include <chrono>
 #include <iostream>
+
+// Check if we're using an x86 processor.
+#if defined(__i386__) || defined(_M_IX86) || defined(__x86_64__) || defined(_M_X64)
 #include <emmintrin.h>
+#define RAVL2_USE_SSE 1
+#else
+#define RAVL2_USE_SSE 0
+#endif
 
-
+#include <xtensor/xarray.hpp>
+#include <xtensor/xtensor.hpp>
 #include "Ravl2/ArrayAccess.hh"
 
 using std::chrono::steady_clock;
@@ -26,7 +34,7 @@ template<typename DataT>
 static inline bool Is16ByteAligned(const DataT *data)
 { return (((unsigned long int) data) & 0xf) == 0; }
 
-
+#if RAVL2_USE_SSE
 void SSEConvolveKernelF(const float *vi, // Scanned image, probably not aligned.
                         const float *vk, // Kernel, expected to be aligned.
                         size_t rows,
@@ -98,13 +106,14 @@ void SSEConvolveKernelF(const float *vi, // Scanned image, probably not aligned.
 
   _mm_store_ss(result,sum);
 }
+#endif
 
 void ConvolveKernelPtr(const float *matrix,
                             const float *kernel,
                             size_t rows,size_t cols,
                             int matrixByteStride,float *result)
 {
-  register float ret = 0;
+  float ret = 0;
   const float *vi = matrix;
   const float *vk = kernel;
   for(size_t i = 0;i < rows;i++) {
@@ -149,6 +158,44 @@ Ravl2::ArrayAccess<float,2> ConvolveKernel2(const Ravl2::ArrayAccess<float,2> &m
   return result;
 }
 
+xt::xtensor<float,2> ConvolveKernel2x(const xt::xtensor<float,2> &matrix,
+				      const xt::xtensor<float,2> &kernel)
+{
+  matrix.shape(0);
+  auto result = xt::xtensor<float,2>(
+    {matrix.shape(0) - kernel.shape(0) + 1,
+    matrix.shape(1) - kernel.shape(1) + 1});
+
+  for(int sr = 0; sr < result.shape(0); sr++) {
+    for(int sc = 0; sc < result.shape(1); sc++)
+    {
+      float sum = 0;
+      for(int kr = 0; kr < kernel.shape(0); kr++)
+      {
+	for(int kc = 0; kc < kernel.shape(1); kc++)
+	{
+	  sum += kernel(kr, kc) * matrix(kr + sr, kc + sc);
+	}
+      }
+      result(sr, sc) = sum;
+    }
+  }
+
+//  for(auto sr : xt::range(0,result.shape(0))) {
+//    for(auto sc : xt::range(result.shape(1))) {
+//      float sum = 0;
+//      for(auto kr : xt::range(kernel.shape(0))) {
+//	for(auto kc : kernel.range()[1]) {
+//	  sum += kernel[kr][kc] * matrix[kr + sr][kc + sc];
+//	}
+//      }
+//      result[sr][sc] = sum;
+//    }
+//  }
+  return result;
+}
+
+
 Ravl2::ArrayAccess<float,2> ConvolveKernel3(const Ravl2::ArrayAccess<float,2> &matrix,
                                            const Ravl2::ArrayAccess<float,2> &kernel)
 {
@@ -167,6 +214,7 @@ Ravl2::ArrayAccess<float,2> ConvolveKernel3(const Ravl2::ArrayAccess<float,2> &m
   return result;
 }
 
+#if RAVL2_USE_SSE
 Ravl2::ArrayAccess<float,2> ConvolveKernel4(const Ravl2::ArrayAccess<float,2> &matrix,
                                            const Ravl2::ArrayAccess<float,2> &kernel)
 {
@@ -184,6 +232,7 @@ Ravl2::ArrayAccess<float,2> ConvolveKernel4(const Ravl2::ArrayAccess<float,2> &m
   }
   return result;
 }
+#endif
 
 
 int generateTestData(Ravl2::ArrayAccess<float,2> &matrix,Ravl2::ArrayAccess<float,2> &kernel)
@@ -202,6 +251,23 @@ int generateTestData(Ravl2::ArrayAccess<float,2> &matrix,Ravl2::ArrayAccess<floa
   return 0;
 }
 
+int generateTestDataX(xt::xtensor<float,2> &matrix,xt::xtensor<float,2> &kernel)
+{
+  matrix = xt::xtensor<float,2>({128,128});
+  kernel = xt::xtensor<float,2>({16,16});
+
+  for(auto r = 0; r < matrix.shape(0); r++)
+    for(auto c = 0; c < matrix.shape(1); c++)
+      matrix(r,c) = float((r-c) * (r-c));
+
+  for(auto r = 0; r < kernel.shape(0); r++)
+    for(auto c = 0; c < kernel.shape(1); c++)
+      kernel(r,c) = float((r-c) * (r-c));
+
+  return 0;
+}
+
+
 float sumElem(const Ravl2::ArrayAccess<float,2> &array) {
   float sum = 0;
   for(auto ind : array.range())
@@ -209,11 +275,23 @@ float sumElem(const Ravl2::ArrayAccess<float,2> &array) {
   return sum;
 }
 
+template<typename DataT>
+float sumElemX(const DataT &array) {
+  float sum = 0;
+  for(auto r = 0; r < array.shape(0); r++)
+    for(auto c = 0; c < array.shape(1); c++)
+	sum += array(r,c);
+  return sum;
+}
+
+
+
 int testPlainAccess()
 {
   Ravl2::ArrayAccess<float,2> matrix;
   Ravl2::ArrayAccess<float,2> kernel;
   generateTestData(matrix,kernel);
+
 
   {
     steady_clock::time_point t1 = steady_clock::now();
@@ -253,6 +331,23 @@ int testPlainAccess()
   }
 
   {
+    xt::xtensor<float,2> x_matrix;
+    xt::xtensor<float,2> x_kernel;
+    generateTestDataX(x_matrix,x_kernel);
+
+    steady_clock::time_point t1 = steady_clock::now();
+    float theSum = 0;
+    for(int i = 0;i < 100;i++) {
+      auto result = ConvolveKernel2x(x_matrix,x_kernel);
+      theSum += sumElemX(result);
+    }
+    steady_clock::time_point t2 = steady_clock::now();
+    duration<double> time_span = duration_cast<duration<double>>(t2 - t1);
+    std::cout << "xtensor took " << time_span.count() << " seconds  to sum " << theSum << std::endl;
+  }
+
+#if RAVL2_USE_SSE
+  {
     steady_clock::time_point t1 = steady_clock::now();
     float theSum = 0;
     for(int i = 0;i < 100;i++) {
@@ -263,7 +358,7 @@ int testPlainAccess()
     duration<double> time_span = duration_cast<duration<double>>(t2 - t1);
     std::cout << "SSE     took " << time_span.count() << " seconds  to sum " << theSum << std::endl;
   }
-
+#endif
 
   return 0;
 }

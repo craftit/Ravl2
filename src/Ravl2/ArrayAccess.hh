@@ -9,7 +9,6 @@
 #define RAVL2_ARRAYACCESS_HH_
 
 #include <array>
-#include "Ravl2/RefCounter.hh"
 #include "Ravl2/Index.hh"
 #include "Ravl2/Buffer.hh"
 
@@ -60,7 +59,7 @@ namespace Ravl2
   {
   public:
     ArrayAccessRef()
-    {}
+    = default;
 
     ArrayAccessRef(const IndexRange<1> *rng,DataT *data,const int *strides)
      : m_ranges(rng),
@@ -125,10 +124,10 @@ namespace Ravl2
   public:
     //! Create an empty array
     ArrayAccess()
-    {}
+    = default;
 
     //! Create an array of the given range.
-    ArrayAccess(const IndexRange<N> &range)
+    explicit ArrayAccess(const IndexRange<N> &range)
      : m_buffer(new BufferVector<DataT>(range.elements())),
        m_range(range)
     {
@@ -141,7 +140,7 @@ namespace Ravl2
      : m_range(sizes)
     {
       make_strides(m_range);
-      m_buffer = std::shared_ptr<Buffer<DataT> >(new BufferVector<DataT>(m_range.elements()));
+      m_buffer = std::make_shared<BufferVector<DataT> >(m_range.elements());
       m_data = &(m_buffer->data()[compute_origin_offset(m_range)]);
     }
 
@@ -216,7 +215,7 @@ namespace Ravl2
     int stride(int dim) const
     { return m_strides[dim]; }
   protected:
-    DataT *m_data;
+    DataT *m_data = nullptr;
     std::shared_ptr<Buffer<DataT> > m_buffer;
     IndexRange<N> m_range;
     std::array<int,N> m_strides;
