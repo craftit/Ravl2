@@ -7,7 +7,7 @@
 #ifndef RAVL2_EDGESOBEL_HEADER
 #define RAVL2_EDGESOBEL_HEADER 1
 
-#include "Ravl2/ArrayAccess.hh"
+#include "Ravl2/Array.hh"
 #include <stdexcept>
 
 namespace Ravl2 {
@@ -24,11 +24,11 @@ namespace Ravl2 {
   // Output gradient vector is in the order: vertical, horizontal gradients
 
   template<class DataInT,class DataOutT>
-  void edge_sobel(const ArrayAccess<DataInT,2> &img,ArrayAccess<DataOutT,3> &out)
+  void edge_sobel(const Array<DataInT,2> &img, Array<DataOutT,3> &out)
   {
     IndexRange<3> outRange(img.range().shrink(1),2);
     if(outRange != out.range())
-      out = ArrayAccess<DataOutT,3>(outRange);
+      out = Array<DataOutT,3>(outRange);
     for(int r : outRange[0]) {
       for(int c : outRange[1]) {
         out[r][c][0] = img[r+1][c-1] + img[r+1][c] * 2 + img[r+1][c-1] - img[r-1][c-1] - img[r-1][c] * 2 - img[r-1][c+1];
@@ -40,13 +40,13 @@ namespace Ravl2 {
 
   //! Apply Sobel operator to 'img', put vertical and horizontal gradients in "Vert" and "Horz" respectively
   template<class DataInT,class DataOutT>
-  void edge_sobel(const ArrayAccess<DataInT,2> &img,ArrayAccess<DataOutT,2> &outRow,ArrayAccess<DataOutT,2> &outCol)
+  void edge_sobel(const Array<DataInT,2> &img, Array<DataOutT,2> &outRow, Array<DataOutT,2> &outCol)
   {
     IndexRange<2> outRange = img.range().shrink(1);
     if(outRange != outRow.range())
-      outRow = ArrayAccess<DataOutT,2>(outRange);
+      outRow = Array<DataOutT,2>(outRange);
     if(outRange != outCol.range())
-      outCol = ArrayAccess<DataOutT,2>(outRange);
+      outCol = Array<DataOutT,2>(outRange);
     for(int r : outRange[0]) {
       for(int c : outRange[1]) {
         outRow[r][c] = img[r+1][c-1] + img[r+1][c] * 2 + img[r+1][c-1] - img[r-1][c-1] - img[r-1][c] * 2 - img[r-1][c+1];

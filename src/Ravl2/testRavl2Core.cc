@@ -9,7 +9,7 @@
 #include <vector>
 
 #include "Ravl2/Index.hh"
-#include "Ravl2/ArrayAccess.hh"
+#include "Ravl2/Array.hh"
 #include "Ravl2/UnitTest.hh"
 #include "Ravl2/EdgeSobel.hh"
 
@@ -91,7 +91,7 @@ int testArrayAccess()
     // Test creation of 1 dimensional array.
 
     Ravl2::IndexRange<1> aRange(10);
-    Ravl2::ArrayAccess<int,1> val(aRange);
+    Ravl2::Array<int,1> val(aRange);
 
     int c = 0;
     for(auto a : aRange) {
@@ -117,7 +117,7 @@ int testArrayAccess()
     Ravl2::IndexRange<2> aRange {10,11};
 
     // Create a 2 dimensional array of objects.
-    Ravl2::ArrayAccess<int,2> val(aRange);
+    Ravl2::Array<int,2> val(aRange);
 
     // Write some data
     int c = 0;
@@ -155,7 +155,7 @@ int testArrayAccess()
     // Test creation of 3 dimensional array.
 
     Ravl2::IndexRange<3> aRange {10,11,12};
-    Ravl2::ArrayAccess<int,3> val(aRange);
+    Ravl2::Array<int,3> val(aRange);
 
     // Write some data
     int c = 0;
@@ -196,7 +196,7 @@ int testArrayAccess()
     // Test conversion from a c++ vector
 
     std::vector<int> acvec {1,2,3};
-    Ravl2::ArrayAccess<int,1> anAccess(acvec);
+    Ravl2::Array<int,1> anAccess(acvec);
 
     RAVL_TEST_EQUALS(anAccess.range().size(),3);
 

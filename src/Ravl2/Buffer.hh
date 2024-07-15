@@ -1,6 +1,6 @@
 
 /*
- * ArrayAccess.hh
+ * Array.hh
  *
  *  Created on: Dec 4, 2013
  *      Author: charlesgalambos
