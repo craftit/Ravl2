@@ -44,7 +44,7 @@ namespace Ravl2
    : public BufferBase
   {
   public:
-    Buffer(size_t theSize)
+    explicit Buffer(size_t theSize)
       : BufferBase(theSize)
     {}
 
@@ -67,27 +67,25 @@ namespace Ravl2
   {
   public:
     //! Move from a vector.
-    BufferVector(std::vector<DataT> &&vec)
-      : Buffer<DataT>(0),
+    explicit BufferVector(std::vector<DataT> &&vec)
+      : Buffer<DataT>(vec.size()),
         m_values(std::move(vec))
     {
       if(this->m_size > 0)
         this->m_data = &m_values[0];
-      this->m_size = m_values.size();
     }
 
     //! Copy from a vector.
-    BufferVector(const std::vector<DataT> &vec)
-      : Buffer<DataT>(0),
+    explicit BufferVector(const std::vector<DataT> &vec)
+      : Buffer<DataT>(vec.size()),
         m_values(vec)
     {
       if(this->m_size > 0)
         this->m_data = &m_values[0];
-      this->m_size = m_values.size();
     }
 
     //! Construct with a given size
-    BufferVector(size_t size)
+    explicit BufferVector(size_t size)
       : Buffer<DataT>(size),
         m_values(size)
     {

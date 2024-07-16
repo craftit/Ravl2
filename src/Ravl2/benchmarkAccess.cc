@@ -140,6 +140,25 @@ Ravl2::Array<float,2> ConvolveKernel1(const Ravl2::Array<float,2> &matrix,
   return result;
 }
 
+Ravl2::Array<float,2> ConvolveKernel1View(const Ravl2::Array<float,2> &matrix,
+                                      const Ravl2::Array<float,2> &kernel)
+{
+  Ravl2::IndexRange<2> scanRange = matrix.range().shrink(kernel.range());
+  Ravl2::Array<float,2> result(scanRange);
+  auto kernelEnd = kernel.end();
+  for(auto si : scanRange) {
+    float sum = 0;
+    auto view = matrix.view(kernel.range() + si);
+    auto it1 = kernel.begin();
+    auto it2 = view.begin();
+    for(;it1 != kernelEnd;++it1,++it2) {
+      sum += *it1 * *it2;
+    }
+    result[si] = sum;
+  }
+  return result;
+}
+
 Ravl2::Array<float,2> ConvolveKernel2(const Ravl2::Array<float,2> &matrix,
                                       const Ravl2::Array<float,2> &kernel)
 {
@@ -158,6 +177,8 @@ Ravl2::Array<float,2> ConvolveKernel2(const Ravl2::Array<float,2> &matrix,
   }
   return result;
 }
+
+
 
 xt::xtensor<float,2> ConvolveKernel2x(const xt::xtensor<float,2> &matrix,
 				      const xt::xtensor<float,2> &kernel)
@@ -271,8 +292,14 @@ int generateTestDataX(xt::xtensor<float,2> &matrix,xt::xtensor<float,2> &kernel)
 
 float sumElem(const Ravl2::Array<float,2> &array) {
   float sum = 0;
+# if 0
   for(auto ind : array.range())
     sum += array[ind];
+#else
+  for(auto x : array) {
+    sum += x;
+  }
+#endif
   return sum;
 }
 
@@ -304,6 +331,19 @@ int testPlainAccess()
     steady_clock::time_point t2 = steady_clock::now();
     duration<double> time_span = duration_cast<duration<double>>(t2 - t1);
     std::cout << "Index   took " << time_span.count() << " seconds  to sum " << theSum << std::endl;
+  }
+
+  {
+    steady_clock::time_point t1 = steady_clock::now();
+
+    float theSum = 0;
+    for(int i = 0;i < 100;i++) {
+      Ravl2::Array<float,2> result = ConvolveKernel1View(matrix, kernel);
+      theSum += sumElem(result);
+    }
+    steady_clock::time_point t2 = steady_clock::now();
+    duration<double> time_span = duration_cast<duration<double>>(t2 - t1);
+    std::cout << "View   took " << time_span.count() << " seconds  to sum " << theSum << std::endl;
   }
 
   {
