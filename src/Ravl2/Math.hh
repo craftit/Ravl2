@@ -5,6 +5,8 @@
 
 namespace Ravl2
 {
+    //! Define the type of real number
+    using RealT = float;
 
     //! Get the sign of number
     //! returns -1,0 or 1
@@ -26,6 +28,11 @@ namespace Ravl2
 #else
       return static_cast<IntT>(std::floor(x));
 #endif
+    }
+
+    template<class RealT, class IntT = int>
+    IntT int_ceil(RealT x) {
+      return static_cast<IntT>(std::ceil(x));
     }
 
     //! Returns the square of 'x'.

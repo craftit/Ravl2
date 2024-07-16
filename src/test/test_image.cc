@@ -4,7 +4,7 @@
 
 #include <gtest/gtest.h>
 #include "Ravl2/Image/BilinearInterpolation.hh"
-#include "Ravl2/Array.hh"
+#include "Ravl2/Image/WarpScale2d.hh"
 
 TEST(Image, BilinearInterpolation)
 {
@@ -24,4 +24,10 @@ TEST(Image, BilinearInterpolation)
 
   auto value2 = interpolate_bilinear(img,std::array<float,2>({1.5f,1.5f}));
   ASSERT_FLOAT_EQ(0.25f,value2);
+}
+
+
+TEST(Image, WarpScale2d)
+{
+
 }

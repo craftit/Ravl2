@@ -167,7 +167,7 @@ namespace Ravl2
     }
 
     //! Default constructor
-    IndexRange(int size)
+    explicit IndexRange(int size)
      : m_min(0),
        m_max(size-1)
     {}
@@ -210,16 +210,16 @@ namespace Ravl2
 
     //! Shrink the range in from both ends by amount.
     [[nodiscard]] IndexRange<1> shrink(int amount) const
-    { return IndexRange<1>(m_min + amount,m_max - amount); }
+    { return {m_min + amount,m_max - amount}; }
 
     //! Shrink the range by given size,
     //! min is increased by min of amount.min(), and max decreased by amount.max()
     [[nodiscard]] IndexRange<1> shrink(const IndexRange<1> &amount) const
-    { return IndexRange<1>(m_min + amount.min(),m_max - amount.max()); }
+    { return {m_min + amount.min(),m_max - amount.max()}; }
 
     //! Shrink the range in from both ends by amount.
     [[nodiscard]] IndexRange<1> expand(int amount) const
-    { return IndexRange<1>(m_min - amount,m_max + amount); }
+    { return {m_min - amount,m_max + amount}; }
 
     //! Shift range by given values.
     IndexRange<1> &operator+=(int ind)

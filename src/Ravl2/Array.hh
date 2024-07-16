@@ -138,22 +138,53 @@ namespace Ravl2
       return iter;
     }
 
-      //! Increment iterator
-    ArrayIter<DataT,N> &operator++()
+  protected:
+    //! The slower part of going to the next row,
+    //! this allows the fast path to be inlined without bloating the code.
+    void next_row()
     {
-      m_at[N-1]++;
-      for(int i = N-1;i > 0;i--) {
-        if(m_at[i] != m_end[i]) {
+      m_at[N-1] += m_strides[N-1];
+      m_at[N] = m_at[N-1];
+      m_end[N] += m_strides[N-1];
+      for(int i = N-2;i > 0;i--) {
+        if(m_at[i-1] != m_end[i-1]) {
           break;
         }
         m_at[i-1] += m_strides[i-1];
         m_at[i] = m_at[i-1];
         m_end[i] += m_strides[i-1];
       }
+    }
+
+  public:
+    //! Increment iterator
+    inline ArrayIter<DataT,N> &operator++()
+    {
+      m_at[N-1]++;
+      if(m_at[N-1] == m_end[N-1]) {
+        next_row();
+      }
       return *this;
     }
 
-      //! Compare iterators
+    //! Increment iterator
+    //! Returns true while we're on the same row.
+    inline bool next_col()
+    {
+      m_at[N-1]++;
+      if(m_at[N-1] == m_end[N-1]) {
+        next_row();
+        return false;
+      }
+      return true;
+    }
+
+    [[nodiscard]] bool valid() const
+    {
+      return m_at[N-1] != m_end[N-1];
+    }
+
+    //! Compare iterators
     bool operator==(const ArrayIter<DataT,N> &other) const
     {
       // Start at the last dimension and work backwards as it is most likely to be different.
@@ -455,10 +486,10 @@ namespace Ravl2
       { return m_strides[dim]; }
 
       //! Fill array with value.
-      void fill(const DataT &val)
+      void fill(DataT val)
       {
-        for(auto at : m_range)
-          (*this)[at] = val;
+        for(auto at : *this)
+          *at = val;
       }
 
   protected:
@@ -605,8 +636,8 @@ namespace Ravl2
       //! Fill array with value.
       void fill(const DataT &val)
       {
-        for(auto at : m_range)
-          m_data[at] = val;
+        for(auto at :*this)
+          *at = val;
       }
 
   protected:

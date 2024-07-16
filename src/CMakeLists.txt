@@ -4,6 +4,7 @@ project (Ravl2)
 
 find_package(xtensor REQUIRED)
 find_package(GTest REQUIRED)
+find_package(OpenCV REQUIRED)
 include(GoogleTest)
 
 set(CMAKE_CXX_STANDARD 20)
@@ -12,13 +13,18 @@ add_library (Ravl2
         Ravl2/Index.cc Ravl2/Index.hh
         Ravl2/Image/EdgeSobel.cc Ravl2/Image/EdgeSobel.hh
         Ravl2/Image/BilinearInterpolation.hh
+        Ravl2/Geometry.hh
+        Ravl2/Image/ImagePyramid.hh
 )
+
+target_link_libraries(Ravl2 PUBLIC ${OpenCV_LIBS})
 
 message(STATUS "Current dir: ${CMAKE_CURRENT_SOURCE_DIR}")
 target_include_directories(Ravl2 PUBLIC ".")
 
-add_executable(benchmarkAccess Ravl2/benchmarkAccess.cc)
-target_link_libraries (benchmarkAccess PUBLIC xtensor Ravl2)
+add_executable(benchmarkAccess Ravl2/benchmarkAccess.cc
+        Ravl2/Geometry.hh)
+target_link_libraries (benchmarkAccess PUBLIC xtensor Ravl2 )
 
 add_executable(test_core test/test_core.cc)
 target_link_libraries (test_core Ravl2  GTest::gtest GTest::gtest_main)
