@@ -15,6 +15,7 @@ add_library (Ravl2
         Ravl2/Image/BilinearInterpolation.hh
         Ravl2/Geometry.hh
         Ravl2/Image/ImagePyramid.hh
+#        Ravl2/Image/CornerDetectorSusan.cc Ravl2/Image/CornerDetectorSusan.hh
 )
 
 target_link_libraries(Ravl2 PUBLIC ${OpenCV_LIBS})

@@ -278,12 +278,15 @@ TEST(Ravl2, ArrayIter2)
     ASSERT_EQ(iter, iter);
     ASSERT_NE(iter, end);
     ASSERT_EQ(*iter, 0);
+    ASSERT_TRUE(iter.valid());
     ++iter;
     ASSERT_EQ(iter, iter);
     ASSERT_NE(iter, end);
     ASSERT_EQ(*iter, 1);
+    ASSERT_TRUE(iter.valid());
     ++iter;
     ASSERT_EQ(iter, end);
+    ASSERT_FALSE(iter.valid());
   }
 
   // Check 2x1 case
@@ -299,13 +302,16 @@ TEST(Ravl2, ArrayIter2)
     ASSERT_EQ(iter, iter);
     ASSERT_NE(iter, end);
     ASSERT_EQ(*iter, 0);
+    ASSERT_TRUE(iter.valid());
     ++iter;
     ASSERT_EQ(iter, iter);
     ASSERT_NE(iter, end);
     ASSERT_EQ(*iter, 1);
+    ASSERT_TRUE(iter.valid());
     ++iter;
     ASSERT_EQ(iter, iter);
     ASSERT_EQ(iter, end);
+    ASSERT_FALSE(iter.valid());
   }
 
   // Check 1x1 case
@@ -321,8 +327,10 @@ TEST(Ravl2, ArrayIter2)
     ASSERT_EQ(iter, iter);
     ASSERT_NE(iter, end);
     ASSERT_EQ(*iter, 0);
+    ASSERT_TRUE(iter.valid());
     ++iter;
     ASSERT_EQ(iter, end);
+    ASSERT_FALSE(iter.valid());
   }
 
   {

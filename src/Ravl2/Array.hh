@@ -23,6 +23,7 @@ namespace Ravl2
   template<typename DataT,unsigned N>
   class ArrayIter;
 
+  //! Iterator for 1 dimensional array.
 
   template<typename DataT>
   class ArrayIter<DataT,1>
@@ -89,6 +90,8 @@ namespace Ravl2
   };
 
 
+  //! Iterator for N dimensional array.
+
   template<typename DataT,unsigned N>
   class ArrayIter
   {
@@ -143,9 +146,9 @@ namespace Ravl2
     //! this allows the fast path to be inlined without bloating the code.
     void next_row()
     {
-      m_at[N-1] += m_strides[N-1];
-      m_at[N] = m_at[N-1];
-      m_end[N] += m_strides[N-1];
+      m_at[N-2] += m_strides[N-2];
+      m_at[N-1] = m_at[N-2];
+      m_end[N-1] += m_strides[N-2];
       for(int i = N-2;i > 0;i--) {
         if(m_at[i-1] != m_end[i-1]) {
           break;
@@ -181,7 +184,7 @@ namespace Ravl2
 
     [[nodiscard]] bool valid() const
     {
-      return m_at[N-1] != m_end[N-1];
+      return m_at[0] != m_end[0];
     }
 
     //! Compare iterators
@@ -197,7 +200,7 @@ namespace Ravl2
 
     //! Compare iterators
     bool operator!=(const ArrayIter<DataT,N> &other) const
-    { return !(*this == other); }
+    { return !this->operator==(other); }
 
     //! Access element
     DataT &operator*() const noexcept
@@ -211,9 +214,7 @@ namespace Ravl2
      const int *m_strides = nullptr;
   };
 
-
-
-    //! 1 dimensional access
+  //! 1 dimensional access
 
   template<typename DataT>
   class ArrayAccess<DataT,1>
@@ -489,7 +490,7 @@ namespace Ravl2
       void fill(DataT val)
       {
         for(auto at : *this)
-          *at = val;
+          at = val;
       }
 
   protected:
@@ -676,7 +677,8 @@ namespace Ravl2
 
     //! Create an array of the given size.
     explicit Array(const IndexRange<1> &range)
-     : ArrayView<DataT, 1>(range)
+     : ArrayView<DataT, 1>(range),
+       m_buffer(new BufferVector<DataT>(range.elements()))
     {
       this->m_data = &m_buffer->data()[-range.min()];
     }

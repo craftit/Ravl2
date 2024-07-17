@@ -34,6 +34,16 @@ namespace Ravl2
         m_index[i] = val.begin()[i];
     }
 
+    //! Unpack using a template
+    template<typename... Args>
+    Index(Args... args)
+    {
+      static_assert(sizeof...(args) == N,"Incorrect number of arguments");
+      int vals[] = {args...};
+      for(int i = 0;i < N;i++)
+	m_index[i] = vals[i];
+    }
+
     //! Default constructor
     Index()
     = default;
@@ -394,7 +404,7 @@ namespace Ravl2
     bool contains(const IndexRange<N> &range) const noexcept
     {
       for(unsigned i = 0;i < N;i++)
-        if(m_range[i].contains(range.m_range[i]))
+        if(!m_range[i].contains(range.m_range[i]))
           return false;
       return true;
     }
