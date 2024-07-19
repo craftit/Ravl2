@@ -5,13 +5,14 @@
  *      Author: charlesgalambos
  */
 
-#ifndef RAVL2_INDEX_HH_
-#define RAVL2_INDEX_HH_
+#pragma once
 
-#include <assert.h>
+#include <cassert>
 #include <vector>
 #include <algorithm>
 #include <iostream>
+#include <fmt/format.h>
+#include <fmt/ostream.h>
 
 namespace Ravl2
 {
@@ -36,7 +37,7 @@ namespace Ravl2
 
     //! Unpack using a template
     template<typename... Args>
-    Index(Args... args)
+    explicit Index(Args... args)
     {
       static_assert(sizeof...(args) == N,"Incorrect number of arguments");
       int vals[] = {args...};
@@ -135,8 +136,9 @@ namespace Ravl2
   template<unsigned N>
   std::ostream &operator<<(std::ostream &strm,const Index<N> &ind)
   {
-    for(unsigned i = 0;i < N;i++)
-      strm << ind[i] << " ";
+    strm << ind[0];
+    for(unsigned i = 1;i < N;i++)
+      strm << " " << ind[i];
     return strm;
   }
 
@@ -229,7 +231,7 @@ namespace Ravl2
     //! Shrink the range by given size,
     //! min is increased by min of amount.min(), and max decreased by amount.max()
     [[nodiscard]] IndexRange<1> shrink(const IndexRange<1> &amount) const
-    { return {m_min + amount.min(),m_max - amount.max()}; }
+    { return {m_min - amount.min(),m_max - amount.max()}; }
 
     //! Shrink the range in from both ends by amount.
     [[nodiscard]] IndexRange<1> expand(int amount) const
@@ -273,6 +275,18 @@ namespace Ravl2
     [[nodiscard]] IndexRange<1> operator+(int ind) const
     { return {m_min + ind,m_max + ind}; }
 
+    //! Add offset to range
+    [[nodiscard]] IndexRange<1> operator-(int ind) const
+    { return {m_min - ind,m_max - ind}; }
+
+      //! Add ranges
+    [[nodiscard]] IndexRange<1> operator+(IndexRange<1> ind) const
+    { return {m_min + ind.m_min,m_max + ind.m_max}; }
+
+    //! Subtract ranges
+    [[nodiscard]] IndexRange<1> operator-(IndexRange<1> ind) const
+    { return {m_min - ind.m_min,m_max - ind.m_max}; }
+
     //! Clip index so it is within the range.
     [[nodiscard]] IndexRange<1> clip(const IndexRange<1> &range) const
     { return {clip(range.min()),clip(range.max())}; }
@@ -297,9 +311,11 @@ namespace Ravl2
     //! One passed the end of the range.
     [[nodiscard]] IndexRangeIterator<1> end() const;
 
+    //! Access as ptr to array of 1d ranges
     [[nodiscard]] IndexRange<1> *range_data()
     { return this; }
 
+    //! Access as ptr to array of 1d ranges
     [[nodiscard]] const IndexRange<1> *range_data() const
     { return this; }
 
@@ -485,7 +501,34 @@ namespace Ravl2
       return ret;
     }
 
-    //! Shift this range in dimension n by the given 'amount'
+    //! Shift range by given values.
+    IndexRange<N> operator-(const Index<N> &ind) const noexcept
+    {
+      IndexRange<N> ret;
+      for(unsigned i = 0;i < N;i++)
+        ret.m_range[i] = m_range[i] - ind[i];
+      return ret;
+    }
+
+    //! Add one range to another
+    IndexRange<N> operator+(const IndexRange<N> &ind) const noexcept
+    {
+      IndexRange<N> ret;
+      for(unsigned i = 0;i < N;i++)
+        ret.m_range[i] = m_range[i] + ind[i];
+      return ret;
+    }
+
+    //! Add one range to another
+    IndexRange<N> operator-(const IndexRange<N> &ind) const noexcept
+    {
+      IndexRange<N> ret;
+      for(unsigned i = 0;i < N;i++)
+        ret.m_range[i] = m_range[i] - ind[i];
+      return ret;
+    }
+
+      //! Shift this range in dimension n by the given 'amount'
     void shift(unsigned n,int amount)
     { m_range[n] += amount; }
 
@@ -567,7 +610,6 @@ namespace Ravl2
     for(unsigned i = 0;i < N;i++) {
       strm << "(" << rng[i].min() << "," << rng[i].max() << ")";
     }
-
     return strm;
   }
 
@@ -687,6 +729,7 @@ namespace Ravl2
 
 }
 
-
-
-#endif /* RANGE_HH_ */
+namespace fmt {
+    template <unsigned N> struct formatter<Ravl2::Index<N>> : ostream_formatter {};
+    template <unsigned N> struct formatter<Ravl2::IndexRange<N>> : ostream_formatter {};
+}

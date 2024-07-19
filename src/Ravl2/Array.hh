@@ -82,7 +82,7 @@ namespace Ravl2
       { return m_at != other; }
 
       //! Access element
-      DataT &operator*()
+      DataT &operator*() const
       { return *m_at; }
   private:
       DataT *m_at = nullptr;
@@ -101,43 +101,46 @@ namespace Ravl2
     ArrayIter(const IndexRange<1> *rng, DataT *data, const int *strides) noexcept
     {
       assert(data != nullptr);
+      DataT *ptr = data;
       for(int i = 0;i < N;i++) {
-        m_at[i] = data + rng[i].min() * strides[i];
-        m_end[i] = m_at[i] + rng[i].size() * strides[i];
+        ptr += rng[i].min() * strides[i];
+      }
+      for(int i = N-1;i >= 0;i--) {
+        m_at[i] = ptr;
+        m_end[i] = ptr + rng[i].size() * strides[i];
       }
       m_strides = strides;
     }
+
+    ArrayIter(const IndexRange<N> &rng, DataT *data, const int *strides) noexcept
+     : ArrayIter(rng.ranges().data(),data,strides)
+    {}
 
     ArrayIter(const IndexRange<N> &rng, DataT *data, const std::array<int,N> &strides) noexcept
      : ArrayIter(rng.ranges().data(),data,strides.data())
     {}
 
     //! Construct end iterator
-    static ArrayIter<DataT,N> end(const IndexRange<N> &rng, DataT *data, const std::array<int,N> &strides) noexcept
+    static ArrayIter<DataT,N> end(const IndexRange<1> *rng, DataT *data, const int *strides) noexcept
     {
       ArrayIter<DataT,N> iter;
-      DataT *at = data;
+      DataT *ptr = data;
       for(int i = 0;i < N;i++) {
-        at += rng.max()[i] * strides[i];
-        iter.m_end[i] = at + strides[i];
-        iter.m_at[i] = iter.m_end[i];
+        ptr += rng[i].max() * (strides[i]);
       }
-      iter.m_strides = strides.data();
+      ptr++;
+      for(int i = 0;i < N;i++) {
+        iter.m_at[i] = ptr ;
+        iter.m_end[i] = ptr;
+      }
+      iter.m_strides = strides;
       return iter;
     }
 
     //! Construct end iterator
-    static ArrayIter<DataT,N> end(const IndexRange<1> *rng, DataT *data, const int *strides) noexcept
+    static ArrayIter<DataT,N> end(const IndexRange<N> &rng, DataT *data, const std::array<int,N> &strides) noexcept
     {
-      ArrayIter<DataT,N> iter;
-      DataT *at = data;
-      for(int i = 0;i < N;i++) {
-        at += rng[i].max() * strides[i];
-        iter.m_end[i] = at + strides[i];
-        iter.m_at[i] = iter.m_end[i];
-      }
-      iter.m_strides = strides;
-      return iter;
+      return end(rng.ranges().data(),data,strides.data());
     }
 
   protected:
@@ -238,6 +241,14 @@ namespace Ravl2
 
     explicit ArrayAccess(Array<DataT,1> &array);
 
+    //! Access origin address
+    [[nodiscard]] DataT *origin_address()
+    { return m_data; }
+
+    //! Access origin address
+    [[nodiscard]] const DataT *origin_address() const
+    { return m_data; }
+
     //! Access indexed element
     [[nodiscard]] inline DataT &operator[](int i) noexcept
     {
@@ -289,15 +300,29 @@ namespace Ravl2
     ArrayAccess()
     = default;
 
-    ArrayAccess(const IndexRange<1> *rng, DataT *data, const int *strides)
-     : m_ranges(rng),
+    ArrayAccess(const IndexRange<N> &rng, DataT *data, const int *strides)
+     : m_ranges(rng.range_data()),
        m_data(data),
        m_strides(strides)
     {}
 
+    ArrayAccess(const IndexRange<1> *rng, DataT *data, const int *strides)
+      : m_ranges(rng),
+        m_data(data),
+        m_strides(strides)
+    {}
+
     explicit ArrayAccess(Array<DataT,N> &array);
 
-      //! Drop index one level.
+    //! Access origin address
+    [[nodiscard]] DataT *origin_address()
+    { return m_data; }
+
+    //! Access origin address
+    [[nodiscard]] const DataT *origin_address() const
+    { return m_data; }
+
+    //! Drop index one level.
     [[nodiscard]] ArrayAccess<DataT, N - 1> operator[](int i)
     {
       assert(m_ranges[0].contains(i));
@@ -308,7 +333,16 @@ namespace Ravl2
     [[nodiscard]] const IndexRange<1> &range1() const
     { return *m_ranges; }
 
-    //! Is array empty ?
+    //! Range of index's for row
+    [[nodiscard]] IndexRange<N> range() const
+    {
+      IndexRange<N> rng;
+      for(int i = 0;i < N;i++)
+        rng[i] = m_ranges[i];
+      return rng;
+    }
+
+      //! Is array empty ?
     [[nodiscard]] bool empty() const noexcept
     {
       if(m_ranges == nullptr) return true;
@@ -428,6 +462,13 @@ namespace Ravl2
         return ArrayView<const DataT,N>(m_data,range,m_strides);
       }
 
+      //! Get an access of the array with the requested 'range'
+      ArrayAccess<const DataT,N> access(const IndexRange<N> &range) const
+      {
+        assert(m_range.contains(range));
+        return ArrayAccess<const DataT,N>(range.range_data(),m_data,m_strides.data());
+      }
+
       //! Access address of origin element
       //! Note: this may not point to a valid element
       [[nodiscard]] DataT *origin_address()
@@ -435,7 +476,7 @@ namespace Ravl2
 
       //! Access address of origin element
       //! Note: this may not point to a valid element
-      [[nodiscard]] const DataT *origin_address() const
+      [[nodiscard]] DataT *origin_address() const
       { return m_data; }
 
       //! Access next dimension of array.
@@ -502,6 +543,10 @@ namespace Ravl2
       [[nodiscard]] int stride(int dim) const
       { return m_strides[dim]; }
 
+      //! Access strides for each dimension
+      [[nodiscard]] const int *strides() const
+      { return m_strides.data(); }
+
       //! Fill array with value.
       void fill(DataT val)
       {
@@ -537,6 +582,16 @@ namespace Ravl2
     }
 
     //! Create an array from a set of sizes.
+    Array(std::initializer_list<IndexRange<N>> ranges)
+      : ArrayView<DataT, N>(IndexRange<N>(ranges)),
+        m_buffer(std::make_shared<BufferVector<DataT> >(this->m_range.elements()))
+    {
+      this->make_strides(this->m_range);
+      this->m_data = &(m_buffer->data()[this->compute_origin_offset(this->m_range)]);
+    }
+
+
+      //! Create an array from a set of sizes.
     Array(std::initializer_list<int> sizes)
      : ArrayView<DataT, N>(IndexRange<N>(sizes)),
        m_buffer(std::make_shared<BufferVector<DataT> >(this->m_range.elements()))
@@ -649,6 +704,13 @@ namespace Ravl2
       //! End iterator
       ArrayIter<DataT,1> end() const
       { return ArrayIter<DataT,1>(m_data + m_range.size()); }
+
+      //! Get the index of the given pointer within the array.
+      [[nodiscard]]
+      Index<1> indexOf(const DataT *ptr) const
+      {
+        return Index<1>({int(ptr - m_data)});
+      }
 
       //! Fill array with value.
       void fill(const DataT &val)

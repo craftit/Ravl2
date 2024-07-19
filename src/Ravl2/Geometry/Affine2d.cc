@@ -4,23 +4,14 @@
 // General Public License (LGPL). See the lgpl.licence file for details or
 // see http://www.gnu.org/copyleft/lesser.html
 // file-header-ends-here
-//! rcsid="$Id$"
-//! lib=RavlMath
-//! file="Ravl/Math/Geometry/Euclidean/2D/Affine2d.cc"
 
-#include "Ravl/Affine2d.hh"
-#include "Ravl/Point2d.hh"
-#include "Ravl/Matrix3d.hh"
-#include "Ravl/Vector3d.hh"
-#include "Ravl/SArray1d.hh"
-#include "Ravl/DArray1d.hh"
-#include "Ravl/SArray1dIter2.hh"
-#include "Ravl/LeastSquares.hh"
-#include "Ravl/Matrix.hh"
-#include "Ravl/DLIter.hh"
+#include "Ravl2/Geometry/Affine2d.hh"
+
+
 
 namespace RavlN {
-  
+
+#if 0
   Affine2dC FitAffine(const SArray1dC<Point2dC> &org,const SArray1dC<Point2dC> &newPos, const SArray1dC<RealT> &weights)
   {
     RealT residual;
@@ -404,5 +395,5 @@ namespace RavlN {
       it.Data1() = trans * it.Data2();
     return ret;
   }
-
+#endif
 }

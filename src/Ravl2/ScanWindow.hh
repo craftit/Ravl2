@@ -18,14 +18,23 @@ namespace Ravl2
   public:
     ScanWindow(ArrayAccess<DataT, 1> img, const IndexRange<1> &window)
       : mArea(img.range() - window),
-	mAt(&mArea, img.origin_address()),
-	mEnd(&mArea, img.origin_address() + mArea.max() + 1),
+	mAt(img.origin_address() + mArea.min()),
+	mEnd(img.origin_address() + mArea.max() + 1),
 	mWindowRange(window)
     {
       assert(!mArea.empty());
     }
 
-    //! Get the window area we're scanning over.
+    ScanWindow(ArrayView<DataT, 1> &img, const IndexRange<1> &window)
+      : mArea(img.range() - window),
+        mAt(img.origin_address() + mArea.min()),
+        mEnd(img.origin_address() + mArea.max() + 1),
+        mWindowRange(window)
+    {
+      assert(!mArea.empty());
+    }
+
+      //! Get the window area we're scanning over.
     [[nodiscard]] const IndexRange<1> &scanArea() const
     {
       return mArea;
@@ -46,8 +55,12 @@ namespace Ravl2
     //! Get the current window
     [[nodiscard]] ArrayAccess<DataT,1> window() const
     {
-      return ArrayAccess<DataT,1>(mWindowRange,&(*mAt),mAt.strides());
+      return ArrayAccess<DataT,1>(&mWindowRange,&(*mAt), nullptr);
     }
+
+    //! Get current index of the window position 0,0 in the image
+    [[nodiscard]] Index<1> indexIn(const Ravl2::ArrayView<DataT,1> &img)
+    { return img.indexOf(&*mAt); }
 
   protected:
     IndexRange<1> mArea; // Area we're scanning over
@@ -63,13 +76,22 @@ namespace Ravl2
   class ScanWindow
   {
   public:
-    ScanWindow(ArrayAccess<DataT, N> img, const IndexRange<N> &window)
-      : mArea(img.range() - window),
-	mAt(&mArea, img.origin_address(),img.strides()),
-        mWindowRange(window)
+    ScanWindow(const Ravl2::ArrayAccess<DataT,N> &img, const IndexRange<N> &window)
+      : mWindowRange(window),
+        mArea(img.range() - window),
+        mAt(mArea, img.origin_address(),img.strides())
     {
       assert(!mArea.empty());
     }
+
+    ScanWindow(const Ravl2::ArrayView<DataT,N> &img, const IndexRange<N> &window)
+      : mWindowRange(window),
+        mArea(img.range() - window),
+	mAt(mArea, img.origin_address(),img.strides())
+    {
+      assert(!mArea.empty());
+    }
+
 
     //! Get the window area we're scanning over.
     [[nodiscard]] const IndexRange<N> &scanArea() const
@@ -96,8 +118,8 @@ namespace Ravl2
     }
 
   protected:
+    IndexRange<N> mWindowRange;
     IndexRange<N> mArea; // Area we're scanning over
     ArrayIter<DataT, N> mAt;
-    IndexRange<N> mWindowRange;
   };
 }
