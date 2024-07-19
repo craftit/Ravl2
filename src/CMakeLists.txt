@@ -6,6 +6,7 @@ find_package(xtensor REQUIRED)
 find_package(GTest REQUIRED)
 find_package(OpenCV REQUIRED)
 find_package(fmt REQUIRED)
+find_package(spdlog REQUIRED)
 include(GoogleTest)
 
 set(CMAKE_CXX_STANDARD 20)
@@ -13,6 +14,7 @@ set(CMAKE_CXX_STANDARD 20)
 add_library (Ravl2
         Ravl2/Index.cc Ravl2/Index.hh
         Ravl2/Array.hh
+        Ravl2/ArrayIterZip.hh
         Ravl2/ScanWindow.hh
         Ravl2/Image/EdgeSobel.cc Ravl2/Image/EdgeSobel.hh
         Ravl2/Image/BilinearInterpolation.hh
@@ -24,7 +26,7 @@ add_library (Ravl2
 #        Ravl2/Image/CornerDetectorSusan.cc Ravl2/Image/CornerDetectorSusan.hh
 )
 
-target_link_libraries(Ravl2 PUBLIC ${OpenCV_LIBS} fmt::fmt xtensor )
+target_link_libraries(Ravl2 PUBLIC ${OpenCV_LIBS} fmt::fmt xtensor spdlog::spdlog)
 
 message(STATUS "Current dir: ${CMAKE_CURRENT_SOURCE_DIR}")
 target_include_directories(Ravl2 PUBLIC ".")
