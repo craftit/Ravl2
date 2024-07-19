@@ -23,7 +23,7 @@ namespace Ravl2 {
     class ImagePyramidC {
     public:
         ImagePyramidC()
-        {}
+        = default;
         //: Default constructor.
 
         ImagePyramidC(const ImageC<PixelT> &img,int nScales = 2,bool subSample = false,bool recursive = false)

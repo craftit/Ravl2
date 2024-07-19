@@ -7,7 +7,7 @@
 #pragma once
 
 #include "Ravl2/Array.hh"
-#include "Ravl2/Geometry.hh"
+#include "Ravl2/Geometry/Geometry.hh"
 
 namespace Ravl2
 {
@@ -133,12 +133,13 @@ namespace Ravl2
     float Px = (- spp - scp - snp + spn + scn + snn)/6.0;
     float Py = (- spp - spc - spn + snp + snc + snn)/6.0;
     float det = Pxy*Pxy - Pxx*Pyy;
-    
+
+    Vector2f indf = {float(pos[0]),float(pos[1])};
     if(det == 0)
-      return {float(pos[0]),float(pos[1])};
+      return indf;
     
     // calculate sub-pixel corrections to the corner position.
-    Vector2f corr((Pyy*Px - Pxy*Py)/det,(Pxx*Py - Pxy*Px)/det);
+    Vector2f corr({(Pyy*Px - Pxy*Py)/det,(Pxx*Py - Pxy*Px)/det});
     
     // pull the corrections inside the pixel.
     if (corr[0] > 0.5) 
@@ -149,7 +150,7 @@ namespace Ravl2
       corr[1]=0.5; 
     if (corr[1] < -0.5) 
       corr[1]= -0.5;
-    return Point2f(float(pos[0]),float(pos[1])) + corr;
+    return indf + corr;
   }
   //: Locate peak with sub-pixel precision.
   // Fits a quadratic to the peak and works out the center. The position of the
@@ -159,7 +160,7 @@ namespace Ravl2
   template<class DataT>
   Point2f LocatePeakSubPixel(const Array<DataT,2> &img,const Index<2> &pos) {
     // apply geometric fitting in image-proportional coordinates.
-    auto fpos = Point2f(float(pos[0]),float(pos[1]));
+    Point2f fpos = {float(pos[0]),float(pos[1])};
     if(!img.range().shrink(1).contains(pos))
       return fpos;
     
@@ -190,7 +191,7 @@ namespace Ravl2
       return fpos;
     
     // calculate sub-pixel corrections to the corner position.
-    Vector2f corr((Pyy*Px - Pxy*Py)/det,(Pxx*Py - Pxy*Px)/det);
+    Vector2f corr = {(Pyy*Px - Pxy*Py)/det,(Pxx*Py - Pxy*Px)/det};
     
     // pull the corrections inside the pixel.
     if (corr[0] > 0.5) 

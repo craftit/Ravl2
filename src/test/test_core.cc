@@ -12,7 +12,7 @@
 #include "Ravl2/Math.hh"
 #include "Ravl2/Index.hh"
 #include "Ravl2/Array.hh"
-#include "Ravl2/Geometry.hh"
+#include "Ravl2/Geometry/Geometry.hh"
 
 TEST(Ravl2, Math)
 {

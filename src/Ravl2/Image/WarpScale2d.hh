@@ -10,7 +10,7 @@
 #include "Ravl2/Array.hh"
 #include "Ravl2/Math.hh"
 #include "Ravl2/Image/BilinearInterpolation.hh"
-#include "Ravl2/Geometry.hh"
+#include "Ravl2/Geometry/Geometry.hh"
 
 namespace Ravl2
 {

@@ -334,7 +334,7 @@ namespace Ravl2
 
   //! Non-owning view of an array values.
 
-  template<typename DataT,unsigned N>
+  template<typename DataT,unsigned N=1>
   class ArrayView
   {
   protected:
@@ -502,7 +502,7 @@ namespace Ravl2
 
   //! Access for an N dimensional element of an array.
 
-  template<typename DataT,unsigned N>
+  template<typename DataT,unsigned N=1>
   class Array
     : public ArrayView<DataT,N>
   {
