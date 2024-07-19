@@ -194,6 +194,10 @@ namespace Ravl2
     [[nodiscard]] int size() const noexcept
     { return (m_max - m_min) + 1; }
 
+    //! Get the area of the range.
+    [[nodiscard]] int area() const noexcept
+    { return size(); }
+
     //! Get size of given dimension
     [[nodiscard]] int size(unsigned n) const noexcept
     {
@@ -361,7 +365,7 @@ namespace Ravl2
     { m_range[0].clear(); }
 
     //! Get the size of the range in each dimension.
-    Index<N> size() const noexcept
+    [[nodiscard]] Index<N> size() const noexcept
     {
       Index<N> ret;
       for(unsigned i = 0;i < N;i++)
@@ -370,11 +374,20 @@ namespace Ravl2
     }
 
     //! Get size of given dimension
-    int size(unsigned n) const noexcept
+    [[nodiscard]] int size(unsigned n) const noexcept
     { return m_range[n].size(); }
 
+    //! Get the area of the range.
+    [[nodiscard]] int area() const noexcept
+    {
+      int a = 1;
+      for(unsigned i = 0;i < N;i++)
+	a *= m_range[i].size();
+      return a;
+    }
+
     //! Get total number of elements covered by range.
-    size_t elements() const
+    [[nodiscard]] size_t elements() const
     {
       size_t n = 1;
       for(unsigned i = 0;i < N;i++)
@@ -383,7 +396,7 @@ namespace Ravl2
     }
 
     //! Is range empty ?
-    bool empty() const noexcept
+    [[nodiscard]] bool empty() const noexcept
     {
       for(unsigned i = 0;i < N;i++)
         if(m_range[i].empty())
@@ -624,7 +637,7 @@ namespace Ravl2
     {}
 
     //! Access current index.
-    const Index<N> &operator*() const
+    [[nodiscard]] const Index<N> &operator*() const
     { return m_at; }
 
     //! Increment position.
@@ -639,12 +652,19 @@ namespace Ravl2
       ++m_at[0];
     }
 
+    //! Are we at the end of the range?
+    //! In the case of this iterator we have all we need to know internally.
+    [[nodiscard]] bool at_end() const
+    {
+      return m_at[0] > m_range->max()[0];
+    }
+
     //! Equality test.
-    bool operator==(const IndexRangeIterator<N> &other) const
+    [[nodiscard]] bool operator==(const IndexRangeIterator<N> &other) const
     { return m_at == other.m_at; }
 
     //! Equality test.
-    bool operator!=(const IndexRangeIterator<N> &other) const
+    [[nodiscard]] bool operator!=(const IndexRangeIterator<N> &other) const
     { return m_at != other.m_at; }
   protected:
     const IndexRange<N> *m_range;

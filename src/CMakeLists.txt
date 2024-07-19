@@ -12,6 +12,8 @@ set(CMAKE_CXX_STANDARD 20)
 
 add_library (Ravl2
         Ravl2/Index.cc Ravl2/Index.hh
+        Ravl2/Array.hh
+        Ravl2/ScanWindow.hh
         Ravl2/Image/EdgeSobel.cc Ravl2/Image/EdgeSobel.hh
         Ravl2/Image/BilinearInterpolation.hh
         Ravl2/Geometry/Geometry.hh Ravl2/Geometry/Geometry.cc

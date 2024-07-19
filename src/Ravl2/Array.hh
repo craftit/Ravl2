@@ -5,8 +5,7 @@
  *      Author: charlesgalambos
  */
 
-#ifndef RAVL2_ARRAYACCESS_HH_
-#define RAVL2_ARRAYACCESS_HH_
+#pragma once
 
 #include <array>
 #include "Ravl2/Index.hh"
@@ -182,9 +181,16 @@ namespace Ravl2
       return true;
     }
 
+    //! Test if the iterator is valid.
     [[nodiscard]] bool valid() const
     {
       return m_at[0] != m_end[0];
+    }
+
+    //! Test if the iterator is finished.
+    [[nodiscard]] bool done() const
+    {
+      return m_at[0] == m_end[0];
     }
 
     //! Compare iterators
@@ -208,6 +214,9 @@ namespace Ravl2
       return *m_at[N-1];
     }
 
+    //! Access strides
+    [[nodiscard]] const int *strides() const
+    { return m_strides; }
   protected:
      std::array<DataT *,N> m_at {};
      std::array<DataT *,N> m_end {};
@@ -227,7 +236,7 @@ namespace Ravl2
       assert(*strides == 1);
     }
 
-    ArrayAccess(Array<DataT,1> &array);
+    explicit ArrayAccess(Array<DataT,1> &array);
 
     //! Access indexed element
     [[nodiscard]] inline DataT &operator[](int i) noexcept
@@ -317,6 +326,13 @@ namespace Ravl2
     [[nodiscard]] ArrayIter<DataT,N> end() const
     { return ArrayIter<DataT,N>::end(m_ranges, m_data, m_strides); }
 
+    //! Get stride for dimension
+    [[nodiscard]] int stride(int dim) const
+    { return m_strides[dim]; }
+
+    //! Access strides
+    [[nodiscard]] const int *strides() const
+    { return m_strides; }
   protected:
     const IndexRange<1> *m_ranges {nullptr};
     DataT *m_data {nullptr};
@@ -694,6 +710,4 @@ namespace Ravl2
 
 }
 
-
-#endif /* RAVL2_ARRAYACCESS_HH_ */
 

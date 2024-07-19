@@ -34,8 +34,8 @@ namespace Ravl2
   bool PeakDetect5(const Array<DataT,2> &img,const Index<2> &pos) {
     const DataT *rt = &(img[pos]);
     const DataT &cent = rt[0];
-    int cc = pos[1];
-    int cr = pos[0];
+    const int cc = pos[1];
+    const int cr = pos[0];
     // Check the middle row first as we already have a pointer to it.
     if(rt[-2] >= cent || rt[-1] >= cent || rt[1] >= cent || rt[2] >= cent)
       return false;
@@ -65,10 +65,11 @@ namespace Ravl2
   template<class DataT>
   inline
   bool PeakDetect7(const Array<DataT,2> &img,const Index<2> &pos) {
-    const DataT *rt = &(img[pos]);
     const DataT &cent = rt[0];
-    int cc = pos[1];
-    int cr = pos[0];
+    const int cc = pos[1];
+    const int cr = pos[0];
+
+    const DataT *rt = &(img[pos]);
     // Check the middle row first as we already have a pointer to it.
     if(rt[-3] >= cent || rt[-2] >= cent || rt[-1] >= cent || rt[1] >= cent || rt[2] >= cent || rt[3] >= cent)
       return false;
@@ -112,19 +113,19 @@ namespace Ravl2
       return {float(pos[0]),float(pos[1])};
     
     const DataT *rt = &(img[pos[0]-1][pos[1]]);
-    float spp = std::pow((float) rt[-1],pof);
-    float spc = std::pow((float) rt[ 0],pof);
-    float spn = std::pow((float) rt[ 1],pof);
+    const float spp = std::pow((float) rt[-1],pof);
+    const float spc = std::pow((float) rt[ 0],pof);
+    const float spn = std::pow((float) rt[ 1],pof);
     
     rt = &(img[pos]);
-    float scp = std::pow((float) rt[-1],pof);
-    float scc = std::pow((float) rt[ 0],pof);
-    float scn = std::pow((float) rt[ 1],pof);
+    const float scp = std::pow((float) rt[-1],pof);
+    const float scc = std::pow((float) rt[ 0],pof);
+    const float scn = std::pow((float) rt[ 1],pof);
     
     rt = &(img[pos[0]+1][pos[1]]);
-    float snp = pow((float) rt[-1],pof);
-    float snc = std::pow((float) rt[ 0],pof);
-    float snn = std::pow((float) rt[ 1],pof);
+    const float snp = pow((float) rt[-1],pof);
+    const float snc = std::pow((float) rt[ 0],pof);
+    const float snn = std::pow((float) rt[ 1],pof);
     
     // Use least-squares to fit quadratic to local corner strengths.
     float Pxx = (spp - 2.0*spc + spn + scp - 2.0*scc + scn + snp - 2.0*snc + snn)/3.0;

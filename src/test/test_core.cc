@@ -12,6 +12,7 @@
 #include "Ravl2/Math.hh"
 #include "Ravl2/Index.hh"
 #include "Ravl2/Array.hh"
+#include "Ravl2/ScanWindow.hh"
 #include "Ravl2/Geometry/Geometry.hh"
 
 TEST(Ravl2, Math)
@@ -361,7 +362,8 @@ TEST(Ravl2, ArrayIter2)
   }
 }
 
-TEST(Ravl2, ArrayViewIter2)
+TEST(Ravl2, ScanWindow1)
 {
+
 
 }
