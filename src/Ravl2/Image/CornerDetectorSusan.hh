@@ -18,11 +18,11 @@ namespace Ravl2
   //: Susan corner detector.
   // Based on code from S.M.Smith
 
-  class CornerDetectorSusanBodyC
-    : public CornerDetectorBodyC
+  class CornerDetectorSusanC
+    : public CornerDetectorC
   {
   public:
-    CornerDetectorSusanBodyC(int threshold = 20);
+    CornerDetectorSusanC(int threshold = 20);
     //: Constructor.
     // threshold = Minimum level of cornerness to accept. <br>
     // w = width of filter to use for corners.
@@ -46,19 +46,5 @@ namespace Ravl2
     int threshold;
   };
 
-  //! userlevel=Normal
-  //: Susan corner detector.
-  // Based on code from S.M.Smith
-
-  class CornerDetectorSusanC
-    : public CornerDetectorC
-  {
-  public:
-    CornerDetectorSusanC(int threshold = 20)
-      : CornerDetectorC(*new CornerDetectorSusanBodyC(threshold))
-    {}
-    //: Corner detector.
-
-  };
 }
 

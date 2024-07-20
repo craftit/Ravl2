@@ -159,8 +159,8 @@ Ravl2::Array<float,2> ConvolveKernelView(const Ravl2::Array<float,2> &matrix,
   return result;
 }
 
-Ravl2::Array<float,2> ConvolveKernelScan(const Ravl2::Array<float,2> &matrix,
-                                          const Ravl2::Array<float,2> &kernel)
+Ravl2::Array<float,2> ConvolveKernelScanZip(const Ravl2::Array<float,2> &matrix,
+                                            const Ravl2::Array<float,2> &kernel)
 {
   Ravl2::ScanWindow<float,2> scan(matrix, kernel.range());
   Ravl2::Array<float,2> result(scan.scanArea());
@@ -171,6 +171,48 @@ Ravl2::Array<float,2> ConvolveKernelScan(const Ravl2::Array<float,2> &matrix,
     auto window = scan.window();
     for(auto it = Ravl2::ArrayIterZip<2,float,float>(kernel,window);!it.done();++it) {
       sum += it.data1() * it.data2();
+    }
+    result[*scanIter] = sum;
+  }
+  return result;
+}
+
+Ravl2::Array<float,2> ConvolveKernelScanZipRow(const Ravl2::Array<float,2> &matrix,
+                                            const Ravl2::Array<float,2> &kernel)
+{
+  Ravl2::ScanWindow<float,2> scan(matrix, kernel.range());
+  Ravl2::Array<float,2> result(scan.scanArea());
+  //auto kernelEnd = kernel.end();
+  auto scanIter = scan.scanArea().begin();
+  for(;!scan.done();++scan,++scanIter) {
+    float sum = 0;
+    auto window = scan.window();
+    auto it = Ravl2::ArrayIterZip<2,float,float>(kernel,window);
+    for(;!it.done();) {
+      // This is a bit faster than the for loop.
+      do {
+        sum += it.data1() * it.data2();
+      } while(it.next_col());
+    }
+    result[*scanIter] = sum;
+  }
+  return result;
+}
+
+Ravl2::Array<float,2> ConvolveKernelScanIndex(const Ravl2::Array<float,2> &matrix,
+                                         const Ravl2::Array<float,2> &kernel)
+{
+  Ravl2::ScanWindow<float,2> scan(matrix, kernel.range());
+  Ravl2::Array<float,2> result(scan.scanArea());
+  //auto kernelEnd = kernel.end();
+  auto scanIter = scan.scanArea().begin();
+  for(;!scan.done();++scan,++scanIter) {
+    float sum = 0;
+    auto window = scan.window();
+    for(auto kr : kernel.range()[0]) {
+      for(auto kc : kernel.range()[1]) {
+        sum += kernel[kr][kc] * window[kr][kc];
+      }
     }
     result[*scanIter] = sum;
   }
@@ -337,7 +379,7 @@ int testPlainAccess()
     }
     steady_clock::time_point t2 = steady_clock::now();
     duration<double> time_span = duration_cast<duration<double>>(t2 - t1);
-    std::cout << "IndexN   took " << time_span.count() << " seconds  to sum " << theSum << std::endl;
+    std::cout << "IndexN  took " << time_span.count() << " seconds  to sum " << theSum << std::endl;
   }
 
   {
@@ -350,7 +392,7 @@ int testPlainAccess()
     }
     steady_clock::time_point t2 = steady_clock::now();
     duration<double> time_span = duration_cast<duration<double>>(t2 - t1);
-    std::cout << "View   took " << time_span.count() << " seconds  to sum " << theSum << std::endl;
+    std::cout << "View    took " << time_span.count() << " seconds  to sum " << theSum << std::endl;
   }
 
   {
@@ -358,12 +400,38 @@ int testPlainAccess()
 
     float theSum = 0;
     for(int i = 0;i < 100;i++) {
-      Ravl2::Array<float,2> result = ConvolveKernelScan(matrix, kernel);
+      Ravl2::Array<float,2> result = ConvolveKernelScanZip(matrix, kernel);
       theSum += sumElem(result);
     }
     steady_clock::time_point t2 = steady_clock::now();
     duration<double> time_span = duration_cast<duration<double>>(t2 - t1);
-    std::cout << "Scan   took " << time_span.count() << " seconds  to sum " << theSum << std::endl;
+    std::cout << "Scan    took " << time_span.count() << " seconds  to sum " << theSum << std::endl;
+  }
+
+  {
+    steady_clock::time_point t1 = steady_clock::now();
+
+    float theSum = 0;
+    for(int i = 0;i < 100;i++) {
+      Ravl2::Array<float,2> result = ConvolveKernelScanZipRow(matrix, kernel);
+      theSum += sumElem(result);
+    }
+    steady_clock::time_point t2 = steady_clock::now();
+    duration<double> time_span = duration_cast<duration<double>>(t2 - t1);
+    std::cout << "ScanZRow took " << time_span.count() << " seconds  to sum " << theSum << std::endl;
+  }
+
+  {
+    steady_clock::time_point t1 = steady_clock::now();
+
+    float theSum = 0;
+    for(int i = 0;i < 100;i++) {
+      Ravl2::Array<float,2> result =   ConvolveKernelScanIndex(matrix, kernel);
+      theSum += sumElem(result);
+    }
+    steady_clock::time_point t2 = steady_clock::now();
+    duration<double> time_span = duration_cast<duration<double>>(t2 - t1);
+    std::cout << "ScanInd took " << time_span.count() << " seconds  to sum " << theSum << std::endl;
   }
 
 
@@ -376,7 +444,7 @@ int testPlainAccess()
     }
     steady_clock::time_point t2 = steady_clock::now();
     duration<double> time_span = duration_cast<duration<double>>(t2 - t1);
-    std::cout << "Index1 took " << time_span.count() << " seconds  to sum " << theSum << std::endl;
+    std::cout << "Index1  took " << time_span.count() << " seconds  to sum " << theSum << std::endl;
   }
 
   {

@@ -117,19 +117,24 @@ namespace Ravl2
     [[nodiscard]] bool valid() const noexcept
     { return mIndex[0] <= m_access.range(0).max();  }
 
+    //! Test if the iterator is valid.
+    [[nodiscard]]
+    operator bool() const noexcept
+    { return valid(); }
+
     //! Test if the iterator is finished.
     [[nodiscard]] bool done() const noexcept
     { return mIndex[0] > m_access.range(0).max();  }
 
-      [[nodiscard]] inline DataT &data1()
-      {
-        return *mPtr;
-      }
+    [[nodiscard]] inline DataT &data1()
+    {
+      return *mPtr;
+    }
 
-      [[nodiscard]] inline Data2T &data2()
-      {
-        return *mZipAt;
-      }
+    [[nodiscard]] inline Data2T &data2()
+    {
+      return *mZipAt;
+    }
 
     //! Get the current value.
     [[nodiscard]] inline auto operator*()

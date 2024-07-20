@@ -18,6 +18,7 @@ namespace Ravl2
   template<class DataT>
   inline 
   bool PeakDetect3(const Array<DataT,2> &img,const Index<2> &pos) {
+    assert(img.range().shrink(1).contains(pos));
     const DataT *rt = &(img[pos]);
     const DataT &cent = rt[0];
     if(rt[-1] >= cent || rt[1] >= cent)
@@ -32,6 +33,7 @@ namespace Ravl2
   template<class DataT>
   inline
   bool PeakDetect5(const Array<DataT,2> &img,const Index<2> &pos) {
+    assert(img.range().shrink(2).contains(pos));
     const DataT *rt = &(img[pos]);
     const DataT &cent = rt[0];
     const int cc = pos[1];
@@ -65,11 +67,13 @@ namespace Ravl2
   template<class DataT>
   inline
   bool PeakDetect7(const Array<DataT,2> &img,const Index<2> &pos) {
-    const DataT &cent = rt[0];
     const int cc = pos[1];
     const int cr = pos[0];
 
+    assert(img.range().shrink(3).contains(pos));
+
     const DataT *rt = &(img[pos]);
+    const DataT &cent = rt[0];
     // Check the middle row first as we already have a pointer to it.
     if(rt[-3] >= cent || rt[-2] >= cent || rt[-1] >= cent || rt[1] >= cent || rt[2] >= cent || rt[3] >= cent)
       return false;
@@ -109,6 +113,7 @@ namespace Ravl2
   template<class DataT>
   Point2f LocatePeakSubPixel(const Array<DataT,2> &img,const Index<2> &pos,float pof) {
     // apply geometric fitting in image-proportional coordinates.
+    assert(img.range().shrink(1).contains(pos));
     if(!img.Frame().Erode().Contains(pos))
       return {float(pos[0]),float(pos[1])};
     
@@ -158,35 +163,36 @@ namespace Ravl2
   // peak is returned. 'img' should contain values surrounding the center of
   // the peak at 'pos'.
 
-  template<class DataT>
+  template<class DataT,typename RealT = float>
   Point2f LocatePeakSubPixel(const Array<DataT,2> &img,const Index<2> &pos) {
     // apply geometric fitting in image-proportional coordinates.
+    assert(img.range().shrink(1).contains(pos));
     Point2f fpos = {float(pos[0]),float(pos[1])};
     if(!img.range().shrink(1).contains(pos))
       return fpos;
     
     const DataT *rt = &(img[pos[0]-1][pos[1]]);
-    float spp = (float) rt[-1];
-    float spc = (float) rt[ 0];
-    float spn = (float) rt[ 1];
+    auto spp = (RealT) rt[-1];
+    auto spc = (RealT) rt[ 0];
+    auto spn = (RealT) rt[ 1];
     
     rt = &(img[pos]);
-    float scp = (float) rt[-1];
-    float scc = (float) rt[ 0];
-    float scn = (float) rt[ 1];
+    auto scp = (RealT) rt[-1];
+    auto scc = (RealT) rt[ 0];
+    auto scn = (RealT) rt[ 1];
     
     rt = &(img[pos[0]+1][pos[1]]);
-    float snp = (float) rt[-1];
-    float snc = (float) rt[ 0];
-    float snn = (float) rt[ 1];
+    auto snp = (RealT) rt[-1];
+    auto snc = (RealT) rt[ 0];
+    auto snn = (RealT) rt[ 1];
     
     // Use least-squares to fit quadratic to local corner strengths.
-    float Pxx = (spp - 2.0*spc + spn + scp - 2.0*scc + scn + snp - 2.0*snc + snn)/3.0;
-    float Pxy = (spp - spn - snp + snn)/4.0;
-    float Pyy = (spp + spc + spn - 2.0*scp - 2.0*scc - 2.0*scn + snp + snc + snn)/3.0;
-    float Px = (- spp - scp - snp + spn + scn + snn)/6.0;
-    float Py = (- spp - spc - spn + snp + snc + snn)/6.0;
-    float det = Pxy*Pxy - Pxx*Pyy;
+    RealT Pxx = (spp - 2.0*spc + spn + scp - 2.0*scc + scn + snp - 2.0*snc + snn)/3.0;
+    RealT Pxy = (spp - spn - snp + snn)/4.0;
+    RealT Pyy = (spp + spc + spn - 2.0*scp - 2.0*scc - 2.0*scn + snp + snc + snn)/3.0;
+    RealT Px = (- spp - scp - snp + spn + scn + snn)/6.0;
+    RealT Py = (- spp - spc - spn + snp + snc + snn)/6.0;
+    RealT det = Pxy*Pxy - Pxx*Pyy;
     
     if(det == 0)
       return fpos;

@@ -57,25 +57,29 @@ namespace Ravl2
     using ConstVectorViewT = std::span<const float>;
 
     template<typename DataT, size_t N>
+    using Point = xt::xtensor_fixed<DataT, xt::xshape<N>>;
+
+    template<typename DataT, size_t N>
     using Vector = xt::xtensor_fixed<DataT, xt::xshape<N>>;
 
     template<typename DataT, size_t N, size_t M>
     using Matrix = xt::xtensor_fixed<DataT, xt::xshape<N,M>>;
 
-    using Vector4f = xt::xtensor_fixed<float, xt::xshape<4>>;
-    using Vector3f = xt::xtensor_fixed<float, xt::xshape<3>>;
-    using Vector3d = xt::xtensor_fixed<double, xt::xshape<3>>;
-    using Vector2f = xt::xtensor_fixed<float, xt::xshape<2>>;
-    using Vector2d = xt::xtensor_fixed<double, xt::xshape<2>>;
-    using Point2f = xt::xtensor_fixed<float, xt::xshape<2>>;
-    using Point2d = xt::xtensor_fixed<double, xt::xshape<2>>;
+    using Vector4f = Vector<float, 4>;
+    using Vector3f = Vector<float, 3>;
+    using Vector3d = Vector<double, 3>;
+    using Vector2f = Vector<float, 2>;
+    using Vector2d = Vector<double, 2>;
+    using Point2f = Point<float, 2>;
+    using Point2d = Point<double, 2>;
     using AngleAxisf = Vector4f;
 
-    using Matrix2f = xt::xtensor_fixed<float, xt::xshape<2,2>>;
-    using Matrix3f = xt::xtensor_fixed<float, xt::xshape<3,3>>;
+    using Matrix2f = Matrix<float, 2,2>;
+    using Matrix3f = Matrix<float, 3,3>;
 
     //! Get a perpendicular vector in 2d.
-    inline Vector2f perpendicular(const Vector2f &v)
+    template<typename DataT>
+    inline Vector<DataT, 2> perpendicular(const Vector<DataT, 2> &v)
     { return {-v(1),v(0)}; }
 
     template<typename T>

@@ -1,6 +1,3 @@
-//
-// Created by charles on 15/07/24.
-//
 
 #include <gtest/gtest.h>
 #include "Ravl2/Image/BilinearInterpolation.hh"
