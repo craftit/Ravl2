@@ -491,10 +491,10 @@ TEST(Ravl2, ArrayIter2View)
   int at = 0;
   for(auto a : matrix.range())
   {
-    SPDLOG_INFO("Matrix: At {} = {}  @ {} ", a, at, (void *) &matrix[a]);
+    //SPDLOG_INFO("Matrix: At {} = {}  @ {} ", a, at, (void *) &matrix[a]);
     matrix[a] = at++;
   }
-  SPDLOG_INFO("Strides: {} {} ", matrix.strides()[0], matrix.strides()[1]);
+  //SPDLOG_INFO("Strides: {} {} ", matrix.strides()[0], matrix.strides()[1]);
 
   Ravl2::IndexRange<2> win({2, 2});
   auto view = matrix.access(win);
@@ -508,7 +508,7 @@ TEST(Ravl2, ArrayIter2View)
 
   auto it = view.begin();
   auto end = view.end();
-  SPDLOG_INFO("Window range: {}  Win:{} ", view.range(),win);
+  //SPDLOG_INFO("Window range: {}  Win:{} ", view.range(),win);
   ASSERT_EQ(view.range(), win);
   int area = win.area();
   for(int i = 0;i < area;++i)
@@ -516,7 +516,7 @@ TEST(Ravl2, ArrayIter2View)
     ASSERT_TRUE(it.valid());
     ASSERT_FALSE(it.done());
     ASSERT_NE(it,end);
-    SPDLOG_INFO("Data: {} {} @ {} ", i, *it, (void *) &(*it));
+    //SPDLOG_INFO("Data: {} {} @ {} ", i, *it, (void *) &(*it));
     ++it;
   }
   ASSERT_FALSE(it.valid());
@@ -559,7 +559,7 @@ TEST(Ravl2, ShiftView)
     int sum2 = 0;
     for(auto it = Ravl2::ArrayIterZip<2, int, int>(kernel, view); !it.done(); ++it)
     {
-      SPDLOG_INFO("Data1: {} Data2: {}", it.data1(), it.data2());
+      //SPDLOG_INFO("Data1: {} Data2: {}", it.data1(), it.data2());
       sum1 += it.data1();
       sum2 += it.data2();
     }
@@ -570,7 +570,7 @@ TEST(Ravl2, ShiftView)
       sum3 += a;
     }
     ASSERT_EQ(sum2,sum3);
-    SPDLOG_INFO("\n");
+    //SPDLOG_INFO("\n");
   }
 }
 
@@ -666,7 +666,7 @@ TEST(Ravl2, ScanWindow1)
   }
 
   Ravl2::IndexRange<1> windowRange(2);
-  SPDLOG_INFO("Window range: {} -> {} ", windowRange.min(), windowRange.max());
+  //SPDLOG_INFO("Window range: {} -> {} ", windowRange.min(), windowRange.max());
   ASSERT_EQ(windowRange.area(), 2);
   Ravl2::ScanWindow<int, 1> scan(val, windowRange);
 
