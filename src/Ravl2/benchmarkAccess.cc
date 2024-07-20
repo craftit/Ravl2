@@ -221,17 +221,6 @@ xt::xtensor<float,2> ConvolveKernelXtensor(const xt::xtensor<float,2> &matrix,
     }
   }
 
-//  for(auto sr : xt::range(0,result.shape(0))) {
-//    for(auto sc : xt::range(result.shape(1))) {
-//      float sum = 0;
-//      for(auto kr : xt::range(kernel.shape(0))) {
-//	for(auto kc : kernel.range()[1]) {
-//	  sum += kernel[kr][kc] * matrix[kr + sr][kc + sc];
-//	}
-//      }
-//      result[sr][sc] = sum;
-//    }
-//  }
   return result;
 }
 

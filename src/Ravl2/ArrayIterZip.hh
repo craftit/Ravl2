@@ -25,8 +25,9 @@ namespace Ravl2
 	assert(strides[N-1] == 1);
 	assert(strides2[N-1] == 1);
 	mIndex[N-1] = rng[N-1].min();
+        mIndexZip[N-1] = rng2[N-1].min();
 	mPtrStart = data + rng[N-1].min();
-	mZipStart = data2 + rng[N-1].min();
+	mZipStart = data2 + rng2[N-1].min();
 	mPtr = mPtrStart;
 	mZipAt = mZipStart;
 	for(unsigned i = 0;i < N-1;i++)
@@ -34,6 +35,7 @@ namespace Ravl2
 	  mPtr += rng[i].min() * strides[i];
 	  mZipAt += rng2[i].min() * strides2[i];
 	  mIndex[i] = rng[i].min();
+          mIndexZip[i] = rng2[i].min();
 	}
 	mEnd = mPtr + rng[N-1].size();
       }
@@ -66,19 +68,22 @@ namespace Ravl2
     {
       for(unsigned i = N-2;i > 0;--i) {
 	++mIndex[i];
+        ++mIndexZip[i];
 	if(mIndex[i] <= m_access.range(i).max())
 	  goto done;
 	mIndex[i] = m_access.range(i).min();
+        mIndexZip[i] = mZipAccess.range(i).min();
       }
       // On the last index we don't need to update
       ++mIndex[0];
+      ++mIndexZip[0];
     done:
       mPtr = mPtrStart;
       mZipAt = mZipStart;
       for(int i = 0;i < N-1;i++)
       {
 	mPtr += m_access.stride(i) * mIndex[i];
-	mZipAt += mZipAccess.stride(i) * mIndex[i];
+	mZipAt += mZipAccess.stride(i) * mIndexZip[i];
       }
       mEnd = mPtr + m_access.range(N-1).size();
     }
@@ -141,6 +146,7 @@ namespace Ravl2
 
     Data2T * mZipAt {};
     Data2T * mZipStart {};
+    Index<N> mIndexZip {}; // Index of the beginning of the last dimension.
     Ravl2::ArrayAccess<Data2T,N> mZipAccess;
   };
 
