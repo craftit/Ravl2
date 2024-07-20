@@ -55,7 +55,7 @@ namespace Ravl2
     //! Get the current window
     [[nodiscard]] ArrayAccess<DataT,1> window() const
     {
-      return ArrayAccess<DataT,1>(&mWindowRange,&(*mAt), nullptr);
+      return ArrayAccess<DataT,1>(&mWindowRange,&(*mAt));
     }
 
     //! Get current index of the window position 0,0 in the image

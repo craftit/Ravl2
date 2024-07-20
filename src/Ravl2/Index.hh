@@ -291,6 +291,14 @@ namespace Ravl2
     [[nodiscard]] IndexRange<1> clip(const IndexRange<1> &range) const
     { return {clip(range.min()),clip(range.max())}; }
 
+    //! Are two ranges equal.
+    bool operator==(const IndexRange<1> &ind) const noexcept
+    { return m_min == ind.m_min && m_max == ind.m_max; }
+
+    //! Are two ranges not equal.
+    bool operator!=(const IndexRange<1> &ind) const noexcept
+    { return m_min != ind.m_min || m_max != ind.m_max; }
+
     //! Access range of given dimension.
     [[nodiscard]] const IndexRange<1> &operator[](unsigned i) const
     {
@@ -528,7 +536,29 @@ namespace Ravl2
       return ret;
     }
 
-      //! Shift this range in dimension n by the given 'amount'
+    //! Add one range to another
+    bool operator==(const IndexRange<N> &ind) const noexcept
+    {
+      for(unsigned i = 0;i < N;i++)
+      {
+	if(m_range[i] != ind.m_range[i])
+	  return false;
+      }
+      return true;
+    }
+
+    //! Add one range to another
+    bool operator!=(const IndexRange<N> &ind) const noexcept
+    {
+      for(unsigned i = 0;i < N;i++)
+      {
+	if(m_range[i] != ind.m_range[i])
+	  return true;
+      }
+      return false;
+    }
+
+    //! Shift this range in dimension n by the given 'amount'
     void shift(unsigned n,int amount)
     { m_range[n] += amount; }
 

@@ -29,65 +29,163 @@ namespace Ravl2
   {
   public:
       explicit ArrayIter(DataT *array)
-        : m_at(array)
+        : mPtr(array)
       {}
 
       //! Increment iterator
       ArrayIter<DataT,1> &operator++()
       {
-          m_at++;
+          mPtr++;
           return *this;
       }
 
       //! Decrement iterator
       ArrayIter<DataT,1> &operator--()
       {
-          m_at--;
+          mPtr--;
           return *this;
       }
 
       //! Add an offset to the iterator
       ArrayIter<DataT,1> &operator+=(int offset)
       {
-          m_at += offset;
+	mPtr += offset;
           return *this;
       }
 
       //! Add an offset to the iterator
       ArrayIter<DataT,1> operator-(int offset) const
       {
-          return ArrayIter<DataT,1>(m_at - offset);
+          return ArrayIter<DataT,1>(mPtr - offset);
       }
 
       //! Add an offset to the iterator
       ArrayIter<DataT,1> operator+(int offset) const
       {
-        return ArrayIter<DataT,1>(m_at + offset);
+        return ArrayIter<DataT,1>(mPtr + offset);
       }
 
       //! Compare iterators
       bool operator==(const ArrayIter<DataT,1> &other) const
-      { return m_at == other.m_at; }
+      { return mPtr == other.mPtr; }
 
       //! Compare iterators
       bool operator!=(const ArrayIter<DataT,1> &other) const
-      { return m_at != other.m_at; }
+      { return mPtr != other.mPtr; }
 
       //! Compare iterators
       bool operator==(const DataT *other) const
-      { return m_at == other; }
+      { return mPtr == other; }
 
       //! Compare iterators
       bool operator!=(const DataT *other) const
-      { return m_at != other; }
+      { return mPtr != other; }
 
       //! Access element
       DataT &operator*() const
-      { return *m_at; }
+      { return *mPtr; }
   private:
-      DataT *m_at = nullptr;
+      DataT *mPtr = nullptr;
   };
 
+  //! Access for an N dimensional element of an array.
+
+  template<typename DataT,unsigned N>
+  class ArrayAccess
+  {
+  public:
+    ArrayAccess()
+    = default;
+
+    ArrayAccess(const IndexRange<N> &rng, DataT *data, const int *strides)
+      : m_ranges(rng.range_data()),
+	m_data(data),
+	m_strides(strides)
+    {}
+
+    ArrayAccess(const IndexRange<1> *rng, DataT *data, const int *strides)
+      : m_ranges(rng),
+	m_data(data),
+	m_strides(strides)
+    {}
+
+    explicit ArrayAccess(Array<DataT,N> &array);
+
+    //! Access origin address
+    [[nodiscard]] DataT *origin_address()
+    { return m_data; }
+
+    //! Access origin address
+    [[nodiscard]] const DataT *origin_address() const
+    { return m_data; }
+
+    //! Drop index one level.
+    [[nodiscard]] ArrayAccess<DataT, N - 1> operator[](int i)
+    {
+      assert(m_ranges[0].contains(i));
+      return ArrayAccess<DataT, N - 1>(m_ranges + 1, m_data + (m_strides[0] * i), m_strides + 1);
+    }
+
+    //! Drop index one level.
+    [[nodiscard]] DataT &operator[](const Index<N> &ind)
+    {
+      DataT *mPtr = m_data;
+      for(int i = 0;i < N;i++)
+      {
+	assert(m_ranges[i].contains(ind[i]));
+	mPtr += m_strides[i] * ind[i];
+      }
+      return *mPtr;
+    }
+
+    //! Range of index's for row
+    [[nodiscard]] const IndexRange<1> &range1() const
+    { return *m_ranges; }
+
+    //! Range of index's for dim
+    [[nodiscard]] const IndexRange<1> &range(unsigned i) const
+    {
+      assert(i < N);
+      return m_ranges[i];
+    }
+
+    //! Range of index's for row
+    [[nodiscard]] IndexRange<N> range() const
+    {
+      IndexRange<N> rng;
+      for(int i = 0;i < N;i++)
+	rng[i] = m_ranges[i];
+      return rng;
+    }
+
+    //! Is array empty ?
+    [[nodiscard]] bool empty() const noexcept
+    {
+      if(m_ranges == nullptr) return true;
+      for(int i = 0;i < N;i++)
+	if(m_ranges[i].empty())
+	  return true;
+      return false;
+    }
+
+    //! Begin iterator
+    [[nodiscard]] ArrayIter<DataT,N> begin() const;
+
+    //! End iterator
+    [[nodiscard]] ArrayIter<DataT,N> end() const;
+
+    //! Get stride for dimension
+    [[nodiscard]] int stride(int dim) const
+    { return m_strides[dim]; }
+
+    //! Access strides
+    [[nodiscard]] const int *strides() const
+    { return m_strides; }
+  protected:
+    const IndexRange<1> *m_ranges {nullptr};
+    DataT *m_data {nullptr};
+    const int *m_strides {nullptr}; //! Strides of each dimension of the array.
+  };
 
   //! Iterator for N dimensional array.
 
@@ -99,17 +197,16 @@ namespace Ravl2
     = default;
 
     ArrayIter(const IndexRange<1> *rng, DataT *data, const int *strides) noexcept
+     : m_access(rng,data,strides)
     {
       assert(data != nullptr);
-      DataT *ptr = data;
-      for(int i = 0;i < N;i++) {
-        ptr += rng[i].min() * strides[i];
+      mPtr = data;
+      for(unsigned i = 0;i < N;i++)
+      {
+	mPtr += rng[i].min() * strides[i];
+	mIndex[i] = rng[i].min();
       }
-      for(int i = N-1;i >= 0;i--) {
-        m_at[i] = ptr;
-        m_end[i] = ptr + rng[i].size() * strides[i];
-      }
-      m_strides = strides;
+      mEnd = mPtr + rng[N-1].size() * strides[N-1];
     }
 
     ArrayIter(const IndexRange<N> &rng, DataT *data, const int *strides) noexcept
@@ -123,17 +220,9 @@ namespace Ravl2
     //! Construct end iterator
     static ArrayIter<DataT,N> end(const IndexRange<1> *rng, DataT *data, const int *strides) noexcept
     {
-      ArrayIter<DataT,N> iter;
-      DataT *ptr = data;
-      for(int i = 0;i < N;i++) {
-        ptr += rng[i].max() * (strides[i]);
-      }
-      ptr++;
-      for(int i = 0;i < N;i++) {
-        iter.m_at[i] = ptr ;
-        iter.m_end[i] = ptr;
-      }
-      iter.m_strides = strides;
+      ArrayIter<DataT,N> iter(rng,data,strides);
+      iter.mPtr += strides[0] * rng[0].size();
+      iter.mEnd = iter.mPtr;
       return iter;
     }
 
@@ -144,30 +233,32 @@ namespace Ravl2
     }
 
   protected:
-    //! The slower part of going to the next row,
-    //! this allows the fast path to be inlined without bloating the code.
-    void next_row()
+    void next_ptr()
     {
-      m_at[N-2] += m_strides[N-2];
-      m_at[N-1] = m_at[N-2];
-      m_end[N-1] += m_strides[N-2];
-      for(int i = N-2;i > 0;i--) {
-        if(m_at[i-1] != m_end[i-1]) {
-          break;
-        }
-        m_at[i-1] += m_strides[i-1];
-        m_at[i] = m_at[i-1];
-        m_end[i] += m_strides[i-1];
+      for(unsigned i = N-2;i > 0;--i) {
+	++mIndex[i];
+	if(mIndex[i] <= m_access.range(i).max())
+	  goto done;
+	mIndex[i] = m_access.range(i).min();
       }
+      // On the last index we don't need to update
+      ++mIndex[0];
+    done:
+      mPtr = m_access.origin_address();
+      for(int i = 0;i < N;i++)
+      {
+	mPtr += m_access.stride(i) * mIndex[i];
+      }
+      mEnd = mPtr + m_access.strides()[N-1] * m_access.range(N-1).size();
     }
 
   public:
     //! Increment iterator
     inline ArrayIter<DataT,N> &operator++()
     {
-      m_at[N-1]++;
-      if(m_at[N-1] == m_end[N-1]) {
-        next_row();
+      mPtr++;
+      if(mPtr == mEnd) {
+        next_ptr();
       }
       return *this;
     }
@@ -176,36 +267,25 @@ namespace Ravl2
     //! Returns true while we're on the same row.
     inline bool next_col()
     {
-      m_at[N-1]++;
-      if(m_at[N-1] == m_end[N-1]) {
-        next_row();
+      mPtr++;
+      if(mPtr == mEnd) {
+	next_ptr();
         return false;
       }
       return true;
     }
 
     //! Test if the iterator is valid.
-    [[nodiscard]] bool valid() const
-    {
-      return m_at[0] != m_end[0];
-    }
+    [[nodiscard]] bool valid() const noexcept
+    { return mIndex[0] <= m_access.range(0).max();  }
 
     //! Test if the iterator is finished.
-    [[nodiscard]] bool done() const
-    {
-      return m_at[0] == m_end[0];
-    }
+    [[nodiscard]] bool done() const noexcept
+    { return mIndex[0] > m_access.range(0).max();  }
 
     //! Compare iterators
     bool operator==(const ArrayIter<DataT,N> &other) const
-    {
-      // Start at the last dimension and work backwards as it is most likely to be different.
-      for(int i = N-1;i >= 0;i--) {
-        if(m_at[i] != other.m_at[i])
-          return false;
-      }
-      return true;
-    }
+    { return (mPtr == other.mPtr); }
 
     //! Compare iterators
     bool operator!=(const ArrayIter<DataT,N> &other) const
@@ -213,17 +293,16 @@ namespace Ravl2
 
     //! Access element
     DataT &operator*() const noexcept
-    {
-      return *m_at[N-1];
-    }
+    { return *mPtr; }
 
     //! Access strides
     [[nodiscard]] const int *strides() const
-    { return m_strides; }
+    { return m_access.strides(); }
   protected:
-     std::array<DataT *,N> m_at {};
-     std::array<DataT *,N> m_end {};
-     const int *m_strides = nullptr;
+     DataT * mPtr {};
+     const DataT * mEnd {};
+     Index<N> mIndex {}; // Index of the beginning of the last dimension.
+     ArrayAccess<DataT,N> m_access;
   };
 
   //! 1 dimensional access
@@ -238,6 +317,11 @@ namespace Ravl2
     {
       assert(*strides == 1);
     }
+
+    ArrayAccess(const IndexRange<1> *rng, DataT *data)
+      : m_ranges(rng),
+	m_data(data)
+    {}
 
     explicit ArrayAccess(Array<DataT,1> &array);
 
@@ -272,12 +356,10 @@ namespace Ravl2
     { return m_ranges->empty(); }
 
     //! Begin iterator
-    [[nodiscard]] ArrayIter<DataT,1> begin() const
-    { return ArrayIter<DataT,1>(&m_data[m_ranges->min()]); }
+    [[nodiscard]] ArrayIter<DataT,1> begin() const;
 
     //! End iterator
-    [[nodiscard]] ArrayIter<DataT,1> end() const
-    { return ArrayIter<DataT,1>(&m_data[m_ranges->max()+1]); }
+    [[nodiscard]] ArrayIter<DataT,1> end() const;
 
   protected:
     const IndexRange<1> *m_ranges;
@@ -285,94 +367,26 @@ namespace Ravl2
   };
 
   template<typename DataT>
+  ArrayIter<DataT, 1>
+  ArrayAccess<DataT, 1>::begin() const { return ArrayIter<DataT,1>(&m_data[m_ranges->min()]); }
+
+  template<typename DataT>
   ArrayAccess<DataT, 1>::ArrayAccess(Array<DataT, 1> &array)
     : m_ranges(array.range().range_data()),
       m_data(array.origin_address())
   {}
 
+  template<typename DataT, unsigned int N>
+  ArrayIter<DataT, N>
+  ArrayAccess<DataT, N>::end() const { return ArrayIter<DataT,N>::end(m_ranges, m_data, m_strides); }
 
-  //! Access for an N dimensional element of an array.
+  template<typename DataT, unsigned int N>
+  ArrayIter<DataT, N>
+  ArrayAccess<DataT, N>::begin() const { return ArrayIter<DataT,N>(m_ranges, m_data, m_strides); }
 
-  template<typename DataT,unsigned N>
-  class ArrayAccess
-  {
-  public:
-    ArrayAccess()
-    = default;
-
-    ArrayAccess(const IndexRange<N> &rng, DataT *data, const int *strides)
-     : m_ranges(rng.range_data()),
-       m_data(data),
-       m_strides(strides)
-    {}
-
-    ArrayAccess(const IndexRange<1> *rng, DataT *data, const int *strides)
-      : m_ranges(rng),
-        m_data(data),
-        m_strides(strides)
-    {}
-
-    explicit ArrayAccess(Array<DataT,N> &array);
-
-    //! Access origin address
-    [[nodiscard]] DataT *origin_address()
-    { return m_data; }
-
-    //! Access origin address
-    [[nodiscard]] const DataT *origin_address() const
-    { return m_data; }
-
-    //! Drop index one level.
-    [[nodiscard]] ArrayAccess<DataT, N - 1> operator[](int i)
-    {
-      assert(m_ranges[0].contains(i));
-      return ArrayAccess<DataT, N - 1>(m_ranges + 1, m_data + (m_strides[0] * i), m_strides + 1);
-    }
-
-    //! Range of index's for row
-    [[nodiscard]] const IndexRange<1> &range1() const
-    { return *m_ranges; }
-
-    //! Range of index's for row
-    [[nodiscard]] IndexRange<N> range() const
-    {
-      IndexRange<N> rng;
-      for(int i = 0;i < N;i++)
-        rng[i] = m_ranges[i];
-      return rng;
-    }
-
-      //! Is array empty ?
-    [[nodiscard]] bool empty() const noexcept
-    {
-      if(m_ranges == nullptr) return true;
-      for(int i = 0;i < N;i++)
-        if(m_ranges[i].empty())
-          return true;
-      return false;
-    }
-
-    //! Begin iterator
-    [[nodiscard]] ArrayIter<DataT,N> begin() const
-    { return ArrayIter<DataT,N>(m_ranges, m_data, m_strides); }
-
-    //! End iterator
-    [[nodiscard]] ArrayIter<DataT,N> end() const
-    { return ArrayIter<DataT,N>::end(m_ranges, m_data, m_strides); }
-
-    //! Get stride for dimension
-    [[nodiscard]] int stride(int dim) const
-    { return m_strides[dim]; }
-
-    //! Access strides
-    [[nodiscard]] const int *strides() const
-    { return m_strides; }
-  protected:
-    const IndexRange<1> *m_ranges {nullptr};
-    DataT *m_data {nullptr};
-    const int *m_strides {nullptr}; //! Strides of each dimension of the array.
-  };
-
+  template<typename DataT>
+  ArrayIter<DataT, 1>
+  ArrayAccess<DataT, 1>::end() const { return ArrayIter<DataT,1>(&m_data[m_ranges->max()+1]); }
 
   template<typename DataT, unsigned int N>
   ArrayAccess<DataT, N>::ArrayAccess(Array<DataT, N> &array)
@@ -452,20 +466,30 @@ namespace Ravl2
       //! Get a view of the array with the requested 'range'
       ArrayView<DataT,N> view(const IndexRange<N> &range)
       {
-        return ArrayView<DataT,N>(range,m_data,m_strides);
+        return ArrayView<DataT,N>(m_data, range, m_strides);
       }
 
       //! Get a view of the array with the requested 'range'
       ArrayView<const DataT,N> view(const IndexRange<N> &range) const
       {
         assert(m_range.contains(range));
+	assert(m_data != nullptr);
         return ArrayView<const DataT,N>(m_data,range,m_strides);
+      }
+
+      //! Get an access of the array with the requested 'range'
+      ArrayAccess<DataT,N> access(const IndexRange<N> &range)
+      {
+	assert(m_range.contains(range));
+	assert(m_data != nullptr);
+	return ArrayAccess<DataT,N>(range.range_data(),m_data,m_strides.data());
       }
 
       //! Get an access of the array with the requested 'range'
       ArrayAccess<const DataT,N> access(const IndexRange<N> &range) const
       {
         assert(m_range.contains(range));
+	assert(m_data != nullptr);
         return ArrayAccess<const DataT,N>(range.range_data(),m_data,m_strides.data());
       }
 

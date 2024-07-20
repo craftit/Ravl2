@@ -369,6 +369,28 @@ TEST(Ravl2, ArrayIter2)
     ASSERT_EQ(iter, end);
     ASSERT_FALSE(iter.valid());
   }
+  // Check 2x2 case
+  {
+    Ravl2::Array<int, 2> val(Ravl2::IndexRange<2>({2, 2}));
+    int at = 0;
+    for (auto a: val.range()) {
+      val[a] = at++;
+    }
+
+    auto iter = val.begin();
+    auto end = val.end();
+    for(int i = 0;i < 4;i++)
+    {
+      ASSERT_EQ(iter, iter);
+      ASSERT_NE(iter, end);
+      ASSERT_EQ(*iter, i);
+      ASSERT_TRUE(iter.valid());
+      ++iter;
+    }
+    ASSERT_EQ(iter, end);
+    ASSERT_FALSE(iter.valid());
+    ASSERT_TRUE(iter.done());
+  }
 
   {
     Ravl2::Array<int, 2> val(Ravl2::IndexRange<2>({10, 20}));
@@ -398,6 +420,159 @@ TEST(Ravl2, ArrayIter2)
   }
 }
 
+TEST(Ravl2, ArrayIter2Offset)
+{
+  Ravl2::Array<int, 2> kernel(Ravl2::IndexRange<2>(Ravl2::IndexRange<1>(1,2),Ravl2::IndexRange<1>(3,5)));
+  int at = 0;
+  for(auto a: kernel.range())
+  {
+    //SPDLOG_INFO("Buffer: At {} = {}  @ {} ", a, at, (void *) &kernel[a]);
+    kernel[a] = at++;
+  }
+
+  //SPDLOG_INFO("Strides: {} {} ", kernel.strides()[0], kernel.strides()[1]);
+
+  at = 0;
+  for(int i = 0;i < 6;i++,at++)
+  {
+    auto x = kernel.buffer()->data()[i];
+    //SPDLOG_INFO("Buffer: {} ", x);
+    ASSERT_EQ(x,at);
+  }
+
+  auto it = kernel.begin();
+  auto end = kernel.end();
+  for(int i = 0;i < 6;++i)
+  {
+    //SPDLOG_INFO("Data: {} {} @ {} ", i, *it, (void *) &(*it));
+    ASSERT_EQ(*it,i);
+    ASSERT_NE(it,end);
+    ASSERT_TRUE(it.valid());
+    ASSERT_FALSE(it.done());
+    ++it;
+  }
+  ASSERT_FALSE(it.valid());
+  ASSERT_TRUE(it.done());
+  ASSERT_EQ(it,end);
+}
+
+TEST(Ravl2, ArrayIter3)
+{
+  // Check 2x3x4 case
+  {
+    Ravl2::Array<int, 3> val(Ravl2::IndexRange<3>({2, 3, 4}));
+    int at = 0;
+    for(auto a : val.range())
+    {
+      val[a] = at++;
+    }
+
+    auto iter = val.begin();
+    auto end = val.end();
+    int count = val.range().area();
+    ASSERT_EQ(count, 2 * 3 * 4);
+    for(int i = 0; i < count; i++)
+    {
+      ASSERT_EQ(iter, iter);
+      ASSERT_NE(iter, end);
+      ASSERT_EQ(*iter, i);
+      ASSERT_TRUE(iter.valid());
+      ++iter;
+    }
+    ASSERT_EQ(iter, end);
+    ASSERT_FALSE(iter.valid());
+  }
+}
+
+
+TEST(Ravl2, ArrayIter2View)
+{
+  Ravl2::Array<int, 2> matrix(Ravl2::IndexRange<2>({4, 4}));
+  int at = 0;
+  for(auto a : matrix.range())
+  {
+    SPDLOG_INFO("Matrix: At {} = {}  @ {} ", a, at, (void *) &matrix[a]);
+    matrix[a] = at++;
+  }
+  SPDLOG_INFO("Strides: {} {} ", matrix.strides()[0], matrix.strides()[1]);
+
+  Ravl2::IndexRange<2> win({2, 2});
+  auto view = matrix.access(win);
+  //auto view = matrix.view(win);
+
+  int targetSum = 0;
+  for(auto a : view.range())
+  {
+    targetSum += matrix[a];
+  }
+
+  auto it = view.begin();
+  auto end = view.end();
+  SPDLOG_INFO("Window range: {}  Win:{} ", view.range(),win);
+  ASSERT_EQ(view.range(), win);
+  int area = win.area();
+  for(int i = 0;i < area;++i)
+  {
+    ASSERT_TRUE(it.valid());
+    ASSERT_FALSE(it.done());
+    ASSERT_NE(it,end);
+    SPDLOG_INFO("Data: {} {} @ {} ", i, *it, (void *) &(*it));
+    ++it;
+  }
+  ASSERT_FALSE(it.valid());
+  ASSERT_TRUE(it.done());
+  ASSERT_EQ(it,end);
+
+  int sum = 0;
+  for(auto a : view)
+  {
+    sum += a;
+  }
+  ASSERT_EQ(sum, targetSum);
+}
+
+TEST(Ravl2, ShiftView)
+{
+  Ravl2::Array<int, 2> matrix(Ravl2::IndexRange<2>({5, 5}));
+  int at = 0;
+  for(auto a : matrix.range())
+  {
+    matrix[a] = at++;
+  }
+  Ravl2::Array<int, 2> kernel(Ravl2::IndexRange<2>({3, 3}));
+  at = 0;
+  int sumKernel = 0;
+  for(auto a : kernel.range())
+  {
+    sumKernel += at;
+    kernel[a] = at++;
+  }
+
+  Ravl2::IndexRange<2> scanRange = matrix.range().shrink(kernel.range());
+  for(auto si : scanRange)
+  {
+    Ravl2::IndexRange<2> rng = kernel.range() + si;
+    auto view = matrix.access(rng);
+    //auto view = matrix.view(rng);
+
+    int sum1 = 0;
+    int sum2 = 0;
+    for(auto it = Ravl2::ArrayIterZip<2, int, int>(kernel, view); !it.done(); ++it)
+    {
+      SPDLOG_INFO("Data1: {} Data2: {}", it.data1(), it.data2());
+      sum1 += it.data1();
+      sum2 += it.data2();
+    }
+    ASSERT_EQ(sum1,sumKernel);
+    int sum3 = 0;
+    for(auto a : view)
+    {
+      sum3 += a;
+    }
+    ASSERT_EQ(sum2,sum3);
+    SPDLOG_INFO("\n");
+  }
+}
 
 
 TEST(Ravl2, ScanWindow2)
@@ -416,10 +591,20 @@ TEST(Ravl2, ScanWindow2)
   int count = 0;
   auto win = scan.window();
   ASSERT_EQ(win.range().area(), 2 * 2);
+  ASSERT_EQ(win.range().size(0), 2);
+  ASSERT_EQ(win.range().size(1), 2);
   ASSERT_EQ(win[0][0], 0);
   ASSERT_EQ(win[0][1], 1);
   ASSERT_EQ(win[1][0], 10);
   ASSERT_EQ(win[1][1], 11);
+
+  {
+    int sum = 0;
+    for (auto x: win)
+      sum += x;
+    ASSERT_EQ(sum, (0 + 1 + 10 + 11));
+  }
+
   count += win.range().area();
   ++scan;
 
@@ -434,7 +619,8 @@ TEST(Ravl2, ScanWindow2)
   ++scan;
 
   // Keep going until the next row
-  for(int i = 0;i < 7;i++) {
+  for(int i = 0;i < 7;i++)
+  {
     win = scan.window();
     ASSERT_EQ(win.range().area(), 2 * 2);
     count += win.range().area();
@@ -472,7 +658,7 @@ TEST(Ravl2, ScanWindow2)
 
 TEST(Ravl2, ScanWindow1)
 {
-  Ravl2::Array<int, 1> val(Ravl2::IndexRange<1>({10}));
+  Ravl2::Array<int, 1> val(Ravl2::IndexRange<1>(10));
   int at = 0;
 
   for (auto a: val.range()) {
@@ -494,65 +680,4 @@ TEST(Ravl2, ScanWindow1)
   ASSERT_EQ(win[1], 1);
   count += win.range().area();
   //ASSERT_EQ(scan.indexIn(val), 0);
-}
-
-
-TEST(Ravl2, ShiftView)
-{
-  Ravl2::Array<int, 2> matrix(Ravl2::IndexRange<2>({5, 5}));
-  int at = 0;
-  for(auto a: matrix.range()) {
-    matrix[a] = at++;
-  }
-  Ravl2::Array<int, 2> kernel(Ravl2::IndexRange<2>({3, 3}));
-  at = 0;
-  for(auto a: kernel.range()) {
-    kernel[a] = at++;
-  }
-
-  Ravl2::IndexRange<2> scanRange = matrix.range().shrink(kernel.range());
-  for (auto si: scanRange) {
-    Ravl2::IndexRange<2> rng = kernel.range() + si;
-    auto view = matrix.access(rng);
-    float sum = 0;
-    for (auto it = Ravl2::ArrayIterZip<2, int, const int>(kernel, view); !it.done(); ++it) {
-      SPDLOG_INFO("Data1: {} Data2: {}", it.data1(), it.data2());
-    }
-    SPDLOG_INFO("\n");
-    //result[si] = sum;
-  }
-
-}
-
-TEST(Ravl2, ArrayIter2Offset)
-{
-  Ravl2::Array<int, 2> kernel(Ravl2::IndexRange<2>(Ravl2::IndexRange<1>(1,2),Ravl2::IndexRange<1>(3,5)));
-  int at = 0;
-  for(auto a: kernel.range())
-  {
-    SPDLOG_INFO("Buffer: At {} = {}  @ {} ", a, at, (void *) &kernel[a]);
-    kernel[a] = at++;
-  }
-
-  SPDLOG_INFO("Strides: {} {} ", kernel.strides()[0], kernel.strides()[1]);
-
-  at = 0;
-  for(int i = 0;i < 6;i++,at++)
-  {
-    auto x = kernel.buffer()->data()[i];
-    SPDLOG_INFO("Buffer: {} ", x);
-    ASSERT_EQ(x,at);
-  }
-
-  auto it = kernel.begin();
-  for(int i = 0;i < 6;++i)
-  {
-    SPDLOG_INFO("Data: {} {} @ {} ", i, *it, (void *) &(*it));
-    ASSERT_EQ(*it,i);
-    ASSERT_TRUE(it.valid());
-    ASSERT_FALSE(it.done());
-    ++it;
-  }
-  ASSERT_FALSE(it.valid());
-  ASSERT_TRUE(it.done());
 }
