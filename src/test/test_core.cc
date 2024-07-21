@@ -574,6 +574,35 @@ TEST(Ravl2, ShiftView)
   }
 }
 
+TEST(Ravl2, TestZipN)
+{
+  using namespace Ravl2;
+  Array<int, 2> a({4, 4});
+  Array<unsigned , 2> b({4, 4});
+  int at = 0;
+  for(auto ai : a.range())
+  {
+    a[ai] = at;
+    b[ai] = at++;
+  }
+  auto it = zipArrayIterN<2>(a, b);
+  int count = 0;
+  ASSERT_FALSE(it.done());
+  ASSERT_TRUE(it.valid());
+  ASSERT_TRUE(it.index<0>() == Index<2>({0, 0}));
+
+  for(;it.valid();++it)
+  {
+    //SPDLOG_INFO("Data: {} {}  @ {} ", it.data<0>(), it.data<1>(),it.index<0>());
+    ASSERT_TRUE(a.range().contains(it.index<0>()));
+    ASSERT_FALSE(it.done());
+    ASSERT_EQ(it.data<0>(), it.data<1>());
+    ASSERT_LT(count, 16);
+    count++;
+  }
+  ASSERT_EQ(count, 16);
+}
+
 
 TEST(Ravl2, ScanWindow2)
 {
