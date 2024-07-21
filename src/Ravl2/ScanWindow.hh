@@ -105,11 +105,17 @@ namespace Ravl2
       ++mAt;
     }
 
+    //! Next element, return true if we're on the same row.
+    bool next()
+    { return mAt.next(); }
+
     //! Test if we're at the end of the window.
     [[nodiscard]] bool done() const
-    {
-      return mAt.done();
-    }
+    { return mAt.done(); }
+
+    //! Test if we're at a valid element.
+    [[nodiscard]] bool valid() const
+    { return mAt.valid(); }
 
     //! Get the current window
     [[nodiscard]] ArrayAccess<DataT,N> window() const

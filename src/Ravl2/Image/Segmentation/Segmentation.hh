@@ -7,8 +7,11 @@
 
 #pragma  once
 
+#include <algorithm>
 #include <vector>
 #include "Ravl2/Array.hh"
+#include "Ravl2/Image/Array2Sqr2Iter.hh"
+#include "Ravl2/Image/Array2Sqr2Iter2.hh"
 #include "Ravl2/Geometry/Geometry.hh"
 #include "Ravl2/Geometry/Moments2.hh"
 
@@ -128,7 +131,7 @@ namespace Ravl2
     std::vector<UIntT> area = Areas();
     
     for(;iter > 0;iter--) {
-      minDist.fill(maxDist); // Fill with maximum merge threshold./
+      std::fill(minDist.begin(), minDist.end(), maxDist); // Fill with maximum merge threshold./
       std::vector<UIntT> minLab =  IdentityLabel();
       
       // Find closest neigbour of small regions.

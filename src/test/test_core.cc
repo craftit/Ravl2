@@ -681,3 +681,23 @@ TEST(Ravl2, ScanWindow1)
   count += win.range().area();
   //ASSERT_EQ(scan.indexIn(val), 0);
 }
+
+TEST(Ravl2, AnotherIterTest)
+{
+  Ravl2::Array<int, 2> narray({4,4},1);
+  Ravl2::IndexRange<2> nrng({{narray.range(0).min() + 1, narray.range(0).max()},
+		      {narray.range(1).min() + 1, narray.range(1).max()}
+		     }
+		    );
+  assert(!nrng.empty());
+  auto subArray = clip(narray, nrng);
+  auto cit = subArray.begin();
+  ASSERT_TRUE(cit.valid());
+  int area = nrng.area();
+  for(int i = 0;i < area;i++)
+  {
+    ASSERT_TRUE(cit.valid());
+    ++cit;
+  }
+  ASSERT_FALSE(cit.valid());
+}

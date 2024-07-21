@@ -82,7 +82,7 @@ namespace Ravl2
                          (pixel1[1] * t));
               pnt[1] += scale[1];
             }
-          } while(it.next_col()); // True while in same row.
+          } while(it.next()); // True while in same row.
         } else {
           RealT onemu = (1.0f-u);
           do {
@@ -106,7 +106,7 @@ namespace Ravl2
                          (pixel2[1] * (t*u)));
               pnt[1] += scale[1];
             }
-          } while(it.next_col()); // True while in same row.
+          } while(it.next()); // True while in same row.
         }
 
         rowStart[0] += scale[0];
@@ -120,9 +120,10 @@ namespace Ravl2
     {
       if(result.Frame().IsEmpty()) return false;
       // Distance between samples in the input image.
-      Vector2f scale(
-      (float) img.Rows() / (float) result.Rows(),
-      (float) img.Cols() / (float) result.Cols()
+      Vector2f scale({
+		       (float)img.Rows() / (float)result.Rows(),
+		       (float)img.Cols() / (float)result.Cols()
+		     }
       );
 
       return WarpScaleBilinear(img, scale, result);

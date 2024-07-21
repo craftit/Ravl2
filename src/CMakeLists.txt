@@ -2,19 +2,29 @@ cmake_minimum_required (VERSION 3.20)
 
 project (Ravl2)
 
+include(FetchContent)
+FetchContent_Declare(
+        xtensor-blas
+        GIT_REPOSITORY https://github.com/xtensor-stack/xtensor-blas.git
+        GIT_TAG        5dcbab5f41636a678a9ec715a058fbe6501aba77
+        FIND_PACKAGE_ARGS
+)
+FetchContent_MakeAvailable(xtensor-blas)
+
 find_package(xtensor REQUIRED)
 find_package(xtensor-blas REQUIRED)
 find_package(GTest REQUIRED)
 find_package(OpenCV REQUIRED)
 find_package(fmt REQUIRED)
 find_package(spdlog REQUIRED)
+find_package(lapack REQUIRED)
 include(GoogleTest)
 
 set(CMAKE_CXX_STANDARD 20)
 
 add_library (Ravl2
         Ravl2/Index.cc Ravl2/Index.hh
-        Ravl2/Array.hh
+        Ravl2/Array.hh Ravl2/Array.cc
         Ravl2/ArrayIterZip.hh
         Ravl2/ScanWindow.hh
         Ravl2/Geometry/Geometry.hh Ravl2/Geometry/Geometry.cc
@@ -22,11 +32,13 @@ add_library (Ravl2
         Ravl2/Geometry/Affine2f.cc Ravl2/Geometry/Affine2f.hh
         Ravl2/Geometry/Affine3d.cc Ravl2/Geometry/Affine3d.hh
         Ravl2/Geometry/Moments2.cc Ravl2/Geometry/Moments2.hh
+        Ravl2/Geometry/CircleIter.cc Ravl2/Geometry/CircleIter.hh
 )
 
+#find_package(cxxlapack REQUIRED)
 
 set_property(TARGET Ravl2 PROPERTY CXX_STANDARD 20)
-target_link_libraries(Ravl2 PUBLIC ${OpenCV_LIBS} fmt::fmt xtensor xtensor-blas spdlog::spdlog )
+target_link_libraries(Ravl2 PUBLIC ${OpenCV_LIBS} fmt::fmt xtensor xtensor-blas spdlog::spdlog lapack )
 
 message(STATUS "Current dir: ${CMAKE_CURRENT_SOURCE_DIR}")
 target_include_directories(Ravl2 PUBLIC ".")

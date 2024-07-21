@@ -726,9 +726,15 @@ namespace Ravl2
 
     //! Are we at the end of the range?
     //! In the case of this iterator we have all we need to know internally.
-    [[nodiscard]] bool at_end() const
+    [[nodiscard]] bool done() const
     {
       return m_at[0] > m_range->max()[0];
+    }
+
+    //! Are we at the end of the range?
+    [[nodiscard]] bool valid() const
+    {
+      return m_at[0] <= m_range->max()[0];
     }
 
     //! Equality test.

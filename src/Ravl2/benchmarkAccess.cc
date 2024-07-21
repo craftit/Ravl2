@@ -151,7 +151,7 @@ Ravl2::Array<float,2> ConvolveKernelView(const Ravl2::Array<float,2> &matrix,
     Ravl2::IndexRange<2> rng = kernel.range() + si;
     auto view = matrix.access(rng);
     float sum = 0;
-    for(auto it = Ravl2::ArrayIterZip<2,float,const float>(kernel,view);!it.done();++it) {
+    for(auto it = Ravl2::zipArrayIter(kernel,view);!it.done();++it) {
       sum += it.data1() * it.data2();
     }
     result[si] = sum;
@@ -169,7 +169,7 @@ Ravl2::Array<float,2> ConvolveKernelScanZip(const Ravl2::Array<float,2> &matrix,
   for(;!scan.done();++scan,++scanIter) {
     float sum = 0;
     auto window = scan.window();
-    for(auto it = Ravl2::ArrayIterZip<2,float,float>(kernel,window);!it.done();++it) {
+    for(auto it = Ravl2::zipArrayIter(kernel,window);!it.done();++it) {
       sum += it.data1() * it.data2();
     }
     result[*scanIter] = sum;
@@ -184,17 +184,18 @@ Ravl2::Array<float,2> ConvolveKernelScanZipRow(const Ravl2::Array<float,2> &matr
   Ravl2::Array<float,2> result(scan.scanArea());
   //auto kernelEnd = kernel.end();
   auto scanIter = scan.scanArea().begin();
-  for(;!scan.done();++scan,++scanIter) {
-    float sum = 0;
-    auto window = scan.window();
-    auto it = Ravl2::ArrayIterZip<2,float,float>(kernel,window);
-    for(;!it.done();) {
-      // This is a bit faster than the for loop.
-      do {
-        sum += it.data1() * it.data2();
-      } while(it.next_col());
-    }
-    result[*scanIter] = sum;
+  for(;scan.valid();++scanIter) {
+    do {
+      float sum = 0;
+      auto window = scan.window();
+      for(auto it = zipArrayIter(kernel, window); !it.done();) {
+	// This is a bit faster than the for loop.
+	do {
+	  sum += it.data1() * it.data2();
+	} while(it.next());
+      }
+      result[*scanIter] = sum;
+    } while( scan.next() );
   }
   return result;
 }

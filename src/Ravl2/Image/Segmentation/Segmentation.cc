@@ -17,25 +17,25 @@
 namespace Ravl2
 {
 
-  SegmentationBodyC::SegmentationBodyC(const Array<UIntT,2> &nsegmap)
+  SegmentationBodyC::SegmentationBodyC(const Array<unsigned,2> &nsegmap)
       : segmap(nsegmap.range()),
         labels(0)
   {
-    for(Array2dIter2C<UIntT,IntT> it(segmap,nsegmap);it;it++) {
-      it.Data1() = it.Data2() >= 0 ? it.Data2() : 0;
-      if(it.Data1() > labels)
-        labels = it.Data1();
+    for(ArrayIterZip<2,unsigned,int> it(segmap,nsegmap);it;++it) {
+      it.data1() = it.data2() >= 0 ? it.data2() : 0;
+      if(it..data1() > labels)
+        labels = it..data1();
     }
     labels++;
   }
 
   //: Generate a table of region adjacencies.
   
-  std::vector<std::vector<UIntT> > SegmentationBodyC::Adjacency(bool biDir)
+  std::vector<std::vector<unsigned> > SegmentationBodyC::Adjacency(bool biDir)
   {
-    std::vector<HSetC<UIntT> > ret(labels);
+    std::vector<std::vector<unsigned> > ret(labels);
     if(biDir) {
-      for(Array2dSqr2IterC<UIntT> it(segmap);it;) {
+      for(Array2dSqr2IterC<unsigned> it(segmap);it;) {
 	if(it.DataBR() != it.DataTR()) {
 	  ret[it.DataBR()] += it.DataTR();
 	  ret[it.DataTR()] += it.DataBR();
@@ -52,7 +52,7 @@ namespace Ravl2
 	}
       }
     } else {
-      for(Array2dSqr2IterC<UIntT> it(segmap);it;) {
+      for(Array2dSqr2IterC<unsigned> it(segmap);it;) {
 	if(it.DataBR() != it.DataTR()) {
 	  if(it.DataBR() < it.DataTR())
 	    ret[it.DataBR()] += it.DataTR();
@@ -82,10 +82,10 @@ namespace Ravl2
   // only adjacenies from regions with a smaller id to those 
   // with a larger ID are generated
   
-  std::vector<std::map<UIntT,unsigned> > SegmentationBodyC::BoundaryLength(bool biDir) {
-    std::vector<std::map<UIntT,unsigned> > ret(labels);
+  std::vector<std::map<unsigned,unsigned> > SegmentationBodyC::BoundaryLength(bool biDir) {
+    std::vector<std::map<unsigned,unsigned> > ret(labels);
     if(biDir) {
-      Array2dSqr2IterC<UIntT> it(segmap);
+      Array2dSqr2IterC<unsigned> it(segmap);
       if(!it) return ret;
       // First pixel
       if(it.DataBL() != it.DataTL()) {
@@ -127,7 +127,7 @@ namespace Ravl2
         }
       }
     } else {
-      Array2dSqr2IterC<UIntT> it(segmap);
+      Array2dSqr2IterC<unsigned> it(segmap);
       if(!it) return ret;
       // First pixel
       if(it.DataBL() != it.DataTL()) {
@@ -188,9 +188,9 @@ namespace Ravl2
   
   //: Generate a table of the length of the boundary for each region
   
-  std::vector<UIntT> SegmentationBodyC::LocalBoundaryLength() {
-    std::vector<UIntT> ret(labels,0);
-    Array2dSqr2IterC<UIntT> it(segmap);
+  std::vector<unsigned> SegmentationBodyC::LocalBoundaryLength() {
+    std::vector<unsigned> ret(labels,0);
+    Array2dSqr2IterC<unsigned> it(segmap);
     if(!it) return ret;
     // First pixel
     if(it.DataBL() != it.DataTL()) {
@@ -237,35 +237,35 @@ namespace Ravl2
   
   //: recompute the areas from the original areas and a mapping.
   
-  std::vector<UIntT> SegmentationBodyC::RedoArea(std::vector<UIntT> area,std::vector<UIntT> map) {
-    std::vector<UIntT> ret(labels,0);
-    for(SArray1dIter2C<UIntT,UIntT> it(area,map);it;it++)
-      ret[it.Data2()] += it.Data1();
+  std::vector<unsigned> SegmentationBodyC::RedoArea(std::vector<unsigned> area,std::vector<unsigned> map) {
+    std::vector<unsigned> ret(labels,0);
+    for(SArray1dIter2C<unsigned,unsigned> it(area,map);it;it++)
+      ret[it.data2()] += it.data1();
     return ret;
   }
   
   //: Compute the areas of all the segmented regions.
   
-  std::vector<UIntT> SegmentationBodyC::Areas() const {
+  std::vector<unsigned> SegmentationBodyC::Areas() const {
     // Compute areas of components
-    std::vector<UIntT> area(labels+1,0);
-    for(Array2dIterC<UIntT> it(segmap);it;it++)
+    std::vector<unsigned> area(labels+1,0);
+    for(Array2dIterC<unsigned> it(segmap);it;it++)
       area[*it]++;
     return area;
   }
   
   //: Compute the bounding box and area of each region in the segmentation.
   
-  std::vector<std::tuple<IndexRange2dC,UIntT> > SegmentationBodyC::BoundsAndArea() const {
-    std::vector<std::tuple<IndexRange2dC,UIntT>  > ret(labels+1,std::tuple<IndexRange2dC,UIntT>(IndexRange2dC(),0));
-    for(Array2dIterC<UIntT> it(segmap);it;) {
-      Index2dC at = it.Index();
+  std::vector<std::tuple<IndexRange<2>,unsigned> > SegmentationBodyC::BoundsAndArea() const {
+    std::vector<std::tuple<IndexRange<2>,unsigned>  > ret(labels+1,std::tuple<IndexRange<2>,unsigned>(IndexRange<2>(),0));
+    for(ArrayIter<unsigned,2> it(segmap);it;) {
+      Index<2> at = it.Index();
       do {
-        Tuple2C<IndexRange2dC,UIntT> &entry = ret[*it];
-        if(entry.Data2() == 0)
-          entry.Data1() = IndexRange2dC(at,1);
-        entry.Data1().Involve(at);
-        entry.Data2()++;
+        Tuple2C<IndexRange<2>,unsigned> &entry = ret[*it];
+        if(entry.data2() == 0)
+          entry..data1() = IndexRange<2>(at,1);
+        entry..data1().Involve(at);
+        entry.data2()++;
         at.Col()++;
       } while(it.Next()) ;
     }
@@ -275,12 +275,12 @@ namespace Ravl2
 
   //: Make an array of labels mapping to themselves.
   
-  std::vector<UIntT> SegmentationBodyC::IdentityLabel() {
+  std::vector<unsigned> SegmentationBodyC::IdentityLabel() {
     // Make an identity mapping.
-    std::vector<UIntT> minLab(labels);
-    UIntT c = 0;
-    for(SArray1dIterC<UIntT> it(minLab);it;it++)
-      *it = c++;
+    std::vector<unsigned> minLab(labels);
+    unsigned c = 0;
+    for(auto it : minLab)
+      it = c++;
     return minLab;
   }
   
@@ -292,8 +292,8 @@ namespace Ravl2
   // which should have the same label. It is valid that a root item
   // of a tree has the same label value as the item index.
   
-  UIntT SegmentationBodyC::RelabelTable(std::vector<UIntT> &labelTable, UIntT currentMaxLabel) {
-    SArray1dIterC<UIntT> it(labelTable,currentMaxLabel+1);
+  unsigned SegmentationBodyC::RelabelTable(std::vector<unsigned> &labelTable, unsigned currentMaxLabel) {
+    SArray1dIterC<unsigned> it(labelTable,currentMaxLabel+1);
     // Make all trees of labels to be with depth one.
     for(;it;it++)
       *it = labelTable[*it];
@@ -302,9 +302,9 @@ namespace Ravl2
     // But there can exist holes in the sequence of labels.
     
     // Squeeze the table. 
-    UIntT n = 0;                     // the next new label  
+    unsigned n = 0;                     // the next new label  
     for(it.First();it;it++) {
-      UIntT m = labelTable[*it];  // the label of the tree root
+      unsigned m = labelTable[*it];  // the label of the tree root
       
       // In the case m >= n the item with the index 'l' contains 
       // the root of the new tree,
@@ -319,16 +319,16 @@ namespace Ravl2
   
   //: Compress newlabs and re-label segmentation.
   
-  UIntT SegmentationBodyC::CompressAndRelabel(std::vector<UIntT> &newLabs) {
+  unsigned SegmentationBodyC::CompressAndRelabel(std::vector<unsigned> &newLabs) {
     // ------ Compress labels -----
     // First make sure they form a directed tree
     // ending in the lowest valued label. 
-    UIntT n = 0;
-    for(SArray1dIterC<UIntT> it(newLabs);it;it++,n++) {
+    unsigned n = 0;
+    for(SArray1dIterC<unsigned> it(newLabs);it;it++,n++) {
       if(*it > n) {
 	// Minimize label.
-	UIntT nat,at = *it;
-	UIntT min = n;
+	unsigned nat,at = *it;
+	unsigned min = n;
 	for(;at > n;at = nat) {
 	  nat = newLabs[at];
 	  if(nat < min)
@@ -341,10 +341,10 @@ namespace Ravl2
     }
     
     // Now we can minimize the labels.
-    UIntT newLastLabel = RelabelTable(newLabs,labels-1);
+    unsigned newLastLabel = RelabelTable(newLabs,labels-1);
     
     // And relable the image.
-    for(Array2dIterC<UIntT> iti(segmap);iti;iti++)
+    for(Array2dIterC<unsigned> iti(segmap);iti;iti++)
       *iti = newLabs[*iti];
     
     labels = newLastLabel+1;
@@ -354,27 +354,27 @@ namespace Ravl2
   
   //: Remove small components from map, label them as 0.
   
-  UIntT SegmentationBodyC::RemoveSmallComponents(IntT thrSize) {
+  unsigned SegmentationBodyC::RemoveSmallComponents(int thrSize) {
     if(labels <= 1)
       return labels;
     
-    std::vector<UIntT> area = Areas();
+    std::vector<unsigned> area = Areas();
     
     // Assign new labels to the regions according their sizes and
     // another requirements.
-    IntT newLabel = 1;
-    SArray1dIterC<UIntT> it(area);
+    int newLabel = 1;
+    SArray1dIterC<unsigned> it(area);
     *it = 0;
     it.Next();
     for(;it;it++) {
-      if (*it < ((UIntT) thrSize)) 
+      if (*it < ((unsigned) thrSize)) 
 	*it = 0;
       else 
 	*it = newLabel++;
     }
     
     // Remove small components
-    for(Array2dIterC<UIntT> iti(segmap);iti;iti++)
+    for(Array2dIterC<unsigned> iti(segmap);iti;iti++)
       *iti = area[*iti];
     
     labels = newLabel;
@@ -389,13 +389,13 @@ namespace Ravl2
     
     if(ignoreZero) {
       // Ignore regions with label 0.
-      for(Array2dIterC<UIntT> it(segmap);it;it++) {
+      for(Array2dIterC<unsigned> it(segmap);it;it++) {
 	if(*it == 0)
 	  continue;
 	ret[*it].AddPixel(it.Index());
       }
     } else {
-      for(Array2dIterC<UIntT> it(segmap);it;it++) 
+      for(Array2dIterC<unsigned> it(segmap);it;it++) 
 	{  ret[*it].AddPixel(it.Index()); }
     }
     return ret;
@@ -405,9 +405,9 @@ namespace Ravl2
   ImageC<ByteT> SegmentationBodyC::ByteImage() const
   {
     ImageC<ByteT> byteimage(segmap.Rectangle());
-    Array2dIter2C<UIntT, ByteT> seg_it(segmap, byteimage);
+    Array2dIter2C<unsigned, ByteT> seg_it(segmap, byteimage);
     for(seg_it.First(); seg_it.IsElm(); seg_it.Next())
-      seg_it.Data2() = (unsigned char)seg_it.Data1();
+      seg_it.data2() = (unsigned char)seg_it..data1();
     return byteimage;
   }
 
@@ -424,8 +424,8 @@ namespace Ravl2
     
     //create RGBImage
     ImageC<ByteRGBValueC> rgbimage(segmap.Frame());
-    for(Array2dIter2C<UIntT, ByteRGBValueC> seg_it(segmap, rgbimage); seg_it; seg_it++)
-      seg_it.Data2() = colours[seg_it.Data1()];
+    for(Array2dIter2C<unsigned, ByteRGBValueC> seg_it(segmap, rgbimage); seg_it; seg_it++)
+      seg_it.data2() = colours[seg_it..data1()];
     
     return rgbimage;
   }
@@ -440,8 +440,8 @@ namespace Ravl2
     
     //create RGBImage
     ImageC<ByteYUVValueC> yuvimage(segmap.Rectangle());
-    for(Array2dIter2C<UIntT, ByteYUVValueC> seg_it(segmap, yuvimage); seg_it; seg_it++)
-      seg_it.Data2() = colours[seg_it.Data1()];
+    for(Array2dIter2C<unsigned, ByteYUVValueC> seg_it(segmap, yuvimage); seg_it; seg_it++)
+      seg_it.data2() = colours[seg_it..data1()];
     return yuvimage;
   }
 #endif

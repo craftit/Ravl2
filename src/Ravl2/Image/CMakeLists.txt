@@ -4,6 +4,8 @@ add_library (Ravl2Image
         EdgeSobel.cc EdgeSobel.hh
         BilinearInterpolation.hh
         ImagePyramid.hh
+        Array2Sqr2Iter.hh
+        Array2Sqr2Iter2.hh
         #        Ravl2/Image/CornerDetectorSusan.cc Ravl2/Image/CornerDetectorSusan.hh
 )
 
