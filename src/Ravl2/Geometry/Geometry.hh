@@ -96,6 +96,14 @@ namespace Ravl2
       return std::span(view.begin(),view.size());
     }
 #endif
+
+    // Define the concept of a point transform
+    template<typename TransformT,typename RealT = TransformT::ValueT,unsigned N = TransformT::dimension>
+    concept PointTransform = requires(TransformT a, Point<RealT,N> pnt)
+    {
+      { a(pnt) } -> std::convertible_to<Point<RealT,N> >;
+    };
+
     //! Convert to a string
     [[nodiscard]] std::string toString(Vector3f v);
     [[nodiscard]] std::string toString(Vector3d v);

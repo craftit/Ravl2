@@ -12,4 +12,6 @@ namespace Ravl2
   static_assert(WindowedArray<ArrayView<int,1> ,int,1>, "ArrayView<int,2> does not satisfy WindowedArray");
   static_assert(WindowedArray<Array<int,1> ,int,1>, "Array<int,2> does not satisfy WindowedArray");
 
+  void doNothing()
+  {}
 }

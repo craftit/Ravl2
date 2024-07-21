@@ -27,7 +27,7 @@ namespace Ravl2
 
   // Declaration of the concept “WindowedArray”, which is satisfied by any type “T”
 
-  template<typename ArrayT,typename DataT,unsigned N>
+  template<typename ArrayT,typename DataT = ArrayT::ValueT,unsigned N = ArrayT::dimension>
   concept WindowedArray = requires(ArrayT a, Index<N> ind, IndexRange<N> rng)
   {
     { ArrayT::dimensions } -> std::convertible_to<unsigned>;
@@ -117,13 +117,13 @@ namespace Ravl2
     ArrayAccess()
     = default;
 
-    ArrayAccess(const IndexRange<N> &rng, DataT *data, const int *strides)
+    constexpr ArrayAccess(const IndexRange<N> &rng, DataT *data, const int *strides)
       : m_ranges(rng.range_data()),
 	m_data(data),
 	m_strides(strides)
     {}
 
-    ArrayAccess(const IndexRange<1> *rng, DataT *data, const int *strides)
+    constexpr ArrayAccess(const IndexRange<1> *rng, DataT *data, const int *strides)
       : m_ranges(rng),
 	m_data(data),
 	m_strides(strides)
@@ -131,7 +131,7 @@ namespace Ravl2
 
     template<typename ArrayT>
       requires WindowedArray<ArrayT,DataT,N>
-    explicit ArrayAccess(ArrayT &array)
+      constexpr explicit ArrayAccess(ArrayT &array)
       : m_ranges(array.range().range_data()),
 	m_data(array.origin_address()),
 	m_strides(array.strides())
@@ -139,7 +139,7 @@ namespace Ravl2
 
     template<typename ArrayT>
     requires WindowedArray<ArrayT,DataT,N>
-    explicit ArrayAccess(ArrayT &array, IndexRange<N> &range)
+    constexpr explicit ArrayAccess(ArrayT &array, IndexRange<N> &range)
       : m_ranges(range.range_data()),
 	m_data(array.origin_address()),
 	m_strides(array.strides())
@@ -148,22 +148,22 @@ namespace Ravl2
     }
 
     //! Access origin address
-    [[nodiscard]] DataT *origin_address()
+    [[nodiscard]] constexpr DataT *origin_address()
     { return m_data; }
 
     //! Access origin address
-    [[nodiscard]] const DataT *origin_address() const
+    [[nodiscard]] constexpr const DataT *origin_address() const
     { return m_data; }
 
     //! Drop index one level.
-    [[nodiscard]] ArrayAccess<DataT, N - 1> operator[](int i)
+    [[nodiscard]] constexpr ArrayAccess<DataT, N - 1> operator[](int i)
     {
       assert(m_ranges[0].contains(i));
       return ArrayAccess<DataT, N - 1>(m_ranges + 1, m_data + (m_strides[0] * i), m_strides + 1);
     }
 
     //! Drop index one level.
-    [[nodiscard]] DataT &operator[](const Index<N> &ind)
+    [[nodiscard]] constexpr DataT &operator[](const Index<N> &ind)
     {
       DataT *mPtr = m_data;
       for(int i = 0;i < N;i++)
@@ -175,14 +175,14 @@ namespace Ravl2
     }
 
     //! Range of index's for dim
-    [[nodiscard]] const IndexRange<1> &range(unsigned i) const
+    [[nodiscard]] constexpr const IndexRange<1> &range(unsigned i) const
     {
       assert(i < N);
       return m_ranges[i];
     }
 
     //! Range of index's for row
-    [[nodiscard]] IndexRange<N> range() const
+    [[nodiscard]] constexpr IndexRange<N> range() const
     {
       IndexRange<N> rng;
       for(int i = 0;i < N;i++)
@@ -191,7 +191,7 @@ namespace Ravl2
     }
 
     //! Is array empty ?
-    [[nodiscard]] bool empty() const noexcept
+    [[nodiscard]] constexpr bool empty() const noexcept
     {
       if(m_ranges == nullptr) return true;
       for(int i = 0;i < N;i++)
@@ -201,10 +201,10 @@ namespace Ravl2
     }
 
     //! Begin iterator
-    [[nodiscard]] ArrayIter<DataT,N> begin() const;
+    [[nodiscard]] constexpr ArrayIter<DataT,N> begin() const;
 
     //! End iterator
-    [[nodiscard]] ArrayIter<DataT,N> end() const;
+    [[nodiscard]] constexpr ArrayIter<DataT,N> end() const;
 
     //! Get stride for dimension
     [[nodiscard]] int stride(int dim) const
@@ -332,7 +332,15 @@ namespace Ravl2
     //! Access strides
     [[nodiscard]] const int *strides() const noexcept
     { return m_access.strides(); }
-  protected:
+
+    //! Access Index
+    [[nodiscard]] Index<N> index() const noexcept
+    {
+      Index<N> ind = mIndex;
+      ind[N-1] = mPtr - mEnd + m_access.range(N-1).max() + 1;
+      return ind;
+    }
+protected:
      DataT * mPtr {};
      const DataT * mEnd {};
      Index<N> mIndex {}; // Index of the beginning of the last dimension.
@@ -348,81 +356,81 @@ namespace Ravl2
     typedef DataT ValueT;
     constexpr static unsigned dimensions = 1;
 
-    ArrayAccess(const IndexRange<1> *rng, DataT *data, [[maybe_unused]] const int *strides)
+    constexpr ArrayAccess(const IndexRange<1> *rng, DataT *data, [[maybe_unused]] const int *strides)
      : m_ranges(rng),
        m_data(data)
     {
       assert(*strides == 1);
     }
 
-    ArrayAccess(const IndexRange<1> *rng, DataT *data)
+    constexpr ArrayAccess(const IndexRange<1> *rng, DataT *data)
       : m_ranges(rng),
 	m_data(data)
     {}
 
     template<typename ArrayT>
       requires WindowedArray<ArrayT,DataT,1>
-    explicit ArrayAccess(ArrayT &array)
+    explicit constexpr ArrayAccess(ArrayT &array)
       : m_ranges(array.range().range_data()),
 	m_data(array.origin_address())
     {}
 
     //! Access origin address
-    [[nodiscard]] DataT *origin_address()
+    [[nodiscard]] constexpr DataT *origin_address()
     { return m_data; }
 
     //! Access origin address
-    [[nodiscard]] const DataT *origin_address() const
+    [[nodiscard]] const constexpr DataT *origin_address() const
     { return m_data; }
 
     //! Access indexed element
-    [[nodiscard]] inline DataT &operator[](int i) noexcept
+    [[nodiscard]] inline constexpr DataT &operator[](int i) noexcept
     {
       assert((*m_ranges).contains(i));
       return m_data[i];
     }
 
     //! Access indexed element
-    [[nodiscard]] inline DataT &operator[](Index<1> i) noexcept
+    [[nodiscard]] inline constexpr DataT &operator[](Index<1> i) noexcept
     {
       assert((*m_ranges).contains(i));
       return m_data[i];
     }
 
     //! Access indexed element.
-    [[nodiscard]] inline const DataT &operator[](int i) const noexcept
+    [[nodiscard]] inline constexpr const DataT &operator[](int i) const noexcept
     {
       assert(m_ranges->contains(i));
       return m_data[i];
     }
 
     //! Access indexed element.
-    [[nodiscard]] inline const DataT &operator[](Index<1> i) const noexcept
+    [[nodiscard]] inline constexpr const DataT &operator[](Index<1> i) const noexcept
     {
       assert(m_ranges->contains(i));
       return m_data[i];
     }
 
     //! Range of index's for row
-    [[nodiscard]] const IndexRange<1> &range() const
+    [[nodiscard]] constexpr const IndexRange<1> &range() const
     { return *m_ranges; }
 
     //! Is array empty ?
-    [[nodiscard]] bool empty() const noexcept
+    [[nodiscard]] constexpr bool empty() const noexcept
     { return m_ranges->empty(); }
 
     //! Begin iterator
-    [[nodiscard]] ArrayIter<DataT,1> begin() const;
+    [[nodiscard]] constexpr ArrayIter<DataT,1> begin() const;
 
     //! End iterator
-    [[nodiscard]] ArrayIter<DataT,1> end() const;
+    [[nodiscard]] constexpr ArrayIter<DataT,1> end() const;
 
     //! Get stride for dimension
-    [[nodiscard]] int stride(int dim) const
+    [[nodiscard]] constexpr int stride(int dim) const
     { return 1; }
 
     //! Access strides
-    [[nodiscard]] const int *strides() const
+    [[nodiscard]] constexpr const int *strides() const
     { return &m_stride; }
 
   protected:
@@ -432,20 +440,20 @@ namespace Ravl2
   };
 
   template<typename DataT>
-  ArrayIter<DataT, 1>
-  ArrayAccess<DataT, 1>::begin() const { return ArrayIter<DataT,1>(&m_data[m_ranges->min()]); }
+  constexpr ArrayIter<DataT, 1> ArrayAccess<DataT, 1>::begin() const
+  { return ArrayIter<DataT,1>(&m_data[m_ranges->min()]); }
 
   template<typename DataT, unsigned int N>
-  ArrayIter<DataT, N>
-  ArrayAccess<DataT, N>::end() const { return ArrayIter<DataT,N>::end(m_ranges, m_data, m_strides); }
+  constexpr ArrayIter<DataT, N> ArrayAccess<DataT, N>::end() const
+  { return ArrayIter<DataT,N>::end(m_ranges, m_data, m_strides); }
 
   template<typename DataT, unsigned int N>
-  ArrayIter<DataT, N>
-  ArrayAccess<DataT, N>::begin() const { return ArrayIter<DataT,N>(m_ranges, m_data, m_strides); }
+  constexpr ArrayIter<DataT, N> ArrayAccess<DataT, N>::begin() const
+  { return ArrayIter<DataT,N>(m_ranges, m_data, m_strides); }
 
   template<typename DataT>
-  ArrayIter<DataT, 1>
-  ArrayAccess<DataT, 1>::end() const { return ArrayIter<DataT,1>(&m_data[m_ranges->max()+1]); }
+  constexpr ArrayIter<DataT, 1> ArrayAccess<DataT, 1>::end() const
+  { return ArrayIter<DataT,1>(&m_data[m_ranges->max()+1]); }
 
   //! Non-owning view of an array values.
 
@@ -459,7 +467,7 @@ namespace Ravl2
   protected:
 
     //! Generate strides
-      void make_strides(const IndexRange<N> &range)
+      constexpr void make_strides(const IndexRange<N> &range)
       {
         int s = 1;
         for(int i = N-1;i >= 0;--i) {
@@ -469,7 +477,7 @@ namespace Ravl2
         }
       }
 
-      int compute_origin_offset(const IndexRange<N> &range)
+    constexpr int compute_origin_offset(const IndexRange<N> &range)
       {
         int off = 0;
         for(unsigned i = 0;i < N;i++) {
@@ -478,30 +486,30 @@ namespace Ravl2
         return off;
       }
 
-      explicit ArrayView(const IndexRange<N> &range, const std::array<int,N> &strides)
+      explicit constexpr ArrayView(const IndexRange<N> &range, const std::array<int,N> &strides)
         : m_range(range),
           m_strides(strides)
       {}
 
-      explicit ArrayView(const IndexRange<N> &range)
+      explicit constexpr ArrayView(const IndexRange<N> &range)
         : m_range(range)
       {}
 
   public:
 
-      explicit ArrayView(DataT *data, const IndexRange<N> &range, const std::array<int,N> &strides)
+      explicit constexpr ArrayView(DataT *data, const IndexRange<N> &range, const std::array<int,N> &strides)
         : m_data(data),
           m_range(range),
           m_strides(strides)
       {}
 
       //! Create an empty array
-      ArrayView()
+      constexpr ArrayView()
       = default;
 
       template<typename ArrayT>
       requires WindowedArray<ArrayT,DataT,N>
-      explicit ArrayView(ArrayT &array)
+      explicit constexpr ArrayView(ArrayT &array)
 	: m_data(array.origin_address())
       {
 	for(int i = 0;i < N;i++) {
@@ -512,7 +520,7 @@ namespace Ravl2
 
       template<typename ArrayT>
       requires WindowedArray<ArrayT,DataT,N>
-      explicit ArrayView(ArrayT &array, const IndexRange<N> &range)
+      explicit constexpr ArrayView(ArrayT &array, const IndexRange<N> &range)
 	: m_range(range),
 	  m_data(array.origin_address())
       {
@@ -524,13 +532,13 @@ namespace Ravl2
       }
 
       //! Get a view of the array with the requested 'range'
-      [[nodiscard]] ArrayView<DataT,N> view(const IndexRange<N> &range)
+      [[nodiscard]] constexpr ArrayView<DataT,N> view(const IndexRange<N> &range)
       {
         return ArrayView<DataT,N>(m_data, range, m_strides);
       }
 
       //! Get a view of the array with the requested 'range'
-      [[nodiscard]] ArrayView<const DataT,N> view(const IndexRange<N> &range) const
+      [[nodiscard]] constexpr ArrayView<const DataT,N> view(const IndexRange<N> &range) const
       {
         assert(m_range.contains(range));
 	assert(m_data != nullptr);
@@ -538,7 +546,7 @@ namespace Ravl2
       }
 
       //! Get an access of the array with the requested 'range'
-      [[nodiscard]] ArrayAccess<DataT,N> access(const IndexRange<N> &range)
+      [[nodiscard]] constexpr ArrayAccess<DataT,N> access(const IndexRange<N> &range)
       {
 	assert(m_range.contains(range));
 	assert(m_data != nullptr);
@@ -546,7 +554,7 @@ namespace Ravl2
       }
 
       //! Get an access of the array with the requested 'range'
-      [[nodiscard]] ArrayAccess<const DataT,N> access(const IndexRange<N> &range) const
+      [[nodiscard]] constexpr ArrayAccess<const DataT,N> access(const IndexRange<N> &range) const
       {
         assert(m_range.contains(range));
 	assert(m_data != nullptr);
@@ -555,30 +563,30 @@ namespace Ravl2
 
       //! Access address of origin element
       //! Note: this may not point to a valid element
-      [[nodiscard]] DataT *origin_address()
+      [[nodiscard]] constexpr DataT *origin_address()
       { return m_data; }
 
       //! Access address of origin element
       //! Note: this may not point to a valid element
-      [[nodiscard]] DataT *origin_address() const
+      [[nodiscard]] constexpr DataT *origin_address() const
       { return m_data; }
 
       //! Access next dimension of array.
-      [[nodiscard]] ArrayAccess<DataT, N - 1> operator[](int i)
+      [[nodiscard]] constexpr ArrayAccess<DataT, N - 1> operator[](int i)
       {
         assert(m_range[0].contains(i));
         return ArrayAccess<DataT, N - 1>(&m_range[1], m_data + i * m_strides[0], &m_strides[1]);
       }
 
       //! Access next dimension of array.
-      [[nodiscard]] ArrayAccess<const DataT, N - 1> operator[](int i) const
+      [[nodiscard]] constexpr ArrayAccess<const DataT, N - 1> operator[](int i) const
       {
         assert(m_range[0].contains(i));
         return ArrayAccess<const DataT, N - 1>(&m_range[1], m_data + i * m_strides[0], &m_strides[1]);
       }
 
       //! Access next dimension of array.
-      [[nodiscard]] DataT &operator[](const Index<N> &ind)
+      [[nodiscard]] constexpr DataT &operator[](const Index<N> &ind)
       {
         int dind = 0;
         for(unsigned i = 0;i < N-1;i++) {
@@ -590,7 +598,7 @@ namespace Ravl2
       }
 
       //! Access next dimension of array.
-      [[nodiscard]] const DataT &operator[](const Index<N> &ind) const
+      [[nodiscard]] constexpr const DataT &operator[](const Index<N> &ind) const
       {
         int dind = 0;
         for(unsigned i = 0;i < N-1;i++) {
@@ -602,41 +610,41 @@ namespace Ravl2
       }
 
       //! Get begin iterator
-      [[nodiscard]] ArrayIter<DataT,N> begin() const
+      [[nodiscard]] constexpr ArrayIter<DataT,N> begin() const
       {
         assert(m_data != nullptr);
         return ArrayIter<DataT,N>(m_range, m_data, m_strides);
       }
 
       //! Get end iterator
-      [[nodiscard]] ArrayIter<DataT,N> end() const
+      [[nodiscard]] constexpr ArrayIter<DataT,N> end() const
       {
         assert(m_data != nullptr);
         return ArrayIter<DataT,N>::end(m_range, m_data, m_strides);
       }
 
       //! access range of first index array
-      [[nodiscard]] const IndexRange<N> &range() const
+      [[nodiscard]] constexpr const IndexRange<N> &range() const
       { return m_range; }
 
       //! access range of first index array
-      [[nodiscard]] const IndexRange<1> &range(unsigned dim) const
+      [[nodiscard]] constexpr const IndexRange<1> &range(unsigned dim) const
       { return m_range[dim]; }
 
       //! Is array empty ?
-      [[nodiscard]] bool empty() const noexcept
+      [[nodiscard]] constexpr bool empty() const noexcept
       { return m_range.empty(); }
 
       //! Access stride size for given dimension
-      [[nodiscard]] int stride(int dim) const
+      [[nodiscard]] constexpr int stride(int dim) const
       { return m_strides[dim]; }
 
       //! Access strides for each dimension
-      [[nodiscard]] const int *strides() const
+      [[nodiscard]] constexpr const int *strides() const
       { return m_strides.data(); }
 
       //! Fill array with value.
-      void fill(DataT val)
+      constexpr void fill(DataT val)
       {
         for(auto at : *this)
           at = val;
@@ -657,11 +665,11 @@ namespace Ravl2
   {
   public:
     //! Create an empty array
-    Array()
+    constexpr Array()
     = default;
 
     //! Create an array of the given range.
-    explicit Array(const IndexRange<N> &range)
+    explicit constexpr Array(const IndexRange<N> &range)
      : ArrayView<DataT, N>(range),
        m_buffer(new BufferVector<DataT>(range.elements()))
     {
@@ -670,7 +678,7 @@ namespace Ravl2
     }
 
     //! Create an array from a set of sizes.
-    Array(std::initializer_list<IndexRange<N>> ranges)
+    constexpr Array(std::initializer_list<IndexRange<N>> ranges)
       : ArrayView<DataT, N>(IndexRange<N>(ranges)),
         m_buffer(std::make_shared<BufferVector<DataT> >(this->m_range.elements()))
     {
@@ -679,7 +687,7 @@ namespace Ravl2
     }
 
     //! Create an array from a set of sizes.
-    Array(std::initializer_list<int> sizes)
+    constexpr Array(std::initializer_list<int> sizes)
      : ArrayView<DataT, N>(IndexRange<N>(sizes)),
        m_buffer(std::make_shared<BufferVector<DataT> >(this->m_range.elements()))
     {
@@ -688,7 +696,7 @@ namespace Ravl2
     }
 
     //! Create an array from a set of sizes.
-    Array(std::initializer_list<int> sizes, const DataT &fillData)
+    constexpr Array(std::initializer_list<int> sizes, const DataT &fillData)
       : ArrayView<DataT, N>(IndexRange<N>(sizes)),
 	m_buffer(std::make_shared<BufferVector<DataT> >(this->m_range.elements()))
     {
@@ -699,7 +707,7 @@ namespace Ravl2
 
     //! Create an sub array with the requested 'range'
     //! Range must be entirely contained in the original array.
-    Array(Array<DataT,N> &original, const IndexRange<N> &range)
+    constexpr Array(Array<DataT,N> &original, const IndexRange<N> &range)
      : ArrayView<DataT, N>(original),
        m_buffer(original.buffer())
     {
@@ -710,7 +718,7 @@ namespace Ravl2
     }
 
     //! Access buffer.
-    [[nodiscard]] std::shared_ptr<Buffer<DataT> > &buffer()
+    [[nodiscard]] constexpr std::shared_ptr<Buffer<DataT> > &buffer()
     { return m_buffer; }
   protected:
     std::shared_ptr<Buffer<DataT> > m_buffer;
@@ -728,7 +736,7 @@ namespace Ravl2
 
       //! Create an sub array with the requested 'range'
       //! Range must be entirely contained in the original array.
-      ArrayView(Array<DataT,1> &original, const IndexRange<1> &range)
+      constexpr ArrayView(Array<DataT,1> &original, const IndexRange<1> &range)
          : m_range(range)
       {
         if(!original.range().contains(range))
@@ -736,7 +744,7 @@ namespace Ravl2
         m_data = original.origin_address();
       }
 
-      explicit ArrayView(const std::vector<DataT> &vec)
+      explicit constexpr ArrayView(const std::vector<DataT> &vec)
           : m_range(vec.size())
       {
         m_data = vec.data();
@@ -744,7 +752,7 @@ namespace Ravl2
 
   protected:
       //! Create an array of the given size.
-      explicit ArrayView(const IndexRange<1> &range)
+      explicit constexpr ArrayView(const IndexRange<1> &range)
         : m_range(range)
       {}
 
@@ -752,77 +760,77 @@ namespace Ravl2
 
       //! Access address of origin element
       //! Note: this may not point to a valid element
-      [[nodiscard]] DataT *origin_address()
+      [[nodiscard]] constexpr DataT *origin_address()
       { return m_data; }
 
       //! Access address of origin element
       //! Note: this may not point to a valid element
-      [[nodiscard]] const DataT *origin_address() const
+      [[nodiscard]] constexpr const DataT *origin_address() const
       { return m_data; }
 
 
       //! Access next dimension of array.
-      [[nodiscard]] DataT &operator[](int i)
+      [[nodiscard]] constexpr DataT &operator[](int i)
       {
         assert(m_range.contains(i));
         return m_data[i];
       }
 
       //! Access next dimension of array.
-      [[nodiscard]] const DataT &operator[](int i) const
+      [[nodiscard]] constexpr const DataT &operator[](int i) const
       {
         assert(m_range.contains(i));
         return m_data[i];
       }
 
       //! Access next dimension of array.
-      [[nodiscard]] DataT &operator[](Index<1> i)
+      [[nodiscard]] constexpr DataT &operator[](Index<1> i)
       {
         assert(m_range.contains(i));
         return m_data[i.index(0)];
       }
 
       //! Access next dimension of array.
-      [[nodiscard]] const DataT &operator[](Index<1> i) const
+      [[nodiscard]] constexpr const DataT &operator[](Index<1> i) const
       {
         assert(m_range.contains(i));
         return m_data[i.index(0)];
       }
 
       //! Access range of array
-      [[nodiscard]] const IndexRange<1> &range() const
+      [[nodiscard]] constexpr const IndexRange<1> &range() const
       { return m_range; }
 
       //! Is array empty ?
-      [[nodiscard]] bool empty() const noexcept
+      [[nodiscard]] constexpr bool empty() const noexcept
       { return m_range.empty(); }
 
       //! Begin iterator
-      [[nodiscard]] ArrayIter<DataT,1> begin() const
+      [[nodiscard]] constexpr ArrayIter<DataT,1> begin() const
       { return ArrayIter<DataT,1>(m_data); }
 
       //! End iterator
-      [[nodiscard]] ArrayIter<DataT,1> end() const
+      [[nodiscard]] constexpr ArrayIter<DataT,1> end() const
       { return ArrayIter<DataT,1>(m_data + m_range.size()); }
 
       //! Get the index of the given pointer within the array.
       [[nodiscard]]
-      Index<1> indexOf(const DataT *ptr) const
+      constexpr Index<1> indexOf(const DataT *ptr) const
       {
         return Index<1>({int(ptr - m_data)});
       }
 
       //! Fill array with value.
-      void fill(const DataT &val)
+      constexpr void fill(const DataT &val)
       {
         for(auto at :*this)
           *at = val;
       }
 
-      int stride([[maybe_unused]] int dim) const
+    [[nodiscard]] constexpr int stride([[maybe_unused]] int dim) const
       { return 1; }
 
-      const int *strides() const
+    [[nodiscard]] constexpr const int *strides() const
       { return &m_stride; }
 
   protected:
@@ -841,19 +849,19 @@ namespace Ravl2
   public:
     //! Create an sub array with the requested 'range'
     //! Range must be entirely contained in the original array.
-    Array(Array<DataT,1> &original, const IndexRange<1> &range)
+    constexpr Array(Array<DataT,1> &original, const IndexRange<1> &range)
      : ArrayView<DataT, 1>(original, range),
        m_buffer(original.buffer())
     {}
 
-    explicit Array(std::vector<DataT> &&vec)
+    explicit constexpr Array(std::vector<DataT> &&vec)
      : ArrayView<DataT, 1>(IndexRange<1>(vec.size())),
        m_buffer(new BufferVector<DataT>(std::move(vec)))
     {
       this->m_data = m_buffer->data();
     }
 
-    explicit Array(const std::vector<DataT> &vec)
+    explicit constexpr Array(const std::vector<DataT> &vec)
      : ArrayView<DataT, 1>(IndexRange<1>(vec.size())),
        m_buffer(new BufferVector<DataT>(vec))
     {
@@ -861,7 +869,7 @@ namespace Ravl2
     }
 
     //! Create an array of the given size.
-    explicit Array(const IndexRange<1> &range)
+    explicit constexpr Array(const IndexRange<1> &range)
      : ArrayView<DataT, 1>(range),
        m_buffer(new BufferVector<DataT>(range.elements()))
     {
@@ -882,7 +890,7 @@ namespace Ravl2
   //! must exist for the lifetime of the sub array.
   template<typename ArrayT,typename DataT = ArrayT::ValueT,unsigned N = ArrayT::dimensions>
   requires WindowedArray<ArrayT,DataT,N>
-  auto clip(ArrayT &array, IndexRange<N> &range)
+  constexpr auto clip(ArrayT &array, IndexRange<N> &range)
   {
     assert(array.range().contains(range));
     return ArrayAccess<DataT,N>(range,array.origin_address(),array.strides());
@@ -905,6 +913,8 @@ namespace Ravl2
     os << "\n";
     return os;
   }
+
+  void doNothing();
 
 }
 

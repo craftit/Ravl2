@@ -338,7 +338,7 @@ namespace Ravl2
   // Make zip N contructor
   template<unsigned N,typename ...ArrayT>
   requires (WindowedArray<ArrayT,typename ArrayT::ValueT, N> && ...)
-  auto zipArrayIterN(ArrayT &...arrays) noexcept -> ArrayIterZipN<N,typename ArrayT::ValueT...>
+  auto begin(ArrayT &...arrays) noexcept -> ArrayIterZipN<N,typename ArrayT::ValueT...>
   {
     return ArrayIterZipN<N,typename ArrayT::ValueT...>(arrays...);
   }

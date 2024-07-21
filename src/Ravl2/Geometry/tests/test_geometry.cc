@@ -1,5 +1,4 @@
 #include <gtest/gtest.h>
-
 #include "Ravl2/Geometry/Moments2.hh"
 
 TEST(Geometry, Moments)

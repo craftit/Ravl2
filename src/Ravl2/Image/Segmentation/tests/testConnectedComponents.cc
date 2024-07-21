@@ -11,7 +11,7 @@
 //! userlevel=Develop
 //! author="Charles Galambos"
 
-#include "Ravl/Image/ConnectedComponents.hh"
+#include "Ravl2/Image/Segmentation/ConnectedComponents.hh"
 
 using namespace RavlImageN;
 
@@ -21,7 +21,7 @@ int main(int nargs,char **argv)
 {
   int ln;
   if((ln = testConnectComp()) != 0) {
-    cerr << "Test failed at " << ln << "\n";
+    std::cerr << "Test failed at " << ln << "\n";
     return 1;
   }
     
@@ -30,8 +30,8 @@ int main(int nargs,char **argv)
 
 
 int testConnectComp() {
-  ImageC<UIntT> test(8,8);
-  test.Fill(0);
+  Ravl2::Array<unsigned, 2> test(8,8);
+  test.fill(0);
   
   test[1][1] = 1;
   test[1][2] = 1;
@@ -39,9 +39,9 @@ int testConnectComp() {
   test[6][6] = 1;
   test[5][6] = 1;
   //cerr << test;
-  ConnectedComponentsC<UIntT> conComp(false);
-  Tuple2C<ImageC<UIntT>,UIntT> result = conComp.Apply(test);
-  ImageC<UIntT> segMap = result.Data1();
+  ConnectedComponentsC<unsigned> conComp(false);
+  auto result = conComp.apply(test);
+  ImageC<unsigned> segMap = result.Data1();
   //cerr << "Regions=" << result.Data2() << "\n";
   //cerr << segMap;
   if(result.Data2() != 4) return __LINE__;

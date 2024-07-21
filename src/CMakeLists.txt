@@ -17,7 +17,7 @@ find_package(GTest REQUIRED)
 find_package(OpenCV REQUIRED)
 find_package(fmt REQUIRED)
 find_package(spdlog REQUIRED)
-find_package(lapack REQUIRED)
+#find_package(lapack REQUIRED)
 include(GoogleTest)
 
 set(CMAKE_CXX_STANDARD 20)
@@ -27,12 +27,6 @@ add_library (Ravl2
         Ravl2/Array.hh Ravl2/Array.cc
         Ravl2/ArrayIterZip.hh
         Ravl2/ScanWindow.hh
-        Ravl2/Geometry/Geometry.hh Ravl2/Geometry/Geometry.cc
-        Ravl2/Geometry/Affine.hh
-        Ravl2/Geometry/Affine2f.cc Ravl2/Geometry/Affine2f.hh
-        Ravl2/Geometry/Affine3d.cc Ravl2/Geometry/Affine3d.hh
-        Ravl2/Geometry/Moments2.cc Ravl2/Geometry/Moments2.hh
-        Ravl2/Geometry/CircleIter.cc Ravl2/Geometry/CircleIter.hh
 )
 
 #find_package(cxxlapack REQUIRED)

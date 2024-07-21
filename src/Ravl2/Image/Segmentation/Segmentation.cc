@@ -6,6 +6,7 @@
 // file-header-ends-here
 
 #include "Ravl2/Image/Segmentation/Segmentation.hh"
+#include "Ravl2/ArrayIterZip.hh"
 //#include "Ravl/Array2dSqr2Iter.hh"
 //#include "Ravl/SArray1d.hh"
 //#include "Ravl/SArray1dIter.hh"
@@ -17,37 +18,37 @@
 namespace Ravl2
 {
 
-  SegmentationBodyC::SegmentationBodyC(const Array<unsigned,2> &nsegmap)
+  SegmentationBodyC::SegmentationBodyC(const Array<int, 2> &nsegmap)
       : segmap(nsegmap.range()),
         labels(0)
   {
-    for(ArrayIterZip<2,unsigned,int> it(segmap,nsegmap);it;++it) {
-      it.data1() = it.data2() >= 0 ? it.data2() : 0;
-      if(it..data1() > labels)
-        labels = it..data1();
+    for(auto it = begin<2>(segmap,nsegmap);it.valid();++it) {
+      it.data<0>() = it.data<1>() >= 0 ? it.data<1>() : 0;
+      if(it.data<0>() > labels)
+        labels = it.data<0>();
     }
     labels++;
   }
 
   //: Generate a table of region adjacencies.
   
-  std::vector<std::vector<unsigned> > SegmentationBodyC::Adjacency(bool biDir)
+  std::vector<std::set<unsigned> > SegmentationBodyC::Adjacency(bool biDir)
   {
-    std::vector<std::vector<unsigned> > ret(labels);
+    std::vector<std::set<unsigned> > ret(labels);
     if(biDir) {
       for(Array2dSqr2IterC<unsigned> it(segmap);it;) {
 	if(it.DataBR() != it.DataTR()) {
-	  ret[it.DataBR()] += it.DataTR();
-	  ret[it.DataTR()] += it.DataBR();
+	  ret[it.DataBR()].insert(it.DataTR());
+	  ret[it.DataTR()].insert(it.DataBR());
 	}
 	for(;it.Next();) { // The rest of the image row.
 	  if(it.DataBR() != it.DataTR()) {
-	    ret[it.DataBR()] += it.DataTR();
-	    ret[it.DataTR()] += it.DataBR();
+	    ret[it.DataBR()].insert(it.DataTR());
+	    ret[it.DataTR()].insert(it.DataBR());
 	  }
 	  if(it.DataBR() != it.DataBL()) {
-	    ret[it.DataBR()] += it.DataBL();
-	    ret[it.DataBL()] += it.DataBR();
+	    ret[it.DataBR()].insert(it.DataBL());
+	    ret[it.DataBL()].insert(it.DataBR());
 	  }
 	}
       }
@@ -55,22 +56,22 @@ namespace Ravl2
       for(Array2dSqr2IterC<unsigned> it(segmap);it;) {
 	if(it.DataBR() != it.DataTR()) {
 	  if(it.DataBR() < it.DataTR())
-	    ret[it.DataBR()] += it.DataTR();
+	    ret[it.DataBR()].insert(it.DataTR());
 	  else
-	    ret[it.DataTR()] += it.DataBR();
+	    ret[it.DataTR()].insert(it.DataBR());
 	}
 	for(;it.Next();) { // The rest of the image row.
 	  if(it.DataBR() != it.DataTR()) {
 	    if(it.DataBR() < it.DataTR())
-	      ret[it.DataBR()] += it.DataTR();
+	      ret[it.DataBR()].insert(it.DataTR());
 	    else
-	      ret[it.DataTR()] += it.DataBR();
+	      ret[it.DataTR()].insert(it.DataBR());
 	  }
 	  if(it.DataBR() != it.DataBL()) {
 	    if(it.DataBR() < it.DataBL())
-	      ret[it.DataBR()] += it.DataBL();
+	      ret[it.DataBR()].insert(it.DataBL());
 	    else
-	      ret[it.DataBL()] += it.DataBR();
+	      ret[it.DataBL()].insert(it.DataBR());
 	  }
 	}
       }
@@ -188,7 +189,8 @@ namespace Ravl2
   
   //: Generate a table of the length of the boundary for each region
   
-  std::vector<unsigned> SegmentationBodyC::LocalBoundaryLength() {
+  std::vector<unsigned> SegmentationBodyC::LocalBoundaryLength()
+  {
     std::vector<unsigned> ret(labels,0);
     Array2dSqr2IterC<unsigned> it(segmap);
     if(!it) return ret;
@@ -237,10 +239,14 @@ namespace Ravl2
   
   //: recompute the areas from the original areas and a mapping.
   
-  std::vector<unsigned> SegmentationBodyC::RedoArea(std::vector<unsigned> area,std::vector<unsigned> map) {
+  std::vector<unsigned> SegmentationBodyC::RedoArea(std::vector<unsigned> area,std::vector<unsigned> map)
+  {
     std::vector<unsigned> ret(labels,0);
-    for(SArray1dIter2C<unsigned,unsigned> it(area,map);it;it++)
-      ret[it.data2()] += it.data1();
+    assert(area.size() == map.size());
+    for(size_t i = 0;i < area.size();i++) {
+      assert(map[i] < labels);
+      ret[map[i]] += area[i];
+    }
     return ret;
   }
   
@@ -249,8 +255,8 @@ namespace Ravl2
   std::vector<unsigned> SegmentationBodyC::Areas() const {
     // Compute areas of components
     std::vector<unsigned> area(labels+1,0);
-    for(Array2dIterC<unsigned> it(segmap);it;it++)
-      area[*it]++;
+    for(auto pix : segmap)
+      area[pix]++;
     return area;
   }
   
@@ -258,16 +264,16 @@ namespace Ravl2
   
   std::vector<std::tuple<IndexRange<2>,unsigned> > SegmentationBodyC::BoundsAndArea() const {
     std::vector<std::tuple<IndexRange<2>,unsigned>  > ret(labels+1,std::tuple<IndexRange<2>,unsigned>(IndexRange<2>(),0));
-    for(ArrayIter<unsigned,2> it(segmap);it;) {
-      Index<2> at = it.Index();
+    for(auto it = segmap.begin();it.valid();) {
+      Index<2> at = it.index();
       do {
-        Tuple2C<IndexRange<2>,unsigned> &entry = ret[*it];
-        if(entry.data2() == 0)
-          entry..data1() = IndexRange<2>(at,1);
-        entry..data1().Involve(at);
-        entry.data2()++;
-        at.Col()++;
-      } while(it.Next()) ;
+        std::tuple<IndexRange<2>,unsigned> &entry = ret[*it];
+        if(std::get<1>(entry) == 0)
+          std::get<0>(entry) = IndexRange<2>(at,at);
+        std::get<0>(entry).involve(at);
+        std::get<1>(entry)++;
+        at[1]++;
+      } while(it.next()) ;
     }
     return ret;
   }
@@ -293,18 +299,20 @@ namespace Ravl2
   // of a tree has the same label value as the item index.
   
   unsigned SegmentationBodyC::RelabelTable(std::vector<unsigned> &labelTable, unsigned currentMaxLabel) {
-    SArray1dIterC<unsigned> it(labelTable,currentMaxLabel+1);
+    auto end = labelTable.begin() + currentMaxLabel + 1;
     // Make all trees of labels to be with depth one.
-    for(;it;it++)
-      *it = labelTable[*it];
-    
+    {
+      for (auto it = labelTable.begin(); it != end; ++it)
+        *it = labelTable[*it];
+    }
+
     // Now all components in the 'labelTable' have a unique label.
     // But there can exist holes in the sequence of labels.
     
     // Squeeze the table. 
-    unsigned n = 0;                     // the next new label  
-    for(it.First();it;it++) {
-      unsigned m = labelTable[*it];  // the label of the tree root
+    unsigned n = 0; // the next new label
+    for(auto it = labelTable.begin(); it != end; ++it) {
+      auto m = labelTable[*it];  // the label of the tree root
       
       // In the case m >= n the item with the index 'l' contains 
       // the root of the new tree,
@@ -319,33 +327,33 @@ namespace Ravl2
   
   //: Compress newlabs and re-label segmentation.
   
-  unsigned SegmentationBodyC::CompressAndRelabel(std::vector<unsigned> &newLabs) {
+  unsigned SegmentationBodyC::CompressAndRelabel(std::vector<unsigned> &newLabs)
+  {
     // ------ Compress labels -----
     // First make sure they form a directed tree
     // ending in the lowest valued label. 
-    unsigned n = 0;
-    for(SArray1dIterC<unsigned> it(newLabs);it;it++,n++) {
-      if(*it > n) {
-	// Minimize label.
-	unsigned nat,at = *it;
-	unsigned min = n;
-	for(;at > n;at = nat) {
-	  nat = newLabs[at];
-	  if(nat < min)
-	    min = nat;
-	  else
-	    newLabs[at] = min;	
-	}
-	*it = min;
+    for(size_t n = 0;n < newLabs.size();n++) {
+      if(newLabs[n] <= n)
+        continue;
+      // Minimize label.
+      unsigned nat,at = newLabs[n];
+      unsigned min = n;
+      for(;at > n;at = nat) {
+        nat = newLabs[at];
+        if(nat < min)
+          min = nat;
+        else
+          newLabs[at] = min;
       }
+      newLabs[n] = min;
     }
     
     // Now we can minimize the labels.
     unsigned newLastLabel = RelabelTable(newLabs,labels-1);
     
-    // And relable the image.
-    for(Array2dIterC<unsigned> iti(segmap);iti;iti++)
-      *iti = newLabs[*iti];
+    // And relabel the image.
+    for(auto &iti : segmap)
+      iti = newLabs[iti];
     
     labels = newLastLabel+1;
     return labels;
@@ -354,7 +362,7 @@ namespace Ravl2
   
   //: Remove small components from map, label them as 0.
   
-  unsigned SegmentationBodyC::RemoveSmallComponents(int thrSize) {
+  unsigned SegmentationBodyC::RemoveSmallComponents(unsigned thrSize) {
     if(labels <= 1)
       return labels;
     
@@ -363,19 +371,20 @@ namespace Ravl2
     // Assign new labels to the regions according their sizes and
     // another requirements.
     int newLabel = 1;
-    SArray1dIterC<unsigned> it(area);
+    auto it = area.begin();
+    auto end = area.end();
     *it = 0;
-    it.Next();
-    for(;it;it++) {
-      if (*it < ((unsigned) thrSize)) 
+    ++it;
+    for(;it != end;++it) {
+      if (*it < thrSize)
 	*it = 0;
       else 
 	*it = newLabel++;
     }
     
     // Remove small components
-    for(Array2dIterC<unsigned> iti(segmap);iti;iti++)
-      *iti = area[*iti];
+    for(auto &iti : segmap)
+      iti = area[iti];
     
     labels = newLabel;
     return newLabel;    

@@ -9,11 +9,9 @@
 //! author="Charles Galambos, based on code by Jiri Matas."
 //! file="Ravl/Image/Processing/Segmentation/SegmentExtrema.cc"
 
-#include "Ravl/Image/SegmentExtrema.hh"
-#include "Ravl/Image/DrawFrame.hh"
-#include "Ravl/Array2dIter2.hh"
-#include "Ravl/Array1dIter.hh"
-#include "Ravl/IO.hh"
+#include "Ravl2/Image/Segmentation/SegmentExtrema.hh"
+#include "Ravl2/Image/DrawFrame.hh"
+#include "Ravl2/ArrayIterZip.hh"
 
 #define DODEBUG 0
 #if DODEBUG
@@ -22,7 +20,8 @@
 #define ONDEBUG(x)
 #endif
 
-namespace RavlImageN {
+namespace Ravl2
+{
 
   //: Destructor.
   
@@ -33,17 +32,17 @@ namespace RavlImageN {
     while(histStack != 0) {
       HistStackC *ret = histStack;
       histStack = ret->next;
-      delete [] reinterpret_cast<IntT *>(ret);
+      delete [] reinterpret_cast<int *>(ret);
     }
   }
 
   //: Delete the current region set, free any memory used.
   
-  void SegmentExtremaBaseC::ReallocRegionMap(IntT size) {
+  void SegmentExtremaBaseC::ReallocRegionMap(int size) {
     if(size == 0)
-      regionMap = SArray1dC<ExtremaRegionC>();
+      regionMap = Array<ExtremaRegionC,1>();
     else 
-      regionMap = SArray1dC<ExtremaRegionC>(size);
+      regionMap = Array<ExtremaRegionC,1>(size);
   }
   
   //: Setup structures for a given image size.
@@ -103,7 +102,7 @@ namespace RavlImageN {
   inline
   int SegmentExtremaBaseC::ConnectedLabels(ExtremaChainPixelC *pix,ExtremaRegionC **labelArray) {
     //cerr << "SegmentExtremaBaseC::ConnectedLabels(), Pix=" << ((void *) pix) << "\n";
-    IntT n = 0;
+    int n = 0;
     ExtremaRegionC *l1 = FindLabel(pix + 1);
     if (l1!=0 )                               { labelArray[n++]=l1; }
     ExtremaRegionC *l2 = FindLabel(pix + stride);
@@ -117,19 +116,19 @@ namespace RavlImageN {
   
   //: Add a new region.
   inline
-  void SegmentExtremaBaseC::AddRegion(ExtremaChainPixelC *pix,IntT level) {
+  void SegmentExtremaBaseC::AddRegion(ExtremaChainPixelC *pix,int level) {
     ExtremaRegionC &region = regionMap[labelAlloc++];
     pix->region = &region;
     //cerr << "SegmentExtremaBaseC::AddRegion(), Pix=" << (void *) pix << " Region=" << (void *) &region << "\n";
     region.total = 0;
     region.merge = 0; //&region;
-    IntT nlevel = level+1; // Don't need to clear this level as its going to be set anyway
+    int nlevel = level+1; // Don't need to clear this level as its going to be set anyway
     if(region.hist == 0) {
       region.hist = PopHist(nlevel);
     } else {
-      IntT clearSize = (region.maxValue + 1) - nlevel;
+      int clearSize = (region.maxValue + 1) - nlevel;
       if(clearSize > 0)
-	memset(&(region.hist[nlevel]),0,clearSize * sizeof(IntT));
+	memset(&(region.hist[nlevel]),0,clearSize * sizeof(int));
     }
 #if 0
     // Check the histogram is clear.
@@ -140,7 +139,7 @@ namespace RavlImageN {
     }
 #endif
 
-    IntT offset = pix - origin;    
+    int offset = pix - origin;    
     region.minat = Index2dC((offset / stride)+1,(offset % stride)+1) + pixs.Frame().Origin();
     region.minValue = level;
     region.maxValue = valueRange.Max().V();
@@ -153,7 +152,7 @@ namespace RavlImageN {
   //: Add pixel to region.
   
   inline
-  void SegmentExtremaBaseC::AddPixel(ExtremaChainPixelC *pix,IntT level,ExtremaRegionC *reg) {
+  void SegmentExtremaBaseC::AddPixel(ExtremaChainPixelC *pix,int level,ExtremaRegionC *reg) {
     reg->hist[level]++;
     reg->total++;
     pix->region = reg;
@@ -162,14 +161,14 @@ namespace RavlImageN {
   //: Add pixel to region.
   
   inline
-  void SegmentExtremaBaseC::MergeRegions(ExtremaChainPixelC *pix,IntT level,ExtremaRegionC **labels,IntT n) {
-    IntT maxValue = labels[0]->total;
+  void SegmentExtremaBaseC::MergeRegions(ExtremaChainPixelC *pix,int level,ExtremaRegionC **labels,int n) {
+    int maxValue = labels[0]->total;
     ExtremaRegionC *max = labels[0];
     
     // Find largest region.
     int i;
     for(i = 1;i < n;i++) {
-      IntT tot = labels[i]->total;
+      int tot = labels[i]->total;
       if(maxValue < tot) {
 	max = labels[i];
 	maxValue = tot;
@@ -201,7 +200,7 @@ namespace RavlImageN {
   
   void SegmentExtremaBaseC::GenerateRegions() {
     ExtremaChainPixelC *at;
-    IntT n, clevel = levels.Range().Min().V();
+    int n, clevel = levels.Range().Min().V();
     ExtremaRegionC *labels[6];
     
     // For each grey level value in image.
@@ -240,8 +239,8 @@ namespace RavlImageN {
   void SegmentExtremaBaseC::Thresholds() {
     //cerr << "SegmentExtremaBaseC::Thresholds() ********************************************** \n";
     SArray1dC<ExtremaThresholdC> thresh(limitMaxValue + 2);
-    IntT nthresh;
-    Array1dC<IntT> chist(0,limitMaxValue + 2);
+    int nthresh;
+    Array1dC<int> chist(0,limitMaxValue + 2);
     chist.Fill(0);
     int half_perimeter_i;
     
@@ -251,10 +250,10 @@ namespace RavlImageN {
 	continue; // Not enough levels in the region.
       }
       // Build the cumulative histogram.
-      IntT maxValue = it->maxValue;
-      IntT minValue = it->minValue;
-      IntT sum = 0;
-      IntT i;
+      int maxValue = it->maxValue;
+      int minValue = it->minValue;
+      int sum = 0;
+      int i;
       
       ONDEBUG(cerr << "Hist= " << it->minValue << " :");
       for(i = minValue;i <= maxValue;i++) {
@@ -265,7 +264,7 @@ namespace RavlImageN {
       chist[maxValue] = sum;
       
       ONDEBUG(cerr << "  Closed=" << (it->closed != 0)<< "\n");
-      IntT up;
+      int up;
       // look for threshold that guarantee area bigger than minSize.
       for(i = minValue; i <= maxValue;i++)
 	if(chist[i] >= minSize) break; 
@@ -273,7 +272,7 @@ namespace RavlImageN {
       // Find thresholds.
       nthresh = 0;
       ONDEBUG(cerr << "Min=" << minValue << " Max=" << maxValue << " Init=" << i << " MaxSize=" << maxSize << "\n");
-      IntT lastThresh = 0;
+      int lastThresh = 0;
       for(up=i+1; up < maxValue && i < maxValue; i++) {
 	int area_i = chist[i];
 	if(area_i > maxSize) {
@@ -308,12 +307,12 @@ namespace RavlImageN {
       }
       //ONDEBUG(cerr << "NThresh=" <<  nthresh << "\n");
       ExtremaThresholdC *newthresh = new ExtremaThresholdC[nthresh];
-      IntT nt = 0;
+      int nt = 0;
       
-      IntT lastSize = -1;
-      IntT lastInd = -1;
+      int lastSize = -1;
+      int lastInd = -1;
       for(int j = 0;j < nthresh;j++) {
-	UIntT size = chist[thresh[j].pos];
+	Uint size = chist[thresh[j].pos];
 	if((lastSize * 1.15) > size) { // Is size only slighly different ?
 	  if(thresh[j].margin > thresh[lastInd].margin) {
 	    newthresh[nt-1] = thresh[j]; // Move threshold if margin is bigger.

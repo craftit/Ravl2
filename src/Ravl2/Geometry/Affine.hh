@@ -17,6 +17,9 @@ namespace Ravl2
   class Affine
   {
   public:
+    using ValueT = DataT;
+    constexpr static unsigned dimension = N;
+
     inline Affine();
     //: Construct no-change transform.
     
@@ -60,9 +63,23 @@ namespace Ravl2
     
     inline Affine<DataT,N> &operator=(const Affine &Oth);
     //: Assignment.
-    
-    bool IsReal() const;
-    //: Check all components of transform are real.
+
+    //! Check all components of transform are real.
+    [[nodiscard]] bool IsReal() const;
+
+    //! Transform Vector,  Scale, Rotate, Translate.
+    // Take a vector and put it though the transformation.
+    auto operator()(const Vector<DataT,N> &In) const
+    {
+      return (SR * In) + T;
+    }
+
+    //: Compose this transform with 'In'
+    inline auto operator()(const Affine &In) const
+    {
+      return Affine(SR * In.SRMatrix(), SR * In.Translation() + T);
+    }
+
 
   protected:
     Matrix<DataT,N,N> SR; // Scale/rotate.

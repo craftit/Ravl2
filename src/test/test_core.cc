@@ -166,11 +166,11 @@ TEST(Ravl2, Array)
   }
 
   {
-    // Test creation of 2 dimensional array.
+    // Test creation of 2-dimensional array.
 
     Ravl2::IndexRange<2> aRange {10,11};
 
-    // Create a 2 dimensional array of objects.
+    // Create a 2-dimensional array of objects.
     Ravl2::Array<int,2> val(aRange);
 
     // Write some data
@@ -257,10 +257,6 @@ TEST(Ravl2, Array)
     ASSERT_EQ(acvec[0],1);
     ASSERT_EQ(acvec[1],2);
     ASSERT_EQ(acvec[2],3);
-
-    for(auto a : anAccess.range()) {
-      //std::cout << " " << acvec[a] << "\n";
-    }
   }
 
 }
@@ -316,11 +312,13 @@ TEST(Ravl2, ArrayIter2)
     ASSERT_NE(iter, end);
     ASSERT_EQ(*iter, 0);
     ASSERT_TRUE(iter.valid());
+    ASSERT_EQ(iter.index(), Ravl2::Index<2>({0, 0}));
     ++iter;
     ASSERT_EQ(iter, iter);
     ASSERT_NE(iter, end);
     ASSERT_EQ(*iter, 1);
     ASSERT_TRUE(iter.valid());
+    ASSERT_EQ(iter.index(), Ravl2::Index<2>({0, 1}));
     ++iter;
     ASSERT_EQ(iter, end);
     ASSERT_FALSE(iter.valid());
@@ -340,11 +338,13 @@ TEST(Ravl2, ArrayIter2)
     ASSERT_NE(iter, end);
     ASSERT_EQ(*iter, 0);
     ASSERT_TRUE(iter.valid());
+    ASSERT_EQ(iter.index(), Ravl2::Index<2>({0, 0}));
     ++iter;
     ASSERT_EQ(iter, iter);
     ASSERT_NE(iter, end);
     ASSERT_EQ(*iter, 1);
     ASSERT_TRUE(iter.valid());
+    ASSERT_EQ(iter.index(), Ravl2::Index<2>({1, 0}));
     ++iter;
     ASSERT_EQ(iter, iter);
     ASSERT_EQ(iter, end);
@@ -365,6 +365,7 @@ TEST(Ravl2, ArrayIter2)
     ASSERT_NE(iter, end);
     ASSERT_EQ(*iter, 0);
     ASSERT_TRUE(iter.valid());
+    ASSERT_EQ(iter.index(), Ravl2::Index<2>({0, 0}));
     ++iter;
     ASSERT_EQ(iter, end);
     ASSERT_FALSE(iter.valid());
@@ -585,7 +586,7 @@ TEST(Ravl2, TestZipN)
     a[ai] = at;
     b[ai] = at++;
   }
-  auto it = zipArrayIterN<2>(a, b);
+  auto it = begin<2 > (a, b);
   int count = 0;
   ASSERT_FALSE(it.done());
   ASSERT_TRUE(it.valid());

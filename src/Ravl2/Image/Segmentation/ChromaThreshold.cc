@@ -9,9 +9,8 @@
 //! author="Joel Mitchelson"
 //! file="Ravl/Image/Processing/Segmentation/ChromaThreshold.cc"
 
-#include "Ravl/Image/ChromaThreshold.hh"
-#include "Ravl/Array2dIter2.hh"
-#include "Ravl/Array2dIter3.hh"
+#include "Ravl2/Image/Segmentation/ChromaThreshold.hh"
+#include "Ravl2/ArrayIterZip.hh"
 
 namespace RavlImageN
 {

@@ -342,16 +342,31 @@ int generateTestDataX(xt::xtensor<float,2> &matrix,xt::xtensor<float,2> &kernel)
 
 float sumElem(const Ravl2::Array<float,2> &array) {
   float sum = 0;
-# if 0
-  for(auto ind : array.range())
-    sum += array[ind];
-#else
   for(auto x : array) {
     sum += x;
   }
-#endif
   return sum;
 }
+
+float sumElemInd(const Ravl2::Array<float,2> &array)
+{
+  float sum = 0;
+  for(auto ind : array.range())
+    sum += array[ind];
+  return sum;
+}
+
+float sumElemNext(const Ravl2::Array<float,2> &array)
+{
+  float sum = 0;
+  for(auto it= array.begin();it.valid();) {
+    do {
+      sum += *it;
+    } while(it.next());
+  }
+  return sum;
+}
+
 
 template<typename DataT>
 float sumElemX(const DataT &array) {
@@ -369,6 +384,48 @@ int testPlainAccess()
   Ravl2::Array<float,2> kernel;
   generateTestData(matrix,kernel);
 
+
+  {
+    steady_clock::time_point t1 = steady_clock::now();
+
+    float theSum = 0;
+    for(int i = 0;i < 10000;i++) {
+      theSum += sumElem(matrix);
+      Ravl2::doNothing(); // Prevent optimization.
+    }
+    steady_clock::time_point t2 = steady_clock::now();
+    duration<double> time_span = duration_cast<duration<double>>(t2 - t1);
+    std::cout << "sumElem  took " << time_span.count() << " seconds  to sum " << theSum << std::endl;
+  }
+
+  {
+    steady_clock::time_point t1 = steady_clock::now();
+
+    float theSum = 0;
+    for(int i = 0;i < 10000;i++) {
+      theSum += sumElemInd(matrix);
+      Ravl2::doNothing(); // Prevent optimization.
+    }
+    steady_clock::time_point t2 = steady_clock::now();
+    duration<double> time_span = duration_cast<duration<double>>(t2 - t1);
+    std::cout << "sumElemInd  took " << time_span.count() << " seconds  to sum " << theSum << std::endl;
+  }
+
+  {
+    steady_clock::time_point t1 = steady_clock::now();
+
+    float theSum = 0;
+    for(int i = 0;i < 10000;i++) {
+      theSum += sumElemNext(matrix);
+      Ravl2::doNothing();  // Prevent optimization.
+    }
+    steady_clock::time_point t2 = steady_clock::now();
+    duration<double> time_span = duration_cast<duration<double>>(t2 - t1);
+    std::cout << "sumElemNext  took " << time_span.count() << " seconds  to sum " << theSum << std::endl;
+  }
+
+
+  std::cout << "\n";
 
   {
     steady_clock::time_point t1 = steady_clock::now();

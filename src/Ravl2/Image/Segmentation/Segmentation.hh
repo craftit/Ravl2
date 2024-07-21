@@ -9,6 +9,7 @@
 
 #include <algorithm>
 #include <vector>
+#include <set>
 #include "Ravl2/Array.hh"
 #include "Ravl2/Image/Array2Sqr2Iter.hh"
 #include "Ravl2/Image/Array2Sqr2Iter2.hh"
@@ -35,11 +36,11 @@ namespace Ravl2
     {}
     //: Constructor.
 
-    SegmentationBodyC(const Array<UIntT,2> &nsegmap);
+    explicit SegmentationBodyC(const Array<int, 2> &nsegmap);
     //: Construct from an IntT image.
     // Negative values will be labeled as region 0.
 
-    std::vector<std::vector<UIntT> > Adjacency(bool biDir = false);
+    std::vector<std::set<UIntT> > Adjacency(bool biDir = false);
     //: Generate a table of 4 connected region adjacencies.
     // For each region, a set of adjacent regions is
     // generated.   If biDir is false, only adjacency from
@@ -92,11 +93,11 @@ namespace Ravl2
     { return labels; }
     //: Access number of labels.
 
-    std::vector<Moments2<float> > ComputeMoments(bool ignoreZero = false);
+    [[nodiscard]] std::vector<Moments2<float> > ComputeMoments(bool ignoreZero = false);
     //: Compute moments for each of the segmented regions.
     // if ignoreZero is true, region labeled 0 is ignored.
 
-    Array<ByteT,2> ByteImage() const;
+    [[nodiscard]] Array<ByteT,2> ByteImage() const;
     //: Returns the segmentation map in the form of a ByteImageC
     // Note: if there are more than 255 labels in the image, some may be used twice.
 
@@ -112,7 +113,7 @@ namespace Ravl2
     UIntT RelabelTable(std::vector<UIntT> &labelTable, UIntT currentMaxLabel);
     //: Compress labels.
 
-    Array<UIntT,2> segmap; // Segmentation map.
+    Array<unsigned, 2> segmap; // Segmentation map.
     UIntT labels = 0;         // Number of labels in map.
   };
 

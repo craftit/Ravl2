@@ -4,8 +4,6 @@
 // General Public License (LGPL). See the lgpl.licence file for details or
 // see http://www.gnu.org/copyleft/lesser.html
 // file-header-ends-here
-#ifndef RAVLIMAGE_CONNECTEDCOMPONENTS_HEADER
-#define RAVLIMAGE_CONNECTEDCOMPONENTS_HEADER 1
 ////////////////////////////////////////////////////////////////////////////
 //! rcsid="$Id$"
 //! author="Radek Marik, modified by Charles Galambos"
@@ -15,28 +13,22 @@
 //! file="Ravl/Image/Processing/Segmentation/ConnectedComponents.hh"
 //! example=exConnectedComponents.cc 
 
-#include "Ravl/Types.hh"
-#include "Ravl/Tuple2.hh"
-#include "Ravl/Image/Image.hh"
-#include "Ravl/DP/Process.hh"
-#include "Ravl/Array2dIter.hh"
-#include "Ravl/Array2dIter2.hh"
-#include "Ravl/RCHash.hh"
-#include "Ravl/HashIter.hh"
-#include "Ravl/Tuple2.hh"
-#include "Ravl/SArray1d.hh"
-#include "Ravl/SArray1dIter.hh"
-#include "Ravl/Array2dSqr2Iter.hh"
-#include "Ravl/Array2dSqr2Iter2.hh"
+#pragma once
 
-namespace RavlImageN {
-#if RAVL_VISUALCPP_NAMESPACE_BUG
-  using namespace RavlN;
-  using RavlN::SArray1dC;
-  using RavlN::RCBodyC;
-  using RavlN::RCHandleC;
-  using RavlN::Tuple2C;
-#endif
+#include "Ravl2/Array.hh"
+//#include "Ravl/DP/Process.hh"
+//#include "Ravl/Array2dIter.hh"
+//#include "Ravl/Array2dIter2.hh"
+//#include "Ravl/RCHash.hh"
+//#include "Ravl/HashIter.hh"
+//#include "Ravl/Tuple2.hh"
+//#include "Ravl/SArray1d.hh"
+//#include "Ravl/SArray1dIter.hh"
+//#include "Ravl/Array2dSqr2Iter.hh"
+//#include "Ravl/Array2dSqr2Iter2.hh"
+
+namespace Ravl2
+{
 
   //! userlevel=Develop
   //: Connected component labelling base class
@@ -52,7 +44,7 @@ namespace RavlImageN {
     static UIntT RelabelTable(SArray1dC<UIntT> &labelTable, UIntT currentMaxLabel);
     
   protected:
-    SizeT maxLabel;
+    size_t maxLabel;
     bool ignoreZero;
   };
 
@@ -78,8 +70,7 @@ namespace RavlImageN {
   
   template <class DataTypeT,class CompareT = ConnectedComponentsCompareC<DataTypeT> >
   class ConnectedComponentsBodyC
-    : public RCBodyC,
-      public ConnectedComponentsBaseBodyC
+    : public ConnectedComponentsBaseBodyC
   {
   public:
     ConnectedComponentsBodyC (UIntT nmaxLabel = 10000, bool ignoreZero=false,const CompareT &compMethod = CompareT())
@@ -327,4 +318,3 @@ namespace RavlImageN {
   }
 
 }
-#endif

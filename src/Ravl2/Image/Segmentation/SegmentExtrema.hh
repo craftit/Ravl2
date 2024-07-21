@@ -13,27 +13,23 @@
 //! file="Ravl/Image/Processing/Segmentation/SegmentExtrema.hh"
 //! example="extrema.cc" 
 
-#include "Ravl/Image/Image.hh"
-#include "Ravl/Image/FloodRegion.hh"
-#include "Ravl/SArray1d.hh"
-#include "Ravl/Array1d.hh"
-#include "Ravl/Array1dIter.hh"
-#include "Ravl/SArray1dIter.hh"
-#include "Ravl/IndexRange2dSet.hh"
 #include <string.h>
+#include "Ravl2/Array.hh"
+#include "Ravl2/Image/Segmentation/FloodRegion.hh"
+#include "Ravl/IndexRange2dSet.hh"
 
-namespace RavlImageN {
-  using namespace RavlN;
-  
+namespace Ravl2 {
+
   //! userlevel=Develop
   //: Extrema threshold information.
   
-  class ExtremaThresholdC {
+  class ExtremaThresholdC
+  {
   public:
     int thresh;
     int pos;
     int margin;
-    UIntT area; // Expected area of region.
+    uint32_t area; // Expected area of region.
   };
   
   //! userlevel=Develop
@@ -62,15 +58,15 @@ namespace RavlImageN {
     //: Destructor.
     
     ExtremaRegionC *merge;
-    IntT *hist; // Histogram of levels.
-    IntT total;
+    int *hist; // Histogram of levels.
+    int total;
     
     ExtremaThresholdC *thresh; // Thresholds
-    IntT nThresh; // Number of thresholds.
+    int nThresh; // Number of thresholds.
     
-    IntT maxValue;
-    IntT minValue;
-    Index2dC minat;
+    int maxValue;
+    int minValue;
+    Index<2> minat;
     ExtremaRegionC *closed;
   };
   
@@ -88,14 +84,14 @@ namespace RavlImageN {
   
   class SegmentExtremaBaseC {
   public:
-    SegmentExtremaBaseC(IntT nMinSize,RealT nMinMargin,IntT nlimitMaxValue = 255)
+    SegmentExtremaBaseC(int nMinSize,RealT nMinMargin,int nlimitMaxValue = 255)
       : stride(0),
         labelAlloc(1),
         origin(0),
 	minSize(nMinSize),
         maxSize(0), // This gets modified later.
 	minMargin(nMinMargin),
-	limitMaxValue(Max(nlimitMaxValue,3)),
+	limitMaxValue(std::max(nlimitMaxValue,3)),
 	histStack(0)
     {}
     //: Constructor.
@@ -103,21 +99,21 @@ namespace RavlImageN {
     ~SegmentExtremaBaseC();
     //: Destructor.
     
-    void SetupImage(const IndexRange2dC &rect);
+    void SetupImage(const IndexRange<2> &rect);
     //: Setup structures for a given image size.
     
     void GenerateRegions();
     //: Generate regions.
     
-    UIntT Levels() const 
+    unsigned Levels() const 
     { return levels.Size(); }
     //: Get number of levels being considered.
     
-    IntT MinSize() const 
+    int MinSize() const 
     { return minSize; }
     //: Access minimum size.
     
-    IntT MaxSize() const 
+    int MaxSize() const 
     { return maxSize; }
     //: Access maximum size.
     
@@ -125,7 +121,7 @@ namespace RavlImageN {
     { return minMargin; }
     //: Access minimum margin
     
-    IntT LimitMaxValue() const
+    int LimitMaxValue() const
     { return limitMaxValue; }
     //: Access value limit
     
@@ -134,7 +130,7 @@ namespace RavlImageN {
     //: Access level set array.
     
   protected:
-    void ReallocRegionMap(IntT size);
+    void ReallocRegionMap(int size);
     //: Reallocate the current region set, free any memory used.
     
     static ExtremaRegionC *FindLabel(ExtremaChainPixelC *lab);
@@ -150,13 +146,13 @@ namespace RavlImageN {
     // put the results into 'labelArray' which must be at least 4 labels long.
     // The number of labels found is returned.
         
-    void AddRegion(ExtremaChainPixelC *pix,IntT level);
+    void AddRegion(ExtremaChainPixelC *pix,int level);
     //: Add a new region.
     
-    void AddPixel(ExtremaChainPixelC *pix,IntT level,ExtremaRegionC *reg);
+    void AddPixel(ExtremaChainPixelC *pix,int level,ExtremaRegionC *reg);
     //: Add pixel to region.
     
-    void MergeRegions(ExtremaChainPixelC *pix,IntT level,ExtremaRegionC **labels,IntT n);
+    void MergeRegions(ExtremaChainPixelC *pix,int level,ExtremaRegionC **labels,int n);
     //: Add pixel to region.
 
     void Thresholds();
@@ -168,46 +164,46 @@ namespace RavlImageN {
     void PeakDetection(Array1dC<RealT> &real);
     //: Peak detection.
     
-    ImageC<ExtremaChainPixelC> pixs;
+    Array<ExtremaChainPixelC,2> pixs;
     Array1dC<ExtremaChainPixelC *> levels;
     SArray1dC<ExtremaRegionC> regionMap;
-    UIntT stride; // Image stride.
-    UIntT labelAlloc;
-    IndexRangeC valueRange; // Range of pixel values.
+    unsigned stride; // Image stride.
+    unsigned labelAlloc;
+    IndexRange<1> valueRange; // Range of pixel values.
     ExtremaChainPixelC *origin;
     
     // Paramiters.
     
-    IntT minSize;
-    IntT maxSize;
+    int minSize;
+    int maxSize;
     RealT minMargin;
-    IntT limitMaxValue; // Maximum image value that will be encountered.
+    int limitMaxValue; // Maximum image value that will be encountered.
 
     struct HistStackC {
-      IntT max;
+      int max;
       HistStackC *next;
     };
     
     HistStackC *histStack;
     
-    IntT *PopHist(IntT level) {
+    int *PopHist(int level) {
       if(histStack == 0) {
-	IntT *val =  new IntT [limitMaxValue+2];
-	memset(&(val[level]),0,sizeof(IntT) * ((limitMaxValue+1)-level));
+	int *val =  new int [limitMaxValue+2];
+	memset(&(val[level]),0,sizeof(int) * ((limitMaxValue+1)-level));
 	return val;
       }
       HistStackC *ret = histStack;
       histStack = ret->next;
-      IntT *rret = reinterpret_cast<IntT *>(ret);
-      IntT clearSize = Max(ret->max+1,3) - level;
+      int *rret = reinterpret_cast<int *>(ret);
+      int clearSize = std::max(ret->max+1,3) - level;
       if(clearSize > 0)
-	memset(&(rret[level]),0,sizeof(IntT) * clearSize);
+	memset(&(rret[level]),0,sizeof(int) * clearSize);
       return rret;
     }
     //: Get a new histogram.
     
-    void PushHist(IntT *stack,IntT used) {
-      register HistStackC *tmp = reinterpret_cast<HistStackC *>(stack);
+    void PushHist(int *stack,int used) {
+      HistStackC *tmp = reinterpret_cast<HistStackC *>(stack);
       tmp->max = used;
       tmp->next = histStack;
       histStack = tmp;
@@ -246,14 +242,14 @@ namespace RavlImageN {
     : public SegmentExtremaBaseC
   {
   public:
-    SegmentExtremaC(IntT minRegionSize,RealT minMargin = 10,IntT nlimitMaxPixelValue = 255)
+    SegmentExtremaC(int minRegionSize,RealT minMargin = 10,int nlimitMaxPixelValue = 255)
       : SegmentExtremaBaseC(minRegionSize,minMargin,nlimitMaxPixelValue)
     {}
     //: Constructor.
     //!param:minRegionSize - Minimum region size to detect.
     //!param:minMargin - Threshold for region stability.
     
-    DListC<BoundaryC> Apply(const ImageC<PixelT> &img) {
+    DListC<BoundaryC> Apply(const Array<PixelT,2> &img) {
       if(typeid(PixelT) == typeid(ByteT)) // Should decided at compile time.
         SortPixelsByte(img);
       else
@@ -266,7 +262,7 @@ namespace RavlImageN {
     // Note: The boundaries generated by this function are not ordered. If you require ordered
     // boundries you can use its 'Order()' method to sort them.
     
-    DListC<ImageC<IntT> > ApplyMask(const ImageC<PixelT> &img) {
+    DListC<Array<int,2> > ApplyMask(const Array<PixelT,2> &img) {
       if(typeid(PixelT) == typeid(ByteT)) // Should decided at compile time.
         SortPixelsByte(img);
       else
@@ -278,7 +274,7 @@ namespace RavlImageN {
     //: Apply operation to img.
     // Generates labeled images.
 
-    DListC<BoundaryC> Apply(const ImageC<PixelT> &img,const IndexRange2dSetC &roi) {
+    DListC<BoundaryC> Apply(const Array<PixelT,2> &img,const IndexRange2dSetC &roi) {
       SortPixels(img,roi);
       GenerateRegions();
       Thresholds();
@@ -288,7 +284,7 @@ namespace RavlImageN {
     // Note: The boundaries generated by this function are not ordered. If you require ordered
     // boundries you can use its 'Order()' method to sort them.
     
-    DListC<ImageC<IntT> > ApplyMask(const ImageC<PixelT> &img,const IndexRange2dSetC &roi) {
+    DListC<Array<int,2> > ApplyMask(const Array<PixelT,2> &img,const IndexRange2dSetC &roi) {
       SortPixels(img,roi);
       GenerateRegions();
       Thresholds();
@@ -298,25 +294,25 @@ namespace RavlImageN {
     // Generates labeled images.
     
   protected:
-    bool SortPixels(const ImageC<PixelT> &nimg);
+    bool SortPixels(const Array<PixelT,2> &nimg);
     //: Do initial sorting of pixels.
     
-    bool SortPixelsByte(const ImageC<PixelT> &nimg);
+    bool SortPixelsByte(const Array<PixelT,2> &nimg);
     //: Do initial sorting of pixels.
     
-    bool SortPixels(const ImageC<PixelT> &img,const IndexRange2dSetC &roi);
+    bool SortPixels(const Array<PixelT,2> &img,const IndexRange2dSetC &roi);
     //: Build a list from a byte image in regions of interest.
 
-    DListC<BoundaryC> GrowRegionBoundary(const ImageC<PixelT> &img);
+    DListC<BoundaryC> GrowRegionBoundary(const Array<PixelT,2> &img);
     //: Grow regions.
     
     DListC<BoundaryC> GrowRegionBoundary(ExtremaRegionC &region);
     //: Grow regions associated with a extrema.
     
-    DListC<ImageC<IntT> > GrowRegionMask(const ImageC<PixelT> &img);
+    DListC<Array<int,2> > GrowRegionMask(const Array<PixelT,2> &img);
     //: Grow regions.
     
-    DListC<ImageC<IntT> > GrowRegionMask(ExtremaRegionC &region);
+    DListC<Array<int,2> > GrowRegionMask(ExtremaRegionC &region);
     //: Grow regions associated with a extrema.
     
     FloodRegionC<PixelT> flood; // Region fill code.    
@@ -326,12 +322,12 @@ namespace RavlImageN {
 
   
   template<class PixelT>
-  bool SegmentExtremaC<PixelT>::SortPixels(const ImageC<PixelT> &img) {
+  bool SegmentExtremaC<PixelT>::SortPixels(const Array<PixelT,2> &img) {
     
     SetupImage(img.Frame());
     // Find range of values in image.
     {
-      Array2dIterC<PixelT> it(img);
+      auto it = img.begin();
       PixelT lmin = *it;
       PixelT lmax = *it;
       for(;it;it++) {
@@ -340,19 +336,19 @@ namespace RavlImageN {
         if(*it > lmax)
           lmax = *it;
       }
-      valueRange.Min() = (IntT) lmin;
-      valueRange.Max() = (IntT) lmax;
+      valueRange.min() = (int) lmin;
+      valueRange.max() = (int) lmax;
     }
     
-    if(valueRange.Max() >= limitMaxValue)
-      valueRange.Max() = limitMaxValue-1;
+    if(valueRange.max() >= limitMaxValue)
+      valueRange.max() = limitMaxValue-1;
     
     //cerr << "SegmentExtremaC<PixelT>::SortPixels, Value Range=" << valueRange << "\n";
     
     // Check level list allocation.
     
     if(!levels.Range().Contains(valueRange))
-      levels = Array1dC<ExtremaChainPixelC *>(valueRange.Expand(2));
+      levels = Array<ExtremaChainPixelC *,1>(valueRange.expand(2));
     levels.Fill(0);
     
     // Sort pixels into appropriate lists.
@@ -374,13 +370,13 @@ namespace RavlImageN {
   
   
   template<class PixelT>
-  bool SegmentExtremaC<PixelT>::SortPixelsByte(const ImageC<PixelT> &img) {
+  bool SegmentExtremaC<PixelT>::SortPixelsByte(const Array<PixelT,2> &img) {
     SetupImage(img.Frame());
     
     // Check level list allocation.
     
     if(levels.Size() == 0)
-      levels = Array1dC<ExtremaChainPixelC *>(IndexRangeC(-4,257));
+      levels = Array<ExtremaChainPixelC *,1>(IndexRange<1>(-4,257));
     memset(&(levels[levels.IMin()]),0,levels.Size() * sizeof(ExtremaChainPixelC *));
     
     // Sort pixels into appropriate lists.
@@ -416,15 +412,15 @@ namespace RavlImageN {
         tmp = &it.Data2();
       }
     }
-    valueRange.Min() = (IntT) lmin;
-    valueRange.Max() = (IntT) lmax;
+    valueRange.Min() = (int) lmin;
+    valueRange.Max() = (int) lmax;
     //cerr << "SegmentExtremaC<PixelT>::SortPixels, Value Range=" << valueRange << "\n";
     return true;
   }
   
   
   template<class PixelT>
-  bool SegmentExtremaC<PixelT>::SortPixels(const ImageC<PixelT> &img,const IndexRange2dSetC &roi) {
+  bool SegmentExtremaC<PixelT>::SortPixels(const Array<PixelT,2> &img,const IndexRange2dSetC &roi) {
     
     SetupImage(img.Frame());
     
@@ -432,8 +428,8 @@ namespace RavlImageN {
     bool first = true;
     PixelT lmin = 0;
     PixelT lmax = 0;
-    for(DLIterC<IndexRange2dC> rit(roi);rit;rit++) {
-      IndexRange2dC rng = *rit;
+    for(DLIterC<IndexRange<2>> rit(roi);rit;rit++) {
+      IndexRange<2> rng = *rit;
       rng.ClipBy(img.Frame());
       if(rng.Area() < 1)
 	continue;
@@ -450,8 +446,8 @@ namespace RavlImageN {
 	  lmax = *it;
       }
     }
-    valueRange.Min() = (IntT) lmin;
-    valueRange.Max() = (IntT) lmax;
+    valueRange.Min() = (int) lmin;
+    valueRange.Max() = (int) lmax;
     if(valueRange.Max() > limitMaxValue)
       valueRange.Max() = limitMaxValue;
     //cerr << "SegmentExtremaC<PixelT>::SortPixels, Value Range=" << valueRange << "\n";
@@ -470,8 +466,8 @@ namespace RavlImageN {
     
     // Sort pixels into appropriate lists.
     
-    for(DLIterC<IndexRange2dC> rit(roi);rit;rit++) {
-      IndexRange2dC rng = *rit;
+    for(DLIterC<IndexRange<2>> rit(roi);rit;rit++) {
+      IndexRange<2> rng = *rit;
       rng.ClipBy(img.Frame());
       if(rng.Area() < 1)
 	continue;
@@ -489,7 +485,7 @@ namespace RavlImageN {
 
   
   template<class PixelT>
-  DListC<BoundaryC> SegmentExtremaC<PixelT>::GrowRegionBoundary(const ImageC<PixelT> &img) {
+  DListC<BoundaryC> SegmentExtremaC<PixelT>::GrowRegionBoundary(const Array<PixelT,2> &img) {
     //cerr << "SegmentExtremaBaseC::GrowRegions() \n";
     flood.SetupImage(img);
     
@@ -522,16 +518,16 @@ namespace RavlImageN {
   }
   
   template<class PixelT>
-  DListC<ImageC<IntT> > SegmentExtremaC<PixelT>::GrowRegionMask(const ImageC<PixelT> &img) {
+  DListC<Array<int,2> > SegmentExtremaC<PixelT>::GrowRegionMask(const Array<PixelT,2> &img) {
     //cerr << "SegmentExtremaBaseC::GrowRegions() \n";
     flood.SetupImage(img);
     
-    DListC<ImageC<IntT> > masks;
+    DListC<Array<int,2> > masks;
     if(labelAlloc == 0)
       return masks;
     for(SArray1dIterC<ExtremaRegionC> it(regionMap,labelAlloc-1);it;it++) {
       if(it->nThresh > 0) {
-	DListC<ImageC<IntT> > tmp = GrowRegionMask(*it);
+	DListC<Array<int,2> > tmp = GrowRegionMask(*it);
         masks.MoveLast(tmp);
       }
       if(it->thresh != 0) {
@@ -544,11 +540,11 @@ namespace RavlImageN {
   }
   
   template<class PixelT>
-  DListC<ImageC<IntT> > SegmentExtremaC<PixelT>::GrowRegionMask(ExtremaRegionC &region) {
-    DListC<ImageC<IntT> > ret;
+  DListC<Array<int,2> > SegmentExtremaC<PixelT>::GrowRegionMask(ExtremaRegionC &region) {
+    DListC<Array<int,2> > ret;
     //cerr << " Thresholds=" << region.nThresh << "\n";
     for(int i = 0;i < region.nThresh;i++) {
-      ImageC<IntT> mask;
+      Array<int,2> mask;
       if(flood.GrowRegion(region.minat,region.thresh[i].thresh,mask,1))
         ret.InsLast(mask);
     }

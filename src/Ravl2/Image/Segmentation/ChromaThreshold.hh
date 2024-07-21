@@ -12,9 +12,9 @@
 //! docentry="Ravl.API.Images.Segmentation"
 //! file="Ravl/Image/Processing/Segmentation/ChromaThreshold.hh"
 
-#include "Ravl/Image/Image.hh"
-#include "Ravl/Image/ByteRGBValue.hh"
-#include "Ravl/Image/ByteRGBAValue.hh"
+#include "Ravl2/Array.hh"
+#include "Ravl2/Image/Pixel/ByteRGBValue.hh"
+#include "Ravl2/Image/Pixel/ByteRGBAValue.hh"
 
 namespace RavlImageN
 {
@@ -35,10 +35,13 @@ namespace RavlImageN
   
   class ChromaThresholdRGBC
   {
-    friend ostream& operator<<(ostream& os, const ChromaThresholdRGBC& c);
-    friend istream& operator>>(istream& is, ChromaThresholdRGBC& c);
+    friend std::ostream& operator<<(std::ostream& os, const ChromaThresholdRGBC& c);
+    friend std::istream& operator>>(std::istream& is, ChromaThresholdRGBC& c);
 
   public:
+    using RealT = float;
+    using ByteT = uint8_t;
+
     ChromaThresholdRGBC()
     {}
     //: default constructor
@@ -121,8 +124,8 @@ namespace RavlImageN
     ByteT label_black;
   };
 
-  ostream& operator<<(ostream& os, const ChromaThresholdRGBC& c);
-  istream& operator>>(istream& is, ChromaThresholdRGBC& c);
+  std::ostream& operator<<(std::ostream& os, const ChromaThresholdRGBC& c);
+  std::istream& operator>>(std::istream& is, ChromaThresholdRGBC& c);
 }
 
 #endif

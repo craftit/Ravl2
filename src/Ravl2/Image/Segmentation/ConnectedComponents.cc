@@ -9,8 +9,7 @@
 //! lib=RavlImageProc
 //! file="Ravl/Image/Processing/Segmentation/ConnectedComponents.cc"
 
-#include "Ravl/Image/ConnectedComponents.hh"
-#include "Ravl/SArray1dIter.hh"
+#include "Ravl2/Image/Segmentation/ConnectedComponents.hh"
 
 #define DODEBUG 0
 #if DODEBUG
@@ -19,7 +18,8 @@
 #define ONDEBUG(x)
 #endif
 
-namespace RavlImageN {
+namespace Ravl2
+{
 
   // The 'labelTable' represents a look-up table for labels. 
   // Each item contains a new label which can be the same
@@ -28,20 +28,20 @@ namespace RavlImageN {
   // which should have the same label. It is valid that a root item
   // of a tree has the same label value as the item index.
   
-  UIntT ConnectedComponentsBaseBodyC::RelabelTable(SArray1dC<UIntT> &labelTable, UIntT currentMaxLabel) {
+  unsigned ConnectedComponentsBaseBodyC::RelabelTable(SArray1dC<unsigned> &labelTable, unsigned currentMaxLabel) {
     ONDEBUG(cerr << "ConnectedComponentsBaseBodyC::RelabelTable(), Called. MaxLabel:" << currentMaxLabel << "\n");
     
     // Make all trees of labels have a depth of one.
-    for(SArray1dIterC<UIntT> it(labelTable,currentMaxLabel+1);it;it++) {
+    for(SArray1dIterC<unsigned> it(labelTable,currentMaxLabel+1);it;it++) {
       *it = labelTable[*it];
     }
     // Now all components in the 'labelTable' have a unique label.
     // But there can exist holes in the sequence of labels.
     
     // Squeeze the table. 
-    UIntT n = 0;                     // the next new label  
-    for(SArray1dIterC<UIntT> it2(labelTable,currentMaxLabel+1);it2;it2++) {
-      UIntT m = labelTable[*it2];  // the label of the tree root
+    unsigned n = 0;                     // the next new label  
+    for(SArray1dIterC<unsigned> it2(labelTable,currentMaxLabel+1);it2;it2++) {
+      unsigned m = labelTable[*it2];  // the label of the tree root
       
       // In the case m >= n the item with the index 'l' contains 
       // the root of the new tree,

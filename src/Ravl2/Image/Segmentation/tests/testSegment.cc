@@ -1,39 +1,13 @@
 
-#include "Ravl/Image/SegmentExtrema.hh"
-#include "Ravl/Image/DrawFrame.hh"
-#include "Ravl/IO.hh"
-#include "Ravl/Image/ConnectedComponents.hh"
-#include "Ravl/Image/FloodRegion.hh"
+#include "Ravl2/Image/DrawFrame.hh"
+#include "Ravl2/Image/Segmentation/SegmentExtrema.hh"
+#include "Ravl2/Image/Segmentation/ConnectedComponents.hh"
+#include "Ravl2/Image/Segmentation/FloodRegion.hh"
 
-using namespace RavlImageN;
-
-int testConnectComp();
-int testFloodRegion();
-int testSegmentExtrema();
-
-int main() {
-  int ln;
-  if((ln = testFloodRegion()) != 0) {
-    cerr << "Test failed on line " << ln << "\n";
-    return 1;
-  }
-#if 1
-  if((ln = testConnectComp()) != 0) {
-    cerr << "Test failed at " << ln << "\n";
-    return 1;
-  }
-  if((ln = testSegmentExtrema()) != 0) {
-    cerr << "Test failed on line " << ln << "\n";
-    return 1;
-  }
-#endif
-  return 0;
-}
-
-
-int testConnectComp() {
-  ImageC<UIntT> test(8,8);
-  test.Fill(0);
+int testConnectComp()
+{
+  Ravl2::Array<unsigned,2> test({8,8});
+  test.fill(0);
   
   test[1][1] = 1;
   test[1][2] = 1;
@@ -41,9 +15,9 @@ int testConnectComp() {
   test[6][6] = 1;
   test[5][6] = 1;
   //cerr << test;
-  ConnectedComponentsC<UIntT> conComp(false);
-  Tuple2C<ImageC<UIntT>,UIntT> result = conComp.Apply(test);
-  ImageC<UIntT> segMap = result.Data1();
+  Ravl2::ConnectedComponentsBodyC<unsigned> conComp;
+  auto result = conComp.Apply(test);
+  Ravl2::Array<unsigned,2> segMap = result.Data1();
   //cerr << "Regions=" << result.Data2() << "\n";
   //cerr << segMap;
   if(result.Data2() != 4) return __LINE__;
@@ -56,7 +30,8 @@ int testConnectComp() {
   return 0;
 }
 
-int testFloodRegion() {
+int testFloodRegion()
+{
   ImageC<ByteT> img(10,10);
   img.Fill(0);
   DrawFrame(img,(ByteT) 9,IndexRange2dC(1,8,1,8),false);
@@ -75,7 +50,8 @@ int testFloodRegion() {
   return 0;
 }
 
-int testSegmentExtrema() {
+int testSegmentExtrema()
+{
   ImageC<ByteT> img(100,100);
   img.Fill(196);
   DrawFrame(img,(ByteT) 128,IndexRange2dC(10,90,10,90),true);

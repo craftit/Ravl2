@@ -1,6 +1,8 @@
 
 
 add_library(Ravl2ImageSegmentation STATIC
+        Crack.cc Crack.hh
+        CrackCode.cc CrackCode.hh
         Segmentation.hh Segmentation.cc
 )
 
