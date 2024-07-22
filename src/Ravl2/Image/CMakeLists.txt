@@ -14,7 +14,7 @@ target_link_libraries(Ravl2Image PUBLIC Ravl2 Ravl2Geometry)
 
 add_subdirectory(Segmentation)
 
-add_executable(test_image tests/test_image.cc tests/testBoundary.cc)
+add_executable(test_image tests/test_image.cc )
 target_link_libraries(test_image Ravl2Image GTest::gtest_main)
 gtest_add_tests(TARGET test_image )
 

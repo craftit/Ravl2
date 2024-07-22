@@ -4,27 +4,13 @@
 // General Public License (LGPL). See the lgpl.licence file for details or
 // see http://www.gnu.org/copyleft/lesser.html
 // file-header-ends-here
-#ifndef RAVLIMAGE_DRAWPOLYGON_HEADER
-#define RAVLIMAGE_DRAWPOLYGON_HEADER 1
-///////////////////////////////////////////////////////////////////
-//! rcsid="$Id$"
 //! author="James Smith"
 //! date="27/10/2002"
-//! docentry="Ravl.API.Images.Drawing"
-//! lib=RavlImage
-//! userlevel=Normal
-//! file="Ravl/Image/Base/DrawPolygon.hh"
-//! example=exDraw.cc
 
 #include "Ravl2/Array.hh"
 #include "Ravl2/Image/DrawLine.hh"
-#include "Ravl/DList.hh"
-#include "Ravl/DLIter.hh"
-#include "Ravl/Array2dIter.hh"
-#include "Ravl/Array1dIter.hh"
-#include "Ravl/SArray1dIter.hh"
 #include "Ravl2/Geometry/Polygon2d.hh"
-#include "Ravl/Array2dPolygon2dIter.hh"
+#include "Ravl2/Geometry/Polygon2dIter.hh"
 
 namespace RavlImageN {
   

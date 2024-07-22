@@ -9,91 +9,99 @@
 
 #pragma once
 
+#include <list>
 #include "Ravl2/Index.hh"
 #include "Ravl2/Geometry/Polygon2d.hh"
+#include "Ravl2/Geometry/Range.hh"
 
 namespace Ravl2
 {
   //! Iterate across the interior of a polygon on an index grid
-  // NB. This performs a scanline conversion of the polygon
+  //! This performs a scanline conversion of the polygon
 
   template<class RealT>
   class Polygon2dIterC {
     class EdgeC {
     public:
-      EdgeC() {}
+      EdgeC() = default;
       EdgeC(const Point<RealT,2> &p1, const Point<RealT,2> &p2);
       RealT xof(RealT row) const { return m_a * row + m_b; }
-      int MinRow() const { return m_minRow; }
-      int MaxRow() const { return m_maxRow; }
+      [[nodiscard]] int MinRow() const { return m_minRow; }
+      [[nodiscard]] int MaxRow() const { return m_maxRow; }
     private:
       int m_minRow,m_maxRow; //end point with smallest y coord
       RealT m_a,m_b; //line is x = a*y + b;
     };
 
-    class IELC: public std::vector<EdgeC> {
+    class IELC: public std::list<EdgeC> {
     public:
       IELC() :m_minRow(std::numeric_limits<int>::max()), m_maxRow(std::numeric_limits<int>::min()) {}
       void Add(const EdgeC &e);
       bool Next(const int &row, EdgeC &e);
-      int MinRow() { return m_minRow; }
-      int MaxRow() { return m_maxRow; }
+      [[nodiscard]] int MinRow() { return m_minRow; }
+      [[nodiscard]] int MaxRow() { return m_maxRow; }
     private:
       int m_minRow;
       int m_maxRow;
     };
 
-    class AELC: public std::vector<EdgeC> {
+    class AELC: public std::list<EdgeC> {
     public:
       void Add(const EdgeC &e, const int &row);
       void DeleteEdges(const int &row);
       bool First(IndexRange<1> &indexRange, const int &row);
       bool Next(IndexRange<1> &indexRange, const int &row);
     private:
-      std::vector<RealT> m_sortedEdges;
+      std::list<RealT> m_sortedEdges;
     };
   public:
+    //! Default constructor does not create a valid iterator!
     inline Polygon2dIterC() :m_valid(false) {}
-    //: Default constructor does not create a valid iterator!
 
+    //! Construct from a polygon
     inline Polygon2dIterC(const Polygon2dC<RealT> &polygon)
       : m_polygon(polygon)
     { First(); }
-    //: Constructor.
-    
-    void First();
-    //: Goto first scan line in the polygon.
-    
-    inline bool IsElm() const { return m_valid; }
-    //: At valid position ?
 
+    //! Goto first scan line in the polygon.
+    void First();
+
+    //! At valid position ?
+    //! \return true if we're at a valid scanline.
+    [[nodiscard]] inline bool IsElm() const { return m_valid; }
+
+    //! At a valid position ?
+    //! \return true if we're at a valid scanline.
     operator bool() const
     { return IsElm(); }
-    //: At a valid position ?
 
-    inline const int &Row() const { return m_row; }
-    //: Get the current row for the scanline
-    
-    inline const IndexRange<1> &IndexRange() const { return m_indexRange; }
-    //: Get point.
-    // Largest error from radius should be less than 0.5
-    
+    //! Get the current row for the scanline
+    [[nodiscard]] inline const int &Row() const { return m_row; }
+
+    //! Get range.
+    //! Largest error from radius should be less than 0.5
+    [[nodiscard]] inline const IndexRange<1> &RowIndexRange() const { return m_indexRange; }
+
+    //! Goto next scan line.
+    //! Returns true if we're now at a valid scanline.
     bool Next();
-    //: Goto next scan line.
+
+    //! Goto next point.
     // Returns true if we're now at a valid scanline.
-    
     bool operator++(int)
     { return Next(); }
-    //: Goto next point.
+
+    //! Goto next point.
     // Returns true if we're now at a valid scanline.
+    bool operator++()
+    { return Next(); }
   private:
     Polygon2dC<RealT> m_polygon;
-    int m_row;
+    int m_row = 0;
     IndexRange<1> m_indexRange;
-    bool m_valid;
+    bool m_valid = false;
     IELC m_iel;
     AELC m_ael;
-
   };
 
 }  

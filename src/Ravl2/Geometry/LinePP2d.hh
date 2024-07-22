@@ -4,24 +4,20 @@
 // General Public License (LGPL). See the lgpl.licence file for details or
 // see http://www.gnu.org/copyleft/lesser.html
 // file-header-ends-here
-#ifndef RAVL_LINEPP2D_HEADER
-#define RAVL_LINEPP2D_HEADER 1
-//! rcsid="$Id$"
-//! lib=RavlMath
 //! date="13/9/2002"
 //! author="Charles Galambos"
-//! docentry="Ravl.API.Math.Geometry.2D"
-//! file="Ravl/Math/Geometry/Euclidean/2D/LinePP2d.hh"
+
+#pragma once
 
 #include "Ravl2/Geometry/Geometry.hh"
 #include "Ravl2/Geometry/FLinePP.hh"
 #include "Ravl2/Index.hh"
+#include "Ravl2/Geometry/Range.hh"
 
 namespace Ravl2
 {
   
-  //! userlevel=Normal
-  //: Line defined by 2 points in 2 dimensional space.
+  //: Line defined by 2 points in 2-dimensional space.
 
   template<typename RealT>
   class LinePP2dC 
@@ -29,7 +25,7 @@ namespace Ravl2
   {
   public:
     LinePP2dC()
-    {}
+    = default;
     //: Default constructor.
     // The contents of the line are undefined.
 
@@ -39,31 +35,34 @@ namespace Ravl2
     //: Constructor from base class
     
     LinePP2dC(const Point<RealT,2> &Start,const Point<RealT,2> &End)
-      : FLinePPC<2>(Start,End)
+      : FLinePPC<RealT, 2>(Start,End)
     {}
     //: Construct a line from two points.
 
-    LinePP2dC(const Point<RealT,2> &Start,const Vector<RealT,2> &Direction)
-      : FLinePPC<2>(Start,Direction)
-    {}
-    //: Construct a line from a start point and a direction
-    
-    bool ClipBy(const RealRange<RealT,2> &Rng);
+    //! Create line from start and end points
+    static LinePP2dC<RealT> fromPoints(const Point<RealT,2> &start,const Point<RealT,2> &end)
+    { return {start, end}; }
+
+    //! Create line from start point and direction
+    static LinePP2dC<RealT> fromStartAndDirection(const Point<RealT,2> &start,const Vector<RealT,2> &direction)
+    { return {start,start + direction}; }
+
+    bool ClipBy(const Range<RealT,2> &Rng);
     //: Clip line by given rectangle.
     // If no part of the line is in the rectangle:<ul>
     // <li>line is <i>not</i> clipped</li>
     // <li>method returns <code>false</code></li></ul>
     
     bool IsPointToRight(const Point<RealT,2>& Pt) const
-    { return Pt.Area2(P1(),P2()) < 0; }
+    { return Pt.Area2(this->P1(),this->P2()) < 0; }
     //: Checks if this point is to the right of the line
     
     bool IsPointToRightOn(const Point<RealT,2>& Pt) const 
-    { return Pt.Area2(P1(),P2()) <= 0; }
+    { return Pt.Area2(this->P1(),this->P2()) <= 0; }
     //: Checks if this point is to the right of, or exactly on the line
     
     bool IsPointOn(const Point<RealT,2>& Pt) const
-    { return Pt.Area2(P1(),P2()) == 0; }
+    { return Pt.Area2(this->P1(),this->P2()) == 0; }
     //: Checks if this point is exactly on the line
 
     bool IsPointIn(const Point<RealT,2>& Pt) const;
@@ -96,13 +95,13 @@ namespace Ravl2
     //!return: True if position exists, false if there is no intersection
     
     RealT Angle() const {
-      Vector<RealT,2> dir = P2() - P1();
-      return ATan2(dir[1],dir[0]);
+      Vector<RealT,2> dir = this->P2() - this->P1();
+      return std::atan2(dir[1],dir[0]);
     }
     //: Return the direction of the line.
 
     Vector<RealT,2> Normal() const
-    { return Vector<RealT,2>(point[1][1]-point[0][1],point[0][0]-point[1][0]); }
+    { return Vector<RealT,2>(this->point[1][1]-this->point[0][1],this->point[0][0]-this->point[1][0]); }
     //: Returns the normal of the line.
     
     Vector<RealT,2> UnitNormal() const
@@ -113,7 +112,7 @@ namespace Ravl2
     //: Returns the normal of the line normalized to have unit size.
     
     RealT SignedDistance(const Point<RealT,2> Pt) const
-    { return Vector<RealT,2>(Vector()).Cross(Vector<RealT,2>(Pt-P1()))/Length(); }
+    { return Vector<RealT,2>(this->Vector()).Cross(Vector<RealT,2>(Pt-this->P1()))/this->Length(); }
     //: Returns signed perpendicular distance of pt from this line
     
     RealT Distance(const Point<RealT,2> Pt) const
@@ -133,4 +132,3 @@ namespace Ravl2
   
 }
 
-#endif

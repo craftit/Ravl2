@@ -223,6 +223,10 @@ namespace Ravl2
     [[nodiscard]] bool contains(const IndexRange<1> &range) const noexcept
     { return (contains(range.m_min) && contains(range.m_max)); }
 
+    //! Test if 'range' overlaps with this one
+    [[nodiscard]] bool overlaps(const IndexRange<1> &range) const noexcept
+    { return (range.m_min <= m_max && range.m_max >= m_min); }
+
     //! Shrink the range in from both ends by amount.
     [[nodiscard]] IndexRange<1> shrink(int amount) const
     { return {m_min + amount,m_max - amount}; }
@@ -270,6 +274,10 @@ namespace Ravl2
       return index;
     }
 
+    //! Clip index so it is within the range.
+    [[nodiscard]] IndexRange<1> clip(const IndexRange<1> &range) const
+    { return {clip(range.min()),clip(range.max())}; }
+
     //! Add offset to range
     [[nodiscard]] IndexRange<1> operator+(int ind) const
     { return {m_min + ind,m_max + ind}; }
@@ -285,10 +293,6 @@ namespace Ravl2
     //! Subtract ranges
     [[nodiscard]] IndexRange<1> operator-(IndexRange<1> ind) const
     { return {m_min - ind.m_min,m_max - ind.m_max}; }
-
-    //! Clip index so it is within the range.
-    [[nodiscard]] IndexRange<1> clip(const IndexRange<1> &range) const
-    { return {clip(range.min()),clip(range.max())}; }
 
     //! Are two ranges equal.
     bool operator==(const IndexRange<1> &ind) const noexcept
@@ -457,6 +461,15 @@ namespace Ravl2
     {
       for(unsigned i = 0;i < N;i++)
         if(!m_range[i].contains(range.m_range[i]))
+          return false;
+      return true;
+    }
+
+    //! Test if 'range' overlaps with this one
+    bool overlaps(const IndexRange<N> &range) const noexcept
+    {
+      for(unsigned i = 0;i < N;i++)
+        if(!m_range[i].overlaps(range.m_range[i]))
           return false;
       return true;
     }

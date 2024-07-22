@@ -24,6 +24,8 @@ namespace Ravl2
       public std::vector<Point<RealT,N> >
   {
   public:
+    using PointArrayT = std::vector<Point<RealT,N>>;
+
     //! Empty list of points.
     PointSet() = default;
 

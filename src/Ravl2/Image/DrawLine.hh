@@ -20,9 +20,10 @@
 #include "Ravl2/Geometry/LinePP2d.hh"
 
 namespace Ravl2 {
-  
-  template<class DataT>
-  void DrawLine(ArrayAccess<DataT,2> &Dat,const DataT &Value,const LinePP2dC &Line)
+
+  //! Draw a line in an image.
+  template<class DataT,typename CoordTypeT>
+  void DrawLine(ArrayAccess<DataT,2> &Dat,const DataT &Value,const LinePP2dC<CoordTypeT> &Line)
   {
     LinePP2dC line = Line;
     if (line.ClipBy(Dat.Frame()))
@@ -30,37 +31,36 @@ namespace Ravl2 {
         Dat[*it] = Value;
     return ;
   }
-  //: Draw a line in an image.
 
-  template<class DataT>
+  //! Draw a line in an image.
+  template<class DataT,typename CoordTypeT = float>
   void DrawLine(ArrayAccess<DataT,2> &Dat,const DataT &Value,const Index<2> &From,const Index<2> &To) {
-    DrawLine(Dat, Value, LinePP2dC(From,To));
+    DrawLine(Dat, Value, LinePP2dC<CoordTypeT>(From,To));
   }
-  //: Draw a line in an image.
 
-  template<class DataT>
-  void DrawLine(Array2dC<DataT> &Dat,const DataT &ValueFrom,const DataT &ValueTo,const LinePP2dC &Line) {
+  //! Draw a line in an image, shaded between two colours <code>valuefrom</code> and <code>valueto</code>
+  //! This function requires that DataT has a working operator*(double) function
+  template<class DataT,typename CoordTypeT = float>
+  void DrawLine(Array<DataT,2> &Dat,const DataT &ValueFrom,const DataT &ValueTo,const LinePP2dC<CoordTypeT> &Line) {
     LinePP2dC line = Line;
-    RealRange2dC frame(Dat.Frame().TRow(),Dat.Frame().BRow(),Dat.Frame().LCol(),Dat.Frame().RCol());
+    Range<CoordTypeT,2> frame(Dat.Frame().TRow(),Dat.Frame().BRow(),Dat.Frame().LCol(),Dat.Frame().RCol());
     if (line.ClipBy(frame)) {
-      RealT length = line.Length();
+      CoordTypeT length = line.Length();
       // If both start and end are inside the image, all pixels in between are.
       for(Line2dIterC it(line.P1(),line.P2());it;it++) {
-        RealT alpha = sqrt(static_cast<double>((it.Data() - Index2dC(line.P1())).SumOfSqr().V())) / length;
+        CoordTypeT alpha = sqrt(static_cast<double>((it.Data() - Index2dC(line.P1())).SumOfSqr().V())) / length;
         Dat[*it] = DataT((ValueFrom*(1-alpha)) + (ValueTo*alpha));
       }
     }
     return ;
   }
-  //: Draw a line in an image, shaded between two colours <code>valuefrom</code> and <code>valueto</code>
-  // This function requires that DataT has a working operator*(double) function
 
-  template<class DataT>
-  void DrawLine(Array<DataT,2> &dat,const DataT &valuefrom,const DataT &valueto,const Index<2> &from,const Index<2> &to) {
-    DrawLine(dat, valuefrom, valueto, LinePP2dC(from,to));
-  }
-  //: Draw a line in an image, shaded between two colours <code>valuefrom</code> and <code>valueto</code>
+  //! Draw a line in an image, shaded between two colours <code>valuefrom</code> and <code>valueto</code>
   // This function requires that DataT has a working operator*(double) function
+  template<class DataT,typename CoordTypeT = float>
+  void DrawLine(Array<DataT,2> &dat,const DataT &valuefrom,const DataT &valueto,const Index<2> &from,const Index<2> &to) {
+    DrawLine(dat, valuefrom, valueto, LinePP2dC<CoordTypeT>(from,to));
+  }
 }
 
 #endif

@@ -4,14 +4,11 @@
 // General Public License (LGPL). See the lgpl.licence file for details or
 // see http://www.gnu.org/copyleft/lesser.html
 // file-header-ends-here
-//////////////////////////////////////////////////////////
-//! rcsid="$Id$"
 //! author="Charles Galambos"
-//! docentry="Ravl.API.Core.Indexing"
-//! userlevel=Normal
-//! lib=RavlCore
-//! file="Ravl/Core/Base/RealRange1d.hh"
 
+#pragma once
+
+#include <array>
 #include "Ravl2/Geometry/Geometry.hh"
 #include "Ravl2/Index.hh"
 
@@ -581,7 +578,7 @@ namespace Ravl2
     //: Access item.
 
   private:
-    std::array<Range<RealT,N>, N> ranges;
+    std::array<Range<RealT,1>, N> ranges;
   };
 
   template<typename RealT,unsigned N>

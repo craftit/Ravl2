@@ -6,27 +6,32 @@
 // file-header-ends-here
 
 #include "Ravl2/Geometry/Polygon2dIter.hh"
+#include "Ravl2/Math.hh"
 
+namespace Ravl2
+{
 
-namespace RavlN {
-  
-  void Polygon2dIterC::First() {
+  template<typename RealT>
+  void Polygon2dIterC<RealT>::First() {
     m_iel = IELC();
     m_ael = AELC();
-    if (m_polygon.Size() <= 2) {
+    if (m_polygon.size() <= 2) {
       m_valid = false;
       return;
     }
     /* build IEL */
-    for (DLIterC<Point2dC> it(m_polygon); it; it++) {
+    auto end = m_polygon.end();
+    for (auto it = beginCircularFirst(m_polygon); it != end; ++it) {
       m_iel.Add(EdgeC(it.Data(), it.NextCrcData()));
     }
 
     m_row = m_iel.MinRow() - 1;
     Next();
   }
-    
-  bool Polygon2dIterC::Next() {
+
+  template<typename RealT>
+  bool Polygon2dIterC<RealT>::Next() 
+  {
     if ((m_valid = m_ael.Next(m_indexRange, m_row)))
       return true;
     for (m_row++; m_row <= m_iel.MaxRow(); m_row++) {
@@ -41,91 +46,124 @@ namespace RavlN {
     return false;
   }
 
-  Polygon2dIterC::EdgeC::EdgeC(const Point2dC &p1, const Point2dC &p2) {
-    if(p2.Row() == p1.Row()) { //horizontal line
+  template<typename RealT>
+  Polygon2dIterC<RealT>::EdgeC::EdgeC(const Point<RealT,2> &p1, const Point<RealT,2> &p2) 
+  {
+    if(p2[0] == p1[0]) { //horizontal line
       m_a = 0.0f;  //to avoid dividing by 0
       m_b = 0.0f;
     } else {
-      m_a = (p2.Col()-p1.Col())/(p2.Row()-p1.Row());
-      m_b = p1.Col() - m_a * p1.Row();
+      m_a = (p2[1]-p1[1])/(p2[0]-p1[0]);
+      m_b = p1[1] - m_a * p1[0];
     }
-    if (p1.Row() < p2.Row()) {
-      m_minRow = Ceil(p1.Row());
-      m_maxRow = Ceil(p2.Row());
+    if (p1[0] < p2[0]) {
+      m_minRow = int_ceil(p1[0]);
+      m_maxRow = int_ceil(p2[0]);
     } else {
-      m_minRow = Ceil(p2.Row());
-      m_maxRow = Ceil(p1.Row());
+      m_minRow = int_ceil(p2[0]);
+      m_maxRow = int_ceil(p1[0]);
     }
   }
 
   /* add edge at appropriate place in IEL */
-  void Polygon2dIterC::IELC::Add (const Polygon2dIterC::EdgeC &e) {
-    m_minRow = Min(e.MinRow(),m_minRow);
-    m_maxRow = Max(e.MaxRow(),m_maxRow);
+  template<typename RealT>
+  void Polygon2dIterC<RealT>::IELC::Add (const Polygon2dIterC<RealT>::EdgeC &e)
+  {
+    m_minRow = std::min(e.MinRow(),m_minRow);
+    m_maxRow = std::max(e.MaxRow(),m_maxRow);
     //v is in decreasing order of ymin()
-    DLIterC<EdgeC> it(*this);
-    for (; it && e.MinRow() < it->MinRow(); it++) {
+    auto it = this->begin();
+    const auto end = this->end();
+    for (; it != end && e.MinRow() < it->MinRow(); it++) {
     }
-    it.InsertBef(e);
+    this->insert(it, e);
   }
 
   /* next edge with miny() = y from IEL */
-  bool Polygon2dIterC::IELC::Next(const IndexC &row, EdgeC &e) {
-    if (Size()==0) return false;
-    if (Last().MinRow() == row) {
-      e = PopLast();
+  template<typename RealT>
+  bool Polygon2dIterC<RealT>::IELC::Next(const int &row, EdgeC &e)
+  {
+    if (this->empty()) return false;
+    if (this->back().MinRow() == row) {
+      e = this->back();
+      this->pop_back();
       return true;
     }
     return false;
   }
 
-  void Polygon2dIterC::AELC::Add(const Polygon2dIterC::EdgeC &e, const IndexC &row) {
+  template<typename RealT>
+  void Polygon2dIterC<RealT>::AELC::Add(const Polygon2dIterC<RealT>::EdgeC &e, const int &row)
+  {
     //find right spot to add it at
-    RealT x = e.xof(row.V()+0.5);
-
-    DLIterC<EdgeC> it(*this);
-    for (; it && it->xof(row.V()+0.5) < x; it++) {
+    RealT x = e.xof(row+0.5);
+    auto it = this->begin();
+    auto end = this->end();
+    for (; it != end; it++) {
+      if(it->xof(row+0.5) >= x)
+        break;
     }
-    it.InsertBef(e);
+    this->insert(it,e);
   }
   
   /* delete edges with max y = y */
-  void Polygon2dIterC::AELC::DeleteEdges(const IndexC &row) {
-    DLIterC<EdgeC> it(*this);
-    for (it.Last(); it; it--) {
-      if (it->MaxRow() == row)
-        it.DelMoveNext();
+  template<typename RealT>
+  void Polygon2dIterC<RealT>::AELC::DeleteEdges(const int &row)
+  {
+    const auto end = this->begin();
+    auto it = this->end();
+    if(it == end) return;
+    --it;
+    for (; it != end ;--it) {
+      if (it->MaxRow() == row) {
+        it = this->erase(it);
+      }
+    }
+    // End is skipped in the loop above, so check it here
+    if (it->MaxRow() == row) {
+      it = this->erase(it);
     }
   }
 
-  bool Polygon2dIterC::AELC::First(IndexRangeC &indexRange, const IndexC &row) {
-    m_sortedEdges.Empty();
+  template<typename RealT>
+  bool Polygon2dIterC<RealT>::AELC::First(IndexRange<1> &indexRange, const int &row)
+  {
+    m_sortedEdges.clear();
     // use list insertion sort to put in ascending order
     // already pretty much sorted so work backwards for efficiency
-    DLIterC<EdgeC> it(*this);
-    for (it.Last(); it; it--) {
+    auto it = this->rbegin();
+    const auto end = this->rend();
+    for (; it != end; it++) {
       RealT edge = it->xof(row);
-      DLIterC<RealT> rt(m_sortedEdges);
-      for (; rt; rt++) {
+      auto rt = m_sortedEdges.begin();
+      auto rt_end = m_sortedEdges.end();
+      for (; rt != rt_end; rt++) {
         if (edge <= *rt) {
-          rt.InsertBef(edge);
+          m_sortedEdges.insert(rt,edge);
           break;
         }
       }
-      if (!rt) // either the list is empty or edge is greater than everything in it
-        m_sortedEdges.InsLast(edge);
+      if (rt == rt_end) // either the list is empty or edge is greater than everything in it
+        m_sortedEdges.push_back(edge);
     }
     return Next(indexRange, row);
   }
 
-  bool Polygon2dIterC::AELC::Next(IndexRangeC &indexRange, const IndexC &row) {
+  template<typename RealT>
+  bool Polygon2dIterC<RealT>::AELC::Next(IndexRange<1> &indexRange, const int &row) {
     do {
-      if (m_sortedEdges.Size() == 0)
+      if (m_sortedEdges.empty())
         return false;
-      indexRange.Min() = Ceil(m_sortedEdges.PopFirst());
-      indexRange.Max() = Ceil(m_sortedEdges.PopFirst() - 1.0);
-    } while(indexRange.Size() <= 0);    // don't include empty sections
+      int newMin = int_ceil(m_sortedEdges.front());
+      m_sortedEdges.pop_front();
+      int newMax = int_ceil(m_sortedEdges.front() - 1.0);
+      indexRange = IndexRange<1>(newMin, newMax);
+      m_sortedEdges.pop_front();
+    } while(indexRange.size() <= 0);    // don't include empty sections
     return true;
   }
 
+
+  template class Polygon2dIterC<float>;
+  template class Polygon2dIterC<double>;
 }

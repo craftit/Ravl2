@@ -50,8 +50,15 @@ namespace Ravl2
     using Vector3d = cv::Vec3d;
     //using VectorT = cv::Vec;
 #else
-    using VectorT = xt::xtensor<float,1>;
-    using TensorT = xt::xarray<float>;
+    template<typename DataT>
+    using VectorT = xt::xtensor<DataT,1>;
+
+    template<typename DataT>
+    using TensorT = xt::xarray<DataT>;
+
+    template<typename DataT>
+    using MatrixT = xt::xtensor<DataT, 2>;
+
     using EmbeddingMatrixT = xt::xtensor<float, 2>;
     using VectorViewT = std::span<float>;
     using ConstVectorViewT = std::span<const float>;
@@ -110,11 +117,22 @@ namespace Ravl2
     [[nodiscard]] std::string toString(Vector2f v);
     [[nodiscard]] std::string toString(Vector2d v);
     //std::string toString(const VectorT &v);
+
+    template<typename RealT,unsigned N>
+    RealT euclidDistance(const Point<RealT,N> &a,const Point<RealT,N> &b)
+    {
+      RealT sum = 0;
+      for(unsigned i = 0; i < N; i++) {
+        sum += sqr(a(i) - b(i));
+      }
+      return std::sqrt(sum);
+    }
 }
 
 #if !USE_OPENCV
 #if FMT_VERSION >= 90000
 template <> struct fmt::formatter<xt::xarray<float> > : fmt::ostream_formatter{};
+template <> struct fmt::formatter<Ravl2::Point2f > : fmt::ostream_formatter{};
 //template <> struct fmt::formatter<xt::xtensor<float,1> > : ostream_formatter{};
 template <> struct fmt::formatter<xt::xarray<float>::shape_type> : fmt::ostream_formatter{};
 template <> struct fmt::formatter<xt::xtensor_container<xt::uvector<float>, 2, xt::layout_type::row_major> > : fmt::ostream_formatter{};

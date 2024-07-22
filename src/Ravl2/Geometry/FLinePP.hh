@@ -6,77 +6,79 @@
 // file-header-ends-here
 
 #include "Ravl2/Geometry/Geometry.hh"
+#include "Ravl2/Assert.hh"
 
 namespace Ravl2
 {
   
-  //! userlevel=Normal
-  //: Line in N dimensional space.
+  //! Line in N dimensional space define by two points.
   
   template<typename RealT, unsigned int N>
   class FLinePPC {
   public:
-    FLinePPC()
-    {}
-    //: Default constructor.
-    // The line is undefined.
-    
+    FLinePPC() = default;
+
+    //! Create line from start and end points
     FLinePPC(const Point<RealT, N> &start,const Point<RealT, N> &end)
     { point[0] = start; point[1] = end; }
     //: Construct from two points.
-    
-    FLinePPC(const Point<RealT,N> &start,const FVectorC<N> &direction)
-    { point[0] =start; point[1] = start + direction; }
-    //: Construct from a start point and a direction.
-    
+
+    //! Create line from start and end points
+    static FLinePPC<RealT,N> fromPoints(const Point<RealT,N> &start,const Point<RealT,N> &end)
+    { return FLinePPC<RealT,N>(start, end); }
+
+    //! Create line from start point and direction
+    static FLinePPC<RealT,N> fromStartAndDirection(const Point<RealT,N> &start,const Vector<RealT,N> &direction)
+    { return FLinePPC<RealT,N>(start, start+direction); }
+
+    //! Returns the start point of the line segment.
     const Point<RealT,N> & FirstPoint() const
     { return point[0]; }
-    //: Returns the start point of the line segment.
-    
+
+    //! Returns the end point of the line segment.
     const Point<RealT,N> & SecondPoint() const
     { return point[1]; }
-    //: Returns the end point of the line segment.
 
+    //! Returns the start point of the line segment.
     Point<RealT,N> & FirstPoint()
     { return point[0]; }
-    //: Returns the start point of the line segment.
-    
+
+    //! Returns the end point of the line segment.
     Point<RealT,N> & SecondPoint()
     { return point[1]; }
-    //: Returns the end point of the line segment.
-    
+
+    //! Returns the mid point of the line segment.
     Point<RealT,N> MidPoint() const
     { return (point[1] + point[0])/2.0; }
-    //: Returns the mid point of the line segment.
-    
+
+    //! Returns the start point of the line segment.
+    // It is equivalent to the function FirstPoint().
     const Point<RealT,N> & P1() const
     { return point[0]; }
-    //: Returns the start point of the line segment. 
-    // It is equivalent to the function FirstPoint().
-    
+
+    //! Returns the start point of the line segment.
+    // It is equivalent to the function SecondPoint().
     const Point<RealT,N> & P2() const
     { return point[1]; }
-    // Returns the start point of the line segment. 
-    //: It is equivalent to the function SecondPoint().
-    
+
+    //! Returns the start point of the line segment.
+    // It is equivalent to the function FirstPoint().
     Point<RealT,N> & P1()
     { return point[0]; }
-    //: Returns the start point of the line segment. 
-    // It is equivalent to the function FirstPoint().
-    
+
+    //! Returns the start point of the line segment.
+    // It is equivalent to the function SecondPoint().
     Point<RealT,N> & P2()
     { return point[1]; }
-    //: Returns the start point of the line segment. 
-    // It is equivalent to the function SecondPoint().
-    
-    const Point<RealT,N> & operator[](const UIntT i) const {
-      RavlAssertMsg(i == 0 || i == 1,"Index out of range 0..1"); 
+
+    const Point<RealT,N> & operator[](const unsigned i) const {
+      RavlAssertMsg(i == 0 || i == 1,"Index out of range 0..1");
       return point[i];
     }
     //: Returns the ith point.
 
-    Point<RealT,N> & operator[](const UIntT i) {
-      RavlAssertMsg(i == 0 || i == 1,"Index out of range 0..1"); 
+    Point<RealT,N> & operator[](const unsigned i) {
+      RavlAssertMsg(i == 0 || i == 1,"Index out of range 0..1");
       return point[i];
     }
     //: Returns the ith point.
@@ -84,11 +86,11 @@ namespace Ravl2
     //:-------------------------
     // Geometrical computations.
     
-    FLinePPC<N> operator+(const FVectorC<N> & v) const
-    { return FLinePPC<N>(Point<RealT,N>(P1()+v),Point<RealT,N>(P2()+v)); }
+    FLinePPC<RealT,N> operator+(const Vector<RealT,N> & v) const
+    { return FLinePPC<RealT,N>(Point<RealT,N>(P1()+v),Point<RealT,N>(P2()+v)); }
     //: Returns the line segment translated into the new position.
     
-    FLinePPC<N> & operator+=(const FVectorC<N> & v) {
+    FLinePPC<RealT,N> & operator+=(const Vector<RealT,N> & v) {
       point[0] += v;
       point[1] += v;
       return *this;
@@ -96,7 +98,7 @@ namespace Ravl2
     //: Moves the line segment into the new position.
     // The operator is equivalent to the member function Translate().
     
-    FLinePPC<N> & Translate(const FVectorC<N> & v)
+    FLinePPC<RealT,N> & Translate(const Vector<RealT,N> & v)
     { return operator+=(v); }
     //: Moves the line segment into the new position.
     // The member function is equivalent to the operator+=.
@@ -108,50 +110,51 @@ namespace Ravl2
     }
     //: Swaps the end points of this
     
-    FLinePPC<N> Swapped() const
-    { return FLinePPC<N>(P2(), P1()); }
+    FLinePPC<RealT,N> Swapped() const
+    { return FLinePPC<RealT,N>(P2(), P1()); }
     //: Returns a line with swapped endpoints
-    
-    FVectorC<N> Vector() const
-    { return point[1] - point[0]; } 
-    //: Returns the direction of the line segment as a free vector.
-    // The magnitude of the vector is the length of the line segment.
-    
-    FLinePPC<N> & FixStart(const Point<RealT,N> & p) {
-      FVectorC<N> vec = point[1] - point[0];
+
+    //! Get the direction of the line segment as a free vector.
+    //! The magnitude of the vector is the length of the line segment.
+    //! This was called 'direction()' in the original code.
+    Vector<RealT,N> direction() const
+    { return point[1] - point[0]; }
+
+    //! Translates the line segment to start in the point 'p'.
+    FLinePPC<RealT,N> & FixStart(const Point<RealT,N> & p) {
+      Ravl2::Vector<RealT,N> vec = point[1] - point[0];
       point[0] = p;
       point[1] = p + vec;
       return *this;
     }
-    //: Translates the line segment to start in the point 'p'.
-    
-    FLinePPC<N> & FixEnd(const Point<RealT,N> & p) {
-      FVectorC<N> vec = point[1] - point[0];
+
+    //! Translates the line segment to end in the point 'p'.
+    FLinePPC<RealT,N> & FixEnd(const Point<RealT,N> & p) {
+      Ravl2::Vector<RealT,N> vec = point[1] - point[0];
       point[0] = p - vec;
       point[1] = p;
       return *this;
     }
-    //: Translates the line segment to end in the point 'p'.
-    
+
+    //! Returns the length of the line in euclidian space.
     RealT Length() const
     { return point[0].EuclidDistance(point[1]); }
-    //: Returns the length of the line in euclidian space.
-    
+
+    //! Returns the point of the line: FirstPoint() + t * direction().
     Point<RealT,N> PointAt(const RealT t) const
-    { return FirstPoint() + Vector() * t; }
-    //: Returns the point of the line: FirstPoint() + t * Vector().
-    
+    { return FirstPoint() + direction() * t; }
+
+    //! Returns the parameter of the closest point on the line to 'pnt'.
+    // Where 0 is at the start point and 1 is at the end.
     RealT ParClosest(const Point<RealT,N> &pnt) const {
-      auto v = Vector();
+      auto v = direction();
       RealT l2 = v.SumOfSqr();
       if (l2 == 0.0) throw std::underflow_error("FLinePPC::ParClosest(): Cannot find line parameter for zero-length line");
       return v.dot(pnt - point[0]) / l2;
     }
-    //: Returns the parameter of the closest point on the line to 'pnt'.
-    // Where 0 is at the start point and 1 is at the end. 
-    
+
   protected:
-    Point<RealT,N> point[2];
+    std::array<Point<RealT,N>,2> point;
   };
 
   template<typename RealT, unsigned int N>
@@ -172,4 +175,3 @@ namespace Ravl2
 }
 
 
-#endif

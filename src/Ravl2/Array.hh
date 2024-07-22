@@ -44,62 +44,61 @@ namespace Ravl2
   class ArrayIter<DataT,1>
   {
   public:
-
-      explicit ArrayIter(DataT *array)
+    constexpr explicit ArrayIter(DataT *array)
         : mPtr(array)
       {}
 
       //! Increment iterator
-      ArrayIter<DataT,1> &operator++()
+      constexpr ArrayIter<DataT,1> &operator++()
       {
           mPtr++;
           return *this;
       }
 
       //! Decrement iterator
-      ArrayIter<DataT,1> &operator--()
+      constexpr ArrayIter<DataT,1> &operator--()
       {
           mPtr--;
           return *this;
       }
 
       //! Add an offset to the iterator
-      ArrayIter<DataT,1> &operator+=(int offset)
+      constexpr ArrayIter<DataT,1> &operator+=(int offset)
       {
 	mPtr += offset;
           return *this;
       }
 
       //! Add an offset to the iterator
-      ArrayIter<DataT,1> operator-(int offset) const
+      [[nodiscard]] constexpr ArrayIter<DataT,1> operator-(int offset) const
       {
           return ArrayIter<DataT,1>(mPtr - offset);
       }
 
       //! Add an offset to the iterator
-      ArrayIter<DataT,1> operator+(int offset) const
+      [[nodiscard]] constexpr ArrayIter<DataT,1> operator+(int offset) const
       {
         return ArrayIter<DataT,1>(mPtr + offset);
       }
 
       //! Compare iterators
-      bool operator==(const ArrayIter<DataT,1> &other) const
+      [[nodiscard]] constexpr bool operator==(const ArrayIter<DataT,1> &other) const
       { return mPtr == other.mPtr; }
 
       //! Compare iterators
-      bool operator!=(const ArrayIter<DataT,1> &other) const
+      [[nodiscard]] constexpr bool operator!=(const ArrayIter<DataT,1> &other) const
       { return mPtr != other.mPtr; }
 
       //! Compare iterators
-      bool operator==(const DataT *other) const
+      [[nodiscard]] constexpr bool operator==(const DataT *other) const
       { return mPtr == other; }
 
       //! Compare iterators
-      bool operator!=(const DataT *other) const
+      [[nodiscard]] constexpr bool operator!=(const DataT *other) const
       { return mPtr != other; }
 
       //! Access element
-      DataT &operator*() const
+      [[nodiscard]] constexpr DataT &operator*() const
       { return *mPtr; }
   private:
       DataT *mPtr = nullptr;
@@ -207,11 +206,11 @@ namespace Ravl2
     [[nodiscard]] constexpr ArrayIter<DataT,N> end() const;
 
     //! Get stride for dimension
-    [[nodiscard]] int stride(int dim) const
+    [[nodiscard]] constexpr int stride(int dim) const
     { return m_strides[dim]; }
 
     //! Access strides
-    [[nodiscard]] const int *strides() const
+    [[nodiscard]] constexpr const int *strides() const
     { return m_strides; }
   protected:
     const IndexRange<1> *m_ranges {nullptr};
@@ -225,10 +224,10 @@ namespace Ravl2
   class ArrayIter
   {
   public:
-    ArrayIter()
+    constexpr ArrayIter()
     = default;
 
-    ArrayIter(const IndexRange<1> *rng, DataT *data, const int *strides) noexcept
+    constexpr ArrayIter(const IndexRange<1> *rng, DataT *data, const int *strides) noexcept
      : m_access(rng,data,strides)
     {
       assert(data != nullptr);
@@ -241,16 +240,16 @@ namespace Ravl2
       mEnd = mPtr + rng[N-1].size() * strides[N-1];
     }
 
-    ArrayIter(const IndexRange<N> &rng, DataT *data, const int *strides) noexcept
+    constexpr ArrayIter(const IndexRange<N> &rng, DataT *data, const int *strides) noexcept
      : ArrayIter(rng.ranges().data(),data,strides)
     {}
 
-    ArrayIter(const IndexRange<N> &rng, DataT *data, const std::array<int,N> &strides) noexcept
+    constexpr ArrayIter(const IndexRange<N> &rng, DataT *data, const std::array<int,N> &strides) noexcept
      : ArrayIter(rng.ranges().data(),data,strides.data())
     {}
 
     //! Construct end iterator
-    static ArrayIter<DataT,N> end(const IndexRange<1> *rng, DataT *data, const int *strides) noexcept
+    static constexpr ArrayIter<DataT,N> end(const IndexRange<1> *rng, DataT *data, const int *strides) noexcept
     {
       ArrayIter<DataT,N> iter(rng,data,strides);
       iter.mPtr += strides[0] * rng[0].size();
@@ -259,22 +258,28 @@ namespace Ravl2
     }
 
     //! Construct end iterator
-    static ArrayIter<DataT,N> end(const IndexRange<N> &rng, DataT *data, const std::array<int,N> &strides) noexcept
+    static constexpr ArrayIter<DataT,N> end(const IndexRange<N> &rng, DataT *data, const std::array<int,N> &strides) noexcept
     {
       return end(rng.ranges().data(),data,strides.data());
     }
 
-    void nextRow()
+  private:
+    constexpr inline void nextIndex()
     {
       for(unsigned i = N-2;i > 0;--i) {
-	++mIndex[i];
-	if(mIndex[i] <= m_access.range(i).max())
-	  goto done;
-	mIndex[i] = m_access.range(i).min();
+        ++mIndex[i];
+        if(mIndex[i] <= m_access.range(i).max())
+          return;
+        mIndex[i] = m_access.range(i).min();
       }
       // On the last index we don't need to update
       ++mIndex[0];
-    done:
+    }
+
+  public:
+    constexpr void nextRow()
+    {
+      nextIndex();
       mPtr = m_access.origin_address();
       for(int i = 0;i < N;i++)
       {
@@ -284,7 +289,7 @@ namespace Ravl2
     }
 
     //! Increment iterator
-    inline ArrayIter<DataT,N> &operator++()
+    constexpr inline ArrayIter<DataT,N> &operator++()
     {
       mPtr++;
       if(mPtr == mEnd) {
@@ -295,7 +300,7 @@ namespace Ravl2
 
     //! Increment iterator
     //! Returns true while we're on the same final dimension (row).
-    inline bool next()
+    constexpr inline bool next()
     {
       mPtr++;
       if(mPtr == mEnd) {
@@ -306,41 +311,41 @@ namespace Ravl2
     }
 
     //! Test if the iterator is valid.
-    [[nodiscard]] bool valid() const noexcept
+    [[nodiscard]] constexpr bool valid() const noexcept
     { return mIndex[0] <= m_access.range(0).max();  }
 
     //! Test if the iterator is finished.
-    [[nodiscard]] bool done() const noexcept
+    [[nodiscard]] constexpr bool done() const noexcept
     { return mIndex[0] > m_access.range(0).max();  }
 
     //! Compare iterators
-    bool operator==(const ArrayIter<DataT,N> &other) const
+    [[nodiscard]] constexpr bool operator==(const ArrayIter<DataT,N> &other) const
     { return (mPtr == other.mPtr); }
 
     //! Compare iterators
-    bool operator!=(const ArrayIter<DataT,N> &other) const
+    [[nodiscard]] constexpr bool operator!=(const ArrayIter<DataT,N> &other) const
     { return !this->operator==(other); }
 
     //! Access element
-    DataT &operator*() const noexcept
+    [[nodiscard]] constexpr DataT &operator*() const noexcept
     { return *mPtr; }
 
     //! Access element point
-    DataT *data() const noexcept
+    [[nodiscard]] constexpr DataT *data() const noexcept
     { return mPtr; }
 
     //! Access strides
-    [[nodiscard]] const int *strides() const noexcept
+    [[nodiscard]] constexpr const int *strides() const noexcept
     { return m_access.strides(); }
 
     //! Access Index
-    [[nodiscard]] Index<N> index() const noexcept
+    [[nodiscard]] constexpr Index<N> index() const noexcept
     {
       Index<N> ind = mIndex;
       ind[N-1] = mPtr - mEnd + m_access.range(N-1).max() + 1;
       return ind;
     }
-protected:
+  protected:
      DataT * mPtr {};
      const DataT * mEnd {};
      Index<N> mIndex {}; // Index of the beginning of the last dimension.

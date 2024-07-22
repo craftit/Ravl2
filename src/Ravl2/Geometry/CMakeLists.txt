@@ -8,6 +8,11 @@ add_library (Ravl2Geometry
         PointSet.cc PointSet.hh
         Moments2.cc Moments2.hh
         CircleIter.cc CircleIter.hh
+        Circle.cc Circle.hh
+        FLinePP.hh FLinePP.cc
+        LinePP2d.hh LinePP2d.cc
+        Polygon2d.cc Polygon2d.hh
+        Polygon2dIter.cc Polygon2dIter.hh
         Range.hh Range.cc
 )
 
