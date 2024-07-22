@@ -4,39 +4,39 @@
 // General Public License (LGPL). See the lgpl.licence file for details or
 // see http://www.gnu.org/copyleft/lesser.html
 // file-header-ends-here
-#pragma once
-///////////////////////////////////////////////////////////////////
-//! rcsid="$Id$"
 //! author="Charles Galambos"
 //! date="22/04/2002"
-//! docentry="Ravl.API.Images.Drawing"
-//! lib=RavlImage
-//! userlevel=Normal
-//! file="Ravl/Image/Base/DrawFrame.hh"
+#pragma once
 
 #include "Ravl2/Array.hh"
 
 namespace Ravl2
 {
-  
+
+  //! Draw a rectangle in an image.
   template<class DataT>
-  void DrawFrame(Array2dC<DataT> &dat,const DataT &value,const IndexRange<2> &rect, bool fill=false) {
+  void DrawFilledFrame(Array<DataT,2> &dat,const DataT &value,const IndexRange<2> &rect)
+  {
+    IndexRange<2> dr = rect.clip(dat.Frame());
+    if (dr.empty())
+      return; // Nothing to draw around.
+    dat.access(dr).fill(value);
+    return;
+  }
+
+    //! Draw a rectangle in an image.
+  template<class DataT>
+  void DrawFrame(Array<DataT,2> &dat,const DataT &value,const IndexRange<2> &rect) {
     IndexRange<2> dr = rect.clip(dat.Frame());
     if(dr.empty())
       return ; // Nothing to draw around.
-    
-    if (fill) {
-      for (Array2dIterC<DataT> it(dat,dr); it; it++) 
-	*it = value;
-      return;
-    }
-    
+
     DataT *it1,*it2,*eor;
-    IntT ColN = dr.Cols();
-    if(rect.TRow() == dr.TRow() && rect.BRow() == dr.BRow()) { // The rectangle wasn't clipped.
+    int ColN = dr.range(1).size(); // Number of columns.
+    if(rect.range(0).min() == dr.range(0).min() && rect.range(0).max() == dr.range(0).max()) { // The rectangle wasn't clipped.
       // Do horizontal lines.
-      it1 = &(dat[dr.TRow()][dr.LCol().V()]);
-      it2 = &(dat[dr.BRow()][dr.LCol().V()]);
+      it1 = &(dat[dr.range(0).min()][dr.range(0).min()]);
+      it2 = &(dat[dr.range(0).max()][dr.range(0).min()]);
       eor = &(it1[ColN]);
       for(;it1 != eor;) {
 	*(it1++) = value;
@@ -44,16 +44,16 @@ namespace Ravl2
       }
     } else {
       // Do top and bottom lines seperatly
-      if(rect.TRow() == dr.TRow()) {
+      if(rect.range(0).min() == dr.range(0).min()) {
 	// Do top horizontal line.
-	it1 = &(dat[dr.TRow()][dr.LCol().V()]);
+	it1 = &(dat[dr.range(0).min()][dr.range(0).min()]);
 	eor = &(it1[ColN]);
 	for(;it1 != eor;)
 	  *(it1++) = value;
       }
-      if(rect.BRow() == dr.BRow()) {
+      if(rect.range(0).max() == dr.range(0).max()) {
 	// Do bottom horizontal line.
-	it1 = &(dat[dr.BRow()][dr.LCol().V()]);
+	it1 = &(dat[dr.range(0).max()][dr.range(0).min()]);
 	eor = &(it1[ColN]);
 	for(;it1 != eor;)
 	  *(it1++) = value;	
@@ -61,44 +61,44 @@ namespace Ravl2
     }
     // Do vertical lines.
     ColN--;
-    if(dr.LCol() == rect.LCol() && dr.RCol() == rect.RCol()) {// Not clipped.
-      for(IndexC r = dr.TRow()+1; r < dr.BRow(); r++) {
-	it1 = &(dat[r][dr.LCol().V()]);
+    if(dr.range(0).min() == rect.range(0).min() && dr.range(1).max() == rect.range(1).max()) {// Not clipped.
+      for(auto r = dr.range(0).min()+1; r < dr.range(0).max(); r++) {
+	it1 = &(dat[r][dr.range(0).min()]);
 	it1[0] = value;
 	it1[ColN] = value;
       }
     } else { // Clipped.
-      if(dr.LCol() == rect.LCol()) {
-	for(IndexC r = dr.TRow()+1; r < dr.BRow(); r++)
-	  dat[r][dr.LCol().V()] = value;
+      if(dr.range(0).min() == rect.range(0).min()) {
+	for(int r = dr.range(0).min()+1; r < dr.range(0).max(); r++)
+	  dat[r][dr.range(0).min()] = value;
       }
-      if(dr.RCol() == rect.RCol()) {
-	for(IndexC r = dr.TRow()+1; r < dr.BRow(); r++)
-	  dat[r][dr.RCol().V()] = value;	
+      if(dr.range(1).max() == rect.range(1).max()) {
+	for(int r = dr.range(0).min()+1; r < dr.range(0).max(); r++)
+	  dat[r][dr.range(1).max()] = value;	
       }
     }
   }
-  //: Draw a rectangle in an image.
-  
+
+  //! Draw a rectangle in an image of given width
+  //! The rectangle is assumed to be the outer one and the image will be filled inside it by 'width' pixels.
   template<class DataT>
-  void DrawFrame(Array2dC<DataT> &dat,const DataT &value,int width,const IndexRange<2> &outerRect) {
-    IndexRange<2> innerRect = outerRect.Shrink(width);
+  void DrawFrame(Array<DataT,2> &dat,const DataT &value,int width,const IndexRange<2> &outerRect) {
+    IndexRange<2> innerRect = outerRect.shrink(width);
     IndexRange<2> outerClipped = outerRect;
-    outerClipped.ClipBy(dat.Frame());
-    if(outerClipped.Area() <= 0 || width == 0)
-      return ; // Nothing to draw..
-    
+    if(!outerClipped.clipBy(dat.Frame()) || width == 0)
+      return ; // Nothing to draw.
+
     //cerr << "Inner=" << innerRect << "\n";
     //cerr << "Outer=" << outerRect << "\n";
     //cerr << "Clipped=" << outerClipped << "\n";
     
     DataT *it1,*it2,*eor;
-    IntT ColN = outerClipped.Cols();
-    if(outerRect.TRow() == outerClipped.TRow() && outerRect.BRow() == outerClipped.BRow()) { // The innerRect wasn't clipped.
+    int ColN = outerClipped.range(1).size(); // Number of columns.
+    if(outerRect.range(0).min() == outerClipped.range(0).min() && outerRect.range(0).max() == outerClipped.range(0).max()) { // The innerRect wasn't clipped.
       // Do horizontal lines.
       for(int i = 0;i < width;i++) {
-	it1 = &(dat[outerClipped.TRow()+i][outerClipped.LCol().V()]);
-	it2 = &(dat[outerClipped.BRow()-i][outerClipped.LCol().V()]);
+	it1 = &(dat[outerClipped.range(0).min()+i][outerClipped.range(0).min()]);
+	it2 = &(dat[outerClipped.range(0).max()-i][outerClipped.range(0).min()]);
 	eor = &(it1[ColN]);
 	for(;it1 != eor;) {
 	  *(it1++) = value;
@@ -108,16 +108,16 @@ namespace Ravl2
     } else {
       // Do top and bottom lines seperatly
       for(int i = 0;i < width;i++) {
-	if(dat.Frame().TRow() <= (outerRect.TRow() - i)) {
+	if(dat.Frame().range(0).min() <= (outerRect.range(0).min() - i)) {
 	  // Do top horizontal line.
-	  it1 = &(dat[outerRect.TRow() - i][outerClipped.LCol().V()]);
+	  it1 = &(dat[outerRect.range(0).min() - i][outerClipped.range(0).min()]);
 	  eor = &(it1[ColN]);
 	  for(;it1 != eor;)
 	    *(it1++) = value;
 	}
-	if(dat.Frame().BRow() >= (outerRect.BRow() + i)) {
+	if(dat.Frame().range(0).max() >= (outerRect.range(0).max() + i)) {
 	  // Do bottom horizontal line.
-	  it1 = &(dat[outerRect.BRow() + i][outerClipped.LCol().V()]);
+	  it1 = &(dat[outerRect.range(0).max() + i][outerClipped.range(0).min()]);
 	  eor = &(it1[ColN]);
 	  for(;it1 != eor;)
 	    *(it1++) = value;	
@@ -125,10 +125,10 @@ namespace Ravl2
       }
     }
     // Do vertical lines.
-    if(outerClipped.LCol() == outerRect.LCol() && outerClipped.RCol() == outerRect.RCol()) {// Not clipped.
-      for(IndexC r = outerRect.TRow()+1; r < outerRect.BRow(); r++) {
-	it1 = &(dat[r][outerRect.LCol().V()]);
-	it2 = &(dat[r][innerRect.RCol().V()+1]);
+    if(outerClipped.range(0).min() == outerRect.range(0).min() && outerClipped.range(1).max() == outerRect.range(1).max()) {// Not clipped.
+      for(int r = outerRect.range(0).min()+1; r < outerRect.range(0).max(); r++) {
+	it1 = &(dat[r][outerRect.range(0).min()]);
+	it2 = &(dat[r][innerRect.range(1).max()+1]);
 	eor = &(it1[width]);
 	for(;it1 != eor;it1++,it2++) {
 	  *it1 = value;
@@ -136,23 +136,16 @@ namespace Ravl2
 	}
       }
     } else { // Clipped.
-      IndexRange<2> r1(Index2dC(innerRect.TRow(),outerRect.LCol()),Index2dC(innerRect.BRow(),innerRect.LCol()-1));
-      r1.ClipBy(dat.Frame());
-      if(r1.Area() > 0) {
-	for (Array2dIterC<DataT> it(dat,r1); it; it++) 
-	  *it = value;
+      IndexRange<2> r1(Index<2>(innerRect.range(0).min(),outerRect.range(0).min()),Index<2>(innerRect.range(0).max(),innerRect.range(0).min()-1));
+      if(r1.clipBy(dat.Frame())) {
+        dat.access(r1).fill(value);
       }
-      IndexRange<2> r2(Index2dC(innerRect.TRow(),innerRect.RCol()+1),Index2dC(innerRect.BRow(),outerRect.RCol()));
-      r2.ClipBy(dat.Frame());
-      if(r2.Area() > 0) {
-	for (Array2dIterC<DataT> it(dat,r2); it; it++) 
-	  *it = value;
+      IndexRange<2> r2(Index<2>(innerRect.range(0).min(),innerRect.range(1).max()+1),Index<2>(innerRect.range(0).max(),outerRect.range(1).max()));
+      if(r2.clipBy(dat.Frame())) {
+        dat.access(r2).fill(value);
       }
     }
-    
   }
-  //: Draw a rectangle in an image of given width
-  // The rectangle is assumed to be the outer one and the image will be filled inside it by 'width' pixels.
-  
+
 }
 

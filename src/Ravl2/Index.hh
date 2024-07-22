@@ -278,6 +278,15 @@ namespace Ravl2
     [[nodiscard]] IndexRange<1> clip(const IndexRange<1> &range) const
     { return {clip(range.min()),clip(range.max())}; }
 
+    //! Clip range in place
+    //! Returns true if the range is still valid.
+    bool clipBy(const IndexRange<1> &range)
+    {
+      m_min = std::max(m_min,range.min());
+      m_max = std::min(m_max,range.max());
+      return m_min <= m_max;
+    }
+
     //! Add offset to range
     [[nodiscard]] IndexRange<1> operator+(int ind) const
     { return {m_min + ind,m_max + ind}; }
@@ -617,6 +626,16 @@ namespace Ravl2
       return ret;
     }
 
+    //! Clip range in place
+    //! Returns true if the range is still valid.
+    bool clipBy(const IndexRange<1> &range)
+    {
+      bool valid = true;
+      for(unsigned i = 0;i < N;i++)
+        valid &= m_range[i].clipBy(range);
+      return valid;
+    }
+
     //! Access range of given dimension.
     [[nodiscard]] const IndexRange<1> &operator[](unsigned i) const
     {
@@ -658,8 +677,21 @@ namespace Ravl2
     //! One passed the end of the range.
     [[nodiscard]] IndexRangeIterator<N> end() const;
 
+    //! Access as an array of ranges
     [[nodiscard]] std::array<IndexRange<1>, N> &ranges()
     { return m_range; }
+
+    [[nodiscard]] IndexRange<1> &range(int i)
+    {
+      assert(i >= 0 && i < N);
+      return m_range[i];
+    }
+
+    [[nodiscard]] const IndexRange<1> &range(int i) const
+    {
+      assert(i >= 0 && i < N);
+      return m_range[i];
+    }
 
     [[nodiscard]] const std::array<IndexRange<1>, N> &ranges() const
     { return m_range; }

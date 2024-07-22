@@ -34,8 +34,12 @@
 #include <xtensor/xsort.hpp>
 #include <xtensor/xnorm.hpp>
 #include <xtensor/xnpy.hpp>
+#include <xtensor-blas/xlinalg.hpp>
 #pragma GCC diagnostic pop
 #endif
+
+#include "Ravl2/Index.hh"
+#include "Ravl2/Math.hh"
 
 namespace Ravl2
 {
@@ -119,7 +123,17 @@ namespace Ravl2
     //std::string toString(const VectorT &v);
 
     template<typename RealT,unsigned N>
-    RealT euclidDistance(const Point<RealT,N> &a,const Point<RealT,N> &b)
+    constexpr RealT squaredEuclidDistanceS(const Point<RealT,N> &a,const Point<RealT,N> &b)
+    {
+      RealT sum = 0;
+      for(unsigned i = 0; i < N; i++) {
+        sum += sqr(a(i) - b(i));
+      }
+      return sum;
+    }
+
+    template<typename RealT,unsigned N>
+    constexpr auto euclidDistance(const Point<RealT,N> &a,const Point<RealT,N> &b)
     {
       RealT sum = 0;
       for(unsigned i = 0; i < N; i++) {
@@ -127,6 +141,80 @@ namespace Ravl2
       }
       return std::sqrt(sum);
     }
+
+    //! Compute twice the area contained by the three 2d points.
+    //! Area of triangle (*this, second, third) is equal to the area
+    //! of the triangle which the first point represents the origin
+    //! of the coordinate system. In fact the points 'aa' and 'bb'
+    //! represents two vectors and the computed area is equal to
+    //! the size of the cross product of these two vectors.
+    // Point2dC aa(second - *this);   // O'Rourke 1.2
+    // Point2dC bb(third  - *this);
+    // return aa[0]*bb[1] - aa[1]*bb[0];
+    template<typename RealT>
+    constexpr RealT triangleArea2(const Point<RealT,2>& first,const Point<RealT,2>& second, const Point<RealT,2>& third) {
+      return (second[0] - first[0]) * (third[1] - first[1]) - (second[1] - first[1]) * (third[0] - first[0]);
+    }
+
+    using xt::linalg::dot;
+
+    template<typename RealT>
+    RealT cross(const Point<RealT,2> &a,const Point<RealT,2> &b)
+    { return a[0] * b[1] - a[1] * b[0]; }
+
+
+  //! Convert a point to the closest integer index
+    template<typename RealT,unsigned N>
+    requires std::is_floating_point<RealT>::value
+    constexpr inline Index<N> toIndex(const Point<RealT,N> &pnt)
+    {
+      Index<N> ret;
+      for(unsigned i = 0; i < N; i++) {
+        ret[i] = int_round(pnt[i]);
+      }
+      return ret;
+    }
+
+  template<typename RealT,unsigned N>
+  requires std::is_integral<RealT>::value
+  constexpr inline Index<N> toIndex(const Point<RealT,N> &pnt)
+  {
+    Index<N> ret;
+    for(unsigned i = 0; i < N; i++) {
+      ret[i] = pnt[i];
+    }
+    return ret;
+  }
+
+
+  //! Convert an index to a point
+  template<typename RealT,unsigned N>
+  constexpr inline Point<RealT,N> toPoint(const Index<N> &idx)
+  {
+    Point<RealT,N> ret;
+    for(unsigned i = 0; i < N; i++) {
+      ret[i] = RealT(idx[i]);
+    }
+    return ret;
+  }
+
+  //! Convert a parameter list of RealT to a point
+  template<typename RealT ,typename ...DataT,unsigned N = sizeof...(DataT)>
+  constexpr inline Point<RealT,N> toPoint(DataT ...data)
+  {
+    return Point<RealT,N>({RealT(data)...});
+  }
+
+  //! Convert a parameter list of RealT to a point
+  template<typename RealT ,typename ...DataT,unsigned N = sizeof...(DataT)>
+  constexpr inline Vector<RealT,N> toVector(DataT ...data)
+  {
+    return Point<RealT,N>({RealT(data)...});
+  }
+
+
+
+
 }
 
 #if !USE_OPENCV

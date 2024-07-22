@@ -4,16 +4,10 @@
 // General Public License (LGPL). See the lgpl.licence file for details or
 // see http://www.gnu.org/copyleft/lesser.html
 // file-header-ends-here
-#ifndef RAVLIMAGE_DRAWLINE_HEADER
-#define RAVLIMAGE_DRAWLINE_HEADER 1
-///////////////////////////////////////////////////////////////////
-//! rcsid="$Id$"
 //! author="Charles Galambos"
 //! date="22/04/2002"
-//! docentry="Ravl.API.Images.Drawing"
-//! lib=RavlImage
-//! userlevel=Normal
-//! file="Ravl/Image/Base/DrawLine.hh"
+
+#pragma once
 
 #include "Ravl2/Array.hh"
 #include "Ravl2/Geometry/Line2dIter.hh"
@@ -22,20 +16,29 @@
 namespace Ravl2 {
 
   //! Draw a line in an image.
-  template<class DataT,typename CoordTypeT>
-  void DrawLine(ArrayAccess<DataT,2> &Dat,const DataT &Value,const LinePP2dC<CoordTypeT> &Line)
+  template<typename ArrayT,typename CoordTypeT, typename DataT = ArrayT::ValueT,unsigned N=ArrayT::dimensions>
+  requires WindowedArray<ArrayT,DataT,N>
+  void DrawLine(ArrayT Dat,const DataT &Value,const LinePP2dC<CoordTypeT> &aLine)
   {
-    LinePP2dC line = Line;
-    if (line.ClipBy(Dat.Frame()))
-      for(Line2dIterC it(line.P1(),line.P2());it;it++)
-        Dat[*it] = Value;
-    return ;
+    LinePP2dC<CoordTypeT> line = aLine;
+    if (!line.clipBy(toRange<CoordTypeT>(Dat.range())))
+      return;
+    for(Line2dIterC it(toIndex<CoordTypeT,2>(line.P1()), toIndex<CoordTypeT,2>(line.P2()));it;it++)
+      Dat[*it] = Value;
   }
 
   //! Draw a line in an image.
-  template<class DataT,typename CoordTypeT = float>
-  void DrawLine(ArrayAccess<DataT,2> &Dat,const DataT &Value,const Index<2> &From,const Index<2> &To) {
-    DrawLine(Dat, Value, LinePP2dC<CoordTypeT>(From,To));
+  template<typename ArrayT, typename DataT = ArrayT::ValueT,unsigned N=ArrayT::dimensions>
+  requires WindowedArray<ArrayT,DataT,N>
+  void DrawLine(ArrayT Dat,const DataT &Value,const Index<2> &From,const Index<2> &To) {
+    if(Dat.range().contains(From) && Dat.range().contains(To)) {
+      // If both start and end are inside the image, all pixels in between are.
+      for(Line2dIterC it(From,To);it;++it) {
+        Dat[*it] = Value;
+      }
+      return;
+    }
+    DrawLine(Dat, Value, LinePP2dC<float>(toPoint<float>(From),toPoint<float>(To)));
   }
 
   //! Draw a line in an image, shaded between two colours <code>valuefrom</code> and <code>valueto</code>
@@ -44,7 +47,7 @@ namespace Ravl2 {
   void DrawLine(Array<DataT,2> &Dat,const DataT &ValueFrom,const DataT &ValueTo,const LinePP2dC<CoordTypeT> &Line) {
     LinePP2dC line = Line;
     Range<CoordTypeT,2> frame(Dat.Frame().TRow(),Dat.Frame().BRow(),Dat.Frame().LCol(),Dat.Frame().RCol());
-    if (line.ClipBy(frame)) {
+    if (line.clipBy(frame)) {
       CoordTypeT length = line.Length();
       // If both start and end are inside the image, all pixels in between are.
       for(Line2dIterC it(line.P1(),line.P2());it;it++) {
@@ -63,4 +66,3 @@ namespace Ravl2 {
   }
 }
 
-#endif

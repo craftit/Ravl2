@@ -85,7 +85,7 @@ TEST(Geometry, CircleIter)
       maxDist = diff;
     //cout << it.Data() << std::endl;
   }
-  SPDLOG_INFO("Points:{} Largest error:{}", i, maxDist);
+  //SPDLOG_INFO("Points:{} Largest error:{}", i, maxDist);
   EXPECT_EQ(i,112);
 }
 

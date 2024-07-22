@@ -7,6 +7,8 @@
 //! author="Charles Galambos"
 //! date="8/8/2002"
 
+#pragma once
+
 #include <numbers>
 #include "Ravl2/Array.hh"
 #include "Ravl2/Geometry/Geometry.hh"
@@ -38,23 +40,40 @@ namespace Ravl2
   }
 
   //! Draw a filled circle in an image from real floating point coordinates.
-  template<class DataT>
-  void DrawCircle(ArrayAccess<DataT,2> &dat,const DataT &value,const Point<float,2> &center,float radius,bool filled) {
+  template<class DataT,typename CoordT = float>
+  void DrawFilledCircle(ArrayAccess<DataT,2> &dat,const DataT &value,const Point<CoordT,2> &center,CoordT radius) {
     if(radius <= 1.0f) { // Very small ?
       Index<2> at({int_round(center[0]), int_round(center[1])});
       if(dat.Frame().Contains(at))
         dat[at] = value;
       return ;
     }
-    auto step = std::numbers::pi_v<float>/(radius+2.0f);
-    Polygon2dC poly;
+    auto step = std::numbers::pi_v<CoordT>/(radius+2.0f);
+    Polygon2dC<CoordT> poly;
     Circle2dC<float> circle(center,radius);
-    for(RealT a = 0;a < 2.0f*std::numbers::pi_v<float>;a += step)
+    for(RealT a = 0;a < 2.0f*std::numbers::pi_v<CoordT>;a += step)
       poly.push_back(circle.Value(a));
     // Fill in...
-    DrawPolygon(dat,value,poly,filled);
+    DrawFilledPolygon(dat,value,poly);
+  }
+
+  //! Draw a filled circle in an image from real floating point coordinates.
+  template<class DataT,typename CoordT = float>
+  void DrawCircle(ArrayAccess<DataT,2> &dat,const DataT &value,const Point<CoordT,2> &center,CoordT radius) {
+    if(radius <= 1.0f) { // Very small ?
+      Index<2> at = toIndex(center);
+      if(dat.range().contains(at))
+        dat[at] = value;
+      return ;
+    }
+    auto step = std::numbers::pi_v<CoordT>/(radius+CoordT(2.0));
+    Polygon2dC<CoordT> poly;
+    Circle2dC<float> circle(center,radius);
+    for(RealT a = 0;a < 2.0f*std::numbers::pi_v<CoordT>;a += step)
+      poly.push_back(circle.Value(a));
+    // Fill in...
+    DrawPolygon(dat,value,poly);
   }
 
 }
 
-#endif

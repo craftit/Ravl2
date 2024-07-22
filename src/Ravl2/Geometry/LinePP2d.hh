@@ -47,88 +47,94 @@ namespace Ravl2
     static LinePP2dC<RealT> fromStartAndDirection(const Point<RealT,2> &start,const Vector<RealT,2> &direction)
     { return {start,start + direction}; }
 
-    bool ClipBy(const Range<RealT,2> &Rng);
+    bool clipBy(const Range<RealT,2> &Rng);
     //: Clip line by given rectangle.
     // If no part of the line is in the rectangle:<ul>
     // <li>line is <i>not</i> clipped</li>
     // <li>method returns <code>false</code></li></ul>
-    
-    bool IsPointToRight(const Point<RealT,2>& Pt) const
-    { return Pt.Area2(this->P1(),this->P2()) < 0; }
+
+    [[nodiscard]] bool IsPointToRight(const Point<RealT,2>& Pt) const
+    { return triangleArea2(Pt,this->P1(),this->P2()) < 0; }
     //: Checks if this point is to the right of the line
-    
-    bool IsPointToRightOn(const Point<RealT,2>& Pt) const 
-    { return Pt.Area2(this->P1(),this->P2()) <= 0; }
+
+    [[nodiscard]] bool IsPointToRightOn(const Point<RealT,2>& Pt) const
+    { return triangleArea2(Pt,this->P1(),this->P2()) <= 0; }
     //: Checks if this point is to the right of, or exactly on the line
-    
-    bool IsPointOn(const Point<RealT,2>& Pt) const
-    { return Pt.Area2(this->P1(),this->P2()) == 0; }
+
+    [[nodiscard]] bool IsPointOn(const Point<RealT,2>& Pt) const
+    { return triangleArea2(Pt,this->P1(),this->P2()) == 0; }
     //: Checks if this point is exactly on the line
 
-    bool IsPointIn(const Point<RealT,2>& Pt) const;
+    [[nodiscard]] bool IsPointIn(const Point<RealT,2>& Pt) const;
     //: Checks if this point is exactly on the closed segment
-    
-    RealT ParIntersection(const LinePP2dC & L) const;
+
+    [[nodiscard]] RealT ParIntersection(const LinePP2dC & L) const;
     //: Returns the parameter of the intersection point of 'l' with this line.
     // If the parameter is equal to 0, the intersection is the starting
     // point of this line, if the parameter is 1, the intersection is the
     // end point. If the parameter is between 0 and 1 the intersection is
     // inside of this line segment.
 
-    bool HasInnerIntersection(const LinePP2dC & L) const;
+    [[nodiscard]] bool HasInnerIntersection(const LinePP2dC & L) const;
     // Returns true if the intersection of this line segment and the 
     // line 'l' is either inside of this line segment or one of the end points.
- 
-    Point<RealT,2> Intersection(const LinePP2dC & L) const;
+
+    [[nodiscard]] Point<RealT,2> Intersection(const LinePP2dC & L) const;
     // Returns the intersection of 2 lines.
 
-    bool Intersection(const LinePP2dC & L, Point<RealT,2>& Here) const;
+    [[nodiscard]] bool Intersection(const LinePP2dC & L, Point<RealT,2>& Here) const;
     //: Calculate the intersection point between this line and l
     //!param: l - another line
     //!param: here - the point of intersection
     //!return: true if the lines intersect or false if they are parallel
-    
-    bool IntersectRow(RealT Row,RealT &Col) const;
+
+    [[nodiscard]] bool IntersectRow(RealT Row,RealT &Col) const;
     //: Find the column position which intersects the given row.
     //!param: row - Row for which we want to find the intersecting column
     //!param: col - Place to store the intersecting col.
     //!return: True if position exists, false if there is no intersection
-    
-    RealT Angle() const {
-      Vector<RealT,2> dir = this->P2() - this->P1();
+
+    [[nodiscard]] RealT Angle() const {
+      auto dir = this->P2() - this->P1();
       return std::atan2(dir[1],dir[0]);
     }
     //: Return the direction of the line.
 
-    Vector<RealT,2> Normal() const
-    { return Vector<RealT,2>(this->point[1][1]-this->point[0][1],this->point[0][0]-this->point[1][0]); }
+    [[nodiscard]] Vector<RealT,2> Normal() const
+    { return toVector<RealT>(this->point[1][1]-this->point[0][1],this->point[0][0]-this->point[1][0]); }
     //: Returns the normal of the line.
-    
-    Vector<RealT,2> UnitNormal() const
+
+    [[nodiscard]] Vector<RealT,2> UnitNormal() const
     { 
-      Vector<RealT,2> normal = Normal();
-      return normal / normal.Magnitude();
+      auto normal = this->Normal();
+      return normal / xt::linalg::norm(normal,2);
     }
     //: Returns the normal of the line normalized to have unit size.
-    
-    RealT SignedDistance(const Point<RealT,2> Pt) const
-    { return Vector<RealT,2>(this->Vector()).Cross(Vector<RealT,2>(Pt-this->P1()))/this->Length(); }
+
+    [[nodiscard]] RealT SignedDistance(const Point<RealT,2> Pt) const
+    {
+      auto dir = this->direction();
+      return cross<RealT>(dir,Pt - this->P1())/xt::linalg::norm(dir,2);
+    }
     //: Returns signed perpendicular distance of pt from this line
-    
-    RealT Distance(const Point<RealT,2> Pt) const
-    { return Abs(SignedDistance(Pt)); }
+
+    [[nodiscard]] RealT Distance(const Point<RealT,2> Pt) const
+    { return std::abs(SignedDistance(Pt)); }
     //: Return unsigned perpendicular distance of pt from this line
 
-    Point<RealT,2> Projection(const Point<RealT,2> & Pt) const
+    [[nodiscard]] Point<RealT,2> Projection(const Point<RealT,2> & Pt) const
     { 
-      return Point<RealT,2>(ParClosest(Pt));
+      return Point<RealT,2>(this->ParClosest(Pt));
     }
     //: Returns intersection of line with perpendicular from Pt to line
-    
-    RealT DistanceWithin(const Point<RealT,2> & pt) const;
+
+    [[nodiscard]] RealT DistanceWithin(const Point<RealT,2> & pt) const;
     //: Returns distance of pt to nearest point on the line within the segment limits 
 
   };
-  
+
+  extern template class LinePP2dC<double>;
+  extern template class LinePP2dC<float>;
+
 }
 

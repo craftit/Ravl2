@@ -116,7 +116,7 @@ namespace Ravl2
 
     //! Get the direction of the line segment as a free vector.
     //! The magnitude of the vector is the length of the line segment.
-    //! This was called 'direction()' in the original code.
+    //! This was called 'Vector()' in the original code.
     Vector<RealT,N> direction() const
     { return point[1] - point[0]; }
 
@@ -138,7 +138,7 @@ namespace Ravl2
 
     //! Returns the length of the line in euclidian space.
     RealT Length() const
-    { return point[0].EuclidDistance(point[1]); }
+    { return euclidDistance(point[0],point[1]); }
 
     //! Returns the point of the line: FirstPoint() + t * direction().
     Point<RealT,N> PointAt(const RealT t) const
@@ -148,9 +148,9 @@ namespace Ravl2
     // Where 0 is at the start point and 1 is at the end.
     RealT ParClosest(const Point<RealT,N> &pnt) const {
       auto v = direction();
-      RealT l2 = v.SumOfSqr();
+      RealT l2 = sqr(v[0]) + sqr(v[1]);
       if (l2 == 0.0) throw std::underflow_error("FLinePPC::ParClosest(): Cannot find line parameter for zero-length line");
-      return v.dot(pnt - point[0]) / l2;
+      return dot(v,pnt - point[0])() / l2;
     }
 
   protected:

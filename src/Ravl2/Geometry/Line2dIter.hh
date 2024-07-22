@@ -30,8 +30,9 @@ namespace Ravl2
     Line2dIterC(const Index<2> &start,const Index<2> &end);
     //: Constructor.
 
-    Line2dIterC(const LinePP2dC &line)
-    { *this = Line2dIterC(line.P1(), line.P2()); }
+    template<class RealT>
+    Line2dIterC(const LinePP2dC<RealT> &line)
+     : Line2dIterC(toIndex(line.P1()), toIndex(line.P2())) {}
     //: Constructor.
     
     void First(const Index<2> &start,const Index<2> &end);
@@ -51,7 +52,11 @@ namespace Ravl2
     void operator++(int)
     { Next(); }
     //: Goto next point on line.
-    
+
+    void operator++()
+    { Next(); }
+    //: Goto next point on line.
+
     Index<2> Data() const
     { return Index<2>(x,y); }
     //: Access position.

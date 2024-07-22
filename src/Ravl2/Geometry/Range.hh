@@ -408,7 +408,7 @@ namespace Ravl2
 
     inline Range & ClipBy(const Range & r) {
       for (int i = 0; i < N; ++i) {
-        ranges[i].ClipBy(r.Range1());
+        ranges[i].clipBy(r.Range1());
       }
       return *this;
     }
@@ -472,11 +472,11 @@ namespace Ravl2
     }
     //: Shifts the rectangle to the new position.
     
-    [[nodiscard]] inline const Range<RealT,N> & range(unsigned d) const
+    [[nodiscard]] inline const Range<RealT,1> & range(unsigned d) const
     { return ranges[d]; }
     //: Access row range.
 
-    [[nodiscard]] inline Range<RealT,N> & range(unsigned d)
+    [[nodiscard]] inline Range<RealT,1> & range(unsigned d)
     { return ranges[d]; }
     //: Access row range.
 
@@ -615,6 +615,39 @@ namespace Ravl2
   void Range<RealT,N>::Involve(const Vector<RealT,N> & index) {
     for(unsigned i = 0; i < N; i++)
       ranges[i].Involve(index[i]);
+  }
+
+  template<typename RealT,unsigned N>
+  inline
+  Range<RealT,N> toRange(const IndexRange<N> &ir) {
+    Range<RealT,N> ret;
+    for(unsigned i = 0; i < N; i++)
+      ret[i] = toRange<RealT>(ir[i]);
+    return ret;
+  }
+
+  template<typename RealT>
+  inline
+  Range<RealT,1> toRange(IndexRange<1> ir)
+  {
+    return Range<RealT,1>(RealT(ir.min()),RealT(ir.max()+1));
+  }
+
+  template<typename RealT,unsigned N>
+  inline
+  IndexRange<N> toIndexRange(const Range<RealT,N> &ir)
+  {
+    IndexRange<N> ret;
+    for(unsigned i = 0; i < N; i++)
+      ret[i] = toIndexRange(ir[i]);
+    return ret;
+  }
+
+  template<typename RealT>
+  inline
+  IndexRange<1> toIndexRange(Range<RealT,1> ir)
+  {
+    return IndexRange<1>(int_floor(ir.min()),int_ceil(ir.max()));
   }
 
 }
