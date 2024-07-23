@@ -3,6 +3,15 @@ cmake_minimum_required (VERSION 3.20)
 project (Ravl2)
 
 include(FetchContent)
+
+FetchContent_Declare(
+        xtensor
+        GIT_REPOSITORY https://github.com/xtensor-stack/xtensor.git
+        GIT_TAG        8c0a484f04eccd0dbc0e25eb58a97de000fb048b
+        FIND_PACKAGE_ARGS
+)
+FetchContent_MakeAvailable(xtensor)
+
 FetchContent_Declare(
         xtensor-blas
         GIT_REPOSITORY https://github.com/xtensor-stack/xtensor-blas.git
