@@ -1,4 +1,9 @@
 
+// Test program to bench mark the relative speed of different ways of accessing
+// elements in a 2D array.  The test is to convolve a 128x128 image with a 16x16
+// kernel.  The kernel is a simple square with the value of the element being
+// the square of the difference between the row and column index.  The image is
+
 #include <chrono>
 #include <iostream>
 
@@ -111,9 +116,9 @@ void SSEConvolveKernelF(const float *vi, // Scanned image, probably not aligned.
 #endif
 
 void ConvolveKernelPtr(const float *matrix,
-                            const float *kernel,
-                            size_t rows,size_t cols,
-                            int matrixByteStride,float *result)
+		       const float *kernel,
+		       size_t rows, size_t cols,
+		       int matrixStride, float *result)
 {
   float ret = 0;
   const float *vi = matrix;
@@ -122,7 +127,7 @@ void ConvolveKernelPtr(const float *matrix,
     const float *vir = vi;
     for(size_t j = 0;j < cols;j++)
       ret += *(vk++) * *(vir++);
-    vi += matrixByteStride;
+    vi += matrixStride;
   }
   *result = ret;
 }

@@ -14,7 +14,6 @@
 
 namespace Ravl2
 {
-
   //! Circle in 2-D space.
 
   template<typename RealT>

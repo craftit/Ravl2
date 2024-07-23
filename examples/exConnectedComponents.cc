@@ -4,22 +4,13 @@
 // General Public License (LGPL). See the lgpl.licence file for details or
 // see http://www.gnu.org/copyleft/lesser.html
 // file-header-ends-here
-///////////////////////////////////////////////////////
-//! lib=RavlImageProc
-//! file="Ravl/Image/Processing/Segmentation/exConnectedComponents.cc"
 //! author="Lee Gregory"
-//! docentry="Ravl.API.Images.Segmentation"
-//! rcsid="$Id$
 
-#include "Ravl/Image/ConnectedComponents.hh"
-#include "Ravl/Option.hh" 
-#include "Ravl/IO.hh"
-
-using namespace RavlN ; 
-using namespace RavlImageN ; 
+#include "Ravl2/Image/ConnectedComponents.hh"
 
 int main (int argc, char ** argv) 
 {
+  using namespace Ravl2;
 
   // get some options 
   OptionC opts ( argc,argv) ; 

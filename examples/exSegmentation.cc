@@ -9,8 +9,7 @@
 //! lib=RavlImageProc
 //! file="Ravl/Image/Processing/Segmentation/exSegmentation.cc"
 
-#include "Ravl/Option.hh"
-#include "Ravl/Image/Image.hh"
+#include "Ravl2/Array.hh"
 
 #include "Ravl/Image/RegionSet.hh"
 #include "Ravl/Image/RegionGrow.hh"
