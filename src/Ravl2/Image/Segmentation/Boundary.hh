@@ -9,6 +9,8 @@
 
 #pragma once
 
+#include <array>
+#include <unordered_map>
 #include "Ravl2/Array.hh"
 #include "Ravl2/Image/Segmentation/Crack.hh"
 #include "Ravl2/Image/Array2Sqr2Iter.hh"
@@ -35,76 +37,32 @@ namespace Ravl2
     //! Create the boundary from the list of edges with an appropriate orientation.
     // The 'edgeList' will be a part of boundary.  If orient is true, the object
     // is on the left of the boundary.
-    BoundaryC(const std::vector<CrackC> & edgeList, bool orient = true)
+    explicit BoundaryC(const std::vector<CrackC> & edgeList, bool orient = true)
      : orientation(orient), mEdges(edgeList)
+    {}
+
+    //! Create the boundary from the list of edges with an appropriate orientation.
+    // The 'edgeList' will be a part of boundary.  If orient is true, the object
+    // is on the left of the boundary.
+    explicit BoundaryC(std::vector<CrackC> && edgeList, bool orient = true)
+      : orientation(orient), mEdges(std::move(edgeList))
     {}
 
     //! Empty boundary with orientation 'orient'.
     //! If orient is true, the object is on the left of the boundary.
-    BoundaryC(bool orient = true)
+    explicit BoundaryC(bool orient = true)
       : orientation(orient)
     {}
 
     //! Creates an unsorted list of boundary elements (CrackC) from the edges between 'inLabel' pixels and other values
     template<typename PixelT>
-    BoundaryC(const Array<PixelT,2> &emask,PixelT inLabel)
-      : orientation(false)
-    {
-      if(emask.Frame().Rows() < 3 || emask.Frame().Cols() < 3) {
-        std::cerr << "RegionMaskBodyC::Boundary(), Mask too small to compute boundary. \n";
-        return;
-      }
-      mEdges.reserve((emask.range(0).size() + emask.range(1).size())*2);
-      for(Array2dSqr2IterC<PixelT> it(emask);it;it++) {
-        if(it.DataBR() == inLabel) {
-          if(it.DataTR() != inLabel)
-            mEdges.emplace_back(it.Index(),CrackCodeT::CR_LEFT);
-          if(it.DataBL() != inLabel)
-            mEdges.emplace_back(it.Index(),CrackCodeT::CR_DOWN);
-        } else {
-          if(it.DataTR() == inLabel)
-            mEdges.emplace_back(it.Index()+Index<2>({-1,0}),CrackCodeT::CR_RIGHT);
-          if(it.DataBL() == inLabel)
-            mEdges.emplace_back(it.Index()+Index<2>({0,-1}),CrackCodeT::CR_UP);
-        }
-      }
-    }
+    BoundaryC(const Array<PixelT,2> &emask,PixelT inLabel);
 
-
-    //: Creates an unsorted list of boundary elements (CrackC) from the edges between 'inLabel' pixels and other values
-    // <code>emask</code> could be for example the image returned by the
-    // <code><a href= "RavlImageN.SegmentationC.html#SegMapObvoidCb">
-    // SegmentationC::SegMap()</a> method.
-
-    template<typename PixelT>
-    static BoundaryC trace(const Array<PixelT,2> &emask,PixelT inLabel)
-    {
-      if(emask.Frame().Rows() < 3 || emask.Frame().Cols() < 3) {
-        std::cerr << "RegionMaskBodyC::Boundary(), Mask too small to compute boundary. \n";
-        return BoundaryC();
-      }
-      std::vector<CrackC> edges;
-      for(Array2dSqr3IterC<Uint> it(emask);it;it++) {
-        if(it.DataMM() != (Uint)inLabel)
-          continue;
-        if(it.DataMR() != (Uint)inLabel)
-          InsLast(CrackC(it.Index(),CR_UP));
-        if(it.DataML() != (Uint)inLabel)
-          InsLast(CrackC(it.Index(),CR_DOWN));
-        if(it.DataTM() != (Uint)inLabel)
-          InsLast(CrackC(it.Index(),CR_LEFT));
-        if(it.DataBM() != (Uint)inLabel)
-          InsLast(CrackC(it.Index(),CR_RIGHT));
-      }
-      return BoundaryC(edges,false);
-    }
-
-
-    BoundaryC(const DListC<DLIterC<CrackC> > & edgeList, bool orient = true);
+    //BoundaryC(const DListC<DLIterC<CrackC> > & edgeList, bool orient = true);
     //: Creates the boundary from the list of pointers to the elementary edges.
     // If orient is true, the object is on the left of the boundary.
     
-    BoundaryC(const IndexRange<2> & rect,bool asHole = true);
+    explicit BoundaryC(const IndexRange<2> & rect,bool asHole = true);
     //: The boundary of the rectangle.
     // The boundary goes clockwise around the rectangle. If asHole is true, 
     // then the rectangle is 'outside' the region. otherwise its inside. 
@@ -114,14 +72,14 @@ namespace Ravl2
     // Note: The area of the region can be negative, if it is a 'hole' in
     // a plane. This can be inverted with the BReverse() method.
     
-    DListC<BoundaryC> OrderEdges() const;
+    std::vector<BoundaryC> OrderEdges() const;
     //: Generate a list of boundaries.
     // Each item in the list corresponds to a single complete boundary contour.<br>
     // The edges in each boundary are ordered along the boundary.<br> 
     // The direction of the boundaries is determined by the constructor.<br>
     // Boundaries that terminate at the edge of the array/image are left open.
     
-    DListC<BoundaryC> Order(const CrackC & firstCrack, bool orient = true);
+    std::vector<BoundaryC> Order(const CrackC & firstCrack, bool orient = true);
     //!deprecated: Order boundary from edge. <br> Order the edgels of this boundary such that it can be traced continuously along the direction of the first edge. The orientation of the boundary is set according to 'orient'. If the boundary is open, 'firstCrack' and 'orient' are ignored.<br>  Note: There is a bug in this code which can cause an infinite loop for some edge patterns. In particular where the two edges go through the same vertex.
     
     bool Orient() const
@@ -137,7 +95,7 @@ namespace Ravl2
     BoundaryC & BReverse();
     //: Reverse the order of the edges.
     
-    DListC<DLIterC<CrackC> > ConvexHull() const;
+    std::vector<std::vector<CrackC> > ConvexHull() const;
     //: Compute the convex hull.
     // The convex hull is created from the original Jordan boundary using
     // Melkman's method.
@@ -154,24 +112,31 @@ namespace Ravl2
     //!param: bHalfPixelOffset - should (-0.5,-0.5) be added to the polygon points?
     // This assumes 'bnd' is a single ordered boundry (See BoundryC::OrderEdges();). 
     // Straight edges are compressed into a single segment.
-    
-  private:s
+
+    //! Get number of endges in the boundry
+    [[nodiscard]] auto size() const
+    { return mEdges.size(); }
+
+    //! Check if the boundary is empty.
+    [[nodiscard]] bool IsEmpty() const
+    { return mEdges.empty(); }
+  private:
     //! Orientation of the boundary. true means that
     //! an object is on the left side of edges.
     bool orientation = true;
 
     std::vector<CrackC> mEdges;
 
-    RCHashC<BVertexC, PairC<BVertexC> > CreateHashtable() const;
+    std::unordered_map<BVertexC, std::array<BVertexC,2> > CreateHashtable() const;
     // Returns the hash table for the boundary; all end points which are only
     // connected to one other point will have at least one invalid
     // neighbour (-1, -1).
 
-    BoundaryC OrderContinuous(const RCHashC<BVertexC, PairC<BVertexC> > & hashtable, const CrackC & firstCrack, bool orient) const;
+    BoundaryC OrderContinuous(const std::unordered_map<BVertexC, std::array<BVertexC,2> > & hashtable, const CrackC & firstCrack, bool orient) const;
     // Returns a continuous boundary; if the boundary is open, 'orient' will be 
     // ignored and 'firstCrack' must be one of the end points of the boundary.
     
-    DListC<BVertexC> FindEndpoints(const RCHashC<BVertexC, PairC<BVertexC> > & hashtable) const;
+    std::vector<BVertexC> FindEndpoints(const std::unordered_map<BVertexC, std::array<BVertexC,2> > & hashtable) const;
     // Returns the endpoints of the boundary, i.e. if the boundary is closed,
     // the list will be empty.
   };

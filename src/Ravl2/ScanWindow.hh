@@ -95,15 +95,11 @@ namespace Ravl2
 
     //! Get the window area we're scanning over.
     [[nodiscard]] const IndexRange<N> &scanArea() const
-    {
-      return mArea;
-    }
+    { return mArea; }
 
     //! Move to the next window position.
     void operator++()
-    {
-      ++mAt;
-    }
+    { ++mAt; }
 
     //! Next element, return true if we're on the same row.
     bool next()

@@ -24,9 +24,10 @@ namespace Ravl2
   class Array2dSqr2Iter2C
   {
   public:
-    Array2dSqr2Iter2C() = default;
     //: Default constructor.
+    Array2dSqr2Iter2C() = default;
 
+    //: Constructor.
     template<typename Array1T, typename Array2T>
     requires WindowedArray<Array1T,Data1T,2> && WindowedArray<Array2T,Data2T,2>
     Array2dSqr2Iter2C(const Array1T &array1,const Array2T &array2)
@@ -39,33 +40,34 @@ namespace Ravl2
 			    });
       assert(!range1.empty());
       assert(!range2.empty());
-      cit = ArrayIterZip<2,Data1T,Data2T>(array1,array2);
-      up1 = &(this->cit.data1()) - cit.strides1()[0];
-      up2 = &(this->cit.data2()) - cit.strides2()[0];
+      auto access1 = clip(array1,range1);
+      auto access2 = clip(array2,range2);
+      cit = ArrayIterZipN<2,Data1T,Data2T>(access1,access2);
+      up1 = &(this->cit.template data<0>()) - cit.template strides<0>()[0];
+      up2 = &(this->cit.template data<1>()) - cit.template strides<1>()[0];
     }
-    //: Constructor.
 
-    bool Next() { 
+    //! Goto next element.
+    // Return true if pixel is on the same row.
+    bool Next() {
       up1++;
       up2++;
       if(!this->cit.next())
       {
-	up1 = &(this->cit.data1()) - cit.strides1()[0];
-	up2 = &(this->cit.data2()) - cit.strides2()[0];
+	up1 = &(this->cit.template data<0>()) - cit.template strides<0>()[0];
+	up2 = &(this->cit.template data<1>()) - cit.template strides<1>()[0];
 	return false;
       }
       return true;
     }
-    //: Goto next element.
-    // Return true if pixel is on the same row.
-    
-    bool IsElm() const
+
+    //! Test if iterator is at a valid element.
+    [[nodiscard]] bool IsElm() const
     { return this->cit.valid(); }
-    //: Test if iterator is at a valid element.
-    
+
+    //! Test if iterator is at a valid element.
     operator bool() const
     { return this->cit.valid(); }
-    //: Test if iterator is at a valid element.
 
     [[nodiscard]] bool valid() const
     { return this->cit.valid(); }
@@ -77,75 +79,75 @@ namespace Ravl2
     void operator++(int) 
     { Next(); }
     //: Goto next element.
-    
-    Data1T &DataBR1() 
-    { return this->cit.data1(); }
+
+    [[nodiscard]] Data1T &DataBR1()
+    { return this->cit.template data<0>(); }
     //: Access bottom right data element 
 
-    const Data1T &DataBR1() const
-    { return this->cit.data1(); }
+    [[nodiscard]] const Data1T &DataBR1() const
+    { return this->cit.template data<0>(); }
     //: Access bottom right data element 
 
-    Data1T &DataBL1() 
-    { return this->cit.dataPtr1()[-1]; }
+    [[nodiscard]] Data1T &DataBL1()
+    { return this->cit.template dataPtr<0>()[-1]; }
     //: Access bottom left data element 
 
-    const Data1T &DataBL1() const
-    { return this->cit.dataPtr1()[-1]; }
+    [[nodiscard]] const Data1T &DataBL1() const
+    { return this->cit.template dataPtr<0>()[-1]; }
     //: Access bottom left data element 
-    
-    Data1T &DataTR1() 
+
+    [[nodiscard]] Data1T &DataTR1()
     { return *up1; }
     //: Access upper right data element 
-    
-    const Data1T &DataTR1() const
+
+    [[nodiscard]] const Data1T &DataTR1() const
     { return *up1; }
     //: Access upper right data element
-    
-    Data1T &DataTL1() 
+
+    [[nodiscard]] Data1T &DataTL1()
     { return up1[-1]; }
     //: Access upper left data element.
-    
-    const Data1T &DataTL1() const
+
+    [[nodiscard]] const Data1T &DataTL1() const
     { return up1[-1]; }
     //: Access upper left data element
-    
-    Data2T &DataBR2() 
-    { return this->cit.data2(); }
+
+    [[nodiscard]] Data2T &DataBR2()
+    { return this->cit.template data<1>(); }
     //: Access bottom right data element 
 
-    const Data2T &DataBR2() const
-    { return this->cit.data2(); }
+    [[nodiscard]] const Data2T &DataBR2() const
+    { return this->cit.template data<1>(); }
     //: Access bottom right data element 
 
-    Data2T &DataBL2() 
-    { return this->cit.dataPtr2()[-1]; }
+    [[nodiscard]] Data2T &DataBL2()
+    { return this->cit.template dataPtr<1>()[-1]; }
     //: Access bottom left data element 
 
-    const Data2T &DataBL2() const
-    { return this->cit.dataPtr2()[-1]; }
+    [[nodiscard]] const Data2T &DataBL2() const
+    { return this->cit.template dataPtr<1>()[-1]; }
     //: Access bottom left data element 
-    
-    Data2T &DataTR2() 
+
+    [[nodiscard]] Data2T &DataTR2()
     { return *up2; }
     //: Access upper right data element 
-    
-    const Data2T &DataTR2() const
+
+    [[nodiscard]] const Data2T &DataTR2() const
     { return *up2; }
     //: Access upper right data element
-    
-    Data2T &DataTL2() 
+
+    [[nodiscard]] Data2T &DataTL2()
     { return up2[-1]; }
     //: Access upper left data element.
-    
-    const Data2T &DataTL2() const
+
+    [[nodiscard]] const Data2T &DataTL2() const
     { return up2[-1]; }
     //: Access upper left data element
 
   protected:
     IndexRange<2> range1;
     IndexRange<2> range2;
-    ArrayIterZip<2,Data1T,Data2T> cit;
+    ArrayIterZipN<2,Data1T,Data2T> cit;
     Data1T *up1;
     Data2T *up2;
   };

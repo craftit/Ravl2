@@ -151,8 +151,10 @@ Ravl2::Array<float,2> ConvolveKernelView(const Ravl2::Array<float,2> &matrix,
     Ravl2::IndexRange<2> rng = kernel.range() + si;
     auto view = matrix.access(rng);
     float sum = 0;
-    for(auto it = Ravl2::zipArrayIter(kernel,view);!it.done();++it) {
-      sum += it.data1() * it.data2();
+    for(auto it = Ravl2::begin<2>(kernel,view);it.valid();) {
+      do {
+	sum += it.data<0>() * it.data<1>();
+      } while(it.next());
     }
     result[si] = sum;
   }
@@ -169,8 +171,8 @@ Ravl2::Array<float,2> ConvolveKernelScanZip(const Ravl2::Array<float,2> &matrix,
   for(;!scan.done();++scan,++scanIter) {
     float sum = 0;
     auto window = scan.window();
-    for(auto it = Ravl2::zipArrayIter(kernel,window);!it.done();++it) {
-      sum += it.data1() * it.data2();
+    for(auto it = Ravl2::begin<2>(kernel,window);it.valid();++it) {
+      sum += it.data<0>() * it.data<1>();
     }
     result[*scanIter] = sum;
   }
@@ -188,10 +190,10 @@ Ravl2::Array<float,2> ConvolveKernelScanZipRow(const Ravl2::Array<float,2> &matr
     do {
       float sum = 0;
       auto window = scan.window();
-      for(auto it = zipArrayIter(kernel, window); !it.done();) {
+      for(auto it = Ravl2::begin<2>(kernel, window); it.valid();) {
 	// This is a bit faster than the for loop.
 	do {
-	  sum += it.data1() * it.data2();
+	  sum += it.data<0>() * it.data<1>();
 	} while(it.next());
       }
       result[*scanIter] = sum;
@@ -463,7 +465,7 @@ int testPlainAccess()
     }
     steady_clock::time_point t2 = steady_clock::now();
     duration<double> time_span = duration_cast<duration<double>>(t2 - t1);
-    std::cout << "Scan    took " << time_span.count() << " seconds  to sum " << theSum << std::endl;
+    std::cout << "ScanZip    took " << time_span.count() << " seconds  to sum " << theSum << std::endl;
   }
 
   {
@@ -476,7 +478,7 @@ int testPlainAccess()
     }
     steady_clock::time_point t2 = steady_clock::now();
     duration<double> time_span = duration_cast<duration<double>>(t2 - t1);
-    std::cout << "ScanZRow took " << time_span.count() << " seconds  to sum " << theSum << std::endl;
+    std::cout << "ScanZipRow took " << time_span.count() << " seconds  to sum " << theSum << std::endl;
   }
 
   {

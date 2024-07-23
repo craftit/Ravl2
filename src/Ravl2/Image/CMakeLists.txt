@@ -10,7 +10,8 @@ add_library (Ravl2Image
         DrawCircle.hh
         DrawLine.hh
         DrawCross.hh
-        #        Ravl2/Image/CornerDetectorSusan.cc Ravl2/Image/CornerDetectorSusan.hh
+        Array2dPolygon2dIter.hh
+        #CornerDetectorSusan.cc CornerDetectorSusan.hh
 )
 
 set_property(TARGET Ravl2Image PROPERTY CXX_STANDARD 20)
@@ -18,7 +19,6 @@ target_link_libraries(Ravl2Image PUBLIC Ravl2 Ravl2Geometry)
 
 add_subdirectory(Segmentation)
 
-add_executable(test_image tests/test_image.cc  tests/test_draw.cc)
+add_executable(test_image tests/test_image.cc tests/test_draw.cc)
 target_link_libraries(test_image Ravl2Image GTest::gtest_main)
-gtest_add_tests(TARGET test_image )
-
+add_test(NAME test_image COMMAND test_image)

@@ -39,7 +39,6 @@ namespace Ravl2
 
   constexpr Index<2> CrackStep(const Index<2> &pixel,CrackCodeT crackCode);
   constexpr Index<2> CrackDirection(CrackCodeT crackCode);
-  
 
   //! Crack code or Freeman code
   

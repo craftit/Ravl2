@@ -558,11 +558,11 @@ TEST(Ravl2, ShiftView)
 
     int sum1 = 0;
     int sum2 = 0;
-    for(auto it = Ravl2::ArrayIterZip<2, int, int>(kernel, view); !it.done(); ++it)
+    for(auto it = Ravl2::ArrayIterZipN<2, int, int>(kernel, view); !it.done(); ++it)
     {
       //SPDLOG_INFO("Data1: {} Data2: {}", it.data1(), it.data2());
-      sum1 += it.data1();
-      sum2 += it.data2();
+      sum1 += it.data<0>();
+      sum2 += it.data<1>();
     }
     ASSERT_EQ(sum1,sumKernel);
     int sum3 = 0;

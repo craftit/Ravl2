@@ -16,9 +16,6 @@
 
 namespace Ravl2
 {
-  
-
-
 
 }
 

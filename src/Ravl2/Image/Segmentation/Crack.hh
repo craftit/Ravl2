@@ -29,7 +29,8 @@ namespace Ravl2
   //!       [i+1,j] ---------> [i+1, j+1]
   //! </pre>
 
-  using BVertex2 = Index<2>;
+  using BVertexC = Index<2>;
+  using BVertex2 = BVertexC;
 
   [[nodiscard]] inline constexpr Index<2> right(const Index<2> &pxl)
   { return Index<2>(pxl[0],pxl[1]+1); }
@@ -245,7 +246,7 @@ namespace Ravl2
   { return s << crack.at() << ' ' << crack.code(); }
   //: Writes the elementary crack 'e' into the output stream 's'.
   
-//  inline std::istream & operator>>(std::istream & s,CrackC & crack)
+  std::istream & operator>>(std::istream & s,CrackC & crack);
 //  { return s >> crack.at() >> crack.code(); }
 //  //: Writes the elementary crack 'e' into the output stream 's'.
   

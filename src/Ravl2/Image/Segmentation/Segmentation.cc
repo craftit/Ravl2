@@ -392,31 +392,30 @@ namespace Ravl2
 
   //: Compute moments for each of the segmented regions.
   // if ignoreZero is true, region labeled 0 is ignored.
-  
-  std::vector<Moments2d2C> SegmentationBodyC::ComputeMoments(bool ignoreZero) {
-    std::vector<Moments2d2C> ret(labels+1);
+
+  std::vector<Moments2<float> > SegmentationBodyC::ComputeMoments(bool ignoreZero)
+  {
+    std::vector<Moments2<float>> ret(labels+1);
     
     if(ignoreZero) {
       // Ignore regions with label 0.
-      for(Array2dIterC<unsigned> it(segmap);it;it++) {
+      for(auto it = segmap.begin();it.valid();++it) {
 	if(*it == 0)
 	  continue;
-	ret[*it].AddPixel(it.Index());
+	ret[*it].addPixel(it.index());
       }
     } else {
-      for(Array2dIterC<unsigned> it(segmap);it;it++) 
-	{  ret[*it].AddPixel(it.Index()); }
+      for(auto it = segmap.begin();it.valid();++it)
+	{  ret[*it].addPixel(it.index()); }
     }
     return ret;
   }
 
 
-  ImageC<ByteT> SegmentationBodyC::ByteImage() const
+  Array<uint8_t,2> SegmentationBodyC::ByteImage() const
   {
-    ImageC<ByteT> byteimage(segmap.Rectangle());
-    Array2dIter2C<unsigned, ByteT> seg_it(segmap, byteimage);
-    for(seg_it.First(); seg_it.IsElm(); seg_it.Next())
-      seg_it.data2() = (unsigned char)seg_it..data1();
+    Array<uint8_t,2> byteimage(segmap.range());
+    forEach<2>([](unsigned &seg,uint8_t &byte) { byte = uint8_t(seg); }, segmap,byteimage);
     return byteimage;
   }
 

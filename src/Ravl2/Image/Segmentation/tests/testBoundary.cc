@@ -8,9 +8,9 @@
 
 #include <gtest/gtest.h>
 #include <spdlog/spdlog.h>
-//#include "Ravl2/Image/Segmentation/Boundary.hh"
-#include "Ravl2/Image/Segmentation/Crack.hh"
 #include "Ravl2/Image/Segmentation/CrackCode.hh"
+#include "Ravl2/Image/Segmentation/Crack.hh"
+#include "Ravl2/Image/Segmentation/Boundary.hh"
 #include "Ravl2/Array.hh"
 
 #define DODEBUG	0
@@ -95,31 +95,31 @@ TEST(Image, Edge)
 }
 
 #if 0
+
 TEST(Image, Boundry)
 {
   using namespace Ravl2;
 
-  IndexRange<2> rect(IndexRangeC(1,3),IndexRangeC(2,4));
+  IndexRange<2> rect(IndexRange<1>({1,3}),IndexRange<1>({2,4}));
   BoundaryC bnd(rect,true);
   //cout << "Bounds:\n " << bnd << "\n";
-  if(bnd.size() != 12) return __LINE__;
+  EXPECT_EQ(bnd.size(), 12);
   ONDEBUG(cout << "Area=" << bnd.Area() << "\n");
-  if(bnd.Area() != - (IntT) rect.Area()) return __LINE__;
+  EXPECT_EQ(bnd.Area(),rect.area());
   IndexRange<2> tmpbb = bnd.BoundingBox();
-  if(tmpbb == rect) return __LINE__;
+  EXPECT_EQ(tmpbb,rect);
   bnd.BReverse();
-  if(tmpbb != bnd.BoundingBox()) return __LINE__;
-  if(bnd.Area() != - (IntT) rect.Area()) return __LINE__;  
+  EXPECT_EQ(tmpbb,bnd.BoundingBox());
+  EXPECT_EQ(bnd.Area(),-rect.area());
   bnd.Invert();
   ONDEBUG(cout << "RArea=" << bnd.Area() << "\n");
-  if(bnd.Area() != (IntT) rect.Area()) return __LINE__;
+  EXPECT_EQ(bnd.Area(),rect.area());
   
   IndexRange<2> bb = bnd.BoundingBox();
   ONDEBUG(std::cerr <<"Bounding box=" << bb << " Inv=" << tmpbb << "\n");
-  if(bb != rect) return __LINE__;
-  
-  return 0;
+  EXPECT_EQ(bb,rect);
 }
+
 
 TEST(Image, MidPoint)
 {

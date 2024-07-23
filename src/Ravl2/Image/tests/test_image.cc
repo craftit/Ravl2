@@ -160,7 +160,7 @@ TEST(Image, Array2Sqr2Iter2)
   ASSERT_TRUE(it2.valid());
   int sqrs = 0;
   count = 0;
-  for(;it2.valid();++it2,sqrs++)
+  for(;it2.valid() && sqrs < 10;++it2,sqrs++)
     count += it2.DataBR1() + it2.DataBL1() + it2.DataTR1() + it2.DataTL1() +
       it2.DataBR2() + it2.DataBL2() + it2.DataTR2() + it2.DataTL2();
   ASSERT_EQ(sqrs,9);
