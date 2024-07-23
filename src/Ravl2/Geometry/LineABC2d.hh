@@ -35,7 +35,7 @@ namespace Ravl2
 
     //! Creates the line passing through two points 'end' and 'start'.
     inline LineABC2dC(const Point<RealT,2>  & start, const Point<RealT,2> & end)
-      : normal(Vector<RealT,2>(end-start).Perpendicular()), d(-normal.Dot(start))
+      : normal(Vector<RealT,2>(end-start).Perpendicular()), d(-dot(normal,start))
     {}
 
     //! Creates the line passing through two points 'end' and 'start'.
@@ -50,7 +50,7 @@ namespace Ravl2
     static LineABC2dC<RealT> fromDirection(const Point<RealT,2> & pt, const Vector<RealT,2> & vec)
     {
       auto normal = perpendicular(vec);
-      return LineABC2dC<RealT>(normal, -normal.dot(vec));
+      return LineABC2dC<RealT>(normal, -dot(normal,pt));
     }
 
     bool FitLSQ(const std::vector<Point<RealT,2>> &points,RealT &residual);

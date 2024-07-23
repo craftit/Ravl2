@@ -612,7 +612,7 @@ namespace Ravl2
       {
         int dind = 0;
         for(unsigned i = 0;i < N-1;i++) {
-          assert(m_range[i].contains(i));
+          assert(m_range[i].contains(ind.index(i)));
           dind += m_strides[i] * ind.index(i);
         }
         dind += ind.index(N-1);

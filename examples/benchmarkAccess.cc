@@ -10,8 +10,7 @@
 #define RAVL2_USE_SSE 0
 #endif
 
-#include <xtensor/xarray.hpp>
-#include <xtensor/xtensor.hpp>
+#include "Ravl2/Geometry/Geometry.hh"
 
 #include "Ravl2/Array.hh"
 #include "Ravl2/ScanWindow.hh"

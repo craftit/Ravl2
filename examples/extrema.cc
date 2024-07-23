@@ -11,7 +11,7 @@
 //! userlevel=Normal
 //! file="Ravl/Image/Processing/Segmentation/extrema.cc"
 
-#include "Ravl/Image/SegmentExtrema.hh"
+#include "Ravl2/Image/SegmentExtrema.hh"
 #include "Ravl/Option.hh"
 #include "Ravl/Image/Image.hh"
 #include "Ravl/IO.hh"
