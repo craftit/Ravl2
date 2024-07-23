@@ -16,7 +16,7 @@ namespace Ravl2
   class ScanWindow<DataT,1>
   {
   public:
-    ScanWindow(ArrayAccess<DataT, 1> img, const IndexRange<1> &window)
+    constexpr ScanWindow(const ArrayAccess<DataT, 1> &img, const IndexRange<1> &window)
       : mArea(img.range() - window),
 	mAt(img.origin_address() + mArea.min()),
 	mEnd(img.origin_address() + mArea.max() + 1),
@@ -25,7 +25,7 @@ namespace Ravl2
       assert(!mArea.empty());
     }
 
-    ScanWindow(ArrayView<DataT, 1> &img, const IndexRange<1> &window)
+    constexpr ScanWindow(ArrayView<DataT, 1> &img, const IndexRange<1> &window)
       : mArea(img.range() - window),
         mAt(img.origin_address() + mArea.min()),
         mEnd(img.origin_address() + mArea.max() + 1),
@@ -35,31 +35,31 @@ namespace Ravl2
     }
 
       //! Get the window area we're scanning over.
-    [[nodiscard]] const IndexRange<1> &scanArea() const
+    [[nodiscard]] constexpr const IndexRange<1> &scanArea() const
     {
       return mArea;
     }
 
     //! Move to the next window position.
-    void operator++()
+    constexpr void operator++()
     {
       ++mAt;
     }
 
     //! Test if we're at the end of the window.
-    [[nodiscard]] bool done() const
+    [[nodiscard]] constexpr bool done() const
     {
       return mAt == mEnd;
     }
 
     //! Get the current window
-    [[nodiscard]] ArrayAccess<DataT,1> window() const
+    [[nodiscard]] constexpr ArrayAccess<DataT,1> window() const
     {
       return ArrayAccess<DataT,1>(&mWindowRange,&(*mAt));
     }
 
     //! Get current index of the window position 0,0 in the image
-    [[nodiscard]] Index<1> indexIn(const Ravl2::ArrayView<DataT,1> &img)
+    [[nodiscard]] constexpr Index<1> indexIn(const Ravl2::ArrayView<DataT,1> &img) const
     { return img.indexOf(&*mAt); }
 
   protected:

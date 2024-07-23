@@ -30,7 +30,7 @@ namespace Ravl2
     PointSet() = default;
 
     //! Construct from list of points
-    PointSet(const std::vector<Point<RealT,N>> & points)
+    explicit PointSet(const std::vector<Point<RealT,N>> & points)
       : std::vector<Point<RealT,N> >(points)
     {}
 
@@ -38,7 +38,7 @@ namespace Ravl2
     Point<RealT,N> Centroid() const;
 
     //! Calculates the barycentric coordinate of point
-    std::vector<RealT> BarycentricCoordinate(Point<RealT,N>& point) const;
+    std::vector<RealT> BarycentricCoordinate(const Point<RealT,N>& point) const;
 
     //! Compute the bounding rectangle for the point set.
     Range<RealT,N> BoundingRectangle() const;
@@ -83,20 +83,21 @@ namespace Ravl2
   static RealT PCot(const Point<RealT,N>& oPointA, const Point<RealT,N>& oPointB, const Point<RealT,N>& oPointC) {
     auto oBA = oPointA - oPointB;
     auto oBC = oPointC - oPointB;
-    RealT cross = std::abs(cross(oBC,oBA));
-    if (cross < 1e-6)
-      cross = 1e-6;
-    return (oBC.dot(oBA) / cross);
+    RealT cp = std::abs(cross(oBC, oBA));
+    if (cp < 1e-6)
+      cp = 1e-6;
+    return (oBC.dot(oBA) / cp);
   }
 
   template<typename RealT,unsigned N>
-  std::vector<RealT> PointSet<RealT,N>::BarycentricCoordinate(Point<RealT,N>& point) const {
+  std::vector<RealT> PointSet<RealT,N>::BarycentricCoordinate(const Point<RealT,N>& point) const
+  {
     // Create return array
     std::vector<RealT> oWeights(this->size());
     // Keep track of total
     RealT fTotalWeight = 0;
     // For each polygon vertex
-    auto &res = oWeights.begin();
+    auto res = oWeights.begin();
     for (auto it : (*this)) {
       RealT sqDist = Vector2dC(point - it).SumOfSqr();
       if (sqDist != 0) {
@@ -137,7 +138,7 @@ namespace Ravl2
   template<typename RealT,unsigned N>
   const PointSet<RealT,N> &PointSet<RealT,N>::operator+=(const Vector<RealT,N> &offset) {
     for(auto & it : *this)
-      *it += offset;
+      it += offset;
     return *this;
   }
 

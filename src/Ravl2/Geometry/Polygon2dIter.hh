@@ -29,8 +29,8 @@ namespace Ravl2
       [[nodiscard]] int MinRow() const { return m_minRow; }
       [[nodiscard]] int MaxRow() const { return m_maxRow; }
     private:
-      int m_minRow,m_maxRow; //end point with smallest y coord
-      RealT m_a,m_b; //line is x = a*y + b;
+      int m_minRow = 0,m_maxRow =0; //end point with smallest y coord
+      RealT m_a = 0,m_b = 0; //line is x = a*y + b;
     };
 
     class IELC: public std::list<EdgeC> {
@@ -41,8 +41,8 @@ namespace Ravl2
       [[nodiscard]] int MinRow() { return m_minRow; }
       [[nodiscard]] int MaxRow() { return m_maxRow; }
     private:
-      int m_minRow;
-      int m_maxRow;
+      int m_minRow = 0;
+      int m_maxRow = 0;
     };
 
     class AELC: public std::list<EdgeC> {
@@ -59,7 +59,7 @@ namespace Ravl2
     inline Polygon2dIterC() :m_valid(false) {}
 
     //! Construct from a polygon
-    inline Polygon2dIterC(const Polygon2dC<RealT> &polygon)
+    [[maybe_unused]] inline explicit Polygon2dIterC(const Polygon2dC<RealT> &polygon)
       : m_polygon(polygon)
     { First(); }
 

@@ -5,9 +5,9 @@
  *      Author: charlesgalambos
  */
 
+#include <catch2/catch_test_macros.hpp>
 #include <iostream>
 #include <vector>
-#include <gtest/gtest.h>
 #include <fmt/ostream.h>
 #include <spdlog/spdlog.h>
 
@@ -17,129 +17,159 @@
 #include "Ravl2/ArrayIterZip.hh"
 #include "Ravl2/ScanWindow.hh"
 
-TEST(Ravl2, Math)
+
+#define CHECK_EQ(a,b) CHECK((a) == (b))
+#define CHECK_NE(a,b) CHECK_FALSE((a) == (b))
+#define ASSERT_EQ(a,b) REQUIRE((a) == (b))
+#define ASSERT_NE(a,b) REQUIRE_FALSE((a) == (b))
+
+TEST_CASE("Math", "[int_floor]")
 {
   // Check the int_floor
-  ASSERT_EQ(Ravl2::int_floor(1.0),1);
-  ASSERT_EQ(Ravl2::int_floor(0.1),0);
-  ASSERT_EQ(Ravl2::int_floor(0.9),0);
-  ASSERT_EQ(Ravl2::int_floor(-0.1),-1);
-  ASSERT_EQ(Ravl2::int_floor(0.0),0);
-  ASSERT_EQ(Ravl2::int_floor(-0.0),0);
-  ASSERT_EQ(Ravl2::int_floor(-1.0),-1);
-  ASSERT_EQ(Ravl2::int_floor(-2.0),-2);
+  CHECK_EQ(Ravl2::int_floor(1.0),1);
+  CHECK_EQ(Ravl2::int_floor(0.1),0);
+  CHECK_EQ(Ravl2::int_floor(0.9),0);
+  CHECK_EQ(Ravl2::int_floor(-0.1),-1);
+  CHECK_EQ(Ravl2::int_floor(0.0),0);
+  CHECK_EQ(Ravl2::int_floor(-0.0),0);
+  CHECK_EQ(Ravl2::int_floor(-1.0),-1);
+  CHECK_EQ(Ravl2::int_floor(-2.0),-2);
 
   // Check the int_round
-  ASSERT_EQ(Ravl2::int_round(0.1),0);
-  ASSERT_EQ(Ravl2::int_round(0.9),1);
-  ASSERT_EQ(Ravl2::int_round(-0.1),0);
-  ASSERT_EQ(Ravl2::int_round(0.0),0);
-  ASSERT_EQ(Ravl2::int_round(-0.0),0);
-  ASSERT_EQ(Ravl2::int_round(-0.9),-1);
+  CHECK_EQ(Ravl2::int_round(0.1),0);
+  CHECK_EQ(Ravl2::int_round(0.9),1);
+  CHECK_EQ(Ravl2::int_round(-0.1),0);
+  CHECK_EQ(Ravl2::int_round(0.0),0);
+  CHECK_EQ(Ravl2::int_round(-0.0),0);
+  CHECK_EQ(Ravl2::int_round(-0.9),-1);
 
   // Check the sign
-  ASSERT_EQ(Ravl2::sign(1),1);
-  ASSERT_EQ(Ravl2::sign(0),0);
-  ASSERT_EQ(Ravl2::sign(-1),-1);
-  ASSERT_EQ(Ravl2::sign(0.1),1);
-  ASSERT_EQ(Ravl2::sign(-0.1),-1);
-  ASSERT_EQ(Ravl2::sign(0.0),0);
-
+  CHECK_EQ(Ravl2::sign(1),1);
+  CHECK_EQ(Ravl2::sign(0),0);
+  CHECK_EQ(Ravl2::sign(-1),-1);
+  CHECK_EQ(Ravl2::sign(0.1),1);
+  CHECK_EQ(Ravl2::sign(-0.1),-1);
+  CHECK_EQ(Ravl2::sign(0.0),0);
 }
 
 
-TEST(Ravl2, IndexRange)
+TEST_CASE("IndexRange", "[IndexRange]")
 {
   {
     Ravl2::IndexRange<1> range1(10);
-    ASSERT_TRUE(range1.contains(1));
-    ASSERT_FALSE(range1.contains(10));
+    CHECK(range1.contains(1));
+    CHECK_FALSE(range1.contains(10));
     int count = 0;
     for (int x: range1) {
-      ASSERT_EQ(x, count);
-      ASSERT_TRUE(range1.contains(x));
+      CHECK_EQ(x, count);
+      CHECK(range1.contains(x));
       count++;
     }
-    ASSERT_EQ(range1.size(), count);
+    CHECK_EQ(range1.size(), count);
 
     Ravl2::IndexRange<1> range2(2);
     auto newRange = range1 - range2;
-    ASSERT_EQ(newRange.size(), 9);
+    CHECK_EQ(newRange.size(), 9);
 
     newRange = range1 + range2;
-    ASSERT_EQ(newRange.size(), 11);
+    CHECK_EQ(newRange.size(), 11);
   }
   {
     // Check ranges not starting at 0
     Ravl2::IndexRange<1> range3(1,5);
     Ravl2::IndexRange<1> rangeRegion(-1,1);
-    ASSERT_EQ(range3.size(),5);
-    ASSERT_EQ(rangeRegion.size(),3);
+    CHECK_EQ(range3.size(),5);
+    CHECK_EQ(rangeRegion.size(),3);
 
     auto shrinkRange = range3.shrink(rangeRegion);
-    ASSERT_EQ(shrinkRange.size(),3);
+    CHECK_EQ(shrinkRange.size(),3);
 
     auto newRange2 = range3 - rangeRegion;
-    ASSERT_EQ(newRange2.size(),3);
+    CHECK_EQ(newRange2.size(),3);
   }
 
   {
     Ravl2::IndexRange<2> range2A{5,7};
-    ASSERT_EQ(range2A[0].size(),5);
-    ASSERT_EQ(range2A[0].min(),0);
-    ASSERT_EQ(range2A[0].max(),4);
+    CHECK_EQ(range2A[0].size(),5);
+    CHECK_EQ(range2A[0].min(),0);
+    CHECK_EQ(range2A[0].max(),4);
 
-    ASSERT_EQ(range2A[1].size(),7);
-    ASSERT_EQ(range2A[1].min(),0);
-    ASSERT_EQ(range2A[1].max(),6);
+    CHECK_EQ(range2A[1].size(),7);
+    CHECK_EQ(range2A[1].min(),0);
+    CHECK_EQ(range2A[1].max(),6);
 
     //std::cout << "Range: " << range2A << " \n";
     int count = 0;
     for(auto at : range2A) {
       count++;
       //std::cout << at << " \n";
-      ASSERT_TRUE(range2A.contains(at));
+      CHECK(range2A.contains(at));
     }
-    ASSERT_EQ(range2A.elements(),count);
+    CHECK_EQ(range2A.elements(),count);
 
 
     Ravl2::IndexRange<2> range2({2,3});
     auto newRange = range2A - range2;
-    ASSERT_EQ(newRange.elements(),4 * 5);
+    CHECK_EQ(newRange.elements(),4 * 5);
 
     newRange = range2A + range2;
-    ASSERT_EQ(newRange.elements(),6 * 9);
+    CHECK_EQ(newRange.elements(),6 * 9);
   }
 
   {
     Ravl2::IndexRange<2> range2B{{1,5},{3,7}};
-    ASSERT_EQ(range2B[0].size(),5);
-    ASSERT_EQ(range2B[0].min(),1);
-    ASSERT_EQ(range2B[0].max(),5);
+    CHECK_EQ(range2B[0].size(),5);
+    CHECK_EQ(range2B[0].min(),1);
+    CHECK_EQ(range2B[0].max(),5);
 
-    ASSERT_EQ(range2B[1].size(),5);
-    ASSERT_EQ(range2B[1].min(),3);
-    ASSERT_EQ(range2B[1].max(),7);
+    CHECK_EQ(range2B[1].size(),5);
+    CHECK_EQ(range2B[1].min(),3);
+    CHECK_EQ(range2B[1].max(),7);
 
     //std::cout << "Range: " << range2B << " \n";
     int count = 0;
     for(auto at : range2B) {
       count++;
       //std::cout << at << " \n";
-      ASSERT_TRUE(range2B.contains(at));
+      CHECK(range2B.contains(at));
     }
-    ASSERT_EQ(range2B.elements(),count);
+    CHECK_EQ(range2B.elements(),count);
 
     Ravl2::IndexRange<2> range2({{-1,1},{-1,1}});
     //SPDLOG_INFO("Range: {}", range2);
     auto newRange = range2B - range2;
-    ASSERT_EQ(newRange.elements(),9);
+    CHECK_EQ(newRange.elements(),9);
 
+  }
+
+  SECTION( "Check overlap handing in 1d  ")
+  {
+    Ravl2::IndexRange<1> range1(4,6);
+    Ravl2::IndexRange<1> range2(3,5);
+    CHECK(range1.overlaps(range2));
+    CHECK(range2.overlaps(range1));
+
+    Ravl2::IndexRange<1> range3(7,8);
+    CHECK_FALSE(range1.overlaps(range3));
+    CHECK_FALSE(range3.overlaps(range1));
+
+    Ravl2::IndexRange<1> range4(1,3);
+    CHECK_FALSE(range1.overlaps(range4));
+    CHECK_FALSE(range4.overlaps(range1));
+
+    CHECK(range1.overlaps(range1));
+
+    CHECK(range4.overlaps(range2));
+    CHECK(range2.overlaps(range4));
+
+    Ravl2::IndexRange<1> range5(3,7);
+    CHECK(range2.overlaps(range5));
+    CHECK(range5.overlaps(range2));
   }
 }
 
 
-TEST(Ravl2, Array)
+TEST_CASE("Array", "[Array]")
 {
   {
     // Test creation of 1 dimensional array.
@@ -154,15 +184,15 @@ TEST(Ravl2, Array)
 
     c = 0;
     for(auto a : aRange) {
-      ASSERT_EQ(val[a],c++);
+      CHECK_EQ(val[a],c++);
     }
 
     c = 0;
     for(int i = aRange.min();i <= aRange.max();i++) {
-      ASSERT_EQ(val[i],c++);
+      CHECK_EQ(val[i],c++);
     }
 
-    ASSERT_EQ(c,10);
+    CHECK_EQ(c,10);
   }
 
   {
@@ -182,14 +212,14 @@ TEST(Ravl2, Array)
     // Check what we wrote is still there.
     c = 0;
     for(auto a : aRange) {
-      ASSERT_EQ(val[a],c++);
+      CHECK_EQ(val[a],c++);
     }
 
     // Index dimensions individually
     c = 0;
     for(auto i : aRange[0]) {
       for(auto j : aRange[1]) {
-        ASSERT_EQ(val[i][j],c++);
+        CHECK_EQ(val[i][j],c++);
       }
     }
 
@@ -197,12 +227,12 @@ TEST(Ravl2, Array)
     c = 0;
     for(int i = aRange[0].min();i <= aRange[0].max();i++) {
       for(int j = aRange[1].min();j <= aRange[1].max();j++) {
-        ASSERT_EQ(val[i][j],c++);
+        CHECK_EQ(val[i][j],c++);
       }
     }
 
 
-    ASSERT_EQ(c,110);
+    CHECK_EQ(c,110);
   }
 
   {
@@ -220,7 +250,7 @@ TEST(Ravl2, Array)
     // Check what we wrote is still there.
     c = 0;
     for(auto a : aRange) {
-      ASSERT_EQ(val[a],c++);
+      CHECK_EQ(val[a],c++);
     }
 
     // Index dimensions individually
@@ -228,7 +258,7 @@ TEST(Ravl2, Array)
     for(auto i : aRange[0]) {
       for(auto j : aRange[1]) {
         for(auto k : aRange[2]) {
-          ASSERT_EQ(val[i][j][k],c++);
+          CHECK_EQ(val[i][j][k],c++);
         }
       }
     }
@@ -238,12 +268,12 @@ TEST(Ravl2, Array)
     for(int i = aRange[0].min();i <= aRange[0].max();i++) {
       for(int j = aRange[1].min();j <= aRange[1].max();j++) {
         for(int k = aRange[2].min();k <= aRange[2].max();k++) {
-          ASSERT_EQ(val[i][j][k],c++);
+          CHECK_EQ(val[i][j][k],c++);
         }
       }
     }
 
-    ASSERT_EQ(c,1320);
+    CHECK_EQ(c,1320);
   }
 
   {
@@ -252,18 +282,17 @@ TEST(Ravl2, Array)
     std::vector<int> acvec {1,2,3};
     Ravl2::Array<int,1> anAccess(acvec);
 
-    ASSERT_EQ(anAccess.range().size(),3);
+    CHECK_EQ(anAccess.range().size(),3);
 
-    ASSERT_EQ(acvec[0],1);
-    ASSERT_EQ(acvec[1],2);
-    ASSERT_EQ(acvec[2],3);
+    CHECK_EQ(acvec[0],1);
+    CHECK_EQ(acvec[1],2);
+    CHECK_EQ(acvec[2],3);
   }
 
 }
 
 
-
-TEST(Ravl2, ArrayIter1)
+TEST_CASE("ArrayIter1", "[ArrayIter<1>]")
 {
   Ravl2::Array<int,1> val(Ravl2::IndexRange<1>(10));
   int sum = 0;
@@ -271,15 +300,15 @@ TEST(Ravl2, ArrayIter1)
     val[a] = a;
     sum += val[a];
   }
-  ASSERT_EQ(sum,45);
+  CHECK_EQ(sum,45);
   sum = 0;
   for(auto a : val) {
     sum += a;
   }
-  ASSERT_EQ(sum,45);
+  CHECK_EQ(sum,45);
 }
 
-TEST(Ravl2, ArrayAccessIter1)
+TEST_CASE("ArrayAccessIter1", "[ArrayIter<1>]")
 {
   Ravl2::Array<int,1> val(Ravl2::IndexRange<1>(10));
   Ravl2::ArrayAccess<int,1> view(val);
@@ -288,15 +317,15 @@ TEST(Ravl2, ArrayAccessIter1)
     val[a] = a;
     sum += val[a];
   }
-  ASSERT_EQ(sum,45);
+  CHECK_EQ(sum,45);
   sum = 0;
   for(auto a : view) {
     sum += a;
   }
-  ASSERT_EQ(sum,45);
+  CHECK_EQ(sum,45);
 }
 
-TEST(Ravl2, ArrayIter2)
+TEST_CASE("ArrayIter2", "[ArrayIter<N>]")
 {
   // Check 1x2 case
   {
@@ -310,18 +339,18 @@ TEST(Ravl2, ArrayIter2)
     auto end = val.end();
     ASSERT_EQ(iter, iter);
     ASSERT_NE(iter, end);
-    ASSERT_EQ(*iter, 0);
-    ASSERT_TRUE(iter.valid());
-    ASSERT_EQ(iter.index(), Ravl2::Index<2>({0, 0}));
+    CHECK_EQ(*iter, 0);
+    CHECK(iter.valid());
+    CHECK_EQ(iter.index(), Ravl2::Index<2>({0, 0}));
     ++iter;
     ASSERT_EQ(iter, iter);
     ASSERT_NE(iter, end);
-    ASSERT_EQ(*iter, 1);
-    ASSERT_TRUE(iter.valid());
-    ASSERT_EQ(iter.index(), Ravl2::Index<2>({0, 1}));
+    CHECK_EQ(*iter, 1);
+    CHECK(iter.valid());
+    CHECK_EQ(iter.index(), Ravl2::Index<2>({0, 1}));
     ++iter;
-    ASSERT_EQ(iter, end);
-    ASSERT_FALSE(iter.valid());
+    CHECK_EQ(iter, end);
+    CHECK_FALSE(iter.valid());
   }
 
   // Check 2x1 case
@@ -334,21 +363,21 @@ TEST(Ravl2, ArrayIter2)
 
     auto iter = val.begin();
     auto end = val.end();
-    ASSERT_EQ(iter, iter);
+    CHECK_EQ(iter, iter);
     ASSERT_NE(iter, end);
-    ASSERT_EQ(*iter, 0);
-    ASSERT_TRUE(iter.valid());
-    ASSERT_EQ(iter.index(), Ravl2::Index<2>({0, 0}));
+    CHECK_EQ(*iter, 0);
+    CHECK(iter.valid());
+    CHECK_EQ(iter.index(), Ravl2::Index<2>({0, 0}));
     ++iter;
-    ASSERT_EQ(iter, iter);
+    CHECK_EQ(iter, iter);
     ASSERT_NE(iter, end);
-    ASSERT_EQ(*iter, 1);
-    ASSERT_TRUE(iter.valid());
-    ASSERT_EQ(iter.index(), Ravl2::Index<2>({1, 0}));
+    CHECK_EQ(*iter, 1);
+    CHECK(iter.valid());
+    CHECK_EQ(iter.index(), Ravl2::Index<2>({1, 0}));
     ++iter;
-    ASSERT_EQ(iter, iter);
-    ASSERT_EQ(iter, end);
-    ASSERT_FALSE(iter.valid());
+    CHECK_EQ(iter, iter);
+    CHECK_EQ(iter, end);
+    CHECK_FALSE(iter.valid());
   }
 
   // Check 1x1 case
@@ -361,14 +390,14 @@ TEST(Ravl2, ArrayIter2)
 
     auto iter = val.begin();
     auto end = val.end();
-    ASSERT_EQ(iter, iter);
+    CHECK_EQ(iter, iter);
     ASSERT_NE(iter, end);
-    ASSERT_EQ(*iter, 0);
-    ASSERT_TRUE(iter.valid());
-    ASSERT_EQ(iter.index(), Ravl2::Index<2>({0, 0}));
+    CHECK_EQ(*iter, 0);
+    CHECK(iter.valid());
+    CHECK_EQ(iter.index(), Ravl2::Index<2>({0, 0}));
     ++iter;
-    ASSERT_EQ(iter, end);
-    ASSERT_FALSE(iter.valid());
+    CHECK_EQ(iter, end);
+    CHECK_FALSE(iter.valid());
   }
   // Check 2x2 case
   {
@@ -382,15 +411,15 @@ TEST(Ravl2, ArrayIter2)
     auto end = val.end();
     for(int i = 0;i < 4;i++)
     {
-      ASSERT_EQ(iter, iter);
+      CHECK_EQ(iter, iter);
       ASSERT_NE(iter, end);
-      ASSERT_EQ(*iter, i);
-      ASSERT_TRUE(iter.valid());
+      CHECK_EQ(*iter, i);
+      CHECK(iter.valid());
       ++iter;
     }
-    ASSERT_EQ(iter, end);
-    ASSERT_FALSE(iter.valid());
-    ASSERT_TRUE(iter.done());
+    CHECK_EQ(iter, end);
+    CHECK_FALSE(iter.valid());
+    CHECK(iter.done());
   }
 
   {
@@ -403,25 +432,26 @@ TEST(Ravl2, ArrayIter2)
     }
 
     auto iter = val.begin();
-    ASSERT_EQ(*iter, 0);
-    ASSERT_EQ(iter, iter);
+    CHECK_EQ(*iter, 0);
+    CHECK_EQ(iter, iter);
 
     auto iterEnd = val.end();
     ASSERT_NE(iter, iterEnd);
 
     ++iter;
-    ASSERT_EQ(*iter, 1);
+    CHECK_EQ(*iter, 1);
     ASSERT_NE(iter, iterEnd);
-    ASSERT_EQ(sum, 19900);
+    CHECK_EQ(sum, 19900);
     sum = 0;
     for (auto a: val) {
       sum += a;
     }
-    ASSERT_EQ(sum, 19900);
+    CHECK_EQ(sum, 19900);
   }
+
 }
 
-TEST(Ravl2, ArrayIter2Offset)
+TEST_CASE("ArrayIter2Offset", "[ArrayIter<N>]")
 {
   Ravl2::Array<int, 2> kernel(Ravl2::IndexRange<2>(Ravl2::IndexRange<1>(1,2),Ravl2::IndexRange<1>(3,5)));
   int at = 0;
@@ -438,7 +468,7 @@ TEST(Ravl2, ArrayIter2Offset)
   {
     auto x = kernel.buffer()->data()[i];
     //SPDLOG_INFO("Buffer: {} ", x);
-    ASSERT_EQ(x,at);
+    CHECK_EQ(x,at);
   }
 
   auto it = kernel.begin();
@@ -446,18 +476,18 @@ TEST(Ravl2, ArrayIter2Offset)
   for(int i = 0;i < 6;++i)
   {
     //SPDLOG_INFO("Data: {} {} @ {} ", i, *it, (void *) &(*it));
-    ASSERT_EQ(*it,i);
+    CHECK_EQ(*it,i);
     ASSERT_NE(it,end);
-    ASSERT_TRUE(it.valid());
-    ASSERT_FALSE(it.done());
+    CHECK(it.valid());
+    CHECK_FALSE(it.done());
     ++it;
   }
-  ASSERT_FALSE(it.valid());
-  ASSERT_TRUE(it.done());
-  ASSERT_EQ(it,end);
+  CHECK_FALSE(it.valid());
+  CHECK(it.done());
+  CHECK_EQ(it,end);
 }
 
-TEST(Ravl2, ArrayIter3)
+TEST_CASE("ArrayIter3",  "[ArrayIter<N>]")
 {
   // Check 2x3x4 case
   {
@@ -471,22 +501,22 @@ TEST(Ravl2, ArrayIter3)
     auto iter = val.begin();
     auto end = val.end();
     int count = val.range().area();
-    ASSERT_EQ(count, 2 * 3 * 4);
+    CHECK_EQ(count, 2 * 3 * 4);
     for(int i = 0; i < count; i++)
     {
-      ASSERT_EQ(iter, iter);
+      CHECK_EQ(iter, iter);
       ASSERT_NE(iter, end);
-      ASSERT_EQ(*iter, i);
-      ASSERT_TRUE(iter.valid());
+      CHECK_EQ(*iter, i);
+      CHECK(iter.valid());
       ++iter;
     }
-    ASSERT_EQ(iter, end);
-    ASSERT_FALSE(iter.valid());
+    CHECK_EQ(iter, end);
+    CHECK_FALSE(iter.valid());
   }
 }
 
 
-TEST(Ravl2, ArrayIter2View)
+TEST_CASE("ArrayIter2View", "[ArrayIter<N>]")
 {
   Ravl2::Array<int, 2> matrix(Ravl2::IndexRange<2>({4, 4}));
   int at = 0;
@@ -510,29 +540,29 @@ TEST(Ravl2, ArrayIter2View)
   auto it = view.begin();
   auto end = view.end();
   //SPDLOG_INFO("Window range: {}  Win:{} ", view.range(),win);
-  ASSERT_EQ(view.range(), win);
+  CHECK_EQ(view.range(), win);
   int area = win.area();
   for(int i = 0;i < area;++i)
   {
-    ASSERT_TRUE(it.valid());
-    ASSERT_FALSE(it.done());
+    CHECK(it.valid());
+    CHECK_FALSE(it.done());
     ASSERT_NE(it,end);
     //SPDLOG_INFO("Data: {} {} @ {} ", i, *it, (void *) &(*it));
     ++it;
   }
-  ASSERT_FALSE(it.valid());
-  ASSERT_TRUE(it.done());
-  ASSERT_EQ(it,end);
+  CHECK_FALSE(it.valid());
+  CHECK(it.done());
+  CHECK_EQ(it,end);
 
   int sum = 0;
   for(auto a : view)
   {
     sum += a;
   }
-  ASSERT_EQ(sum, targetSum);
+  CHECK_EQ(sum, targetSum);
 }
 
-TEST(Ravl2, ShiftView)
+TEST_CASE("ShiftView", "Array<N>")
 {
   Ravl2::Array<int, 2> matrix(Ravl2::IndexRange<2>({5, 5}));
   int at = 0;
@@ -564,18 +594,18 @@ TEST(Ravl2, ShiftView)
       sum1 += it.data<0>();
       sum2 += it.data<1>();
     }
-    ASSERT_EQ(sum1,sumKernel);
+    CHECK_EQ(sum1,sumKernel);
     int sum3 = 0;
     for(auto a : view)
     {
       sum3 += a;
     }
-    ASSERT_EQ(sum2,sum3);
+    CHECK_EQ(sum2,sum3);
     //SPDLOG_INFO("\n");
   }
 }
 
-TEST(Ravl2, TestZipN)
+TEST_CASE("ZipN", "[ZipIterN]")
 {
   using namespace Ravl2;
   Array<int, 2> a({4, 4});
@@ -584,28 +614,28 @@ TEST(Ravl2, TestZipN)
   for(auto ai : a.range())
   {
     a[ai] = at;
-    b[ai] = at++;
+    b[ai] = unsigned (at++);
   }
-  auto it = begin<2 > (a, b);
+  auto it = begin(a, b);
   int count = 0;
-  ASSERT_FALSE(it.done());
-  ASSERT_TRUE(it.valid());
-  ASSERT_TRUE(it.index<0>() == Index<2>({0, 0}));
+  CHECK_FALSE(it.done());
+  CHECK(it.valid());
+  CHECK(it.index<0>() == Index<2>({0, 0}));
 
   for(;it.valid();++it)
   {
     //SPDLOG_INFO("Data: {} {}  @ {} ", it.data<0>(), it.data<1>(),it.index<0>());
-    ASSERT_TRUE(a.range().contains(it.index<0>()));
-    ASSERT_FALSE(it.done());
-    ASSERT_EQ(it.data<0>(), it.data<1>());
-    ASSERT_LT(count, 16);
+    CHECK(a.range().contains(it.index<0>()));
+    CHECK_FALSE(it.done());
+    CHECK_EQ(it.data<0>(), int(it.data<1>()));
+    CHECK(count < 16);
     count++;
   }
-  ASSERT_EQ(count, 16);
+  CHECK_EQ(count, 16);
 }
 
 
-TEST(Ravl2, ScanWindow2)
+TEST_CASE("ScanWindow2", "[ScanWindow]")
 {
   Ravl2::Array<int, 2> val(Ravl2::IndexRange<2>({11, 10}));
   int at = 0;
@@ -616,35 +646,35 @@ TEST(Ravl2, ScanWindow2)
   Ravl2::IndexRange<2> windowRange({2, 2});
   Ravl2::ScanWindow<int, 2> scan(val, windowRange);
 
-  ASSERT_EQ(scan.scanArea().area(), 9 * 10);
+  CHECK_EQ(scan.scanArea().area(), 9 * 10);
 
   int count = 0;
   auto win = scan.window();
-  ASSERT_EQ(win.range().area(), 2 * 2);
-  ASSERT_EQ(win.range().size(0), 2);
-  ASSERT_EQ(win.range().size(1), 2);
-  ASSERT_EQ(win[0][0], 0);
-  ASSERT_EQ(win[0][1], 1);
-  ASSERT_EQ(win[1][0], 10);
-  ASSERT_EQ(win[1][1], 11);
+  CHECK_EQ(win.range().area(), 2 * 2);
+  CHECK_EQ(win.range().size(0), 2);
+  CHECK_EQ(win.range().size(1), 2);
+  CHECK_EQ(win[0][0], 0);
+  CHECK_EQ(win[0][1], 1);
+  CHECK_EQ(win[1][0], 10);
+  CHECK_EQ(win[1][1], 11);
 
   {
     int sum = 0;
     for (auto x: win)
       sum += x;
-    ASSERT_EQ(sum, (0 + 1 + 10 + 11));
+    CHECK_EQ(sum, (0 + 1 + 10 + 11));
   }
 
   count += win.range().area();
   ++scan;
 
   win = scan.window();
-  ASSERT_EQ(win.range().area(), 2 * 2);
+  CHECK_EQ(win.range().area(), 2 * 2);
 
-  ASSERT_EQ(win[0][0], 1);
-  ASSERT_EQ(win[0][1], 2);
-  ASSERT_EQ(win[1][0], 11);
-  ASSERT_EQ(win[1][1], 12);
+  CHECK_EQ(win[0][0], 1);
+  CHECK_EQ(win[0][1], 2);
+  CHECK_EQ(win[1][0], 11);
+  CHECK_EQ(win[1][1], 12);
   count += win.range().area();
   ++scan;
 
@@ -652,24 +682,24 @@ TEST(Ravl2, ScanWindow2)
   for(int i = 0;i < 7;i++)
   {
     win = scan.window();
-    ASSERT_EQ(win.range().area(), 2 * 2);
+    CHECK_EQ(win.range().area(), 2 * 2);
     count += win.range().area();
     ++scan;
   }
 
   // Check the window is on the next row
   win = scan.window();
-  ASSERT_EQ(win.range().area(), 2 * 2);
-  ASSERT_EQ(win[0][0], 10);
-  ASSERT_EQ(win[0][1], 11);
-  ASSERT_EQ(win[1][0], 20);
-  ASSERT_EQ(win[1][1], 21);
+  CHECK_EQ(win.range().area(), 2 * 2);
+  CHECK_EQ(win[0][0], 10);
+  CHECK_EQ(win[0][1], 11);
+  CHECK_EQ(win[1][0], 20);
+  CHECK_EQ(win[1][1], 21);
 
   {
     int sum = 0;
     for (auto x: win)
       sum += x;
-    ASSERT_EQ(sum, (10 + 11 + 20 + 21));
+    CHECK_EQ(sum, (10 + 11 + 20 + 21));
   }
 
   count += win.range().area();
@@ -679,14 +709,15 @@ TEST(Ravl2, ScanWindow2)
     auto window = scan.window();
     for (auto a: window.range()) {
       //std::cout << " " << window[a] << "\n";
+      CHECK(window.range().contains(a));
       count++;
     }
     ++scan;
   }
-  ASSERT_EQ(count, 9 * 10 * 4);
+  CHECK_EQ(count, 9 * 10 * 4);
 }
 
-TEST(Ravl2, ScanWindow1)
+TEST_CASE("ScanWindow1", "[ScanWindow1]")
 {
   Ravl2::Array<int, 1> val(Ravl2::IndexRange<1>(10));
   int at = 0;
@@ -697,22 +728,22 @@ TEST(Ravl2, ScanWindow1)
 
   Ravl2::IndexRange<1> windowRange(2);
   //SPDLOG_INFO("Window range: {} -> {} ", windowRange.min(), windowRange.max());
-  ASSERT_EQ(windowRange.area(), 2);
+  CHECK_EQ(windowRange.area(), 2);
   Ravl2::ScanWindow<int, 1> scan(val, windowRange);
 
-  ASSERT_EQ(scan.scanArea().area(), 9);
+  CHECK_EQ(scan.scanArea().area(), 9);
 
   int count = 0;
   auto win = scan.window();
 
-  ASSERT_EQ(win.range().area(), 2);
-  ASSERT_EQ(win[0], 0);
-  ASSERT_EQ(win[1], 1);
+  CHECK_EQ(win.range().area(), 2);
+  CHECK_EQ(win[0], 0);
+  CHECK_EQ(win[1], 1);
   count += win.range().area();
-  //ASSERT_EQ(scan.indexIn(val), 0);
+  CHECK(count > 0);
 }
 
-TEST(Ravl2, AnotherIterTest)
+TEST_CASE("AnotherIterTest", "[ArrayIter]")
 {
   Ravl2::Array<int, 2> narray({4,4},1);
   Ravl2::IndexRange<2> nrng({{narray.range(0).min() + 1, narray.range(0).max()},
@@ -722,12 +753,12 @@ TEST(Ravl2, AnotherIterTest)
   assert(!nrng.empty());
   auto subArray = clip(narray, nrng);
   auto cit = subArray.begin();
-  ASSERT_TRUE(cit.valid());
+  CHECK(cit.valid());
   int area = nrng.area();
   for(int i = 0;i < area;i++)
   {
-    ASSERT_TRUE(cit.valid());
+    CHECK(cit.valid());
     ++cit;
   }
-  ASSERT_FALSE(cit.valid());
+  CHECK_FALSE(cit.valid());
 }

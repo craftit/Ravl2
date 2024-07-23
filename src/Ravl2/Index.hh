@@ -9,6 +9,7 @@
 
 #include <cassert>
 #include <vector>
+#include <array>
 #include <algorithm>
 #include <iostream>
 #include <fmt/format.h>
@@ -26,12 +27,12 @@ namespace Ravl2
     constexpr Index(std::initializer_list<int> val)
     {
       if(val.size() == 1) {
-        for(int i = 0;i < N;i++)
+        for(unsigned i = 0;i < N;i++)
           m_index[i] = val.begin()[0];
         return;
       }
       assert(val.size() == N);
-      for(int i = 0;i < N;i++)
+      for(unsigned i = 0;i < N;i++)
         m_index[i] = val.begin()[i];
     }
 
@@ -40,8 +41,8 @@ namespace Ravl2
     constexpr explicit Index(Args... args)
     {
       static_assert(sizeof...(args) == N,"Incorrect number of arguments");
-      int vals[] = {args...};
-      for(int i = 0;i < N;i++)
+      std::array<int,N> vals {args...};
+      for(unsigned i = 0;i < N;i++)
 	m_index[i] = vals[i];
     }
 
@@ -200,7 +201,7 @@ namespace Ravl2
     { return size(); }
 
     //! Get size of given dimension
-    [[nodiscard]] int size(unsigned n) const noexcept
+    [[nodiscard]] int size([[maybe_unused]] unsigned n) const noexcept
     {
       assert(n == 0);
       return size();
@@ -249,7 +250,7 @@ namespace Ravl2
     }
 
     //! Shift this range in dimension n by the given 'amount'
-    void shift(unsigned n,int amount)
+    void shift([[maybe_unused]] unsigned n,int amount)
     {
       assert(n == 0);
       m_min += amount;
@@ -257,11 +258,11 @@ namespace Ravl2
     }
 
     //! Smallest index in all dimensions.
-    [[nodiscard]] const int &min() const
+    [[nodiscard]] int min() const
     { return m_min; }
 
     //! largest index in all dimensions.
-    [[nodiscard]] const int &max() const
+    [[nodiscard]] int max() const
     { return m_max; }
 
     //! Create a new index clipped so it is within the range.
@@ -312,14 +313,14 @@ namespace Ravl2
     { return m_min != ind.m_min || m_max != ind.m_max; }
 
     //! Access range of given dimension.
-    [[nodiscard]] const IndexRange<1> &operator[](unsigned i) const
+    [[nodiscard]] const IndexRange<1> &operator[]([[maybe_unused]] unsigned i) const
     {
       assert(i == 0);
       return *this;
     }
 
     //! Access range of given dimension.
-    [[nodiscard]] IndexRange<1> &operator[](unsigned i)
+    [[nodiscard]] IndexRange<1> &operator[]([[maybe_unused]] unsigned i)
     {
       assert(i == 0);
       return *this;
@@ -439,9 +440,9 @@ namespace Ravl2
     }
 
     //! Get total number of elements covered by range.
-    [[nodiscard]] size_t elements() const
+    [[nodiscard]] int elements() const
     {
-      size_t n = 1;
+      int n = 1;
       for(unsigned i = 0;i < N;i++)
         n *= m_range[i].size();
       return n;
@@ -639,14 +640,14 @@ namespace Ravl2
     //! Access range of given dimension.
     [[nodiscard]] const IndexRange<1> &operator[](unsigned i) const
     {
-      assert(i >= 0 && i < N);
+      assert(i < N);
       return m_range[i];
     }
 
     //! Access range of given dimension.
     [[nodiscard]] IndexRange<1> &operator[](unsigned i)
     {
-      assert(i >= 0 && i < N);
+      assert(i < N);
       return m_range[i];
     }
 
@@ -775,10 +776,13 @@ namespace Ravl2
   class IndexRangeIterator
   {
   public:
+    // cppcheck-suppress functionStatic
     IndexRangeIterator(const IndexRange<N> &range,const Index<N> &at)
      : m_range(&range),
        m_at(at)
-    {}
+    {
+      assert(range.contains(at));
+    }
 
     //! Access current index.
     [[nodiscard]] const Index<N> &operator*() const

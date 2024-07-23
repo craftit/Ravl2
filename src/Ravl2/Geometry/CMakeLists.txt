@@ -17,9 +17,5 @@ add_library (Ravl2Geometry
         Range.hh Range.cc
 )
 
-target_link_libraries(Ravl2Geometry PUBLIC Ravl2 )
+target_link_libraries(Ravl2Geometry PUBLIC Ravl2Core )
 
-
-add_executable(test_geometry tests/test_geometry.cc)
-target_link_libraries (test_geometry Ravl2Geometry GTest::gtest_main xtensor xtensor-blas )
-gtest_add_tests(TARGET test_geometry )

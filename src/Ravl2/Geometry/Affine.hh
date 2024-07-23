@@ -29,10 +29,10 @@ namespace Ravl2
     inline Affine(const Matrix<DataT,N,N> &SR, const Vector<DataT,N> &T);
     //: Construct from Scale/Rotate matrix and a translation vector.
     
-    inline Vector<DataT,N> &Translation() { return T; }
+    inline Vector<DataT,N> &Translation() { return mT; }
     //: Access the translation component of the transformation.
     
-    inline const Vector<DataT,N> &Translation() const { return T; }
+    inline const Vector<DataT,N> &Translation() const { return mT; }
     //: Constant access to the translation component of the transformation.
     
     inline void Scale(const Vector<DataT,N> &xy);
@@ -55,10 +55,10 @@ namespace Ravl2
     Affine<DataT,N> Inverse() const;
     //: Generate an inverse transformation.
     
-    Matrix<DataT,N,N> &SRMatrix() { return SR; }
+    Matrix<DataT,N,N> &SRMatrix() { return mSR; }
     //: Get Scale/Rotate matrix.
     
-    const Matrix<DataT,N,N> &SRMatrix() const { return SR; }
+    const Matrix<DataT,N,N> &SRMatrix() const { return mSR; }
     //: Get Scale/Rotate matrix.
     
     inline Affine<DataT,N> &operator=(const Affine &Oth);
@@ -71,97 +71,97 @@ namespace Ravl2
     // Take a vector and put it though the transformation.
     auto operator()(const Vector<DataT,N> &In) const
     {
-      return (SR * In) + T;
+      return (mSR * In) + mT;
     }
 
     //: Compose this transform with 'In'
     inline auto operator()(const Affine &In) const
     {
-      return Affine(SR * In.SRMatrix(), SR * In.Translation() + T);
+      return Affine(mSR * In.SRMatrix(), mSR * In.Translation() + mT);
     }
 
 
   protected:
-    Matrix<DataT,N,N> SR; // Scale/rotate.
-    Vector<DataT,N> T;   // Translate.
+    Matrix<DataT,N,N> mSR; // Scale/rotate.
+    Vector<DataT,N> mT;   // Translate.
   };
 
   /////////////////////////////////////////////////
   
   template<typename DataT,unsigned N>
   inline Affine<DataT,N>::Affine()
-    : SR()
+    : mSR()
   {
-    T.Fill(0);
-    SR.Fill(0.0);
+    mT.Fill(0);
+    mSR.Fill(0.0);
     for(size_t i = 0;i < N;i++)
-      SR[i][i] = 1.0;
+      mSR[i][i] = 1.0;
   }
   
   template<typename DataT,unsigned N>
   inline Affine<DataT,N>::Affine(const Affine &Oth)
-    : SR(Oth.SR),
-      T(Oth.T)
+    : mSR(Oth.mSR),
+      mT(Oth.mT)
   {}
   
   template<typename DataT,unsigned N>
-  inline Affine<DataT,N>::Affine(const Matrix<DataT,N,N> &nSR, const Vector<DataT,N> &nT)
-    : SR(nSR),
-      T(nT)
+  inline Affine<DataT,N>::Affine(const Matrix<DataT,N,N> &SR, const Vector<DataT,N> &T)
+    : mSR(SR),
+      mT(T)
   {}
   
   template<typename DataT,unsigned N>
   void Affine<DataT,N>::Scale(const Vector<DataT,N> &xy) {
     for(size_t i = 0;i < N;i++)
       for(size_t j = 0;j < N;j++)
-	SR[i][j] *= xy[j];
+        mSR[i][j] *= xy[j];
   }
   
   template<typename DataT,unsigned N>
-  inline void Affine<DataT,N>::Translate(const Vector<DataT,N> &DT) {
-    T += DT;
+  inline void Affine<DataT,N>::Translate(const Vector<DataT,N> &T) {
+    mT += T;
   }
   
   template<typename DataT,unsigned N>
   Affine<DataT,N> Affine<DataT,N>::Inverse(void) const {
     Affine<DataT,N> ret;
-    ret.SR = SR.Inverse();
-    Mul(ret.SR,T,ret.T);
-    ret.T *= -1;
+    ret.mSR = mSR.Inverse();
+    Mul(ret.mSR, mT, ret.mT);
+    ret.mT *= -1;
     return ret;
   }
   
   template<typename DataT,unsigned N>
   Vector<DataT,N> Affine<DataT,N>::operator*(const Vector<DataT,N> &In) const {
-    return (SR * In) + T;
+    return (mSR * In) + mT;
   }
   
   template<typename DataT,unsigned N>
   Affine<DataT,N> Affine<DataT,N>::operator*(const Affine &In) const{
-    return Affine(SR * In.SRMatrix(), SR * In.Translation() + T);
+    return Affine(mSR * In.SRMatrix(), mSR * In.Translation() + mT);
   }
   
   template<typename DataT,unsigned N>
   Affine<DataT,N> Affine<DataT,N>::operator/(const Affine &In) const{
     Matrix<DataT,N,N> inverse = In.SRMatrix().Inverse();
-    return Affine(SR * inverse, inverse * (T - In.Translation()));
+    return Affine(mSR * inverse, inverse * (mT - In.Translation()));
   }
   
   template<typename DataT,unsigned N>
   inline Affine<DataT,N> &Affine<DataT,N>::operator=(const Affine &Oth) {
-    SR = Oth.SR;
-    T = Oth.T;
+    mSR = Oth.mSR;
+    mT = Oth.mT;
     return *this;
   }
   
   template<typename DataT,unsigned N>
   bool Affine<DataT,N>::IsReal() const
   {
-    for(auto x : SR) {
+    for(auto x : mSR) {
       if(std::isinf(x) || std::isnan(x))
         return false;
     }
-    for(auto x : T) {
+    for(auto x : mT) {
       if (std::isinf(x) || std::isnan(x))
         return false;
     }

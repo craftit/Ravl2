@@ -251,8 +251,7 @@ namespace Ravl2
   template<typename RealT>
   inline bool Range<RealT,1>::IsOverlapping(const Range & r) const {
     return (!IsEmpty() && !r.IsEmpty())
-           && (((min() <= r.max()) && (r.min() <= max()))
-               || ((r.min() <= max()) && (min() <= r.max())));
+           && (min() <= r.max() && max() >= r.min());
   }
 
   template<typename RealT>

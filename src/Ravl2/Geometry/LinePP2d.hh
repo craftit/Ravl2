@@ -29,7 +29,7 @@ namespace Ravl2
     //: Default constructor.
     // The contents of the line are undefined.
 
-    LinePP2dC(const FLinePPC<RealT, 2> &Base)
+    explicit LinePP2dC(const FLinePPC<RealT, 2> &Base)
       : FLinePPC<RealT, 2>(Base)
     {}
     //: Constructor from base class

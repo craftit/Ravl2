@@ -21,16 +21,16 @@ namespace Ravl2
   class BufferBase
   {
   public:
-    BufferBase(size_t size)
+    explicit BufferBase(size_t size)
       : m_size(size)
     {}
 
     //! Virtual destructor
     virtual ~BufferBase()
-    {}
+    = default;
 
     //! Access size of buffer.
-    size_t size() const noexcept
+    [[nodiscard]] size_t size() const noexcept
     { return m_size; }
 
   protected:
@@ -48,10 +48,10 @@ namespace Ravl2
       : BufferBase(theSize)
     {}
 
-    DataT *data()
+    [[nodiscard]] DataT *data()
     { return m_data; }
 
-    const DataT *data() const
+    [[nodiscard]] const DataT *data() const
     { return m_data; }
 
   protected:
@@ -72,7 +72,7 @@ namespace Ravl2
         m_values(std::move(vec))
     {
       if(this->m_size > 0)
-        this->m_data = &m_values[0];
+        this->m_data = m_values.data();
     }
 
     //! Copy from a vector.
@@ -81,16 +81,34 @@ namespace Ravl2
         m_values(vec)
     {
       if(this->m_size > 0)
-        this->m_data = &m_values[0];
+        this->m_data = m_values.data();
     }
 
     //! Construct with a given size
     explicit BufferVector(size_t size)
       : Buffer<DataT>(size),
-        m_values(size)
+        m_values(this->size())
     {
       if(size > 0)
-        this->m_data = &m_values[0];
+        this->m_data = m_values.data();
+    }
+
+    //! Construct with a given size
+    explicit BufferVector(int size)
+        : Buffer<DataT>(size > 0 ? size_t(size) : 0),
+          m_values(this->size())
+    {
+      if(size > 0)
+        this->m_data = m_values.data();
+    }
+
+    //! Construct with a given size
+    explicit BufferVector(int bufferSize, const DataT &value)
+        : Buffer<DataT>(bufferSize > 0 ? size_t(bufferSize) : 0),
+          m_values(this->size(), value)
+    {
+      if(bufferSize > 0)
+        this->m_data = m_values.data();
     }
 
   protected:

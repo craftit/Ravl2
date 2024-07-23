@@ -54,7 +54,7 @@ namespace Ravl2
 
     void GotoLast() {
       iter = container.end();
-      iter--;
+      --iter;
     }
 
     void GotoFirst() {

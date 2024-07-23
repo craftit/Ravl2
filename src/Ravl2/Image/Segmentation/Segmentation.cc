@@ -22,7 +22,7 @@ namespace Ravl2
       : segmap(nsegmap.range()),
         labels(0)
   {
-    for(auto it = begin<2>(segmap,nsegmap);it.valid();++it) {
+    for(auto it = begin(segmap,nsegmap);it.valid();++it) {
       it.data<0>() = it.data<1>() >= 0 ? it.data<1>() : 0;
       if(it.data<0>() > labels)
         labels = it.data<0>();
@@ -285,8 +285,9 @@ namespace Ravl2
     // Make an identity mapping.
     std::vector<unsigned> minLab(labels);
     unsigned c = 0;
-    for(auto it : minLab)
+    for(auto &it : minLab) {
       it = c++;
+    }
     return minLab;
   }
   

@@ -148,7 +148,7 @@ namespace Ravl2
     IndexRange<2> range1;
     IndexRange<2> range2;
     ArrayIterZipN<2,Data1T,Data2T> cit;
-    Data1T *up1;
-    Data2T *up2;
+    Data1T *up1 = nullptr;
+    Data2T *up2 = nullptr;
   };
 }

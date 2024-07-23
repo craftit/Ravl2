@@ -57,7 +57,7 @@ namespace Ravl2
     {
       next_index();
       mPtr = mPtrStart;
-      for(int i = 0;i < N-1;i++)
+      for(unsigned i = 0;i < N-1;i++)
       { mPtr += mAccess.stride(i) * mIndex[i]; }
     }
 
@@ -78,9 +78,9 @@ namespace Ravl2
     {
       Index<N> ret = mIndex;
       auto rowStart = mPtrStart;
-      for(int i = 0;i < N-1;i++)
+      for(unsigned i = 0;i < N-1;i++)
       { rowStart += mAccess.stride(i) * mIndex[i]; }
-      ret[N-1] += mPtr - rowStart;
+      ret[N-1] += int(mPtr - rowStart);
       return ret;
     }
 
@@ -188,7 +188,7 @@ namespace Ravl2
   };
 
   //! Make zip N contructor
-  template<unsigned N,typename ...ArrayT>
+  template<typename ...ArrayT,unsigned N =  std::tuple_element<0, std::tuple<ArrayT...>>::type::dimensions>
   requires (WindowedArray<ArrayT,typename ArrayT::ValueT, N> && ...)
   constexpr auto begin(ArrayT &...arrays) noexcept -> ArrayIterZipN<N,typename ArrayT::ValueT...>
   {
@@ -196,9 +196,9 @@ namespace Ravl2
   }
 
   //! Just begin one array
-  template<typename ArrayT,unsigned N = ArrayT::dimension>
+  template<typename ArrayT,unsigned N = ArrayT::dimensions>
   requires (WindowedArray<ArrayT,typename ArrayT::ValueT, N> )
-  constexpr auto begin(ArrayT &arrays) noexcept -> ArrayIterZipN<N,typename ArrayT::ValueT>
+  constexpr auto begin(ArrayT &arrays) noexcept -> ArrayIter<typename ArrayT::ValueT,N>
   {
     return arrays.begin();
   }
@@ -214,7 +214,7 @@ namespace Ravl2
   template<unsigned N,typename FuncT, typename ...ArrayT>
   constexpr void forEach(FuncT func,ArrayT &...arrays)
   {
-    auto iter = begin<N>(arrays...);
+    auto iter = begin(arrays...);
     while(iter.valid())
     {
       do {

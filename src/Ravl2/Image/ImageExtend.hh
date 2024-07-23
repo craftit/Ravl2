@@ -4,25 +4,20 @@
 // General Public License (LGPL). See the lgpl.licence file for details or
 // see http://www.gnu.org/copyleft/lesser.html
 // file-header-ends-here
+//! author="Charles Galambos"
+
 #pragma once
 
-//! author="Charles Galambos"
-//! docentry="Ravl.API.Images.Filtering"
-//! lib=RavlImageProc
-//! userlevel=Normal 
-//! file="Ravl/Image/Processing/Filters/Misc/ImageExtend.hh"
-
 #include "Ravl2/Array.hh"
-#include "Ravl/Array2dIter2.hh"
-#include "Ravl/Image/DrawFrame.hh"
+#include "Ravl2/Image/DrawFrame.hh"
 
 namespace Ravl2
 {
   
   template<class DataT>
-  void ExtendImageFill(const ImageC<DataT> &image,IntT n,ImageC<DataT> &result,const DataT &borderValue) {
-    RavlAssert(n > 0);
-    ImageRectangleC rect = image.Frame().Expand(n);
+  void ExtendImageFill(const ImageC<DataT> &image,int n,ImageC<DataT> &result,const DataT &borderValue) {
+    assert(n > 0);
+    IndexRange<2> rect = image.Frame().Expand(n);
     if(!result.Frame().Contains(rect)) // Is result rectangle big enough.
       result = ImageC<DataT>(rect);
     // Copy centre of image
@@ -37,9 +32,9 @@ namespace Ravl2
   // be replaced with an image of a suitable size.
   
   template<class DataT>
-  void ExtendImageCopy(const ImageC<DataT> &image,IntT n,ImageC<DataT> &result) {
-    RavlAssert(n > 0);
-    ImageRectangleC rect = image.Frame().Expand(n);
+  void ExtendImageCopy(const ImageC<DataT> &image,int n,ImageC<DataT> &result) {
+    assert(n > 0);
+    IndexRange<2> rect = image.Frame().Expand(n);
     if(!result.Frame().Contains(rect)) // Is result rectangle big enough.
       result = ImageC<DataT>(rect);
     // Copy centre of image
@@ -48,7 +43,7 @@ namespace Ravl2
       it.Data1() = it.Data2();
     // Take care of border
     // Extend rows first.
-    for(IndexC r = image.Frame().TRow();r <= image.Frame().BRow();r++) {
+    for(int r = image.Frame().TRow();r <= image.Frame().BRow();r++) {
       DataT value1 = result[r][image.LCol()];
       DataT value2 = result[r][image.RCol()];
       DataT *at1 = &(result[r][rect.LCol()]);
@@ -60,12 +55,12 @@ namespace Ravl2
       }
     }
     // Take care of top of image.
-    for(IndexC r = rect.TRow();r < image.Frame().TRow();r++) {
+    for(int r = rect.TRow();r < image.Frame().TRow();r++) {
       for(BufferAccessIter2C<DataT,DataT> it(result[r],result[image.Frame().TRow()]);it;it++)
         it.Data1() = it.Data2();
     }
     // Take care of bottom of image.
-    for(IndexC r = image.Frame().BRow()+1;r <= result.BRow();r++) {
+    for(int r = image.Frame().BRow()+1;r <= result.BRow();r++) {
       for(BufferAccessIter2C<DataT,DataT> it(result[r],result[image.Frame().BRow()]);it;it++)
         it.Data1() = it.Data2();
     }
@@ -75,11 +70,11 @@ namespace Ravl2
   // be replaced with an image of a suitable size.
   
   template<class DataT>
-  void ExtendImageMirror(const ImageC<DataT> &image,IntT n,ImageC<DataT> &result) {
-    RavlAssert(n > 0);
-    RavlAssert(image.Frame().Rows() > 1);
-    RavlAssert(image.Frame().Cols() > 1);
-    ImageRectangleC rect = image.Frame().Expand(n);
+  void ExtendImageMirror(const ImageC<DataT> &image,int n,ImageC<DataT> &result) {
+    assert(n > 0);
+    assert(image.Frame().Rows() > 1);
+    assert(image.Frame().Cols() > 1);
+    IndexRange<2> rect = image.Frame().Expand(n);
     if(!result.Frame().Contains(rect)) // Is result rectangle big enough.
       result = ImageC<DataT>(rect);
     // Copy centre of image
@@ -88,7 +83,7 @@ namespace Ravl2
       it.Data1() = it.Data2();
     // Take care of border
     // Extend rows first.
-    for(IndexC r = image.Frame().TRow();r <= image.Frame().BRow();r++) {
+    for(int r = image.Frame().TRow();r <= image.Frame().BRow();r++) {
       DataT *org1 = &(result[r][image.LCol()]);
       DataT *org2 = &(result[r][image.RCol()]);
       DataT *at1 = org1-1;
@@ -102,10 +97,10 @@ namespace Ravl2
       }
     }
     // Take care of top of image.
-    IndexC ra1 = image.TRow();
-    IndexC ra2 = ra1-1;
-    IndexC rb1 = image.BRow();
-    IndexC rb2 = rb1+1;
+    int ra1 = image.TRow();
+    int ra2 = ra1-1;
+    int rb1 = image.BRow();
+    int rb2 = rb1+1;
     for(ra1++,rb1--;rb2 <= rect.BRow();ra1++,ra2--,rb1--,rb2++) {
       for(BufferAccessIter2C<DataT,DataT> it(result[ra2],result[ra1]);it;it++)
         it.Data1() = it.Data2();

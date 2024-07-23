@@ -1,6 +1,3 @@
-cmake_minimum_required (VERSION 3.20)
-
-project (Ravl2)
 
 include(FetchContent)
 
@@ -32,5 +29,4 @@ set(CMAKE_CXX_STANDARD 20)
 
 add_subdirectory(Ravl2)
 add_subdirectory(tests)
-add_subdirectory(examples)
 
