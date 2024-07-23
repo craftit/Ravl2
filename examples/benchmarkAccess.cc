@@ -185,7 +185,7 @@ Ravl2::Array<float,2> ConvolveKernelScanZipRow(const Ravl2::Array<float,2> &matr
   Ravl2::Array<float,2> result(scan.scanArea());
   //auto kernelEnd = kernel.end();
   auto scanIter = scan.scanArea().begin();
-  for(;scan.valid();++scanIter) {
+  for(;scan.valid();) {
     do {
       float sum = 0;
       auto window = scan.window();
@@ -196,6 +196,7 @@ Ravl2::Array<float,2> ConvolveKernelScanZipRow(const Ravl2::Array<float,2> &matr
 	} while(it.next());
       }
       result[*scanIter] = sum;
+      ++scanIter;
     } while( scan.next() );
   }
   return result;

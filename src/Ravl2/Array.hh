@@ -180,6 +180,10 @@ namespace Ravl2
       return m_ranges[i];
     }
 
+    //! Access range data
+    [[nodiscard]] constexpr const IndexRange<1> *range_data() const
+    { return m_ranges; }
+
     //! Range of index's for row
     [[nodiscard]] constexpr IndexRange<N> range() const
     {
@@ -423,6 +427,10 @@ namespace Ravl2
     [[nodiscard]] constexpr const IndexRange<1> &range() const
     { return *m_ranges; }
 
+    //! Access range data
+    [[nodiscard]] constexpr const IndexRange<1> *range_data() const
+    { return m_ranges; }
+
     //! Is array empty ?
     [[nodiscard]] constexpr bool empty() const noexcept
     { return m_ranges->empty(); }
@@ -655,7 +663,11 @@ namespace Ravl2
       [[nodiscard]] constexpr const IndexRange<1> &range(unsigned dim) const
       { return m_range[dim]; }
 
-      //! Is array empty ?
+      //! Access range data
+      [[nodiscard]] constexpr const IndexRange<1> *range_data() const
+      { return m_range.range_data(); }
+
+    //! Is array empty ?
       [[nodiscard]] constexpr bool empty() const noexcept
       { return m_range.empty(); }
 

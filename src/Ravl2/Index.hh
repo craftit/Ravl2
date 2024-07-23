@@ -784,6 +784,14 @@ namespace Ravl2
       assert(range.contains(at));
     }
 
+    // cppcheck-suppress functionStatic
+    IndexRangeIterator(const IndexRange<N> &range,const Index<N> &at, [[maybe_unused]] bool noRangeCheck)
+        : m_range(&range),
+          m_at(at)
+    {
+      assert(noRangeCheck || range.contains(at));
+    }
+
     //! Access current index.
     [[nodiscard]] const Index<N> &operator*() const
     { return m_at; }
@@ -836,7 +844,7 @@ namespace Ravl2
   {
     Index<N> end = min();
     end[0] = m_range[0].max()+1;
-    return IndexRangeIterator<N>(*this,end);
+    return IndexRangeIterator<N>(*this,end,true);
   }
 
 }

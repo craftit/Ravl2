@@ -33,7 +33,7 @@ namespace Ravl2
     template<typename ArrayT>
     requires WindowedArray<ArrayT,ElementT,N>
     explicit constexpr SlaveIter(ArrayT &img) noexcept
-      : SlaveIter(img.range().range_data(),img.origin_address(),img.strides())
+      : SlaveIter(img.range_data(),img.origin_address(),img.strides())
     {}
 
     constexpr void next()
@@ -104,8 +104,8 @@ namespace Ravl2
     { return mIndex[0] > mAccess.range(0).max();  }
 
   private:
-    ElementT * mPtr {};
-    ElementT * mPtrStart {};
+    ElementT * mPtr = nullptr;
+    ElementT * mPtrStart = nullptr;
     Index<N> mIndex {}; // Index of the beginning of the last dimension.
     Ravl2::ArrayAccess<ElementT,N> mAccess;
   };

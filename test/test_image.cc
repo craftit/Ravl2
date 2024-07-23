@@ -165,6 +165,14 @@ TEST_CASE("Array2Sqr2Iter2", "[Image]")
   data2.fill(1);
   Array2dSqr2Iter2C<int,int16_t> it2(data,data2);
   ASSERT_TRUE(it2.valid());
+  CHECK(it2.DataTL1() == 1);
+  CHECK(it2.DataTR1() == 2);
+  ASSERT_EQ(it2.DataBL1(),5);
+  ASSERT_EQ(it2.DataBR1(),6);
+  ASSERT_EQ(it2.DataTL2(),1);
+  ASSERT_EQ(it2.DataTR2(),1);
+  ASSERT_EQ(it2.DataBL2(),1);
+  ASSERT_EQ(it2.DataBR2(),1);
   int sqrs = 0;
   count = 0;
   for(;it2.valid() && sqrs < 10;++it2,sqrs++)

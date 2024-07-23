@@ -5,6 +5,7 @@
 #include "Ravl2/Assert.hh"
 
 int main(int nargs,char **args) {
+  // cppcheck-suppress duplicateExpression
   RavlAssertMsg(1 == 1, "This is a test message.");
   RavlAlwaysAssertMsg(1 == 0, "This test failed.");
   return 0;
