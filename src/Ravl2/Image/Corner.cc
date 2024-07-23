@@ -15,9 +15,9 @@ namespace Ravl2
     return out;
   }
 
-  std::istream &operator>>(std::istream &in,CornerC &corn) {
-    in >> corn.Location() >>  corn.Gradient() >> corn.Level();
-    return in;
-  }
+//  std::istream &operator>>(std::istream &in,CornerC &corn) {
+//    in >> corn.Location() >> corn.Gradient() >> corn.Level();
+//    return in;
+//  }
 
 }

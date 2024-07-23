@@ -12,6 +12,7 @@ add_library (Ravl2Image
         DrawLine.hh
         DrawCross.hh
         Array2dPolygon2dIter.hh
+        Corner.cc Corner.hh
         CornerDetectorSusan.cc CornerDetectorSusan.hh
 )
 

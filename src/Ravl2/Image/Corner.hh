@@ -28,19 +28,21 @@ namespace Ravl2 {
   class CornerC 
     {
   public:
+    using RealT = float;
+    
     CornerC() 
     {}
     //: Default constructor.
     // Contents of class are undefined.
     
-    CornerC(const Point<float,2> &location,RealT ndV,RealT ndH,ByteT nlevel) 
+    CornerC(const Point<float,2> &location,RealT ndV,RealT ndH,uint8_t nlevel) 
       : loc(location),
 	grad({ndV,ndH}),
 	level(nlevel)
     {}
     //: Constructor.
     
-    CornerC(const Point<float,2> &location,const Vector<float,2> &ngrad,ByteT nlevel) 
+    CornerC(const Point<float,2> &location,const Vector<float,2> &ngrad,uint8_t nlevel) 
       : loc(location),
 	grad(ngrad),
 	level(nlevel)
@@ -69,10 +71,10 @@ namespace Ravl2 {
     RealT &DHor() { return grad[1]; }
     // Horizontal component of gradient.
     
-    ByteT &Level() { return level; }
+    uint8_t &Level() { return level; }
     // Grey level of pixel.
 
-    const ByteT &Level() const 
+    const uint8_t &Level() const 
     { return level; }
     // Grey level of pixel.
     
@@ -90,7 +92,7 @@ namespace Ravl2 {
   private:
     Point<float,2> loc;       // Location of corner.
     Vector<float,2> grad;     // gradient of point.
-    ByteT level;        // Intensity of point.
+    uint8_t level;        // Intensity of point.
   };
   
   std::ostream &operator<<(std::ostream &out,const CornerC &corn);
@@ -102,10 +104,10 @@ namespace Ravl2 {
   //////////////////////////////////////
   // A somewhat arbitrary distance measure between two corners.
 
-  inline auto CornerC::Distance(const CornerC &oth) const {
+  inline float CornerC::Distance(const CornerC &oth) const {
     return xt::sum(xt::abs(loc - oth.loc))() +
       xt::sum(xt::abs(grad - oth.grad))() +
-      std::abs(level - oth.level);
+      std::abs(RealT(level) - RealT(oth.level));
   }
 
 }

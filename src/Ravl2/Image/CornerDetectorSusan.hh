@@ -9,7 +9,6 @@
 
 #include "Ravl2/Array.hh"
 #include "Ravl2/Image/Corner.hh"
-#include "Ravl2/Image/CornerDetector.hh"
 
 namespace Ravl2
 {
@@ -18,32 +17,32 @@ namespace Ravl2
   //: Susan corner detector.
   // Based on code from S.M.Smith
 
-  class CornerDetectorSusanC
-    : public CornerDetectorC
+  class CornerDetectorSusan
   {
   public:
-    CornerDetectorSusanC(int threshold = 20);
-    //: Constructor.
-    // threshold = Minimum level of cornerness to accept. <br>
-    // w = width of filter to use for corners.
+    using RealT = CornerC::RealT;
 
-    DListC<CornerC> Apply(const ImageC<ByteT> &img);
+    //! Constructor.
+    //! threshold = Minimum level of cornerness to accept. <br>
+    explicit CornerDetectorSusan(int threshold = 20);
+
+    [[nodiscard]] std::vector<CornerC> Apply(const Array<ByteT,2> &img) const;
     //: Get a list of corners from 'img'
 
   protected:
+    //! Setup LUT.
     void SetupLUT(int form);
-    //: Setup LUT.
 
-    DListC<CornerC> Corners(const ImageC<ByteT> &img,ImageC<IntT> &cornerMap);
-    //: Generate a corner map and a list of non zero components.
+    //! Generate a corner map and a list of non zero components.
+    [[nodiscard]] std::vector<CornerC> Corners(const Array<ByteT,2> &img,Array<int,2> &cornerMap) const;
 
-    void Peaks(DListC<CornerC> &list,const ImageC<IntT> &cornerMap);
-    //: Remove non-maximal peaks.
+    //! Remove non-maximal peaks.
+    void Peaks(std::vector<CornerC> &list,const Array<int,2> &cornerMap) const;
 
   private:
-    ByteT Lut[516]; // Brightness LUT.
-    ByteT *bp;
-    int threshold;
+    std::array<uint8_t,516> Lut; // Brightness LUT.
+    const uint8_t *bp = nullptr;
+    int threshold = 20;
   };
 
 }

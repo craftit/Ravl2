@@ -4,10 +4,7 @@
 // General Public License (LGPL). See the lgpl.licence file for details or
 // see http://www.gnu.org/copyleft/lesser.html
 // file-header-ends-here
-//! rcsid="$Id$"
-//! lib=RavlImageProc
 //! author="Charles Galambos based on code by S.M.Smith"
-//! file="Ravl/Image/Processing/Corners/CornerDetectorSusan.cc"
 
 #include "Ravl2/Image/PeakDetector.hh"
 #include "Ravl2/Image/CornerDetectorSusan.hh"
@@ -20,16 +17,17 @@
 #define ONDEBUG(x)
 #endif
 
-namespace RavlImageN {
+namespace Ravl2 
+{
 
   inline static int FTOI(float a)
-  { return ( (a) < 0 ? ((int)(a-0.5)) : ((int)(a+0.5)) ); }
+  { return ( (a) < 0 ? (int(a-0.5f)) : (int(a+0.5f)) ); }
 
 
   ///////////////////////////////////
   // Constructor.
 
-  CornerDetectorSusanBodyC::CornerDetectorSusanBodyC(int nTheshold)
+  CornerDetectorSusan::CornerDetectorSusan(int nTheshold)
     : threshold(nTheshold)
   {
     SetupLUT(6);
@@ -37,51 +35,58 @@ namespace RavlImageN {
 
   //: Setup LUT.
 
-  void CornerDetectorSusanBodyC::SetupLUT(int form) {
+  void CornerDetectorSusan::SetupLUT(int form)
+  {
     int   k;
     float temp;
 
     bp=&Lut[258];
-    float thresh = threshold;
+    auto bpPtr = &Lut[258];
+    auto thresh = float(threshold);
     for(k=-256;k<257;k++) {
-      temp=((float)k)/thresh;
+      temp=float(k)/thresh;
       temp=temp*temp;
       if (form==6)
 	temp=temp*temp*temp;
-      temp=100.0*Exp(-temp);
-      bp[k]= (ByteT)temp;
+      temp=100.0f * std::exp(-temp);
+      bpPtr[k]= uint8_t(temp);
     }
   }
 
-  DListC<CornerC> CornerDetectorSusanBodyC::Apply(const ImageC<ByteT> &img) {
-    ONDEBUG(cerr << "CornerDetectorSusanBodyC::Apply(), Called. \n");
-    ImageC<IntT> cornerImage(img.Frame());
-    DListC<CornerC> lst = Corners(img,cornerImage);
+  std::vector<CornerC> CornerDetectorSusan::Apply(const Array<uint8_t,2> &img) const
+  {
+    ONDEBUG(cerr << "CornerDetectorSusan::Apply(), Called. \n");
+    Array<int,2> cornerImage(img.range());
+    auto lst = Corners(img,cornerImage);
     Peaks(lst,cornerImage);
     return lst;
   }
 
-  DListC<CornerC> CornerDetectorSusanBodyC::Corners(const ImageC<ByteT> &img,ImageC<IntT> &cornerMap) {
-
-    DListC<CornerC> cornerList;
-    cornerMap.Fill(0);
+  std::vector<CornerC>CornerDetectorSusan::Corners(const Array<uint8_t,2> &img,Array<int,2> &cornerMap) const
+  {
+    std::vector<CornerC> cornerList;
+    if(img.empty())
+      return cornerList;
+    cornerList.reserve(size_t(img.range().area()/100));
+    cornerMap.fill(0);
     const int max_no = 1850;
 
     ONDEBUG(int CCount = 0);
 
     int   n,x,y,sq,xx,yy;
-    IntT i,j;
+    int i,j;
     float divide;
-    const ByteT *p,*cp;
-    ByteT c;
+    const uint8_t *p,*cp;
+    uint8_t c;
 
-    const IntT colMin = img.Rectangle().Origin().Col().V() + 5;
-    const IntT colMax = img.Rectangle().End().Col().V() - 5;
-    const IntT rowMin = img.Rectangle().Origin().Row().V() + 5;
-    const IntT rowMax = img.Rectangle().End().Row().V() - 5;
+    IndexRange<2> window = img.range().shrink(5);
+    const int colMin = window.range(1u).min();
+    const int colMax = window.range(1u).max();
+    const int rowMin = window.range(0u).min();
+    const int rowMax = window.range(0u).max();
 
-    for (i=rowMin;i<rowMax;i++)
-      for (j=colMin;j<colMax;j++) {
+    for (i=rowMin;i<=rowMax;i++)
+      for (j=colMin;j<=colMax;j++) {
 	n = 100;
 	p = &(img[(i-3)][j - 1]);
 	cp = &bp[(img[i][j])];
@@ -226,14 +231,14 @@ namespace RavlImageN {
 	  continue;
 	sq=sq/2;
 	if(yy < sq) {
-	  divide=(float)y/(float)Abs(x);
-	  sq=Abs(x)/x;
+	  divide=float(y)/float(std::abs(x));
+	  sq=std::abs(x)/x;
 	  sq=*(cp-img[(i+FTOI(divide))][j+sq]) +
 	    *(cp-img[(i+FTOI(2*divide))][j+2*sq]) +
 	    *(cp-img[(i+FTOI(3*divide))][j+3*sq]);
 	} else if(xx < sq) {
-	  divide=(float)x/(float)Abs(y);
-	  sq=Abs(y)/y;
+	  divide=float(x)/float(std::abs(y));
+	  sq=std::abs(y)/y;
 	  sq=*(cp-img[(i+sq)][j+FTOI(divide)]) +
 	    *(cp-img[(i+2*sq)][j+FTOI(2*divide)]) +
 	    *(cp-img[(i+3*sq)][j+FTOI(3*divide)]);
@@ -241,8 +246,8 @@ namespace RavlImageN {
 	if(sq <= 290)
 	  continue;
 	cornerMap[i][j] = max_no - n;
-	cornerList.InsLast(CornerC(Point2dC(i,j),
-				   (51*x)/n,(51*y)/n,
+	cornerList.push_back(CornerC(toPoint<float>(float(i),float(j)),
+				   RealT((51*RealT(x))/RealT(n)),RealT((51*RealT(y))/RealT(n)),
 				   img[i][j])
 			  );
 	ONDEBUG(CCount++);
@@ -253,10 +258,18 @@ namespace RavlImageN {
 
   //: Remove non-maximal peaks.
 
-  void CornerDetectorSusanBodyC::Peaks(DListC<CornerC> &list,const ImageC<IntT> &cornerMap) {
-    for(DLIterC<CornerC> it(list);it;it++) {
-      if(!PeakDetect7(cornerMap,it->Location()))
-	it.Del();
+  void CornerDetectorSusan::Peaks(std::vector<CornerC> &list,const Array<int,2> &cornerMap) const
+  {
+    auto end = list.end();
+    for(auto it = list.begin();it != end;++it) {
+      if(!PeakDetect7(cornerMap, toIndex<float,2>(it->Location()))) {
+	// Take element from end of list and move it here.
+	*it = list.back();
+	list.pop_back();
+	end = list.end();
+      } else {
+	++it;
+      }
     }
   }
 

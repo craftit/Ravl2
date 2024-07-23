@@ -682,15 +682,15 @@ namespace Ravl2
     [[nodiscard]] std::array<IndexRange<1>, N> &ranges()
     { return m_range; }
 
-    [[nodiscard]] IndexRange<1> &range(int i)
+    [[nodiscard]] IndexRange<1> &range(unsigned i)
     {
-      assert(i >= 0 && i < N);
+      assert(i < N);
       return m_range[i];
     }
 
-    [[nodiscard]] const IndexRange<1> &range(int i) const
+    [[nodiscard]] const IndexRange<1> &range(unsigned i) const
     {
-      assert(i >= 0 && i < N);
+      assert(i < N);
       return m_range[i];
     }
 
