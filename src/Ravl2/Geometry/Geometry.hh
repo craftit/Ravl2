@@ -34,6 +34,8 @@
 #include <xtensor/xsort.hpp>
 #include <xtensor/xnorm.hpp>
 #include <xtensor/xnpy.hpp>
+#include <xtensor/xmath.hpp>
+#include <xtensor/xreducer.hpp>
 #include <xtensor-blas/xlinalg.hpp>
 #pragma GCC diagnostic pop
 #endif
@@ -123,7 +125,7 @@ namespace Ravl2
     //std::string toString(const VectorT &v);
 
     template<typename RealT,unsigned N>
-    constexpr RealT squaredEuclidDistanceS(const Point<RealT,N> &a,const Point<RealT,N> &b)
+    constexpr RealT squaredEuclidDistance(const Point<RealT,N> &a,const Point<RealT,N> &b)
     {
       RealT sum = 0;
       for(unsigned i = 0; i < N; i++) {
@@ -140,6 +142,22 @@ namespace Ravl2
         sum += sqr(a(i) - b(i));
       }
       return std::sqrt(sum);
+    }
+
+    //! City Block Distance
+
+    template<typename A, typename B>
+    constexpr auto cityBlockDistance(xt::xexpression<A> a,xt::xexpression<B> b)
+    { return xt::sum(xt::abs(a - b)); }
+
+    template<unsigned N>
+    constexpr auto cityBlockDistance(const Index<N> &a,const Index<N> &b)
+    {
+      int sum = 0;
+      for(unsigned i = 0; i < N; i++) {
+	sum += std::abs(a[i] - b[i]);
+      }
+      return sum;
     }
 
     //! Compute twice the area contained by the three 2d points.
@@ -211,9 +229,6 @@ namespace Ravl2
   {
     return Point<RealT,N>({RealT(data)...});
   }
-
-
-
 
 }
 
