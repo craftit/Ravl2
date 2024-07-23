@@ -50,8 +50,8 @@ namespace Ravl2
   Polygon2dIterC<RealT>::EdgeC::EdgeC(const Point<RealT,2> &p1, const Point<RealT,2> &p2) 
   {
     if(p2[0] == p1[0]) { //horizontal line
-      m_a = 0.0f;  //to avoid dividing by 0
-      m_b = 0.0f;
+      m_a = RealT(0.0);  //to avoid dividing by 0
+      m_b = RealT(0.0);
     } else {
       m_a = (p2[1]-p1[1])/(p2[0]-p1[0]);
       m_b = p1[1] - m_a * p1[0];
@@ -93,14 +93,14 @@ namespace Ravl2
   }
 
   template<typename RealT>
-  void Polygon2dIterC<RealT>::AELC::Add(const Polygon2dIterC<RealT>::EdgeC &e, const int &row)
+  void Polygon2dIterC<RealT>::AELC::Add(const Polygon2dIterC<RealT>::EdgeC &e, int row)
   {
     //find right spot to add it at
-    RealT x = e.xof(row+0.5);
+    RealT x = e.xof(RealT(row)+RealT(0.5));
     auto it = this->begin();
     auto end = this->end();
     for (; it != end; it++) {
-      if(it->xof(row+0.5) >= x)
+      if(it->xof(RealT(row)+RealT(0.5)) >= x)
         break;
     }
     this->insert(it,e);
@@ -126,7 +126,7 @@ namespace Ravl2
   }
 
   template<typename RealT>
-  bool Polygon2dIterC<RealT>::AELC::First(IndexRange<1> &indexRange, const int &row)
+  bool Polygon2dIterC<RealT>::AELC::First(IndexRange<1> &indexRange, const int row)
   {
     m_sortedEdges.clear();
     // use list insertion sort to put in ascending order
@@ -134,7 +134,7 @@ namespace Ravl2
     auto it = this->rbegin();
     const auto end = this->rend();
     for (; it != end; it++) {
-      RealT edge = it->xof(row);
+      RealT edge = it->xof(RealT(row));
       auto rt = m_sortedEdges.begin();
       auto rt_end = m_sortedEdges.end();
       for (; rt != rt_end; rt++) {
@@ -150,13 +150,13 @@ namespace Ravl2
   }
 
   template<typename RealT>
-  bool Polygon2dIterC<RealT>::AELC::Next(IndexRange<1> &indexRange, const int &row) {
+  bool Polygon2dIterC<RealT>::AELC::Next(IndexRange<1> &indexRange, [[maybe_unused]] const int row) {
     do {
       if (m_sortedEdges.empty())
         return false;
       int newMin = int_ceil(m_sortedEdges.front());
       m_sortedEdges.pop_front();
-      int newMax = int_ceil(m_sortedEdges.front() - 1.0);
+      int newMax = int_ceil(m_sortedEdges.front() - RealT(1.0));
       indexRange = IndexRange<1>(newMin, newMax);
       m_sortedEdges.pop_front();
     } while(indexRange.size() <= 0);    // don't include empty sections

@@ -89,7 +89,7 @@ namespace Ravl2
     { return segmap; }
     //: Access segmentation map.
 
-    auto Labels()
+    auto Labels() const
     { return labels; }
     //: Access number of labels.
 
@@ -110,7 +110,7 @@ namespace Ravl2
 //    // The labels in the U and V channels are in the range 0 to 'max'.
 
   protected:
-    UIntT RelabelTable(std::vector<UIntT> &labelTable, UIntT currentMaxLabel);
+    static UIntT RelabelTable(std::vector<UIntT> &labelTable, UIntT currentMaxLabel);
     //: Compress labels.
 
     Array<unsigned, 2> segmap; // Segmentation map.

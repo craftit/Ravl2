@@ -1,19 +1,19 @@
-#include <gtest/gtest.h>
+
+#include <catch2/catch_test_macros.hpp>
 #include <spdlog/spdlog.h>
 
 //#include "Ravl2/Image/DrawCircle.hh"
 #include "Ravl2/Image/DrawLine.hh"
 #include "Ravl2/Image/DrawFrame.hh"
 
-TEST(Image, GeneralDraw)
+TEST_CASE("Draw", "[DrawLine]")
 {
   using namespace Ravl2;
   
   // Do some quick tests on the draw functions.
-  Array<uint8_t,2> img({100,100});
-  img.fill(0);
-  Index<2> from(10,10);
-  Index<2> to(90,90);
+  Array<uint8_t,2> img({100,100}, 0);
+//  Index<2> from(10,10);
+//  Index<2> to(90,90);
   Index<2> out1(200,20);
   Index<2> out2(200,40);
   DrawLine(img,uint8_t(255),out1,out2);

@@ -29,6 +29,7 @@ namespace Ravl2 {
   template <typename PixelT,typename Point2dT>
   [[nodiscard]] inline auto interpolate_bilinear(const Array<PixelT,2> &img,Point2dT pnt)
   {
+    int_floor(0.1);
     const auto px = pnt[0];
     const auto py = pnt[1];
     const auto fx = std::floor(px); // Row
@@ -37,8 +38,8 @@ namespace Ravl2 {
     const auto t = py - fy;
     const auto onemu = (1.0f-u);
     const auto onemt = (1.0f-t);
-    const int ix = fx;
-    const int iy = fy;
+    const int ix = int(fx);
+    const int iy = int(fy);
     const auto* pixel1 = &((img)[ix][iy]);
     const auto* pixel2 = &((img)[ix+1][iy]);
     return (pixel1[0] * (onemt*onemu)) +

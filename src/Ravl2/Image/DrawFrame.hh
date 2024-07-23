@@ -31,10 +31,12 @@ namespace Ravl2
     if(dr.empty())
       return ; // Nothing to draw around.
 
-    DataT *it1,*it2,*eor;
+    DataT *it1 = nullptr;
+    const DataT *eor = nullptr;
     int ColN = dr.range(1).size(); // Number of columns.
     if(rect.range(0).min() == dr.range(0).min() && rect.range(0).max() == dr.range(0).max()) { // The rectangle wasn't clipped.
       // Do horizontal lines.
+      DataT *it2 = nullptr;
       it1 = &(dat[dr.range(0).min()][dr.range(0).min()]);
       it2 = &(dat[dr.range(0).max()][dr.range(0).min()]);
       eor = &(it1[ColN]);
@@ -92,7 +94,8 @@ namespace Ravl2
     //cerr << "Outer=" << outerRect << "\n";
     //cerr << "Clipped=" << outerClipped << "\n";
     
-    DataT *it1,*it2,*eor;
+    DataT *it1,*it2;
+    const DataT *eor;
     int ColN = outerClipped.range(1).size(); // Number of columns.
     if(outerRect.range(0).min() == outerClipped.range(0).min() && outerRect.range(0).max() == outerClipped.range(0).max()) { // The innerRect wasn't clipped.
       // Do horizontal lines.

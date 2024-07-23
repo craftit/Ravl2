@@ -31,13 +31,13 @@ namespace Ravl2
     template<typename Array1T, typename Array2T>
     requires WindowedArray<Array1T,Data1T,2> && WindowedArray<Array2T,Data2T,2>
     Array2dSqr2Iter2C(const Array1T &array1,const Array2T &array2)
+     : range1({{array1.range(0).min()+1,array1.range(0).max()},
+               {array1.range(1).min()+1,array1.range(1).max()}
+              }),
+        range2({{array2.range(0).min()+1,array2.range(0).max()},
+                 {array2.range(1).min()+1,array2.range(1).max()}
+                })
     {
-      range1 = IndexRange<2>({{array1.range(0).min()+1,array1.range(0).max()},
-			     {array1.range(1).min()+1,array1.range(1).max()}
-			    });
-      range2 = IndexRange<2>({{array2.range(0).min()+1,array2.range(0).max()},
-			     {array2.range(1).min()+1,array2.range(1).max()}
-			    });
       assert(!range1.empty());
       assert(!range2.empty());
       auto access1 = clip(array1,range1);

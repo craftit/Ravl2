@@ -30,10 +30,10 @@ namespace Ravl2
     template<typename ArrayT>
     requires WindowedArray<ArrayT,DataT,2>
     explicit Array2dSqr2IterC(const ArrayT &narray)
+     : range({{narray.range(0).min()+1,narray.range(0).max()},
+              {narray.range(1).min()+1,narray.range(1).max()}
+             })
     {
-      range = IndexRange<2>({{narray.range(0).min()+1,narray.range(0).max()},
-			  {narray.range(1).min()+1,narray.range(1).max()}
-			 });
       assert(!range.empty());
       cit = clip(narray,range).begin();
       up = cit.data() - cit.strides()[0];

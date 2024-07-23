@@ -40,14 +40,16 @@ namespace Ravl2
     //: Construct a line from two points.
 
     //! Create line from start and end points
+    // cppcheck-suppress duplInheritedMember
     static LinePP2dC<RealT> fromPoints(const Point<RealT,2> &start,const Point<RealT,2> &end)
     { return {start, end}; }
 
     //! Create line from start point and direction
+    // cppcheck-suppress duplInheritedMember
     static LinePP2dC<RealT> fromStartAndDirection(const Point<RealT,2> &start,const Vector<RealT,2> &direction)
     { return {start,start + direction}; }
 
-    bool clipBy(const Range<RealT,2> &Rng);
+    bool clipBy(const Range<RealT,2> &rng);
     //: Clip line by given rectangle.
     // If no part of the line is in the rectangle:<ul>
     // <li>line is <i>not</i> clipped</li>
@@ -68,18 +70,18 @@ namespace Ravl2
     [[nodiscard]] bool IsPointIn(const Point<RealT,2>& Pt) const;
     //: Checks if this point is exactly on the closed segment
 
-    [[nodiscard]] RealT ParIntersection(const LinePP2dC & L) const;
+    [[nodiscard]] RealT ParIntersection(const LinePP2dC & l) const;
     //: Returns the parameter of the intersection point of 'l' with this line.
     // If the parameter is equal to 0, the intersection is the starting
     // point of this line, if the parameter is 1, the intersection is the
     // end point. If the parameter is between 0 and 1 the intersection is
     // inside of this line segment.
 
-    [[nodiscard]] bool HasInnerIntersection(const LinePP2dC & L) const;
+    [[nodiscard]] bool HasInnerIntersection(const LinePP2dC & l) const;
     // Returns true if the intersection of this line segment and the 
     // line 'l' is either inside of this line segment or one of the end points.
 
-    [[nodiscard]] Point<RealT,2> Intersection(const LinePP2dC & L) const;
+    [[nodiscard]] Point<RealT,2> Intersection(const LinePP2dC & l) const;
     // Returns the intersection of 2 lines.
 
     [[nodiscard]] bool Intersection(const LinePP2dC & L, Point<RealT,2>& Here) const;
@@ -88,7 +90,7 @@ namespace Ravl2
     //!param: here - the point of intersection
     //!return: true if the lines intersect or false if they are parallel
 
-    [[nodiscard]] bool IntersectRow(RealT Row,RealT &Col) const;
+    [[nodiscard]] bool IntersectRow(RealT row,RealT &col) const;
     //: Find the column position which intersects the given row.
     //!param: row - Row for which we want to find the intersecting column
     //!param: col - Place to store the intersecting col.

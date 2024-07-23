@@ -118,26 +118,26 @@ namespace Ravl2
       return {float(pos[0]),float(pos[1])};
     
     const DataT *rt = &(img[pos[0]-1][pos[1]]);
-    const float spp = std::pow((float) rt[-1],pof);
-    const float spc = std::pow((float) rt[ 0],pof);
-    const float spn = std::pow((float) rt[ 1],pof);
+    const float spp = std::pow(float(rt[-1]),pof);
+    const float spc = std::pow(float(rt[ 0]),pof);
+    const float spn = std::pow(float(rt[ 1]),pof);
     
     rt = &(img[pos]);
-    const float scp = std::pow((float) rt[-1],pof);
-    const float scc = std::pow((float) rt[ 0],pof);
-    const float scn = std::pow((float) rt[ 1],pof);
+    const float scp = std::pow(float(rt[-1]),pof);
+    const float scc = std::pow(float(rt[ 0]),pof);
+    const float scn = std::pow(float(rt[ 1]),pof);
     
     rt = &(img[pos[0]+1][pos[1]]);
-    const float snp = pow((float) rt[-1],pof);
-    const float snc = std::pow((float) rt[ 0],pof);
-    const float snn = std::pow((float) rt[ 1],pof);
+    const float snp = std::pow(float(rt[-1]),pof);
+    const float snc = std::pow(float(rt[ 0]),pof);
+    const float snn = std::pow(float(rt[ 1]),pof);
     
     // Use least-squares to fit quadratic to local corner strengths.
-    float Pxx = (spp - 2.0*spc + spn + scp - 2.0*scc + scn + snp - 2.0*snc + snn)/3.0;
-    float Pxy = (spp - spn - snp + snn)/4.0;
-    float Pyy = (spp + spc + spn - 2.0*scp - 2.0*scc - 2.0*scn + snp + snc + snn)/3.0;
-    float Px = (- spp - scp - snp + spn + scn + snn)/6.0;
-    float Py = (- spp - spc - spn + snp + snc + snn)/6.0;
+    float Pxx = (spp - 2*spc + spn + scp - 2*scc + scn + snp - 2*snc + snn)/3;
+    float Pxy = (spp - spn - snp + snn)/4;
+    float Pyy = (spp + spc + spn - 2*scp - 2*scc - 2*scn + snp + snc + snn)/3;
+    float Px = (- spp - scp - snp + spn + scn + snn)/6;
+    float Py = (- spp - spc - spn + snp + snc + snn)/6;
     float det = Pxy*Pxy - Pxx*Pyy;
 
     Vector2f indf = {float(pos[0]),float(pos[1])};
@@ -148,14 +148,14 @@ namespace Ravl2
     Vector2f corr({(Pyy*Px - Pxy*Py)/det,(Pxx*Py - Pxy*Px)/det});
     
     // pull the corrections inside the pixel.
-    if (corr[0] > 0.5) 
-     corr[0]=0.5; 
-    if (corr[0] < -0.5) 
-      corr[0]= -0.5;
-    if (corr[1] > 0.5) 
-      corr[1]=0.5; 
-    if (corr[1] < -0.5) 
-      corr[1]= -0.5;
+    if (corr[0] > float(0.5))
+     corr[0]=float(0.5);
+    if (corr[0] < float(-0.5))
+      corr[0]= float(-0.5);
+    if (corr[1] > float(0.5))
+      corr[1]=float(0.5);
+    if (corr[1] < float(-0.5))
+      corr[1]= float(-0.5);
     return indf + corr;
   }
   //: Locate peak with sub-pixel precision.
@@ -172,26 +172,26 @@ namespace Ravl2
       return fpos;
     
     const DataT *rt = &(img[pos[0]-1][pos[1]]);
-    auto spp = (RealT) rt[-1];
-    auto spc = (RealT) rt[ 0];
-    auto spn = (RealT) rt[ 1];
+    auto spp = RealT(rt[-1]);
+    auto spc = RealT(rt[ 0]);
+    auto spn = RealT(rt[ 1]);
     
     rt = &(img[pos]);
-    auto scp = (RealT) rt[-1];
-    auto scc = (RealT) rt[ 0];
-    auto scn = (RealT) rt[ 1];
+    auto scp = RealT(rt[-1]);
+    auto scc = RealT(rt[ 0]);
+    auto scn = RealT(rt[ 1]);
     
     rt = &(img[pos[0]+1][pos[1]]);
-    auto snp = (RealT) rt[-1];
-    auto snc = (RealT) rt[ 0];
-    auto snn = (RealT) rt[ 1];
+    auto snp = RealT(rt[-1]);
+    auto snc = RealT(rt[ 0]);
+    auto snn = RealT(rt[ 1]);
     
     // Use least-squares to fit quadratic to local corner strengths.
-    RealT Pxx = (spp - 2.0*spc + spn + scp - 2.0*scc + scn + snp - 2.0*snc + snn)/3.0;
-    RealT Pxy = (spp - spn - snp + snn)/4.0;
-    RealT Pyy = (spp + spc + spn - 2.0*scp - 2.0*scc - 2.0*scn + snp + snc + snn)/3.0;
-    RealT Px = (- spp - scp - snp + spn + scn + snn)/6.0;
-    RealT Py = (- spp - spc - spn + snp + snc + snn)/6.0;
+    RealT Pxx = (spp - RealT(2)*spc + spn + scp - RealT(2)*scc + scn + snp - RealT(2)*snc + snn)/RealT(3);
+    RealT Pxy = (spp - spn - snp + snn)/4;
+    RealT Pyy = (spp + spc + spn - 2*scp - 2*scc - 2*scn + snp + snc + snn)/3;
+    RealT Px = (- spp - scp - snp + spn + scn + snn)/6;
+    RealT Py = (- spp - spc - spn + snp + snc + snn)/6;
     RealT det = Pxy*Pxy - Pxx*Pyy;
     
     if(det == 0)
@@ -201,14 +201,14 @@ namespace Ravl2
     Vector2f corr = {(Pyy*Px - Pxy*Py)/det,(Pxx*Py - Pxy*Px)/det};
     
     // pull the corrections inside the pixel.
-    if (corr[0] > 0.5) 
-     corr[0]=0.5; 
-    if (corr[0] < -0.5) 
-      corr[0]= -0.5;
-    if (corr[1] > 0.5) 
-      corr[1]=0.5; 
-    if (corr[1] < -0.5) 
-      corr[1]= -0.5;
+    if (corr[0] > RealT(0.5))
+     corr[0]=RealT(0.5);
+    if (corr[0] < RealT(-0.5))
+      corr[0]= RealT(-0.5);
+    if (corr[1] > RealT(0.5))
+      corr[1]= RealT(0.5);
+    if (corr[1] < RealT(-0.5))
+      corr[1]= RealT(-0.5);
     return fpos + corr;
   }
   //: Locate peak with sub-pixel precision.

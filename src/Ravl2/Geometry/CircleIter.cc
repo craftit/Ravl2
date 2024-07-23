@@ -72,6 +72,7 @@ namespace Ravl2
 	}
 	octant++;
 	/* no break */
+        FMT_FALLTHROUGH;
       case 2:
 	data = Index<2>(y,-x) + offset;
 	break;

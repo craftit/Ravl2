@@ -671,7 +671,7 @@ namespace Ravl2
       // cppcheck-suppress functionConst
       constexpr void fill(const DataT &val)
       {
-        for(auto at : *this) {
+        for(auto &at : *this) {
           // cppcheck-suppress useStlAlgorithm
           at = val;
         }

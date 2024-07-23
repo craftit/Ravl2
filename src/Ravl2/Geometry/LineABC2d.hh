@@ -29,8 +29,8 @@ namespace Ravl2
     {}
 
     //! Creates the line determined by the equation norm[0]*x+norm[1]*y+c = 0.
-    inline LineABC2dC(Vector<RealT,2> norm, RealT d)
-        : normal(norm), d(d)
+    inline LineABC2dC(Vector<RealT,2> norm, RealT vd)
+        : normal(norm), d(vd)
     {}
 
     //! Creates the line passing through two points 'end' and 'start'.
@@ -87,12 +87,12 @@ namespace Ravl2
     //: Returns parameter c.
     
     inline RealT ValueX(const RealT y) const
-    { return (A() == 0) ? (RealT) 0 : (-B()*y - C()) / A(); }
+    { return (A() == 0) ? 0.0 : (-B()*y - C()) / A(); }
     //: Returns the value of x coordinate if the y coordinate is known.
     // If the parameter A() is zero, the zero is returned.
     
     inline RealT ValueY(const RealT x) const
-    { return (B() == 0) ? (RealT) 0 : (-A()*x - C()) / B(); }
+    { return (B() == 0) ? 0.0 : (-A()*x - C()) / B(); }
     //: Returns the value of y coordinate if the x coordinate is known.
     // If the parameter B() is zero, the zero is returned.
     

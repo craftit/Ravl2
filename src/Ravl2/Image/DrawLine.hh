@@ -23,7 +23,7 @@ namespace Ravl2 {
     LinePP2dC<CoordTypeT> line = aLine;
     if (!line.clipBy(toRange<CoordTypeT>(Dat.range())))
       return;
-    for(Line2dIterC it(toIndex<CoordTypeT,2>(line.P1()), toIndex<CoordTypeT,2>(line.P2()));it;it++)
+    for(Line2dIterC it(toIndex<CoordTypeT,2>(line.P1()), toIndex<CoordTypeT,2>(line.P2()));it;++it)
       Dat[*it] = Value;
   }
 
@@ -50,7 +50,7 @@ namespace Ravl2 {
     if (line.clipBy(frame)) {
       CoordTypeT length = line.Length();
       // If both start and end are inside the image, all pixels in between are.
-      for(Line2dIterC it(line.P1(),line.P2());it;it++) {
+      for(Line2dIterC it(line.P1(),line.P2());it;++it) {
         CoordTypeT alpha = sqrt(static_cast<double>((it.Data() - Index2dC(line.P1())).SumOfSqr().V())) / length;
         Dat[*it] = DataT((ValueFrom*(1-alpha)) + (ValueTo*alpha));
       }

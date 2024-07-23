@@ -47,10 +47,10 @@ namespace Ravl2
 
     class AELC: public std::list<EdgeC> {
     public:
-      void Add(const EdgeC &e, const int &row);
+      void Add(const EdgeC &e, int row);
       void DeleteEdges(const int &row);
-      bool First(IndexRange<1> &indexRange, const int &row);
-      bool Next(IndexRange<1> &indexRange, const int &row);
+      bool First(IndexRange<1> &indexRange, int row);
+      bool Next(IndexRange<1> &indexRange, int row);
     private:
       std::list<RealT> m_sortedEdges;
     };

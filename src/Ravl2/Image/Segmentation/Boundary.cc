@@ -28,7 +28,7 @@ namespace Ravl2
       return;
     }
     mEdges.reserve((emask.range(0).size() + emask.range(1).size()) * 2);
-    for(Array2dSqr2IterC<PixelT> it(emask); it; it++) {
+    for(Array2dSqr2IterC<PixelT> it(emask); it; ++it) {
       if(it.DataBR() == inLabel) {
 	if(it.DataTR() != inLabel)
 	  mEdges.emplace_back(it.Index(), CrackCodeT::CR_LEFT);

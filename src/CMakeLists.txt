@@ -28,5 +28,4 @@ find_package(spdlog REQUIRED)
 set(CMAKE_CXX_STANDARD 20)
 
 add_subdirectory(Ravl2)
-add_subdirectory(tests)
 

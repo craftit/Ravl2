@@ -35,7 +35,7 @@ namespace Ravl2
     {}
 
     //! Returns the centroid (mean) of the points
-    Point<RealT,N> Centroid() const;
+    Point<RealT,N> PointCentroid() const;
 
     //! Calculates the barycentric coordinate of point
     std::vector<RealT> BarycentricCoordinate(const Point<RealT,N>& point) const;
@@ -64,17 +64,17 @@ namespace Ravl2
 
 
   template<typename RealT,unsigned N>
-  Point<RealT,N> PointSet<RealT,N>::Centroid() const {
+  Point<RealT,N> PointSet<RealT,N>::PointCentroid() const {
     // Create return value
     Point<RealT,N> centroid {};
     // Sum
-    int size = 0;
+    int count = 0;
     for (auto point : (*this)) {
       centroid += point;
-      size++;
+      count++;
     }
     // Divide
-    centroid /= (RealT) size;
+    centroid /= RealT(count);
     // Done
     return centroid;
   }

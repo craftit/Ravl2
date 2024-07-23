@@ -81,17 +81,17 @@ namespace Ravl2
   }
 
   template<typename RealT>
-  bool LinePP2dC<RealT>::IsPointIn(const Point<RealT,2>& point) const {
-    if ( ! IsPointOn(point))
+  bool LinePP2dC<RealT>::IsPointIn(const Point<RealT,2>& pnt) const {
+    if ( ! IsPointOn(pnt))
       return false;
 
     // If ab not vertical, check betweenness on x; else on y.
     if ( this->P1()[0] != this->P2()[0] )
-      return   ((this->P1()[0] <= point[0]) && (point[0] <= this->P2()[0]))
-	||((this->P1()[0] >= point[0]) && (point[0] >= this->P2()[0]));
+      return   ((this->P1()[0] <= pnt[0]) && (pnt[0] <= this->P2()[0]))
+	||((this->P1()[0] >= pnt[0]) && (pnt[0] >= this->P2()[0]));
     else
-      return   ((this->P1()[1] <= point[1]) && (point[1] <= this->P2()[1]))
-	||((this->P1()[1] >= point[1]) && (point[1] >= this->P2()[1]));
+      return   ((this->P1()[1] <= pnt[1]) && (pnt[1] <= this->P2()[1]))
+	||((this->P1()[1] >= pnt[1]) && (pnt[1] >= this->P2()[1]));
   }
 
   template<typename RealT>
@@ -148,8 +148,8 @@ namespace Ravl2
   template<typename RealT>
   RealT LinePP2dC<RealT>::DistanceWithin(const Point<RealT,2> & pt) const {
     RealT t = this->ParClosest(pt);
-    if (t < 0.0) return euclidDistance<RealT,2>(this->P1(),pt);
-    if (t > 1.0) return euclidDistance<RealT,2>(this->P2(),pt);
+    if (t < RealT(0)) return euclidDistance<RealT,2>(this->P1(),pt);
+    if (t > RealT(1)) return euclidDistance<RealT,2>(this->P2(),pt);
     return this->Distance(pt);
   }
 

@@ -31,7 +31,7 @@ namespace Ravl2
     //: Constructor.
 
     template<class RealT>
-    Line2dIterC(const LinePP2dC<RealT> &line)
+    explicit Line2dIterC(const LinePP2dC<RealT> &line)
      : Line2dIterC(toIndex(line.P1()), toIndex(line.P2())) {}
     //: Constructor.
     

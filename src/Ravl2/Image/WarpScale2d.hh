@@ -29,7 +29,7 @@ namespace Ravl2
     {
       //call subsampling function
       //cout << "WarpScaleBilinear scale:" << scale << std::endl;
-      if(scale[0] >= 1. && scale[1] >= 1.)
+      if(scale[0] >= 1.0f && scale[1] >= 1.0f)
         return WarpSubsample(img, scale, result);
 
       //cout << "src frame:" << img.Frame() << std::endl;
@@ -64,12 +64,12 @@ namespace Ravl2
         int fx = int_floor(pnt[0]); // Row
         int fxp1 = fx + 1;
         if(fxp1 >= img.Rows()) fxp1 = fx;
-        RealT u = pnt[0] - fx;
-        if(u < 1e-5) {
+        RealT u = pnt[0] - RealT(fx);
+        if(u < RealT(1e-5)) {
           do {
             int fy = int_floor(pnt[1]); // Col
-            RealT t = pnt[1] - fy;
-            if(t < 1e-5) {
+            RealT t = pnt[1] - RealT(fy);
+            if(t < RealT(1e-5)) {
               const InT* pixel1 = &(img)[fx][fy];
               *it = OutT(pixel1[0]);
               pnt[1] += scale[1];
@@ -84,11 +84,11 @@ namespace Ravl2
             }
           } while(it.next()); // True while in same row.
         } else {
-          RealT onemu = (1.0f-u);
+          RealT onemu = (RealT(1.0)-u);
           do {
             int fy = int_floor(pnt[1]); // Col
-            RealT t = pnt[1] - fy;
-            if(t < 1e-5) {
+            RealT t = pnt[1] - RealT(fy);
+            if(t < RealT(1e-5)) {
               const InT* pixel1 = &(img)[fx][fy];
               const InT* pixel2 = &(img)[fxp1][fy];
               *it = OutT((pixel1[0] * onemu) +
@@ -121,8 +121,8 @@ namespace Ravl2
       if(result.Frame().IsEmpty()) return false;
       // Distance between samples in the input image.
       Vector2f scale({
-		       (float)img.Rows() / (float)result.Rows(),
-		       (float)img.Cols() / (float)result.Cols()
+		       float(img.Rows()) / float(result.Rows()),
+		       float(img.Cols()) / float(result.Cols())
 		     }
       );
 
@@ -156,13 +156,13 @@ namespace Ravl2
         //cerr << "i:" << i << endl;
         //first partial pixel in the row
         const double onemt = 1. - t;
-        OutT resPixel = (OutT)(pixVal) * onemt;
+        OutT resPixel = OutT(pixVal) * onemt;
 
         //all full pixels
         const double srcLastColR = srcColR + scaleColR;
         const int srcLastColI = int_floor(srcLastColR);
         for(srcColI++; srcColI < srcLastColI; srcColI++) {
-          resPixel += (OutT)(*srcPtr);
+          resPixel += OutT(*srcPtr);
           srcPtr++;
         }
 
@@ -172,7 +172,7 @@ namespace Ravl2
         srcPtr++;
         //cerr << "t:" << t << endl;
         if(t > 1e-5) {
-          resPixel += (OutT)(pixVal) * t;
+          resPixel += OutT(pixVal) * t;
         }
 
         *resPtr = resPixel;
@@ -197,13 +197,13 @@ namespace Ravl2
       for(int i = 0; i < resCols; i++) {
         //first partial pixel in the row
         const double onemt = 1. - t;
-        OutT resPixel = (OutT)(pixVal) * onemt;
+        OutT resPixel = OutT(pixVal) * onemt;
 
         //all full pixels
         const double srcLastColR = srcColR + scaleColR;
         const int srcLastColI = int_floor(srcLastColR);
         for(srcColI++; srcColI < srcLastColI; srcColI++) {
-          resPixel += (OutT)(*srcPtr);
+          resPixel += OutT(*srcPtr);
           srcPtr++;
         }
 
@@ -212,7 +212,7 @@ namespace Ravl2
         pixVal = *srcPtr; //this could read outside the row, but the value will not be used
         srcPtr++;
         if(t > 1e-5) {
-          resPixel += (OutT)(pixVal) * t;
+          resPixel += OutT(pixVal) * t;
         }
 
         *resPtr += resPixel;
@@ -256,18 +256,18 @@ namespace Ravl2
       const Point2f origin(result.Frame().TRow() * scale[0], result.Frame().LCol() * scale[1]);
       //cout << "origin:" << origin << std::endl;
 
-      const int resRows = (int)(result.Rows());
-      const int resCols = (int)(result.Cols());
+      const int resRows = int(result.Rows());
+      const int resCols = int(result.Cols());
 
-      const double norm = 1. / (scale[0] * scale[1]);
+      const RealAccumT norm = RealAccumT(1.0) / (scale[0] * scale[1]);
 
       std::vector<RealAccumT> bufferRow(resCols);
       std::vector<RealAccumT> bufferRes(resCols);
 
       //prepare row buffer
-      double srcRowR = origin[0];
+      RealAccumT srcRowR = RealAccumT(origin[0]);
       int srcRowI = int_floor(srcRowR);
-      double u = srcRowR - srcRowI;
+      RealAccumT u = srcRowR - srcRowI;
 
       WS_prepareRow(img, srcRowI, origin[1], scale[1], bufferRow.data(), resCols);
       //if(!CheckRow(buffer, resCols, scale[1])) return false;
@@ -312,7 +312,7 @@ namespace Ravl2
         //copy and scale result
         OutT *resRowPtr = &(result[j+result.TRow()][result.LCol()]);
         for(int i = 0; i < resCols; i++) {
-          resRowPtr[i] = (OutT)(bufferRes[i] * norm);
+          resRowPtr[i] = OutT(bufferRes[i] * norm);
         }
 
         srcRowR = srcLastRowR;

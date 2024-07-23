@@ -123,7 +123,7 @@ void ConvolveKernelPtr(const float *matrix,
     const float *vir = vi;
     for(size_t j = 0;j < cols;j++)
       ret += *(vk++) * *(vir++);
-    vi = reinterpret_cast<const float *>(reinterpret_cast<const char *>(vi) + matrixByteStride);
+    vi += matrixByteStride;
   }
   *result = ret;
 }
@@ -281,7 +281,7 @@ Ravl2::Array<float,2> ConvolveKernelPtr(const Ravl2::Array<float,2> &matrix,
                         &kernel[kernel.range()[0].min()][kernel.range()[1].min()],
                         kernel.range()[0].size(),
                         kernel.range()[1].size(),
-                        matrix.stride(0) * sizeof(float),
+                        matrix.stride(0),
                         &result[sr][sc]);
     }
   }

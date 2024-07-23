@@ -29,12 +29,14 @@ add_test(NAME cli.has_help COMMAND intro --help)
 add_test(NAME cli.version_matches COMMAND intro --version)
 set_tests_properties(cli.version_matches PROPERTIES PASS_REGULAR_EXPRESSION "${PROJECT_VERSION}")
 
-add_executable(tests test_core.cc)
+add_executable(tests test_core.cc test_geometry.cc test_image.cc test_draw.cc)
 target_link_libraries(
   tests
   PRIVATE ravl2::ravl2_warnings
           ravl2::ravl2_options
           ravl2::Ravl2Core
+          ravl2::Ravl2Geometry
+          ravl2::Ravl2Image
           Catch2::Catch2WithMain)
 
 if(WIN32 AND BUILD_SHARED_LIBS)

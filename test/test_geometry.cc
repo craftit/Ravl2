@@ -1,6 +1,7 @@
 
-#include <gtest/gtest.h>
+#include <catch2/catch_test_macros.hpp>
 #include <spdlog/spdlog.h>
+#include "Ravl2/Math.hh"
 #include "Ravl2/Geometry/Moments2.hh"
 #include "Ravl2/Geometry/Circle.hh"
 #include "Ravl2/Geometry/Polygon2d.hh"
@@ -8,7 +9,16 @@
 #include "Ravl2/Geometry/CircleIter.hh"
 #include "Ravl2/Geometry/LineABC2d.hh"
 
-TEST(Geometry, Moments)
+#define CHECK_EQ(a,b) CHECK((a) == (b))
+#define CHECK_NE(a,b) CHECK_FALSE((a) == (b))
+#define EXPECT_TRUE(a) CHECK(a)
+#define EXPECT_EQ(a,b) CHECK((a) == (b))
+#define EXPECT_NE(a,b) CHECK_FALSE((a) == (b))
+#define ASSERT_EQ(a,b) REQUIRE((a) == (b))
+#define ASSERT_NE(a,b) REQUIRE_FALSE((a) == (b))
+#define ASSERT_FLOAT_EQ(a,b) REQUIRE(Ravl2::isNearZero((a) -(b)))
+
+TEST_CASE("Moments", "[Moments2]")
 {
   using namespace Ravl2;
 
@@ -27,7 +37,7 @@ TEST(Geometry, Moments)
 
 }
 
-TEST(Geometry, PolygonIter)
+TEST_CASE("PolygonIter", "[Polygon2dC]")
 {
   using namespace Ravl2;
   IndexRange<2> range(Index<2>(0,0), Index<2>(10,10));
@@ -58,7 +68,7 @@ TEST(Geometry, PolygonIter)
     //SPDLOG_INFO("{} {}", it.Row(), it.RowIndexRange());
     EXPECT_TRUE(range[0].contains(it.Row()));
     EXPECT_TRUE(range[1].contains(it.RowIndexRange()));
-    EXPECT_LT(i, expectedResult.size());
+    CHECK(i < expectedResult.size());
     EXPECT_EQ(it.Row(), std::get<0>(expectedResult[i]));
     EXPECT_EQ(it.RowIndexRange(), std::get<1>(expectedResult[i]));
   }
@@ -66,7 +76,7 @@ TEST(Geometry, PolygonIter)
 }
 
 
-TEST(Geometry, CircleIter)
+TEST_CASE("CircleIter", "[CircleIterC]")
 {
   using namespace Ravl2;
   int i = 0;
@@ -75,12 +85,12 @@ TEST(Geometry, CircleIter)
   Point<float,2> origin({0,0});
   Point<float,2> at;
   for(CircleIterC it(rad);it.IsElm();it.Next(),i++) {
-    at[0] = it.Data()[0];
-    at[1] = it.Data()[1];
+    at[0] = float(it.Data()[0]);
+    at[1] = float(it.Data()[1]);
     RealT dst =  euclidDistance<float,2>(at,origin);
-    RealT diff = std::abs((RealT) rad - dst);
+    RealT diff = std::abs(RealT(rad) - dst);
     //cerr << "Dst:" << Abs((RealT) rad - dst) << " ";
-    EXPECT_LE(diff, 0.5); // Should never be greater than 0.5 !
+    CHECK(diff < 0.5f); // Should never be greater than 0.5 !
     if(diff > maxDist)
       maxDist = diff;
     //cout << it.Data() << std::endl;
@@ -89,7 +99,7 @@ TEST(Geometry, CircleIter)
   EXPECT_EQ(i,112);
 }
 
-TEST(Geometry, Circle2d)
+TEST_CASE("Circle2", "[Circle2]")
 {
   using namespace Ravl2;
 
@@ -98,15 +108,15 @@ TEST(Geometry, Circle2d)
   pnts[1] = Point<float,2>({-1,2});
   pnts[2] = Point<float,2>({3,2});
   pnts[3] = Point<float,2>({1,4});
-  pnts[4] = Point<float,2>({1,4.01}); // Just to add a slight error.
+  pnts[4] = Point<float,2>({1,4.01f}); // Just to add a slight error.
 
 
   Circle2dC<float> circle2;
   EXPECT_TRUE(circle2.Fit(pnts[0],pnts[1],pnts[2]));
   SPDLOG_INFO("Center={} Radius={}", circle2.Centre(), circle2.Radius());
   float sqrMag = xt::sum(xt::square(Point<float,2>(circle2.Centre() - Point<float,2>({1,2}))))[0];
-  EXPECT_LT(sqrMag, 0.01f);
-  EXPECT_LT(std::abs(circle2.Radius() - 2), 0.01f);
+  CHECK(sqrMag < 0.01f);
+  CHECK(std::abs(circle2.Radius() - 2) < 0.01f);
 
   Circle2dC<float> circle;
 #if 0
