@@ -61,7 +61,6 @@ namespace Ravl2
       { mPtr += mAccess.stride(i) * mIndex[i]; }
     }
 
-
     [[nodiscard]] constexpr ElementT &data()
     {  return *mPtr; }
 
@@ -114,6 +113,10 @@ namespace Ravl2
   class ArrayIterZipN
   {
   public:
+    using difference_type = std::ptrdiff_t;
+    using value_type = std::tuple<DataT &...>;
+    constexpr static unsigned dimensions = N;
+
     constexpr ArrayIterZipN()
     = default;
 
@@ -126,7 +129,7 @@ namespace Ravl2
     }
 
     //! Increment iterator, return true while we're on the same row.
-    inline constexpr bool next() noexcept
+    inline constexpr bool next()
     {
       // Increment all the iterators
       std::apply([](auto &...args) { (args.next(), ...); }, mIters);
@@ -141,7 +144,7 @@ namespace Ravl2
     }
 
     //! Increment iterator
-    inline constexpr auto &operator++() noexcept
+    inline constexpr auto &operator++()
     {
       // Increment all the iterators
       std::apply([](auto &...args) { (args.next(), ...); }, mIters);
@@ -152,6 +155,14 @@ namespace Ravl2
 	mEnd = std::get<0>(mIters).end();
       }
       return *this;
+    }
+
+    //! Post Increment iterator
+    inline constexpr auto operator++(int)
+    {
+      auto ret = *this;
+      ++(*this);
+      return ret;
     }
 
     //! Test if the iterator is valid.
@@ -181,6 +192,14 @@ namespace Ravl2
     template<unsigned Ind>
     [[nodiscard]] constexpr auto strides() const
     { return std::get<Ind>(mIters).strides(); }
+
+    //! Access tuple of elements
+    [[nodiscard]] constexpr value_type operator*() const
+    { return std::apply([](auto &...args) { return std::make_tuple(args.data()...); }, mIters); }
+
+    //! Compare iterators
+    [[nodiscard]] constexpr bool operator==(const ArrayIterZipN &other) const noexcept
+    { return std::get<0>(mIters).dataPtr() == std::get<0>(other.mIters).dataPtr(); }
 
   private:
     std::tuple<SlaveIter<DataT,N>...> mIters;

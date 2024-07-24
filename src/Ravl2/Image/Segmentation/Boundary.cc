@@ -19,29 +19,6 @@
 namespace Ravl2
 {
 
-  template<typename PixelT>
-  BoundaryC::BoundaryC(const Array<PixelT, 2> &emask, PixelT inLabel)
-    : orientation(false)
-  {
-    if(emask.Frame().Rows() < 3 || emask.Frame().Cols() < 3) {
-      std::cerr << "RegionMaskBodyC::Boundary(), Mask too small to compute boundary. \n";
-      return;
-    }
-    mEdges.reserve((emask.range(0).size() + emask.range(1).size()) * 2);
-    for(Array2dSqr2IterC<PixelT> it(emask); it; ++it) {
-      if(it.DataBR() == inLabel) {
-	if(it.DataTR() != inLabel)
-	  mEdges.emplace_back(it.Index(), CrackCodeT::CR_LEFT);
-	if(it.DataBL() != inLabel)
-	  mEdges.emplace_back(it.Index(), CrackCodeT::CR_DOWN);
-      } else {
-	if(it.DataTR() == inLabel)
-	  mEdges.emplace_back(it.Index() + Index<2>({-1, 0}), CrackCodeT::CR_RIGHT);
-	if(it.DataBL() == inLabel)
-	  mEdges.emplace_back(it.Index() + Index<2>({0, -1}), CrackCodeT::CR_UP);
-      }
-    }
-  }
 
 #if 0
   //: Create a boundary from the edges between 'inLabel' pixels an other values

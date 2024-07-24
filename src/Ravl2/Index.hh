@@ -143,6 +143,14 @@ namespace Ravl2
     return strm;
   }
 
+  //! Convert a parameter list of RealT to a point
+  template<typename ...DataT,unsigned N = sizeof...(DataT)>
+  constexpr inline Index<N> toIndex(DataT ...data)
+  {
+    return Index<N>({int(data)...});
+  }
+
+
   template<unsigned N> class IndexRangeIterator;
   template<unsigned N> class IndexRange;
 
@@ -629,11 +637,11 @@ namespace Ravl2
 
     //! Clip range in place
     //! Returns true if the range is still valid.
-    bool clipBy(const IndexRange<1> &range)
+    bool clipBy(const IndexRange<N> &range)
     {
       bool valid = true;
       for(unsigned i = 0;i < N;i++)
-        valid &= m_range[i].clipBy(range);
+        valid &= m_range[i].clipBy(range.range(i));
       return valid;
     }
 
@@ -722,6 +730,11 @@ namespace Ravl2
   class IndexRangeIterator<1>
   {
   public:
+    using value_type = int;
+    using difference_type = int;
+
+    IndexRangeIterator() = default;
+
     //! Constructor iterator
     explicit IndexRangeIterator(int at)
      : m_at(at)
@@ -732,34 +745,43 @@ namespace Ravl2
     { return m_at; }
 
     //! Increment
-    IndexRangeIterator<1> &operator++(int)
+    IndexRangeIterator<1> operator++(int)
     {
-      m_at++;
-      return *this;
+      auto ret = *this;
+      ++m_at;
+      return ret;
     }
 
     //! Increment
-    IndexRangeIterator<1> operator++()
+    IndexRangeIterator<1> &operator++()
     {
-      int v = ++m_at;
-      return IndexRangeIterator<1>(v);
-    }
-
-    //! Decrement
-    IndexRangeIterator<1> &operator--(int)
-    {
-      m_at++;
+      ++m_at;
       return *this;
     }
 
-    bool operator!=(const IndexRangeIterator<1> &other) const
+    //! Decrement
+    IndexRangeIterator<1> &operator--()
+    {
+      m_at--;
+      return *this;
+    }
+
+    //! Decrement
+    IndexRangeIterator<1> operator--(int)
+    {
+      auto ret = *this;
+      m_at--;
+      return ret;
+    }
+
+    [[nodiscard]] bool operator!=(const IndexRangeIterator<1> &other) const
     { return other.m_at != m_at; }
 
-    bool operator==(const IndexRangeIterator<1> &other) const
+    [[nodiscard]] bool operator==(const IndexRangeIterator<1> &other) const
     { return other.m_at == m_at; }
 
   protected:
-    int m_at;
+    int m_at {};
   };
 
   //! Start of the range.
@@ -776,6 +798,14 @@ namespace Ravl2
   class IndexRangeIterator
   {
   public:
+    using value_type = Index<N>;
+    using difference_type = int;
+
+    //! Default constructor, creates an invalid iterator.
+    IndexRangeIterator() = default;
+
+    //! Constructor iterator from a range and a position.
+    //! The position must be within the range.
     // cppcheck-suppress functionStatic
     IndexRangeIterator(const IndexRange<N> &range,const Index<N> &at)
      : m_range(&range),
@@ -784,6 +814,7 @@ namespace Ravl2
       assert(range.contains(at));
     }
 
+    //! Constructor iterator from a range and a position.
     // cppcheck-suppress functionStatic
     IndexRangeIterator(const IndexRange<N> &range,const Index<N> &at, [[maybe_unused]] bool noRangeCheck)
         : m_range(&range),
@@ -797,18 +828,27 @@ namespace Ravl2
     { return m_at; }
 
     //! Increment position.
-    void operator++()
+    IndexRangeIterator<N> &operator++()
     {
       for(unsigned i = N-1;i > 0;--i) {
         ++m_at[i];
         if(m_at[i] <= m_range->max()[i])
-          return ;
+          return *this;
         m_at[i] = m_range->min()[i];
       }
       ++m_at[0];
+      return *this;
     }
 
-    //! Are we at the end of the range?
+    //! Increment position.
+    IndexRangeIterator<N> operator++(int)
+    {
+      IndexRangeIterator<N> ret = *this;
+      operator++();
+      return ret;
+    }
+
+      //! Are we at the end of the range?
     //! In the case of this iterator we have all we need to know internally.
     [[nodiscard]] bool done() const
     {
@@ -828,9 +868,21 @@ namespace Ravl2
     //! Equality test.
     [[nodiscard]] bool operator!=(const IndexRangeIterator<N> &other) const
     { return m_at != other.m_at; }
+
+    //! Compute the distance between two iterators in terms of number of increments.
+    [[nodiscard]] difference_type operator-(const IndexRangeIterator<N> &other) const
+    {
+      assert(m_range == other.m_range);
+      assert(m_range != nullptr);
+      difference_type diff = (m_at[N-1] - other.m_at[N-1]);
+      for(unsigned i = 0;i < N-1;i++)
+        diff += (m_at[i] - other.m_at[i]) * m_range->size(i);
+      return diff;
+    }
+
   protected:
-    const IndexRange<N> *m_range;
-    Index<N> m_at;
+    const IndexRange<N> *m_range = nullptr;
+    Index<N> m_at {};
   };
 
   //! Start of the range.

@@ -6,6 +6,7 @@
 // file-header-ends-here
 #pragma once
 
+#include "Ravl2/Assert.hh"
 #include "Ravl2/Array.hh"
 #include "Ravl2/Geometry/Geometry.hh"
 
@@ -70,7 +71,7 @@ namespace Ravl2
     const int cc = pos[1];
     const int cr = pos[0];
 
-    assert(img.range().shrink(3).contains(pos));
+    RavlAssertMsg(img.range().shrink(3).contains(pos),"PeakDetect7: Position {}  out of range {}  .",pos,img.range().shrink(3));
 
     const DataT *rt = &(img[pos]);
     const DataT &cent = rt[0];

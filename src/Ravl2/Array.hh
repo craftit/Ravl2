@@ -284,6 +284,14 @@ namespace Ravl2
     //! Access strides
     [[nodiscard]] constexpr const int *strides() const
     { return m_strides; }
+
+    //! Fill the array with a value
+    constexpr void fill(const DataT &value)
+    {
+      for(auto & it : *this)
+        it = value;
+    }
+
   protected:
     const IndexRange<1> *m_ranges {nullptr};
     DataT *m_data {nullptr};
@@ -515,6 +523,13 @@ namespace Ravl2
     [[nodiscard]] constexpr const IndexRange<1> &range() const
     { return *m_ranges; }
 
+    //! Range of index's for dim
+    [[nodiscard]] constexpr const IndexRange<1> &range([[maybe_unused]] unsigned i) const
+    {
+      assert(i == 0);
+      return *m_ranges;
+    }
+
     //! Access range data
     [[nodiscard]] constexpr const IndexRange<1> *range_data() const
     { return m_ranges; }
@@ -536,12 +551,19 @@ namespace Ravl2
     [[nodiscard]] constexpr ArrayIter<const DataT,1> cend() const;
 
     //! Get stride for dimension
-    [[nodiscard]] constexpr static int stride([[maybe_unused]] int dim)
+    [[nodiscard]] constexpr static int stride([[maybe_unused]] unsigned dim)
     { return 1; }
 
     //! Access strides
     [[nodiscard]] constexpr static const int *strides()
     { return &m_stride; }
+
+    //! Fill the array with a value
+    constexpr void fill(const DataT &value)
+    {
+      for(auto & it : *this)
+        it = value;
+    }
 
   protected:
     const IndexRange<1> *m_ranges;
@@ -771,7 +793,10 @@ namespace Ravl2
 
       //! access range of first index array
       [[nodiscard]] constexpr const IndexRange<1> &range(unsigned dim) const
-      { return m_range[dim]; }
+      {
+        assert(dim < N);
+        return m_range[dim];
+      }
 
       //! Access range data
       [[nodiscard]] constexpr const IndexRange<1> *range_data() const
@@ -782,7 +807,7 @@ namespace Ravl2
       { return m_range.empty(); }
 
       //! Access stride size for given dimension
-      [[nodiscard]] constexpr int stride(int dim) const
+      [[nodiscard]] constexpr int stride(unsigned dim) const
       { return m_strides[dim]; }
 
       //! Access strides for each dimension
@@ -828,6 +853,18 @@ namespace Ravl2
       this->make_strides(this->m_range);
       this->m_data = &(m_buffer->data()[this->compute_origin_offset(range)]);
     }
+
+    //! Construct with an existing buffer
+    explicit constexpr Array(DataT *data, const IndexRange<N> &range, const std::array<int,N> &strides, const std::shared_ptr<Buffer<DataT> > &buffer)
+      : ArrayView<DataT, N>(data,range,strides),
+        m_buffer(std::move(buffer))
+    {}
+
+    //! Construct with an existing buffer
+    explicit constexpr Array(DataT *data, const IndexRange<N> &range, const std::array<int,N> &strides, std::shared_ptr<Buffer<DataT> > &&buffer)
+        : ArrayView<DataT, N>(data,range,strides),
+          m_buffer(std::move(buffer))
+    {}
 
     //! Create an array from a set of sizes.
     constexpr Array(std::initializer_list<IndexRange<N>> ranges)
@@ -991,7 +1028,7 @@ namespace Ravl2
         }
       }
 
-    [[nodiscard]] constexpr static int stride([[maybe_unused]] int dim)
+    [[nodiscard]] constexpr static int stride([[maybe_unused]] unsigned dim)
       { return 1; }
 
     [[nodiscard]] constexpr static const int *strides()

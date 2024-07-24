@@ -49,6 +49,8 @@ namespace Ravl2
     constexpr CrackCodeC()
     = default;
 
+    constexpr CrackCodeC(const CrackCodeC &) = default;
+
     //! Constructs object from an integer 'i'.
     constexpr explicit CrackCodeC(int i)
      : crackCode(CrackCodeT(i))
@@ -78,7 +80,7 @@ namespace Ravl2
     { return cc.Code() == Code(); }
 
     [[nodiscard]] inline constexpr bool operator!=(const CrackCodeC & cc) const
-    { return (bool)(cc.Code() != Code()); }
+    { return cc.Code() != Code(); }
     //: Returns true if the object content is not equal to 'cc'.
     
     inline constexpr const CrackCodeC & operator+=(const CrackCodeC & cc)  {
@@ -130,7 +132,7 @@ namespace Ravl2
 
     //! Get pixel in the direction of the crack code.
     [[nodiscard]] constexpr Index<2> Next(const Index<2> &pixel) const
-    { return pixel + offset[int(crackCode)]; }
+    { return pixel + offset[unsigned (crackCode)]; }
 
   protected:
 
@@ -152,7 +154,7 @@ namespace Ravl2
 
   //! Write to a stream.
   inline std::ostream &operator<<(std::ostream &strm,const CrackCodeC &cc) {
-    strm << (int) cc.Code();
+    strm << int(cc.Code());
     return strm;
   }
 
@@ -160,18 +162,18 @@ namespace Ravl2
   inline std::istream &operator>>(std::istream &strm,CrackCodeC &cc) {
     int v;
     strm >> v;
-    cc = (CrackCodeT) v;
+    cc = CrackCodeT(v);
     return strm;
   }
 
   //! Step one pixel in the direction of the crack code.
   inline
   constexpr Index<2> CrackStep(const Index<2> &pixel,CrackCodeT crackCode)
-  { return pixel + CrackCodeC::offset[int(crackCode)]; }
+  { return pixel + CrackCodeC::offset[unsigned (crackCode)]; }
 
   //! Direction in the form of an offset for a crack code.
   inline
   constexpr Index<2> CrackDirection(CrackCodeT crackCode)
-  { return  CrackCodeC::offset[int(crackCode)]; }
+  { return  CrackCodeC::offset[unsigned (crackCode)]; }
 
 }

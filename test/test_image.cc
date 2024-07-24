@@ -132,8 +132,7 @@ TEST_CASE("Array2Sqr2Iter", "[Image]")
   for(auto &ita : data)
     ita = count++;
 
-  //cerr <<"Locs:" << count << "\n";
-  SPDLOG_INFO("Data:{}", data);
+  //SPDLOG_INFO("Data:{}", data);
   count = 0;
   int sqrs = 0;
   Array2dSqr2IterC<int> it(data);

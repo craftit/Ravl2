@@ -14,20 +14,22 @@ namespace Ravl2
 {
 
   //! Draw a rectangle in an image.
-  template<class DataT>
-  void DrawFilledFrame(Array<DataT,2> &dat,const DataT &value,const IndexRange<2> &rect)
+  template<typename ArrayT,typename DataT = ArrayT::value_type>
+  requires WindowedArray<ArrayT,DataT,2>
+  void DrawFilledFrame(ArrayT &dat,const DataT &value,const IndexRange<2> &rect)
   {
-    IndexRange<2> dr = rect.clip(dat.Frame());
+    IndexRange<2> dr = rect.clip(dat.range());
     if (dr.empty())
       return; // Nothing to draw around.
-    dat.access(dr).fill(value);
-    return;
+    auto arr = dat.access(dr);
+    std::fill(arr.begin(),arr.end(),value);
   }
 
-    //! Draw a rectangle in an image.
-  template<class DataT>
-  void DrawFrame(Array<DataT,2> &dat,const DataT &value,const IndexRange<2> &rect) {
-    IndexRange<2> dr = rect.clip(dat.Frame());
+  //! Draw a rectangle in an image.
+  template<typename ArrayT,typename DataT = ArrayT::value_type>
+  requires WindowedArray<ArrayT,DataT,2>
+  void DrawFrame(ArrayT &dat,const DataT &value,const IndexRange<2> &rect) {
+    IndexRange<2> dr = rect.clip(dat.range());
     if(dr.empty())
       return ; // Nothing to draw around.
 
@@ -37,25 +39,25 @@ namespace Ravl2
     if(rect.range(0).min() == dr.range(0).min() && rect.range(0).max() == dr.range(0).max()) { // The rectangle wasn't clipped.
       // Do horizontal lines.
       DataT *it2 = nullptr;
-      it1 = &(dat[dr.range(0).min()][dr.range(0).min()]);
-      it2 = &(dat[dr.range(0).max()][dr.range(0).min()]);
+      it1 = &(dat[dr.range(0).min()][dr.range(1).min()]);
+      it2 = &(dat[dr.range(0).max()][dr.range(1).min()]);
       eor = &(it1[ColN]);
       for(;it1 != eor;) {
 	*(it1++) = value;
 	*(it2++) = value;
       }
     } else {
-      // Do top and bottom lines seperatly
+      // Do top and bottom lines separately
       if(rect.range(0).min() == dr.range(0).min()) {
 	// Do top horizontal line.
-	it1 = &(dat[dr.range(0).min()][dr.range(0).min()]);
+	it1 = &(dat[dr.range(0).min()][dr.range(1).min()]);
 	eor = &(it1[ColN]);
 	for(;it1 != eor;)
 	  *(it1++) = value;
       }
       if(rect.range(0).max() == dr.range(0).max()) {
 	// Do bottom horizontal line.
-	it1 = &(dat[dr.range(0).max()][dr.range(0).min()]);
+	it1 = &(dat[dr.range(0).max()][dr.range(1).min()]);
 	eor = &(it1[ColN]);
 	for(;it1 != eor;)
 	  *(it1++) = value;	
@@ -63,16 +65,16 @@ namespace Ravl2
     }
     // Do vertical lines.
     ColN--;
-    if(dr.range(0).min() == rect.range(0).min() && dr.range(1).max() == rect.range(1).max()) {// Not clipped.
+    if(dr.range(1).min() == rect.range(1).min() && dr.range(1).max() == rect.range(1).max()) {// Not clipped.
       for(auto r = dr.range(0).min()+1; r < dr.range(0).max(); r++) {
-	it1 = &(dat[r][dr.range(0).min()]);
+	it1 = &(dat[r][dr.range(1).min()]);
 	it1[0] = value;
 	it1[ColN] = value;
       }
     } else { // Clipped.
-      if(dr.range(0).min() == rect.range(0).min()) {
+      if(dr.range(1).min() == rect.range(1).min()) {
 	for(int r = dr.range(0).min()+1; r < dr.range(0).max(); r++)
-	  dat[r][dr.range(0).min()] = value;
+	  dat[r][dr.range(1).min()] = value;
       }
       if(dr.range(1).max() == rect.range(1).max()) {
 	for(int r = dr.range(0).min()+1; r < dr.range(0).max(); r++)
@@ -83,25 +85,26 @@ namespace Ravl2
 
   //! Draw a rectangle in an image of given width
   //! The rectangle is assumed to be the outer one and the image will be filled inside it by 'width' pixels.
-  template<class DataT>
-  void DrawFrame(Array<DataT,2> &dat,const DataT &value,int width,const IndexRange<2> &outerRect) {
+  template<typename ArrayT,typename DataT = ArrayT::value_type>
+  requires WindowedArray<ArrayT,DataT,2>
+  void DrawFrame(ArrayT &dat,const DataT &value,int width,const IndexRange<2> &outerRect)
+  {
     IndexRange<2> innerRect = outerRect.shrink(width);
     IndexRange<2> outerClipped = outerRect;
-    if(!outerClipped.clipBy(dat.Frame()) || width == 0)
+    if(!outerClipped.clipBy(dat.range()) || width == 0)
       return ; // Nothing to draw.
 
     //cerr << "Inner=" << innerRect << "\n";
     //cerr << "Outer=" << outerRect << "\n";
     //cerr << "Clipped=" << outerClipped << "\n";
     
-    DataT *it1,*it2;
     const DataT *eor;
     int ColN = outerClipped.range(1).size(); // Number of columns.
     if(outerRect.range(0).min() == outerClipped.range(0).min() && outerRect.range(0).max() == outerClipped.range(0).max()) { // The innerRect wasn't clipped.
       // Do horizontal lines.
       for(int i = 0;i < width;i++) {
-	it1 = &(dat[outerClipped.range(0).min()+i][outerClipped.range(0).min()]);
-	it2 = &(dat[outerClipped.range(0).max()-i][outerClipped.range(0).min()]);
+        DataT *it1 = &(dat[outerClipped.range(1).min()+i][outerClipped.range(0).min()]);
+        DataT *it2 = &(dat[outerClipped.range(1).max()-i][outerClipped.range(0).min()]);
 	eor = &(it1[ColN]);
 	for(;it1 != eor;) {
 	  *(it1++) = value;
@@ -109,18 +112,18 @@ namespace Ravl2
 	}
       }
     } else {
-      // Do top and bottom lines seperatly
+      // Do top and bottom lines separately
       for(int i = 0;i < width;i++) {
-	if(dat.Frame().range(0).min() <= (outerRect.range(0).min() - i)) {
+	if(dat.range(0).min() <= (outerRect.range(0).min() - i)) {
 	  // Do top horizontal line.
-	  it1 = &(dat[outerRect.range(0).min() - i][outerClipped.range(0).min()]);
+          DataT *it1 = &(dat[outerRect.range(1).min() - i][outerClipped.range(0).min()]);
 	  eor = &(it1[ColN]);
 	  for(;it1 != eor;)
 	    *(it1++) = value;
 	}
-	if(dat.Frame().range(0).max() >= (outerRect.range(0).max() + i)) {
+	if(dat.range(0).max() >= (outerRect.range(0).max() + i)) {
 	  // Do bottom horizontal line.
-	  it1 = &(dat[outerRect.range(0).max() + i][outerClipped.range(0).min()]);
+          DataT *it1 = &(dat[outerRect.range(1).max() + i][outerClipped.range(0).min()]);
 	  eor = &(it1[ColN]);
 	  for(;it1 != eor;)
 	    *(it1++) = value;	
@@ -130,8 +133,8 @@ namespace Ravl2
     // Do vertical lines.
     if(outerClipped.range(0).min() == outerRect.range(0).min() && outerClipped.range(1).max() == outerRect.range(1).max()) {// Not clipped.
       for(int r = outerRect.range(0).min()+1; r < outerRect.range(0).max(); r++) {
-	it1 = &(dat[r][outerRect.range(0).min()]);
-	it2 = &(dat[r][innerRect.range(1).max()+1]);
+        DataT *it1 = &(dat[r][outerRect.range(1).min()]);
+        DataT *it2 = &(dat[r][innerRect.range(1).max()+1]);
 	eor = &(it1[width]);
 	for(;it1 != eor;it1++,it2++) {
 	  *it1 = value;
@@ -140,11 +143,11 @@ namespace Ravl2
       }
     } else { // Clipped.
       IndexRange<2> r1(Index<2>(innerRect.range(0).min(),outerRect.range(0).min()),Index<2>(innerRect.range(0).max(),innerRect.range(0).min()-1));
-      if(r1.clipBy(dat.Frame())) {
+      if(r1.clipBy(dat.range())) {
         dat.access(r1).fill(value);
       }
       IndexRange<2> r2(Index<2>(innerRect.range(0).min(),innerRect.range(1).max()+1),Index<2>(innerRect.range(0).max(),outerRect.range(1).max()));
-      if(r2.clipBy(dat.Frame())) {
+      if(r2.clipBy(dat.range())) {
         dat.access(r2).fill(value);
       }
     }

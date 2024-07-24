@@ -10,15 +10,16 @@
 
 namespace Ravl2
 {
-  
-  template<class DataT>
-  void DrawCross(ArrayAccess<DataT,2> &dat,const DataT &value,const Index<2> &at,unsigned size = 3) {
+
+  template<typename ArrayT,typename DataT = ArrayT::value_type>
+  requires WindowedArray<ArrayT,DataT,2>
+  void DrawCross(ArrayT &dat,const DataT &value,const Index<2> &at,int pixelSize = 3) {
     // Cross entirely in the image ?
-    if(dat.Frame().Contains(IndexRange<2>(at,at).expand(size))) {
+    if(dat.range().contains(IndexRange<2>(at,at).expand(pixelSize))) {
       // Its completely inside, we can just change the pixels.
       dat[at] = value;
-      for(unsigned i = 1;i < size;i++) {
-	Index<2> off1(i,i);
+      for(int i = 1; i < pixelSize; i++) {
+	Index<2> off1 = toIndex(i,i);
 	dat[at + off1] = value;
 	dat[at - off1] = value;
 	off1[0] = -i;
@@ -27,22 +28,22 @@ namespace Ravl2
       }
     } else {
       // Cross is not entirely in the image.
-      if(dat.Frame().Contains(at))
+      if(dat.range().contains(at))
 	dat[at] = value;
-      for(unsigned i = 1;i < size;i++) {
+      for(int i = 1; i < pixelSize; i++) {
 	Index<2> off1(i,i);
 	Index<2> pat =  at + off1;
-	if(dat.Frame().Contains(pat))
+	if(dat.range().contains(pat))
 	  dat[pat] = value;
 	pat =  at - off1;
-	if(dat.Frame().Contains(pat))
+	if(dat.range().contains(pat))
 	  dat[pat] = value;
 	off1[0] = -i;
 	pat =  at + off1;
-	if(dat.Frame().Contains(pat))
+	if(dat.range().contains(pat))
 	  dat[pat] = value;
 	pat =  at - off1;
-	if(dat.Frame().Contains(pat))
+	if(dat.range().contains(pat))
 	  dat[pat] = value;
       }      
     }
@@ -51,4 +52,3 @@ namespace Ravl2
   
 }
 
-#endif

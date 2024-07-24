@@ -80,7 +80,7 @@ TEST_CASE("CircleIter", "[CircleIterC]")
 {
   using namespace Ravl2;
   int i = 0;
-  int rad = 20;
+  unsigned rad = 20;
   RealT maxDist = 0;
   Point<float,2> origin({0,0});
   Point<float,2> at;
@@ -113,7 +113,7 @@ TEST_CASE("Circle2", "[Circle2]")
 
   Circle2dC<float> circle2;
   EXPECT_TRUE(circle2.Fit(pnts[0],pnts[1],pnts[2]));
-  SPDLOG_INFO("Center={} Radius={}", circle2.Centre(), circle2.Radius());
+  //SPDLOG_INFO("Center={} Radius={}", circle2.Centre(), circle2.Radius());
   float sqrMag = xt::sum(xt::square(Point<float,2>(circle2.Centre() - Point<float,2>({1,2}))))[0];
   CHECK(sqrMag < 0.01f);
   CHECK(std::abs(circle2.Radius() - 2) < 0.01f);
