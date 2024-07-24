@@ -20,28 +20,41 @@
 namespace Ravl2 
 {
 
-  //: Draw a circle in an image with an integer index and size.
-  template<class DataT>
-  void DrawCircle(ArrayAccess<DataT,2> &dat,const DataT &value,const Index<2> &center,unsigned radius ) 
+  //! Draw a circle in an image with an integer index and size.
+  template<typename ArrayT,typename DataT = ArrayT::value_type>
+  requires WindowedArray<ArrayT,DataT,2>
+  void DrawCircle(ArrayT &dat,const DataT &value,const Index<2> &center,unsigned radius)
   {
-    Index<2> radius2({int(radius),int(radius)});
-    if(dat.range().contains(center + radius2) && dat.range().contains(center - radius2)) {
+    if(radius <= 1) {
+      if(dat.range().contains(center))
+        dat[center] = value;
+      return ;
+    }
+    Index<2> radius2 = toIndex(int(radius),int(radius));
+    IndexRange<2> drawRect = IndexRange<2>(center - radius2,center + radius2);
+    if(dat.range().contains(drawRect)) {
       // If far diagonals are inside the image, all pixels in between are.
       for(CircleIterC it(radius,center);it;it++)
 	dat[*it] = value;
       return ;
     }
+    if(!dat.range().overlaps(drawRect)) {
+      // Nothing to draw.
+      return ;
+    }
     // Be careful, we need to check each pixel.
     for(CircleIterC it(radius,center);it;it++) {
-      if(!dat.Contains(*it)) 
+      if(!dat.range().contains(*it))
 	continue;
       dat[*it] = value;
     }
   }
 
   //! Draw a filled circle in an image from real floating point coordinates.
-  template<class DataT,typename CoordT = float>
-  void DrawFilledCircle(ArrayAccess<DataT,2> &dat,const DataT &value,const Point<CoordT,2> &center,CoordT radius) {
+  //! Draw a circle in an image with an integer index and size.
+  template<typename ArrayT,typename DataT = ArrayT::value_type,typename CoordT = float>
+  requires WindowedArray<ArrayT,DataT,2>
+  void DrawFilledCircle(ArrayT &dat,const DataT &value,const Point<CoordT,2> &center,CoordT radius) {
     if(radius <= 1.0f) { // Very small ?
       Index<2> at({int_round(center[0]), int_round(center[1])});
       if(dat.Frame().Contains(at))
@@ -58,8 +71,9 @@ namespace Ravl2
   }
 
   //! Draw a filled circle in an image from real floating point coordinates.
-  template<class DataT,typename CoordT = float>
-  void DrawCircle(ArrayAccess<DataT,2> &dat,const DataT &value,const Point<CoordT,2> &center,CoordT radius) {
+  template<typename ArrayT,typename DataT = ArrayT::value_type,typename CoordT = float>
+  requires WindowedArray<ArrayT,DataT,2>
+  void DrawCircle(ArrayT &dat,const DataT &value,const Point<CoordT,2> &center,CoordT radius) {
     if(radius <= 1.0f) { // Very small ?
       Index<2> at = toIndex(center);
       if(dat.range().contains(at))

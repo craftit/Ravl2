@@ -637,11 +637,11 @@ namespace Ravl2
 
     //! Clip range in place
     //! Returns true if the range is still valid.
-    bool clipBy(const IndexRange<1> &range)
+    bool clipBy(const IndexRange<N> &range)
     {
       bool valid = true;
       for(unsigned i = 0;i < N;i++)
-        valid &= m_range[i].clipBy(range);
+        valid &= m_range[i].clipBy(range.range(i));
       return valid;
     }
 

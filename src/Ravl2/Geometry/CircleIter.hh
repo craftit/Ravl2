@@ -20,8 +20,8 @@ namespace Ravl2
   {
   public:
     //! Constructor.
-    explicit CircleIterC(int nradius = 1,const Index<2> &nOffset = Index<2>(0,0))
-      : radius(nradius),
+    explicit CircleIterC(unsigned int nradius = 1, const Index<2> &nOffset = Index<2>(0, 0))
+      : radius(int(nradius)),
 	offset(nOffset)
     { First(); }
 

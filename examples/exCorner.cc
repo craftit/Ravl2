@@ -31,7 +31,7 @@ int main(int argc,char **argv)
   bool useHarris = false;
   bool useTopHat = true;
   bool seq = false;
-  bool verb = false;
+  bool verbose = false;
   bool deinterlace = false;
   
   int frameLimit = 0;
@@ -43,7 +43,7 @@ int main(int argc,char **argv)
   app.add_flag("--hr", useHarris, "Use harris corner detector, else use susan. ");
   app.add_flag("--th", useTopHat, "Use top hat filter in harris corner detector. ");
   app.add_flag("--seq", seq, "Process a sequence. ");
-  app.add_flag("-v", verb, "Verbose mode. ");
+  app.add_flag("-v", verbose, "Verbose mode. ");
   app.add_flag("-d", deinterlace, "Deinterlace images");
   app.add_option("--fl", frameLimit, "Limit on the number of frames to process in a sequence. ");
   app.add_option("-i", inf, "Input image. ");
@@ -83,35 +83,38 @@ int main(int argc,char **argv)
 
     Ravl2::Array<uint8_t,2> img = Ravl2::toArray<uint8_t,2>(cvImg);
 
-
-
 //    if(!RavlN::Load(inf,img)) { // Load an image.
 //      SPDLOG_ERROR("Failed to load image '{}'", inf);
 //      return 1;
 //    }
     
     // Find the corners.
-    
     std::vector<Ravl2::CornerC> corners;
-
-    SPDLOG_INFO("Extracting corners");
-
+    if(verbose) {
+      SPDLOG_INFO("Extracting corners");
+    }
     corners = cornerDet.Apply(img);
 
-    SPDLOG_INFO("Drawing {} corners", corners.size());
+    if(verbose) {
+      SPDLOG_INFO("Drawing {} corners", corners.size());
+    }
     // Draw boxes around the corners.
     
     uint8_t val = 0;
     for(auto it : corners) {
       auto pixelIndex = Ravl2::toIndex<2>(it.Location());
       Ravl2::IndexRange<2> rect = Ravl2::IndexRange<2>(pixelIndex,pixelIndex).expand(5);
-      SPDLOG_INFO("Drawing rect {} -> {}",  pixelIndex, rect);
+      if(verbose) {
+        SPDLOG_INFO("Drawing {} -> {}", pixelIndex, rect);
+      }
       Ravl2::DrawFrame(img,val,rect);
-      Ravl2::DrawCross(img, val, pixelIndex, 5);
+      //Ravl2::DrawCross(img, val, pixelIndex, 5);
     }
     
     // Save image to a file.
-    SPDLOG_INFO("Displaying image");
+    if(verbose) {
+      SPDLOG_INFO("Displaying image");
+    }
 
     cv::namedWindow("Display Image", cv::WINDOW_AUTOSIZE );
     cv::imshow("Display Image", cvImg);

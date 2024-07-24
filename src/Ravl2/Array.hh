@@ -278,6 +278,14 @@ namespace Ravl2
     //! Access strides
     [[nodiscard]] constexpr const int *strides() const
     { return m_strides; }
+
+    //! Fill the array with a value
+    constexpr void fill(const DataT &value)
+    {
+      for(auto & it : *this)
+        it = value;
+    }
+
   protected:
     const IndexRange<1> *m_ranges {nullptr};
     DataT *m_data {nullptr};
@@ -537,6 +545,13 @@ namespace Ravl2
     //! Access strides
     [[nodiscard]] constexpr static const int *strides()
     { return &m_stride; }
+
+    //! Fill the array with a value
+    constexpr void fill(const DataT &value)
+    {
+      for(auto & it : *this)
+        it = value;
+    }
 
   protected:
     const IndexRange<1> *m_ranges;

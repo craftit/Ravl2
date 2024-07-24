@@ -12,67 +12,81 @@
 #include "Ravl2/Geometry/Polygon2d.hh"
 #include "Ravl2/Geometry/Polygon2dIter.hh"
 
-namespace RavlImageN {
-  
-  template<class DataT>
-  void DrawPolygon(Array2dC<DataT> &dat,const DataT &value,const Polygon2dC &poly, bool fill=false) {
+namespace Ravl2 {
+
+  //! Draw a polygon into the image
+  template<typename ArrayT,typename CoordT = float, typename DataT = ArrayT::value_type>
+  requires WindowedArray<ArrayT,DataT,2>
+  void DrawFilledPolygon(ArrayT &dat,const DataT &value,const Polygon2dC<CoordT> &poly)
+  {
     // Draw one-colour polygon
-    if (fill) {
-      for (Array2dPolygon2dIterC<DataT> it(dat, poly); it; it++)
-        *it = value;
-    } else {
-      // Draw individual lines
-      for (DLIterC<Point2dC> it(poly); it; it++) {
-	DrawLine(dat,value,it.Data(),it.NextCrcData());
-      }
-    }
+    for (Polygon2dIterC<CoordT> it(dat, poly); it; ++it)
+      *it = value;
   }
-  //: Draw a single-colour polygon into the image
 
-
-  template<class DataT>
-  void DrawPolyline(Array2dC<DataT> &dat,const DataT &value,const DListC<Point2dC> &poly) {
+  //: Draw a poly line into the image.
+  template<typename ArrayT,typename CoordT = float, typename DataT = ArrayT::value_type>
+  requires WindowedArray<ArrayT,DataT,2>
+  void DrawPolygon(ArrayT &dat,const DataT &value,const Polygon2dC<CoordT> &poly)
+  {
     // Draw individual lines
-    DLIterC<Point2dC> it(poly);
-    if(!it) return ; // Nothing to draw!
-    Point2dC last = *it;
-    for (it++; it; it++) {
-      DrawLine(dat,value,last,*it);
+    auto end = poly.end();
+    auto last = poly.last();
+    for (auto it = poly.begin(); it != end; it++) {
+      DrawLine(dat, value, last, *it);
       last = *it;
     }
   }
-  //: Draw a poly line into the image.
-  
-  template<class DataT>
-  void DrawPolygon(Array2dC<DataT> &dat,const DListC<DataT>& values,const Polygon2dC &poly, bool fill=false) {
-    // Draw shaded polygon
-    if (fill) {
-      for (Array2dPolygon2dIterC<DataT> it(dat, poly); it; it++) {
-        Point2dC pnt(it.Index());
-        // Calculate barycentric coords
-        SArray1dC<RealT> coord = poly.BarycentricCoordinate(pnt);
-        // Calculate interpolated value
-        DataT value;
-        SetZero(value);
-        SArray1dIterC<RealT> cit(coord);
-        DLIterC<DataT> vit(values);
-        while (cit && vit) {
-          value += DataT(vit.Data() * cit.Data());
-          cit++;
-          vit++;
-        }
-        // Set value
-        *it = value;
-      }
-    }
-    // Draw individual lines
-    DLIterC<DataT> val(values);
-    for (DLIterC<Point2dC> pnt(poly); pnt && val; pnt++, val++) {
-      DrawLine(dat,val.Data(),val.NextCrcData(),pnt.Data(),pnt.NextCrcData());
-    }
-  }
+
+
   //: Draw a shaded polygon into the image
   // This function requires that DataT has a working operator*(double) function
-  
+  template<typename ArrayT,typename CoordT = float, typename DataT = ArrayT::value_type>
+  requires WindowedArray<ArrayT,DataT,2>
+  void DrawShadedPolygon(ArrayT &dat,const std::vector<DataT>& values,const Polygon2dC<CoordT> &poly)
+  {
+    if(values.size() != poly.size())
+      throw std::runtime_error("DrawPolygon: values.size() != poly.Size()");
+    if(poly.size() < 2)
+      return;
+    auto valuesEnd = values.end();
+    // Draw shaded polygon
+    for (Polygon2dIterC<CoordT> it(dat, poly); it; it++) {
+      auto pnt = toPoint<float>(it.Index());
+      // Calculate barycentric coords
+      auto coord = poly.BarycentricCoordinate(pnt);
+      // Calculate interpolated value
+      DataT value {};
+      auto cit = coord.begin();
+      auto vit = values.begin();
+      while (vit != valuesEnd) {
+        value += DataT(vit.Data() * cit.Data());
+        cit++;
+        vit++;
+      }
+      // Set value
+      *it = value;
+    }
+  }
+
+    //: Draw a shaded polygon into the image
+  // This function requires that DataT has a working operator*(double) function
+  template<typename ArrayT,typename CoordT = float, typename DataT = ArrayT::value_type>
+  requires WindowedArray<ArrayT,DataT,2>
+  void DrawPolygon(ArrayT &dat,const std::vector<DataT>& values,const Polygon2dC<CoordT> &poly) {
+    if(values.size() != poly.size())
+      throw std::runtime_error("DrawPolygon: values.size() != poly.Size()");
+    if(poly.size() < 2)
+      return;
+    // Draw individual lines
+    auto val = values.begin();
+    auto last = poly.last();
+    auto lastValue = values.last();
+    for (auto pnt : poly) {
+      DrawLine(dat,lastValue,*val, last, pnt);
+      val++;
+    }
+  }
+
 }
 

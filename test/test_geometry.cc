@@ -80,7 +80,7 @@ TEST_CASE("CircleIter", "[CircleIterC]")
 {
   using namespace Ravl2;
   int i = 0;
-  int rad = 20;
+  unsigned rad = 20;
   RealT maxDist = 0;
   Point<float,2> origin({0,0});
   Point<float,2> at;
