@@ -43,42 +43,67 @@ namespace Ravl2
   class ArrayIter<DataT,1>
   {
   public:
+    using difference_type = std::ptrdiff_t;
+    using value_type = DataT;
+    constexpr static unsigned dimensions = 1;
+
+    constexpr explicit ArrayIter() = default;
+
     constexpr explicit ArrayIter(DataT *array)
         : mPtr(array)
-      {}
+    {}
 
-      //! Increment iterator
-      constexpr ArrayIter<DataT,1> &operator++()
-      {
-          mPtr++;
-          return *this;
-      }
+    //! Increment iterator
+    constexpr ArrayIter<DataT,1> &operator++()
+    {
+	mPtr++;
+	return *this;
+    }
 
-      //! Decrement iterator
-      constexpr ArrayIter<DataT,1> &operator--()
-      {
-          mPtr--;
-          return *this;
-      }
+    //! Post Increment iterator
+    constexpr ArrayIter<DataT,1> operator++(int)
+    {
+      ArrayIter<DataT,1> iter = *this;
+      mPtr++;
+      return iter;
+    }
 
-      //! Add an offset to the iterator
-      constexpr ArrayIter<DataT,1> &operator+=(int offset)
-      {
-	mPtr += offset;
-          return *this;
-      }
+    //! Decrement iterator
+    constexpr ArrayIter<DataT,1> &operator--()
+    {
+	mPtr--;
+	return *this;
+    }
 
-      //! Add an offset to the iterator
-      [[nodiscard]] constexpr ArrayIter<DataT,1> operator-(int offset) const
-      {
-          return ArrayIter<DataT,1>(mPtr - offset);
-      }
+    //! Decrement iterator
+    constexpr ArrayIter<DataT,1> operator--(int)
+    {
+      ArrayIter<DataT,1> iter = *this;
+      mPtr--;
+      return iter;
+    }
 
-      //! Add an offset to the iterator
-      [[nodiscard]] constexpr ArrayIter<DataT,1> operator+(int offset) const
-      {
-        return ArrayIter<DataT,1>(mPtr + offset);
-      }
+    //! Add an offset to the iterator
+    template<typename IntegerT>
+    requires std::is_integral_v<IntegerT>
+    constexpr ArrayIter<DataT,1> &operator+=(IntegerT offset)
+    {
+      mPtr += offset;
+	return *this;
+    }
+
+    //! Add an offset to the iterator
+    template<typename IntegerT>
+    requires std::is_integral_v<IntegerT>
+    constexpr ArrayIter<DataT,1> &operator-=(IntegerT offset)
+    {
+      mPtr -= offset;
+      return *this;
+    }
+
+    //! Spaceship operator
+      [[nodiscard]] constexpr auto operator<=>(const ArrayIter<DataT,1> &other) const
+      { return mPtr <=> other.mPtr; }
 
       //! Compare iterators
       [[nodiscard]] constexpr bool operator==(const ArrayIter<DataT,1> &other) const
@@ -99,9 +124,44 @@ namespace Ravl2
       //! Access element
       [[nodiscard]] constexpr DataT &operator*() const
       { return *mPtr; }
+
+      //! Index access
+      [[nodiscard]] constexpr DataT &operator[](int i) const
+      { return mPtr[i]; }
+
   private:
       DataT *mPtr = nullptr;
   };
+
+  //! Add to the iterator
+  template<typename DataT,typename IntegerT>
+  requires std::is_integral_v<IntegerT>
+  [[nodiscard]] constexpr ArrayIter<DataT,1> operator+(const ArrayIter<DataT,1> &it, IntegerT offset)
+  {  return ArrayIter<DataT,1>(it.data() + offset); }
+
+  //! Subtract from the iterator
+  template<typename DataT,typename IntegerT>
+  requires std::is_integral_v<IntegerT>
+  [[nodiscard]] constexpr ArrayIter<DataT,1> operator-(const ArrayIter<DataT,1> &it, IntegerT offset)
+  { return ArrayIter<DataT,1>(it.data() + offset); }
+
+  //! Add to the iterator
+  template<typename DataT,typename IntegerT>
+  requires std::is_integral_v<IntegerT>
+  [[nodiscard]] constexpr ArrayIter<DataT,1> operator+( IntegerT offset, const ArrayIter<DataT,1> &it)
+  {  return ArrayIter<DataT,1>(offset + it.data()); }
+
+  //! Subtract from the iterator
+  template<typename DataT,typename IntegerT>
+  requires std::is_integral_v<IntegerT>
+  [[nodiscard]] constexpr ArrayIter<DataT,1> operator-( IntegerT offset,const ArrayIter<DataT,1> &it)
+  { return ArrayIter<DataT,1>(offset + it.data()); }
+
+  //! Add an offset to the iterator
+  template<typename DataT>
+  [[nodiscard]] constexpr ArrayIter<DataT,1>::difference_type operator-(ArrayIter<DataT,1> o1,ArrayIter<DataT,1> o2)
+  { return o1.data() - o2.data(); }
+
 
   //! Access for an N dimensional element of an array.
 
@@ -109,7 +169,7 @@ namespace Ravl2
   class ArrayAccess
   {
   public:
-    typedef DataT value_type;
+    using value_type = DataT;
     constexpr static unsigned dimensions = N;
 
     ArrayAccess()
@@ -230,6 +290,10 @@ namespace Ravl2
   class ArrayIter
   {
   public:
+    using difference_type = std::ptrdiff_t;
+    using value_type = DataT;
+    constexpr static unsigned dimensions = N;
+
     constexpr ArrayIter()
     = default;
 
@@ -304,6 +368,14 @@ namespace Ravl2
       return *this;
     }
 
+    //! Post increment iterator
+    constexpr inline ArrayIter<DataT,N> operator++(int)
+    {
+      ArrayIter<DataT,N> iter = *this;
+      ++(*this);
+      return iter;
+    }
+
     //! Increment iterator
     //! Returns true while we're on the same final dimension (row).
     constexpr inline bool next()
@@ -351,6 +423,17 @@ namespace Ravl2
       ind[N-1] = int(mPtr - mEnd + m_access.range(N-1).max() + 1);
       return ind;
     }
+
+    //! Iterator difference
+    //! This is the number of elements between the two iterators in the first iterators range.
+    [[nodiscard]] constexpr difference_type operator-(const ArrayIter<DataT,N> &other) const noexcept
+    {
+      auto at1 = index();
+      auto at2 = other.index();
+      difference_type diff = (at1[1] - at2[1]) + (at1[0] - at2[0]) * m_access.range(0).size();
+      return diff;
+    }
+
   protected:
      DataT * mPtr {};
      const DataT * mEnd {};
@@ -476,7 +559,7 @@ namespace Ravl2
   class ArrayView
   {
   public:
-    typedef DataT value_type;
+    using value_type = DataT;
     constexpr static unsigned dimensions = N;
 
   protected:
@@ -627,28 +710,28 @@ namespace Ravl2
       }
 
       //! Get begin iterator
-      [[nodiscard]] constexpr ArrayIter<DataT,N> begin()
+      [[nodiscard]] constexpr ArrayIter<DataT,N> begin() const
       {
         assert(m_range.empty() || m_data != nullptr);
         return ArrayIter<DataT,N>(m_range, m_data, m_strides);
       }
 
       //! Get end iterator
-      [[nodiscard]] constexpr ArrayIter<DataT,N> end()
+      [[nodiscard]] constexpr ArrayIter<DataT,N> end() const
       {
         assert(m_range.empty() || m_data != nullptr);
         return ArrayIter<DataT,N>::end(m_range, m_data, m_strides);
       }
 
     //! Get begin iterator
-    [[nodiscard]] constexpr ArrayIter<const DataT,N> begin() const
+    [[nodiscard]] constexpr ArrayIter<const DataT,N> cbegin() const
     {
       assert(m_range.empty() || m_data != nullptr);
       return ArrayIter<const DataT,N>(m_range, m_data, m_strides);
     }
 
     //! Get end iterator
-    [[nodiscard]] constexpr ArrayIter<const DataT,N> end() const
+    [[nodiscard]] constexpr ArrayIter<const DataT,N> cend() const
     {
       assert(m_range.empty() || m_data != nullptr);
       return ArrayIter<const DataT,N>::end(m_range, m_data, m_strides);
@@ -702,6 +785,9 @@ namespace Ravl2
     : public ArrayView<DataT,N>
   {
   public:
+    using value_type = DataT;
+    constexpr static unsigned dimensions = N;
+
     //! Create an empty array
     constexpr Array()
     = default;
@@ -753,6 +839,9 @@ namespace Ravl2
       this->m_range = range;
       this->m_data = original.origin_address();
     }
+
+    using ArrayView<DataT,N>::begin;
+    using ArrayView<DataT,N>::end;
 
     //! Access buffer.
     [[nodiscard]] constexpr std::shared_ptr<Buffer<DataT> > &buffer()
