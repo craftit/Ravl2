@@ -246,9 +246,9 @@ namespace Ravl2
 	if(sq <= 290)
 	  continue;
 	cornerMap[i][j] = max_no - n;
-	cornerList.push_back(CornerC(toPoint<float>(float(i),float(j)),
+	cornerList.emplace_back(toPoint<float>(float(i),float(j)),
 				   RealT((51*RealT(x))/RealT(n)),RealT((51*RealT(y))/RealT(n)),
-				   img[i][j])
+				   img[i][j]
 			  );
 	ONDEBUG(CCount++);
       }

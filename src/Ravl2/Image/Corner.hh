@@ -4,17 +4,8 @@
 // General Public License (LGPL). See the lgpl.licence file for details or
 // see http://www.gnu.org/copyleft/lesser.html
 // file-header-ends-here
-#ifndef RAVLIMAGE_CORNER_HEADER
-#define RAVLIMAGE_CORNER_HEADER 1
-///////////////////////////////////////////////////////////
 //! author="Charles Galambos"
-//! userlevel=Normal
 //! date="18/12/1995"
-//! docentry="Ravl.API.Images.Corner Detection"
-//! rcsid="$Id$"
-//! lib=RavlImageProc
-//! example=exCorner.cc
-//! file="Ravl/Image/Processing/Corners/Corner.hh"
 
 #include "Ravl2/Index.hh"
 #include "Ravl2/Geometry/Geometry.hh"
@@ -112,5 +103,3 @@ namespace Ravl2 {
 
 }
 
-
-#endif
