@@ -37,7 +37,7 @@ namespace Ravl2
     [[nodiscard]] std::vector<CornerC> Corners(const Array<ByteT,2> &img,Array<int,2> &cornerMap) const;
 
     //! Remove non-maximal peaks.
-    void Peaks(std::vector<CornerC> &list,const Array<int,2> &cornerMap) const;
+    static void Peaks(std::vector<CornerC> &list,const Array<int,2> &cornerMap) ;
 
   private:
     std::array<uint8_t,516> Lut; // Brightness LUT.

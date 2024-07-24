@@ -22,10 +22,14 @@
 #pragma GCC diagnostic ignored "-Wnull-dereference"
 #pragma GCC diagnostic ignored "-Warray-bounds"
 #pragma GCC diagnostic ignored "-Wunused-parameter"
-#pragma GCC diagnostic ignored "-Wimplicit-float-conversion"
-#ifndef __clang__
+#ifdef __GNUC__
 #pragma GCC diagnostic ignored "-Wduplicated-branches"
 #pragma GCC diagnostic ignored "-Wunused-but-set-parameter"
+#pragma GCC diagnostic ignored "-Wuseless-cast"
+#pragma GCC diagnostic ignored "-Wparentheses"
+#endif
+#ifdef __clang__
+#pragma GCC diagnostic ignored "-Wimplicit-float-conversion"
 #endif
 #include <xtensor/xio.hpp>
 #include <xtensor/xtensor.hpp>
@@ -183,7 +187,7 @@ namespace Ravl2
 
 
   //! Convert a point to the closest integer index
-    template<typename RealT,unsigned N>
+    template<unsigned N,typename RealT>
     requires std::is_floating_point<RealT>::value
     constexpr inline Index<N> toIndex(const Point<RealT,N> &pnt)
     {
@@ -194,7 +198,7 @@ namespace Ravl2
       return ret;
     }
 
-  template<typename RealT,unsigned N>
+  template<unsigned N,typename RealT>
   requires std::is_integral<RealT>::value
   constexpr inline Index<N> toIndex(const Point<RealT,N> &pnt)
   {

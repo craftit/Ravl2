@@ -2,13 +2,12 @@
 // Created by charles galambos on 24/07/2024.
 //
 
-#include <CLI/CLI.hpp>
-#include <iostream>
 #include <spdlog/spdlog.h>
+#include <CLI/CLI.hpp>
 
 // This file will be generated automatically when you run the CMake configuration step.
-// It creates a namespace called `myproject`.
-// You can modify the source template at `configured_files/config.hpp.in`.
+// It creates a namespace called `Ravl2`.
+// You can modify the source template at `configured_files/config.hh.in`.
 #include <internal_use_only/config.hh>
 
 int main(int argc, char **argv)
@@ -29,6 +28,6 @@ int main(int argc, char **argv)
     return EXIT_SUCCESS;
   }
 
-  std::cout << "Parameter value: " << p << std::endl;
+  SPDLOG_INFO("Parameter value: {}", p);
   return 0;
 }

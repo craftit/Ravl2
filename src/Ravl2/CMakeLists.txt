@@ -6,8 +6,9 @@ find_package(fmt REQUIRED)
 find_package(spdlog REQUIRED)
 
 
-add_subdirectory(Image)
 add_subdirectory(Geometry)
+add_subdirectory(Image)
+add_subdirectory(OpenCV)
 
 include(GenerateExportHeader)
 
@@ -17,6 +18,7 @@ add_library(Ravl2Core
     ArrayIterZip.hh
     ScanWindow.hh
     Assert.hh
+        OpenCV/convert.hh
 )
 
 add_library(ravl2::Ravl2Core ALIAS Ravl2Core)
