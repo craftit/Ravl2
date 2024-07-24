@@ -92,10 +92,8 @@ namespace Ravl2
   inline Affine<DataT,N>::Affine()
     : mSR()
   {
-    mT.Fill(0);
-    mSR.Fill(0.0);
-    for(size_t i = 0;i < N;i++)
-      mSR[i][i] = 1.0;
+    mT = xt::zeros<DataT>({N});
+    mSR = xt::eye<DataT>(N);
   }
   
   template<typename DataT,unsigned N>

@@ -9,7 +9,6 @@
 #pragma once
 
 #include <stdexcept>
-#include <xtensor-blas/xlinalg.hpp>
 #include "Ravl2/Math.hh"
 #include "Ravl2/Index.hh"
 #include "Ravl2/Geometry/Geometry.hh"

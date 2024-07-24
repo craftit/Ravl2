@@ -118,7 +118,7 @@ namespace Ravl2
     = default;
 
     template<typename ...ArrayAccessT>
-    requires (WindowedArray<ArrayAccessT,typename ArrayAccessT::ValueT,N> && ...)
+    requires (WindowedArray<ArrayAccessT,typename ArrayAccessT::value_type,N> && ...)
     constexpr explicit ArrayIterZipN(ArrayAccessT &...arrays) noexcept
       : mIters(arrays...)
     {
@@ -189,16 +189,16 @@ namespace Ravl2
 
   //! Make zip N contructor
   template<typename ...ArrayT,unsigned N =  std::tuple_element<0, std::tuple<ArrayT...>>::type::dimensions>
-  requires (WindowedArray<ArrayT,typename ArrayT::ValueT, N> && ...)
-  constexpr auto begin(ArrayT &...arrays) noexcept -> ArrayIterZipN<N,typename ArrayT::ValueT...>
+  requires (WindowedArray<ArrayT,typename ArrayT::value_type, N> && ...)
+  constexpr auto begin(ArrayT &...arrays) noexcept -> ArrayIterZipN<N,typename ArrayT::value_type...>
   {
-    return ArrayIterZipN<N,typename ArrayT::ValueT...>(arrays...);
+    return ArrayIterZipN<N,typename ArrayT::value_type...>(arrays...);
   }
 
   //! Just begin one array
   template<typename ArrayT,unsigned N = ArrayT::dimensions>
-  requires (WindowedArray<ArrayT,typename ArrayT::ValueT, N> )
-  constexpr auto begin(ArrayT &arrays) noexcept -> ArrayIter<typename ArrayT::ValueT,N>
+  requires (WindowedArray<ArrayT,typename ArrayT::value_type, N> )
+  constexpr auto begin(ArrayT &arrays) noexcept -> ArrayIter<typename ArrayT::value_type,N>
   {
     return arrays.begin();
   }

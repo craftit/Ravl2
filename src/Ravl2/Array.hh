@@ -27,11 +27,10 @@ namespace Ravl2
 
   // Declaration of the concept “WindowedArray”, which is satisfied by any type “T”
 
-  template<typename ArrayT,typename DataT = ArrayT::ValueT,unsigned N = ArrayT::dimension>
+  template<typename ArrayT,typename DataT = ArrayT::value_type,unsigned N = ArrayT::dimension>
   concept WindowedArray = requires(ArrayT a, Index<N> ind, IndexRange<N> rng)
   {
     { ArrayT::dimensions } -> std::convertible_to<unsigned>;
-    //{ typename ArrayT::ValueT } -> std::convertible_to<DataT>;
     { a[ind] } -> std::convertible_to<DataT>;
     { a.range() } -> std::convertible_to<IndexRange<N> >;
     { a.origin_address() } -> std::convertible_to<DataT *>;
@@ -110,7 +109,7 @@ namespace Ravl2
   class ArrayAccess
   {
   public:
-    typedef DataT ValueT;
+    typedef DataT value_type;
     constexpr static unsigned dimensions = N;
 
     ArrayAccess()
@@ -365,7 +364,7 @@ namespace Ravl2
   class ArrayAccess<DataT,1>
   {
   public:
-    typedef DataT ValueT;
+    using value_type = DataT;
     constexpr static unsigned dimensions = 1;
 
     constexpr ArrayAccess(const IndexRange<1> *rng, DataT *data, [[maybe_unused]] const int *strides)
@@ -477,7 +476,7 @@ namespace Ravl2
   class ArrayView
   {
   public:
-    typedef DataT ValueT;
+    typedef DataT value_type;
     constexpr static unsigned dimensions = N;
 
   protected:
@@ -769,7 +768,7 @@ namespace Ravl2
   class ArrayView<DataT,1>
   {
   public:
-      typedef DataT ValueT;
+      using value_type = DataT;
       constexpr static unsigned dimensions = 1;
 
       //! Create an sub array with the requested 'range'
@@ -936,7 +935,7 @@ namespace Ravl2
   //! Take a sub array of the given array.
   //! The range must be entirely contained in the original array and
   //! must exist for the lifetime of the sub array.
-  template<typename ArrayT,typename DataT = ArrayT::ValueT,unsigned N = ArrayT::dimensions>
+  template<typename ArrayT,typename DataT = ArrayT::value_type,unsigned N = ArrayT::dimensions>
   requires WindowedArray<ArrayT,DataT,N>
   constexpr auto clip(ArrayT &array, IndexRange<N> &range)
   {
@@ -947,7 +946,7 @@ namespace Ravl2
   //! Take a sub array of the given array.
   //! The range must be entirely contained in the original array and
   //! must exist for the lifetime of the sub array.
-  template<typename ArrayT,typename DataT = ArrayT::ValueT,unsigned N = ArrayT::dimensions>
+  template<typename ArrayT,typename DataT = ArrayT::value_type,unsigned N = ArrayT::dimensions>
   requires WindowedArray<ArrayT,DataT,N>
   std::ostream &operator<<(std::ostream &os, const ArrayT &array)
   {
