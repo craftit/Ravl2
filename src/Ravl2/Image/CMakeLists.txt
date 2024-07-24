@@ -14,6 +14,7 @@ add_library (Ravl2Image
         Array2dPolygon2dIter.hh
         Corner.cc Corner.hh
         CornerDetectorSusan.cc CornerDetectorSusan.hh
+        Segmentation/FloodRegion.cc
 )
 
 add_library(ravl2::Ravl2Image ALIAS Ravl2Image)

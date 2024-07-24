@@ -243,7 +243,7 @@ namespace Ravl2
     //! Shrink the range by given size,
     //! min is increased by min of amount.min(), and max decreased by amount.max()
     [[nodiscard]] IndexRange<1> shrink(const IndexRange<1> &amount) const
-    { return {m_min + amount.min(),m_max - amount.max()}; }
+    { return {m_min - amount.min(),m_max - amount.max()}; }
 
     //! Shrink the range in from both ends by amount.
     [[nodiscard]] IndexRange<1> expand(int amount) const

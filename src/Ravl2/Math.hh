@@ -18,7 +18,10 @@ namespace Ravl2
 
     //! Returns the value x rounded to the nearest integer.
     template<class RealT, class IntT = int>
-    inline IntT int_round(RealT x) { return static_cast<IntT>((RealT(x) >= 0) ? (x + RealT(0.5)) : (x - RealT(0.5))); }
+    inline IntT int_round(RealT x) {
+      return IntT(std::lrint(x));
+      //return static_cast<IntT>((RealT(x) >= 0) ? (x + RealT(0.5)) : (x - RealT(0.5)));
+    }
 
     //! Returns the greatest integral  value  less  than  or equal  to  'x'.
     template<class RealT, class IntT = int>

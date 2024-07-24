@@ -13,7 +13,7 @@
 //! lib=RavlImageProc
 //! file="Ravl/Image/Processing/Segmentation/BlueScreen.hh"
 
-#include "Ravl/Image/Image.hh"
+#include "Ravl2/Image/Image.hh"
 #include "Ravl/Image/ByteRGBValue.hh"
 #include "Ravl/Image/ByteRGBAValue.hh"
 #include "Ravl/Image/ByteYUV422Value.hh"
