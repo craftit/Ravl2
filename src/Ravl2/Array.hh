@@ -268,6 +268,12 @@ namespace Ravl2
     //! End iterator
     [[nodiscard]] constexpr ArrayIter<DataT,N> end() const;
 
+    //! Begin iterator
+    [[nodiscard]] constexpr ArrayIter<const DataT,N> cbegin() const;
+
+    //! End iterator
+    [[nodiscard]] constexpr ArrayIter<const DataT,N> cend() const;
+
     //! Get stride for dimension
     [[nodiscard]] constexpr int stride(unsigned dim) const
     {
@@ -523,6 +529,12 @@ namespace Ravl2
     //! End iterator
     [[nodiscard]] constexpr ArrayIter<DataT,1> end() const;
 
+    //! Begin iterator
+    [[nodiscard]] constexpr ArrayIter<const DataT,1> cbegin() const;
+
+    //! End iterator
+    [[nodiscard]] constexpr ArrayIter<const DataT,1> cend() const;
+
     //! Get stride for dimension
     [[nodiscard]] constexpr static int stride([[maybe_unused]] int dim)
     { return 1; }
@@ -545,6 +557,14 @@ namespace Ravl2
   constexpr ArrayIter<DataT, N> ArrayAccess<DataT, N>::end() const
   { return ArrayIter<DataT,N>::end(m_ranges, m_data, m_strides); }
 
+  template<typename DataT>
+  constexpr ArrayIter<const DataT, 1> ArrayAccess<DataT, 1>::cbegin() const
+  { return ArrayIter<const DataT,1>(&m_data[m_ranges->min()]); }
+
+  template<typename DataT, unsigned int N>
+  constexpr ArrayIter<const DataT, N> ArrayAccess<DataT, N>::cend() const
+  { return ArrayIter<const DataT,N>::end(m_ranges, m_data, m_strides); }
+
   template<typename DataT, unsigned int N>
   constexpr ArrayIter<DataT, N> ArrayAccess<DataT, N>::begin() const
   { return ArrayIter<DataT,N>(m_ranges, m_data, m_strides); }
@@ -552,6 +572,14 @@ namespace Ravl2
   template<typename DataT>
   constexpr ArrayIter<DataT, 1> ArrayAccess<DataT, 1>::end() const
   { return ArrayIter<DataT,1>(&m_data[m_ranges->max()+1]); }
+
+  template<typename DataT, unsigned int N>
+  constexpr ArrayIter<const DataT, N> ArrayAccess<DataT, N>::cbegin() const
+  { return ArrayIter<const DataT,N>(m_ranges, m_data, m_strides); }
+
+  template<typename DataT>
+  constexpr ArrayIter<const DataT, 1> ArrayAccess<DataT, 1>::cend() const
+  { return ArrayIter<const DataT,1>(&m_data[m_ranges->max()+1]); }
 
   //! Non-owning view of an array values.
 
