@@ -17,6 +17,8 @@ namespace Ravl2 {
   //! Handles a set region defined by a set of non-overlapping rectangles.
   //! The methods in this class ensure that each part of the range is only
   //! covered by a single rectangle.
+  //! The implementation is not particularly efficient, but it is simple.
+  //! and should be fine for small numbers of rectangles.
   
   template<unsigned N>
   class IndexRangeSet
@@ -96,7 +98,6 @@ namespace Ravl2 {
       }
       return ret;
     }
-
 
     //! Get axis align enclosing rectangle for set.
     [[nodiscard]] IndexRange<N> enclosingRange() const

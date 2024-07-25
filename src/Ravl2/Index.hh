@@ -166,10 +166,16 @@ namespace Ravl2
          m_max(-1)
     {}
 
-    //! Default constructor
+    //! Constructor from a min and max value, inclusive.
     constexpr IndexRange(int min,int max)
      : m_min(min),
        m_max(max)
+    {}
+
+    //! Construct from a single value.
+    constexpr IndexRange(int at)
+      : m_min(at),
+	m_max(at)
     {}
 
     //! Default constructor
@@ -185,12 +191,6 @@ namespace Ravl2
         m_max = init.begin()[1];
       }
     }
-
-    //! Default constructor
-    explicit IndexRange(int size)
-     : m_min(0),
-       m_max(size-1)
-    {}
 
     //! Make size of range 0.
     void clear() noexcept
