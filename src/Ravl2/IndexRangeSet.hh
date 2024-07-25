@@ -41,38 +41,35 @@ namespace Ravl2 {
       ret.reserve(4);
       IndexRange<N> remainder(rect1);
 
-      //ONDEBUG(std::cerr << "Rectangles overlap. \n");
-      
-      // Cut top.
-
-      if(remainder.min(0) < rect2.min(0)) {
-        //ONDEBUG(std::cerr << "Top Cut. \n");
-        ret.push_back(IndexRange<N>({{remainder.min(0),rect2.min(0)-1},{remainder.min(1),remainder.max(1)}}));
-        remainder.min(0) = rect2.min(0); // Cut it down.
-      }
-
-      // Cut left.
-
-      if(remainder.min(1) < rect2.min(1)) {
-        //ONDEBUG(std::cerr << "Left Cut. \n");
-        ret.push_back(IndexRange<N>({{remainder.min(0),remainder.max(0)},{remainder.min(1),rect2.min(1)-1}}));
-        remainder.min(1) = rect2.min(1); // Cut it down.
-      }
-
-      // Cut bottom.
-
-      if(remainder.max(0) > rect2.max(0)) {
-        //ONDEBUG(std::cerr << "Bottom Cut. \n");
-        ret.push_back(IndexRange<N>({{rect2.max(0)+1,remainder.max(0)},{remainder.min(1),remainder.max(1)}}));
-        remainder.max(0) = rect2.max(0); // Cut it down.
-      }
-
-      // Cut right.
-
-      if(remainder.max(1) > rect2.max(1)) {
-        //ONDEBUG(std::cerr << "Right Cut. \n");
-        ret.push_back(IndexRange<N>({{remainder.min(0),remainder.max(0)},{rect2.max(1)+1,remainder.max(1)}}));
-        remainder.max(1) = rect2.max(1); // Cut it down.
+      for(unsigned i = 0;i < N;++i) {
+	if(remainder.min(i) < rect2.min(i)) {
+	  IndexRange<N> r;
+	  for(unsigned j = 0;j < N;++j) {
+	    if(j == i) {
+	      r.min(j) = remainder.min(j);
+	      r.max(j) = rect2.min(j) - 1;
+	    } else {
+	      r.min(j) = remainder.min(j);
+	      r.max(j) = remainder.max(j);
+	    }
+	  }
+	  ret.push_back(r);
+	  remainder.min(i) = rect2.min(i); // Cut it down.
+	}
+	if(remainder.max(i) > rect2.max(i)) {
+	  IndexRange<N> r;
+	  for(unsigned j = 0;j < N;++j) {
+	    if(j == i) {
+	      r.min(j) = rect2.max(j) + 1;
+	      r.max(j) = remainder.max(j);
+	    } else {
+	      r.min(j) = remainder.min(j);
+	      r.max(j) = remainder.max(j);
+	    }
+	  }
+	  ret.push_back(r);
+	  remainder.max(i) = rect2.max(i); // Cut it down.
+	}
       }
 
       return ret;
@@ -179,7 +176,9 @@ namespace Ravl2 {
     }
   };
 
+  // Let everyone know there's an implementation already generated for common cases
   extern template class IndexRangeSet<2>;
+  extern template class IndexRangeSet<1>;
 }
 
 
