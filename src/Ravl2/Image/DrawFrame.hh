@@ -14,7 +14,7 @@ namespace Ravl2
 {
 
   //! Draw a rectangle in an image.
-  template<typename ArrayT,typename DataT = ArrayT::value_type>
+  template<typename ArrayT,typename DataT = typename ArrayT::value_type>
   requires WindowedArray<ArrayT,DataT,2>
   void DrawFilledFrame(ArrayT &dat,const DataT &value,const IndexRange<2> &rect)
   {
@@ -26,7 +26,7 @@ namespace Ravl2
   }
 
   //! Draw a rectangle in an image.
-  template<typename ArrayT,typename DataT = ArrayT::value_type>
+  template<typename ArrayT,typename DataT = typename ArrayT::value_type>
   requires WindowedArray<ArrayT,DataT,2>
   void DrawFrame(ArrayT &dat,const DataT &value,const IndexRange<2> &rect) {
     IndexRange<2> dr = rect.clip(dat.range());
@@ -85,7 +85,7 @@ namespace Ravl2
 
   //! Draw a rectangle in an image of given width
   //! The rectangle is assumed to be the outer one and the image will be filled inside it by 'width' pixels.
-  template<typename ArrayT,typename DataT = ArrayT::value_type>
+  template<typename ArrayT,typename DataT = typename ArrayT::value_type>
   requires WindowedArray<ArrayT,DataT,2>
   void DrawFrame(ArrayT &dat,const DataT &value,int width,const IndexRange<2> &outerRect)
   {
