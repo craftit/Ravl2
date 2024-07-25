@@ -22,7 +22,7 @@ namespace Ravl2
     /* build IEL */
     auto end = m_polygon.end();
     for (auto it = beginCircularFirst(m_polygon); it != end; ++it) {
-      m_iel.Add(EdgeC(it.Data(), it.NextCrcData()));
+      m_iel.add(EdgeC(it.Data(), it.NextCrcData()));
     }
 
     m_row = m_iel.MinRow() - 1;
@@ -37,7 +37,7 @@ namespace Ravl2
     for (m_row++; m_row <= m_iel.MaxRow(); m_row++) {
       EdgeC e;
       while (m_iel.Next(m_row, e))
-        m_ael.Add(e,m_row);
+        m_ael.add(e,m_row);
       m_ael.DeleteEdges(m_row);
       if ((m_valid = m_ael.First(m_indexRange, m_row))) {
         return true;
@@ -67,7 +67,7 @@ namespace Ravl2
 
   /* add edge at appropriate place in IEL */
   template<typename RealT>
-  void Polygon2dIterC<RealT>::IELC::Add (const Polygon2dIterC<RealT>::EdgeC &e)
+  void Polygon2dIterC<RealT>::IELC::add (const Polygon2dIterC<RealT>::EdgeC &e)
   {
     m_minRow = std::min(e.MinRow(),m_minRow);
     m_maxRow = std::max(e.MaxRow(),m_maxRow);
@@ -93,7 +93,7 @@ namespace Ravl2
   }
 
   template<typename RealT>
-  void Polygon2dIterC<RealT>::AELC::Add(const Polygon2dIterC<RealT>::EdgeC &e, int row)
+  void Polygon2dIterC<RealT>::AELC::add(const Polygon2dIterC<RealT>::EdgeC &e, int row)
   {
     //find right spot to add it at
     RealT x = e.xof(RealT(row)+RealT(0.5));

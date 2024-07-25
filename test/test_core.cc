@@ -13,6 +13,7 @@
 
 #include "Ravl2/Math.hh"
 #include "Ravl2/Index.hh"
+#include "Ravl2/IndexRangeSet.hh"
 #include "Ravl2/Array.hh"
 #include "Ravl2/ArrayIterZip.hh"
 #include "Ravl2/ScanWindow.hh"
@@ -167,6 +168,30 @@ TEST_CASE("IndexRange", "[IndexRange]")
     CHECK(range5.overlaps(range2));
   }
 }
+
+TEST_CASE("IndexRangeSet", "[IndexRangeSet]")
+{
+  using namespace Ravl2;
+  IndexRange<2> rect1({{0,1},{0,1}});
+  IndexRange<2> rect2({{1,2},{1,2}});
+  //cout << "R1:" << rect1 << " Area:" << rect1.area() << "\n";
+  //cout << "R2:" << rect2 << " Area:" << rect2.area() << "\n";
+
+  IndexRangeSet<2> t1 = IndexRangeSet<2>::subtract(rect1,rect2);
+  CHECK(t1.area() == 3);
+
+  IndexRangeSet<2> t2 = IndexRangeSet<2>::subtract(rect2,rect1);
+  CHECK(t2.area() == 3);
+
+  IndexRange<2> rect3({{0,1},{2,3}});
+
+  IndexRangeSet<2> t3 = IndexRangeSet<2>::subtract(rect2,rect3);
+  CHECK(t3.area() == 3);
+
+  IndexRangeSet<2> t4 = IndexRangeSet<2>::subtract(rect3,rect2);
+  CHECK(t4.area() == 3);
+}
+
 
 
 TEST_CASE("Array", "[Array]")

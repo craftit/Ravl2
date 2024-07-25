@@ -36,7 +36,7 @@ namespace Ravl2
     class IELC: public std::list<EdgeC> {
     public:
       IELC() :m_minRow(std::numeric_limits<int>::max()), m_maxRow(std::numeric_limits<int>::min()) {}
-      void Add(const EdgeC &e);
+      void add(const EdgeC &e);
       bool Next(const int &row, EdgeC &e);
       [[nodiscard]] int MinRow() { return m_minRow; }
       [[nodiscard]] int MaxRow() { return m_maxRow; }
@@ -47,7 +47,7 @@ namespace Ravl2
 
     class AELC: public std::list<EdgeC> {
     public:
-      void Add(const EdgeC &e, int row);
+      void add(const EdgeC &e, int row);
       void DeleteEdges(const int &row);
       bool First(IndexRange<1> &indexRange, int row);
       bool Next(IndexRange<1> &indexRange, int row);
