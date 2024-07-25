@@ -266,6 +266,8 @@ namespace Ravl2
       if(it.template data<1>() == id) {
         size++;
         it.template data<0>() = 1;
+	if(size > maxSize && maxSize > 0)
+	  break;
       } else
         it.template data<0>() = 0;
     }
