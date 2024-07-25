@@ -17,39 +17,136 @@ files=$(find $SRC_DIR -type f -name "*.hh" -o -name "*.cc")
 # Create a temporary file for the sed script
 sed_script_file=$(mktemp)
 
-echo "Creating sed script at $sed_script_file"
-
 # Write the sed script to the temporary file
 cat <<'EOF' > "$sed_script_file"
+
+# Remove old Ravl includes
+/include "Ravl\/RefCounter\.hh"/d
+/include "Ravl\/Array2dIter\.hh"/d
+/include "Ravl\/Array1dIter\.hh"/d
+/include "Ravl\/SArray1dIter\.hh"/d
+/include "Ravl\/SArray2dIter\.hh"/d
+/include "Ravl\/Hash\.hh"/d
+/include "Ravl\/DListExtra\.hh"/d
+/include "Ravl\/DLIter\.hh"/d
+
+s/include "Ravl\/IndexRange1d\.hh"/include "Ravl2\/Index.hh"/g
+s/include "Ravl\/SArray1d\.hh"/include <vector>/g
+s/include "Ravl2\/Tuple2\.hh"/include <tuple>/g
+s/include "Ravl\/Tuple2\.hh"/include <tuple>/g
+s/include "Ravl\/SysLog\.hh"/include <spdlog\/spdlog.h>/g
+
+# Delete useless header info
+/\/\/! rcsid=/d
+/\/\/! lib=/d
+/\/\/! file=/d
+/\/\/! docentry=/d
+/\/\/! userlevel=/d
+
+# Update some container types
+# Use std::vector< instead of DListC< by default
+s/DListC/std::vector/g
+s/Tuple2C/std::tuple/g
+
+# Replace 'for(DLIterC<CrackC> edge(list);edge;edge++)' with 'for(auto &edge : list)'
+s/for[ ]+(DLIterC<\([^>]*\)> \([^(]*\)(\([^;]*\));[^;]*;[^;^,]*++)/for(auto \&\2 : \3)/g
+s/for[ ]+(SArray1dIterC<\([^>]*\)> \([^(]*\)(\([^;]*\));[^;^,]*;[^;]*++)/for(auto \&\2 : \3)/g
+
+# Replace things like 'for(DLIterC<CrackC> edge(list);edge;edge++)' with 'for(auto &edge : list)
+
+# If we see cerr << replace with std::cerr <<, provided it hasn't already been done
+s/(cerr <</(std::cerr <</g
+
+# Replace .Origin() with .min()
+s/\.Origin()/\.min()/g
 
 # Update indexing
 s/IndexC/int/g
 # Remove .V() calls entirely, they were used to convert IndexC to int
-/\.V()/d
+s/\.Max()\.V()/\.max()/g
+s/\.Min()\.V()/\.min()/g
+
+# Replace .Expand() with .expand()
+s/\.Expand(/\.expand(/g
+s/\.Shrink(/\.shrink(/g
+s/\.Erode()/\.shrink(1)/g
+s/\.Dilate()/\.expand(1)/g
+s/\.Contains(/\.contains(/g
+s/\.Next()/\.next()/g
+s/.Data1()/.data<0>()/g
+s/.Data2()/.data<1>()/g
+s/.Data3()/.data<2>()/g
+
+s/\.V()//g
 s/Index2dC/Index<2>/g
 s/IndexRange2dC/IndexRange<2>/g
-s/IndexRange1dC/IndexRange<1>/g
+s/IndexRangeC/IndexRange<1>/g
+s/\.ClipBy(/\.clipBy(/g
 
 # Update Arrays
 s/SArray1dC<\([^>]*\)>/std::vector<\1>/g
 s/Array1dC<\([^>]*\)>/Array<\1,1>/g
+
+# Image has .TRow() and .BRow() methods, replace with range().min(0) and range().max(0) where we're the variable is called images
+s/image\.TRow()/image\.range().min(0)/g
+s/image\.BRow()/image\.range().max(0)/g
+s/image\.LCol()/image\.range().min(1)/g
+s/image\.RCol()/image\.range().max(1)/g
+# same for img
+s/img\.TRow()/img\.range().min(0)/g
+s/img\.BRow()/img\.range().max(0)/g
+s/img\.LCol()/img\.range().min(1)/g
+s/img\.RCol()/img\.range().max(1)/g
+
+# ImageC has .Range1() and .Range2() methods, replace with .range(0) and .range(1)
+s/image\.Range1()/image\.range(0)/g
+s/image\.Range2()/image\.range(1)/g
+s/img\.Range1()/img\.range(0)/g
+s/img\.Range2()/img\.range(1)/g
+
+# .Rows() and .Cols() -> .size(0) and .size(1)
+s/image\.Rows()/image\.range()\.size(0)/g
+s/image\.Cols()/image\.range()\.size(1)/g
+s/img\.Rows()/img\.range()\.size(0)/g
+s/img\.Cols()/img\.range()\.size(1)/g
+
 # Replace Frame().TRow() with .range().range(0).min()
 s/\.TRow()/\.min(0)/g
 s/\.BRow()/\.max(0)/g
 s/\.LCol()/\.min(1)/g
 s/\.RCol()/\.max(1)/g
 s/\.Frame()/\.range()/g
+s/\.Rectangle()/\.range()/g
 s/\.Size()/\.size()/g
+s/\.Fill(/\.fill(/g
+s/\.Apply(/\.apply(/g
 s/\.Row()/[0]/g
 s/\.Col()/[1]/g
+
+# When we see pxl.UpN() replace with up(pxl)
+
+# IsEmpty() -> empty()
+s/IsEmpty()/empty()/g
+
+
+# InsLast( -> push_back(
+s/\InsLast(/\push_back(/g
 
 # Update math
 s/Matrix2dC/Matrix<RealT,2,2>/g
 s/Matrix3dC/Matrix<RealT,3,3>/g
 s/Point2dC/Point<RealT,2>/g
 s/Point3dC/Point<RealT,3>/g
+s/Vector2dC/Vector<RealT,2>/g
+s/Vector3dC/Vector<RealT,3>/g
 s/RealRange1dC/Range<1,float>/g
 s/RealRange2dC/Range<2,float>/g
+
+# Replace Abs() with std::abs()
+s/Abs(/std::abs(/g
+
+# Pow() -> std::pow()
+s/Pow(/std::pow(/g
 
 # Deal with images
 s/ImageC<\([^>]*\)>/Array<\1,2>/g
@@ -64,14 +161,43 @@ s/Ravl\/Image\/Image.hh/Ravl2\/Array.hh/g
 # Change all the #include "Ravl/..." to #include "Ravl2/..."
 s/\#include "Ravl\//#include "Ravl2\//g
 
+# Change ostream to std::ostream, if it hasn't already been done
+s/ ostream / std::ostream /g
+s/ istream / std::istream /g
+s/(ostream /(std::ostream /g
+s/(istream /(std::istream /g
+
 # Namespaces
 # Delete lines with "using namespace RavlN;" and "using namespace RavlImageN;" after any whitespace
 /^\s*using namespace RavlN;/d
 /^\s*using namespace RavlImageN;/d
 s/namespace RavlN/namespace Ravl2/g
 s/namespace RavlImageN/namespace Ravl2/g
+
+# Convert SysLog to spdlog.
+# In text RavlDebug(x), RavlWarning(x), RavlInfo(x), RavlError(x), -> SPDLOG_TRACE(x), SYSLOG_WARN(x), SPDLOG_INFO(x), SPDLOG_ERROR(x),
+# and in the text part change %s %f %d %e %u to {} %0.2f to {:.2f
+
+/.*Ravl\(Debug\|Warning\|Info\|Error\).*/ {
+  s/%s/{}/g
+  s/%f/{}/g
+  s/%d/{}/g
+  s/%e/{}/g
+  s/%u/{}/g
+  s/%\([0-9]*\.[0-9]*\)f/{:\1f}/g
+}
+
+s/RavlDebug/SPDLOG_TRACE/g
+s/RavlWarning/SYSLOG_WARN/g
+s/RavlInfo/SPDLOG_INFO/g
+s/RavlError/SPDLOG_ERROR/g
+
+# Other types, do them last to avoid conflicts
 s/UIntT/unsigned/g
+s/SizeT/size_t/g
 EOF
+
+echo "Applying sed script $sed_script_file to files in $SRC_DIR"
 
 # Apply the sed script to the files
 echo "$files" | xargs sed -i -f "$sed_script_file"
