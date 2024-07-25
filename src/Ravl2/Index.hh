@@ -265,6 +265,18 @@ namespace Ravl2
       m_max += amount;
     }
 
+    [[nodiscard]] auto &range([[maybe_unused]] unsigned i)
+    {
+      assert(i == 0);
+      return *this;
+    }
+
+    [[nodiscard]] const auto &range([[maybe_unused]] unsigned i) const
+    {
+      assert(i == 0);
+      return *this;
+    }
+    
     //! Smallest index in all dimensions.
     [[nodiscard]] int min() const
     { return m_min; }
@@ -272,6 +284,39 @@ namespace Ravl2
     //! largest index in all dimensions.
     [[nodiscard]] int max() const
     { return m_max; }
+
+    //! Smallest index in all dimensions.
+    [[nodiscard]] int &min()
+    { return m_min; }
+
+    //! largest index in all dimensions.
+    [[nodiscard]] int &max()
+    { return m_max; }
+
+    [[nodiscard]] int &min([[maybe_unused]] unsigned i)
+    {
+      assert(i == 0);
+      return min();
+    }
+
+    [[nodiscard]] int min([[maybe_unused]] unsigned i) const
+    {
+      assert(i == 0);
+      return min();
+    }
+
+    [[nodiscard]] int &max([[maybe_unused]] unsigned i)
+    {
+      assert(i == 0);
+      return max();
+    }
+
+    [[nodiscard]] int max([[maybe_unused]] unsigned i) const
+    {
+      assert(i == 0);
+      return max();
+    }
+
 
     //! Create a new index clipped so it is within the range.
     [[nodiscard]] int clip(int index) const
@@ -701,6 +746,31 @@ namespace Ravl2
       assert(i < N);
       return m_range[i];
     }
+
+    [[nodiscard]] int &min(unsigned i)
+    {
+      assert(i < N);
+      return m_range[i].min();
+    }
+
+    [[nodiscard]] int min(unsigned i) const
+    {
+      assert(i < N);
+      return m_range[i].min();
+    }
+
+    [[nodiscard]] int &max(unsigned i)
+    {
+      assert(i < N);
+      return m_range[i].max();
+    }
+
+    [[nodiscard]] int max(unsigned i) const
+    {
+      assert(i < N);
+      return m_range[i].max();
+    }
+
 
     [[nodiscard]] const std::array<IndexRange<1>, N> &ranges() const
     { return m_range; }
