@@ -11,7 +11,7 @@
 namespace Ravl2
 {
 
-  template<typename ArrayT,typename DataT = ArrayT::value_type>
+  template<typename ArrayT,typename DataT = typename ArrayT::value_type>
   requires WindowedArray<ArrayT,DataT,2>
   void DrawCross(ArrayT &dat,const DataT &value,const Index<2> &at,int pixelSize = 3) {
     // Cross entirely in the image ?

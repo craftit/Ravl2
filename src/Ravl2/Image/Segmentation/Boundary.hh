@@ -56,7 +56,7 @@ namespace Ravl2
 
     //! Creates an unsorted list of boundary elements (CrackC) from the edges between 'inLabel' pixels and other values
 
-    template<typename ArrayT,typename DataT = ArrayT::value_type>
+    template<typename ArrayT,typename DataT = typename ArrayT::value_type>
     requires WindowedArray<ArrayT,DataT,2>
     static BoundaryC traceBoundary(const ArrayT &emask, DataT inLabel);
 

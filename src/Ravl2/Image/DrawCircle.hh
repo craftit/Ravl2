@@ -21,7 +21,7 @@ namespace Ravl2
 {
 
   //! Draw a circle in an image with an integer index and size.
-  template<typename ArrayT,typename DataT = ArrayT::value_type>
+  template<typename ArrayT,typename DataT = typename ArrayT::value_type>
   requires WindowedArray<ArrayT,DataT,2>
   void DrawCircle(ArrayT &dat,const DataT &value,const Index<2> &center,unsigned radius)
   {
@@ -52,7 +52,7 @@ namespace Ravl2
 
   //! Draw a filled circle in an image from real floating point coordinates.
   //! Draw a circle in an image with an integer index and size.
-  template<typename ArrayT,typename DataT = ArrayT::value_type,typename CoordT = float>
+  template<typename ArrayT,typename DataT = typename ArrayT::value_type,typename CoordT = float>
   requires WindowedArray<ArrayT,DataT,2>
   void DrawFilledCircle(ArrayT &dat,const DataT &value,const Point<CoordT,2> &center,CoordT radius) {
     if(radius <= 1.0f) { // Very small ?
@@ -71,7 +71,7 @@ namespace Ravl2
   }
 
   //! Draw a filled circle in an image from real floating point coordinates.
-  template<typename ArrayT,typename DataT = ArrayT::value_type,typename CoordT = float>
+  template<typename ArrayT,typename DataT = typename ArrayT::value_type,typename CoordT = float>
   requires WindowedArray<ArrayT,DataT,2>
   void DrawCircle(ArrayT &dat,const DataT &value,const Point<CoordT,2> &center,CoordT radius) {
     if(radius <= 1.0f) { // Very small ?
