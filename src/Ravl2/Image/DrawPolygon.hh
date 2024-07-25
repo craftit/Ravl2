@@ -15,7 +15,7 @@
 namespace Ravl2 {
 
   //! Draw a polygon into the image
-  template<typename ArrayT,typename CoordT = float, typename DataT = ArrayT::value_type>
+  template<typename ArrayT,typename CoordT = float, typename DataT = typename ArrayT::value_type>
   requires WindowedArray<ArrayT,DataT,2>
   void DrawFilledPolygon(ArrayT &dat,const DataT &value,const Polygon2dC<CoordT> &poly)
   {
@@ -25,7 +25,7 @@ namespace Ravl2 {
   }
 
   //: Draw a poly line into the image.
-  template<typename ArrayT,typename CoordT = float, typename DataT = ArrayT::value_type>
+  template<typename ArrayT,typename CoordT = float, typename DataT = typename ArrayT::value_type>
   requires WindowedArray<ArrayT,DataT,2>
   void DrawPolygon(ArrayT &dat,const DataT &value,const Polygon2dC<CoordT> &poly)
   {
@@ -41,7 +41,7 @@ namespace Ravl2 {
 
   //: Draw a shaded polygon into the image
   // This function requires that DataT has a working operator*(double) function
-  template<typename ArrayT,typename CoordT = float, typename DataT = ArrayT::value_type>
+  template<typename ArrayT,typename CoordT = float, typename DataT = typename ArrayT::value_type>
   requires WindowedArray<ArrayT,DataT,2>
   void DrawShadedPolygon(ArrayT &dat,const std::vector<DataT>& values,const Polygon2dC<CoordT> &poly)
   {
@@ -71,7 +71,7 @@ namespace Ravl2 {
 
     //: Draw a shaded polygon into the image
   // This function requires that DataT has a working operator*(double) function
-  template<typename ArrayT,typename CoordT = float, typename DataT = ArrayT::value_type>
+  template<typename ArrayT,typename CoordT = float, typename DataT = typename ArrayT::value_type>
   requires WindowedArray<ArrayT,DataT,2>
   void DrawPolygon(ArrayT &dat,const std::vector<DataT>& values,const Polygon2dC<CoordT> &poly) {
     if(values.size() != poly.size())

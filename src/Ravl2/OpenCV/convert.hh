@@ -14,7 +14,7 @@ namespace Ravl2
   //! Create a cv::Mat from a Ravl2::Array
   //! The array data is referenced by the cv::Mat, so the array
   //! must exist for the lifetime of the cv::Mat
-  template<typename ArrayT,typename DataT = ArrayT::value_type, unsigned N = ArrayT::dimensions>
+  template<typename ArrayT,typename DataT = typename ArrayT::value_type, unsigned N = ArrayT::dimensions>
   requires WindowedArray<ArrayT,DataT,N>
   cv::Mat toCvMat(const ArrayT& m)
   {
