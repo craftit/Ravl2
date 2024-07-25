@@ -58,7 +58,7 @@ TEST_CASE("Math", "[int_floor]")
 TEST_CASE("IndexRange", "[IndexRange]")
 {
   {
-    Ravl2::IndexRange<1> range1(10);
+    Ravl2::IndexRange<1> range1(0,9);
     CHECK(range1.contains(1));
     CHECK_FALSE(range1.contains(10));
     int count = 0;
@@ -69,7 +69,7 @@ TEST_CASE("IndexRange", "[IndexRange]")
     }
     CHECK_EQ(range1.size(), count);
 
-    Ravl2::IndexRange<1> range2(2);
+    Ravl2::IndexRange<1> range2(0,1);
     auto newRange = range1 - range2;
     CHECK_EQ(newRange.size(), 9);
 
@@ -77,6 +77,13 @@ TEST_CASE("IndexRange", "[IndexRange]")
     CHECK_EQ(newRange.size(), 11);
   }
   {
+    Ravl2::IndexRange<1> range1(2);
+    CHECK(range1.size() == 1);
+    CHECK(range1.min() == 2);
+    CHECK(range1.max() == 2);
+  }
+
+    {
     // Check ranges not starting at 0
     Ravl2::IndexRange<1> range3(1,5);
     Ravl2::IndexRange<1> rangeRegion(-1,1);
@@ -235,11 +242,8 @@ TEST_CASE("IndexRangeSet", "[IndexRangeSet]")
 	}
       }
     }
-
-
   }
 }
-
 
 
 TEST_CASE("Array", "[Array]")
@@ -247,7 +251,7 @@ TEST_CASE("Array", "[Array]")
   {
     // Test creation of 1 dimensional array.
 
-    Ravl2::IndexRange<1> aRange(10);
+    Ravl2::IndexRange<1> aRange(0,9);
     Ravl2::Array<int,1> val(aRange);
 
     int c = 0;
@@ -265,7 +269,7 @@ TEST_CASE("Array", "[Array]")
       CHECK_EQ(val[i],c++);
     }
 
-    CHECK_EQ(c,10);
+    CHECK(c == 10);
   }
 
   {
@@ -367,7 +371,7 @@ TEST_CASE("Array", "[Array]")
 
 TEST_CASE("ArrayIter1", "[ArrayIter<1>]")
 {
-  Ravl2::Array<int,1> val(Ravl2::IndexRange<1>(10));
+  Ravl2::Array<int,1> val(Ravl2::IndexRange<1>(0,9));
   int sum = 0;
   for(auto a : val.range()) {
     val[a] = a;
@@ -383,7 +387,7 @@ TEST_CASE("ArrayIter1", "[ArrayIter<1>]")
 
 TEST_CASE("ArrayAccessIter1", "[ArrayIter<1>]")
 {
-  Ravl2::Array<int,1> val(Ravl2::IndexRange<1>(10));
+  Ravl2::Array<int,1> val(Ravl2::IndexRange<1>(0,9));
   Ravl2::ArrayAccess<int,1> view(val);
   int sum = 0;
   for(auto a : view.range()) {
@@ -792,14 +796,14 @@ TEST_CASE("ScanWindow2", "[ScanWindow]")
 
 TEST_CASE("ScanWindow1", "[ScanWindow1]")
 {
-  Ravl2::Array<int, 1> val(Ravl2::IndexRange<1>(10));
+  Ravl2::Array<int, 1> val(Ravl2::IndexRange<1>(0,9));
   int at = 0;
 
   for (auto a: val.range()) {
     val[a] = at++;
   }
 
-  Ravl2::IndexRange<1> windowRange(2);
+  Ravl2::IndexRange<1> windowRange(0,1);
   //SPDLOG_INFO("Window range: {} -> {} ", windowRange.min(), windowRange.max());
   CHECK_EQ(windowRange.area(), 2);
   Ravl2::ScanWindow<int, 1> scan(val, windowRange);

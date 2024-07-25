@@ -74,7 +74,7 @@ namespace Ravl2
     //! Add index in place
     constexpr Index<N> &operator+=(const Index<N> &ind) noexcept
     {
-      for(int i = 0;i < N;i++)
+      for(unsigned i = 0;i < N;i++)
         m_index[i] += ind[i];
       return *this;
     }
@@ -82,7 +82,7 @@ namespace Ravl2
     //! Subtract index in place
     constexpr Index<N> &operator-=(const Index<N> &ind) noexcept
     {
-      for(int i = 0;i < N;i++)
+      for(unsigned i = 0;i < N;i++)
         m_index[i] -= ind[i];
       return *this;
     }
@@ -122,9 +122,9 @@ namespace Ravl2
     [[nodiscard]] constexpr int *begin()
     { return m_index; }
 
-    //! begin
+    //! end
     [[nodiscard]] constexpr const int *end() const
-    { return &m_index + N; }
+    { return &(m_index[N]); }
 
     //! begin
     [[nodiscard]] constexpr const int *begin() const
@@ -467,20 +467,28 @@ namespace Ravl2
 
     //! Construct from sizes for each dimension.
     //! The ranges will have a zero origin.
-    IndexRange(std::initializer_list<int> sizes) noexcept
+    IndexRange(std::initializer_list<size_t> sizes) noexcept
     {
       assert(sizes.size() == N);
       for(unsigned i = 0;i < N;i++)
-        m_range[i] = IndexRange<1>(sizes.begin()[i]);
+        m_range[i] = IndexRange<1>(0,int(sizes.begin()[i])-1);
     }
 
     //! Construct from ranges for each dimension.
 
-    IndexRange(std::initializer_list<std::initializer_list<int> > sizes) noexcept
+    IndexRange(std::initializer_list<std::initializer_list<int> > init) noexcept
     {
-      assert(sizes.size() == N);
+      assert(init.size() == N);
       for(unsigned i = 0;i < N;i++) {
-        m_range[i] = IndexRange<1>(sizes.begin()[i]);
+        m_range[i] = IndexRange<1>(init.begin()[i]);
+      }
+    }
+
+    IndexRange(std::initializer_list<IndexRange<1> > ranges) noexcept
+    {
+      assert(ranges.size() == N);
+      for(unsigned i = 0;i < N;i++) {
+	m_range[i] = ranges.begin()[i];
       }
     }
 
@@ -998,6 +1006,14 @@ namespace Ravl2
     end[0] = m_range[0].max()+1;
     return IndexRangeIterator<N>(*this,end,true);
   }
+
+  // Let everyone know there's an implementation already generated for common cases
+  extern template class Index<1>;
+  extern template class Index<2>;
+  extern template class IndexRange<1>;
+  extern template class IndexRange<2>;
+  extern template class IndexRangeIterator<1>;
+  extern template class IndexRangeIterator<2>;
 
 }
 

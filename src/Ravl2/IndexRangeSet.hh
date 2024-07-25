@@ -127,7 +127,7 @@ namespace Ravl2 {
     //! Remove 'rectset' from the region given by the set.
     [[nodiscard]] IndexRangeSet<N> subtract(const IndexRangeSet<N> &rectSet) const
     {
-      IndexRangeSet ret = (*this);
+      IndexRangeSet<N> ret = (*this);
       for(auto it : rectSet)
         ret = ret.subtract(it);
       return ret;
@@ -135,12 +135,12 @@ namespace Ravl2 {
 
     //! Remove set from rect.
     [[nodiscard]] IndexRangeSet<N> subtractFrom(const IndexRange<N> &rect) const
-    { return IndexRangeSet(rect).subtract(*this); }
+    { return IndexRangeSet<N>(rect).subtract(*this); }
 
     //! Add this rectangle to the set.
     [[nodiscard]] IndexRangeSet<N> add(const IndexRange<N> &rect) const
     {
-      IndexRangeSet ret = subtract(rect);
+      IndexRangeSet<N> ret = subtract(rect);
       ret.push_back(rect); // Well it works doesn't it!!!!
       return ret;
     }
@@ -148,7 +148,7 @@ namespace Ravl2 {
     //! Add rectangle set to this set.
     [[nodiscard]] IndexRangeSet<N> add(const IndexRangeSet<N> &rect) const
     {
-      IndexRangeSet ret(*this);
+      IndexRangeSet<N> ret(*this);
       for(auto it : rect)
         ret = ret.add(it);
       return ret;
@@ -157,7 +157,7 @@ namespace Ravl2 {
     //! Does this set completely contain 'rect' ?
     [[nodiscard]] bool contains(const IndexRange<N> &rect) const
     {
-      IndexRangeSet remainder(rect);
+      IndexRangeSet<N> remainder(rect);
       for(auto it : *this) {
         remainder = remainder.subtract(it);
         if(remainder.empty())

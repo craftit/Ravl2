@@ -2,6 +2,7 @@
 #pragma once
 
 #include <cassert>
+#include <cstdint>
 #include "Ravl2/Array.hh"
 #include "Ravl2/Index.hh"
 
@@ -18,18 +19,18 @@ namespace Ravl2
   public:
     constexpr ScanWindow(const ArrayAccess<DataT, 1> &img, const IndexRange<1> &window)
       : mArea(img.range() - window),
+	mWindowRange(window),
 	mAt(img.origin_address() + mArea.min()),
-	mEnd(img.origin_address() + mArea.max() + 1),
-	mWindowRange(window)
+	mEnd(img.origin_address() + mArea.max() + 1)
     {
       assert(!mArea.empty());
     }
 
     constexpr ScanWindow(ArrayView<DataT, 1> &img, const IndexRange<1> &window)
       : mArea(img.range() - window),
+	mWindowRange(window),
         mAt(img.origin_address() + mArea.min()),
-        mEnd(img.origin_address() + mArea.max() + 1),
-        mWindowRange(window)
+        mEnd(img.origin_address() + mArea.max() + 1)
     {
       assert(!mArea.empty());
     }
@@ -64,9 +65,9 @@ namespace Ravl2
 
   protected:
     IndexRange<1> mArea; // Area we're scanning over
+    IndexRange<1> mWindowRange;
     ArrayIter<DataT, 1> mAt;
     ArrayIter<DataT, 1> mEnd;
-    IndexRange<1> mWindowRange;
   };
 
 
@@ -124,4 +125,8 @@ namespace Ravl2
     IndexRange<N> mArea; // Area we're scanning over
     ArrayIter<DataT, N> mAt;
   };
+
+  extern template class ScanWindow<uint8_t,1>;
+  extern template class ScanWindow<uint8_t,2>;
+
 }

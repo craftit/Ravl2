@@ -9,6 +9,10 @@
 
 namespace Ravl2
 {
-
-
+  template class Index<1>;
+  template class Index<2>;
+  template class IndexRange<1>;
+  template class IndexRange<2>;
+  template class IndexRangeIterator<1>;
+  template class IndexRangeIterator<2>;
 }

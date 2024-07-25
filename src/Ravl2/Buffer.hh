@@ -6,12 +6,10 @@
  *      Author: charlesgalambos
  */
 
-#ifndef RAVL2_BUFFER_HH_
-#define RAVL2_BUFFER_HH_
 
-#include "Ravl2/Index.hh"
 #include <memory>
 #include <vector>
+#include "Ravl2/Index.hh"
 
 namespace Ravl2
 {
@@ -115,6 +113,8 @@ namespace Ravl2
     std::vector<DataT> m_values;
   };
 
+  extern template class BufferVector<uint8_t>;
+  extern template class BufferVector<float>;
+
 }
 
-#endif
