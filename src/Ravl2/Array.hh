@@ -27,7 +27,7 @@ namespace Ravl2
 
   // Declaration of the concept “WindowedArray”, which is satisfied by any type “T”
 
-  template<typename ArrayT,typename DataT = ArrayT::value_type,unsigned N = ArrayT::dimension>
+  template<typename ArrayT,typename DataT = typename ArrayT::value_type,unsigned N = ArrayT::dimension>
   concept WindowedArray = requires(ArrayT a, Index<N> ind, IndexRange<N> rng)
   {
     { ArrayT::dimensions } -> std::convertible_to<unsigned>;
@@ -159,7 +159,7 @@ namespace Ravl2
 
   //! Add an offset to the iterator
   template<typename DataT>
-  [[nodiscard]] constexpr ArrayIter<DataT,1>::difference_type operator-(ArrayIter<DataT,1> o1,ArrayIter<DataT,1> o2)
+  [[nodiscard]] constexpr typename ArrayIter<DataT,1>::difference_type operator-(ArrayIter<DataT,1> o1,ArrayIter<DataT,1> o2)
   { return o1.data() - o2.data(); }
 
 
@@ -1089,7 +1089,7 @@ namespace Ravl2
   //! Take a sub array of the given array.
   //! The range must be entirely contained in the original array and
   //! must exist for the lifetime of the sub array.
-  template<typename ArrayT,typename DataT = ArrayT::value_type,unsigned N = ArrayT::dimensions>
+  template<typename ArrayT,typename DataT = typename ArrayT::value_type,unsigned N = ArrayT::dimensions>
   requires WindowedArray<ArrayT,DataT,N>
   constexpr auto clip(ArrayT &array, IndexRange<N> &range)
   {
@@ -1100,7 +1100,7 @@ namespace Ravl2
   //! Take a sub array of the given array.
   //! The range must be entirely contained in the original array and
   //! must exist for the lifetime of the sub array.
-  template<typename ArrayT,typename DataT = ArrayT::value_type,unsigned N = ArrayT::dimensions>
+  template<typename ArrayT,typename DataT = typename ArrayT::value_type,unsigned N = ArrayT::dimensions>
   requires WindowedArray<ArrayT,DataT,N>
   std::ostream &operator<<(std::ostream &os, const ArrayT &array)
   {

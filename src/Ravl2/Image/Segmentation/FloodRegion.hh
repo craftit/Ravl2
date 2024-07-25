@@ -233,7 +233,7 @@ namespace Ravl2
   
 
   template<class PixelT,class InclusionTestT>
-  bool FloodRegionC<PixelT,InclusionTestT>::GrowRegion(const Index<2> &seed,const InclusionTestT &inclusionCriteria,BoundaryC &boundary,int maxSize) {
+  bool FloodRegionC<PixelT,InclusionTestT>::GrowRegion(const Index<2> &seed,const InclusionTestT &inclusionCriteria,BoundaryC &boundary,[[maybe_unused]] int maxSize) {
     IndexRange<2> rng;
     if(!BaseGrowRegion(seed,inclusionCriteria,rng) || rng.area() <= 0) {
       boundary = BoundaryC();
