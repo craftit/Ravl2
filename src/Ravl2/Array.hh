@@ -239,13 +239,6 @@ namespace Ravl2
       return m_ranges[i];
     }
 
-    //! Get min value for dimension
-    [[nodiscard]] constexpr const int &min(unsigned i) const
-    {
-      assert(i < N);
-      return m_ranges[i].min();
-    }
-
     //! Access range data
     [[nodiscard]] constexpr const IndexRange<1> *range_data() const
     { return m_ranges; }

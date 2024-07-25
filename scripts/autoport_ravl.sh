@@ -29,6 +29,7 @@ cat <<'EOF' > "$sed_script_file"
 /include "Ravl\/Hash\.hh"/d
 /include "Ravl\/DListExtra\.hh"/d
 /include "Ravl\/DLIter\.hh"/d
+/include "Ravl\/Stream\.hh"/d
 
 s/include "Ravl\/IndexRange1d\.hh"/include "Ravl2\/Index.hh"/g
 s/include "Ravl\/SArray1d\.hh"/include <vector>/g
@@ -71,7 +72,7 @@ s/\.Expand(/\.expand(/g
 s/\.Shrink(/\.shrink(/g
 s/\.Erode()/\.shrink(1)/g
 s/\.Dilate()/\.expand(1)/g
-s/\.Contains(/\.contains(/g
+s/Contains(/contains(/g
 s/\.Next()/\.next()/g
 s/.Data1()/.data<0>()/g
 s/.Data2()/.data<1>()/g
@@ -127,7 +128,10 @@ s/\.Col()/[1]/g
 
 # IsEmpty() -> empty()
 s/IsEmpty()/empty()/g
-
+s/\.IsElm()/\.valid()/g
+s/\.Area()/\.area()/g
+s/ Area()/ area()/g
+s/:Area()/:area()/g
 
 # InsLast( -> push_back(
 s/\InsLast(/\push_back(/g
