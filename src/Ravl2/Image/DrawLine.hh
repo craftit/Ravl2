@@ -16,7 +16,7 @@
 namespace Ravl2 {
 
   //! Draw a line in an image.
-  template<typename ArrayT,typename CoordTypeT, typename DataT = ArrayT::ValueT,unsigned N=ArrayT::dimensions>
+  template<typename ArrayT,typename CoordTypeT, typename DataT = typename ArrayT::ValueT,unsigned N=ArrayT::dimensions>
   requires WindowedArray<ArrayT,DataT,N>
   void DrawLine(ArrayT Dat,const DataT &Value,const LinePP2dC<CoordTypeT> &aLine)
   {
