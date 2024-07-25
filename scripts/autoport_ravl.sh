@@ -149,6 +149,7 @@ s/Vector3dC/Vector<RealT,3>/g
 s/RealRange1dC/Range<1,float>/g
 s/RealRange2dC/Range<2,float>/g
 s/IndexRange2dSetC/IndexRangeSet<2>/g
+a/Affine2dC/Affine<RealT,2>/g
 
 # Replace Abs() with std::abs()
 s/Abs(/std::abs(/g

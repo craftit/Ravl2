@@ -129,7 +129,13 @@ namespace Ravl2
     [[nodiscard]] std::string toString(Vector2d v);
     //std::string toString(const VectorT &v);
 
-    template<typename RealT,unsigned N>
+  template<typename Pnt1T,typename Pnt2T>
+  constexpr auto euclidDistance(Pnt1T a,Pnt2T b)
+  {
+    return xt::sqrt(xt::sum((a - b)*(a - b)));
+  }
+
+  template<typename RealT,unsigned N>
     constexpr RealT squaredEuclidDistance(const Point<RealT,N> &a,const Point<RealT,N> &b)
     {
       RealT sum = 0;

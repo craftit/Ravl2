@@ -1,4 +1,5 @@
 
+#include <numbers>
 #include <catch2/catch_test_macros.hpp>
 #include <spdlog/spdlog.h>
 #include "Ravl2/Math.hh"
@@ -8,6 +9,7 @@
 #include "Ravl2/Geometry/Polygon2dIter.hh"
 #include "Ravl2/Geometry/CircleIter.hh"
 #include "Ravl2/Geometry/LineABC2d.hh"
+#include "Ravl2/Geometry/Affine.hh"
 
 #define CHECK_EQ(a,b) CHECK((a) == (b))
 #define CHECK_NE(a,b) CHECK_FALSE((a) == (b))
@@ -130,4 +132,23 @@ TEST_CASE("Circle2", "[Circle2]")
   if(Abs(circle.Radius() - 2) > 0.01)
     return __LINE__;
 #endif
+}
+
+TEST_CASE("AffineComposition", "[Affine<2>]")
+{
+  using namespace Ravl2;
+  Affine<float,2> a1 = affineFromScaleAngleTranslation(toVector<float>(2,2), std::numbers::pi_v<float>/2, toVector<float>(0,0));
+  Affine<float,2> a2 = affineFromScaleAngleTranslation(toVector<float>(1,1), 0.0f, toVector<float>(10,20));
+  Point<float,2> p = toPoint<float>(0,0);
+  auto pnt0 = xt::eval(a2(a1(p)));
+  //SPDLOG_INFO("At: {} {} Size:{} {} Dim:{}", pnt0(0), pnt0(1),pnt0.shape(0),pnt0.shape(1),pnt0.dimension());
+  float diff = euclidDistance(pnt0,toPoint<float>(10,20))();
+  CHECK(diff < 0.001f);
+  auto pnt = xt::eval(a1(a2(p)));
+  //SPDLOG_INFO("At: {} {} Size:{} {} Dim:{}", pnt(0), pnt(1),pnt.shape(0),pnt.shape(1),pnt.dimension());
+  diff = euclidDistance(pnt,toPoint<float>(-40,20))();
+  CHECK(diff < 0.001f);
+  Point<float,2> q = toPoint<float>(5,4);
+  diff = Ravl2::euclidDistance(a2(a1)(q),a2(a1(q)))();
+  CHECK(diff < 0.001f);
 }
