@@ -203,7 +203,7 @@ namespace Ravl2
 
   private:
     std::tuple<SlaveIter<DataT,N>...> mIters;
-    std::tuple_element<0, std::tuple<DataT...>>::type * mEnd = nullptr;
+    typename std::tuple_element<0, std::tuple<DataT...>>::type * mEnd = nullptr;
   };
 
   //! Make zip N contructor
