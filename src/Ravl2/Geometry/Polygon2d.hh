@@ -148,7 +148,7 @@ namespace Ravl2
     : public PointSet<RealT,2>
   {
   public:
-    using PointArrayT = PointSet<RealT,2>::PointArrayT;
+    using PointArrayT = typename PointSet<RealT,2>::PointArrayT;
 
     //! Empty list of points.
     Polygon2dC() = default;
