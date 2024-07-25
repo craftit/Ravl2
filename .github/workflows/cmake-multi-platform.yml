@@ -56,14 +56,18 @@ jobs:
       run: |
         echo "build-output-dir=${{ github.workspace }}/build" >> "$GITHUB_OUTPUT"
 
-    - uses: awalsh128/cache-apt-pkgs-action@latest
+    - name: Install build packages (Ubuntu)
+      uses: awalsh128/cache-apt-pkgs-action@latest
+      if: runner.os != 'Windows'
       with:
-        packages:  build-essential libopencv-dev libxtensor-dev libxtensor-blas-dev libspdlog-dev libfmt-dev
+        packages:  build-essential libopencv-dev libxtensor-dev libxtensor-blas-dev libspdlog-dev libfmt-dev libcli11-dev
         version: 1.0
 
-#    - name: Install build packages
-#      run: |
-#        sudo ${{ github.workspace }}/scripts/install-build-packages.sh
+    - name: Install build packages (Windows)
+      if: runner.os == 'Windows'
+      run: |
+          choco install -y visualstudio2019buildtools visualstudio2019-workload-vctools
+          choco install -y opencv xtensor xtensor-blas spdlog fmt cli11
 
     - name: Configure CMake
       # Configure CMake in a 'build' subdirectory. `CMAKE_BUILD_TYPE` is only required if you are using a single-configuration generator such as make.
