@@ -18,7 +18,7 @@ add_library(Ravl2Core
     ArrayIterZip.hh
     ScanWindow.hh
     Assert.hh
-        OpenCV/convert.hh
+    IndexRangeSet.cc IndexRangeSet.hh
 )
 
 add_library(ravl2::Ravl2Core ALIAS Ravl2Core)

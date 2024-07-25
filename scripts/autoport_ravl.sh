@@ -132,9 +132,12 @@ s/\.IsElm()/\.valid()/g
 s/\.Area()/\.area()/g
 s/ Area()/ area()/g
 s/:Area()/:area()/g
-
-# InsLast( -> push_back(
-s/\InsLast(/\push_back(/g
+s/\.Involve(/\.involve(/g
+s/\.IsOverlapping(/\.overlaps(/g
+s/\.InsLast(/\.push_back(/g
+s/\.Add(/\.add(/g
+s/:Add(/:add(/g
+s/ Add(/ add(/g
 
 # Update math
 s/Matrix2dC/Matrix<RealT,2,2>/g
@@ -145,6 +148,7 @@ s/Vector2dC/Vector<RealT,2>/g
 s/Vector3dC/Vector<RealT,3>/g
 s/RealRange1dC/Range<1,float>/g
 s/RealRange2dC/Range<2,float>/g
+s/IndexRange2dSetC/IndexRangeSet<2>/g
 
 # Replace Abs() with std::abs()
 s/Abs(/std::abs(/g

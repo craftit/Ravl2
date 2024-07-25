@@ -14,9 +14,9 @@
 
 namespace Ravl2 {
   //! Rectangle set.
-  // Handles a set region defined by a set of non-overlapping rectangles.
-  // The methods in this class ensure that each part of the range is only
-  // covered by a single rectangle.
+  //! Handles a set region defined by a set of non-overlapping rectangles.
+  //! The methods in this class ensure that each part of the range is only
+  //! covered by a single rectangle.
   
   template<unsigned N>
   class IndexRangeSet
@@ -38,6 +38,7 @@ namespace Ravl2 {
         ret = IndexRangeSet(rect1);
         return ret;
       }
+      ret.reserve(4);
       IndexRange<N> remainder(rect1);
 
       //ONDEBUG(std::cerr << "Rectangles overlap. \n");
@@ -77,9 +78,7 @@ namespace Ravl2 {
       return ret;
     }
 
-    //: Subtract rect2 from rect1.
-
-    //: Add rect2 and rect1.
+    //! Add rect2 and rect1.
     static IndexRangeSet add(const IndexRange<N> &rect1,const IndexRange<N> &rect2)
     {
       IndexRangeSet ret;
@@ -90,10 +89,12 @@ namespace Ravl2 {
       }
       // Try and keep rects approximately the same size....
       if(rect1.area() > rect2.area()) {
-        ret += Subtract(rect1,rect2);
+        auto diff = subtract(rect1, rect2);
+        ret.insert(std::end(ret), std::begin(diff), std::end(diff));
         ret.push_back(rect2);
       } else {
-        ret += Subtract(rect2,rect1);
+        auto diff = subtract(rect2,rect1);
+        ret.insert(std::end(ret), std::begin(diff), std::end(diff));
         ret.push_back(rect1);
       }
       return ret;
@@ -106,7 +107,7 @@ namespace Ravl2 {
       auto it = this->begin();
       auto end = this->end();
       if(it == end)
-        return IndexRange<N>({});
+        return IndexRange<N>();
       IndexRange<N> ret(*it);
       ++it;
       for(;it != end;++it)
@@ -114,60 +115,60 @@ namespace Ravl2 {
       return ret;
     }
 
-    [[nodiscard]] IndexRangeSet subtract(const IndexRange<N> &rect) const
+    //! Remove 'rect' rectangle from the region given by the set.
+    [[nodiscard]] IndexRangeSet<N> subtract(const IndexRange<N> &rect) const
     {
-      IndexRangeSet ret;
-      for(auto it : *this)
-        ret += Subtract(it,rect);
+      IndexRangeSet<N> ret;
+      for(auto it : *this) {
+        auto diff = subtract(it, rect);
+        ret.insert(std::end(ret), std::begin(diff), std::end(diff));
+      }
       return ret;
     }
 
-    //: Remove 'rect' rectangle from the region given by the set.
-
-    [[nodiscard]] IndexRangeSet subtract(const IndexRangeSet &rectSet) const
+    //! Remove 'rectset' from the region given by the set.
+    [[nodiscard]] IndexRangeSet<N> subtract(const IndexRangeSet<N> &rectSet) const
     {
       IndexRangeSet ret = (*this);
       for(auto it : rectSet)
-        ret = ret.Subtract(it);
+        ret = ret.subtract(it);
       return ret;
     }
 
-    //: Remove 'rectset' from the region given by the set.
-
     //! Remove set from rect.
-    [[nodiscard]] IndexRangeSet subtractFrom(const IndexRange<N> &rect) const
-    { return IndexRangeSet(rect).Subtract(*this); }
+    [[nodiscard]] IndexRangeSet<N> subtractFrom(const IndexRange<N> &rect) const
+    { return IndexRangeSet(rect).subtract(*this); }
 
-    [[nodiscard]] IndexRangeSet add(const IndexRange<N> &rect) const
+    //! Add this rectangle to the set.
+    [[nodiscard]] IndexRangeSet<N> add(const IndexRange<N> &rect) const
     {
-      IndexRangeSet ret = Subtract(rect);
+      IndexRangeSet ret = subtract(rect);
       ret.push_back(rect); // Well it works doesn't it!!!!
       return ret;
     }
-    //: Add this rectangle to the set.
 
     //! Add rectangle set to this set.
-    [[nodiscard]] IndexRangeSet add(const IndexRangeSet &rect) const
+    [[nodiscard]] IndexRangeSet<N> add(const IndexRangeSet<N> &rect) const
     {
       IndexRangeSet ret(*this);
-      for(auto it : *this)
+      for(auto it : rect)
         ret = ret.add(it);
       return ret;
     }
 
-    //: Does this set completely contain 'rect' ?
+    //! Does this set completely contain 'rect' ?
     [[nodiscard]] bool contains(const IndexRange<N> &rect) const
     {
       IndexRangeSet remainder(rect);
       for(auto it : *this) {
-        remainder = remainder.Subtract(it);
+        remainder = remainder.subtract(it);
         if(remainder.empty())
           return true;
       }
       return false;
     }
 
-    //! Total area of set.
+    //! Total area of the set.
     [[nodiscard]] int area() const
     {
       int ret = 0;
@@ -178,6 +179,7 @@ namespace Ravl2 {
     }
   };
 
+  extern template class IndexRangeSet<2>;
 }
 
 

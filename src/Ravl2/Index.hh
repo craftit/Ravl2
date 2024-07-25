@@ -395,6 +395,24 @@ namespace Ravl2
       return inside;
     }
 
+    //! Modify range to include given index.
+    //! Returns true if rng is within this range.
+    inline bool involve(const IndexRange<1> &rng)
+    {
+      bool inside = true;
+      if(rng.m_max > m_max) {
+        m_max = rng.m_max;
+        inside = false;
+      }
+      if(rng.m_min < m_min) {
+        m_min = rng.m_min;
+        inside = false;
+      }
+      return inside;
+    }
+
+
+
     //! Start of the range.
     [[nodiscard]] IndexRangeIterator<1> begin() const;
 
@@ -720,6 +738,18 @@ namespace Ravl2
       bool ret = true;
       for(unsigned i = 0;i < N;i++) {
         if (!m_range[i].involve(ind[i]))
+          ret = false;
+      }
+      return ret;
+    }
+
+    //! Involve another index range in this range.
+    //! Returns true if ind is within the range.
+    bool involve(const IndexRange<N> &rng)
+    {
+      bool ret = true;
+      for(unsigned i = 0;i < N;i++) {
+        if (!m_range[i].involve(rng[i]))
           ret = false;
       }
       return ret;

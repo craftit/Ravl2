@@ -17,6 +17,7 @@
 
 namespace Ravl2
 {
+  template class IndexRangeSet<2>;
 
 
 
