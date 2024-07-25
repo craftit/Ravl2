@@ -43,8 +43,9 @@ namespace Ravl2 {
 
   //! Draw a line in an image, shaded between two colours <code>valuefrom</code> and <code>valueto</code>
   //! This function requires that DataT has a working operator*(double) function
-  template<class DataT,typename CoordTypeT = float>
-  void DrawLine(Array<DataT,2> &Dat,const DataT &ValueFrom,const DataT &ValueTo,const LinePP2dC<CoordTypeT> &Line) {
+  template<typename ArrayT, typename CoordTypeT, typename DataT = typename ArrayT::ValueT,unsigned N=ArrayT::dimensions>
+  requires WindowedArray<ArrayT,DataT,N>
+  void DrawLine(ArrayT &Dat,const DataT &ValueFrom,const DataT &ValueTo,const LinePP2dC<CoordTypeT> &Line) {
     LinePP2dC line = Line;
     Range<CoordTypeT,2> frame(Dat.Frame().TRow(),Dat.Frame().BRow(),Dat.Frame().LCol(),Dat.Frame().RCol());
     if (line.clipBy(frame)) {
@@ -55,14 +56,14 @@ namespace Ravl2 {
         Dat[*it] = DataT((ValueFrom*(1-alpha)) + (ValueTo*alpha));
       }
     }
-    return ;
   }
 
   //! Draw a line in an image, shaded between two colours <code>valuefrom</code> and <code>valueto</code>
-  // This function requires that DataT has a working operator*(double) function
-  template<class DataT,typename CoordTypeT = float>
-  void DrawLine(Array<DataT,2> &dat,const DataT &valuefrom,const DataT &valueto,const Index<2> &from,const Index<2> &to) {
-    DrawLine(dat, valuefrom, valueto, LinePP2dC<CoordTypeT>(from,to));
+  //! This function requires that DataT has a working operator*(double) function
+  template<typename ArrayT, typename CoordTypeT = float, typename DataT = typename ArrayT::ValueT,unsigned N=ArrayT::dimensions>
+  requires WindowedArray<ArrayT,DataT,N>
+  void DrawLine(ArrayT &dat,const DataT &valuefrom,const DataT &valueto,const Index<2> &from,const Index<2> &to) {
+    DrawLine(dat, valuefrom, valueto, LinePP2dC<CoordTypeT>(toPoint<CoordTypeT>(from),toPoint<CoordTypeT>(to)));
   }
 }
 
