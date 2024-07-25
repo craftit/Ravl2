@@ -47,12 +47,12 @@ namespace Ravl2 {
   requires WindowedArray<ArrayT,DataT,N>
   void DrawLine(ArrayT &Dat,const DataT &ValueFrom,const DataT &ValueTo,const LinePP2dC<CoordTypeT> &Line) {
     LinePP2dC line = Line;
-    Range<CoordTypeT,2> frame(Dat.Frame().TRow(),Dat.Frame().BRow(),Dat.Frame().LCol(),Dat.Frame().RCol());
+    Range<CoordTypeT,2> frame(Dat.range().TRow(),Dat.range().BRow(),Dat.range().LCol(),Dat.range().RCol());
     if (line.clipBy(frame)) {
       CoordTypeT length = line.Length();
       // If both start and end are inside the image, all pixels in between are.
       for(Line2dIterC it(line.P1(),line.P2());it;++it) {
-        CoordTypeT alpha = sqrt(static_cast<double>((it.Data() - Index2dC(line.P1())).SumOfSqr().V())) / length;
+        CoordTypeT alpha = euclidDistance(it.Data(), toIndex<2>(line.P1())) / length;
         Dat[*it] = DataT((ValueFrom*(1-alpha)) + (ValueTo*alpha));
       }
     }

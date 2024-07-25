@@ -149,7 +149,17 @@ namespace Ravl2
       return std::sqrt(sum);
     }
 
-    //! City Block Distance
+    template<typename RealT = float,unsigned N>
+    constexpr auto euclidDistance(const Index<N> &a,const Index<N> &b)
+    {
+      int sum = 0;
+      for(unsigned i = 0; i < N; i++) {
+        sum += sqr(a[i] - b[i]);
+      }
+      return std::sqrt(RealT(sum));
+    }
+
+  //! City Block Distance
 
     template<typename A, typename B>
     constexpr auto cityBlockDistance(xt::xexpression<A> a,xt::xexpression<B> b)

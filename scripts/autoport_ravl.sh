@@ -30,17 +30,25 @@ s/RealRange2dC/Range<2,float>/g
 s/ImageC<\([^>]*>\)>/Array<\1,2>/g
 s/SArray1dC<\([^>]*>\)>/std::vector<\1,1>/g
 s/Array1dC<\([^>]*>\)>/Array<\1,1>/g
-s/.Frame()/.range()/g
-s/.Size()/.size()/g
-s/.Row()/[0]/g
-s/.Col()/[1]/g
+# Replace Frame().TRow() with .range().range(0).min()
+s/\.TRow()/\.range(0).min()/g
+s/\.BRow()/\.range(0).max()/g
+s/\.LCol()/\.range(1).min()/g
+s/\.RCol()/\.range(1).max()/g
+s/\.Frame()/\.range()/g
+s/\.Size()/\.size()/g
+s/\.Row()/[0]/g
+s/\.Col()/[1]/g
 s/\#include "Ravl\//#include "Ravl2\//g
+# Delete lines with "using namespace RavlN;" and "using namespace RavlImageN;" after any whitespace
+/^\s*using namespace RavlN;/d
+/^\s*using namespace RavlImageN;/d
 s/namespace RavlN/namespace Ravl2/g
 s/namespace RavlImageN/namespace Ravl2/g
 EOF
 
 # Apply the sed script to the files
-#echo "$files" | xargs sed -i -f "$sed_script_file"
+echo "$files" | xargs sed -i -f "$sed_script_file"
 
 # Clean up the temporary file
 #rm "$sed_script_file"
