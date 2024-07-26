@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include <numbers>
 #include <iostream>
 #include <vector>
 #include "Ravl2/Math.hh"
