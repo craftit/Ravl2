@@ -149,10 +149,12 @@ s/Vector3dC/Vector<RealT,3>/g
 s/RealRange1dC/Range<1,float>/g
 s/RealRange2dC/Range<2,float>/g
 s/IndexRange2dSetC/IndexRangeSet<2>/g
-a/Affine2dC/Affine<RealT,2>/g
+s/Affine2dC/Affine<RealT,2>/g
 
 # Replace Abs() with std::abs()
 s/Abs(/std::abs(/g
+s/Sqrt(/std::sqrt(/g
+s/Exp(/std::exp(/g
 
 # Pow() -> std::pow()
 s/Pow(/std::pow(/g
