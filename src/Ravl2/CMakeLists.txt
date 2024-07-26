@@ -8,6 +8,7 @@ find_package(lapack REQUIRED)
 find_package(blas REQUIRED)
 
 add_subdirectory(Geometry)
+add_subdirectory(Math)
 add_subdirectory(Image)
 add_subdirectory(OpenCV)
 

@@ -15,7 +15,7 @@
 namespace Ravl2
 {
 
-    //: Rescale an image by sampling points with bilinear interpolation
+    //! Rescale an image by sampling points with bilinear interpolation
     //!param: img - input image
     //!param: scale - output image size is input size <i>divided</i> by <code>scale</code>
     //!param: result - output image
