@@ -123,6 +123,8 @@ s/\.Fill(/\.fill(/g
 s/\.Apply(/\.apply(/g
 s/\.Row()/[0]/g
 s/\.Col()/[1]/g
+s/\.Number()/\.count()/g
+s/MeanVarianceC/MeanVariance/g
 
 # When we see pxl.UpN() replace with up(pxl)
 
@@ -155,6 +157,7 @@ s/Affine2dC/Affine<RealT,2>/g
 s/Abs(/std::abs(/g
 s/Sqrt(/std::sqrt(/g
 s/Exp(/std::exp(/g
+s/ Sqr(/sqr(/g
 
 # Pow() -> std::pow()
 s/Pow(/std::pow(/g
