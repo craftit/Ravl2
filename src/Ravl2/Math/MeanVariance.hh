@@ -33,9 +33,9 @@ namespace Ravl2 {
 
     //! Construct from parts
     MeanVariance(size_t nn,RealT nmean,RealT nvar)
-      : n(nn),
-	mean(nmean),
-	var(nvar)
+      : mN(nn),
+        mMean(nmean),
+        mVar(nvar)
     {}
 
     //! Construct from a single value.
@@ -43,26 +43,26 @@ namespace Ravl2 {
 
     //! Get the standard deviation.
     [[nodiscard]] RealT stdDeviation() const
-    { return (var<0) ? 0 : std::sqrt(var); }
+    { return (mVar < 0) ? 0 : std::sqrt(mVar); }
 
     //! Access the variance.
-    RealT variance() const
-    { return (var<0) ? 0 : var; }
+    [[nodiscard]] RealT variance() const
+    { return (mVar < 0) ? 0 : mVar; }
 
     //! Access the variance, this isn't limited to values zero or above.
-    RealT rawVariance() const
-    { return var; }
+    [[nodiscard]] RealT rawVariance() const
+    { return mVar; }
 
     [[nodiscard]] const size_t &count() const
-    { return n; }
+    { return mN; }
     //: Access the number of samples.
 
-    size_t &count()
-    { return n; }
+    [[nodiscard]] size_t &count()
+    { return mN; }
     //: Access the number of samples.
 
     [[nodiscard]] RealT Mean() const
-    { return mean; }
+    { return mMean; }
     //: Access the mean.
     
     [[nodiscard]] RealT Gauss(RealT x) const;
@@ -82,9 +82,9 @@ namespace Ravl2 {
     // (The number of samples is ignored)
     
   protected:
-    size_t n = 0;
-    RealT mean = 0;
-    RealT var = 0;
+    size_t mN = 0;
+    RealT mMean = 0;
+    RealT mVar = 0;
   };
 
   //! Calculate the mean and variance from an array of numbers.
@@ -105,7 +105,7 @@ namespace Ravl2 {
     RealT sn = rn;
     if(sampleStatistics) sn--;
     var = (var - sqr(sum)/rn)/sn;
-    return MeanVariance<RealT>(n,mean,var);
+    return MeanVariance<RealT>(n, mean, var);
   }
 
   //: Add another MeanVariance to this one.
@@ -120,24 +120,24 @@ namespace Ravl2 {
     const RealT p1 = number1 / nDen;
     const RealT p2 = number2 / nDen;
 
-    var *= p1;
-    var += mv.variance() * p2;
-    var += ((mv.Mean() - Mean()) * p1*p2);
+    mVar *= p1;
+    mVar += mv.variance() * p2;
+    mVar += ((mv.Mean() - Mean()) * p1 * p2);
 
     // Update the mean.
-    mean = mean * p1 + mv.Mean() * p2;
-    n += mv.count();
+    mMean = mMean * p1 + mv.Mean() * p2;
+    mN += mv.count();
     return *this;
   }
 
   //: Add another sample
   template<typename RealT>
   MeanVariance<RealT> &MeanVariance<RealT>::operator+=(const RealT &value) {
-    n += 1;
-    RealT rn = RealT(n);
-    RealT delta = value - mean;
-    mean += delta/rn;
-    var = (var * (rn-1) + (delta*(value - mean)))/rn;
+    mN += 1;
+    RealT rn = RealT(mN);
+    RealT delta = value - mMean;
+    mMean += delta/rn;
+    mVar = (mVar * (rn - 1) + (delta * (value - mMean))) / rn;
     return *this;
   }
 
@@ -154,14 +154,14 @@ namespace Ravl2 {
     const RealT p2 = number2 / number1;
 
     // Update the mean.
-    mean = (mean - mv.Mean() * p2) / p1 ;
+    mMean = (mMean - mv.Mean() * p2) / p1 ;
 
     // Update the variance.
-    var -= ((mv.Mean() - Mean()) * p1*p2);
-    var -= mv.variance() * p2;
-    var /= p1;
+    mVar -= ((mv.Mean() - Mean()) * p1 * p2);
+    mVar -= mv.variance() * p2;
+    mVar /= p1;
 
-    n -= mv.count();
+    mN -= mv.count();
     return *this;
   }
 
@@ -169,8 +169,8 @@ namespace Ravl2 {
 
   template<typename RealT>
   RealT MeanVariance<RealT>::Gauss(RealT x) const {
-    RealT sig = std::sqrt(var);
-    return std::exp(RealT(-0.5) *sqr((x-mean)/sig)) /(sig * std::sqrt(2 * std::numbers::pi_v<RealT>));
+    RealT sig = std::sqrt(mVar);
+    return std::exp(RealT(-0.5) *sqr((x-mMean)/sig)) /(sig * std::sqrt(2 * std::numbers::pi_v<RealT>));
   }
 
   //: Calculate the product of the two probability density functions.
