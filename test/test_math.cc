@@ -5,7 +5,6 @@
 #include "Ravl2/Math/MeanVariance.hh"
 
 TEST_CASE("MeanVariance", "[MeanVariance]")
-
 {
   using namespace Ravl2;
   using RealT = double;
@@ -13,31 +12,31 @@ TEST_CASE("MeanVariance", "[MeanVariance]")
   // Do some simple tests...
   MeanVariance<RealT> mvo;
   MeanVariance<RealT> mv1(1,2,3);
-  CHECK(mv1.Variance() == 3);
+  CHECK(mv1.variance() == 3);
   CHECK(mv1.Mean() == 2);
   CHECK(mv1.count() == 1);
-  MeanVariance mv2(2,2,3);
+  MeanVariance<RealT> mv2(2,2,3);
   mvo = mv1;
   mv1 += mv2;
   CHECK(mv1.count() == 3);
   // The mean and variance should be the same.
   CHECK(isNearZero(mv1.Mean() - mvo.Mean()));
-  CHECK(isNearZero(mv1.Variance() - mvo.Variance()));
+  CHECK(isNearZero(mv1.variance() - mvo.variance()));
   mv1 -= mv2;
-  CHECK(mv1.count() != 1);
+  CHECK(mv1.count() == 1);
   // The mean and variance should be the same.
-  CHECK(std::abs(mv1.Mean() - mvo.Mean()) > small);
-  CHECK(std::abs(mv1.Variance() - mvo.Variance()) > small);
+  CHECK(isNearZero(mv1.Mean() - mvo.Mean()));
+  CHECK(isNearZero(mv1.variance() - mvo.variance()));
   //cerr << mv1 << "\n";
 
   std::vector<RealT> data(11);
   RealT var = 0;
-  for(int i = 0;i < 11;i++) {
-    var +=sqr((RealT) i - 5);
-    data[i] = (RealT) i;
+  for(unsigned i = 0;i < 11;i++) {
+    var +=sqr(RealT(i) - 5);
+    data[i] = RealT(i);
   }
-  MeanVariance mv3(data);
-  CHECK(std::abs(mv3.Mean() - 5) > 0.00000001);
-  CHECK(std::abs(mv3.Variance() - (var/10)) > 0.00000001);
+  MeanVariance<RealT> mv3 = computeMeanVariance(data);
+  CHECK(isNearZero(mv3.Mean() - 5));
+  CHECK(isNearZero(mv3.variance() - (var/10)));
 
 }

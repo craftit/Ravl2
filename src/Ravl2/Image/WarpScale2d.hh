@@ -21,7 +21,7 @@ namespace Ravl2
     //!param: result - output image
     // If <code>result</code> is empty, the correct size is computed.
 
-    template <class InT, class OutT>
+    template <class InT, class OutT, typename RealT = float >
     bool WarpScaleBilinear(const Array<InT,2> &img,
                            const Vector2f &scale, // Distance between samples in the input image.
                            Array<OutT,2> &result    // Output of scaling. The image must be of the appropriate size

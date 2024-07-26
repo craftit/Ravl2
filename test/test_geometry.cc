@@ -81,6 +81,8 @@ TEST_CASE("PolygonIter", "[Polygon2dC]")
 TEST_CASE("CircleIter", "[CircleIterC]")
 {
   using namespace Ravl2;
+  using RealT = float;
+
   int i = 0;
   unsigned rad = 20;
   RealT maxDist = 0;

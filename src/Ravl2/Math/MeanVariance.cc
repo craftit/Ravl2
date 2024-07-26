@@ -8,7 +8,9 @@
 
 #include "Ravl2/Math/MeanVariance.hh"
 
-namespace Ravl2 {
-  
+namespace Ravl2
+{
+  template class MeanVariance<float>;
+  template class MeanVariance<double>;
 
 }
