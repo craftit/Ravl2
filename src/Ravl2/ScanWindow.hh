@@ -128,5 +128,7 @@ namespace Ravl2
 
   extern template class ScanWindow<uint8_t,1>;
   extern template class ScanWindow<uint8_t,2>;
+  extern template class ScanWindow<float,1>;
+  extern template class ScanWindow<float,2>;
 
 }

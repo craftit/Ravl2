@@ -23,15 +23,21 @@ jobs:
       #
       # To add more build types (Release, Debug, RelWithDebInfo, etc.) customize the build_type list.
       matrix:
-        os: [ubuntu-latest] #[ubuntu-latest, windows-latest]
+        os: [ubuntu-24.04] #[ubuntu-latest, windows-latest]
         build_type: [Release]
         # The CMake generator to use. The default generator is used if not specified.
         c_compiler: [gcc, clang] # [gcc, clang, cl]
         include:
-          - os: ubuntu-latest
+#          - os: ubuntu-latest
+#            c_compiler: gcc
+#            cpp_compiler: g++
+#          - os: ubuntu-latest
+#            c_compiler: clang
+#            cpp_compiler: clang++
+          - os: ubuntu-24.04
             c_compiler: gcc
             cpp_compiler: g++
-          - os: ubuntu-latest
+          - os: ubuntu-24.04
             c_compiler: clang
             cpp_compiler: clang++
         #          - os: windows-latest
@@ -43,6 +49,8 @@ jobs:
           - os: windows-latest
             c_compiler: clang
           - os: ubuntu-latest
+            c_compiler: cl
+          - os: ubuntu-24.04
             c_compiler: cl
 
     steps:

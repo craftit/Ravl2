@@ -1010,11 +1010,13 @@ namespace Ravl2
   // Let everyone know there's an implementation already generated for common cases
   extern template class Index<1>;
   extern template class Index<2>;
+  extern template class Index<3>;
   extern template class IndexRange<1>;
   extern template class IndexRange<2>;
+  extern template class IndexRange<3>;
   extern template class IndexRangeIterator<1>;
   extern template class IndexRangeIterator<2>;
-
+  extern template class IndexRangeIterator<3>;
 }
 
 namespace fmt {
