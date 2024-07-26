@@ -7,13 +7,12 @@
 
 #pragma once
 
-/////////////////////////////////////////////////////////
-
 #include <iostream>
 #include <vector>
 #include "Ravl2/Math.hh"
 
-namespace Ravl2 {
+namespace Ravl2
+{
 
   //! Mean and variance of a single variable.
   // If you want to build up statistics about a sample use the Sums1d2C

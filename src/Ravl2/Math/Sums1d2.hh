@@ -7,10 +7,12 @@
 //! author="Charles Galambos"
 //! date="26/8/2002"
 
+#include "Ravl2/Assert.hh"
 #include "Ravl2/Math.hh"
 #include "Ravl2/Math/MeanVariance.hh"
 
-namespace Ravl2 {
+namespace Ravl2
+{
   
   //! Sums of a variable.
   // This class provides a way of calculating statistics about
@@ -26,35 +28,35 @@ namespace Ravl2 {
     //! Constructor from sum elements.
     Sums1d2C(unsigned nn,RealT nsum,RealT nsum2)
       : mN(nn),
-        sum(nsum),
+        mSum(nsum),
         mSum2(nsum2)
     {}
 
     //! Create a Sums1d2C from mean variance.
-    [[nodiscard]] static Sums1d2C fromMeanVariance(int n, RealT mean, RealT variance, bool useSampleStatistics = true);
+    [[nodiscard]] static Sums1d2C<RealT> fromMeanVariance(unsigned n, RealT mean, RealT variance, bool useSampleStatistics = true);
 
     //! Reset all counters.
     void reset()
-    { mN = 0; sum = 0; mSum2 = 0; }
+    { mN = 0; mSum = 0; mSum2 = 0; }
 
     //! Add a point.
     void operator+=(RealT val) {
       mN++;
-      sum += val;
-      mSum2 += Sqr(val);
+      mSum += val;
+      mSum2 +=sqr(val);
     }
 
     //! Remove a point.
     void operator-=(RealT val) {
       mN--;
-      sum -= val;
-      mSum2 -= Sqr(val);
+      mSum -= val;
+      mSum2 -=sqr(val);
     }
 
     //! Add another set of sums.
     void operator+=(const Sums1d2C &s) {
       mN += s.mN;
-      sum += s.sum;
+      mSum += s.mSum;
       mSum2 += s.mSum2;
     }
 
@@ -62,7 +64,7 @@ namespace Ravl2 {
     void operator-=(const Sums1d2C &s) {
       RavlAssert(s.mN < mN);
       mN += s.mN;
-      sum -= s.sum;
+      mSum -= s.mSum;
       mSum2 -= s.mSum2;
     }
 
@@ -74,34 +76,38 @@ namespace Ravl2 {
     [[nodiscard]] auto N() const
     { return mN; }
 
+    //! Number of data points.
+    [[nodiscard]] auto count() const
+    { return mN; }
+
     //! Sum of all data points.
-    [[nodiscard]] RealT Sum() const
-    { return sum; }
+    [[nodiscard]] RealT sum() const
+    { return mSum; }
 
     //! Sum of squares of all data points.
-    [[nodiscard]] RealT Sum2() const
+    [[nodiscard]] RealT sum2() const
     { return mSum2; }
 
     //! Calculate the mean and variance for this sample.
     //!param: sampleStatistics - When true compute statistics as a sample of a random variable. (Normalise covariance by n-1 )
-    [[nodiscard]] MeanVariance<RealT> MeanVariance(bool sampleStatistics = true) const {
-      return MeanVariance<RealT>(mN, Mean(), Variance(sampleStatistics));
+    [[nodiscard]] MeanVariance<RealT> toMeanVariance(bool sampleStatistics = true) const {
+      return MeanVariance<RealT>(mN, mean(), variance(sampleStatistics));
     }
 
     //! Compute the variance of the sample.
-    [[nodiscard]] RealT Variance(bool sampleStatistics = true) const {
+    [[nodiscard]] RealT variance(bool sampleStatistics = true) const {
       RealT rn = RealT(mN);
       RealT sn = rn;
       if(sampleStatistics) sn--;
-      RealT var = (mSum2 - Sqr(sum) / rn) / sn;
-      if (var < 0.0) var = 0.0;
+      RealT var = (mSum2 -sqr(mSum) / rn) / sn;
+      if (var < 0) var = 0.0;
       return var;
     }
 
     //! Compute the mean of the sample.
-    [[nodiscard]] RealT Mean() const {
+    [[nodiscard]] RealT mean() const {
       RealT rn = RealT(mN);
-      return sum / rn;
+      return mSum / rn;
     }
 
     //! Add value as part of a rolling average.
@@ -110,26 +116,26 @@ namespace Ravl2 {
     inline void AddRollingAverage(unsigned rollLength,RealT value) {
       if(rollLength < mN) {
         RealT rollFraction = (RealT(rollLength-1)/(RealT(rollLength)));
-        sum *= rollFraction;
+        mSum *= rollFraction;
         mSum2 *= rollFraction;
       } else
         mN++;
-      sum += value;
-      mSum2 += Sqr(value);
+      mSum += value;
+      mSum2 +=sqr(value);
     }
 
   private:
     unsigned mN = 0;
-    RealT sum = 0; // Sum of data.
+    RealT mSum = 0; // Sum of data.
     RealT mSum2 = 0; // Sum of square data.
   };
 
   template<typename RealT>
-  Sums1d2C<RealT> Sums1d2C<RealT>::fromMeanVariance(int n, RealT mean, RealT variance, bool useSampleStatistics)
+  Sums1d2C<RealT> Sums1d2C<RealT>::fromMeanVariance(unsigned n, RealT mean, RealT variance, bool useSampleStatistics)
   {
-    RealT rn = n;
+    RealT rn = RealT(n);
     RealT sum = mean * rn;
-    return Sums1d2C(n,sum,variance * (rn -(useSampleStatistics ? 1.0 : 0)) + Sqr(sum)/rn);
+    return Sums1d2C(n,sum,variance * (rn -(useSampleStatistics ? 1 : 0)) +sqr(sum)/rn);
   }
 
   //: Create a Sums1d2C from mean variance.
