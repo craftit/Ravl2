@@ -80,8 +80,8 @@ namespace Ravl2 {
     MeanVariance<RealT> operator*(const MeanVariance<RealT> &oth) const;
     //: Calculate the product of the two probability density functions.
     // (The number of samples is ignored)
-    
-  protected:
+
+  private:
     size_t mN = 0;
     RealT mMean = 0;
     RealT mVar = 0;

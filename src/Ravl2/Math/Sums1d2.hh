@@ -4,142 +4,154 @@
 // General Public License (LGPL). See the lgpl.licence file for details or
 // see http://www.gnu.org/copyleft/lesser.html
 // file-header-ends-here
-#ifndef RAVL_SUMS1D2_HEADER
-#define RAVL_SUMS1D2_HEADER 1
 //! author="Charles Galambos"
 //! date="26/8/2002"
 
 #include "Ravl2/Math.hh"
-#include "Ravl2/MeanVariance.hh"
+#include "Ravl2/Math/MeanVariance.hh"
 
 namespace Ravl2 {
   
-  //: Sums of a variable.
+  //! Sums of a variable.
   // This class provides a way of calculating statistics about
   // a variable. 
-  
+
+  template<typename RealT>
   class Sums1d2C {
   public:
-    Sums1d2C()
-      : n(0),
-	sum(0),
-	sum2(0)
-    {}
-    //: Default constructor.
+    //! Default constructor.
     // Sets sums to zero.
-    
+    Sums1d2C() = default;
+
+    //! Constructor from sum elements.
     Sums1d2C(unsigned nn,RealT nsum,RealT nsum2)
-      : n(nn),
-	sum(nsum),
-	sum2(nsum2)
+      : mN(nn),
+        sum(nsum),
+        mSum2(nsum2)
     {}
-    //: Constructor from sum elements.
-    
-    static Sums1d2C CreateFromMeanVariance(int n,RealT mean,RealT variance,bool useSampleStatistics = true);
-    //: Create a Sums1d2C from mean variance.
 
-    void Reset()
-    { n = 0; sum = 0; sum2 = 0; }
-    //: Reset all counters.
-    
+    //! Create a Sums1d2C from mean variance.
+    [[nodiscard]] static Sums1d2C fromMeanVariance(int n, RealT mean, RealT variance, bool useSampleStatistics = true);
+
+    //! Reset all counters.
+    void reset()
+    { mN = 0; sum = 0; mSum2 = 0; }
+
+    //! Add a point.
     void operator+=(RealT val) {
-      n++;
+      mN++;
       sum += val;
-      sum2 += Sqr(val);
+      mSum2 += Sqr(val);
     }
-    //: Add a point.
 
+    //! Remove a point.
     void operator-=(RealT val) {
-      n--;
+      mN--;
       sum -= val;
-      sum2 -= Sqr(val);
+      mSum2 -= Sqr(val);
     }
-    //: Remove a point.
-    
+
+    //! Add another set of sums.
     void operator+=(const Sums1d2C &s) {
-      n += s.n;
+      mN += s.mN;
       sum += s.sum;
-      sum2 += s.sum2;
+      mSum2 += s.mSum2;
     }
-    //: Add another set of sums.
 
+    //! Subtract another set of sums.
     void operator-=(const Sums1d2C &s) {
-      RavlAssert(s.n < n);
-      n += s.n;
+      RavlAssert(s.mN < mN);
+      mN += s.mN;
       sum -= s.sum;
-      sum2 -= s.sum2;
+      mSum2 -= s.mSum2;
     }
-    //: Subtract another set of sums.
-    
-    const unsigned &Size() const
-    { return n; }
-    //: Number of data points.
-    
-    const unsigned &N() const
-    { return n; }
-    //: Number of data points.
-    
-    const RealT &Sum() const
-    { return sum; }
-    //: Sum of all data points.
 
-    const RealT &Sum2() const
-    { return sum2; }
-    //: Sum of squares of all data points.
-    
-    MeanVarianceC MeanVariance(bool sampleStatistics = true) const {
-      return MeanVarianceC(n, Mean(), Variance(sampleStatistics));
-    }
-    //: Calculate the mean and variance for this sample.
+    //! Number of data points.
+    [[nodiscard]] auto size() const
+    { return mN; }
+
+    //! Number of data points.
+    [[nodiscard]] auto N() const
+    { return mN; }
+
+    //! Sum of all data points.
+    [[nodiscard]] RealT Sum() const
+    { return sum; }
+
+    //! Sum of squares of all data points.
+    [[nodiscard]] RealT Sum2() const
+    { return mSum2; }
+
+    //! Calculate the mean and variance for this sample.
     //!param: sampleStatistics - When true compute statistics as a sample of a random variable. (Normalise covariance by n-1 )
-    
-    RealT Variance(bool sampleStatistics = true) const {
-      RealT rn = (RealT) n;
+    [[nodiscard]] MeanVariance<RealT> MeanVariance(bool sampleStatistics = true) const {
+      return MeanVariance<RealT>(mN, Mean(), Variance(sampleStatistics));
+    }
+
+    //! Compute the variance of the sample.
+    [[nodiscard]] RealT Variance(bool sampleStatistics = true) const {
+      RealT rn = RealT(mN);
       RealT sn = rn;
       if(sampleStatistics) sn--;
-      RealT var = (sum2 - Sqr(sum)/rn)/sn;
+      RealT var = (mSum2 - Sqr(sum) / rn) / sn;
       if (var < 0.0) var = 0.0;
       return var;
     }
-    //: Compute the variance of the sample.
-    
-    RealT Mean() const {
-      RealT rn = (RealT) n;
+
+    //! Compute the mean of the sample.
+    [[nodiscard]] RealT Mean() const {
+      RealT rn = RealT(mN);
       return sum / rn;
     }
-    //: Compute the mean of the sample.
-    
-    inline void AddRollingAverage(unsigned rollLength,RealT value) {
-      if(rollLength < n) {
-        RealT rollFraction = ((RealT) (rollLength-1)/((RealT) rollLength));
-        sum *= rollFraction;
-        sum2 *= rollFraction;
-      } else
-        n++;
-      sum += value;
-      sum2 += Sqr(value);      
-    }
-    //: Add value as part of a rolling average.
+
+    //! Add value as part of a rolling average.
     //!param: rollLen - Length of rolling average.
     //!param: value   - Value to add.
-    
-    size_t Hash() const
-    { return n; }
-    //: Hash of value
-  protected:
-    unsigned n;
-    RealT sum; // Sum of data.
-    RealT sum2; // Sum of square data.
+    inline void AddRollingAverage(unsigned rollLength,RealT value) {
+      if(rollLength < mN) {
+        RealT rollFraction = (RealT(rollLength-1)/(RealT(rollLength)));
+        sum *= rollFraction;
+        mSum2 *= rollFraction;
+      } else
+        mN++;
+      sum += value;
+      mSum2 += Sqr(value);
+    }
+
+  private:
+    unsigned mN = 0;
+    RealT sum = 0; // Sum of data.
+    RealT mSum2 = 0; // Sum of square data.
   };
 
-  ostream& operator<<(std::ostream &s,const Sums1d2C &mv);
-  istream& operator>>(std::istream &s, Sums1d2C &mv);
-  BinOStreamC& operator<<(BinOStreamC &s,const Sums1d2C &mv);
-  BinIStreamC& operator>>(BinIStreamC &s, Sums1d2C &mv);
-  bool operator==(const Sums1d2C &v2,const Sums1d2C &v1);
-  bool operator!=(const Sums1d2C &v2,const Sums1d2C &v1);
+  template<typename RealT>
+  Sums1d2C<RealT> Sums1d2C<RealT>::fromMeanVariance(int n, RealT mean, RealT variance, bool useSampleStatistics)
+  {
+    RealT rn = n;
+    RealT sum = mean * rn;
+    return Sums1d2C(n,sum,variance * (rn -(useSampleStatistics ? 1.0 : 0)) + Sqr(sum)/rn);
+  }
+
+  //: Create a Sums1d2C from mean variance.
+
+  template<typename RealT>
+  std::ostream& operator<<(std::ostream &s,const Sums1d2C<RealT> &mv) {
+    s << mv.size() << " " << mv.Sum() << " " << mv.Sum2();
+    return s;
+  }
+
+  template<typename RealT>
+  std::istream& operator>>(std::istream &s, Sums1d2C<RealT> &mv) {
+    unsigned n;
+    RealT s1,s2;
+    s >> n >> s1 >> s2;
+    mv = Sums1d2C(n,s1,s2);
+    return s;
+  }
+
+  extern template class Sums1d2C<double>;
+  extern template class Sums1d2C<float>;
 
 }
 
 
-#endif

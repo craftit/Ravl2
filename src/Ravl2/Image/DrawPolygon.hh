@@ -46,7 +46,7 @@ namespace Ravl2 {
   void DrawShadedPolygon(ArrayT &dat,const std::vector<DataT>& values,const Polygon2dC<CoordT> &poly)
   {
     if(values.size() != poly.size())
-      throw std::runtime_error("DrawPolygon: values.size() != poly.Size()");
+      throw std::runtime_error("DrawPolygon: values.size() != poly.size()");
     if(poly.size() < 2)
       return;
     auto valuesEnd = values.end();
@@ -75,7 +75,7 @@ namespace Ravl2 {
   requires WindowedArray<ArrayT,DataT,2>
   void DrawPolygon(ArrayT &dat,const std::vector<DataT>& values,const Polygon2dC<CoordT> &poly) {
     if(values.size() != poly.size())
-      throw std::runtime_error("DrawPolygon: values.size() != poly.Size()");
+      throw std::runtime_error("DrawPolygon: values.size() != poly.size()");
     if(poly.size() < 2)
       return;
     // Draw individual lines

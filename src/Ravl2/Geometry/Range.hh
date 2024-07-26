@@ -378,7 +378,7 @@ namespace Ravl2
     {
       RealT area = 1;
       for (int i = 0; i < N; ++i) {
-        area *= ranges[i].Size();
+        area *= ranges[i].size();
       }
       return area;
     }

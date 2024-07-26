@@ -2,7 +2,7 @@
 include(GenerateExportHeader)
 
 add_library (Ravl2Math
-#        Sums1d2.cc Sums1d2.hh
+        Sums1d2.cc Sums1d2.hh
         MeanVariance.cc MeanVariance.hh
 #        SumsNd2.hh SumsNd2.cc
 )
