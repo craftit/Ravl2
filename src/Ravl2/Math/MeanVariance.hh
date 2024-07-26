@@ -60,7 +60,7 @@ namespace Ravl2
     { return mN; }
     //: Access the number of samples.
 
-    [[nodiscard]] RealT Mean() const
+    [[nodiscard]] RealT mean() const
     { return mMean; }
     //: Access the mean.
     
@@ -121,10 +121,10 @@ namespace Ravl2
 
     mVar *= p1;
     mVar += mv.variance() * p2;
-    mVar += ((mv.Mean() - Mean()) * p1 * p2);
+    mVar += ((mv.mean() - mean()) * p1 * p2);
 
     // Update the mean.
-    mMean = mMean * p1 + mv.Mean() * p2;
+    mMean = mMean * p1 + mv.mean() * p2;
     mN += mv.count();
     return *this;
   }
@@ -153,10 +153,10 @@ namespace Ravl2
     const RealT p2 = number2 / number1;
 
     // Update the mean.
-    mMean = (mMean - mv.Mean() * p2) / p1 ;
+    mMean = (mMean - mv.mean() * p2) / p1 ;
 
     // Update the variance.
-    mVar -= ((mv.Mean() - Mean()) * p1 * p2);
+    mVar -= ((mv.mean() - mean()) * p1 * p2);
     mVar -= mv.variance() * p2;
     mVar /= p1;
 
@@ -178,15 +178,15 @@ namespace Ravl2
   template<typename RealT>
   MeanVariance<RealT> MeanVariance<RealT>::operator*(const MeanVariance<RealT> &oth) const {
     RealT sum = variance() + oth.variance();
-    RealT newMean = (variance() * oth.Mean() / sum) +
-                    (oth.variance() * Mean() / sum);
+    RealT newMean = (variance() * oth.mean() / sum) +
+                    (oth.variance() * mean() / sum);
     RealT newVar = variance() * oth.variance() / sum;
     return MeanVariance(count() + oth.count(), newMean, newVar);
   }
 
   template<typename RealT>
   std::ostream& operator<<(std::ostream &s,const MeanVariance<RealT> &mv) {
-    s << mv.count() << ' ' << mv.Mean() << ' ' << mv.variance();
+    s << mv.count() << ' ' << mv.mean() << ' ' << mv.variance();
     return s;
   }
 

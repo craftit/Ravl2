@@ -15,19 +15,19 @@ TEST_CASE("MeanVariance", "[MeanVariance]")
   MeanVariance<RealT> mvo;
   MeanVariance<RealT> mv1(1,2,3);
   CHECK(mv1.variance() == 3);
-  CHECK(mv1.Mean() == 2);
+  CHECK(mv1.mean() == 2);
   CHECK(mv1.count() == 1);
   MeanVariance<RealT> mv2(2,2,3);
   mvo = mv1;
   mv1 += mv2;
   CHECK(mv1.count() == 3);
   // The mean and variance should be the same.
-  CHECK(isNearZero(mv1.Mean() - mvo.Mean()));
+  CHECK(isNearZero(mv1.mean() - mvo.mean()));
   CHECK(isNearZero(mv1.variance() - mvo.variance()));
   mv1 -= mv2;
   CHECK(mv1.count() == 1);
   // The mean and variance should be the same.
-  CHECK(isNearZero(mv1.Mean() - mvo.Mean()));
+  CHECK(isNearZero(mv1.mean() - mvo.mean()));
   CHECK(isNearZero(mv1.variance() - mvo.variance()));
   //cerr << mv1 << "\n";
 
@@ -38,7 +38,7 @@ TEST_CASE("MeanVariance", "[MeanVariance]")
     data[i] = RealT(i);
   }
   MeanVariance<RealT> mv3 = computeMeanVariance(data);
-  CHECK(isNearZero(mv3.Mean() - 5));
+  CHECK(isNearZero(mv3.mean() - 5));
   CHECK(isNearZero(mv3.variance() - (var/10)));
 
 }
@@ -76,25 +76,25 @@ TEST_CASE("Sums1d2C", "[Sums1d2C]")
       MeanVariance<RealT> added = mva;
       added += mvb;
       MeanVariance<RealT> comp = computeMeanVariance(data,false);
-#if 0
-      RavlDebug("Val:%f Sum: %f %f  added:%f %f  inc:%f %f comp:%f %f",
+#if 1
+      SPDLOG_INFO("Val:{} Sum: {} {}  added:{} {}  inc:{} {} comp:{} {}",
           val,
-          sum.Mean(),
-          sum.Variance(false),
-          added.Mean(),
-          added.Variance(),
-          mvinc.Mean(),
-          mvinc.Variance(),
-          comp.Mean(),
-          comp.Variance()
+          sum.mean(),
+          sum.variance(false),
+          added.mean(),
+          added.variance(),
+          mvinc.mean(),
+          mvinc.variance(),
+          comp.mean(),
+          comp.variance()
           );
 #endif
 
-      CHECK(isNearZero(sum.mean()-added.Mean()));
+      CHECK(isNearZero(sum.mean()-added.mean()));
       CHECK(isNearZero(sum.variance(false)-added.variance()));
-      CHECK(isNearZero(sum.mean()-mvinc.Mean()));
+      CHECK(isNearZero(sum.mean()-mvinc.mean()));
       CHECK(isNearZero(sum.variance(false)-mvinc.variance()));
-      CHECK(isNearZero(sum.mean()-comp.Mean()));
+      CHECK(isNearZero(sum.mean()-comp.mean()));
       CHECK(isNearZero(sum.variance(false)-comp.variance()));
 
     }
