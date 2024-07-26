@@ -185,7 +185,7 @@ s/namespace RavlImageN/namespace Ravl2/g
 
 # Convert SysLog to spdlog.
 # In text RavlDebug(x), RavlWarning(x), RavlInfo(x), RavlError(x), -> SPDLOG_TRACE(x), SYSLOG_WARN(x), SPDLOG_INFO(x), SPDLOG_ERROR(x),
-# and in the text part change %s %f %d %e %u to {} %0.2f to {:.2f
+# and in the text part change %s %f %d %e %u to {} %0.2f to {:.2f}
 
 /.*Ravl\(Debug\|Warning\|Info\|Error\).*/ {
   s/%s/{}/g
