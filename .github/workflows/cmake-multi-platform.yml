@@ -59,7 +59,7 @@ jobs:
       uses: awalsh128/cache-apt-pkgs-action@latest
       if: runner.os != 'Windows'
       with:
-        packages:  build-essential libopencv-dev libxtensor-dev libxtensor-blas-dev libspdlog-dev libfmt-dev libcli11-dev libopenblas-dev liblapack-dev
+        packages:  build-essential libopencv-dev libxtensor-dev libxtensor-blas-dev libspdlog-dev libfmt-dev libcli11-dev libblas-dev liblapack-dev
         version: 1.0
 
     - name: Install build packages (Windows)
