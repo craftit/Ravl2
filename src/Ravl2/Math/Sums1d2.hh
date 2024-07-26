@@ -8,17 +8,12 @@
 #define RAVL_SUMS1D2_HEADER 1
 //! author="Charles Galambos"
 //! date="26/8/2002"
-//! docentry="Ravl.API.Math.Statistics"
-//! rcsid="$Id$"
-//! lib=RavlMath
-//! file="Ravl/Math/Statistics/MeanCovariance/Sums1d2.hh"
 
-#include "Ravl/Math.hh"
-#include "Ravl/MeanVariance.hh"
+#include "Ravl2/Math.hh"
+#include "Ravl2/MeanVariance.hh"
 
-namespace RavlN {
+namespace Ravl2 {
   
-  //! userlevel=Normal
   //: Sums of a variable.
   // This class provides a way of calculating statistics about
   // a variable. 
@@ -33,7 +28,7 @@ namespace RavlN {
     //: Default constructor.
     // Sets sums to zero.
     
-    Sums1d2C(UIntT nn,RealT nsum,RealT nsum2)
+    Sums1d2C(unsigned nn,RealT nsum,RealT nsum2)
       : n(nn),
 	sum(nsum),
 	sum2(nsum2)
@@ -76,11 +71,11 @@ namespace RavlN {
     }
     //: Subtract another set of sums.
     
-    const UIntT &Size() const
+    const unsigned &Size() const
     { return n; }
     //: Number of data points.
     
-    const UIntT &N() const
+    const unsigned &N() const
     { return n; }
     //: Number of data points.
     
@@ -114,7 +109,7 @@ namespace RavlN {
     }
     //: Compute the mean of the sample.
     
-    inline void AddRollingAverage(UIntT rollLength,RealT value) {
+    inline void AddRollingAverage(unsigned rollLength,RealT value) {
       if(rollLength < n) {
         RealT rollFraction = ((RealT) (rollLength-1)/((RealT) rollLength));
         sum *= rollFraction;
@@ -132,13 +127,13 @@ namespace RavlN {
     { return n; }
     //: Hash of value
   protected:
-    UIntT n;
+    unsigned n;
     RealT sum; // Sum of data.
     RealT sum2; // Sum of square data.
   };
 
-  ostream& operator<<(ostream &s,const Sums1d2C &mv);
-  istream& operator>>(istream &s, Sums1d2C &mv);
+  ostream& operator<<(std::ostream &s,const Sums1d2C &mv);
+  istream& operator>>(std::istream &s, Sums1d2C &mv);
   BinOStreamC& operator<<(BinOStreamC &s,const Sums1d2C &mv);
   BinIStreamC& operator>>(BinIStreamC &s, Sums1d2C &mv);
   bool operator==(const Sums1d2C &v2,const Sums1d2C &v1);

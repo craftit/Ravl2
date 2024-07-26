@@ -5,16 +5,11 @@
 // see http://www.gnu.org/copyleft/lesser.html
 // file-header-ends-here
 //! author="Charles Galambos"
-//! docentry="Ravl.Math.Statistics"
-//! rcsid="$Id$"
-//! lib=RavlMath
-//! file="Ravl/Math/Statistics/MeanCovariance/SumsNd2.cc"
 
-#include "Ravl/SumsNd2.hh"
-#include "Ravl/Stream.hh"
-#include "Ravl/BinStream.hh"
+#include "Ravl2/SumsNd2.hh"
+#include "Ravl2/BinStream.hh"
 
-namespace RavlN {
+namespace Ravl2 {
 
   //: Compute mean and covariance of samples
   
@@ -29,12 +24,12 @@ namespace RavlN {
     return MeanCovarianceC(n,mean,cov);
   }
   
-  ostream& operator<<(ostream &s,const SumsNd2C &mv) {
+  ostream& operator<<(std::ostream &s,const SumsNd2C &mv) {
     s << mv.N() << " " << mv.Sum() << " " << mv.Sum2();
     return s;
   }
   
-  istream& operator>>(istream &s, SumsNd2C &mv) {
+  istream& operator>>(std::istream &s, SumsNd2C &mv) {
     RealT n;
     VectorC s1;
     MatrixRUTC s2;

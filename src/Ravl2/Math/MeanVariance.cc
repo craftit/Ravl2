@@ -6,10 +6,7 @@
 // file-header-ends-here
 //////////////////////////////////////////////////
 
-#include "Ravl2/MeanVariance.hh"
-#include "Ravl2/Statistics.hh"
-#include "Ravl2/StdConst.hh"
-#include "Ravl2/StdMath.hh"
+#include "Ravl2/Math/MeanVariance.hh"
 
 namespace Ravl2 {
   

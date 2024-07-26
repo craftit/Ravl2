@@ -7,18 +7,13 @@
 #ifndef RAVL_SUMSND2_HEADER
 #define RAVL_SUMSND2_HEADER 1
 //! author="Charles Galambos"
-//! docentry="Ravl.API.Math.Statistics"
 //! date="28/1/2004"
-//! rcsid="$Id$"
-//! lib=RavlMath
-//! file="Ravl/Math/Statistics/MeanCovariance/SumsNd2.hh"
 
-#include "Ravl/MeanCovariance.hh"
-#include "Ravl/MatrixRUT.hh"
+#include "Ravl2/MeanCovariance.hh"
+#include "Ravl2/MatrixRUT.hh"
 
-namespace RavlN {
+namespace Ravl2 {
 
-  //! userlevel=Normal
   //: Sums of a set of variables.
   // This class provides a efficient way of calculating statistics about
   // a set of variables.
@@ -30,11 +25,11 @@ namespace RavlN {
     {}
     //: Default constructor.
 
-    SumsNd2C(UIntT dim)
+    SumsNd2C(unsigned dim)
       : n(0),
 	sum(dim),
 	sum2(dim)
-    { sum.Fill(0); sum2.Fill(0); }
+    { sum.fill(0); sum2.fill(0); }
     //: Construct with a specific dimension.
     
     SumsNd2C(RealT nn,const VectorC &nsum,const MatrixRUTC &nsum2)
@@ -46,8 +41,8 @@ namespace RavlN {
     
     void Reset() {
       n = 0;
-      sum.Fill(0);
-      sum2.Fill(0);
+      sum.fill(0);
+      sum2.fill(0);
     }
     //: Reset counters to zero
     
@@ -67,7 +62,7 @@ namespace RavlN {
     }
     //: Add a sample
     
-    void Add(const VectorC &vec,RealT weight) {
+    void add(const VectorC &vec,RealT weight) {
       n += weight;
       sum.MulAdd(vec,weight);
       sum2.AddOuterProduct(vec,weight);
@@ -100,8 +95,8 @@ namespace RavlN {
     MatrixRUTC sum2; // Covariance matrix.
   };
   
-  ostream& operator<<(ostream &s,const SumsNd2C &mv);
-  istream& operator>>(istream &s, SumsNd2C &mv);
+  ostream& operator<<(std::ostream &s,const SumsNd2C &mv);
+  istream& operator>>(std::istream &s, SumsNd2C &mv);
   BinOStreamC& operator<<(BinOStreamC &s,const SumsNd2C &mv);
   BinIStreamC& operator>>(BinIStreamC &s, SumsNd2C &mv);
   
