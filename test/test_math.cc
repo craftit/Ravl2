@@ -45,7 +45,7 @@ TEST_CASE("MeanVariance", "[MeanVariance]")
 
 TEST_CASE("Sums1d2C", "[Sums1d2C]")
 {
-  using RealT = float;
+  using RealT = double;
   using namespace Ravl2;
 
   {
@@ -76,7 +76,7 @@ TEST_CASE("Sums1d2C", "[Sums1d2C]")
       MeanVariance<RealT> added = mva;
       added += mvb;
       MeanVariance<RealT> comp = computeMeanVariance(data,false);
-#if 1
+#if 0
       SPDLOG_INFO("Val:{} Sum: {} {}  added:{} {}  inc:{} {} comp:{} {}",
           val,
           sum.mean(),

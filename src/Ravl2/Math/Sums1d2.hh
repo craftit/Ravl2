@@ -16,7 +16,9 @@ namespace Ravl2
   
   //! Sums of a variable.
   // This class provides a way of calculating statistics about
-  // a variable. 
+  // a variable.  Care should be taken when using this class
+  // particularly when the variable is a 'float' the precision is limited
+  // and we're summing potentially large numbers.
 
   template<typename RealT>
   class Sums1d2C {
@@ -100,7 +102,7 @@ namespace Ravl2
       RealT sn = rn;
       if(sampleStatistics) sn--;
       RealT var = (mSum2 -sqr(mSum) / rn) / sn;
-      if (var < 0) var = 0.0;
+      if (var < 0) var = 0;
       return var;
     }
 
