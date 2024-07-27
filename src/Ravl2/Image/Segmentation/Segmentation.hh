@@ -30,13 +30,13 @@ namespace Ravl2
     {}
     //: Default constructor.
     
-    SegmentationBodyC(const Array<UIntT,2> &nsegmap,UIntT nlabels)
+    SegmentationBodyC(const Array<unsigned, 2> &nsegmap,unsigned nlabels)
       : segmap(nsegmap),
 	labels(nlabels)
     {}
     //: Constructor.
 
-    explicit SegmentationBodyC(const Array<int, 2> &nsegmap);
+    explicit SegmentationBodyC(const Array<unsigned, 2> &nsegmap);
     //: Construct from an IntT image.
     // Negative values will be labeled as region 0.
 
@@ -79,7 +79,7 @@ namespace Ravl2
     // This is useful for making merge tables which can
     // the be passed to CompressAndRelabel.
 
-    template<class PixelT,class CmpT>
+    template<class PixelT,class CmpT,typename RealT>
     UIntT MergeComponents(Array<PixelT,2> &dat,UIntT thrSize,RealT maxDist,CmpT &cmp,unsigned iter = 1);
     //: Merge simlar components smaller than 'thrSize'.
     // This just looks for the difference between adjacent pixels from different regions.
@@ -119,7 +119,7 @@ namespace Ravl2
 
   //: Merge similar components smaller than 'thrSize'.
 
-  template<class PixelT,class CmpT>
+  template<class PixelT,class CmpT, typename RealT>
   SegmentationBodyC::UIntT SegmentationBodyC::MergeComponents(Array<PixelT, 2> &dat,
 					   UIntT thrSize,
 					   RealT maxDist,

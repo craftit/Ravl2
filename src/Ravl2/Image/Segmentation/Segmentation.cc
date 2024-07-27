@@ -18,7 +18,7 @@
 namespace Ravl2
 {
 
-  SegmentationBodyC::SegmentationBodyC(const Array<int, 2> &nsegmap)
+  SegmentationBodyC::SegmentationBodyC(const Array<unsigned , 2> &nsegmap)
       : segmap(nsegmap.range()),
         labels(0)
   {
@@ -333,7 +333,7 @@ namespace Ravl2
     // ------ Compress labels -----
     // First make sure they form a directed tree
     // ending in the lowest valued label. 
-    for(size_t n = 0;n < newLabs.size();n++) {
+    for(unsigned n = 0;n < unsigned(newLabs.size());n++) {
       if(newLabs[n] <= n)
         continue;
       // Minimize label.
@@ -371,7 +371,7 @@ namespace Ravl2
     
     // Assign new labels to the regions according their sizes and
     // another requirements.
-    int newLabel = 1;
+    unsigned newLabel = 1;
     auto it = area.begin();
     auto end = area.end();
     *it = 0;

@@ -54,8 +54,8 @@ namespace Ravl2
     
   protected:
     Index<2> start;
-    int end;
-    int dr;
+    int end = 0;
+    int dr = 0;
   };
   
   //! userlevel=Normal

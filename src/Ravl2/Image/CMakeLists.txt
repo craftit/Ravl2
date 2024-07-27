@@ -39,4 +39,5 @@ if(NOT BUILD_SHARED_LIBS)
     target_compile_definitions(Ravl2Image PUBLIC SAMPLE_LIBRARY_STATIC_DEFINE)
 endif()
 
+add_subdirectory(Segmentation)
 

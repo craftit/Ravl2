@@ -20,6 +20,8 @@ namespace Ravl2
 {
   class Polygon2dC;
 
+  enum class BoundaryTypeT { OUTSIDE, INSIDE };
+
   //! Crack code boundary
 
   // <p>The class BoundaryC represents the 4-connected oriented boundary of an
@@ -64,11 +66,6 @@ namespace Ravl2
     //: Creates the boundary from the list of pointers to the elementary edges.
     // If orient is true, the object is on the left of the boundary.
 
-    explicit BoundaryC(const IndexRange<2> & rect,bool asHole = true);
-    //: The boundary of the rectangle.
-    // The boundary goes clockwise around the rectangle. If asHole is true, 
-    // then the rectangle is 'outside' the region. otherwise its inside. 
-
     int Area() const;
     //: Get the area of the region which is determined by the 'boundary'.
     // Note: The area of the region can be negative, if it is a 'hole' in
@@ -94,20 +91,23 @@ namespace Ravl2
     { orientation = !orientation; }
     //: Invert the boundary.
 
-    BoundaryC & BReverse();
-    //: Reverse the order of the edges.
+    //! Reverse the order of the edges.
+    [[nodiscard]] BoundaryC reverse() const;
 
-    std::vector<std::vector<CrackC> > ConvexHull() const;
-    //: Compute the convex hull.
+    //! Reverse the order of the edges.
+    BoundaryC & BReverse();
+
+    //! Compute the convex hull.
     // The convex hull is created from the original Jordan boundary using
     // Melkman's method.
-    // Ref.: A V Melkman. On-line construction of the convex hull of a 
+    // Ref.: A V Melkman. On-line construction of the convex hull of a
     //                    simple polyline. Information Processing Letters,
     //                    25(1):11-12, 1987.
-    // Ref.: M Sonka, V Hlavac: Image Processing.    
+    // Ref.: M Sonka, V Hlavac: Image Processing.
+    std::vector<std::vector<CrackC> > ConvexHull() const;
 
+    //! Get the bounding box around all pixels on the inside edge of the boundary.
     IndexRange<2> BoundingBox() const;
-    //: Get the bounding box around all pixels on the inside edge of the boundry.
 
     Polygon2dC Polygon2d(bool bHalfPixelOffset = false) const;
     //: Convert a boundry to a polygon.
@@ -143,16 +143,11 @@ namespace Ravl2
     // the list will be empty.
   };
 
-//  inline std::ostream & operator<<(std::ostream & s, const BoundaryC & b)
-//  { s << (DListC<CrackC> &) b; return s; }
-//  //: Write the boundary to output stream 's'.
-//
-//  inline std::istream & operator<<(std::istream & s,BoundaryC & b)
-//  { s >> (DListC<CrackC> &) b; return s;  }
-//  //: Read the boundary from input stream 's'.
-
-  BoundaryC Line2Boundary(const BVertexC & startVertex, const BVertexC & endVertex);
   //: Creates a boundary which connects both boundary vertexes.
+  BoundaryC Line2Boundary(const BVertexC & startVertex, const BVertexC & endVertex);
+
+  //: Creates a boundary around the rectangle.
+  BoundaryC toBoundary(IndexRange<2> rect, BoundaryTypeT type = BoundaryTypeT::OUTSIDE);
 
   template<typename ArrayT,typename DataT>
   requires WindowedArray<ArrayT,DataT,2>

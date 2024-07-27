@@ -210,6 +210,14 @@ namespace Ravl2
       return *this;
     }
 
+    //! Reverse the direction of this crack.
+    [[nodiscard]] constexpr CrackC reversed() const
+    {
+      CrackCodeC cc = mCode;
+      cc.TurnBack();
+      return {CrackStep(mAt,mCode.Code()),cc};
+    }
+
     [[nodiscard]] constexpr BVertex2 &at()
     { return mAt; }
 
@@ -222,7 +230,10 @@ namespace Ravl2
     [[nodiscard]] constexpr const CrackCodeC &code() const
     { return mCode; }
 
-    //1 Turns the crack code clockwise.
+    [[nodiscard]] constexpr CrackCodeT crackCode() const
+    { return mCode.Code(); }
+
+    //! Turns the crack code clockwise.
     // This is an in-place operation.
     inline constexpr auto & TurnClock()
     { mCode.TurnClock(); return *this; }

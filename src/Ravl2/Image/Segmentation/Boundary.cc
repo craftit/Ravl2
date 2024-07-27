@@ -8,6 +8,7 @@
 //! date="26.04.1994"
 
 #include "Ravl2/Image/Segmentation/Boundary.hh"
+#include "Ravl2/Assert.hh"
 
 #define DODEBUG 0
 #if DODEBUG
@@ -18,6 +19,102 @@
 
 namespace Ravl2
 {
+
+  //! Creates a boundary around the rectangle.
+  BoundaryC toBoundary(IndexRange<2> rect, BoundaryTypeT type)
+  {
+    auto origin = rect.min();
+    auto endP = rect.max();
+    BVertexC   oVertex(origin);      // to help to GNU C++ 2.6.0
+    CrackCodeC cr(CrackCodeT::CR_RIGHT);
+    CrackC      edge(oVertex, cr);
+    std::vector<CrackC> edges;
+
+    for(int cUp=origin[1]; cUp <= endP[1]; cUp++) {
+      edges.push_back(edge);
+      edge.Right();
+    }
+    edge.TurnClock();
+    for(int rRight=origin[0]; rRight <= endP[0]; rRight++) {
+      edges.push_back(edge);
+      edge.Down();
+    }
+    edge.TurnClock();
+    for(int cDown=endP[1]; cDown >= origin[1]; cDown--) {
+      edges.push_back(edge);
+      edge.Left();
+    }
+    edge.TurnClock();
+    for(int rLeft=endP[0]; rLeft >= origin[0]; rLeft--) {
+      edges.push_back(edge);
+      edge.Up();
+    }
+    return BoundaryC(std::move(edges), type == BoundaryTypeT::OUTSIDE);
+  }
+
+  int BoundaryC::Area() const
+  {
+    int   col  = 0; // relative column of the boundary pixel
+    int area = 0; // region area
+
+    for(auto edge : mEdges ) {
+      switch (edge.crackCode())  {
+	case CrackCodeT::CR_DOWN  : area -= col;  break;
+	case CrackCodeT::CR_RIGHT : col++;        break;
+	case CrackCodeT::CR_UP    : area += col;  break;
+	case CrackCodeT::CR_LEFT  : col--;        break;
+	case CrackCodeT::CR_NODIR :
+	default       :
+	  RavlAssertMsg(0,"BoundaryC::Area(), Illegal direction code. ");
+	  break;
+      };
+      //ONDEBUG(cerr << "BoundaryC::Area() Area=" << area << " col=" << col << "\n");
+    }
+    if(orientation)
+      return -area;
+    return area;
+  }
+
+  //! Reverse the order of the edges.
+  [[nodiscard]] BoundaryC BoundaryC::reverse() const
+  {
+    std::vector<CrackC> newEdges;
+    newEdges.reserve(mEdges.size());
+    auto end = mEdges.rend();
+    for(auto it = mEdges.rbegin(); it != end; ++it) {
+      newEdges.push_back(it->reversed());
+    }
+    return BoundaryC(std::move(newEdges), !orientation);
+  }
+
+  BoundaryC &BoundaryC::BReverse()
+  {
+    *this = reverse();
+    return *this;
+  }
+
+  IndexRange<2> BoundaryC::BoundingBox() const
+  {
+    if (IsEmpty())
+      return {};
+    IndexRange<2> bb = IndexRange<2>::mostEmpty();
+    if(!orientation) {
+      ONDEBUG(cerr << "BoundaryC::BoundingBox(), Object is on left. \n");
+      for(auto edge : mEdges)
+      {
+	Index<2> vx = edge.LPixel();
+	bb.involve(vx);
+      }
+    } else {
+      ONDEBUG(cerr << "BoundaryC::BoundingBox(), Object is on right. \n");
+      for(auto edge : mEdges)
+      {
+	Index<2> vx = edge.RPixel();
+	bb.involve(vx);
+      }
+    }
+    return bb;
+  }
 
 
 #if 0
@@ -44,93 +141,6 @@ namespace Ravl2
 	InsLast(CrackC(it.Index(),CrackCodeT::CR_RIGHT));
     }
   }
-
-
-  BoundaryC::BoundaryC(const IndexRange<2> & rect,bool asHole)
-    : orientation(!asHole)
-  {
-    Index<2>   origin(rect.Origin());
-    Index<2>   endP(rect.End());
-    BVertexC   oVertex(origin);      // to help to GNU C++ 2.6.0
-    CrackCodeC cr(CrackCodeT::CR_RIGHT);
-    CrackC      edge(oVertex, cr);
-
-    for(int cUp=origin.Col(); cUp <= endP.Col(); cUp++) {
-      InsLast(edge);
-      edge.Step(NEIGH_RIGHT);
-    }
-    edge.TurnClock();
-    for(int rRight=origin.Row(); rRight <= endP.Row(); rRight++) {
-      InsLast(edge);
-      edge.Step(NEIGH_DOWN);
-    }
-    edge.TurnClock();
-    for(int cDown=endP.Col(); cDown >= origin.Col(); cDown--) {
-      InsLast(edge);
-      edge.Step(NEIGH_LEFT);
-    }
-    edge.TurnClock();
-    for(int rLeft=endP.Row(); rLeft >= origin.Row(); rLeft--) {
-      InsLast(edge);
-      edge.Step(NEIGH_UP);
-    }
-  }
-
-  int BoundaryC::Area() const {
-    int   col  = 0; // relative column of the boundary pixel
-    int area = 0; // region area
-
-    for(auto edge : *this ) {
-      switch (edge.Data().Code())  {
-      case CrackCodeT::CR_DOWN  : area -= col;  break;
-      case CrackCodeT::CR_RIGHT : col++;        break;
-      case CrackCodeT::CR_UP    : area += col;  break;
-      case CrackCodeT::CR_LEFT  : col--;        break;
-      case CrackCodeT::CR_NODIR :
-      default       :
-        RavlAssertMsg(0,"BoundaryC::Area(), Illegal direction code. ");
-        break;
-      };
-      //ONDEBUG(cerr << "BoundaryC::Area() Area=" << area << " col=" << col << "\n");
-    }
-    if(orientation)
-      return -area;
-    return area;
-  }
-
-  IndexRange<2> BoundaryC::BoundingBox() const {
-    if (IsEmpty())
-      return IndexRange<2>();
-    BVertexC firstV(First());
-    int minR = firstV.Row();
-    int minC = firstV.Col();
-    int maxR = minR;
-    int maxC = minC;
-    // False=Right.
-    // True=Left.
-    if(!orientation) {
-      ONDEBUG(cerr << "BoundaryC::BoundingBox(), Object is on left. \n");
-      for(DLIterC<CrackC> edge(*this);edge;edge++) {
-	Index<2> vx = edge->LPixel();
-	if (minR > vx.Row()) minR = vx.Row();
-	if (maxR < vx.Row()) maxR = vx.Row();
-	if (minC > vx.Col()) minC = vx.Col();
-	if (maxC < vx.Col()) maxC = vx.Col();
-      }
-    } else {
-      ONDEBUG(cerr << "BoundaryC::BoundingBox(), Object is on right. \n");
-      for(DLIterC<CrackC> edge(*this);edge;edge++) {
-	Index<2> vx = edge->RPixel();
-	if (minR > vx.Row()) minR = vx.Row();
-	if (maxR < vx.Row()) maxR = vx.Row();
-	if (minC > vx.Col()) minC = vx.Col();
-	if (maxC < vx.Col()) maxC = vx.Col();
-      }
-    }
-    return IndexRange<2>(Index<2>(minR,minC), Index<2>(maxR,maxC));
-  }
-
-
 
   DListC<BoundaryC> BoundaryC::Order(const CrackC & firstEdge, bool orient) {
     DListC<BoundaryC> bnds;
@@ -250,18 +260,6 @@ namespace Ravl2
     return ret;
   }
 
-
-  BoundaryC &BoundaryC::BReverse()
-  {
-    //  cout << "BoundaryC::BReverse()\n";
-
-    Reverse();
-    for(DLIterC<CrackC> it(*this);it;it++)
-      it.Data().Reverse();
-    orientation = !orientation;
-    return *this;
-  }
-
   RCHashC<BVertexC, std::array<BVertexC,2> > BoundaryC::CreateHashtable() const {
     RCHashC<BVertexC, std::array<BVertexC,2> > hashtable;
     for(DLIterC<CrackC> edge(*this);edge;edge++) {
@@ -377,8 +375,8 @@ namespace Ravl2
     std::vector<CrackC> boundary;
     BVertexC  vertex(startVertex);
     using RealT = float;
-    RealT     startRow = startVertex[0];
-    RealT     startCol = startVertex[1];
+    RealT     startRow = RealT(startVertex[0]);
+    RealT     startCol = RealT(startVertex[1]);
     RealT     k = 0;
     RealT     kk = 0;
     if (endVertex[0] == startVertex[0])
@@ -386,9 +384,9 @@ namespace Ravl2
     else if (endVertex[1] == startVertex[1])
       kk = 0;
     else if (std::abs(endVertex[0] - startVertex[0]) < std::abs(endVertex[1] - startVertex[1]))
-      k = ((RealT)(endVertex[0] - startVertex[0])) / (endVertex[1] - startVertex[1]);
+      k = (RealT(endVertex[0] - startVertex[0])) / RealT(endVertex[1] - startVertex[1]);
     else
-      kk = ((RealT)(endVertex[1] - startVertex[1])) / (endVertex[0] - startVertex[0]);
+      kk = (RealT(endVertex[1] - startVertex[1])) / RealT(endVertex[0] - startVertex[0]);
 
     if (startVertex[1] < endVertex[1]) {  // 1 or 2 or 7 or 8 octant
       if (startVertex[0] > endVertex[0]) {  // 1 or 2 octant
@@ -398,7 +396,7 @@ namespace Ravl2
 	  while (vertex[1] < endVertex[1]) {
 	    boundary.push_back(CrackC(vertex,CrackCodeT::CR_RIGHT));
 	    vertex = right(vertex);
-	    if ( std::abs(startRow + k *(vertex[1] - startCol) - vertex[0]) > 0.5) {
+	    if ( std::abs(startRow + k *(vertex[1] - startCol) - vertex[0]) > RealT(0.5)) {
 	      boundary.push_back(CrackC(vertex,CrackCodeT::CR_UP));
 	      vertex = up(vertex);
 	    }
@@ -408,7 +406,7 @@ namespace Ravl2
 	  while (vertex[0] > endVertex[0]) {
 	    boundary.push_back(CrackC(vertex,CrackCodeT::CR_UP));
 	    vertex = up(vertex);
-	    if ( std::abs(startCol + kk *(vertex[0] - startRow) - vertex[1]) > 0.5 ) {
+	    if ( std::abs(startCol + kk *(vertex[0] - startRow) - vertex[1]) > RealT(0.5) ) {
 	      boundary.push_back(CrackC(vertex,CrackCodeT::CR_RIGHT));
 	      vertex = right(vertex);
 	    }
@@ -421,7 +419,7 @@ namespace Ravl2
 	  while (vertex[1] < endVertex[1]) {
 	    boundary.push_back(CrackC(vertex,CrackCodeT::CR_RIGHT));
 	    vertex = right(vertex);
-	    if (std::abs(startRow + k *(vertex[1] - startCol) - vertex[0]) > 0.5) {
+	    if (std::abs(startRow + k *(vertex[1] - startCol) - vertex[0]) > RealT(0.5)) {
 	      boundary.push_back(CrackC(vertex,CrackCodeT::CR_DOWN));
 	      vertex = down(vertex);
 	    }
@@ -431,7 +429,7 @@ namespace Ravl2
 	  while (vertex[0] < endVertex[0]) {
 	    boundary.push_back(CrackC(vertex,CrackCodeT::CR_DOWN));
 	    vertex = down(vertex);
-	    if ( std::abs(startCol + kk *(vertex[0] - startRow) - vertex[1]) > 0.5) {
+	    if ( std::abs(startCol + kk *(vertex[0] - startRow) - vertex[1]) > RealT(0.5)) {
 	      boundary.push_back(CrackC(vertex,CrackCodeT::CR_RIGHT));
 	      vertex = right(vertex);
 	    }
@@ -446,7 +444,7 @@ namespace Ravl2
 	  while (vertex[1] > endVertex[1]) {
 	    boundary.push_back(CrackC(vertex,CrackCodeT::CR_LEFT));
 	    vertex = left(vertex);
-	    if (std::abs(startRow + k *(vertex[1] - startCol) - vertex[0]) > 0.5) {
+	    if (std::abs(startRow + k *(vertex[1] - startCol) - vertex[0]) > RealT(0.5)) {
 	      boundary.push_back(CrackC(vertex,CrackCodeT::CR_UP));
 	      vertex = up(vertex);
 	    }
@@ -456,7 +454,7 @@ namespace Ravl2
 	  while (vertex[0] > endVertex[0]) {
 	    boundary.push_back(CrackC(vertex,CrackCodeT::CR_UP));
 	    vertex = up(vertex);
-	    if ( std::abs(startCol + kk *(vertex[0] - startRow) - vertex[1]) > 0.5) {
+	    if ( std::abs(startCol + kk *(vertex[0] - startRow) - vertex[1]) > RealT(0.5)) {
 	      boundary.push_back(CrackC(vertex,CrackCodeT::CR_LEFT));
 	      vertex = left(vertex);
 	    }
@@ -469,7 +467,7 @@ namespace Ravl2
 	  while (vertex[1] > endVertex[1]) {
 	    boundary.push_back(CrackC(vertex,CrackCodeT::CR_LEFT));
 	    vertex = left(vertex);
-	    if ( std::abs(startRow + k *(vertex[1] - startCol) - vertex[0]) > 0.5) {
+	    if ( std::abs(startRow + k *(vertex[1] - startCol) - vertex[0]) > RealT(0.5)) {
 	      boundary.push_back(CrackC(vertex,CrackCodeT::CR_DOWN));
 	      vertex = down(vertex);
 	    }
@@ -479,7 +477,7 @@ namespace Ravl2
 	  while (vertex[0] < endVertex[0]) {
 	    boundary.push_back(CrackC(vertex,CrackCodeT::CR_DOWN));
 	    vertex = down(vertex);
-	    if (std::abs(startCol + kk *(vertex[0] - startRow) - vertex[1]) > 0.5) {
+	    if (std::abs(startCol + kk *(vertex[0] - startRow) - vertex[1]) > RealT(0.5)) {
 	      boundary.push_back(CrackC(vertex,CrackCodeT::CR_LEFT));
 	      vertex = left(vertex);
 	    }

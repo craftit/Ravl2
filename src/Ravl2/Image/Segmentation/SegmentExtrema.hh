@@ -14,6 +14,7 @@
 //! example="extrema.cc" 
 
 #include <string.h>
+#include <cstdint>
 #include "Ravl2/Array.hh"
 #include "Ravl2/Image/Segmentation/FloodRegion.hh"
 #include "Ravl/IndexRange2dSet.hh"
@@ -84,6 +85,8 @@ namespace Ravl2 {
   
   class SegmentExtremaBaseC {
   public:
+    using RealT = float;
+
     SegmentExtremaBaseC(int nMinSize,RealT nMinMargin,int nlimitMaxValue = 255)
       : stride(0),
         labelAlloc(1),

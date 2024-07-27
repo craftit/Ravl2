@@ -64,7 +64,8 @@ namespace Ravl2
     {}
 
     //! Returns the crack code.
-    [[nodiscard]] inline constexpr CrackCodeT Code() const
+    [[nodiscard]] inline constexpr CrackCodeT
+    Code() const
     { return crackCode; }
 
     //! Get relative crack code of direction 'cc' relative to this one.

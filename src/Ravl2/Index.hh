@@ -161,10 +161,7 @@ namespace Ravl2
   {
   public:
     //! Default constructor
-    constexpr IndexRange()
-       : m_min(0), // gcc-4.7.2 doesn't appear to initialise these correctly.
-         m_max(-1)
-    {}
+    constexpr IndexRange() = default;
 
     //! Constructor from a min and max value, inclusive.
     constexpr IndexRange(int min,int max)
@@ -177,6 +174,17 @@ namespace Ravl2
       : m_min(at),
 	m_max(at)
     {}
+
+    //! Create a range from a size.
+    //! The range will be from 0 to size-1.
+    static IndexRange<1> fromSize(int size)
+    { return {0,size-1}; }
+
+    //! Create the range which creates the most negative area.
+    // This is useful if you want guarantee the first point involved in
+    // the rectangle is always covered
+    static IndexRange<1> mostEmpty()
+    { return {std::numeric_limits<int>::max(),std::numeric_limits<int>::min()}; }
 
     //! Default constructor
     IndexRange(std::initializer_list<int> init)
@@ -411,8 +419,6 @@ namespace Ravl2
       return inside;
     }
 
-
-
     //! Start of the range.
     [[nodiscard]] IndexRangeIterator<1> begin() const;
 
@@ -490,6 +496,17 @@ namespace Ravl2
       for(unsigned i = 0;i < N;i++) {
 	m_range[i] = ranges.begin()[i];
       }
+    }
+
+    //! Create the range which creates the most negative area.
+    // This is useful if you want guarantee the first point involved in
+    // the rectangle is always covered
+    static IndexRange<N> mostEmpty()
+    {
+      IndexRange<N> ret;
+      for(unsigned i = 0;i < N;i++)
+	ret[i] = IndexRange<1>::mostEmpty();
+      return ret;
     }
 
     //! Make size of range 0.
