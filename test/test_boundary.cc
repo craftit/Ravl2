@@ -104,48 +104,44 @@ TEST_CASE("Check relative directions", "[CrackCodeC]")
 }
 
 
-TEST_CASE("Check relative directions", "[Boundary]")
+TEST_CASE("Check things are working properly", "[Boundary]")
 {
   using namespace Ravl2;
 
-  IndexRange<2> rect(IndexRange<1>({1,3}),IndexRange<1>({2,4}));
-  BoundaryC bnd = toBoundary(rect,BoundaryTypeT::OUTSIDE);
-  //cout << "Bounds:\n " << bnd << "\n";
-  EXPECT_EQ(bnd.size(), 12);
-  ONDEBUG(std::cout << "Area=" << bnd.Area() << "\n");
-  EXPECT_EQ(bnd.Area(),rect.area());
-  IndexRange<2> tmpbb = bnd.BoundingBox();
-  EXPECT_EQ(tmpbb,rect);
-  bnd.BReverse();
-  EXPECT_EQ(tmpbb,bnd.BoundingBox());
-  EXPECT_EQ(bnd.Area(),rect.area());
-  bnd.Invert();
-  ONDEBUG(cout << "RArea=" << bnd.Area() << "\n");
-  CHECK(-bnd.Area() == rect.area());
-  
-  IndexRange<2> bb = bnd.BoundingBox();
-  ONDEBUG(std::cerr <<"Bounding box=" << bb << " Inv=" << tmpbb << "\n");
-  CHECK(bb == rect.expand(1));
+  SECTION("Bounding box and areas")
+  {
+    IndexRange<2> rect(IndexRange<1>({1, 3}), IndexRange<1>({2, 4}));
+    BoundaryC bnd = toBoundary(rect, BoundaryTypeT::OUTSIDE);
+    //cout << "Bounds:\n " << bnd << "\n";
+    EXPECT_EQ(bnd.size(), 12);
+    ONDEBUG(std::cout << "Area=" << bnd.Area() << "\n");
+    EXPECT_EQ(bnd.Area(), rect.area());
+    IndexRange<2> tmpbb = bnd.BoundingBox();
+    EXPECT_EQ(tmpbb, rect);
+    bnd.BReverse();
+    EXPECT_EQ(tmpbb, bnd.BoundingBox());
+    EXPECT_EQ(bnd.Area(), rect.area());
+    bnd.Invert();
+    ONDEBUG(cout << "RArea=" << bnd.Area() << "\n");
+    CHECK(-bnd.Area() == rect.area());
+
+    IndexRange<2> bb = bnd.BoundingBox();
+    ONDEBUG(std::cerr << "Bounding box=" << bb << " Inv=" << tmpbb << "\n");
+    CHECK(bb == rect.expand(1));
+  }
+  SECTION("Edge nid point")
+  {
+    for(int i =0;i < 5;i++) {
+      BVertexC start({5,5});
+      CrackC edge(start,CrackCodeC(i));
+      auto m1 = ((toPoint<float>(edge.RPixel()) + toPoint<float>(edge.LPixel())) / 2.0f) + Point<float,2>({0.5,0.5});
+      CHECK(isNearZero<float>(euclidDistance(m1,edge.MidPoint<float>())(),1e-5f));
+    }
+  }
 }
 
 #if 0
 
-
-
-TEST(Image, MidPoint)
-{
-  using namespace Ravl2;
-
-  for(int i =0;i < 5;i++) {
-    BVertexC start({5,5});
-    CrackC edge(start,(CrackCodeC) i);
-    //ONDEBUG(std::cerr <<" Left=" << edge.LPixel() << " Right=" << edge.RPixel() << "\n");
-    Point<float,2> m1 = ((Point<float,2>(edge.RPixel()) + Point<float,2>(edge.LPixel())) / 2) + Point<float,2>({0.5,0.5});
-    //ONDEBUG(std::cerr <<" Mid=" << edge.MidPoint() << " m1=" << m1 << " diff=" << (m1 - edge.MidPoint()) << "\n");
-    if((m1 - edge.MidPoint()).SumOfSqr() > 0.00001) return __LINE__;
-  }
-  return 0;
-}
 
 
 TEST(Image, OrderEdges)

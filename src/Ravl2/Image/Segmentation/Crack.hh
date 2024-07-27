@@ -179,11 +179,11 @@ namespace Ravl2
     [[nodiscard]] constexpr Point<RealT,2> MidPoint() const
     {
       switch(mCode.Code()) {
-        case CrackCodeT::CR_DOWN : return Point<RealT,2>({RealT(mAt[0]) +0.5  ,RealT(mAt[1])});
-        case CrackCodeT::CR_RIGHT: return Point<RealT,2>({RealT(mAt[0])       ,RealT(mAt[1]) + 0.5});
-        case CrackCodeT::CR_UP   : return Point<RealT,2>({RealT(mAt[0]) -0.5  ,RealT(mAt[1])});
-        case CrackCodeT::CR_LEFT : return Point<RealT,2>({RealT(mAt[0])       ,RealT(mAt[1]) - 0.5});
-        case CrackCodeT::CR_NODIR: return Point<RealT,2>({RealT(mAt[0]) +0.5  ,RealT(mAt[1]) + 0.5});
+        case CrackCodeT::CR_DOWN : return Point<RealT,2>({RealT(mAt[0]) +RealT(0.5)  ,RealT(mAt[1])});
+        case CrackCodeT::CR_RIGHT: return Point<RealT,2>({RealT(mAt[0])              ,RealT(mAt[1]) + RealT(0.5)});
+        case CrackCodeT::CR_UP   : return Point<RealT,2>({RealT(mAt[0]) -RealT(0.5)  ,RealT(mAt[1])});
+        case CrackCodeT::CR_LEFT : return Point<RealT,2>({RealT(mAt[0])              ,RealT(mAt[1]) - RealT(0.5)});
+        case CrackCodeT::CR_NODIR: return Point<RealT,2>({RealT(mAt[0]) +RealT(0.5)  ,RealT(mAt[1]) + RealT(0.5)});
       }
       assert(false);
       return Point<RealT,2>({0,0});
