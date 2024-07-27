@@ -52,7 +52,7 @@ namespace Ravl2
     return BoundaryC(std::move(edges), type == BoundaryTypeT::OUTSIDE);
   }
 
-  int BoundaryC::Area() const
+  int BoundaryC::area() const
   {
     int   col  = 0; // relative column of the boundary pixel
     int area = 0; // region area
@@ -65,10 +65,10 @@ namespace Ravl2
 	case CrackCodeT::CR_LEFT  : col--;        break;
 	case CrackCodeT::CR_NODIR :
 	default       :
-	  RavlAssertMsg(0,"BoundaryC::Area(), Illegal direction code. ");
+	  RavlAssertMsg(0,"BoundaryC::area(), Illegal direction code. ");
 	  break;
       };
-      //ONDEBUG(cerr << "BoundaryC::Area() Area=" << area << " col=" << col << "\n");
+      //ONDEBUG(std::cerr << "BoundaryC::area() Area=" << area << " col=" << col << "\n");
     }
     if(orientation)
       return -area;
@@ -96,18 +96,18 @@ namespace Ravl2
   IndexRange<2> BoundaryC::BoundingBox() const
   {
     IndexRange<2> bb;
-    if (IsEmpty())
+    if (empty())
       return bb;
     bb = IndexRange<2>::mostEmpty();
     if(!orientation) {
-      ONDEBUG(cerr << "BoundaryC::BoundingBox(), Object is on left. \n");
+      ONDEBUG(std::cerr << "BoundaryC::BoundingBox(), Object is on left. \n");
       for(auto edge : mEdges)
       {
 	Index<2> vx = edge.LPixel();
 	bb.involve(vx);
       }
     } else {
-      ONDEBUG(cerr << "BoundaryC::BoundingBox(), Object is on right. \n");
+      ONDEBUG(std::cerr << "BoundaryC::BoundingBox(), Object is on right. \n");
       for(auto edge : mEdges)
       {
 	Index<2> vx = edge.RPixel();
@@ -125,7 +125,7 @@ namespace Ravl2
   BoundaryC::BoundaryC(const Array<PixelT,2> &emask,PixelT inLabel)
     : orientation(false)
   {
-    if(emask.Frame().Rows() < 3 || emask.Frame().Cols() < 3) {
+    if(emask.range().Rows() < 3 || emask.range().Cols() < 3) {
       std::cerr << "RegionMaskBodyC::Boundary(), Mask too small to compute boundary. \n";
       return;
     }
@@ -143,25 +143,25 @@ namespace Ravl2
     }
   }
 
-  DListC<BoundaryC> BoundaryC::Order(const CrackC & firstEdge, bool orient) {
-    DListC<BoundaryC> bnds;
+  std::vector<BoundaryC> BoundaryC::Order(const CrackC & firstEdge, bool orient) {
+    std::vector<BoundaryC> bnds;
 
     RCHashC<BVertexC, std::array<BVertexC,2> > hashtable = CreateHashtable();
 
-    DListC<BVertexC> endpoints = FindEndpoints(hashtable);
-    if (endpoints.IsEmpty()){
+    std::vector<BVertexC> endpoints = FindEndpoints(hashtable);
+    if (endpoints.empty()){
       BoundaryC bnd = OrderContinuous(hashtable, firstEdge, orient);
-      bnds.InsLast(bnd);
+      bnds.push_back(bnd);
     }
     else {
       DLIterC<BVertexC> ep_it(endpoints);
-      for (ep_it.First(); ep_it.IsElm(); ep_it.Next()){
+      for (ep_it.First(); ep_it.valid(); ep_it.next()){
 	BoundaryC bnd = OrderContinuous(hashtable, CrackC(ep_it.Data(), CrackCodeC(CrackCodeT::CR_NODIR)) , orient);
 	DLIterC<BVertexC> ep2_it(endpoints);
-	for (ep2_it.First(); ep2_it.IsElm(); ep2_it.Next()){
+	for (ep2_it.First(); ep2_it.valid(); ep2_it.next()){
 	  if (ep2_it.Data()==bnd.Last().End()) ep2_it.Del();
 	}
-	bnds.InsLast(bnd);
+	bnds.push_back(bnd);
       }
     }
 
@@ -171,28 +171,28 @@ namespace Ravl2
 
   //: Generate a set of ordered boundries.
 
-  DListC<BoundaryC> BoundaryC::OrderEdges() const {
-    ONDEBUG(cerr << "DListC<BoundaryC> BoundaryC::OrderEdges() const \n");
-    DListC<BoundaryC> ret;
+  std::vector<BoundaryC> BoundaryC::OrderEdges() const {
+    ONDEBUG(std::cerr << "std::vector<BoundaryC> BoundaryC::OrderEdges() const \n");
+    std::vector<BoundaryC> ret;
 
     HashC<CrackC,CrackC> edges;
-    HashC<BVertexC,DListC<CrackC> > leavers;
+    HashC<BVertexC,std::vector<CrackC> > leavers;
 
     // Make table of all possible paths.
 
     for(DLIterC<CrackC> it(*this);it;it++) {
-      ONDEBUG(cerr << "Begin=" << it->Begin() << "\n");
-      leavers[it->Begin()].InsLast(*it);
+      ONDEBUG(std::cerr << "Begin=" << it->Begin() << "\n");
+      leavers[it->Begin()].push_back(*it);
     }
 
-    ONDEBUG(cerr << "leavers.Size()=" << leavers.Size() << ". \n");
+    ONDEBUG(std::cerr << "leavers.size()=" << leavers.size() << ". \n");
 
     // Make table of prefered paths.
     CrackC invalid(BVertexC(0,0),CrackCodeT::CR_NODIR);
     for(DLIterC<CrackC> it(*this);it;it++) {
-      ONDEBUG(cerr << "End=" << it->End() << "\n");
-      DListC<CrackC> &lst = leavers[it->End()];
-      Uint size = lst.Size();
+      ONDEBUG(std::cerr << "End=" << it->End() << "\n");
+      std::vector<CrackC> &lst = leavers[it->End()];
+      Uint size = lst.size();
       switch(size) {
       case 0: // Nothing leaving...
 	edges[*it] = invalid;
@@ -218,11 +218,11 @@ namespace Ravl2
     leavers.Empty(); // Done with these.
 
     // Seperate boundries or boundry segements.
-    ONDEBUG(cerr << "edges.Size()=" << edges.Size() << ". \n");
+    ONDEBUG(std::cerr << "edges.size()=" << edges.size() << ". \n");
 
     CrackC at,nxt;
     HashC<CrackC,BoundaryC> startMap;
-    while(!edges.IsEmpty()) {
+    while(!edges.empty()) {
       HashIterC<CrackC,CrackC> it(edges); // Use iterator to pick an edge.
       BoundaryC bnds;
       at=it.Key();
@@ -230,21 +230,21 @@ namespace Ravl2
       for(;;) {
 	if(!edges.Lookup(at,nxt))
 	  break;
-	bnds.InsLast(at);
+	bnds.push_back(at);
 	edges.Del(at);
 	at = nxt;
       }
       if(at == first) { // If its a loop we're done.
-	ONDEBUG(cerr << "Found closed boundary. \n");
-	ret.InsLast(bnds);
+	ONDEBUG(std::cerr << "Found closed boundary. \n");
+	ret.push_back(bnds);
       } else {
-	ONDEBUG(cerr << "Found open boundary. \n");
+	ONDEBUG(std::cerr << "Found open boundary. \n");
 	// Tie boundry segements together.
 	// 'at' is the last edge from the segment.
 	// 'first' is the first edge from the segment.
 	BoundaryC nbnds;
 	if(startMap.Lookup(at,nbnds)) {
-	  ONDEBUG(cerr << "Joinging boundary. \n");
+	  ONDEBUG(std::cerr << "Joinging boundary. \n");
 	  //nbnds.DelFirst();
 	  bnds.MoveLast(nbnds);
 	  startMap.Del(at);
@@ -255,9 +255,9 @@ namespace Ravl2
     }
 
     // Clean up any remaining boundry segments.
-    ONDEBUG(cerr << "StartMap.Size()=" << startMap.Size() << "\n");
+    ONDEBUG(std::cerr << "StartMap.size()=" << startMap.size() << "\n");
     for(HashIterC<CrackC,BoundaryC> smit(startMap);smit;smit++)
-      ret.InsLast(smit.Data());
+      ret.push_back(smit.Data());
     return ret;
   }
 
@@ -305,7 +305,7 @@ namespace Ravl2
     else if (firstEdge.End()==neighbour2) next_vertex = neighbour2;
     else if (neighbour1==invalid_vertex) next_vertex = neighbour2;
     else if (neighbour2==invalid_vertex) next_vertex = neighbour1;
-    bnd.InsLast(CrackC(present_vertex, next_vertex));
+    bnd.push_back(CrackC(present_vertex, next_vertex));
 
     for(;;){
       present_vertex = bnd.Last().End();
@@ -318,7 +318,7 @@ namespace Ravl2
       else next_vertex = neighbour1;
 
       if (next_vertex!=invalid_vertex)
-	bnd.InsLast(CrackC(present_vertex, next_vertex));
+	bnd.push_back(CrackC(present_vertex, next_vertex));
 
       if (next_vertex==bnd.First().Begin() || next_vertex==invalid_vertex) break;
       // boundary has been traced
@@ -327,15 +327,15 @@ namespace Ravl2
     return bnd;
   }
 
-  DListC<BVertexC> BoundaryC::FindEndpoints(const RCHashC<BVertexC, std::array<BVertexC,2> > & hashtable) const {
+  std::vector<BVertexC> BoundaryC::FindEndpoints(const RCHashC<BVertexC, std::array<BVertexC,2> > & hashtable) const {
     BVertexC invalid_vertex(-1, -1);
     HashIterC<BVertexC, std::array<BVertexC,2> > hash_iter(hashtable);
-    DListC<BVertexC> endpoints;
-    for(hash_iter.First(); hash_iter.IsElm(); hash_iter.Next()){
+    std::vector<BVertexC> endpoints;
+    for(hash_iter.First(); hash_iter.valid(); hash_iter.next()){
       BVertexC neighbour1 = hash_iter.Data().A();
       BVertexC neighbour2 = hash_iter.Data().B();
       if (neighbour1==invalid_vertex || neighbour2==invalid_vertex)
-	endpoints.InsLast(hash_iter.Key());
+	endpoints.push_back(hash_iter.Key());
     }
     return endpoints;
   }
@@ -347,15 +347,15 @@ namespace Ravl2
     Polygon2dC polygon;
     DLIterC<CrackC> et(*this);
     if(!et) return polygon;
-    polygon.InsLast(Point2dC(*et));
+    polygon.push_back(Point<RealT,2>(*et));
     CrackCodeT lastCode = et->Code();
     if (bHalfPixelOffset) {
-      Point2dC halfPixelOffset(-0.5,-0.5);
+      Point<RealT,2> halfPixelOffset(-0.5,-0.5);
       for (et++; et; et++) {
         if (et->Code() == lastCode)
           continue;
         lastCode = et->Code();
-        polygon.InsLast(Point2dC(*et) + halfPixelOffset);
+        polygon.push_back(Point<RealT,2>(*et) + halfPixelOffset);
       }
     }
     else {
@@ -363,7 +363,7 @@ namespace Ravl2
         if (et->Code() == lastCode)
           continue;
         lastCode = et->Code();
-        polygon.InsLast(Point2dC(*et));
+        polygon.push_back(Point<RealT,2>(*et));
       }
     }
     return polygon;
@@ -486,7 +486,7 @@ namespace Ravl2
 	}
       }
     }
-    //  cout << "Line2Boundary - size:" << boundary.Size() << '\n';
+    //  cout << "Line2Boundary - size:" << boundary.size() << '\n';
     return BoundaryC(std::move(boundary));
   }
 

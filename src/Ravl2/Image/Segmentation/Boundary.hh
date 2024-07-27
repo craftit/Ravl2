@@ -62,11 +62,11 @@ namespace Ravl2
     requires WindowedArray<ArrayT,DataT,2>
     static BoundaryC traceBoundary(const ArrayT &emask, DataT inLabel);
 
-    //BoundaryC(const DListC<DLIterC<CrackC> > & edgeList, bool orient = true);
+    //BoundaryC(const std::vector<DLIterC<CrackC> > & edgeList, bool orient = true);
     //: Creates the boundary from the list of pointers to the elementary edges.
     // If orient is true, the object is on the left of the boundary.
 
-    int Area() const;
+    int area() const;
     //: Get the area of the region which is determined by the 'boundary'.
     // Note: The area of the region can be negative, if it is a 'hole' in
     // a plane. This can be inverted with the BReverse() method.
@@ -120,7 +120,7 @@ namespace Ravl2
     { return mEdges.size(); }
 
     //! Check if the boundary is empty.
-    [[nodiscard]] bool IsEmpty() const
+    [[nodiscard]] bool empty() const
     { return mEdges.empty(); }
   private:
     //! Orientation of the boundary. true means that
