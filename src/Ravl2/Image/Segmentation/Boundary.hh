@@ -180,17 +180,17 @@ namespace Ravl2
 	//          <-
 	// BL(0) \/ BR(1)
         if(it.DataTR() != inLabel)
-          mEdges.emplace_back(it.indexBR() - toIndex(1,0), CrackCodeT::CR_LEFT);
+          mEdges.emplace_back(it.indexBR() + toIndex(0,1), CrackCodeT::CR_LEFT);
         if(it.DataBL() != inLabel)
-          mEdges.emplace_back(it.indexBR() - toIndex(0,0), CrackCodeT::CR_DOWN);
+          mEdges.emplace_back(it.indexBR(), CrackCodeT::CR_DOWN);
       } else {
 	// TL       TR(1)
 	//           ->
 	// BL(1) /\ BR(0)
 	if(it.DataTR() == inLabel)
-          mEdges.emplace_back(it.indexBR() - toIndex(0,1), CrackCodeT::CR_RIGHT);
+          mEdges.emplace_back(it.indexBR(), CrackCodeT::CR_RIGHT);
         if(it.DataBL() == inLabel)
-          mEdges.emplace_back(it.indexBR(), CrackCodeT::CR_UP);
+          mEdges.emplace_back(it.indexBR() + toIndex(1,0), CrackCodeT::CR_UP);
       }
     }
     return BoundaryC(std::move(mEdges),true);

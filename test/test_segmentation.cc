@@ -25,7 +25,13 @@ TEST_CASE("FloodRegion", "[FloodRegion]")
     FloodRegionC<PixelT> flood(img);
 
     BoundaryC boundary;
+    SPDLOG_INFO("Seed: {}", at);
     CHECK(flood.GrowRegion(at, FloorRegionThresholdC(15), boundary));
+    for(auto it : boundary.edges()) {
+      SPDLOG_INFO("Edge: {}", it);
+      CHECK(img[it.LPixel()] == 10);
+      CHECK(img[it.RPixel()] == 99);
+    }
     CHECK(boundary.BoundingBox() == rng);
     SPDLOG_INFO("Boundary: {}  ({})", boundary.size(), size_t((rng.range(0).size() + rng.range(1).size()) * 2));
     CHECK(boundary.size() == size_t((rng.range(0).size() + rng.range(1).size()) * 2));
@@ -40,9 +46,14 @@ TEST_CASE("FloodRegion", "[FloodRegion]")
     int area = flood.GrowRegion(at, FloorRegionThresholdC(15), mask);
     CHECK(area == rng.area());
     int count = 0;
-    for(auto x : mask) {
-      if(x != 0)
+    SPDLOG_INFO("Mask: {}", mask);
+    for(auto it = begin(mask,clip(img,mask.range())); it.valid(); ++it) {
+      if(it.template data<0>() == 1) {
+	CHECK(it.template data<1>() == 10);
 	count++;
+      } else {
+	CHECK(it.template data<1>() == 99);
+      }
     }
     CHECK(count == rng.area());
    // SPDLOG_INFO("Mask: {}", mask);

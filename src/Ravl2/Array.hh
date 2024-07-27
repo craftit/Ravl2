@@ -1091,7 +1091,7 @@ namespace Ravl2
   //! must exist for the lifetime of the sub array.
   template<typename ArrayT,typename DataT = typename ArrayT::value_type,unsigned N = ArrayT::dimensions>
   requires WindowedArray<ArrayT,DataT,N>
-  constexpr auto clip(ArrayT &array, IndexRange<N> &range)
+  constexpr auto clip(ArrayT &array, const IndexRange<N> &range)
   {
     assert(array.range().contains(range));
     return ArrayAccess<DataT,N>(range,array.origin_address(),array.strides());

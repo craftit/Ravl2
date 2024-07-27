@@ -159,9 +159,16 @@ TEST_CASE("Check things are working properly", "[Boundary]")
     // Setup a square in the middle of the image.
     auto rng = img.range().shrink(2);
     clip(img,rng).fill(10);
-    //SPDLOG_INFO("Image: {}", img);
+    SPDLOG_INFO("Image: {}", img);
 
     auto bounds = BoundaryC::traceBoundary(img,10);
+
+    for(auto it : bounds.edges()) {
+      //SPDLOG_INFO("Edge: {}  Left:{} ", it,it.LPixel());
+      CHECK(img[it.LPixel()] == 10);
+      CHECK(img[it.RPixel()] != 10);
+    }
+
     //SPDLOG_INFO("Bounds Lengths: {}  ({})", bounds.size(), size_t((rng.range(0).size() + rng.range(1).size()) * 2));
     //SPDLOG_INFO("Bounds: {} ", bounds);
 
