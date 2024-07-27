@@ -176,15 +176,21 @@ namespace Ravl2
     mEdges.reserve(size_t((emask.range(0).size() + emask.range(1).size()) * 2));
     for(Array2dSqr2IterC<DataT> it(emask); it.valid(); ++it) {
       if(it.DataBR() == inLabel) {
+	// TL       TR(0)
+	//          <-
+	// BL(0) \/ BR(1)
         if(it.DataTR() != inLabel)
-          mEdges.emplace_back(it.indexBR(), CrackCodeT::CR_LEFT);
+          mEdges.emplace_back(it.indexBR() - toIndex(1,0), CrackCodeT::CR_LEFT);
         if(it.DataBL() != inLabel)
-          mEdges.emplace_back(it.indexBR(), CrackCodeT::CR_DOWN);
+          mEdges.emplace_back(it.indexBR() - toIndex(0,0), CrackCodeT::CR_DOWN);
       } else {
-        if(it.DataTR() == inLabel)
-          mEdges.emplace_back(it.indexTR(), CrackCodeT::CR_RIGHT);
+	// TL       TR(1)
+	//           ->
+	// BL(1) /\ BR(0)
+	if(it.DataTR() == inLabel)
+          mEdges.emplace_back(it.indexBR() - toIndex(0,1), CrackCodeT::CR_RIGHT);
         if(it.DataBL() == inLabel)
-          mEdges.emplace_back(it.indexBL(), CrackCodeT::CR_UP);
+          mEdges.emplace_back(it.indexBR(), CrackCodeT::CR_UP);
       }
     }
     return BoundaryC(std::move(mEdges),true);

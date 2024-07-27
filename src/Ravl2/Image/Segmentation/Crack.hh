@@ -27,6 +27,7 @@ namespace Ravl2
   //!        |      (i,j)          |
   //!        V                     |
   //!       [i+1,j] ---------> [i+1, j+1]
+  //!
   //! </pre>
 
   using BVertexC = Index<2>;

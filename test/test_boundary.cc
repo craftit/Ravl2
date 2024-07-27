@@ -112,7 +112,7 @@ TEST_CASE("Check things are working properly", "[Boundary]")
   {
     IndexRange<2> rect(IndexRange<1>({1, 3}), IndexRange<1>({2, 4}));
     BoundaryC bnd = toBoundary(rect, BoundaryTypeT::OUTSIDE);
-    SPDLOG_INFO("Rect: {}  Bounds:{} ", rect, bnd);
+    //SPDLOG_INFO("Rect: {}  Bounds:{} ", rect, bnd);
 
     // Check the edges are closed and ordered
     {
@@ -159,11 +159,11 @@ TEST_CASE("Check things are working properly", "[Boundary]")
     // Setup a square in the middle of the image.
     auto rng = img.range().shrink(2);
     clip(img,rng).fill(10);
-    SPDLOG_INFO("Image: {}", img);
+    //SPDLOG_INFO("Image: {}", img);
 
     auto bounds = BoundaryC::traceBoundary(img,10);
-    SPDLOG_INFO("Bounds Lengths: {}  ({})", bounds.size(), size_t((rng.range(0).size() + rng.range(1).size()) * 2));
-    SPDLOG_INFO("Bounds: {} ", bounds);
+    //SPDLOG_INFO("Bounds Lengths: {}  ({})", bounds.size(), size_t((rng.range(0).size() + rng.range(1).size()) * 2));
+    //SPDLOG_INFO("Bounds: {} ", bounds);
 
     // Check the boundary is the same as the image.
     CHECK(bounds.size() == size_t((rng.range(0).size() + rng.range(1).size()) * 2));
