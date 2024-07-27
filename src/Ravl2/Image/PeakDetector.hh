@@ -13,12 +13,13 @@
 namespace Ravl2
 {
 
-  //: Test if position 'pos' is the largest value in a 3 by 3 area.
+  //! Test if position 'pos' is the largest value in a 3 by 3 area.
   // Is is the users responsibility to ensure that all pixels around 'pos'
   // are in the image.
   template<class DataT>
   inline 
-  bool PeakDetect3(const Array<DataT,2> &img,const Index<2> &pos) {
+  bool PeakDetect3(const Array<DataT,2> &img,const Index<2> &pos)
+  {
     assert(img.range().shrink(1).contains(pos));
     const DataT *rt = &(img[pos]);
     const DataT &cent = rt[0];
@@ -31,9 +32,14 @@ namespace Ravl2
     return (rt[-1] < cent && rt[0] < cent && rt[1] < cent);
   }
 
+  //! Test if position 'pos' is the largest value in a 5 by 5 area.
+  // Is is the users responsibility to ensure that all pixels around 'pos'
+  // are in the image.  The corners of the area are not mask to bring
+  // the area checked closer to a circle.
   template<class DataT>
   inline
-  bool PeakDetect5(const Array<DataT,2> &img,const Index<2> &pos) {
+  bool PeakDetect5(const Array<DataT,2> &img,const Index<2> &pos)
+  {
     assert(img.range().shrink(2).contains(pos));
     const DataT *rt = &(img[pos]);
     const DataT &cent = rt[0];
@@ -60,14 +66,15 @@ namespace Ravl2
       return false;
     return true;
   }
-  //: Test if position 'pos' is the largest value in a 5 by 5 area.
+
+  //! Test if position 'pos' is the largest value in a 7 by 7 area.
   // Is is the users responsibility to ensure that all pixels around 'pos'
   // are in the image.  The corners of the area are not mask to bring
   // the area checked closer to a circle.
-
   template<class DataT>
   inline
-  bool PeakDetect7(const Array<DataT,2> &img,const Index<2> &pos) {
+  bool PeakDetect7(const Array<DataT,2> &img,const Index<2> &pos)
+  {
     const int cc = pos[1];
     const int cr = pos[0];
 
@@ -104,15 +111,16 @@ namespace Ravl2
       return false;
     return true;
   }
-  //: Test if position 'pos' is the largest value in a 7 by 7 area.
-  // Is is the users responsibility to ensure that all pixels around 'pos'
-  // are in the image.  The corners of the area are not mask to bring
-  // the area checked closer to a circle.
 
 
+  //! Locate peak with sub-pixel precision.
+  // Fits a quadratic to the peak and works out the center. The position of the
+  // peak is returned. 'img' should contain values surrounding the center of
+  // the peak at 'pos'.
 
   template<class DataT>
-  Point2f LocatePeakSubPixel(const Array<DataT,2> &img,const Index<2> &pos,float pof) {
+  Point2f LocatePeakSubPixel(const Array<DataT,2> &img,const Index<2> &pos,float pof)
+  {
     // apply geometric fitting in image-proportional coordinates.
     assert(img.range().shrink(1).contains(pos));
     if(!img.Frame().Erode().Contains(pos))
@@ -159,16 +167,17 @@ namespace Ravl2
       corr[1]= float(-0.5);
     return indf + corr;
   }
+
   //: Locate peak with sub-pixel precision.
   // Fits a quadratic to the peak and works out the center. The position of the
   // peak is returned. 'img' should contain values surrounding the center of
   // the peak at 'pos'.
-
   template<class DataT,typename RealT = float>
-  Point2f LocatePeakSubPixel(const Array<DataT,2> &img,const Index<2> &pos) {
+  Point2f LocatePeakSubPixel(const Array<DataT,2> &img,const Index<2> &pos)
+  {
     // apply geometric fitting in image-proportional coordinates.
     assert(img.range().shrink(1).contains(pos));
-    Point2f fpos = {float(pos[0]),float(pos[1])};
+    auto fpos = toPoint<float>(pos);
     if(!img.range().shrink(1).contains(pos))
       return fpos;
     
@@ -199,7 +208,7 @@ namespace Ravl2
       return fpos;
     
     // calculate sub-pixel corrections to the corner position.
-    Vector2f corr = {(Pyy*Px - Pxy*Py)/det,(Pxx*Py - Pxy*Px)/det};
+    Vector<RealT,2> corr = {(Pyy*Px - Pxy*Py)/det,(Pxx*Py - Pxy*Px)/det};
     
     // pull the corrections inside the pixel.
     if (corr[0] > RealT(0.5))
@@ -212,9 +221,5 @@ namespace Ravl2
       corr[1]= RealT(-0.5);
     return fpos + corr;
   }
-  //: Locate peak with sub-pixel precision.
-  // Fits a quadratic to the peak and works out the center. The position of the
-  // peak is returned. 'img' should contain values surrounding the center of
-  // the peak at 'pos'.
 }
 

@@ -16,9 +16,10 @@
 #include <cstdint>
 #include "Ravl2/Math.hh"
 #include "Ravl2/Array.hh"
+#include "Ravl2/Geometry/Geometry.hh"
 
-namespace Ravl2 {
-
+namespace Ravl2
+{
   //! \brief Bilinear interpolation
   //! This function performs bi-linear interpolation on a 2D image, it does not perform any bounds checking.
   //! It also assumes the image is continuous in memory, with the first index being the row and the second index being the column.
@@ -26,10 +27,10 @@ namespace Ravl2 {
   //! \param pnt - The point in the i/p image coord system for which the interpolated value is required.
   //! \return The interpolated value.
 
-  template <typename PixelT,typename Point2dT>
-  [[nodiscard]] inline auto interpolate_bilinear(const Array<PixelT,2> &img,Point2dT pnt)
+  template<typename ArrayT,typename Point2T, typename PixelT = typename ArrayT::value_type,unsigned N=ArrayT::dimensions>
+  requires WindowedArray<ArrayT,PixelT,N>
+  [[nodiscard]] inline auto interpolateBilinear(const ArrayT &img, Point2T pnt)
   {
-    int_floor(0.1);
     const auto px = pnt[0];
     const auto py = pnt[1];
     const auto fx = std::floor(px); // Row
@@ -47,7 +48,6 @@ namespace Ravl2 {
 		  (pixel2[0] * (onemt*u)) +
 		  (pixel2[1] * (t*u));
   }
-
 
 }
 

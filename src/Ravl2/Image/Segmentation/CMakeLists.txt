@@ -6,7 +6,7 @@ add_library (Ravl2ImageSegmentation
         CrackCode.cc CrackCode.hh
         Boundary.cc Boundary.hh
         Segmentation.hh Segmentation.cc
-        FloodRegion.hh
+        FloodRegion.cc FloodRegion.hh
 )
 
 add_library(ravl2::Ravl2ImageSegmentation ALIAS Ravl2ImageSegmentation)

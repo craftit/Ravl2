@@ -26,11 +26,16 @@ add_library(Ravl2Core
 
 add_library(ravl2::Ravl2Core ALIAS Ravl2Core)
 
-target_link_libraries(Ravl2Core PRIVATE ravl2_options ravl2_warnings
-)
+target_link_libraries(Ravl2Core PRIVATE ravl2_options ravl2_warnings)
+
+# On apple we need to add lapack and blas
+if (APPLE)
+    target_link_libraries(Ravl2Core PUBLIC "-framework Accelerate")
+endif()
 
 target_link_libraries(Ravl2Core PUBLIC ${OpenCV_LIBS} fmt::fmt xtensor xtensor-blas spdlog::spdlog )
 # lapack blas
+
 target_include_directories(Ravl2Core ${WARNING_GUARD} PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src>
         $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/include>)
 

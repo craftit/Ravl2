@@ -248,7 +248,7 @@ namespace Ravl2
   template<typename RealT ,typename ...DataT,unsigned N = sizeof...(DataT)>
   constexpr inline Vector<RealT,N> toVector(DataT ...data)
   {
-    return Point<RealT,N>({RealT(data)...});
+    return Vector<RealT,N>({RealT(data)...});
   }
 
 }

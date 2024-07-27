@@ -3,7 +3,7 @@ include(GenerateExportHeader)
 
 add_library (Ravl2Image
         EdgeSobel.cc EdgeSobel.hh
-        BilinearInterpolation.hh
+        BilinearInterpolation.cc BilinearInterpolation.hh
         ImagePyramid.hh
         Array2Sqr2Iter.hh
         Array2Sqr2Iter2.hh
@@ -14,7 +14,7 @@ add_library (Ravl2Image
         Array2dPolygon2dIter.hh
         Corner.cc Corner.hh
         CornerDetectorSusan.cc CornerDetectorSusan.hh
-        Segmentation/FloodRegion.cc
+        PeakDetector.cc PeakDetector.hh
 )
 
 add_library(ravl2::Ravl2Image ALIAS Ravl2Image)
