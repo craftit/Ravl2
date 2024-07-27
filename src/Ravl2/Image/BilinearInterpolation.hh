@@ -6,12 +6,8 @@
 // file-header-ends-here
 #ifndef RAVLIMAGE_BILINEAR_HEADER
 #define RAVLIMAGE_BILINEAR_HEADER
-//! docentry="Ravl.API.Images.Scaling and Warping"
 //! author="Charles Galambos"
 //! date="24/01/2001"
-//! rcsid="$Id$"
-//! lib=RavlImage
-//! file="Ravl/Image/Base/BilinearInterpolation.hh"
 
 #include <cstdint>
 #include "Ravl2/Math.hh"

@@ -12,7 +12,6 @@
 namespace Ravl2
 {
 
-  //! userlevel=Normal
   //: General affine transformation.
   
   template<typename DataT, unsigned N>

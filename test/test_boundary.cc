@@ -114,16 +114,16 @@ TEST_CASE("Check things are working properly", "[Boundary]")
     BoundaryC bnd = toBoundary(rect, BoundaryTypeT::OUTSIDE);
     //cout << "Bounds:\n " << bnd << "\n";
     EXPECT_EQ(bnd.size(), 12);
-    ONDEBUG(std::cout << "Area=" << bnd.Area() << "\n");
-    EXPECT_EQ(bnd.Area(), rect.area());
+    ONDEBUG(std::cout << "Area=" << bnd.area() << "\n");
+    EXPECT_EQ(bnd.area(), rect.area());
     IndexRange<2> tmpbb = bnd.BoundingBox();
     EXPECT_EQ(tmpbb, rect);
     bnd.BReverse();
     EXPECT_EQ(tmpbb, bnd.BoundingBox());
-    EXPECT_EQ(bnd.Area(), rect.area());
+    EXPECT_EQ(bnd.area(), rect.area());
     bnd.Invert();
-    ONDEBUG(cout << "RArea=" << bnd.Area() << "\n");
-    CHECK(-bnd.Area() == rect.area());
+    ONDEBUG(cout << "RArea=" << bnd.area() << "\n");
+    CHECK(-bnd.area() == rect.area());
 
     IndexRange<2> bb = bnd.BoundingBox();
     ONDEBUG(std::cerr << "Bounding box=" << bb << " Inv=" << tmpbb << "\n");
@@ -184,9 +184,9 @@ TEST(Image, OrderEdges)
   if((lst.First().size() + lst.Last().size()) != 16) return __LINE__;
   
   BoundaryC bnds3;
-  bnds3.InsLast(CrackC(BVertexC(2,2),1));
-  bnds3.InsLast(CrackC(BVertexC(2,3),0));
-  bnds3.InsLast(CrackC(BVertexC(3,3),3));
+  bnds3.push_back(CrackC(BVertexC(2,2),1));
+  bnds3.push_back(CrackC(BVertexC(2,3),0));
+  bnds3.push_back(CrackC(BVertexC(3,3),3));
   lst = bnds3.OrderEdges();
   if(lst.size() != 1) return __LINE__;
   if(lst.First().size() != 3) return __LINE__;
@@ -194,10 +194,10 @@ TEST(Image, OrderEdges)
   // std::cerr <<"Lst.First().size()=" << lst.First() << "\n";
 
   BoundaryC bnds4;
-  bnds4.InsLast(CrackC(BVertexC(2,2),1));
-  //bnds4.InsLast(CrackC(BVertexC(2,3),0));
-  bnds4.InsLast(CrackC(BVertexC(3,3),3));
-  bnds4.InsLast(CrackC(BVertexC(3,2),2));
+  bnds4.push_back(CrackC(BVertexC(2,2),1));
+  //bnds4.push_back(CrackC(BVertexC(2,3),0));
+  bnds4.push_back(CrackC(BVertexC(3,3),3));
+  bnds4.push_back(CrackC(BVertexC(3,2),2));
   lst = bnds4.OrderEdges();  
   if(lst.size() != 1) return __LINE__;
   if(lst.First().size() != 3) return __LINE__;

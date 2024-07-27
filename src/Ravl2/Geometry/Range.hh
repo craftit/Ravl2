@@ -18,7 +18,6 @@ namespace Ravl2
   template<typename RealT,unsigned N>
   class Range;
 
-  //! userlevel=Normal
   //: 1D Range of real values.
 
   template<typename RealT>
@@ -93,7 +92,7 @@ namespace Ravl2
     //:-------------------
     //: Logical operations.
 
-    [[nodiscard]] inline bool IsEmpty() const
+    [[nodiscard]] inline bool empty() const
     { return min() > max(); }
     //: Returns true if the minimum limit is bigger than the maximum limit.
 
@@ -101,12 +100,12 @@ namespace Ravl2
     { return min() <= max(); }
     //: Returns true if the minimum limit is smaller than or equal to the maximum value
 
-    [[nodiscard]] inline bool Contains(RealT i) const
+    [[nodiscard]] inline bool contains(RealT i) const
     { return (min() <= i) && (i <= max()); }
     //: Returns true if this range contains the index 'i'.
 
-    [[nodiscard]] inline bool Contains(const Range & range) const
-    { return Contains(range.min()) && Contains(range.max()); }
+    [[nodiscard]] inline bool contains(const Range & range) const
+    { return contains(range.min()) && contains(range.max()); }
     //: Returns true if this range contains the subrange 'range'.
 
     inline bool operator==(const Range & range) const
@@ -250,7 +249,7 @@ namespace Ravl2
 
   template<typename RealT>
   inline bool Range<RealT,1>::IsOverlapping(const Range & r) const {
-    return (!IsEmpty() && !r.IsEmpty())
+    return (!empty() && !r.empty())
            && (min() <= r.max() && max() >= r.min());
   }
 
@@ -285,7 +284,6 @@ namespace Ravl2
 
 
   //-----------------------------------------------------------------------------
-  //! userlevel=Normal
   //: An index range of a 2D array
 
   template<typename RealT,unsigned N>
@@ -374,7 +372,7 @@ namespace Ravl2
     }
 
     //! Returns the area of the image rectangle expressed in number of indexs.
-    [[nodiscard]] inline RealT Area() const
+    [[nodiscard]] inline RealT area() const
     {
       RealT area = 1;
       for (int i = 0; i < N; ++i) {
@@ -389,7 +387,7 @@ namespace Ravl2
     {
         Range ret;
         for (int i = 0; i < N; ++i) {
-          ret[i] = ranges[i].Expand(n);
+          ret[i] = ranges[i].expand(n);
         }
         return ret;
     }
@@ -400,7 +398,7 @@ namespace Ravl2
     {
       Range ret;
       for (int i = 0; i < N; ++i) {
-        ret[i] = ranges[i].Shrink(n);
+        ret[i] = ranges[i].shrink(n);
       }
       return ret;
     }
@@ -422,10 +420,10 @@ namespace Ravl2
     }
     //: The value 'r' is clipped to be within this range.
 
-    [[nodiscard]] inline bool Contains(const Range<RealT,N> & oth) const
+    [[nodiscard]] inline bool contains(const Range<RealT,N> & oth) const
     {
       for (int i = 0; i < N; ++i) {
-        if (!ranges[i].Contains(oth[i])) {
+        if (!ranges[i].contains(oth[i])) {
           return false;
         }
       }
@@ -434,10 +432,10 @@ namespace Ravl2
 
     //: Returns true if this range contains the subrange 'oth'.
 
-    [[nodiscard]] inline bool Contains(const Vector<RealT,N> & oth) const
+    [[nodiscard]] inline bool contains(const Vector<RealT,N> & oth) const
     {
       for (int i = 0; i < N; ++i) {
-        if (!ranges[i].Contains(oth[i])) {
+        if (!ranges[i].contains(oth[i])) {
           return false;
         }
       }
@@ -490,7 +488,7 @@ namespace Ravl2
     inline void Involve(const Range<RealT,N> &subrectangle)
     {
       for(unsigned i = 0; i < N; i++)
-        ranges[i].Involve(subrectangle[i]);
+        ranges[i].involve(subrectangle[i]);
     }
 
     //! Returns true if this rectangle contains at least one index.
@@ -531,7 +529,7 @@ namespace Ravl2
     [[nodiscard]] inline bool IsOverlapping(const Range<RealT,N> & r) const
     {
       for (unsigned i = 0; i < N; i++) {
-        if (!ranges[i].IsOverlapping(r.range(i))) {
+        if (!ranges[i].overlaps(r.range(i))) {
           return false;
         }
       }
@@ -613,7 +611,7 @@ namespace Ravl2
   inline
   void Range<RealT,N>::Involve(const Vector<RealT,N> & index) {
     for(unsigned i = 0; i < N; i++)
-      ranges[i].Involve(index[i]);
+      ranges[i].involve(index[i]);
   }
 
   template<typename RealT,unsigned N>

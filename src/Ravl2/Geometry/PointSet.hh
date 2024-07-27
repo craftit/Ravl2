@@ -14,9 +14,6 @@
 namespace Ravl2
 {
 
-  class Affine2dC;
-  class Projection2dC;
-
   //! A set of points in space
 
   template<typename RealT,unsigned N>
@@ -99,7 +96,7 @@ namespace Ravl2
     // For each polygon vertex
     auto res = oWeights.begin();
     for (auto it : (*this)) {
-      RealT sqDist = Vector2dC(point - it).SumOfSqr();
+      RealT sqDist = sumOfSqr(point - it)();
       if (sqDist != 0) {
         RealT fWeight = (PCot(point,it.Data(),it.PrevCrcData()) +
                          PCot(point,it.Data(),it.NextCrcData())) / sqDist;
@@ -160,7 +157,7 @@ namespace Ravl2
     return *this;
   }
 
-
+  extern template class PointSet<float,2>;
 
 
 }

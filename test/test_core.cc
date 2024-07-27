@@ -219,7 +219,7 @@ TEST_CASE("IndexRangeSet", "[IndexRangeSet]")
 	IndexRange<1> rng(start,finish);
 	for(auto ind : rng)
 	  done[size_t(ind)] = true;
-	//RavlDebug("Adding %d ",ind.V());
+	//SPDLOG_TRACE("Adding {} ",ind);
 
 	// Add to set.
 	rngSet = rngSet.add(rng);

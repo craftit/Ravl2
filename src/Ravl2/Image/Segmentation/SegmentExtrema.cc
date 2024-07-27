@@ -4,10 +4,7 @@
 // General Public License (LGPL). See the lgpl.licence file for details or
 // see http://www.gnu.org/copyleft/lesser.html
 // file-header-ends-here
-//! rcsid="$Id$"
-//! lib=RavlImageProc
 //! author="Charles Galambos, based on code by Jiri Matas."
-//! file="Ravl/Image/Processing/Segmentation/SegmentExtrema.cc"
 
 #include "Ravl2/Image/Segmentation/SegmentExtrema.hh"
 #include "Ravl2/Image/DrawFrame.hh"
@@ -47,15 +44,15 @@ namespace Ravl2
   
   //: Setup structures for a given image size.
   
-  void SegmentExtremaBaseC::SetupImage(const IndexRange2dC &rect) {
-    IndexRange2dC imgRect = rect.Expand(1);
+  void SegmentExtremaBaseC::SetupImage(const IndexRange<2> &rect) {
+    IndexRange<2> imgRect = rect.expand(1);
     labelAlloc = 0; // Reset region allocation counter.
-    if(imgRect == pixs.Frame())
+    if(imgRect == pixs.range())
       return ; // Done already.
     
     // Allocate ExtremaChainPixelC image.
-    pixs = ImageC<ExtremaChainPixelC>(imgRect);
-    origin = &(pixs[rect.Origin()]);
+    pixs = Array<ExtremaChainPixelC,2>(imgRect);
+    origin = &(pixs[rect.min()]);
     stride = imgRect.Cols();
     
     // Put a frame of zero labels around the edge.
@@ -65,11 +62,11 @@ namespace Ravl2
     DrawFrame(pixs,zeroPix,imgRect);
     
     // Create region map.
-    ReallocRegionMap(rect.Area()/2);
+    ReallocRegionMap(rect.area()/2);
     
     // ...
     if(maxSize == 0)
-      maxSize = rect.Area();
+      maxSize = rect.area();
   }
   
   //: Find matching label.
@@ -132,17 +129,17 @@ namespace Ravl2
     }
 #if 0
     // Check the histogram is clear.
-    for(int i = level;i <= valueRange.Max().V();i++) {
+    for(int i = level;i <= valueRange.max();i++) {
       if(region.hist[i] != 0) 
-        cerr << "Non zero at " << i << " Max=" << valueRange.Max().V() <<  "\n";
+        cerr << "Non zero at " << i << " Max=" << valueRange.max() <<  "\n";
       RavlAlwaysAssert(region.hist[i] == 0);
     }
 #endif
 
     int offset = pix - origin;    
-    region.minat = Index2dC((offset / stride)+1,(offset % stride)+1) + pixs.Frame().Origin();
+    region.minat = Index<2>((offset / stride)+1,(offset % stride)+1) + pixs.range().min();
     region.minValue = level;
-    region.maxValue = valueRange.Max().V();
+    region.maxValue = valueRange.max();
     region.hist[level] = 1;
     region.total = 1;
     region.thresh = 0;
@@ -200,17 +197,17 @@ namespace Ravl2
   
   void SegmentExtremaBaseC::GenerateRegions() {
     ExtremaChainPixelC *at;
-    int n, clevel = levels.Range().Min().V();
+    int n, clevel = levels.Range().min();
     ExtremaRegionC *labels[6];
     
     // For each grey level value in image.
     for(BufferAccessIterC<ExtremaChainPixelC *> lit(levels);lit;lit++,clevel++) {
-      //ONDEBUG(cerr << "Level=" << clevel << " \n");
+      //ONDEBUG(std::cerr << "Level=" << clevel << " \n");
       
       // Go through linked list of pixels at the current brightness level.
       for(at = *lit;at != 0;at = at->next) {
 	// Got a standard pixel.
-	//ONDEBUG(cerr << "Pixel=" << (void *) at << " Region=" << at->region << "\n");
+	//ONDEBUG(std::cerr << "Pixel=" << (void *) at << " Region=" << at->region << "\n");
 
         // Look at the region membership of the pixels surrounding the new
         // one.  n is the number of different regions found.
@@ -238,10 +235,10 @@ namespace Ravl2
   
   void SegmentExtremaBaseC::Thresholds() {
     //cerr << "SegmentExtremaBaseC::Thresholds() ********************************************** \n";
-    SArray1dC<ExtremaThresholdC> thresh(limitMaxValue + 2);
+    std::vector<ExtremaThresholdC> thresh(limitMaxValue + 2);
     int nthresh;
-    Array1dC<int> chist(0,limitMaxValue + 2);
-    chist.Fill(0);
+    Array<int,1> chist(0,limitMaxValue + 2);
+    chist.fill(0);
     int half_perimeter_i;
     
     for(SArray1dIterC<ExtremaRegionC> it(regionMap,labelAlloc);it;it++) {
@@ -255,15 +252,15 @@ namespace Ravl2
       int sum = 0;
       int i;
       
-      ONDEBUG(cerr << "Hist= " << it->minValue << " :");
+      ONDEBUG(std::cerr << "Hist= " << it->minValue << " :");
       for(i = minValue;i <= maxValue;i++) {
 	sum += it->hist[i];
 	chist[i] = sum;
-	ONDEBUG(cerr << " " << it->hist[i]);
+	ONDEBUG(std::cerr << " " << it->hist[i]);
       }
       chist[maxValue] = sum;
       
-      ONDEBUG(cerr << "  Closed=" << (it->closed != 0)<< "\n");
+      ONDEBUG(std::cerr << "  Closed=" << (it->closed != 0)<< "\n");
       int up;
       // look for threshold that guarantee area bigger than minSize.
       for(i = minValue; i <= maxValue;i++)
@@ -271,7 +268,7 @@ namespace Ravl2
       
       // Find thresholds.
       nthresh = 0;
-      ONDEBUG(cerr << "Min=" << minValue << " Max=" << maxValue << " Init=" << i << " MaxSize=" << maxSize << "\n");
+      ONDEBUG(std::cerr << "Min=" << minValue << " Max=" << maxValue << " Init=" << i << " MaxSize=" << maxSize << "\n");
       int lastThresh = 0;
       for(up=i+1; up < maxValue && i < maxValue; i++) {
 	int area_i = chist[i];
@@ -280,7 +277,7 @@ namespace Ravl2
 	  break; // Quit if area is too large.
 	}
         
-	half_perimeter_i = Round(2.1 * Sqrt((double)area_i)) + area_i;
+	half_perimeter_i = Round(2.1 * std::sqrt((double)area_i)) + area_i;
         if(half_perimeter_i == lastThresh)
           continue; // If the thresholds are the same, the next margin will only be shorter.
         lastThresh = half_perimeter_i;
@@ -288,7 +285,7 @@ namespace Ravl2
 	  up++;
 	
 	int margin = up - i;
-	//ONDEBUG(cerr << " Margin=" << margin << "\n");
+	//ONDEBUG(std::cerr << " Margin=" << margin << "\n");
 	if(margin > minMargin) { // && margin > prevMargin
 	  ExtremaThresholdC &et = thresh[nthresh++];
 	  et.pos = i;
@@ -305,7 +302,7 @@ namespace Ravl2
 	et.margin = margin;
 	et.thresh = maxValue-1;	
       }
-      //ONDEBUG(cerr << "NThresh=" <<  nthresh << "\n");
+      //ONDEBUG(std::cerr << "NThresh=" <<  nthresh << "\n");
       ExtremaThresholdC *newthresh = new ExtremaThresholdC[nthresh];
       int nt = 0;
       

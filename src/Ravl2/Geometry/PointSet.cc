@@ -7,8 +7,8 @@
 
 #include "Ravl2/Geometry/PointSet.hh"
 
-namespace RavlN
+namespace Ravl2
 {
-
+  template class PointSet<float,2>;
 
 }

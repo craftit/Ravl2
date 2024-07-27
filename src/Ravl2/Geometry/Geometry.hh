@@ -165,7 +165,10 @@ namespace Ravl2
       return std::sqrt(RealT(sum));
     }
 
-  //! City Block Distance
+    template<typename DataTypeT>
+    requires xt::has_shape<DataTypeT>
+    constexpr auto sumOfSqr(const DataTypeT &a)
+    { return xt::sum(a * a); }
 
     template<typename A, typename B>
     constexpr auto cityBlockDistance(xt::xexpression<A> a,xt::xexpression<B> b)
@@ -187,8 +190,8 @@ namespace Ravl2
     //! of the coordinate system. In fact the points 'aa' and 'bb'
     //! represents two vectors and the computed area is equal to
     //! the size of the cross product of these two vectors.
-    // Point2dC aa(second - *this);   // O'Rourke 1.2
-    // Point2dC bb(third  - *this);
+    // Point<RealT,2> aa(second - *this);   // O'Rourke 1.2
+    // Point<RealT,2> bb(third  - *this);
     // return aa[0]*bb[1] - aa[1]*bb[0];
     template<typename RealT>
     constexpr RealT triangleArea2(const Point<RealT,2>& first,const Point<RealT,2>& second, const Point<RealT,2>& third) {

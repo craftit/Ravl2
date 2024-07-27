@@ -7,11 +7,7 @@
 #ifndef RAVL_LINE2DITER_HEADER
 #define RAVL_LINE2DITER_HEADER    1
 ////////////////////////////////////////////////////////////////////
-//! rcsid="$Id$"
-//! lib=RavlMath
-//! docentry="Ravl.API.Math.Geometry.2D"
 //! author="Charles Galambos"
-//! file="Ravl/Math/Geometry/Euclidean/2D/Line2dIter.hh"
 
 #include "Ravl2/Geometry/Geometry.hh"
 #include "Ravl2/Index.hh"
@@ -20,7 +16,6 @@
 namespace Ravl2
 {
   
-  //! userlevel=Normal
   //: Iterate through integer grid points along a 2d line.
   // Uses a version of the midpoint algorithm to iterate all
   // 8-connected grid points on a line between two positions.

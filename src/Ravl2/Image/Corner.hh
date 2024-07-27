@@ -13,7 +13,6 @@
 
 namespace Ravl2 {
 
-  //! userlevel=Normal
   //: Corner descriptor.
   
   class CornerC 

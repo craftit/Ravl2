@@ -53,7 +53,7 @@ namespace Ravl2 {
     xe = end[0];
     ye = end[1];
     isElm = true;
-    ONDEBUG(cerr << "dx=" << dx <<" dy=" << dy << " incrE=" << incrE << " incrNE=" << incrNE << "\n");
+    ONDEBUG(std::cerr << "dx=" << dx <<" dy=" << dy << " incrE=" << incrE << " incrNE=" << incrNE << "\n");
   }
 
 

@@ -131,7 +131,7 @@ namespace Ravl2
     // by the direction of the normal.
     
     inline RealT Distance(const Point<RealT,2> & point) const
-    { return Abs(SignedDistance(point)); }
+    { return std::abs(SignedDistance(point)); }
     //: Returns the distance of the 'point' from the line.
     
     inline Point<RealT,2> Projection(const Point<RealT,2> & point) const

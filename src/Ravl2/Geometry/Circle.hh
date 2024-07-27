@@ -99,7 +99,7 @@ namespace Ravl2
 
     //! Distance to closest point on perimeter.
     inline RealT Distance(const Point<RealT,2> &p) const
-    { return Abs(centre.EuclidDistance(p) - radius); }
+    { return std::abs(centre.EuclidDistance(p) - radius); }
 
   private:
     Point<RealT,2> centre {};
