@@ -83,6 +83,7 @@ s/Index2dC/Index<2>/g
 s/IndexRange2dC/IndexRange<2>/g
 s/IndexRangeC/IndexRange<1>/g
 s/\.ClipBy(/\.clipBy(/g
+s/Round(/int_round(/g
 
 # Update Arrays
 s/SArray1dC<\([^>]*\)>/std::vector<\1>/g

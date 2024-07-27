@@ -932,6 +932,7 @@ namespace Ravl2
         m_data = vec.data();
       }
 
+      constexpr ArrayView() = default;
   protected:
       //! Create an array of the given size.
       explicit constexpr ArrayView(const IndexRange<1> &range)
@@ -1006,7 +1007,7 @@ namespace Ravl2
       //! Fill array with value.
       constexpr void fill(const DataT &val)
       {
-        for(auto &at : begin()) {
+        for(auto &at : *this) {
           // cppcheck-suppress useStlAlgorithm
           at = val;
         }
@@ -1060,6 +1061,9 @@ namespace Ravl2
     {
       this->m_data = &m_buffer->data()[-range.min()];
     }
+
+    //! Construct an empty array
+    explicit constexpr Array() = default;
 
     //! Access buffer.
     [[nodiscard]] std::shared_ptr<Buffer<DataT> > &buffer()
