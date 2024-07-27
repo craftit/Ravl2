@@ -26,37 +26,50 @@ namespace Ravl2
     auto origin = rect.min();
     auto endP = rect.max();
     BVertexC   oVertex(origin);      // to help to GNU C++ 2.6.0
-    CrackCodeC cr(CrackCodeT::CR_RIGHT);
+    CrackCodeC cr(CrackCodeT::CR_DOWN);
     CrackC      edge(oVertex, cr);
     std::vector<CrackC> edges;
 
-    for(int cUp=origin[1]; cUp <= endP[1]; cUp++) {
-      edges.push_back(edge);
-      edge.Right();
-    }
-    edge.TurnClock();
-    for(int rRight=origin[0]; rRight <= endP[0]; rRight++) {
+    for(int i=origin[0]; i <= endP[0]; i++) {
       edges.push_back(edge);
       edge.Down();
     }
-    edge.TurnClock();
-    for(int cDown=endP[1]; cDown >= origin[1]; cDown--) {
+    edge.TurnCClock();
+    for(int i=origin[1]; i <= endP[1]; i++) {
       edges.push_back(edge);
-      edge.Left();
+      edge.Right();
     }
-    edge.TurnClock();
-    for(int rLeft=endP[0]; rLeft >= origin[0]; rLeft--) {
+    edge.TurnCClock();
+    for(int i=endP[1]; i >= origin[1]; i--) {
       edges.push_back(edge);
       edge.Up();
+    }
+    edge.TurnCClock();
+    for(int i=endP[0]; i >= origin[0]; i--) {
+      edges.push_back(edge);
+      edge.Left();
     }
     return BoundaryC(std::move(edges), type == BoundaryTypeT::OUTSIDE);
   }
 
   int BoundaryC::area() const
   {
-    int   col  = 0; // relative column of the boundary pixel
     int area = 0; // region area
 
+#if 1
+    for(auto edge : mEdges ) {
+      // 5 or 2
+      switch(edge.crackCode()) {
+	case CrackCodeT::CR_DOWN  : area -= edge.at()[1]; break;
+	case CrackCodeT::CR_UP    : area += edge.at()[1]; break;
+	case CrackCodeT::CR_RIGHT :
+	case CrackCodeT::CR_LEFT  : break;
+	case CrackCodeT::CR_NODIR : break;
+      }
+    }
+#else
+    int   col  = 0; // relative column of the boundary pixel
+    // This only works for ordered edges.
     for(auto edge : mEdges ) {
       switch (edge.crackCode())  {
 	case CrackCodeT::CR_DOWN  : area -= col;  break;
@@ -68,9 +81,11 @@ namespace Ravl2
 	  RavlAssertMsg(0,"BoundaryC::area(), Illegal direction code. ");
 	  break;
       };
-      //ONDEBUG(std::cerr << "BoundaryC::area() Area=" << area << " col=" << col << "\n");
+      ONDEBUG(std::cerr << "BoundaryC::area() Area=" << area << " col=" << col << "\n");
+      SPDLOG_INFO("BoundaryC::area() Code {}  Area={} col={}", edge.crackCode(), area, col);
     }
-    if(orientation)
+#endif
+    if(!orientation)
       return -area;
     return area;
   }
@@ -99,7 +114,7 @@ namespace Ravl2
     if (empty())
       return bb;
     bb = IndexRange<2>::mostEmpty();
-    if(!orientation) {
+    if(orientation) {
       ONDEBUG(std::cerr << "BoundaryC::BoundingBox(), Object is on left. \n");
       for(auto edge : mEdges)
       {
@@ -489,6 +504,17 @@ namespace Ravl2
     //  cout << "Line2Boundary - size:" << boundary.size() << '\n';
     return BoundaryC(std::move(boundary));
   }
+
+  //! Write out the boundary to a stream.
+  std::ostream & operator<<(std::ostream & os, const BoundaryC & bnd)
+  {
+    os << "BoundaryC: ";
+    for(auto edge : bnd.edges()) {
+      os << edge << ",";
+    }
+    return os;
+  }
+
 
 }
 

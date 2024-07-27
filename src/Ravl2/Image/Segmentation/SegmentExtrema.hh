@@ -83,7 +83,7 @@ namespace Ravl2 {
     //! \param nMinSize - Minimum region size to detect.
     //! \param nMinMargin - Threshold for region stability.
     //! \param nlimitMaxValue - Maximum pixel value.
-    SegmentExtremaBaseC(size_t nMinSize,RealT nMinMargin,uint32_t nlimitMaxValue = 255)
+    SegmentExtremaBaseC(uint32_t nMinSize,RealT nMinMargin,uint32_t nlimitMaxValue = 255)
       : stride(0),
         labelAlloc(1),
         origin(nullptr),
@@ -244,7 +244,7 @@ namespace Ravl2 {
     : public SegmentExtremaBaseC
   {
   public:
-    SegmentExtremaC(int minRegionSize,RealT theMinMargin = 10,int nlimitMaxPixelValue = 255)
+    SegmentExtremaC(uint32_t minRegionSize,RealT theMinMargin = 10,uint32_t nlimitMaxPixelValue = 255)
       : SegmentExtremaBaseC(minRegionSize,theMinMargin,nlimitMaxPixelValue)
     {}
     //: Constructor.

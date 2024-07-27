@@ -10,6 +10,9 @@
 #pragma once
 
 #include <array>
+#include <fmt/format.h>
+#include <fmt/ostream.h>
+#include <spdlog/spdlog.h>
 #include "Ravl2/Index.hh"
 
 namespace Ravl2
@@ -36,6 +39,19 @@ namespace Ravl2
     CR_TO_RIGHT  = 3,
     CR_RNODIR    = 4
   };
+
+  //! Convert to a string.
+  [[nodiscard]] std::string_view toString(CrackCodeT cc);
+
+  //! Convert to a string.
+  [[nodiscard]] std::string_view toString(RelativeCrackCodeT cc);
+
+  //! Parse from a string.
+  [[nodiscard]] bool fromString(std::string_view str, CrackCodeT &cc);
+
+  //! Parse from a string.
+  [[nodiscard]] bool fromString(std::string_view str, RelativeCrackCodeT &cc);
+
 
   constexpr Index<2> CrackStep(const Index<2> &pixel,CrackCodeT crackCode);
   constexpr Index<2> CrackDirection(CrackCodeT crackCode);
@@ -64,8 +80,11 @@ namespace Ravl2
     {}
 
     //! Returns the crack code.
-    [[nodiscard]] inline constexpr CrackCodeT
-    Code() const
+    [[nodiscard]] inline constexpr CrackCodeT Code() const
+    { return crackCode; }
+
+    //! Returns the crack code.
+    [[nodiscard]] inline constexpr CrackCodeT &code()
     { return crackCode; }
 
     //! Get relative crack code of direction 'cc' relative to this one.
@@ -154,16 +173,25 @@ namespace Ravl2
   };
 
   //! Write to a stream.
+  inline std::ostream &operator<<(std::ostream &strm,const CrackCodeT &cc) {
+    strm << toString(cc);
+    return strm;
+  }
+
+  //! Write to a stream.
   inline std::ostream &operator<<(std::ostream &strm,const CrackCodeC &cc) {
-    strm << int(cc.Code());
+    strm << toString(cc.Code());
     return strm;
   }
 
   //! Read from a stream.
   inline std::istream &operator>>(std::istream &strm,CrackCodeC &cc) {
-    int v;
+    std::string v;
     strm >> v;
-    cc = CrackCodeT(v);
+    if(!fromString(v,cc.code())) {
+      SPDLOG_ERROR("Unknown crack code: {}",v);
+      strm.setstate(std::ios::failbit);
+    }
     return strm;
   }
 
@@ -178,3 +206,9 @@ namespace Ravl2
   { return  CrackCodeC::offset[unsigned (crackCode)]; }
 
 }
+
+namespace fmt {
+  template<> struct formatter<Ravl2::CrackCodeT> : ostream_formatter {};
+  template<> struct formatter<Ravl2::CrackCodeC> : ostream_formatter {};
+}
+

@@ -254,12 +254,15 @@ namespace Ravl2
   };
   
   inline std::ostream & operator<<(std::ostream & s, const CrackC & crack)
-  { return s << crack.at() << ' ' << crack.code(); }
+  { return s << crack.at() << ' ' << toString(crack.code().Code()); }
   //: Writes the elementary crack 'e' into the output stream 's'.
   
   std::istream & operator>>(std::istream & s,CrackC & crack);
-//  { return s >> crack.at() >> crack.code(); }
-//  //: Writes the elementary crack 'e' into the output stream 's'.
-  
 
 }
+
+namespace fmt
+{
+  template<> struct formatter<Ravl2::CrackC> : ostream_formatter {};
+}
+

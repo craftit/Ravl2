@@ -4,14 +4,15 @@
 // General Public License (LGPL). See the lgpl.licence file for details or
 // see http://www.gnu.org/copyleft/lesser.html
 // file-header-ends-here
-#ifndef RAVLIMAGE_FLOODREGION_HEADER
-#define RAVLIMAGE_FLOODREGION_HEADER 1
+#pragma once
 //! author="Charles Galambos, based on code by Jiri Matas."
 
 #include <queue>
+#include "Ravl2/Assert.hh"
 #include "Ravl2/Array.hh"
 #include "Ravl2/Image/DrawFrame.hh"
 #include "Ravl2/Image/Segmentation/Boundary.hh"
+#include "Ravl2/ArrayIterZip.hh"
 
 namespace Ravl2
 {
@@ -83,14 +84,16 @@ namespace Ravl2
     //! Default constructor.
     FloodRegionC() = default;
 
+    //! Constructor with image to segment.
     explicit FloodRegionC(const Array<PixelT,2> &nimg)
     { SetupImage(nimg); }
-    //: Constructor with image to segment.
-    
+
+    //! Access the image we're currently segmenting.
     const Array<PixelT,2> &Image() const
     { return img; }
-    //: Access the image we're currently segmenting.
-    
+
+  protected:
+    //! Setup new image for processing.
     bool SetupImage(const Array<PixelT,2> &nimg) {
       img = nimg;
       IndexRange<2> rng = img.range().expand(1);
@@ -101,12 +104,12 @@ namespace Ravl2
       }
       return true;
     }
-    //: Setup new image for processing.
-    
+
+  public:
+    //! Grow a region from 'seed' including all connected pixel less than or equal to threshold, generate a mask as the result.
+    //! Returns true if the boundary has a non zero area.
     bool GrowRegion(const Index<2> &seed,const InclusionTestT &inclusionCriteria,BoundaryC &boundary,int maxSize = 0);
-    //: Grow a region from 'seed' including all connected pixel less than or equal to threshold, generate a mask as the result.
-    // Returns true if the boundry has a non zero area.
-    
+
     template<typename MaskT>
     int GrowRegion(const Index<2> &seed,const InclusionTestT &inclusionCriteria,Array<MaskT,2> &mask,int padding = 0,int maxSize = 0);
     //: Grow a region from 'seed' including all connected pixel less than or equal to threshold, generate a mask as the result.
@@ -150,7 +153,7 @@ namespace Ravl2
     const auto &imgCols = img.range(1);
     const auto &imgRows = img.range(0);
     
-    if(img.range().Range1().contains(seed[0]+1))
+    if(img.range().range(0).contains(seed[0]+1))
       pixQueue.push(FloodRegionLineC(seed[0]+1,seed[1],seed[1],1));
     pixQueue.push(FloodRegionLineC(seed[0],seed[1],seed[1],-1));
     
@@ -182,7 +185,7 @@ namespace Ravl2
       // segment of scan line lsr - line.DY() for lsc <= c <= line.End() was previously filled,
       // now explore adjacent pixels in scan line lsr
       int c;
-      for (c = lsc; c >= imgCols.Min() && (mrow[c] != id) && inclusionTest(irow[c]); c--) 
+      for (c = lsc; c >= imgCols.min() && (mrow[c] != id) && inclusionTest(irow[c]); c--)
         mrow[c] = id;
       
       if (c >= lsc)
@@ -199,7 +202,7 @@ namespace Ravl2
       c = lsc+1;
       
       do {
-        for (; c <= imgCols.Max() && (mrow[c] != id) && inclusionTest(irow[c]); c++)
+        for (; c <= imgCols.max() && (mrow[c] != id) && inclusionTest(irow[c]); c++)
           mrow[c] = id;
         rng.range(1).involve(c);
         
@@ -254,7 +257,7 @@ namespace Ravl2
       DrawFrame(mask,MaskT(0),padding,mask.range());
     int size = 0;
 
-    for(auto it = begin(clip(mask,rng),clip(marki,rng));it;it++) {
+    for(auto it = begin(clip(mask,rng),clip(marki,rng));it.valid();it++) {
       if(it.template data<1>() == id) {
         size++;
         it.template data<0>() = 1;
@@ -268,4 +271,3 @@ namespace Ravl2
     
 }
 
-#endif

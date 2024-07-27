@@ -39,22 +39,28 @@ namespace Ravl2
     //! Create the boundary from the list of edges with an appropriate orientation.
     // The 'edgeList' will be a part of boundary.  If orient is true, the object
     // is on the left of the boundary.
-    explicit BoundaryC(const std::vector<CrackC> & edgeList, bool orient = true)
+    explicit BoundaryC(const std::vector<CrackC> & edgeList, bool orient = false)
      : orientation(orient), mEdges(edgeList)
     {}
 
     //! Create the boundary from the list of edges with an appropriate orientation.
     // The 'edgeList' will be a part of boundary.  If orient is true, the object
     // is on the left of the boundary.
-    explicit BoundaryC(std::vector<CrackC> && edgeList, bool orient = true)
+    explicit BoundaryC(std::vector<CrackC> && edgeList, bool orient = false)
       : orientation(orient), mEdges(std::move(edgeList))
     {}
 
     //! Empty boundary with orientation 'orient'.
     //! If orient is true, the object is on the left of the boundary.
-    explicit BoundaryC(bool orient = true)
+    explicit BoundaryC(bool orient)
       : orientation(orient)
     {}
+
+    BoundaryC() = default;
+    BoundaryC(const BoundaryC &) = default;
+    BoundaryC(BoundaryC &&) = default;
+    BoundaryC & operator=(const BoundaryC &) = default;
+    BoundaryC & operator=(BoundaryC &&) = default;
 
     //! Creates an unsorted list of boundary elements (CrackC) from the edges between 'inLabel' pixels and other values
 
@@ -122,6 +128,11 @@ namespace Ravl2
     //! Check if the boundary is empty.
     [[nodiscard]] bool empty() const
     { return mEdges.empty(); }
+
+    //! Get edges
+    [[nodiscard]] const std::vector<CrackC> & edges() const
+    { return mEdges; }
+
   private:
     //! Orientation of the boundary. true means that
     //! an object is on the left side of edges.
@@ -143,6 +154,9 @@ namespace Ravl2
     // the list will be empty.
   };
 
+  //! Write out the boundary to a stream.
+  std::ostream & operator<<(std::ostream & os, const BoundaryC & bnd);
+
   //: Creates a boundary which connects both boundary vertexes.
   BoundaryC Line2Boundary(const BVertexC & startVertex, const BVertexC & endVertex);
 
@@ -154,29 +168,34 @@ namespace Ravl2
   BoundaryC BoundaryC::traceBoundary(const ArrayT &emask, DataT inLabel)
   {
     BoundaryC ret;
-    if(emask.range().Rows() < 3 || emask.range().Cols() < 3) {
-      std::cerr << "RegionMaskBodyC::Boundary(), Mask too small to compute boundary. \n";
-      return ret;
+    if(emask.range(0).size() < 3 || emask.range(1).size() < 3) {
+      SPDLOG_ERROR("RegionMaskBodyC::Boundary(), Mask too small to compute boundary. ");
+      return {};
     }
     std::vector<CrackC> mEdges;
-    mEdges.reserve((emask.range(0).size() + emask.range(1).size()) * 2);
-    for(Array2dSqr2IterC<DataT> it(emask); it; ++it) {
+    mEdges.reserve(size_t((emask.range(0).size() + emask.range(1).size()) * 2));
+    for(Array2dSqr2IterC<DataT> it(emask); it.valid(); ++it) {
       if(it.DataBR() == inLabel) {
         if(it.DataTR() != inLabel)
-          mEdges.emplace_back(it.Index(), CrackCodeT::CR_LEFT);
+          mEdges.emplace_back(it.indexBR(), CrackCodeT::CR_LEFT);
         if(it.DataBL() != inLabel)
-          mEdges.emplace_back(it.Index(), CrackCodeT::CR_DOWN);
+          mEdges.emplace_back(it.indexBR(), CrackCodeT::CR_DOWN);
       } else {
         if(it.DataTR() == inLabel)
-          mEdges.emplace_back(it.Index() + Index<2>({-1, 0}), CrackCodeT::CR_RIGHT);
+          mEdges.emplace_back(it.indexTR(), CrackCodeT::CR_RIGHT);
         if(it.DataBL() == inLabel)
-          mEdges.emplace_back(it.Index() + Index<2>({0, -1}), CrackCodeT::CR_UP);
+          mEdges.emplace_back(it.indexBL(), CrackCodeT::CR_UP);
       }
     }
-    ret = BoundaryC(std::move(mEdges));
-    return ret;
+    return BoundaryC(std::move(mEdges),true);
   }
 
 }
+
+namespace fmt
+{
+  template<> struct formatter<Ravl2::BoundaryC> : ostream_formatter {};
+}
+
 
 

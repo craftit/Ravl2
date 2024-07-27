@@ -125,6 +125,21 @@ namespace Ravl2
     { return up[-1]; }
     //: Access upper left data element
 
+    //! Get the index of the DataBR() element.
+    [[nodiscard]] auto indexBR() const
+    { return this->cit.index(); }
+
+    //! Get the index of the DataBR() element.
+    [[nodiscard]] auto indexTR() const
+    { return this->cit.index() + toIndex(-1,0); }
+
+    //! Get the index of the DataBR() element.
+    [[nodiscard]] auto indexTL() const
+    { return this->cit.index() + toIndex(-1,-1); }
+
+    [[nodiscard]] auto indexBL() const
+    { return this->cit.index() + toIndex(0,-1); }
+
   protected:
     IndexRange<2> range;
     ArrayIter<DataT,2> cit;

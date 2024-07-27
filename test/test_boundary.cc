@@ -112,10 +112,22 @@ TEST_CASE("Check things are working properly", "[Boundary]")
   {
     IndexRange<2> rect(IndexRange<1>({1, 3}), IndexRange<1>({2, 4}));
     BoundaryC bnd = toBoundary(rect, BoundaryTypeT::OUTSIDE);
+    SPDLOG_INFO("Rect: {}  Bounds:{} ", rect, bnd);
+
+    // Check the edges are closed and ordered
+    {
+      auto prevCode = bnd.edges().back();
+      for(auto it : bnd.edges()) {
+	//SPDLOG_INFO("Crack: {} ", it);
+	CHECK(CrackStep(prevCode.at(), prevCode.crackCode()) == it.at());
+	prevCode = it;
+      }
+    }
+
     //cout << "Bounds:\n " << bnd << "\n";
-    EXPECT_EQ(bnd.size(), 12);
+    CHECK(bnd.size() == 12);
     ONDEBUG(std::cout << "Area=" << bnd.area() << "\n");
-    EXPECT_EQ(bnd.area(), rect.area());
+    CHECK(bnd.area() == rect.area());
     IndexRange<2> tmpbb = bnd.BoundingBox();
     EXPECT_EQ(tmpbb, rect);
     bnd.BReverse();
@@ -129,7 +141,7 @@ TEST_CASE("Check things are working properly", "[Boundary]")
     ONDEBUG(std::cerr << "Bounding box=" << bb << " Inv=" << tmpbb << "\n");
     CHECK(bb == rect.expand(1));
   }
-  SECTION("Edge nid point")
+  SECTION("Edge mid point")
   {
     for(int i =0;i < 5;i++) {
       BVertexC start({5,5});
@@ -137,6 +149,25 @@ TEST_CASE("Check things are working properly", "[Boundary]")
       auto m1 = ((toPoint<float>(edge.RPixel()) + toPoint<float>(edge.LPixel())) / 2.0f) + Point<float,2>({0.5,0.5});
       CHECK(isNearZero<float>(euclidDistance(m1,edge.MidPoint<float>())(),1e-5f));
     }
+  }
+  SECTION("Tracing a labeled region")
+  {
+    using PixelT = int;
+    Array<PixelT,2> img({10,10});
+    img.fill(99);
+
+    // Setup a square in the middle of the image.
+    auto rng = img.range().shrink(2);
+    clip(img,rng).fill(10);
+    SPDLOG_INFO("Image: {}", img);
+
+    auto bounds = BoundaryC::traceBoundary(img,10);
+    SPDLOG_INFO("Bounds Lengths: {}  ({})", bounds.size(), size_t((rng.range(0).size() + rng.range(1).size()) * 2));
+    SPDLOG_INFO("Bounds: {} ", bounds);
+
+    // Check the boundary is the same as the image.
+    CHECK(bounds.size() == size_t((rng.range(0).size() + rng.range(1).size()) * 2));
+    CHECK(bounds.area() == rng.area());
   }
 }
 

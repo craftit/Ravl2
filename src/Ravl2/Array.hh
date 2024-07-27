@@ -232,6 +232,18 @@ namespace Ravl2
       return *mPtr;
     }
 
+    //! Drop index one level.
+    [[nodiscard]] constexpr const DataT &operator[](const Index<N> &ind) const
+    {
+      const DataT *mPtr = m_data;
+      for(unsigned i = 0;i < N;i++)
+      {
+	assert(m_ranges[i].contains(ind[i]));
+	mPtr += m_strides[i] * ind[i];
+      }
+      return *mPtr;
+    }
+
     //! Range of index's for dim
     [[nodiscard]] constexpr const IndexRange<1> &range(unsigned i) const
     {
