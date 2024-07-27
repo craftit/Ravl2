@@ -168,7 +168,7 @@ namespace Ravl2
     explicit Polygon2dC(const Range<RealT,2> &range);
 
     //!return: the signed area of this polygon
-    [[nodiscard]] RealT Area() const;
+    [[nodiscard]] RealT area() const;
 
     //!return: the moments of the polygon
     [[nodiscard]] Moments2<RealT> Moments() const;
@@ -213,7 +213,7 @@ namespace Ravl2
     [[nodiscard]] Polygon2dC<RealT> ClipByRange(const Range<RealT,2> &range) const;
 
     //! Returns true iff the point 'p' is an internal point of this polygon.
-    [[nodiscard]] bool Contains(const Point<RealT,2> & p) const;
+    [[nodiscard]] bool contains(const Point<RealT,2> & p) const;
 
     //! Returns the perimeter length of this polygon.
     [[nodiscard]] RealT Perimeter() const;
