@@ -36,7 +36,7 @@ namespace Ravl2
     {}
     //: Constructor.
 
-    explicit SegmentationBodyC(const Array<unsigned, 2> &nsegmap);
+    explicit SegmentationBodyC(const Array<int, 2> &nsegmap);
     //: Construct from an IntT image.
     // Negative values will be labeled as region 0.
 

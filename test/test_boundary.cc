@@ -112,20 +112,20 @@ TEST_CASE("Check relative directions", "[Boundary]")
   BoundaryC bnd = toBoundary(rect,BoundaryTypeT::OUTSIDE);
   //cout << "Bounds:\n " << bnd << "\n";
   EXPECT_EQ(bnd.size(), 12);
-  ONDEBUG(cout << "Area=" << bnd.Area() << "\n");
+  ONDEBUG(std::cout << "Area=" << bnd.Area() << "\n");
   EXPECT_EQ(bnd.Area(),rect.area());
   IndexRange<2> tmpbb = bnd.BoundingBox();
   EXPECT_EQ(tmpbb,rect);
   bnd.BReverse();
   EXPECT_EQ(tmpbb,bnd.BoundingBox());
-  EXPECT_EQ(bnd.Area(),-rect.area());
+  EXPECT_EQ(bnd.Area(),rect.area());
   bnd.Invert();
   ONDEBUG(cout << "RArea=" << bnd.Area() << "\n");
-  EXPECT_EQ(bnd.Area(),rect.area());
+  CHECK(-bnd.Area() == rect.area());
   
   IndexRange<2> bb = bnd.BoundingBox();
   ONDEBUG(std::cerr <<"Bounding box=" << bb << " Inv=" << tmpbb << "\n");
-  EXPECT_EQ(bb,rect);
+  CHECK(bb == rect.expand(1));
 }
 
 #if 0

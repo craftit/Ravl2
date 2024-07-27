@@ -255,8 +255,8 @@ namespace Ravl2
   inline
   void Moments2<RealT>::addPixel(const Index<2> &pxl)
   {
-    RealT a = pxl[0];
-    RealT b = pxl[1];
+    auto a = RealT(pxl[0]);
+    auto b = RealT(pxl[1]);
 
     m00++;
     m01 += b;

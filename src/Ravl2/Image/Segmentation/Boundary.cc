@@ -95,9 +95,10 @@ namespace Ravl2
 
   IndexRange<2> BoundaryC::BoundingBox() const
   {
+    IndexRange<2> bb;
     if (IsEmpty())
-      return {};
-    IndexRange<2> bb = IndexRange<2>::mostEmpty();
+      return bb;
+    bb = IndexRange<2>::mostEmpty();
     if(!orientation) {
       ONDEBUG(cerr << "BoundaryC::BoundingBox(), Object is on left. \n");
       for(auto edge : mEdges)
@@ -375,8 +376,8 @@ namespace Ravl2
     std::vector<CrackC> boundary;
     BVertexC  vertex(startVertex);
     using RealT = float;
-    RealT     startRow = RealT(startVertex[0]);
-    RealT     startCol = RealT(startVertex[1]);
+    auto     startRow = RealT(startVertex[0]);
+    auto     startCol = RealT(startVertex[1]);
     RealT     k = 0;
     RealT     kk = 0;
     if (endVertex[0] == startVertex[0])
@@ -396,7 +397,7 @@ namespace Ravl2
 	  while (vertex[1] < endVertex[1]) {
 	    boundary.push_back(CrackC(vertex,CrackCodeT::CR_RIGHT));
 	    vertex = right(vertex);
-	    if ( std::abs(startRow + k *(vertex[1] - startCol) - vertex[0]) > RealT(0.5)) {
+	    if ( std::abs(startRow + k * (RealT(vertex[1]) - startCol) - RealT(vertex[0])) > RealT(0.5)) {
 	      boundary.push_back(CrackC(vertex,CrackCodeT::CR_UP));
 	      vertex = up(vertex);
 	    }
@@ -406,7 +407,7 @@ namespace Ravl2
 	  while (vertex[0] > endVertex[0]) {
 	    boundary.push_back(CrackC(vertex,CrackCodeT::CR_UP));
 	    vertex = up(vertex);
-	    if ( std::abs(startCol + kk *(vertex[0] - startRow) - vertex[1]) > RealT(0.5) ) {
+	    if ( std::abs(startCol + kk *(RealT(vertex[0]) - startRow) - RealT(vertex[1])) > RealT(0.5) ) {
 	      boundary.push_back(CrackC(vertex,CrackCodeT::CR_RIGHT));
 	      vertex = right(vertex);
 	    }
@@ -419,7 +420,7 @@ namespace Ravl2
 	  while (vertex[1] < endVertex[1]) {
 	    boundary.push_back(CrackC(vertex,CrackCodeT::CR_RIGHT));
 	    vertex = right(vertex);
-	    if (std::abs(startRow + k *(vertex[1] - startCol) - vertex[0]) > RealT(0.5)) {
+	    if (std::abs(startRow + k *(RealT(vertex[1]) - startCol) - RealT(vertex[0])) > RealT(0.5)) {
 	      boundary.push_back(CrackC(vertex,CrackCodeT::CR_DOWN));
 	      vertex = down(vertex);
 	    }
@@ -429,7 +430,7 @@ namespace Ravl2
 	  while (vertex[0] < endVertex[0]) {
 	    boundary.push_back(CrackC(vertex,CrackCodeT::CR_DOWN));
 	    vertex = down(vertex);
-	    if ( std::abs(startCol + kk *(vertex[0] - startRow) - vertex[1]) > RealT(0.5)) {
+	    if ( std::abs(startCol + kk *(RealT(vertex[0]) - startRow) - RealT(vertex[1])) > RealT(0.5)) {
 	      boundary.push_back(CrackC(vertex,CrackCodeT::CR_RIGHT));
 	      vertex = right(vertex);
 	    }
@@ -444,7 +445,7 @@ namespace Ravl2
 	  while (vertex[1] > endVertex[1]) {
 	    boundary.push_back(CrackC(vertex,CrackCodeT::CR_LEFT));
 	    vertex = left(vertex);
-	    if (std::abs(startRow + k *(vertex[1] - startCol) - vertex[0]) > RealT(0.5)) {
+	    if (std::abs(startRow + k *(RealT(vertex[1]) - startCol) - RealT(vertex[0])) > RealT(0.5)) {
 	      boundary.push_back(CrackC(vertex,CrackCodeT::CR_UP));
 	      vertex = up(vertex);
 	    }
@@ -454,7 +455,7 @@ namespace Ravl2
 	  while (vertex[0] > endVertex[0]) {
 	    boundary.push_back(CrackC(vertex,CrackCodeT::CR_UP));
 	    vertex = up(vertex);
-	    if ( std::abs(startCol + kk *(vertex[0] - startRow) - vertex[1]) > RealT(0.5)) {
+	    if ( std::abs(startCol + kk *(RealT(vertex[0]) - startRow) - RealT(vertex[1])) > RealT(0.5)) {
 	      boundary.push_back(CrackC(vertex,CrackCodeT::CR_LEFT));
 	      vertex = left(vertex);
 	    }
@@ -467,7 +468,7 @@ namespace Ravl2
 	  while (vertex[1] > endVertex[1]) {
 	    boundary.push_back(CrackC(vertex,CrackCodeT::CR_LEFT));
 	    vertex = left(vertex);
-	    if ( std::abs(startRow + k *(vertex[1] - startCol) - vertex[0]) > RealT(0.5)) {
+	    if ( std::abs(startRow + k *(RealT(vertex[1]) - startCol) - RealT(vertex[0])) > RealT(0.5)) {
 	      boundary.push_back(CrackC(vertex,CrackCodeT::CR_DOWN));
 	      vertex = down(vertex);
 	    }
@@ -477,7 +478,7 @@ namespace Ravl2
 	  while (vertex[0] < endVertex[0]) {
 	    boundary.push_back(CrackC(vertex,CrackCodeT::CR_DOWN));
 	    vertex = down(vertex);
-	    if (std::abs(startCol + kk *(vertex[0] - startRow) - vertex[1]) > RealT(0.5)) {
+	    if (std::abs(startCol + kk *(RealT(vertex[0]) - startRow) - RealT(vertex[1])) > RealT(0.5)) {
 	      boundary.push_back(CrackC(vertex,CrackCodeT::CR_LEFT));
 	      vertex = left(vertex);
 	    }
