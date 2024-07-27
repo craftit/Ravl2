@@ -13,7 +13,6 @@
 namespace Ravl2
 {
 
-  //! userlevel=Normal
   //: Iterator which slides a 2x2 window over two arrays.
   // The square can be accessed with DataBL,DataBR,DataUL and DataUR
   // which access the following array elements. <p>

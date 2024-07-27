@@ -123,7 +123,7 @@ namespace Ravl2
   {
     // apply geometric fitting in image-proportional coordinates.
     assert(img.range().shrink(1).contains(pos));
-    if(!img.Frame().Erode().Contains(pos))
+    if(!img.range().shrink(1).contains(pos))
       return {float(pos[0]),float(pos[1])};
     
     const DataT *rt = &(img[pos[0]-1][pos[1]]);

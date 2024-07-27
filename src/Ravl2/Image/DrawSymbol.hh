@@ -7,13 +7,8 @@
 #ifndef RAVLIMAGE_DRAWSYMBOL_HEADER
 #define RAVLIMAGE_DRAWSYMBOL_HEADER 1
 ///////////////////////////////////////////////////////////////////
-//! rcsid="$Id$"
 //! author="Bill Christmas"
 //! date="25/3/2013"
-//! docentry="Ravl.API.Images.Drawing"
-//! lib=RavlImage
-//! userlevel=Normal
-//! file="Ravl/Image/Base/DrawSymbol.hh"
 //! example=exDraw.cc
 
 #include "Ravl2/Image/DrawCircle.hh"

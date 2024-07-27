@@ -11,7 +11,7 @@
 #include "Ravl2/Array.hh"
 #include "Ravl2/ArrayIterZip.hh"
 
-namespace RavlImageN {
+namespace Ravl2 {
 
   template<class PixelT,class MaskT>
   void DrawMask(Array2dC<PixelT> &img,const Array2dC<MaskT> &mask,const PixelT &value) {
@@ -20,8 +20,8 @@ namespace RavlImageN {
     if(rng.area() < 1)
       return ;
     for(auto it = begin(img,mask,rng);it;it++) {
-      if(it.Data2() != 0)
-	it.Data1() = value;
+      if(it.data<1>() != 0)
+	it.data<0>() = value;
     }
   }
   //: Draw a mask into an image.

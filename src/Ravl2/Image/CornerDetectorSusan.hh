@@ -13,7 +13,6 @@
 namespace Ravl2
 {
 
-  //! userlevel=Develop
   //: Susan corner detector.
   // Based on code from S.M.Smith
 

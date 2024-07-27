@@ -47,7 +47,7 @@ namespace Ravl2 {
   requires WindowedArray<ArrayT,DataT,N>
   void DrawLine(ArrayT &Dat,const DataT &ValueFrom,const DataT &ValueTo,const LinePP2dC<CoordTypeT> &Line) {
     LinePP2dC line = Line;
-    Range<CoordTypeT,2> frame(Dat.range().TRow(),Dat.range().BRow(),Dat.range().LCol(),Dat.range().RCol());
+    Range<CoordTypeT,2> frame(Dat.range().min(0),Dat.range().max(0),Dat.range().min(1),Dat.range().max(1));
     if (line.clipBy(frame)) {
       CoordTypeT length = line.Length();
       // If both start and end are inside the image, all pixels in between are.

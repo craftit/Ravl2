@@ -10,6 +10,7 @@
 #include "Ravl2/Geometry/Geometry.hh"
 #include "Ravl2/Geometry/Affine.hh"
 #include "Ravl2/Geometry/Range.hh"
+#include "Ravl2/Assert.hh"
 
 namespace Ravl2
 {
@@ -32,13 +33,13 @@ namespace Ravl2
     {}
 
     //! Returns the centroid (mean) of the points
-    Point<RealT,N> PointCentroid() const;
+    [[nodiscard]] Point<RealT,N> PointCentroid() const;
 
     //! Calculates the barycentric coordinate of point
-    std::vector<RealT> BarycentricCoordinate(const Point<RealT,N>& point) const;
+    [[nodiscard]] std::vector<RealT> BarycentricCoordinate(const Point<RealT,N>& point) const;
 
     //! Compute the bounding rectangle for the point set.
-    Range<RealT,N> BoundingRectangle() const;
+    [[nodiscard]] Range<RealT,N> BoundingRectangle() const;
 
     //! Translate point set by adding a vector.
     const PointSet &operator+=(const Vector<RealT,N> &offset);
@@ -55,6 +56,16 @@ namespace Ravl2
       for(auto &it : *this)
         *it = trans(*it);
       return *this;
+    }
+
+  protected:
+    static RealT pCot(const Point<RealT,2>& oPointA, const Point<RealT,2>& oPointB, const Point<RealT,2>& oPointC) {
+      Point<RealT,2> oBA = (oPointA - oPointB);
+      Point<RealT,2> oBC = (oPointC - oPointB);
+      auto cr = std::abs(cross(oBC,oBA));
+      if (cr < RealT(1e-6))
+        cr = RealT(1e-6);
+      return (xt::linalg::dot(oBC,oBA) / cr)();
     }
 
   };
@@ -91,26 +102,37 @@ namespace Ravl2
   {
     // Create return array
     std::vector<RealT> oWeights(this->size());
+    if(this->size() == 0)
+      return oWeights;
     // Keep track of total
     RealT fTotalWeight = 0;
     // For each polygon vertex
     auto res = oWeights.begin();
+    const auto end = this->end();
+    auto previous = *(this->end() - 1);
+    auto next = this->begin() + 1;
     for (auto it : (*this)) {
       RealT sqDist = sumOfSqr(point - it)();
       if (sqDist != 0) {
-        RealT fWeight = (PCot(point,it.Data(),it.PrevCrcData()) +
-                         PCot(point,it.Data(),it.NextCrcData())) / sqDist;
-        res.Data() = fWeight;
+        RealT fWeight = (pCot(point, it, previous) +
+                         pCot(point, it, *next)) / sqDist;
+        *res = fWeight;
         fTotalWeight += fWeight;
       }
       else {
-        res = 1;
+        *res = 1;
         fTotalWeight += 1;
       }
-      res++;
+      previous = it;
+      ++next;
+      if(next == end) {
+        next = this->begin();
+      }
+      ++res;
     }
     // Normalise weights
-    oWeights /= fTotalWeight;
+    for(auto &it : oWeights)
+      it /= fTotalWeight;
     // Done
     return oWeights;
   }
@@ -119,14 +141,14 @@ namespace Ravl2
 
   template<typename RealT,unsigned N>
   Range<RealT,N> PointSet<RealT,N>::BoundingRectangle() const {
-    Range<RealT,N> ret(0,0);
+    Range<RealT,N> ret;
     auto point = this->begin();
     auto end = this->end();
     if(point == end)
       return ret; // No points in set.
-    ret = RealRange<RealT,N>(*point,0);
+    ret = Range<RealT,N>(*point,0);
     for (; point != end; ++point)
-      ret.Involve(*point);
+      ret.involve(*point);
     return ret;
   }
 

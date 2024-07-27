@@ -16,7 +16,6 @@
 namespace Ravl2
 {
 
-  //! userlevel=Normal
   //: The moments up to 2nd order in 2D space
 
   template<class RealT>
@@ -123,7 +122,7 @@ namespace Ravl2
     { return m02; }
     //: Access 02 component.
 
-    inline RealT Area() const
+    inline RealT area() const
     { return m00; }
     //: Returns the moment m00, ie the area of the 2 dimensional object.
 
@@ -138,11 +137,11 @@ namespace Ravl2
     // The M00 moment must not be 0.
 
     inline RealT varX() const
-    { return m20 / m00 - Sqr(centroidX()); }
+    { return m20 / m00 -sqr(centroidX()); }
     //: Returns the variance of the x.
 
     inline RealT varY() const
-    { return m02 / m00 - Sqr(centroidY()); }
+    { return m02 / m00 -sqr(centroidY()); }
     //: Returns the variance of the y.
 
     inline RealT slopeY() const;

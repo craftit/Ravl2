@@ -28,7 +28,7 @@ namespace Ravl2
     // Constructors, copy, assigment, and destructor.
 
     // Creates the index range <0, dim-1>.
-    inline explicit Range(RealT size = 0)
+    inline explicit constexpr Range(RealT size = 0)
         : minV(0),
           maxV(size)
     {}
@@ -36,12 +36,12 @@ namespace Ravl2
     //! Create real range from an IndexRange.
     // Note that the upper limit of the Range object is incremented by 1
     // to make the range consistent.
-    explicit inline Range(const IndexRange<1> &rng)
-        : minV(rng.min()),
-          maxV(rng.max()+1)
+    explicit inline constexpr Range(const IndexRange<1> &rng)
+        : minV(RealT(rng.min())),
+          maxV(RealT(rng.max()+1))
     {}
 
-    inline Range(RealT minReal, RealT maxReal)
+    inline constexpr Range(RealT minReal, RealT maxReal)
         : minV(minReal),
           maxV(maxReal)
     {}
@@ -53,7 +53,7 @@ namespace Ravl2
     //:---------------------------------
     //: Access to the object information.
 
-    [[nodiscard]] inline RealT Size() const
+    [[nodiscard]] inline constexpr RealT size() const
     { return (maxV-minV); }
     //: Returns the number of elements in the range.
 
@@ -61,65 +61,65 @@ namespace Ravl2
     { return *this; }
     //: Returns this object.
 
-    [[nodiscard]] inline const RealT & min()  const
+    [[nodiscard]] inline constexpr RealT min()  const
     { return minV; }
     //: Returns the minimum index of the range.
 
-    [[nodiscard]] inline const RealT & max()  const
+    [[nodiscard]] inline constexpr RealT max()  const
     { return maxV; }
     //: Returns the maximum index of the range.
 
-    inline RealT & min()
+    inline constexpr RealT & min()
     { return minV; }
     //: Returns the minimum index of the range.
 
-    inline RealT & max()
+    inline constexpr RealT & max()
     { return maxV; }
     //: Returns the maximum index of the range.
 
-    [[nodiscard]] inline RealT Center() const
+    [[nodiscard]] inline constexpr RealT Center() const
     { return (min() + max())/2; }
     //: Returns the index in the middle of the range, eg. (max()+min())/2.
 
-    [[nodiscard]] inline RealT CenterD() const
+    [[nodiscard]] inline constexpr RealT CenterD() const
     { return (min() + max())/2; }
     //: Returns the index previous the middle of the range, eg. (max()+min())/2.
 
-    [[nodiscard]] inline RealT Percentage(RealT p) const
-    { return (max() - min()) * p/100.0 + min(); }
+    [[nodiscard]] inline constexpr RealT Percentage(RealT p) const
+    { return (max() - min()) * p/RealT(100.0) + min(); }
     //: Returns the index which is in the 'p' % of the whole range.
 
     //:-------------------
     //: Logical operations.
 
-    [[nodiscard]] inline bool empty() const
+    [[nodiscard]] inline constexpr bool empty() const
     { return min() > max(); }
     //: Returns true if the minimum limit is bigger than the maximum limit.
 
-    [[nodiscard]] inline bool IsValid() const
+    [[nodiscard]] inline constexpr bool IsValid() const
     { return min() <= max(); }
     //: Returns true if the minimum limit is smaller than or equal to the maximum value
 
-    [[nodiscard]] inline bool contains(RealT i) const
+    [[nodiscard]] inline constexpr bool contains(RealT i) const
     { return (min() <= i) && (i <= max()); }
     //: Returns true if this range contains the index 'i'.
 
-    [[nodiscard]] inline bool contains(const Range & range) const
+    [[nodiscard]] inline constexpr bool contains(const Range<RealT,1> & range) const
     { return contains(range.min()) && contains(range.max()); }
     //: Returns true if this range contains the subrange 'range'.
 
-    inline bool operator==(const Range & range) const
+    [[nodiscard]] inline constexpr bool operator==(const Range & range) const
     { return (min() == range.min()) && (max() == range.max()); }
     //: Returns true if both index ranges have the same limits.
 
-    inline bool operator!=(const Range & range) const
+    [[nodiscard]] inline constexpr bool operator!=(const Range & range) const
     { return (min() != range.min()) || (max() != range.max()); }
     //: Returns true if both the ranges have different limits.
 
     [[nodiscard]] bool In(const Range & range) const;
     //: Returns true if this range is inside of the 'range'.
 
-    [[nodiscard]] inline bool IsOverlapping(const Range & r) const;
+    [[nodiscard]] inline bool overlaps(const Range<RealT, 1> &r) const;
     //: Returns true if this range contains at least one common index with
     //: the range 'r'.
 
@@ -160,8 +160,8 @@ namespace Ravl2
     { return Range(min() - i,max() - i); }
     //: Create a new Range with minimum and maximum limits shifted by subtracting the offset 'i'.
 
-    inline Range & ClipBy(const Range & r);
-    //: This index range is clipped to contain at most the index range 'r'.
+    //! This index range is clipped in place to contain at most the index range 'r'.
+    inline Range & clipBy(const Range & r);
 
     [[nodiscard]] inline RealT Clip(const RealT & r) const {
       RealT lower = min() > r? min(): r;
@@ -178,16 +178,16 @@ namespace Ravl2
     //: Returns the index range < min(), (max()+min())/2 >.
 
     [[nodiscard]] inline Range Enlarge(RealT f) const
-    { return Range(min(), min() + Size()*f - 1); }
+    { return Range(min(), min() + size() * f - 1); }
     //: Returns the index range whose number of elements is enlarged by
     //: the factor 'f'. The upper limits is changed.
 
-    [[nodiscard]] inline Range Expand(RealT n) const
+    [[nodiscard]] inline Range expand(RealT n) const
     { return Range(minV - n,maxV + n); }
     //: Returns the range extended by adding 'n' items on both limits of
     //: this range.
 
-    [[nodiscard]] inline Range Shrink(RealT n) const
+    [[nodiscard]] inline Range shrink(RealT n) const
     { return Range(minV + n,maxV - n); }
     //: Returns the range extended by adding 'n' items on both limits of
     //: this range.
@@ -201,16 +201,16 @@ namespace Ravl2
     { return Range(min()*scale,max()*scale); }
     //: Scale range
 
-    const Range &Involve(RealT i) {
+    const Range &involve(RealT i) {
       if(minV > i) minV = i;
       if(maxV < i) maxV = i;
       return *this;
     }
     //: Modify this range to ensure index i is contained within it.
 
-    const Range &Involve(const Range &subRange) {
-      Involve(subRange.min());
-      Involve(subRange.max());
+    const Range &involve(const Range<RealT,1> &subRange) {
+      involve(subRange.min());
+      involve(subRange.max());
       return *this;
     }
     //: Modify this range to ensure subRange is contained within it.
@@ -248,7 +248,7 @@ namespace Ravl2
 
 
   template<typename RealT>
-  inline bool Range<RealT,1>::IsOverlapping(const Range & r) const {
+  inline bool Range<RealT,1>::overlaps(const Range<RealT, 1> &r) const {
     return (!empty() && !r.empty())
            && (min() <= r.max() && max() >= r.min());
   }
@@ -268,7 +268,7 @@ namespace Ravl2
   }
 
   template<typename RealT>
-  inline Range<RealT,1> &Range<RealT,1>::ClipBy(const Range & r) {
+  inline Range<RealT,1> &Range<RealT,1>::clipBy(const Range & r) {
     if (min() < r.min()) {
       min() = r.min();
       if(max() < r.min()) // Make sure there is some overlap.
@@ -299,23 +299,22 @@ namespace Ravl2
     // to make the range consistent.
     explicit Range(const IndexRange<N> &rng)
     {
-      for (int i = 0; i < N; ++i) {
-        ranges[i] = rng[i];
+      for (unsigned i = 0; i < N; ++i) {
+        ranges[i] = Range<RealT,1>(rng[i]);
       }
     }
 
     //! Constructor.
     Range(std::initializer_list<Range<RealT,1>> list)
-     : ranges( list)
-    {}
-
-    //! Constructor.
-    Range(const Range<RealT,N> & range) = default;
+    {
+      assert(list.size() == N);
+      std::copy(list.begin(), list.end(), ranges.begin());
+    }
 
     //! Create an 2d range from corner points.
     Range(const Vector<RealT,N> &org,const Vector<RealT,N> &end)
     {
-      for (int i = 0; i < N; ++i) {
+      for (unsigned i = 0; i < N; ++i) {
         ranges[i] = Range<RealT,1>(org[i],end[i]);
       }
     }
@@ -324,9 +323,9 @@ namespace Ravl2
     // Size is the distance from the center to the edge, so
     // a size of 0 gives a single pixel, and a size of 1 generates
     // a 3x3 square.
-    Range(const Vector<RealT,N> &center,RealT size)
+    Range(const Point<RealT,N> &center,RealT size)
     {
-      for (int i = 0; i < N; ++i) {
+      for (unsigned i = 0; i < N; ++i) {
         ranges[i] = Range<RealT,1>(center[i] - size/2,center[i] + size/2);
       }
     }
@@ -334,7 +333,7 @@ namespace Ravl2
     //! Set the origin of the range to 'newOrigin'
     // Returns a reference to this rectangle.
     const Range &SetOrigin(const Vector<RealT,N> &newOrigin) {
-      for (int i = 0; i < N; ++i) {
+      for (unsigned i = 0; i < N; ++i) {
         ranges[i].SetOrigin(newOrigin[i]);
       }
       return *this;
@@ -344,7 +343,7 @@ namespace Ravl2
     [[nodiscard]] inline Vector<RealT,N> Origin() const
     { 
       Vector<RealT,N> ret;
-      for (int i = 0; i < N; ++i) {
+      for (unsigned i = 0; i < N; ++i) {
         ret[i] = ranges[i].min();
       }
       return ret;
@@ -354,7 +353,7 @@ namespace Ravl2
     [[nodiscard]] inline Vector<RealT,N>  End() const
     {
       Vector<RealT,N> ret;
-      for (int i = 0; i < N; ++i) {
+      for (unsigned i = 0; i < N; ++i) {
         ret[i] = ranges[i].max();
       }
       return ret;
@@ -365,7 +364,7 @@ namespace Ravl2
     [[nodiscard]] inline Vector<RealT,N> Center() const
     {
       Vector<RealT,N> ret;
-      for (int i = 0; i < N; ++i) {
+      for (unsigned i = 0; i < N; ++i) {
         ret[i] = ranges[i].Center();
       }
       return ret;
@@ -375,7 +374,7 @@ namespace Ravl2
     [[nodiscard]] inline RealT area() const
     {
       RealT area = 1;
-      for (int i = 0; i < N; ++i) {
+      for (unsigned i = 0; i < N; ++i) {
         area *= ranges[i].size();
       }
       return area;
@@ -383,10 +382,10 @@ namespace Ravl2
 
 
     //! Returns an rectangle expanded by 'n' on each side.
-    [[nodiscard]] inline Range Expand(RealT n) const
+    [[nodiscard]] inline Range expand(RealT n) const
     {
         Range ret;
-        for (int i = 0; i < N; ++i) {
+        for (unsigned i = 0; i < N; ++i) {
           ret[i] = ranges[i].expand(n);
         }
         return ret;
@@ -394,18 +393,18 @@ namespace Ravl2
 
     //! Returns a new rectangle which has layer of the width of 'n'
     //! removed.
-    [[nodiscard]] inline Range Shrink(RealT n) const
+    [[nodiscard]] inline Range shrink(RealT n) const
     {
       Range ret;
-      for (int i = 0; i < N; ++i) {
+      for (unsigned i = 0; i < N; ++i) {
         ret[i] = ranges[i].shrink(n);
       }
       return ret;
     }
 
-    inline Range & ClipBy(const Range & r) {
-      for (int i = 0; i < N; ++i) {
-        ranges[i].clipBy(r.Range1());
+    inline Range & clipBy(const Range & r) {
+      for (unsigned i = 0; i < N; ++i) {
+        ranges[i].clipBy(r.range(i));
       }
       return *this;
     }
@@ -413,7 +412,7 @@ namespace Ravl2
 
     inline Vector<RealT,N> Clip(const Vector<RealT,N> & r) {
       Vector<RealT,N> result;
-      for (int i = 0; i < N; ++i) {
+      for (unsigned i = 0; i < N; ++i) {
         result[i] = ranges[i].Clip(r[i]);
       }
       return result;
@@ -422,8 +421,8 @@ namespace Ravl2
 
     [[nodiscard]] inline bool contains(const Range<RealT,N> & oth) const
     {
-      for (int i = 0; i < N; ++i) {
-        if (!ranges[i].contains(oth[i])) {
+      for (unsigned i = 0; i < N; ++i) {
+        if (!ranges[i].contains(oth.range(i))) {
           return false;
         }
       }
@@ -434,7 +433,7 @@ namespace Ravl2
 
     [[nodiscard]] inline bool contains(const Vector<RealT,N> & oth) const
     {
-      for (int i = 0; i < N; ++i) {
+      for (unsigned i = 0; i < N; ++i) {
         if (!ranges[i].contains(oth[i])) {
           return false;
         }
@@ -452,7 +451,7 @@ namespace Ravl2
     inline Range<RealT,N> operator+(const Vector<RealT,N> & offset) const
     {
       Range<RealT,N> ret;
-      for (int i = 0; i < N; ++i) {
+      for (unsigned i = 0; i < N; ++i) {
         ret[i] = ranges[i] + offset[i];
       }
       return ret;
@@ -462,7 +461,7 @@ namespace Ravl2
     inline Range<RealT,N> operator-(const Vector<RealT,N> & offset) const
     {
       Range<RealT,N> ret;
-      for (int i = 0; i < N; ++i) {
+      for (unsigned i = 0; i < N; ++i) {
         ret[i] = ranges[i] - offset[i];
       }
       return ret;
@@ -480,15 +479,15 @@ namespace Ravl2
     //! Ensures this rectangle contains given index.
     // This method checks and changes, if necessary, the 2-dimensional range
     // to contain the 'index'.
-    inline void Involve(const Vector<RealT,N> & index);
+    inline void involve(const Vector<RealT,N> & index);
 
     //! Ensures this rectangle contains given sub rectangle.
     // This method checks and changes, if necessary, the 2-dimensional range
     // to contain the 'subrectangle'.
-    inline void Involve(const Range<RealT,N> &subrectangle)
+    inline void involve(const Range<RealT,N> &subrectangle)
     {
       for(unsigned i = 0; i < N; i++)
-        ranges[i].involve(subrectangle[i]);
+        ranges[i].involve(subrectangle.range(i));
     }
 
     //! Returns true if this rectangle contains at least one index.
@@ -526,7 +525,7 @@ namespace Ravl2
 
     //! Returns true if this range contains a common area with
     //! the range 'r'.
-    [[nodiscard]] inline bool IsOverlapping(const Range<RealT,N> & r) const
+    [[nodiscard]] inline bool overlaps(const Range<RealT,N> & r) const
     {
       for (unsigned i = 0; i < N; i++) {
         if (!ranges[i].overlaps(r.range(i))) {
@@ -570,7 +569,7 @@ namespace Ravl2
     Range<RealT,1> &operator[](unsigned ind)
     { return ranges[ind]; }
 
-    const Range<RealT,N> &operator[](unsigned ind) const
+    const Range<RealT,1> &operator[](unsigned ind) const
     { return ranges[ind]; }
     //: Access item.
 
@@ -609,7 +608,7 @@ namespace Ravl2
 
   template<typename RealT,unsigned N>
   inline
-  void Range<RealT,N>::Involve(const Vector<RealT,N> & index) {
+  void Range<RealT,N>::involve(const Vector<RealT,N> & index) {
     for(unsigned i = 0; i < N; i++)
       ranges[i].involve(index[i]);
   }
@@ -646,6 +645,9 @@ namespace Ravl2
   {
     return IndexRange<1>(int_floor(ir.min()),int_ceil(ir.max()));
   }
+
+  extern template class Range<float,1>;
+  extern template class Range<float,2>;
 
 }
 

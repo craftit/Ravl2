@@ -12,7 +12,6 @@
 namespace Ravl2
 {
 
-  //! userlevel=Normal
   //: Iterator which slides a 2x2 window over an array.
   // The square can be accessed with DataBL,DataBR,DataUL and DataUR
   // which access the following array elements. <p>
@@ -40,7 +39,7 @@ namespace Ravl2
     }
     //: Constructor.
 
-    bool Next()
+    bool next()
     {
       up++;
       if(!this->cit.next()) {
@@ -55,7 +54,7 @@ namespace Ravl2
     bool Next(int n) {
       bool sameRow = true;
       for(int i = 0; i < n; i++) {
-	if(!Next())
+	if(!next())
 	  sameRow = false;
       }
       return sameRow;
@@ -79,11 +78,11 @@ namespace Ravl2
     { return this->cit.valid(); }
 
     void operator++() 
-    { Next(); }
+    { next(); }
     //: Goto next element.
 
     void operator++(int)
-    { Next(); }
+    { next(); }
     //: Goto next element.
 
     DataT &operator*() 

@@ -6,9 +6,6 @@
 // file-header-ends-here
 //! date="26.10.1992"
 //! author="Radek Marik"
-//! rcsid="$Id$"
-//! lib=RavlMath
-//! file="Ravl/Math/Geometry/Euclidean/Boundary/Crack.cc"
 
 // elementary boundary edge based on crack code
 

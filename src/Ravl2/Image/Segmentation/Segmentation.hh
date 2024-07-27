@@ -18,13 +18,11 @@
 
 namespace Ravl2
 {
-  //! userlevel=Develop
   //: Segmentation map.
 
   class SegmentationBodyC
   {
   public:
-    using UIntT = unsigned;
     SegmentationBodyC()
       : labels(0)
     {}
@@ -40,47 +38,47 @@ namespace Ravl2
     //: Construct from an IntT image.
     // Negative values will be labeled as region 0.
 
-    std::vector<std::set<UIntT> > Adjacency(bool biDir = false);
+    std::vector<std::set<unsigned> > Adjacency(bool biDir = false);
     //: Generate a table of 4 connected region adjacencies.
     // For each region, a set of adjacent regions is
     // generated.   If biDir is false, only adjacency from
     // regions with a smaller id to those with a larger ID are
     // generated, otherwise both direction are registered.
 
-    std::vector<std::map<UIntT,unsigned> > BoundaryLength(bool biDir = false);
+    std::vector<std::map<unsigned,unsigned> > BoundaryLength(bool biDir = false);
     //: Generate a table of boundary lengths with 4 connected adjacent regions
     // if biDir is false only adjacency from regions with a smaller id to those
     // with a larger ID are generated
 
-    std::vector<UIntT> LocalBoundaryLength();
+    std::vector<unsigned> LocalBoundaryLength();
     //: Generate a table of the length of the 4 connected boundary for each region
     // Note, boundary pixels at the edge of the image are NOT counted.
 
-    UIntT RemoveSmallComponents(unsigned thrSize);
+    unsigned RemoveSmallComponents(unsigned thrSize);
     //: Remove small components from map, label them as 0.
 
-    UIntT CompressAndRelabel(std::vector<UIntT> &newLabs);
+    unsigned CompressAndRelabel(std::vector<unsigned> &newLabs);
     //: Compress newlabs and re-label segmentation.
     // this correctly resolves multilevel mappings.
     // Note: newLabs will be changed to contain a mapping
     // from the original labels to their new values.
 
-    [[nodiscard]] std::vector<std::tuple<IndexRange<2>, UIntT> > BoundsAndArea() const;
+    [[nodiscard]] std::vector<std::tuple<IndexRange<2>, unsigned> > BoundsAndArea() const;
     //: Compute the bounding box and area of each region in the segmentation.
 
-    [[nodiscard]] std::vector<UIntT> Areas() const;
+    [[nodiscard]] std::vector<unsigned> Areas() const;
     //: Compute the areas of all the segmented regions.
 
-    std::vector<UIntT> RedoArea(std::vector<UIntT> area,std::vector<UIntT> map);
+    std::vector<unsigned> RedoArea(std::vector<unsigned> area,std::vector<unsigned> map);
     //: recompute the areas from the original areas and a mapping.
 
-    std::vector<UIntT> IdentityLabel();
+    std::vector<unsigned> IdentityLabel();
     //: Make an array of labels mapping to themselves.
     // This is useful for making merge tables which can
     // the be passed to CompressAndRelabel.
 
     template<class PixelT,class CmpT,typename RealT>
-    UIntT MergeComponents(Array<PixelT,2> &dat,UIntT thrSize,RealT maxDist,CmpT &cmp,unsigned iter = 1);
+    unsigned MergeComponents(Array<PixelT,2> &dat,unsigned thrSize,RealT maxDist,CmpT &cmp,unsigned iter = 1);
     //: Merge simlar components smaller than 'thrSize'.
     // This just looks for the difference between adjacent pixels from different regions.
     // FIXME :- It maybe better to look at the average difference.
@@ -101,27 +99,27 @@ namespace Ravl2
     //: Returns the segmentation map in the form of a ByteImageC
     // Note: if there are more than 255 labels in the image, some may be used twice.
 
-//    ImageC<ByteRGBValueC> RandomImage() const;
+//    Array<ByteRGBValueC,2> RandomImage() const;
 //    //: Returns the segmentation map in the form of a colour random image; this means that segmentation maps with more than 255 labels can be saved to disk
 //
-//    ImageC<ByteYUVValueC> RandomTaintImage(ByteT max=100) const;
+//    Array<ByteYUVValueC,2> RandomTaintImage(ByteT max=100) const;
 //    //: Returns the segmentation map in the form of a colour random image.
 //    // The Y channel is left blank (e.g., for displaying the original data).
 //    // The labels in the U and V channels are in the range 0 to 'max'.
 
   protected:
-    static UIntT RelabelTable(std::vector<UIntT> &labelTable, UIntT currentMaxLabel);
+    static unsigned RelabelTable(std::vector<unsigned> &labelTable, unsigned currentMaxLabel);
     //: Compress labels.
 
     Array<unsigned, 2> segmap; // Segmentation map.
-    UIntT labels = 0;         // Number of labels in map.
+    unsigned labels = 0;         // Number of labels in map.
   };
 
   //: Merge similar components smaller than 'thrSize'.
 
   template<class PixelT,class CmpT, typename RealT>
-  SegmentationBodyC::UIntT SegmentationBodyC::MergeComponents(Array<PixelT, 2> &dat,
-					   UIntT thrSize,
+  unsigned SegmentationBodyC::MergeComponents(Array<PixelT, 2> &dat,
+					   unsigned thrSize,
 					   RealT maxDist,
 					   CmpT &cmp,
 					   unsigned iter)
@@ -129,15 +127,15 @@ namespace Ravl2
     if(labels <= 1)
       return labels;
     std::vector<RealT> minDist(labels);  
-    std::vector<UIntT> area = Areas();
+    std::vector<unsigned> area = Areas();
     
     for(;iter > 0;iter--) {
       std::fill(minDist.begin(), minDist.end(), maxDist); // Fill with maximum merge threshold./
-      std::vector<UIntT> minLab =  IdentityLabel();
+      std::vector<unsigned> minLab =  IdentityLabel();
       
       // Find closest neigbour of small regions.
       
-      for(Array2dSqr2Iter2C<UIntT,PixelT> it(segmap,dat);it;) {
+      for(Array2dSqr2Iter2C<unsigned,PixelT> it(segmap,dat);it;) {
 	// Do up.
 	if(it.DataBR1() != it.DataTR1()) { // Are labels different ?
 	  if(area[it.DataBR1()] < thrSize) {
@@ -156,7 +154,7 @@ namespace Ravl2
 	  }
 	}
 	
-	for(;it.Next();) { // The rest of the image row.
+	for(;it.next();) { // The rest of the image row.
 	  // Do up.
 	  if(it.DataBR1() != it.DataTR1()) {  // Are labels different ?
 	    if(area[it.DataBR1()] < thrSize) {

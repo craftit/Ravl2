@@ -4,21 +4,18 @@
 // General Public License (LGPL). See the lgpl.licence file for details or
 // see http://www.gnu.org/copyleft/lesser.html
 // file-header-ends-here
-//! rcsid="$Id$"
-//! lib=RavlImageProc
 //! author="Charles Galambos"
-//! file="Ravl/Image/Processing/Tracking/MatchNormalisedCorrelation.cc"
 
-#include "Ravl/Image/MatchNormalisedCorrelation.hh"
-#include "Ravl/Sums1d2.hh"
-#include "Ravl/Image/Rectangle2dIter.hh"
-#include "Ravl/Vector2d.hh"
+#include "Ravl2/Image/MatchNormalisedCorrelation.hh"
+#include "Ravl2/Sums1d2.hh"
+#include "Ravl2/Image/Rectangle2dIter.hh"
+#include "Ravl2/Vector2d.hh"
 
-namespace RavlImageN {
+namespace Ravl2 {
   
   //: 'img' is the image to search.
   
-  MatchNormalisedCorrelationC::MatchNormalisedCorrelationC(const ImageC<ByteT> &img) 
+  MatchNormalisedCorrelationC::MatchNormalisedCorrelationC(const Array<ByteT,2> &img) 
     : threshold(10)
   {
     SetSearchImage(img);
@@ -32,7 +29,7 @@ namespace RavlImageN {
   
   //: Setup search image.
   
-  bool MatchNormalisedCorrelationC::SetSearchImage(const ImageC<ByteT> &img) {
+  bool MatchNormalisedCorrelationC::SetSearchImage(const Array<ByteT,2> &img) {
     searchImg = img;
     sums.BuildTable(img);
     return true;
@@ -43,7 +40,7 @@ namespace RavlImageN {
     // The following loop could probably be speeded up with some MMX code.
     for(BufferAccess2dIter2C<ByteT,ByteT> it2(templ,templ.Range2(),
 					      subImg,subImg.Range2());it2;it2++)
-      sumxy += (IntT) it2.Data1() * it2.Data2();
+      sumxy += (IntT) it2.data<0>() * it2.data<1>();
     return sumxy;
   }
   
@@ -51,24 +48,24 @@ namespace RavlImageN {
   // Returns false if no likely match is found.
   
   bool MatchNormalisedCorrelationC::Search(const Array2dC<ByteT> &templ,
-					   const IndexRange2dC &searchArea,
-					   RealT &score,Index2dC &at) const {
+					   const IndexRange<2> &searchArea,
+					   RealT &score,Index<2> &at) const {
     score = 0;
     Sums1d2C tsums;
     for(Array2dIterC<ByteT> it(templ);it;it++) 
       tsums += *it;
-    RealT tarea = (RealT) tsums.Size();
-    MeanVarianceC smv = tsums.MeanVariance();
+    RealT tarea = (RealT) tsums.size();
+    MeanVariance smv = tsums.MeanVariance();
     RealT tmean = smv.Mean();
     RealT tvar = smv.Variance();
-    RealT z = Sqrt(tvar) * tarea;
+    RealT z = std::sqrt(tvar) * tarea;
     RealT tsum = tsums.Sum();
     
-    IndexRange2dC clippedSearchArea = searchArea;
-    clippedSearchArea.ClipBy(searchImg.Frame());
+    IndexRange<2> clippedSearchArea = searchArea;
+    clippedSearchArea.clipBy(searchImg.range());
     
-    for(Rectangle2dIterC itr(clippedSearchArea,templ.Frame());itr;itr++) {
-      IndexRange2dC rect = itr.Window();
+    for(Rectangle2dIterC itr(clippedSearchArea,templ.range());itr;itr++) {
+      IndexRange<2> rect = itr.Window();
       RangeBufferAccess2dC<ByteT> subImg(searchImg,rect);
       IntT sumxy = SumOfProducts(templ,subImg);
       
@@ -76,12 +73,12 @@ namespace RavlImageN {
       TFVectorC<IntT, 2>  rs = sums.Sum(rect);
       RealT ssum = rs[0];
       RealT smean = (RealT) rs[0] / tarea;
-      RealT svar = ((RealT) rs[1] - Sqr((RealT) rs[0])/tarea) / (tarea-1);
+      RealT svar = ((RealT) rs[1] -sqr((RealT) rs[0])/tarea) / (tarea-1);
       
       // Compute correlation score.
       RealT curScore = 
 	(sumxy - smean * tsum - tmean * ssum + smean * tmean * tarea)
-	/ (Sqrt(svar) * z);
+	/ (std::sqrt(svar) * z);
       //cerr << " " << curScore;
       // Compair it to pervious scores.
       if(curScore > score) { // Best so far ?

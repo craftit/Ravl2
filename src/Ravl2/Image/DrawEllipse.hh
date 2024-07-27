@@ -7,30 +7,26 @@
 #ifndef RAVLIMAGE_DRAWELLIPSE_HEADER
 #define RAVLIMAGE_DRAWELLIPSE_HEADER 1
 //! author="Charles Galambos"
-//! lib=RavlImage
-//! docentry="Ravl.API.Images.Drawing"
-//! file="Ravl/Image/Base/DrawEllipse.hh"
 
 #include "Ravl2/Geometry/Ellipse2d.hh"
 #include "Ravl2/Image/DrawPolygon.hh"
 
-namespace RavlImageN {
-  using namespace RavlN;
+namespace Ravl2 {
   
   template<class DataT>
-  void DrawEllipse(ImageC<DataT> &image,const DataT &value,const Ellipse2dC &ellipse,bool fill = false) {
+  void DrawEllipse(Array<DataT,2> &image,const DataT &value,const Ellipse2dC &ellipse,bool fill = false) {
     RealT maj,min;
     ellipse.Size(maj,min);
     if((maj + min) < 3) { // Very small ?
-      Index2dC at = ellipse.Centre();
-      if(image.Frame().Contains(at))
+      Index<2> at = ellipse.Centre();
+      if(image.range().contains(at))
 	image[at] = value;
       return ;
     }
     RealT step = 2*RavlConstN::pi/(maj + min);
     Polygon2dC poly;
     for(RealT a = 0;a < 2*RavlConstN::pi;a += step)
-      poly.InsLast(ellipse.Point(a));
+      poly.push_back(ellipse.Point(a));
     DrawPolygon(image,value,poly,fill);
   }
   //: Draw an ellipse.

@@ -166,7 +166,6 @@ namespace Ravl2
     }
 
     template<typename DataTypeT>
-    requires xt::has_shape<DataTypeT>
     constexpr auto sumOfSqr(const DataTypeT &a)
     { return xt::sum(a * a); }
 

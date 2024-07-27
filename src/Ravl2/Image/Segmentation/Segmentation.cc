@@ -7,13 +7,11 @@
 
 #include "Ravl2/Image/Segmentation/Segmentation.hh"
 #include "Ravl2/ArrayIterZip.hh"
-//#include "Ravl/Array2dSqr2Iter.hh"
-//#include "Ravl/SArray1d.hh"
-//#include "Ravl/SArray1dIter.hh"
-//#include "Ravl/SArray1dIter2.hh"
-//#include "Ravl/Array2dIter.hh"
-//#include "Ravl/Array2dIter2.hh"
-//#include "Ravl/SobolSequence.hh"
+//#include "Ravl2/Array2dSqr2Iter.hh"
+//#include <vector>
+//#include "Ravl2/SArray1dIter2.hh"
+//#include "Ravl2/Array2dIter2.hh"
+//#include "Ravl2/SobolSequence.hh"
 
 namespace Ravl2
 {
@@ -41,7 +39,7 @@ namespace Ravl2
 	  ret[it.DataBR()].insert(it.DataTR());
 	  ret[it.DataTR()].insert(it.DataBR());
 	}
-	for(;it.Next();) { // The rest of the image row.
+	for(;it.next();) { // The rest of the image row.
 	  if(it.DataBR() != it.DataTR()) {
 	    ret[it.DataBR()].insert(it.DataTR());
 	    ret[it.DataTR()].insert(it.DataBR());
@@ -60,7 +58,7 @@ namespace Ravl2
 	  else
 	    ret[it.DataTR()].insert(it.DataBR());
 	}
-	for(;it.Next();) { // The rest of the image row.
+	for(;it.next();) { // The rest of the image row.
 	  if(it.DataBR() != it.DataTR()) {
 	    if(it.DataBR() < it.DataTR())
 	      ret[it.DataBR()].insert(it.DataTR());
@@ -94,7 +92,7 @@ namespace Ravl2
         ret[it.DataTL()][it.DataBL()]++;
       }
       // First row.
-      for(;it.Next();) {
+      for(;it.next();) {
         if(it.DataBR() != it.DataTR()) {
           ret[it.DataBR()][it.DataTR()]++;
           ret[it.DataTR()][it.DataBR()]++;
@@ -116,7 +114,7 @@ namespace Ravl2
           ret[it.DataTL()][it.DataBL()]++;
         }
         // The rest of the image row.
-        for(;it.Next();) { 
+        for(;it.next();) { 
           if(it.DataBR() != it.DataTR()) {
             ret[it.DataBR()][it.DataTR()]++;
             ret[it.DataTR()][it.DataBR()]++;
@@ -138,7 +136,7 @@ namespace Ravl2
           ret[it.DataTL()][it.DataBL()]++;
       }
       // First row.
-      for(;it.Next();) {
+      for(;it.next();) {
         if(it.DataBR() != it.DataTR()) {
           if(it.DataBR() < it.DataTR())
             ret[it.DataBR()][it.DataTR()]++;
@@ -168,7 +166,7 @@ namespace Ravl2
             ret[it.DataTL()][it.DataBL()]++;
         }
         // The rest of the image row.
-        for(;it.Next();) { 
+        for(;it.next();) { 
           if(it.DataBR() != it.DataTR()) {
             if(it.DataBR() < it.DataTR())
               ret[it.DataBR()][it.DataTR()]++;
@@ -200,7 +198,7 @@ namespace Ravl2
       ret[it.DataTL()]++;
     }
     // First row.
-    for(;it.Next();) {
+    for(;it.next();) {
       if(it.DataBR() != it.DataTR()) {
         ret[it.DataBR()]++;
         ret[it.DataTR()]++;
@@ -222,7 +220,7 @@ namespace Ravl2
         ret[it.DataTL()]++;
       }
       // The rest of the image row.
-      for(;it.Next();) { 
+      for(;it.next();) { 
         if(it.DataBR() != it.DataTR()) {
           ret[it.DataBR()]++;
           ret[it.DataTR()]++;
@@ -421,34 +419,34 @@ namespace Ravl2
   }
 
 #if 0
-  ImageC<ByteRGBValueC> SegmentationBodyC::RandomImage() const {
+  Array<ByteRGBValueC,2> SegmentationBodyC::RandomImage() const {
     //generate Sobol sequence
     SobolSequenceC sobel_sequence(3);
     std::vector<ByteRGBValueC> colours(labels);    
     sobel_sequence.First();
-    for (SArray1dIterC<ByteRGBValueC> it(colours);it;it++,sobel_sequence.Next())
+    for (SArray1dIterC<ByteRGBValueC> it(colours);it;it++,sobel_sequence.next())
       *it = ByteRGBValueC((ByteT) (sobel_sequence.Data()[0]*255), 
 			  (ByteT) (sobel_sequence.Data()[1]*255),
 			  (ByteT) (sobel_sequence.Data()[2]*255));
     
     //create RGBImage
-    ImageC<ByteRGBValueC> rgbimage(segmap.Frame());
+    Array<ByteRGBValueC,2> rgbimage(segmap.range());
     for(Array2dIter2C<unsigned, ByteRGBValueC> seg_it(segmap, rgbimage); seg_it; seg_it++)
       seg_it.data2() = colours[seg_it..data1()];
     
     return rgbimage;
   }
   
-  ImageC<ByteYUVValueC> SegmentationBodyC::RandomTaintImage(ByteT max) const {
+  Array<ByteYUVValueC,2> SegmentationBodyC::RandomTaintImage(ByteT max) const {
     //generate Sobol sequence
     SobolSequenceC sobol_sequence(2);
     
     std::vector<ByteYUVValueC> colours(labels);    
-    for (SArray1dIterC<ByteYUVValueC> it(colours);it;it++,sobol_sequence.Next())
+    for (SArray1dIterC<ByteYUVValueC> it(colours);it;it++,sobol_sequence.next())
       *it = ByteYUVValueC(127, (ByteT) (sobol_sequence.Data()[0]*max), (ByteT)( sobol_sequence.Data()[1]*max));
     
     //create RGBImage
-    ImageC<ByteYUVValueC> yuvimage(segmap.Rectangle());
+    Array<ByteYUVValueC,2> yuvimage(segmap.range());
     for(Array2dIter2C<unsigned, ByteYUVValueC> seg_it(segmap, yuvimage); seg_it; seg_it++)
       seg_it.data2() = colours[seg_it..data1()];
     return yuvimage;

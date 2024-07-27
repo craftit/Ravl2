@@ -153,6 +153,8 @@ s/RealRange1dC/Range<1,float>/g
 s/RealRange2dC/Range<2,float>/g
 s/IndexRange2dSetC/IndexRangeSet<2>/g
 s/Affine2dC/Affine<RealT,2>/g
+s/Tuple2C</std::tuple</g
+s/Tuple3C</std::tuple</g
 
 # Replace Abs() with std::abs()
 s/Abs(/std::abs(/g

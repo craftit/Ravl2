@@ -32,9 +32,9 @@ namespace Ravl2
       if(scale[0] >= 1.0f && scale[1] >= 1.0f)
         return WarpSubsample(img, scale, result);
 
-      //cout << "src frame:" << img.Frame() << std::endl;
-      if(result.Frame().IsEmpty()) {
-        const IndexRange<2> &imgFrame = img.Frame();
+      //cout << "src frame:" << img.range() << std::endl;
+      if(result.range().empty()) {
+        const IndexRange<2> &imgFrame = img.range();
         IndexRange<2> rng(
                 IndexRange<1>(int_ceil(imgFrame[0].min() / scale[0]),
                                 int_floor((imgFrame[0].max() - 0) / scale[0])),
@@ -43,8 +43,8 @@ namespace Ravl2
                 );
         result = Array<OutT,2>(rng);
       }
-      //cout << "res frame:" << result.Frame() << std::endl;
-      Point2f origin(result.Frame().TRow() * scale[0], result.Frame().LCol() * scale[1]);
+      //cout << "res frame:" << result.range() << std::endl;
+      Point2f origin(result.range().min(0) * scale[0], result.range().min(1) * scale[1]);
       //cout << "origin:" << origin << std::endl;
 
     // Reference implementation
@@ -63,7 +63,7 @@ namespace Ravl2
 
         int fx = int_floor(pnt[0]); // Row
         int fxp1 = fx + 1;
-        if(fxp1 >= img.Rows()) fxp1 = fx;
+        if(fxp1 >= img.range().size(0)) fxp1 = fx;
         RealT u = pnt[0] - RealT(fx);
         if(u < RealT(1e-5)) {
           do {
@@ -118,11 +118,11 @@ namespace Ravl2
     template <class InT, class OutT>
     bool WarpScaleBilinear(const Array<InT,2> &img,Array<OutT,2> &result)
     {
-      if(result.Frame().IsEmpty()) return false;
+      if(result.range().empty()) return false;
       // Distance between samples in the input image.
       Vector2f scale({
-		       float(img.Rows()) / float(result.Rows()),
-		       float(img.Cols()) / float(result.Cols())
+		       float(img.range().size(0)) / float(result.Rows()),
+		       float(img.range().size(1)) / float(result.Cols())
 		     }
       );
 
@@ -135,7 +135,6 @@ namespace Ravl2
 
 
     //:--
-    //! userlevel=Develop
     template <class InT, class OutT>
     inline void WS_prepareRow(const Array<InT,2> &img, int srcRowI, double srcColR, double scaleColR,
                               OutT *resPtr, int resCols)
@@ -233,9 +232,9 @@ namespace Ravl2
       if(scale[0] < 1 || scale[1] < 1)
         return false;
 
-      //cout << "src frame:" << img.Frame() << std::endl;
+      //cout << "src frame:" << img.range() << std::endl;
 
-      const IndexRange<2> &imgFrame = img.Frame();
+      const IndexRange<2> &imgFrame = img.range();
       IndexRange<2> rng(
               IndexRange<1>(int_ceil(imgFrame[0].min() / scale[0]),
                             int_floor((imgFrame[0].max() - 0) / scale[0])),
@@ -243,17 +242,17 @@ namespace Ravl2
                             int_floor((imgFrame[1].max() - 0) / scale[1]))
       );
 
-      if(result.Frame().IsEmpty()) {
-        result = ImageC<OutT>(rng);
+      if(result.range().empty()) {
+        result = Array<OutT,2>(rng);
       } else {
-        if(!rng.contains(result.Frame())) {
+        if(!rng.contains(result.range())) {
           std::cerr << "Resulting image is too large\n";
           return false;
         }
       }
 
-      //cout << "res frame:" << result.Frame() << std::endl;
-      const Point2f origin(result.Frame().TRow() * scale[0], result.Frame().LCol() * scale[1]);
+      //cout << "res frame:" << result.range() << std::endl;
+      const Point2f origin(result.range().min(0) * scale[0], result.range().min(1) * scale[1]);
       //cout << "origin:" << origin << std::endl;
 
       const int resRows = int(result.Rows());
@@ -310,7 +309,7 @@ namespace Ravl2
         //if(!CheckRow(resRowPtr, resCols, scale[1]*scale[0])) return false;
 
         //copy and scale result
-        OutT *resRowPtr = &(result[j+result.TRow()][result.LCol()]);
+        OutT *resRowPtr = &(result[j+result.min(0)][result.min(1)]);
         for(int i = 0; i < resCols; i++) {
           resRowPtr[i] = OutT(bufferRes[i] * norm);
         }

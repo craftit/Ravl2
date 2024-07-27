@@ -5,43 +5,36 @@
 // see http://www.gnu.org/copyleft/lesser.html
 // file-header-ends-here
 ////////////////////////////////////////////////////////////////////////////
-//! rcsid="$Id$"
 //! author="Radek Marik, modified by Charles Galambos"
-//! docentry="Ravl.API.Images.Segmentation"
-//! lib=RavlImageProc
 //! date="17/10/2000"
-//! file="Ravl/Image/Processing/Segmentation/ConnectedComponents.hh"
 //! example=exConnectedComponents.cc 
 
 #pragma once
 
 #include "Ravl2/Array.hh"
-//#include "Ravl/DP/Process.hh"
-//#include "Ravl/Array2dIter.hh"
-//#include "Ravl/Array2dIter2.hh"
-//#include "Ravl/RCHash.hh"
-//#include "Ravl/HashIter.hh"
-//#include "Ravl/Tuple2.hh"
-//#include "Ravl/SArray1d.hh"
-//#include "Ravl/SArray1dIter.hh"
-//#include "Ravl/Array2dSqr2Iter.hh"
-//#include "Ravl/Array2dSqr2Iter2.hh"
+//#include "Ravl2/DP/Process.hh"
+//#include "Ravl2/Array2dIter2.hh"
+//#include "Ravl2/RCHash.hh"
+//#include "Ravl2/HashIter.hh"
+//#include <tuple>
+//#include <vector>
+//#include "Ravl2/Array2dSqr2Iter.hh"
+//#include "Ravl2/Array2dSqr2Iter2.hh"
 
 namespace Ravl2
 {
 
-  //! userlevel=Develop
   //: Connected component labelling base class
   
   class ConnectedComponentsBaseBodyC {
   public:
-    ConnectedComponentsBaseBodyC(UIntT nmaxLabel=1000, bool ignore=false)
+    ConnectedComponentsBaseBodyC(unsigned nmaxLabel=1000, bool ignore=false)
       : maxLabel(nmaxLabel), 
 	ignoreZero(ignore)
     {}
     //: Constructor.
     
-    static UIntT RelabelTable(SArray1dC<UIntT> &labelTable, UIntT currentMaxLabel);
+    static unsigned RelabelTable(std::vector<unsigned> &labelTable, unsigned currentMaxLabel);
     
   protected:
     size_t maxLabel;
@@ -49,7 +42,6 @@ namespace Ravl2
   };
 
 
-  //! userlevel=Normal
   //: Default <code>CompareT</code> comparison operator for connected components
   
   template <class DataTypeT>
@@ -65,7 +57,6 @@ namespace Ravl2
   };
 
 
-  //! userlevel=Develop
   //: Connected component labelling. 
   
   template <class DataTypeT,class CompareT = ConnectedComponentsCompareC<DataTypeT> >
@@ -73,14 +64,14 @@ namespace Ravl2
     : public ConnectedComponentsBaseBodyC
   {
   public:
-    ConnectedComponentsBodyC (UIntT nmaxLabel = 10000, bool ignoreZero=false,const CompareT &compMethod = CompareT())
+    ConnectedComponentsBodyC (unsigned nmaxLabel = 10000, bool ignoreZero=false,const CompareT &compMethod = CompareT())
       : ConnectedComponentsBaseBodyC(nmaxLabel, ignoreZero),
 	compare(compMethod)
     { SetZero(zero); }
     //: Constructor
     // (See handle class ConnectedComponentsC)
 
-    ConnectedComponentsBodyC (UIntT nmaxLabel,const CompareT &compMethod,const DataTypeT &zeroValue)
+    ConnectedComponentsBodyC (unsigned nmaxLabel,const CompareT &compMethod,const DataTypeT &zeroValue)
       : ConnectedComponentsBaseBodyC(nmaxLabel, true),
 	compare(compMethod),
 	zero(zeroValue)
@@ -88,7 +79,7 @@ namespace Ravl2
     //: Constructor
     // (See handle class ConnectedComponentsC)
     
-    Tuple2C<ImageC<UIntT>,UIntT> Apply (const ImageC<DataTypeT> &im);
+    std::tuple<Array<unsigned,2>,unsigned> Apply (const Array<DataTypeT,2> &im);
     //: Performs the connected component labelling
     
   protected:
@@ -96,7 +87,6 @@ namespace Ravl2
     DataTypeT zero; // Zero value to use.
   };
 
-  //! userlevel=Normal
   //: Connected component labelling. 
   // <p>This class identifies each connected region in an image and labels it
   // with a unique integer.  The label set is contiguous, starting from 1.</p>
@@ -129,10 +119,10 @@ namespace Ravl2
     //!param: ignoreValue - value of pixels not to be included in labelling
 
     
-    Tuple2C<ImageC<UIntT>,UIntT> Apply (const ImageC<DataTypeT> &im)
-    { return Body().Apply(im); }
+    std::tuple<Array<unsigned,2>,unsigned> Apply (const Array<DataTypeT,2> &im)
+    { return Body().apply(im); }
     //: Performs the connected component labelling
-    // The returned Tuple2C object can be used directly to construct a SegmentationC object. 
+    // The returned std::tuple object can be used directly to construct a SegmentationC object. 
 
   protected:
     ConnectedComponentsBodyC<DataTypeT,CompareT> &Body()
@@ -151,37 +141,37 @@ namespace Ravl2
   // Implementation:
   
   template <class DataTypeT,class CompareT >
-  Tuple2C<ImageC<UIntT>,UIntT> ConnectedComponentsBodyC<DataTypeT,CompareT>::Apply (const ImageC<DataTypeT> &ip) { 
-    SArray1dC<UIntT> labelTable(maxLabel+1);
-    //labelTable.Fill(-1);
+  std::tuple<Array<unsigned,2>,unsigned> ConnectedComponentsBodyC<DataTypeT,CompareT>::Apply (const Array<DataTypeT,2> &ip) { 
+    std::vector<unsigned> labelTable(maxLabel+1);
+    //labelTable.fill(-1);
     // If there are two labels for the same component, the bigger label bin
     // contains the value of the smaller label.
-    ImageC<UIntT> jp(ip.Rectangle());
+    Array<unsigned,2> jp(ip.range());
     
     // Label the first row.
     labelTable[0] = 0; // usually a special label
-    UIntT lab = 1; // the last used label 
+    unsigned lab = 1; // the last used label 
     {
-      Array2dIter2C<DataTypeT,UIntT> it1(ip,jp);
-      if(!it1.IsElm())
-	return Tuple2C<ImageC<UIntT>,UIntT>(jp,0); // Zero size image.
-      it1.Data2() = lab; // Label first pixel in the image.
+      Array2dIter2C<DataTypeT,unsigned> it1(ip,jp);
+      if(!it1.valid())
+	return std::tuple<Array<unsigned,2>,unsigned>(jp,0); // Zero size image.
+      it1.data<1>() = lab; // Label first pixel in the image.
       labelTable[lab] = lab; // Setup first label.
-      DataTypeT lastValue = it1.Data1();
-      for (;it1.Next();) { // Only iterate through the first row.
-	if(compare(it1.Data1(),lastValue)) 
-	  it1.Data2() = lab;
+      DataTypeT lastValue = it1.data<0>();
+      for (;it1.next();) { // Only iterate through the first row.
+	if(compare(it1.data<0>(),lastValue)) 
+	  it1.data<1>() = lab;
 	else { // a new component
 	  lab++;
 	  RavlAssert(lab < maxLabel);
-	  it1.Data2() = lab;
+	  it1.data<1>() = lab;
 	  labelTable[lab] = lab;
 	}
-	lastValue = it1.Data1();
+	lastValue = it1.data<0>();
       }
     }
     
-    for(Array2dSqr2Iter2C<DataTypeT,UIntT> it(ip,jp);it;) {
+    for(Array2dSqr2Iter2C<DataTypeT,unsigned> it(ip,jp);it;) {
       // Label the first column pixel.
       if (compare(it.DataBL1(),it.DataTL1()))
 	it.DataBL2() = it.DataTL2();
@@ -205,8 +195,8 @@ namespace Ravl2
 	  // The left pixel belongs to the same component.
 	  // All pixels belong to the old created component.
 	  it.DataBR2() = it.DataBL2(); 
-	  UIntT upperRoot = labelTable[it.DataTR2()];
-	  UIntT leftRoot = labelTable[it.DataBL2()];
+	  unsigned upperRoot = labelTable[it.DataTR2()];
+	  unsigned leftRoot = labelTable[it.DataBL2()];
 	  if (upperRoot == leftRoot) {
 	    // The processed pixel belongs to the upper component.
 	    continue; // Same label, just get on with it.
@@ -220,16 +210,16 @@ namespace Ravl2
 	    leftRoot  = labelTable[leftRoot];
 	  
 	  // Join both tree of labels.
-	  UIntT newRoot = (upperRoot >= leftRoot) ? leftRoot : upperRoot;
+	  unsigned newRoot = (upperRoot >= leftRoot) ? leftRoot : upperRoot;
 	  labelTable[upperRoot] = newRoot;
 	  labelTable[leftRoot]  = newRoot;
 	  
 	  // Relabel both branches in the trees.
-	  UIntT il = it.DataTR2();
-	  for (UIntT hl = labelTable[il];il != newRoot;hl = labelTable[il = hl])
+	  unsigned il = it.DataTR2();
+	  for (unsigned hl = labelTable[il];il != newRoot;hl = labelTable[il = hl])
 	    labelTable[il] = newRoot;
 	  il = it.DataBL2();
-	  for (UIntT hhl = labelTable[il];il != newRoot;hhl = labelTable[il = hhl])
+	  for (unsigned hhl = labelTable[il];il != newRoot;hhl = labelTable[il = hhl])
 	    labelTable[il] = newRoot;
 	  continue;
 	}
@@ -247,18 +237,18 @@ namespace Ravl2
 	labelTable[lab] = lab;
 	// +2 according to the first column pixel
 	if (lab + 2 > maxLabel)  { // Try condensate the 'labelTable'.
-	  UIntT newLastLabel = RelabelTable(labelTable,lab);
-	  Index2dC iat = it.Index();
+	  unsigned newLastLabel = RelabelTable(labelTable,lab);
+	  Index<2> iat = it.Index();
 	  // Change labels in the processed part of the image.
-	  ImageRectangleC subRect(jp.Rectangle());
-	  IndexC ix = iat[0];
-	  IndexC iy = iat[1];
-	  subRect.BRow() = ix - 1;
-	  for(Array2dIterC<UIntT> its(jp,subRect);its;its++)
+	  ImageRectangleC subRect(jp.range());
+	  int ix = iat[0];
+	  int iy = iat[1];
+	  subRect.max(0) = ix - 1;
+	  for(Array2dIterC<unsigned> its(jp,subRect);its;its++)
 	    *its = labelTable[*its];
 	  
 	  // Change labels in the processed part of the row.
-	  for (IndexC jy = ip.Rectangle().Origin().Col(); jy <= iy; ++jy)
+	  for (int jy = ip.range().min()[1]; jy <= iy; ++jy)
 	    jp[ix][jy] = labelTable[jp[ix][jy]];
 	  
 	  // Create the correct label scheme.
@@ -266,42 +256,42 @@ namespace Ravl2
 	    //cerr << "Resizing label table. Max:" << maxLabel << "\n";
 	    // The size of the 'labelTable' is too small.
 	    maxLabel *= 2; // Double the size of the table.
-	    labelTable = SArray1dC<UIntT>(maxLabel+1);
-	    //labelTable.Fill(((UIntT) -1)); // Debug measure...
+	    labelTable = std::vector<unsigned>(maxLabel+1);
+	    //labelTable.fill(((unsigned) -1)); // Debug measure...
 	  }
 	  // Create an identity label set.
-	  UIntT ll = 0;
-	  for(SArray1dIterC<UIntT> itx(labelTable,newLastLabel+1);itx;itx++,ll++)
+	  unsigned ll = 0;
+	  for(SArray1dIterC<unsigned> itx(labelTable,newLastLabel+1);itx;itx++,ll++)
 	    *itx = ll;
 	  lab = newLastLabel;
 	}
-      } while(it.Next());
+      } while(it.next());
     }
     
     // Relabel the whole image
     if (lab == 0)
-      return Tuple2C<ImageC<UIntT>,UIntT>(jp,lab);
+      return std::tuple<Array<unsigned,2>,unsigned>(jp,lab);
     
     // newLastLabel =
     RelabelTable(labelTable,lab);
     // Change labels in the have been processed area
-    for(Array2dIterC<UIntT> it(jp);it;it++) 
+    for(Array2dIterC<unsigned> it(jp);it;it++) 
       *it = labelTable[*it];  
     
     // The user may of requested to ignore the empty pixels (eg. zeros) in the original image
     if(ignoreZero) {
-      SArray1dC<IntT> arr(lab+2);
-      arr.Fill(-1);
-      UIntT curr = 1;
-      for(Array2dIter2C<DataTypeT, UIntT> it(ip, jp);it;it++) {
-	if(it.Data1()==zero) 
-	  it.Data2() = 0;
+      std::vector<IntT> arr(lab+2);
+      arr.fill(-1);
+      unsigned curr = 1;
+      for(Array2dIter2C<DataTypeT, unsigned> it(ip, jp);it;it++) {
+	if(it.data<0>()==zero) 
+	  it.data<1>() = 0;
 	else {
-	  if(arr[it.Data2()]==-1) {
-	    arr[it.Data2()] = curr;
+	  if(arr[it.data<1>()]==-1) {
+	    arr[it.data<1>()] = curr;
 	    curr++;
 	  }
-	  it.Data2() = arr[it.Data2()];
+	  it.data<1>() = arr[it.data<1>()];
 	}
       }
       lab=curr;
@@ -310,11 +300,11 @@ namespace Ravl2
     //cout << "\n " << labelTable << "*****" ; 
     
     // find highest value in lable table , this assumes that they run in sequence. 
-    //UIntT maxLabel = 0 ; 
-    //for ( SArray1dIterC<UIntT> iter ( labelTable) ; iter.IsElm() ; iter.Next() )
+    //unsigned maxLabel = 0 ; 
+    //for ( SArray1dIterC<unsigned> iter ( labelTable) ; iter.valid() ; iter.next() )
       //if ( iter.Data() > maxLabel ) maxLabel = iter.Data() ; 
     //
-    return Tuple2C<ImageC<UIntT>,UIntT>(jp,lab);
+    return std::tuple<Array<unsigned,2>,unsigned>(jp,lab);
   }
 
 }

@@ -7,11 +7,6 @@
 #ifndef RAVLIMAGE_SEGMENTREGION_HEADER
 #define RAVLIMAGE_SEGMENTREGION_HEADER
 //////////////////////////////////////////////////////////////
-//! docentry="Ravl.API.Images.Segmentation"
-//! userlevel=Develop
-//! file="Ravl/Image/Processing/Segmentation/SegmentRegion.hh"
-//! rcsid="$Id$"
-//! lib=RavlImageProc
 //! example=exSegmentation.cc
 //! author="Ratna Rambaruth"
 //! date="12/06/1998"
@@ -22,7 +17,6 @@ namespace Ravl2 {
 
   template<class StatT> class RegionSetC;
   
-  //! userlevel=Develop
   //: Virtual segmentation class (provides interface for real classes)
   
   template<class PixelT, class StatT>

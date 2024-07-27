@@ -6,37 +6,32 @@
 // file-header-ends-here
 #ifndef RAVLIMAGE_MATCHNORMALISEDCORRELATION_HEADER
 #define RAVLIMAGE_MATCHNORMALISEDCORRELATION_HEADER 1
-//! rcsid="$Id$"
-//! lib=RavlImageProc
 //! author="Charles Galambos"
 //! date="28/11/2002"
-//! docentry="Ravl.API.Images.Tracking;Ravl.API.Images.Correlation"
-//! file="Ravl/Image/Processing/Tracking/MatchNormalisedCorrelation.hh"
 
-#include "Ravl/Image/Image.hh"
-#include "Ravl/Image/SummedAreaTable2.hh"
+#include "Ravl2/Array.hh"
+#include "Ravl2/Image/SummedAreaTable2.hh"
 
-namespace RavlImageN {
+namespace Ravl2 {
   
-  //! userlevel=Normal
   //: Do a grid search for the position of the best match using normalised correlation.
   
   class MatchNormalisedCorrelationC {
   public:
-    MatchNormalisedCorrelationC(const ImageC<ByteT> &img);
+    MatchNormalisedCorrelationC(const Array<ByteT,2> &img);
     //: 'img' is the image to search.
     
     MatchNormalisedCorrelationC();
     //: Default constructor.
     
-    bool SetSearchImage(const ImageC<ByteT> &img);
+    bool SetSearchImage(const Array<ByteT,2> &img);
     //: Setup search image.
     // This precomputes some information about the image we're doing tracking in.
     
     bool Search(const Array2dC<ByteT> &templ,
-                const IndexRange2dC &searchArea,
+                const IndexRange<2> &searchArea,
 		RealT &score,
-                Index2dC &at
+                Index<2> &at
                 ) const;
     //: The location in the image most likely to match the template.
     //!param: templ - Template to search.
@@ -47,7 +42,7 @@ namespace RavlImageN {
     
   protected:
     RealT threshold;
-    ImageC<ByteT> searchImg;
+    Array<ByteT,2> searchImg;
     SummedAreaTable2C<IntT> sums; // Sums for searchImg
   };
 }

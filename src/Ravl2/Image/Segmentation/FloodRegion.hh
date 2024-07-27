@@ -6,12 +6,7 @@
 // file-header-ends-here
 #ifndef RAVLIMAGE_FLOODREGION_HEADER
 #define RAVLIMAGE_FLOODREGION_HEADER 1
-//! rcsid="$Id$"
-//! lib=RavlImageProc
 //! author="Charles Galambos, based on code by Jiri Matas."
-//! docentry="Ravl.API.Images.Segmentation"
-//! userlevel=Normal
-//! file="Ravl/Image/Processing/Segmentation/FloodRegion.hh"
 
 #include <queue>
 #include "Ravl2/Array.hh"
@@ -21,7 +16,6 @@
 namespace Ravl2
 {
   
-  //! userlevel=Develop
   //: Scan line info
   
   class FloodRegionLineC {
@@ -58,7 +52,6 @@ namespace Ravl2
     int dr = 0;
   };
   
-  //! userlevel=Normal
   //: Threshold comparison class.
   
   template<class PixelT>
@@ -81,7 +74,6 @@ namespace Ravl2
     PixelT value {};
   };
   
-  //! userlevel=Normal
   //: Flood based region growing.
   // Grow a region from 'seed' including all connected pixel less than or equal to threshold, generate a boundary as the result.
   
@@ -101,7 +93,7 @@ namespace Ravl2
     
     bool SetupImage(const Array<PixelT,2> &nimg) {
       img = nimg;
-      IndexRange<2> rng = img.Frame().Expand(1);
+      IndexRange<2> rng = img.range().expand(1);
       if(!marki.range().contains(rng)) {
 	marki = Array<int,2>(rng);
 	marki.fill(0);
@@ -149,16 +141,16 @@ namespace Ravl2
     inclusionTest = inclusionCriteria;
     pixQueue = std::queue<FloodRegionLineC >();
     // Check seed.
-    RavlAssert(img.Frame().Contains(seed));
+    RavlAssert(img.range().contains(seed));
     if(!inclusionTest(img[seed]))
       return false; // Empty region.
     
     // Setup stack.
     
-    const auto &imgCols = img.Range2();
-    const auto &imgRows = img.Range1();
+    const auto &imgCols = img.range(1);
+    const auto &imgRows = img.range(0);
     
-    if(img.Frame().Range1().Contains(seed[0]+1))
+    if(img.range().Range1().contains(seed[0]+1))
       pixQueue.push(FloodRegionLineC(seed[0]+1,seed[1],seed[1],1));
     pixQueue.push(FloodRegionLineC(seed[0],seed[1],seed[1],-1));
     
@@ -200,7 +192,7 @@ namespace Ravl2
       l = c+1;
       if (l < lsc) { // Leak on the left ?
         int newRow = lsr-line.DR();
-        if(imgRows.Contains(newRow))
+        if(imgRows.contains(newRow))
           pixQueue.push(FloodRegionLineC(newRow,l,lsc-1,-line.DR()));
       }
       
@@ -213,13 +205,13 @@ namespace Ravl2
         
         {
           int newRow = lsr+line.DR();
-          if(imgRows.Contains(newRow))
+          if(imgRows.contains(newRow))
             pixQueue.push(FloodRegionLineC(newRow,l,c-1,line.DR()));
         }
         
         if (c > (line.End() + 1)) { // Leak on the right ?
           int newRow = lsr-line.DR();
-          if(imgRows.Contains(newRow))
+          if(imgRows.contains(newRow))
             pixQueue.push(FloodRegionLineC(newRow,(line.End() + 1),c-1,-line.DR()));
         }
         
@@ -259,7 +251,7 @@ namespace Ravl2
     // Extract region.
     mask = Array<MaskT,2>(rng.expand(padding));
     if(padding > 0)
-      DrawFrame(mask,MaskT(0),padding,mask.Frame());
+      DrawFrame(mask,MaskT(0),padding,mask.range());
     int size = 0;
 
     for(auto it = begin(clip(mask,rng),clip(marki,rng));it;it++) {
