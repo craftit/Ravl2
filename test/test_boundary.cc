@@ -142,8 +142,6 @@ TEST_CASE("Check things are working properly", "[Boundary]")
 
 #if 0
 
-
-
 TEST(Image, OrderEdges)
 {
   using namespace Ravl2;

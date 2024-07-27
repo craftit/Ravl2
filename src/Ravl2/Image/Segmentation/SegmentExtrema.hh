@@ -4,8 +4,7 @@
 // General Public License (LGPL). See the lgpl.licence file for details or
 // see http://www.gnu.org/copyleft/lesser.html
 // file-header-ends-here
-#ifndef RAVLIMAGE_SEGMENTEXTREMA_HEADER
-#define RAVLIMAGE_SEGMENTEXTREMA_HEADER 1
+#pragma once
 //! rcsid="$Id$"
 //! lib=RavlImageProc
 //! author="Charles Galambos, based on code by Jiri Matas."
@@ -13,11 +12,11 @@
 //! file="Ravl/Image/Processing/Segmentation/SegmentExtrema.hh"
 //! example="extrema.cc" 
 
-#include <string.h>
+#include <memory>
 #include <cstdint>
 #include "Ravl2/Array.hh"
 #include "Ravl2/Image/Segmentation/FloodRegion.hh"
-#include "Ravl/IndexRange2dSet.hh"
+#include "Ravl2/IndexRangeSet.hh"
 
 namespace Ravl2 {
 
@@ -557,5 +556,3 @@ namespace Ravl2 {
 
 }
 
-
-#endif
