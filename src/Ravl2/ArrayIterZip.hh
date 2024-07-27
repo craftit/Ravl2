@@ -167,7 +167,7 @@ namespace Ravl2
     }
 
     //! Test if the iterator is valid.
-    [[nodiscard]] constexpr bool valid() const noexcept
+    [[nodiscard]] constexpr inline bool valid() const noexcept
     { return std::get<0>(mIters).valid();  }
 
     //! Test if the iterator is valid.
@@ -266,5 +266,5 @@ namespace Ravl2
   extern template class ArrayIterZipN<1,uint8_t,uint8_t>;
   extern template class ArrayIterZipN<1,float,float>;
   extern template class ArrayIterZipN<2,uint8_t,uint8_t>;
-  extern template class ArrayIterZipN<2,float,float>;
+  //extern template class ArrayIterZipN<2,float,float>;
 }
