@@ -22,9 +22,7 @@ namespace Ravl2
   class Moments2
   {
   public:
-    inline Moments2()
-        : m00(0.0), m10(0.0), m01(0.0), m20(0.0), m11(0.0), m02(0.0)
-    {}
+    inline Moments2() = default;
     //: Default constructor
     // Creates the moment object with all moments set to be zero.
 
@@ -193,12 +191,12 @@ namespace Ravl2
     //: Swap X and Y co-ordinates.
 
   private:
-    RealT m00;
-    RealT m10;
-    RealT m01;
-    RealT m20;
-    RealT m11;
-    RealT m02;
+    RealT m00 = 0;
+    RealT m10 = 0;
+    RealT m01 = 0;
+    RealT m20 = 0;
+    RealT m11 = 0;
+    RealT m02 = 0;
   };
 
   template<class RealT>

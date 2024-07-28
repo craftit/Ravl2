@@ -52,7 +52,7 @@ namespace Ravl2
     constexpr explicit ArrayIter() = default;
 
     constexpr explicit ArrayIter(DataT *array)
-        : mPtr(array)
+      : mPtr(array)
     {}
 
     constexpr explicit ArrayIter([[maybe_unused]] IndexRange<1> &rng, DataT *array)
@@ -62,8 +62,8 @@ namespace Ravl2
     //! Increment iterator
     constexpr ArrayIter<DataT,1> &operator++()
     {
-	mPtr++;
-	return *this;
+      mPtr++;
+      return *this;
     }
 
     //! Post Increment iterator
@@ -77,8 +77,8 @@ namespace Ravl2
     //! Decrement iterator
     constexpr ArrayIter<DataT,1> &operator--()
     {
-	mPtr--;
-	return *this;
+      mPtr--;
+      return *this;
     }
 
     //! Decrement iterator
@@ -95,7 +95,7 @@ namespace Ravl2
     constexpr ArrayIter<DataT,1> &operator+=(IntegerT offset)
     {
       mPtr += offset;
-	return *this;
+      return *this;
     }
 
     //! Add an offset to the iterator
@@ -108,35 +108,35 @@ namespace Ravl2
     }
 
     //! Spaceship operator
-      [[nodiscard]] constexpr auto operator<=>(const ArrayIter<DataT,1> &other) const
-      { return mPtr <=> other.mPtr; }
+    [[nodiscard]] constexpr auto operator<=>(const ArrayIter<DataT,1> &other) const
+    { return mPtr <=> other.mPtr; }
 
-      //! Compare iterators
-      [[nodiscard]] constexpr bool operator==(const ArrayIter<DataT,1> &other) const
-      { return mPtr == other.mPtr; }
+    //! Compare iterators
+    [[nodiscard]] constexpr bool operator==(const ArrayIter<DataT,1> &other) const
+    { return mPtr == other.mPtr; }
 
-      //! Compare iterators
-      [[nodiscard]] constexpr bool operator!=(const ArrayIter<DataT,1> &other) const
-      { return mPtr != other.mPtr; }
+    //! Compare iterators
+    [[nodiscard]] constexpr bool operator!=(const ArrayIter<DataT,1> &other) const
+    { return mPtr != other.mPtr; }
 
-      //! Compare iterators
-      [[nodiscard]] constexpr bool operator==(const DataT *other) const
-      { return mPtr == other; }
+    //! Compare iterators
+    [[nodiscard]] constexpr bool operator==(const DataT *other) const
+    { return mPtr == other; }
 
-      //! Compare iterators
-      [[nodiscard]] constexpr bool operator!=(const DataT *other) const
-      { return mPtr != other; }
+    //! Compare iterators
+    [[nodiscard]] constexpr bool operator!=(const DataT *other) const
+    { return mPtr != other; }
 
-      //! Access element
-      [[nodiscard]] constexpr DataT &operator*() const
-      { return *mPtr; }
+    //! Access element
+    [[nodiscard]] constexpr DataT &operator*() const
+    { return *mPtr; }
 
-      //! Index access
-      [[nodiscard]] constexpr DataT &operator[](int i) const
-      { return mPtr[i]; }
+    //! Index access
+    [[nodiscard]] constexpr DataT &operator[](int i) const
+    { return mPtr[i]; }
 
   private:
-      DataT *mPtr = nullptr;
+    DataT *mPtr = nullptr;
   };
 
   //! Add to the iterator
