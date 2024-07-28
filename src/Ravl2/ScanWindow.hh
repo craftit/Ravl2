@@ -120,6 +120,10 @@ namespace Ravl2
       return ArrayAccess<DataT,N>(mWindowRange,&(*mAt),mAt.strides());
     }
 
+    //! Index of the window in the image.
+    [[nodiscard]] Index<N> index() const
+    { return mAt.index(); }
+
   protected:
     IndexRange<N> mWindowRange;
     IndexRange<N> mArea; // Area we're scanning over

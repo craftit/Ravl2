@@ -251,7 +251,7 @@ namespace Ravl2 {
     //!param:minMargin - Threshold for region stability.
     
     std::vector<BoundaryC> Apply(const Array<PixelT,2> &img) {
-      if(typeid(PixelT) == typeid(ByteT)) // Should decided at compile time.
+      if(typeid(PixelT) == typeid(uint8_t)) // Should decided at compile time.
         SortPixelsByte(img);
       else
         SortPixels(img);
@@ -264,7 +264,7 @@ namespace Ravl2 {
     // boundries you can use its 'Order()' method to sort them.
     
     std::vector<Array<int,2> > ApplyMask(const Array<PixelT,2> &img) {
-      if(typeid(PixelT) == typeid(ByteT)) // Should decided at compile time.
+      if(typeid(PixelT) == typeid(uint8_t)) // Should decided at compile time.
         SortPixelsByte(img);
       else
         SortPixels(img);

@@ -88,6 +88,7 @@ s/Round(/int_round(/g
 # Update Arrays
 s/SArray1dC<\([^>]*\)>/std::vector<\1>/g
 s/Array1dC<\([^>]*\)>/Array<\1,1>/g
+s/Array2dC<\([^>]*\)>/Array<\1,2>/g
 s/CollectionC/std::vector/g
 
 # Image has .TRow() and .BRow() methods, replace with range().min(0) and range().max(0) where we're the variable is called images

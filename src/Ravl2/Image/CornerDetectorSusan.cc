@@ -10,7 +10,7 @@
 #include "Ravl2/Image/CornerDetectorSusan.hh"
 #include "Ravl2/Math.hh"
 
-#define DODEBUG 1
+#define DODEBUG 0
 #if DODEBUG
 #define ONDEBUG(x) x
 #else

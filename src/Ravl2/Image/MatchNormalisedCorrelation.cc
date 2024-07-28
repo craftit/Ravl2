@@ -47,7 +47,7 @@ namespace Ravl2 {
   //: The location in the image most likely to match the template.
   // Returns false if no likely match is found.
   
-  bool MatchNormalisedCorrelationC::Search(const Array2dC<ByteT> &templ,
+  bool MatchNormalisedCorrelationC::Search(const Array<ByteT,2> &templ,
 					   const IndexRange<2> &searchArea,
 					   RealT &score,Index<2> &at) const {
     score = 0;

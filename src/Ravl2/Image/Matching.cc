@@ -4,32 +4,23 @@
 // General Public License (LGPL). See the lgpl.licence file for details or
 // see http://www.gnu.org/copyleft/lesser.html
 // file-header-ends-here
-//! rcsid="$Id$"
-//! lib=RavlImageProc
-//! file="Ravl/Image/Processing/Filters/Matching.cc"
 
-#include "Ravl/config.h"
-#include "Ravl/Array2dIter2.hh"
+#include "Ravl2/config.hh"
+#include "Ravl2/Image/Matching.hh"
 
 #if RAVL_USE_MMX  
-#include "Ravl/mmx.hh"
+#include "Ravl2/mmx.hh"
 #endif
 
-#include "Ravl/Image/Matching.hh"
-
-namespace RavlImageN {
+namespace Ravl2 {
   
 #if RAVL_USE_MMX
-  IntT MatchSumAbsDifference(const Array2dC<ByteT> &imgTemplate,
-			     const Array2dC<ByteT> &img,
-			     const Index2dC &origin,
-			     IntT &diff) {
+  IntT matchSumAbsDifference(const Array<ByteT,2> &imgTemplate,
+			     const Array<ByteT,2> &img)
+  {
     diff = 0;
-    IndexRange2dC srect(imgTemplate.Frame());
-    srect += origin;
-    RavlAssert(img.Frame().Contains(srect)); 
     INITMMX;
-    int cols = imgTemplate.Frame().Cols();
+    int cols = imgTemplate.range().Cols();
     switch(cols) { // Choose cols.
     case 8: {
       BufferAccess2dIter2C<ByteT,ByteT> it(imgTemplate,imgTemplate.Range1(),imgTemplate.Range2(),
@@ -53,7 +44,7 @@ namespace RavlImageN {
 	   "\n\t punpcklbw  %%mm6, %%mm1             # unpack to higher precision for accumulation "     
 	   "\n\t paddw      %%mm0, %%mm7             # accumulate difference... "
 	   "\n\t paddw      %%mm1, %%mm7             # accumulate difference... "
-	   : : "m"(it.Data1()), "m"(it.Data2())
+	   : : "m"(it.data<0>()), "m"(it.data<1>())
 	   );
       } while(it.NextRow()) ;
       
@@ -107,7 +98,7 @@ namespace RavlImageN {
 	   "\n\t punpcklbw  %%mm6, %%mm4             # unpack to higher precision for accumulation "
 	   "\n\t paddw      %%mm3, %%mm7             # accumulate difference... "
 	   "\n\t paddw      %%mm4, %%mm7             # accumulate difference... "
-	   : : "m"(it.Data1()), "m"(it.Data2()),"m"(*(&(it.Data1()) + 8)),"m"(*(&(it.Data2())+8)) 
+	   : : "m"(it.data<0>()), "m"(it.data<1>()),"m"(*(&(it.data<0>()) + 8)),"m"(*(&(it.data<1>())+8)) 
 	   );
       } while(it.NextRow()) ;
       
@@ -129,7 +120,7 @@ namespace RavlImageN {
       RangeBufferAccess2dC<ByteT> subImg(img,srect); 
       if(cols < 8) { // 1 - 7
 	for(BufferAccess2dIter2C<ByteT,ByteT> it(imgTemplate,imgTemplate.Range2(),subImg,subImg.Range2());it;it++)
-	  diff += Abs((IntT) it.Data1() - (IntT) it.Data2());
+	  diff += std::abs((IntT) it.data<0>() - (IntT) it.data<1>());
       } else if(cols < 16) { // 9 - 15
 	
 	BufferAccess2dIter2C<ByteT,ByteT> it(imgTemplate,imgTemplate.Range2(),subImg,subImg.Range2());
@@ -151,12 +142,12 @@ namespace RavlImageN {
 	     "\n\t punpcklbw  %%mm6, %%mm1             # unpack to higher precision for accumulation "     
 	     "\n\t paddw      %%mm0, %%mm7             # accumulate difference... "
 	     "\n\t paddw      %%mm1, %%mm7             # accumulate difference... "
-	     : : "m"(it.Data1()), "m"(it.Data2())
+	     : : "m"(it.data<0>()), "m"(it.data<1>())
 	     );
 	  it.NextCol(8); // Skip ones we've added.
 	  do {
-	    diff1 += Abs((IntT) it.Data1() - (IntT) it.Data2());
-	  } while(it.Next());
+	    diff1 += std::abs((IntT) it.data<0>() - (IntT) it.data<1>());
+	  } while(it.next());
 	}
 	
 	__asm__ volatile 
@@ -204,12 +195,12 @@ namespace RavlImageN {
 	     "\n\t punpcklbw  %%mm6, %%mm4             # unpack to higher precision for accumulation "
 	     "\n\t paddw      %%mm3, %%mm7             # accumulate difference... "
 	     "\n\t paddw      %%mm4, %%mm7             # accumulate difference... "
-	     : : "m"(it.Data1()), "m"(it.Data2()),"m"(*(&(it.Data1()) + 8)),"m"(*(&(it.Data2())+8)) 
+	     : : "m"(it.data<0>()), "m"(it.data<1>()),"m"(*(&(it.data<0>()) + 8)),"m"(*(&(it.data<1>())+8)) 
 	     );
 	  it.NextCol(16); // Skip ones we've added.
 	  do {
-	    diff1 += Abs((IntT) it.Data1() - (IntT) it.Data2());
-	  } while(it.Next());
+	    diff1 += std::abs((IntT) it.data<0>() - (IntT) it.data<1>());
+	  } while(it.next());
 	}
 	
 	__asm__ volatile 

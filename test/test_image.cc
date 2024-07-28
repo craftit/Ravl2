@@ -7,6 +7,7 @@
 #include "Ravl2/Image/PeakDetector.hh"
 #include "Ravl2/Image/Array2Sqr2Iter.hh"
 #include "Ravl2/Image/Array2Sqr2Iter2.hh"
+#include "Ravl2/Image/Matching.hh"
 
 #define CHECK_EQ(a,b) CHECK((a) == (b))
 #define CHECK_NE(a,b) CHECK_FALSE((a) == (b))
@@ -122,7 +123,7 @@ TEST_CASE("SubPixelPeakDetection", "[Image]")
 
 // Test 2x2 iterators.
 
-TEST_CASE("Array2Sqr2Iter", "[Image]")
+TEST_CASE("Array2Sqr2Iter")
 {
   using namespace Ravl2;
 
@@ -190,6 +191,26 @@ TEST_CASE("Array2Sqr2Iter2", "[Image]")
     ASSERT_EQ(it2a.DataTR1(), it2a.DataTR2());
     ASSERT_EQ(it2a.DataBL1(), it2a.DataBL2());
     ASSERT_EQ(it2a.DataTL1(), it2a.DataTL2());
+  }
+}
+
+TEST_CASE("matchSumAbsDifference")
+{
+  using namespace Ravl2;
+  using ByteT = uint8_t;
+  for(size_t imgSize = 3;imgSize < 19;imgSize++) {
+    Array<ByteT,2> img1({imgSize,imgSize});
+    Array<ByteT,2> img2({imgSize,imgSize});
+    int v = 0;
+    for(auto &it : img1)
+      it = ByteT((v++ % 32) + 1);
+
+    v = 0;
+    for(auto &it : img2)
+      it = ByteT((v++ % 32) + 2);
+    auto sum = matchSumAbsDifference<ByteT,int>(img1,img2);
+    SPDLOG_INFO("Sum {} = {}",imgSize, sum);
+    CHECK(sum == int(imgSize * imgSize));
   }
 }
 

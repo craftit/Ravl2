@@ -14,7 +14,7 @@
 namespace Ravl2 {
 
   template<class PixelT,class MaskT>
-  void DrawMask(Array2dC<PixelT> &img,const Array2dC<MaskT> &mask,const PixelT &value) {
+  void DrawMask(Array<PixelT,2> &img,const Array<MaskT,2> &mask,const PixelT &value) {
     IndexRange<2> rng = img.range();
     rng.clipBy(mask.range());
     if(rng.area() < 1)

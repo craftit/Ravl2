@@ -6,8 +6,6 @@
 
 namespace Ravl2
 {
-    //! Define the type of real number
-    using ByteT = uint8_t;
 
     //! Get the sign of number
     //! returns -1,0 or 1

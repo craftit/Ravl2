@@ -15,6 +15,7 @@ add_library (Ravl2Image
         Corner.cc Corner.hh
         CornerDetectorSusan.cc CornerDetectorSusan.hh
         PeakDetector.cc PeakDetector.hh
+        Matching.cc Matching.hh
 )
 
 add_library(ravl2::Ravl2Image ALIAS Ravl2Image)

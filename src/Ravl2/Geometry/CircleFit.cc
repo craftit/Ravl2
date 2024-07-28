@@ -6,9 +6,6 @@
 // file-header-ends-here
 //! date="3/5/1997"
 //! author="Charles Galambos"
-//! rcsid="$Id$"
-//! lib=RavlMath
-//! file="Ravl/Math/Geometry/Euclidean/2D/FitCircle2d.cc"
 
 #include "Ravl2/Geometry/Circle.hh"
 #include "Ravl2/LeastSquares.hh"
@@ -46,7 +43,7 @@ namespace Ravl2
     const RealT X = B[0] / -2;
     const RealT Y = B[1] / -2;
     Centre() = Point<RealT,2>({X,Y});
-    Radius() = Sqrt(((X * X) + (Y * Y)) - B[2]);
+    Radius() = std::sqrt(((X * X) + (Y * Y)) - B[2]);
     ONDEBUG(SPDLOG_INFO("Circle2dC::FitLSQ() Center={} Radius={}", Centre(), Radius()));
     return true;
   }

@@ -1066,7 +1066,7 @@ namespace Ravl2
 
     explicit constexpr Array(std::vector<DataT> &&vec)
      : ArrayView<DataT, 1>(vec.data(),IndexRange<1>(0,int(vec.size())-1)),
-       m_buffer(std::shared_ptr<DataT[]>(this->m_data,[aVec = std::move(vec)](DataT *delPtr){ assert(aVec.data() == delPtr);}))
+       m_buffer(std::shared_ptr<DataT[]>(this->m_data,[aVec = std::move(vec)]([[maybe_unused]] DataT *delPtr){ assert(aVec.data() == delPtr);}))
     {}
 
     explicit constexpr Array(const std::vector<DataT> &vec)

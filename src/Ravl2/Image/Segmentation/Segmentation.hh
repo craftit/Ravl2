@@ -95,7 +95,7 @@ namespace Ravl2
     //: Compute moments for each of the segmented regions.
     // if ignoreZero is true, region labeled 0 is ignored.
 
-    [[nodiscard]] Array<ByteT,2> ByteImage() const;
+    [[nodiscard]] Array<uint8_t,2> ByteImage() const;
     //: Returns the segmentation map in the form of a ByteImageC
     // Note: if there are more than 255 labels in the image, some may be used twice.
 

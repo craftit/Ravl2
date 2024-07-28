@@ -20,6 +20,7 @@ namespace Ravl2
   {
   public:
     using RealT = CornerC::RealT;
+    using ByteT = uint8_t;
 
     //! Constructor.
     //! threshold = Minimum level of cornerness to accept. <br>

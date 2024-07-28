@@ -5,9 +5,6 @@
 // see http://www.gnu.org/copyleft/lesser.html
 // file-header-ends-here
 ////////////////////////////////////////////////////////////////////
-//! rcsid="$Id$"
-//! lib=RavlImageProc
-//! file="Ravl/Image/Processing/Segmentation/ConnectedComponents.cc"
 
 #include "Ravl2/Image/Segmentation/ConnectedComponents.hh"
 
@@ -28,8 +25,8 @@ namespace Ravl2
   // which should have the same label. It is valid that a root item
   // of a tree has the same label value as the item index.
   
-  unsigned ConnectedComponentsBaseBodyC::RelabelTable(SArray1dC<unsigned> &labelTable, unsigned currentMaxLabel) {
-    ONDEBUG(cerr << "ConnectedComponentsBaseBodyC::RelabelTable(), Called. MaxLabel:" << currentMaxLabel << "\n");
+  unsigned ConnectedComponentsBaseBodyC::RelabelTable(std::vector<unsigned> &labelTable, unsigned currentMaxLabel) {
+    ONDEBUG(std::cerr << "ConnectedComponentsBaseBodyC::RelabelTable(), Called. MaxLabel:" << currentMaxLabel << "\n");
     
     // Make all trees of labels have a depth of one.
     for(SArray1dIterC<unsigned> it(labelTable,currentMaxLabel+1);it;it++) {
@@ -50,7 +47,7 @@ namespace Ravl2
       // The root will be relabeled by a new label.
       *it2 = (m >= n) ? n++ : m;
     }
-    ONDEBUG(cerr << "ConnectedComponentsBaseBodyC::RelabelTable(), Complete MaxLabel:" << (n-1) << "\n"); 
+    ONDEBUG(std::cerr << "ConnectedComponentsBaseBodyC::RelabelTable(), Complete MaxLabel:" << (n-1) << "\n"); 
     return n - 1;  // the new last used label
   }
   

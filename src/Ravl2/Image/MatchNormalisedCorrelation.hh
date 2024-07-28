@@ -28,7 +28,7 @@ namespace Ravl2 {
     //: Setup search image.
     // This precomputes some information about the image we're doing tracking in.
     
-    bool Search(const Array2dC<ByteT> &templ,
+    bool Search(const Array<ByteT,2> &templ,
                 const IndexRange<2> &searchArea,
 		RealT &score,
                 Index<2> &at

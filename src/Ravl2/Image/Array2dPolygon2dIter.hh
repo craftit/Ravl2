@@ -25,7 +25,7 @@ namespace Ravl2
     //: Goto point of the iterator.
     
     bool IsElm() const
-    { return m_arrayIter.IsElm(); }
+    { return m_arrayIter.valid(); }
     //: At valid position ?
 
     operator bool() const
@@ -57,7 +57,7 @@ namespace Ravl2
     //: Constant access to member function of data..
 
     Index<2> Index()
-    { return Index<2>(m_polygonIter.Row(), m_arrayIter.Index()); }
+    { return Index<2>(m_polygonIter[0], m_arrayIter.Index()); }
     //: Access to the current index in the array
 
     bool Next();
@@ -94,13 +94,13 @@ namespace Ravl2
 
   template<class DataT>
   bool Array2dPolygon2dIterC<DataT>::Next() {
-    if (m_arrayIter.IsElm()) {
-      m_arrayIter.Next();
-      if (m_arrayIter.IsElm())
+    if (m_arrayIter.valid()) {
+      m_arrayIter.next();
+      if (m_arrayIter.valid())
         return true;
     }
     for (; m_polygonIter; m_polygonIter++) {
-      int row = m_polygonIter.Row();
+      int row = m_polygonIter[0];
       IndexRange<1> indexRange = m_polygonIter.IndexRange();
       if (m_rowRange.contains(row) &&
           m_colRange.overlaps(indexRange)) {
