@@ -180,6 +180,7 @@ TEST_CASE("IndexRange", "[IndexRange]")
 TEST_CASE("IndexRangeSet", "[IndexRangeSet]")
 {
   using namespace Ravl2;
+  SECTION("Basic 2d RangeSet operations")
   {
     IndexRange<2> rect1({{0, 1}, {0, 1}});
     IndexRange<2> rect2({{1, 2}, {1, 2}});
@@ -200,6 +201,8 @@ TEST_CASE("IndexRangeSet", "[IndexRangeSet]")
     IndexRangeSet<2> t4 = IndexRangeSet<2>::subtract(rect3, rect2);
     CHECK(t4.area() == 3);
   }
+
+  SECTION("Random 1d RangeSet operations")
   {
     // Add a random set of 1d ranges.
     std::random_device rd;
@@ -248,6 +251,7 @@ TEST_CASE("IndexRangeSet", "[IndexRangeSet]")
 
 TEST_CASE("Array", "[Array]")
 {
+  SECTION("Array 1d")
   {
     // Test creation of 1 dimensional array.
 
@@ -272,9 +276,8 @@ TEST_CASE("Array", "[Array]")
     CHECK(c == 10);
   }
 
+  SECTION("Array 2d")
   {
-    // Test creation of 2-dimensional array.
-
     Ravl2::IndexRange<2> aRange {10,11};
 
     // Create a 2-dimensional array of objects.
@@ -307,11 +310,10 @@ TEST_CASE("Array", "[Array]")
         CHECK_EQ(val[i][j],c++);
       }
     }
-
-
     CHECK_EQ(c,110);
   }
 
+  SECTION("Array 3d")
   {
     // Test creation of 3-dimensional array.
 
@@ -351,6 +353,37 @@ TEST_CASE("Array", "[Array]")
     }
 
     CHECK_EQ(c,1320);
+  }
+
+  SECTION("Array 3d Partial index")
+  {
+    Ravl2::IndexRange<3> aRange {10,11,12};
+    Ravl2::Array<int,3> val(aRange);
+
+    int i = 0;
+    for(auto a : aRange) {
+      val[a] = i++;
+    }
+
+    Ravl2::Index<2> idx = {0,0};
+    CHECK(val[idx][0] == 0);
+    CHECK(val[0][idx] == 0);
+    CHECK(val[idx][1] == 1);
+    CHECK(val[idx][2] == 2);
+    CHECK(val[idx].range().size() == 12);
+    CHECK(val[Ravl2::toIndex(1,2)][3] == val[1][2][3]);
+    CHECK(val[1][Ravl2::toIndex(2,3)] == val[1][2][3]);
+
+    // Check const access
+
+    const Ravl2::Array<int,3> &cval = val;
+    CHECK(cval[idx][0] == 0);
+    CHECK(cval[0][idx] == 0);
+    Ravl2::Index<2> idx2 = {0,1};
+    CHECK(cval[0][idx2] == 1);
+    CHECK(cval[0][Ravl2::toIndex(0,3)] == 3);
+    CHECK(cval[Ravl2::toIndex(1,2)][3] == cval[1][2][3]);
+    CHECK(cval[1][Ravl2::toIndex(2,3)] == cval[1][2][3]);
   }
 
   SECTION("Conversion from a vector")

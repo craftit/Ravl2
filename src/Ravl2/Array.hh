@@ -234,7 +234,35 @@ namespace Ravl2
       return *mPtr;
     }
 
-    //! Drop index one level.
+    //! Partial index
+    template<unsigned M>
+    requires (M < N)
+    [[nodiscard]] constexpr auto operator[](const Index<M> &ind)
+    {
+      DataT *mPtr = m_data;
+      for(unsigned i = 0;i < M;i++)
+      {
+	assert(m_ranges[i].contains(ind[i]));
+	mPtr += m_strides[i] * ind[i];
+      }
+      return ArrayAccess<DataT, N - M>(m_ranges + M, mPtr, m_strides + M);
+    }
+
+    //! Partial index
+    template<unsigned M>
+    requires (M < N)
+    [[nodiscard]] constexpr auto operator[](const Index<M> &ind) const
+    {
+      const DataT *mPtr = m_data;
+      for(unsigned i = 0;i < M;i++)
+      {
+	assert(m_ranges[i].contains(ind[i]));
+	mPtr += m_strides[i] * ind[i];
+      }
+      return ArrayAccess<const DataT, N - M>(m_ranges + M, mPtr, m_strides + M);
+    }
+
+    //! Index an element
     [[nodiscard]] constexpr const DataT &operator[](const Index<N> &ind) const
     {
       const DataT *mPtr = m_data;
@@ -734,14 +762,42 @@ namespace Ravl2
       { return m_data; }
 
       //! Access next dimension of array.
-      [[nodiscard]] constexpr ArrayAccess<DataT, N - 1> operator[](int i)
+      [[nodiscard]] constexpr auto operator[](int i)
       {
         assert(m_range[0].contains(i));
         return ArrayAccess<DataT, N - 1>(&m_range[1], m_data + i * m_strides[0], &m_strides[1]);
       }
 
-      //! Access next dimension of array.
-      [[nodiscard]] constexpr ArrayAccess<const DataT, N - 1> operator[](int i) const
+      //! Partial index
+      template<unsigned M>
+      requires (M < N)
+      [[nodiscard]] constexpr auto operator[](const Index<M> &ind)
+      {
+	DataT *mPtr = m_data;
+	for(unsigned i = 0;i < M;i++)
+	{
+	  assert(m_range[i].contains(ind[i]));
+	  mPtr += m_strides[i] * ind[i];
+	}
+	return ArrayAccess<DataT, N - M>(&m_range[M], mPtr, &m_strides[M]);
+      }
+
+      //! Partial index
+      template<unsigned M>
+      requires (M < N)
+      [[nodiscard]] constexpr auto operator[](const Index<M> &ind) const
+      {
+	const DataT *mPtr = m_data;
+	for(unsigned i = 0;i < M;i++)
+	{
+	  assert(m_range[i].contains(ind[i]));
+	  mPtr += m_strides[i] * ind[i];
+	}
+	return ArrayAccess<const DataT, N - M>(&m_range[M], mPtr, &m_strides[M]);
+      }
+
+    //! Access next dimension of array.
+      [[nodiscard]] constexpr auto operator[](int i) const
       {
         assert(m_range[0].contains(i));
         return ArrayAccess<const DataT, N - 1>(&m_range[1], m_data + i * m_strides[0], &m_strides[1]);
@@ -957,7 +1013,7 @@ namespace Ravl2
             m_range(range)
       {}
 
-    constexpr ArrayView() = default;
+      constexpr ArrayView() = default;
   protected:
       //! Create an array of the given size.
       explicit constexpr ArrayView(const IndexRange<1> &range)
