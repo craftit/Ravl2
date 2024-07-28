@@ -21,10 +21,10 @@ namespace Ravl2
   class Polygon2dC;
 
   //! Is the inside of the boundary on the left or right side of the boundary?n
-  enum class BoundaryTypeT { INSIDE_LEFT, INSIDE_RIGHT };
+  enum class BoundaryOrientationT { INSIDE_LEFT, INSIDE_RIGHT };
 
-  inline BoundaryTypeT reverse(BoundaryTypeT orient)
-  { return (orient == BoundaryTypeT::INSIDE_LEFT) ? BoundaryTypeT::INSIDE_RIGHT : BoundaryTypeT::INSIDE_LEFT; }
+  inline BoundaryOrientationT reverse(BoundaryOrientationT orient)
+  { return (orient == BoundaryOrientationT::INSIDE_LEFT) ? BoundaryOrientationT::INSIDE_RIGHT : BoundaryOrientationT::INSIDE_LEFT; }
 
   //! Crack code boundary
 
@@ -43,20 +43,20 @@ namespace Ravl2
     //! Create the boundary from the list of edges with an appropriate orientation.
     // The 'edgeList' will be a part of boundary.  If orient is true, the object
     // is on the left of the boundary.
-    explicit BoundaryC(const std::vector<CrackC> & edgeList, BoundaryTypeT orient = BoundaryTypeT::INSIDE_LEFT)
+    explicit BoundaryC(const std::vector<CrackC> & edgeList, BoundaryOrientationT orient = BoundaryOrientationT::INSIDE_LEFT)
      : orientation(orient), mEdges(edgeList)
     {}
 
     //! Create the boundary from the list of edges with an appropriate orientation.
     // The 'edgeList' will be a part of boundary.  If orient is true, the object
     // is on the left of the boundary.
-    explicit BoundaryC(std::vector<CrackC> && edgeList,  BoundaryTypeT orient = BoundaryTypeT::INSIDE_LEFT)
+    explicit BoundaryC(std::vector<CrackC> && edgeList, BoundaryOrientationT orient = BoundaryOrientationT::INSIDE_LEFT)
       : orientation(orient), mEdges(std::move(edgeList))
     {}
 
     //! Empty boundary with orientation 'orient'.
     //! If orient is true, the object is on the left of the boundary.
-    explicit BoundaryC(BoundaryTypeT orient)
+    explicit BoundaryC(BoundaryOrientationT orient)
       : orientation(orient)
     {}
 
@@ -139,20 +139,20 @@ namespace Ravl2
 
   private:
     //! Orientation of the boundary.
-    BoundaryTypeT orientation = BoundaryTypeT::INSIDE_LEFT;
+    BoundaryOrientationT orientation = BoundaryOrientationT::INSIDE_LEFT;
 
     std::vector<CrackC> mEdges;
 
-    std::unordered_map<BVertexC, std::array<BVertexC,2> > CreateHashtable() const;
+    std::unordered_map<BoundaryVertexC, std::array<BoundaryVertexC, 2> > CreateHashtable() const;
     // Returns the hash table for the boundary; all end points which are only
     // connected to one other point will have at least one invalid
     // neighbour (-1, -1).
 
-    BoundaryC OrderContinuous(const std::unordered_map<BVertexC, std::array<BVertexC,2> > & hashtable, const CrackC & firstCrack, bool orient) const;
+    BoundaryC OrderContinuous(const std::unordered_map<BoundaryVertexC, std::array<BoundaryVertexC, 2> > & hashtable, const CrackC & firstCrack, bool orient) const;
     // Returns a continuous boundary; if the boundary is open, 'orient' will be 
     // ignored and 'firstCrack' must be one of the end points of the boundary.
 
-    std::vector<BVertexC> FindEndpoints(const std::unordered_map<BVertexC, std::array<BVertexC,2> > & hashtable) const;
+    std::vector<BoundaryVertexC> FindEndpoints(const std::unordered_map<BoundaryVertexC, std::array<BoundaryVertexC, 2> > & hashtable) const;
     // Returns the endpoints of the boundary, i.e. if the boundary is closed,
     // the list will be empty.
   };
@@ -161,10 +161,10 @@ namespace Ravl2
   std::ostream & operator<<(std::ostream & os, const BoundaryC & bnd);
 
   //: Creates a boundary which connects both boundary vertexes.
-  BoundaryC Line2Boundary(const BVertexC & startVertex, const BVertexC & endVertex);
+  BoundaryC Line2Boundary(const BoundaryVertexC & startVertex, const BoundaryVertexC & endVertex);
 
   //: Creates a boundary around the rectangle.
-  BoundaryC toBoundary(IndexRange<2> rect, BoundaryTypeT type = BoundaryTypeT::INSIDE_LEFT);
+  BoundaryC toBoundary(IndexRange<2> rect, BoundaryOrientationT type = BoundaryOrientationT::INSIDE_LEFT);
 
   template<typename ArrayT,typename DataT>
   requires WindowedArray<ArrayT,DataT,2>
@@ -196,7 +196,7 @@ namespace Ravl2
           mEdges.emplace_back(it.indexBR() + toIndex(1,0), CrackCodeT::CR_UP);
       }
     }
-    return BoundaryC(std::move(mEdges),BoundaryTypeT::INSIDE_LEFT);
+    return BoundaryC(std::move(mEdges), BoundaryOrientationT::INSIDE_LEFT);
   }
 
 }

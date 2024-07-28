@@ -21,11 +21,11 @@ namespace Ravl2
 {
 
   //! Creates a boundary around the rectangle.
-  BoundaryC toBoundary(IndexRange<2> rect, BoundaryTypeT type)
+  BoundaryC toBoundary(IndexRange<2> rect, BoundaryOrientationT type)
   {
     auto origin = rect.min();
     auto endP = rect.max();
-    BVertexC   oVertex(origin);      // to help to GNU C++ 2.6.0
+    BoundaryVertexC   oVertex(origin);      // to help to GNU C++ 2.6.0
     CrackCodeC cr(CrackCodeT::CR_DOWN);
     CrackC      edge(oVertex, cr);
     std::vector<CrackC> edges;
@@ -85,7 +85,7 @@ namespace Ravl2
       SPDLOG_INFO("BoundaryC::area() Code {}  Area={} col={}", edge.crackCode(), area, col);
     }
 #endif
-    if(orientation == BoundaryTypeT::INSIDE_RIGHT)
+    if(orientation == BoundaryOrientationT::INSIDE_RIGHT)
       return -area;
     return area;
   }
@@ -114,7 +114,7 @@ namespace Ravl2
     if (empty())
       return bb;
     bb = IndexRange<2>::mostEmpty();
-    if(orientation == BoundaryTypeT::INSIDE_LEFT) {
+    if(orientation == BoundaryOrientationT::INSIDE_LEFT) {
       ONDEBUG(std::cerr << "BoundaryC::BoundingBox(), Object is on left. \n");
       for(auto edge : mEdges)
       {
@@ -386,10 +386,10 @@ namespace Ravl2
 
 #endif
 
-  BoundaryC Line2Boundary(const BVertexC & startVertex, const BVertexC & endVertex)
+  BoundaryC Line2Boundary(const BoundaryVertexC & startVertex, const BoundaryVertexC & endVertex)
   {
     std::vector<CrackC> boundary;
-    BVertexC  vertex(startVertex);
+    BoundaryVertexC  vertex(startVertex);
     using RealT = float;
     auto     startRow = RealT(startVertex[0]);
     auto     startCol = RealT(startVertex[1]);

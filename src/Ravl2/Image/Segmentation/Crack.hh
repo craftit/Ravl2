@@ -30,8 +30,8 @@ namespace Ravl2
   //!
   //! </pre>
 
-  using BVertexC = Index<2>;
-  using BVertex2 = BVertexC;
+  using BoundaryVertexC = Index<2>;
+  using BoundaryVertex2 = BoundaryVertexC;
 
   [[nodiscard]] inline constexpr Index<2> right(const Index<2> &pxl)
   { return Index<2>(pxl[0],pxl[1]+1); }
@@ -69,14 +69,14 @@ namespace Ravl2
 
     // Create the crack with origin in the boundary vertex 'px' and with
     // direction 'cc'.
-    constexpr CrackC(const BVertex2 & px,const CrackCodeC & cc)
+    constexpr CrackC(const BoundaryVertex2 & px, const CrackCodeC & cc)
       : mAt(px),
 	mCode(cc)
     {}
 
     // Create the crack with origin in the boundary vertex 'px' and with
     // direction 'cc'.
-    constexpr CrackC(const BVertex2 & px,CrackCodeT cc)
+    constexpr CrackC(const BoundaryVertex2 & px, CrackCodeT cc)
         : mAt(px),
           mCode(cc)
     {}
@@ -84,7 +84,7 @@ namespace Ravl2
     // Create the crack with origin in the boundary vertex 'begin' pointing
     // towards the boundary vertex 'end'. The direction is automatically
     // generated.
-    constexpr CrackC(const BVertex2 & beginAt, const BVertex2 & endAt)
+    constexpr CrackC(const BoundaryVertex2 & beginAt, const BoundaryVertex2 & endAt)
       : mAt(beginAt),
         mCode(CrackCodeT::CR_NODIR)
     {
@@ -192,15 +192,15 @@ namespace Ravl2
 
 
     //! Returns the boundary vertex from which the elementary crack starts from.
-    [[nodiscard]] const constexpr BVertex2 & Begin() const
+    [[nodiscard]] const constexpr BoundaryVertex2 & Begin() const
     { return mAt; }
 
     //! Returns the boundary vertex from which the elementary crack starts from.
-    constexpr BVertex2 & Begin()
+    constexpr BoundaryVertex2 & Begin()
     { return mAt; }
 
     //! Returns the boundary vertex to which the elementary crack points to.
-    [[nodiscard]] constexpr BVertex2 End() const
+    [[nodiscard]] constexpr BoundaryVertex2 End() const
     { return CrackStep(mAt,mCode.Code()); }
 
     //! Reverse the direction of this crack.
@@ -219,10 +219,10 @@ namespace Ravl2
       return {CrackStep(mAt,mCode.Code()),cc};
     }
 
-    [[nodiscard]] constexpr BVertex2 &at()
+    [[nodiscard]] constexpr BoundaryVertex2 &at()
     { return mAt; }
 
-    [[nodiscard]] constexpr const BVertex2 &at() const
+    [[nodiscard]] constexpr const BoundaryVertex2 &at() const
     { return mAt; }
 
     [[nodiscard]] constexpr CrackCodeC &code()
@@ -250,7 +250,7 @@ namespace Ravl2
     { mCode.TurnBack(); return *this; }
 
   protected:
-    BVertex2 mAt;
+    BoundaryVertex2 mAt;
     CrackCodeC mCode;
   };
   

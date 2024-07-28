@@ -111,7 +111,7 @@ TEST_CASE("Check things are working properly", "[Boundary]")
   SECTION("Bounding box and areas")
   {
     IndexRange<2> rect(IndexRange<1>({1, 3}), IndexRange<1>({2, 4}));
-    BoundaryC bnd = toBoundary(rect, BoundaryTypeT::INSIDE_LEFT);
+    BoundaryC bnd = toBoundary(rect, BoundaryOrientationT::INSIDE_LEFT);
     //SPDLOG_INFO("Rect: {}  Bounds:{} ", rect, bnd);
 
     // Check the edges are closed and ordered
@@ -144,7 +144,7 @@ TEST_CASE("Check things are working properly", "[Boundary]")
   SECTION("Edge mid point")
   {
     for(int i =0;i < 5;i++) {
-      BVertexC start({5,5});
+      BoundaryVertexC start({5, 5});
       CrackC edge(start,CrackCodeC(i));
       auto m1 = ((toPoint<float>(edge.RPixel()) + toPoint<float>(edge.LPixel())) / 2.0f) + Point<float,2>({0.5,0.5});
       CHECK(isNearZero<float>(euclidDistance(m1,edge.MidPoint<float>())(),1e-5f));
