@@ -385,6 +385,26 @@ TEST_CASE("Array", "[Array]")
     CHECK(cval[Ravl2::toIndex(1,2)][3] == cval[1][2][3]);
     CHECK(cval[1][Ravl2::toIndex(2,3)] == cval[1][2][3]);
   }
+  SECTION("Array Access Assignment")
+  {
+    Ravl2::IndexRange<3> aRange {10,11,3};
+    Ravl2::Array<int,3> val(aRange);
+    int i = 0;
+    for(auto a : aRange) {
+      val[a] = i++;
+    }
+
+    Ravl2::Array<int,3> val2(aRange);
+    val2.fill(0);
+    auto dest = val[0][0];
+    std::copy(dest.begin(),dest.end(),val2[0][1].begin());
+    //! Copy data from another array
+
+    CHECK(val2[0][1][0] == val[0][0][0]);
+    CHECK(val2[0][1][1] == val[0][0][1]);
+    CHECK(val2[0][1][2] == val[0][0][2]);
+  }
+
 
   SECTION("Conversion from a vector")
   {
@@ -395,7 +415,7 @@ TEST_CASE("Array", "[Array]")
 
     CHECK(anAccess.range().min() == 0);
     CHECK(anAccess.range().max() == 2);
-    CHECK_EQ(anAccess.range().size(),3);
+    CHECK(anAccess.range().size() == 3);
 
     CHECK_EQ(anAccess[0],1);
     CHECK_EQ(anAccess[1],2);

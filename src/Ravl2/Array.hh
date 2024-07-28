@@ -334,6 +334,20 @@ namespace Ravl2
         it = value;
     }
 
+#if 0
+    //! Copy data from another array
+    //! Experimental
+    template<typename ArrayT,typename OtherDataT = typename ArrayT::value_type>
+    requires WindowedArray<ArrayT,OtherDataT,N> && std::is_convertible_v<OtherDataT,DataT>
+    auto &operator=(const ArrayT &array)
+    {
+      assert(array.range().size() == range().size());
+      SPDLOG_INFO("Copy data from another array {}  ({}) ", array.range().size(),N);
+      std::copy(array.begin(),array.end(),begin());
+      return *this;
+    }
+#endif
+
   protected:
     const IndexRange<1> *m_ranges {nullptr};
     DataT *m_data {nullptr};
@@ -609,6 +623,20 @@ namespace Ravl2
       for(auto & it : *this)
         it = value;
     }
+
+#if 0
+    //! Copy data from another array
+    //! Experimental
+    template<typename ArrayT,typename OtherDataT = typename ArrayT::value_type>
+    requires WindowedArray<ArrayT,OtherDataT,1> && std::is_convertible_v<OtherDataT,DataT>
+    auto &operator=(const ArrayT &array)
+    {
+      assert(array.range().size() == m_ranges->size());
+      SPDLOG_INFO("Copy data from another array {} ", array.range().size());
+      std::copy(array.begin(),array.end(),begin());
+      return *this;
+    }
+#endif
 
   protected:
     const IndexRange<1> *m_ranges;
@@ -1098,7 +1126,7 @@ namespace Ravl2
       { return 1; }
 
     [[nodiscard]] constexpr static const int *strides()
-      { return &gStride1; }
+    { return &gStride1; }
 
   protected:
       DataT *m_data = nullptr;
@@ -1162,6 +1190,15 @@ namespace Ravl2
   {
     assert(array.range().contains(range));
     return ArrayAccess<DataT,N>(range,array.origin_address(),array.strides());
+  }
+
+  template<typename ArrayT,typename DataT = typename ArrayT::value_type,unsigned N = ArrayT::dimensions>
+  requires WindowedArray<ArrayT,DataT,N>
+  constexpr auto clone(ArrayT &array)
+  {
+    Array<DataT,N> ret(array.range());
+    std::copy(array.begin(),array.end(),ret.begin());
+    return ret;
   }
 
   //! Take a sub array of the given array.
