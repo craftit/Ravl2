@@ -11,58 +11,51 @@
 
 #include <memory>
 #include <cstdint>
+#include <spdlog/spdlog.h>
 #include "Ravl2/Array.hh"
 #include "Ravl2/Image/Segmentation/FloodRegion.hh"
 #include "Ravl2/IndexRangeSet.hh"
 
 namespace Ravl2 {
 
-  //: Extrema threshold information.
+  //! Extrema threshold information.
   
   class ExtremaThresholdC
   {
   public:
-    int thresh;
+    int thresh; //!< Threshold value.
     int pos;
     int margin;
-    uint32_t area; // Expected area of region.
+    uint32_t area; //!< Expected area of region.
   };
   
-  //: Extremal region
+  //! Extremal region
   
-  class ExtremaRegionC {
+  class ExtremaRegionC
+  {
   public:
-    ExtremaRegionC()
-      : merge(0),
-        hist(0),
-        total(0),
-	thresh(0),
-	nThresh(0),
-	maxValue(0),
-	minValue(0),
-	closed(0)
-    {}
+    ExtremaRegionC() = default;
     //: Constructor.
     
     ~ExtremaRegionC() {
-      if(hist != 0)
+      if(hist != nullptr)
 	delete [] hist;
-      if(thresh != 0)
+      if(thresh != nullptr)
 	delete [] thresh;
     }
     //: Destructor.
     
-    ExtremaRegionC *merge;
-    uint32_t *hist; // Histogram of levels.
-    uint32_t total;
+    ExtremaRegionC *merge = nullptr; // Region to merge with.
+    uint32_t *hist = nullptr; // Histogram of levels.
+    uint32_t total = 0;
     
     ExtremaThresholdC *thresh; // Thresholds
-    int nThresh; // Number of thresholds.
+    int nThresh = 0; // Number of thresholds.
     
-    int maxValue;
-    int minValue;
-    Index<2> minat;
-    ExtremaRegionC *closed;
+    int maxValue = 0;
+    int minValue = 0;
+    Index<2> minat {};
+    ExtremaRegionC *closed = nullptr;
   };
   
   //: Extremal pixel list.
@@ -83,14 +76,15 @@ namespace Ravl2 {
     //! \param nMinSize - Minimum region size to detect.
     //! \param nMinMargin - Threshold for region stability.
     //! \param nlimitMaxValue - Maximum pixel value.
-    SegmentExtremaBaseC(uint32_t nMinSize,RealT nMinMargin,uint32_t nlimitMaxValue = 255)
+    //! \param maxSize - Maximum region size.
+    SegmentExtremaBaseC(uint32_t nMinSize,RealT nMinMargin,int nlimitMaxValue = 255,size_t maxSize = 0)
       : stride(0),
         labelAlloc(1),
         origin(nullptr),
 	minSize(nMinSize),
-        maxSize(0), // This gets modified later.
+        maxSize(maxSize), // If 0 this gets set to the image size.
 	minMargin(nMinMargin),
-	limitMaxValue(std::max(nlimitMaxValue,uint32_t(3)))
+	limitMaxValue(std::max(nlimitMaxValue,3))
     {
       histStack.reserve(100);
     }
@@ -177,7 +171,7 @@ namespace Ravl2 {
     size_t minSize = 0;
     size_t maxSize = 0;
     RealT minMargin = 0;
-    uint32_t limitMaxValue = 0; // Maximum image value that will be encountered.
+    int limitMaxValue = 0; // Maximum image value that will be encountered.
 
     struct HistStackC {
       HistStackC(int nmax,uint32_t *nstack)
@@ -190,11 +184,14 @@ namespace Ravl2 {
     
     std::vector<HistStackC> histStack;
 
+    //! Get a new histogram.
     uint32_t *PopHist(int level) {
       assert(level >= 0);
       if(histStack.empty()) {
-        auto *val = new uint32_t [limitMaxValue+2];
-	memset(&(val[level]),0,sizeof(uint32_t) * ((limitMaxValue+1)-size_t(level)));
+	// Should this deal with negative pixel values?
+	assert(limitMaxValue > 0);
+        auto *val = new uint32_t [size_t(limitMaxValue+2)];
+	memset(&(val[level]),0,sizeof(uint32_t) * size_t((limitMaxValue+1)-level));
 	return val;
       }
       HistStackC &ret = histStack.back();
@@ -205,13 +202,12 @@ namespace Ravl2 {
 	memset(&(rret[level]),0,sizeof(uint32_t) * size_t(clearSize));
       return rret;
     }
-    //: Get a new histogram.
-    
+
+    //! Push unused histogram
     void PushHist(uint32_t *stack,int used)
     {
       histStack.emplace_back(used,stack);
     }
-    //: Push unused histogram
   };
   
   
@@ -244,9 +240,12 @@ namespace Ravl2 {
     : public SegmentExtremaBaseC
   {
   public:
-    SegmentExtremaC(uint32_t minRegionSize,RealT theMinMargin = 10,uint32_t nlimitMaxPixelValue = 255)
-      : SegmentExtremaBaseC(minRegionSize,theMinMargin,nlimitMaxPixelValue)
-    {}
+    SegmentExtremaC(uint32_t minRegionSize,RealT theMinMargin = 10,int nLimitMaxPixelValue = 255)
+      : SegmentExtremaBaseC(minRegionSize,theMinMargin,nLimitMaxPixelValue)
+    {
+      assert(minRegionSize > 0);
+      assert(nLimitMaxPixelValue > 0);
+    }
     //: Constructor.
     //!param:minRegionSize - Minimum region size to detect.
     //!param:minMargin - Threshold for region stability.
@@ -317,9 +316,7 @@ namespace Ravl2 {
     std::vector<Array<int,2> > GrowRegionMask(ExtremaRegionC &region);
     //: Grow regions associated with a extrema.
     
-    FloodRegionC<PixelT> flood; // Region fill code.    
-        
-    
+    FloodRegionC<PixelT> flood; // Region fill code.
   };
 
   
@@ -332,7 +329,7 @@ namespace Ravl2 {
       auto it = img.begin();
       PixelT lmin = *it;
       PixelT lmax = *it;
-      for(;it;it++) {
+      for(;it.valid();it++) {
         if(*it < lmin)
           lmin = *it;
         if(*it > lmax)
@@ -351,22 +348,23 @@ namespace Ravl2 {
     
     if(!levels.range().contains(valueRange))
       levels = Array<ExtremaChainPixelC *,1>(valueRange.expand(2));
-    levels.fill(0);
+    levels.fill(nullptr);
     
     // Sort pixels into appropriate lists.
+    RavlAssert(pixs.range().contains(img.range()));
     
-    for(auto it = begin(img,clip(pixs,img.range()));it;it++) {
+    for(auto it = begin(img,clip(pixs,img.range()));it.valid();it++) {
       it.template data<1>().region = 0;
       PixelT val = it.template data<0>();
       if(val > limitMaxValue) {
         continue;
       }
-      ExtremaChainPixelC * &tmp = levels[val]; 
+      auto &tmp = levels[val];
       it.template data<1>().next = tmp;
       tmp = &it.template data<1>();
     }
-    //cerr << "SegmentExtremaC<PixelT>::SortPixels, Value Range=" << valueRange << "\n";
-    
+    SPDLOG_INFO("SegmentExtremaC<PixelT>::SortPixels, Value Range={}", valueRange);
+
     return true;
   }
   
@@ -377,47 +375,25 @@ namespace Ravl2 {
     SetupImage(img.range());
     
     // Check level list allocation.
-    
-    if(levels.range().size() == 0)
-      levels = Array<ExtremaChainPixelC *,1>(IndexRange<1>(-4,257));
-    memset(&(levels[levels.range().min()]),0,levels.range().size() * sizeof(ExtremaChainPixelC *));
-    
-    // Sort pixels into appropriate lists.
-    
-    auto it = begin(img,clip(pixs,img.range()));
+    IndexRange<1> targetRange(std::numeric_limits<PixelT>::min(),std::numeric_limits<PixelT>::max());
+    if(levels.range() != targetRange)
+      levels = Array<ExtremaChainPixelC *,1>(targetRange);
+    memset(&(levels[levels.range().min()]),0,size_t(levels.range().size()) * sizeof(ExtremaChainPixelC *));
+    static_assert(std::numeric_limits<PixelT>::max() <= std::numeric_limits<int>::max(),"PixelT must be a byte type.");
 
-    PixelT lmin = it.template data<0>();
-    PixelT lmax = it.template data<0>();
-    if(it.template data<0>() > limitMaxValue) {
-      lmax = limitMaxValue;
-      lmin = limitMaxValue;
+    // Sort pixels into appropriate lists.
+    valueRange = IndexRange<1>::mostEmpty();
+    for(auto it = begin(img,clip(pixs,img.range()));it.valid();++it) {
+      it.template data<1>().region = nullptr;
+      int val = it.template data<0>();
+      if(val > limitMaxValue)
+	continue;
+      valueRange.involve(val);
+      ExtremaChainPixelC * &tmp = levels[val];
+      it.template data<1>().next = tmp;
+      tmp = &it.template data<1>();
     }
-    if(limitMaxValue >= 255) {
-      for(;it;it++) {
-        it.template data<1>().region = 0;
-        PixelT val = it.template data<0>();
-        if(val < lmin) lmin = val;
-        if(val > lmax) lmax = val;
-        ExtremaChainPixelC * &tmp = levels[val]; 
-        it.template data<1>().next = tmp;
-        tmp = &it.template data<1>();
-      }
-    } else {
-      for(;it;it++) {
-        it.template data<1>().region = 0;
-        PixelT val = it.template data<0>();
-        if(val > limitMaxValue)
-          continue;
-        if(val < lmin) lmin = val;
-        if(val > lmax) lmax = val;
-        ExtremaChainPixelC * &tmp = levels[val]; 
-        it.template data<1>().next = tmp;
-        tmp = &it.template data<1>();
-      }
-    }
-    valueRange.min() = int(lmin);
-    valueRange.max() = int(lmax);
-    //cerr << "SegmentExtremaC<PixelT>::SortPixels, Value Range=" << valueRange << "\n";
+    SPDLOG_INFO("SegmentExtremaC<PixelT>::SortPixels, Value Range={}", valueRange);
     return true;
   }
   
@@ -494,13 +470,15 @@ namespace Ravl2 {
     flood.SetupImage(img);
     
     std::vector<BoundaryC> bounds;
+    bounds.reserve(size_t(img.range().area())/(minSize * 3u));
     if(labelAlloc == 0)
       return bounds;
     auto end = regionMap.begin();
     end += labelAlloc;
-    for(auto &it = regionMap.begin();it != end;++it) {
+    for(auto it = regionMap.begin();it != end;++it) {
       if(it->nThresh > 0) {
-	bounds.push_back(GrowRegionBoundary(*it));
+	auto newBoundaries = GrowRegionBoundary(*it);
+	bounds.insert(bounds.end(),newBoundaries.begin(),newBoundaries.end());
       }
       if(it->thresh != 0) {
 	delete [] it->thresh;
@@ -516,7 +494,7 @@ namespace Ravl2 {
     std::vector<BoundaryC> ret;
     for(int i = 0;i < region.nThresh;i++) {
       BoundaryC boundary;
-      if(flood.GrowRegion(region.minat,region.thresh[i].thresh,boundary))
+      if(flood.GrowRegion(region.minat, FloodRegionLessThanThresholdC<PixelT>(PixelT(region.thresh[i].thresh)), boundary, maxSize))
 	ret.push_back(boundary);
     }
     return ret;

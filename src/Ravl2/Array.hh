@@ -13,6 +13,9 @@
 
 namespace Ravl2
 {
+  //! Global stride for 1 dimensional arrays. Always has a value of 1.
+  extern const int gStride1;
+
   template<typename DataT,unsigned N>
   class Array;
 
@@ -483,6 +486,13 @@ namespace Ravl2
       assert(*strides == 1);
     }
 
+    constexpr ArrayAccess(const IndexRange<1> &rng, DataT *data, [[maybe_unused]] const int *strides)
+      : m_ranges(&rng),
+	m_data(data)
+    {
+      assert(*strides == 1);
+    }
+
     constexpr ArrayAccess(const IndexRange<1> *rng, DataT *data)
       : m_ranges(rng),
 	m_data(data)
@@ -564,7 +574,7 @@ namespace Ravl2
 
     //! Access strides
     [[nodiscard]] constexpr static const int *strides()
-    { return &m_stride; }
+    { return &gStride1; }
 
     //! Fill the array with a value
     constexpr void fill(const DataT &value)
@@ -576,7 +586,6 @@ namespace Ravl2
   protected:
     const IndexRange<1> *m_ranges;
     DataT *m_data;
-    static const int m_stride = {1};
   };
 
   template<typename DataT>
@@ -1029,12 +1038,11 @@ namespace Ravl2
       { return 1; }
 
     [[nodiscard]] constexpr static const int *strides()
-      { return &m_stride; }
+      { return &gStride1; }
 
   protected:
       DataT *m_data = nullptr;
       IndexRange<1> m_range;
-      static const int m_stride = {1};
   };
 
 

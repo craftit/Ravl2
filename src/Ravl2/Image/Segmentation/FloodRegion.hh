@@ -17,7 +17,7 @@
 namespace Ravl2
 {
   
-  //: Scan line info
+  //! Scan line info
   
   class FloodRegionLineC {
   public:
@@ -53,32 +53,52 @@ namespace Ravl2
     int dr = 0;
   };
   
-  //: Threshold comparison class.
+  //! Threshold comparison class.
   
   template<class PixelT>
-  class FloorRegionThresholdC {
+  class FloodRegionLessThanThresholdC {
   public:
-    FloorRegionThresholdC()
+    //! Default constructor.
+    FloodRegionLessThanThresholdC()
     = default;
-    //: Default constructor.
-    
-    explicit FloorRegionThresholdC(const PixelT &pix)
+
+    //! Construct from pixel value.
+    explicit FloodRegionLessThanThresholdC(const PixelT &pix)
       : value(pix)
     {}
-    //: Construct from pixel value.
-    
+
+    //! Should pixel be included in the region ?
     bool operator()(const PixelT &pix) const
     { return pix <= value; }
-    //: Should pixel be included in the region ?
-    
+
   protected:
     PixelT value {};
   };
-  
-  //: Flood based region growing.
+
+  template<class PixelT>
+  class FloodRegionGreaterThanThresholdC {
+  public:
+    //! Default constructor.
+    FloodRegionGreaterThanThresholdC()
+    = default;
+
+    //! Construct from pixel value.
+    explicit FloodRegionGreaterThanThresholdC(const PixelT &pix)
+      : value(pix)
+    {}
+
+    //! Should pixel be included in the region ?
+    bool operator()(const PixelT &pix) const
+    { return pix >= value; }
+
+  protected:
+    PixelT value {};
+  };
+
+  //! Flood based region growing.
   // Grow a region from 'seed' including all connected pixel less than or equal to threshold, generate a boundary as the result.
   
-  template<class PixelT,class InclusionTestT = FloorRegionThresholdC<PixelT> >
+  template<class PixelT,class InclusionTestT = FloodRegionLessThanThresholdC<PixelT> >
   class FloodRegionC {
   public:
     //! Default constructor.
@@ -92,7 +112,6 @@ namespace Ravl2
     const Array<PixelT,2> &Image() const
     { return img; }
 
-  protected:
     //! Setup new image for processing.
     bool SetupImage(const Array<PixelT,2> &nimg) {
       img = nimg;
@@ -105,17 +124,16 @@ namespace Ravl2
       return true;
     }
 
-  public:
     //! Grow a region from 'seed' including all connected pixel less than or equal to threshold, generate a mask as the result.
     //! Returns true if the boundary has a non zero area.
-    bool GrowRegion(const Index<2> &seed,const InclusionTestT &inclusionCriteria,BoundaryC &boundary,int maxSize = 0);
+    bool GrowRegion(const Index<2> &seed,const InclusionTestT &inclusionCriteria,BoundaryC &boundary,size_t maxSize = 0);
 
-    template<typename MaskT>
-    int GrowRegion(const Index<2> &seed,const InclusionTestT &inclusionCriteria,Array<MaskT,2> &mask,int padding = 0,int maxSize = 0);
     //: Grow a region from 'seed' including all connected pixel less than or equal to threshold, generate a mask as the result.
     // The mask images are generated with a boundary
     // Returns the region size.
-    
+    template<typename MaskT>
+    size_t GrowRegion(const Index<2> &seed,const InclusionTestT &inclusionCriteria,Array<MaskT,2> &mask,int padding = 0,size_t maxSize = 0);
+
     Array<int,2> &MarkImage()
     { return marki; }
     //: Access marked pixel image.
@@ -141,21 +159,21 @@ namespace Ravl2
   
   template<class PixelT,class InclusionTestT>
   bool FloodRegionC<PixelT,InclusionTestT>::BaseGrowRegion(const Index<2> &seed,const InclusionTestT &inclusionCriteria,IndexRange<2> &rng) {
-    inclusionTest = inclusionCriteria;
-    pixQueue = std::queue<FloodRegionLineC >();
     // Check seed.
+    inclusionTest = inclusionCriteria;
     RavlAssert(img.range().contains(seed));
     if(!inclusionTest(img[seed]))
       return false; // Empty region.
-    
-    // Setup stack.
-    
+
+    // Make sure queue is empty.
+    pixQueue = std::queue<FloodRegionLineC >();
+
     const auto &imgCols = img.range(1);
     const auto &imgRows = img.range(0);
     
     if(img.range().range(0).contains(seed[0]+1))
-      pixQueue.push(FloodRegionLineC(seed[0]+1,seed[1],seed[1],1));
-    pixQueue.push(FloodRegionLineC(seed[0],seed[1],seed[1],-1));
+      pixQueue.emplace(seed[0]+1,seed[1],seed[1],1);
+    pixQueue.emplace(seed[0],seed[1],seed[1],-1);
     
     // Misc bits a pieces.
     rng = IndexRange<2>(seed,seed);
@@ -228,7 +246,7 @@ namespace Ravl2
   
 
   template<class PixelT,class InclusionTestT>
-  bool FloodRegionC<PixelT,InclusionTestT>::GrowRegion(const Index<2> &seed,const InclusionTestT &inclusionCriteria,BoundaryC &boundary,[[maybe_unused]] int maxSize) {
+  bool FloodRegionC<PixelT,InclusionTestT>::GrowRegion(const Index<2> &seed,const InclusionTestT &inclusionCriteria,BoundaryC &boundary,[[maybe_unused]] size_t maxSize) {
     IndexRange<2> rng;
     if(!BaseGrowRegion(seed,inclusionCriteria,rng) || rng.area() <= 0) {
       boundary = BoundaryC();
@@ -243,7 +261,7 @@ namespace Ravl2
   
   template<class PixelT,class InclusionTestT>
   template<typename MaskT>
-  int FloodRegionC<PixelT,InclusionTestT>::GrowRegion(const Index<2> &seed,const InclusionTestT &inclusionCriteria,Array<MaskT,2> &mask,int padding,int maxSize) {
+  size_t FloodRegionC<PixelT,InclusionTestT>::GrowRegion(const Index<2> &seed,const InclusionTestT &inclusionCriteria,Array<MaskT,2> &mask,int padding,size_t maxSize) {
     IndexRange<2> rng;
     
     if(!BaseGrowRegion(seed,inclusionCriteria,rng)) {
@@ -255,7 +273,7 @@ namespace Ravl2
     mask = Array<MaskT,2>(rng.expand(padding));
     if(padding > 0)
       DrawFrame(mask,MaskT(0),padding,mask.range());
-    int size = 0;
+    size_t size = 0;
 
     for(auto it = begin(clip(mask,rng),clip(marki,rng));it.valid();it++) {
       if(it.template data<1>() == id) {

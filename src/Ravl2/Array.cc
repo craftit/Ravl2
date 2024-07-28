@@ -3,6 +3,7 @@
 
 namespace Ravl2
 {
+  const int gStride1 = 1;
 
   void doNothing()
   {}

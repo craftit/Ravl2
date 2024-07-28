@@ -5,6 +5,7 @@
 #include <catch2/catch_test_macros.hpp>
 #include <spdlog/spdlog.h>
 #include "Ravl2/Image/Segmentation/FloodRegion.hh"
+#include "Ravl2/Image/Segmentation/SegmentExtrema.hh"
 
 
 TEST_CASE("FloodRegion", "[FloodRegion]")
@@ -18,17 +19,17 @@ TEST_CASE("FloodRegion", "[FloodRegion]")
   // Setup a square in the middle of the image.
   auto rng = img.range().shrink(2);
   clip(img,rng).fill(10);
-  SPDLOG_INFO("Image: {}", img);
+  //SPDLOG_INFO("Image: {}", img);
 
   SECTION("Test boundary creation")
   {
     FloodRegionC<PixelT> flood(img);
 
     BoundaryC boundary;
-    SPDLOG_INFO("Seed: {}", at);
-    CHECK(flood.GrowRegion(at, FloorRegionThresholdC(15), boundary));
+    //SPDLOG_INFO("Seed: {}", at);
+    CHECK(flood.GrowRegion(at, FloodRegionLessThanThresholdC(15), boundary));
     for(auto it : boundary.edges()) {
-      SPDLOG_INFO("Edge: {}", it);
+      //SPDLOG_INFO("Edge: {}", it);
       CHECK(img[it.LPixel()] == 10);
       CHECK(img[it.RPixel()] == 99);
     }
@@ -43,10 +44,10 @@ TEST_CASE("FloodRegion", "[FloodRegion]")
     FloodRegionC<PixelT> flood(img);
 
     Array<unsigned,2> mask;
-    int area = flood.GrowRegion(at, FloorRegionThresholdC(15), mask);
-    CHECK(area == rng.area());
+    size_t area = flood.GrowRegion(at, FloodRegionLessThanThresholdC(15), mask);
+    CHECK(area == size_t(rng.area()));
     int count = 0;
-    SPDLOG_INFO("Mask: {}", mask);
+    //SPDLOG_INFO("Mask: {}", mask);
     for(auto it = begin(mask,clip(img,mask.range())); it.valid(); ++it) {
       if(it.template data<0>() == 1) {
 	CHECK(it.template data<1>() == 10);
@@ -58,5 +59,45 @@ TEST_CASE("FloodRegion", "[FloodRegion]")
     CHECK(count == rng.area());
    // SPDLOG_INFO("Mask: {}", mask);
   }
+
+}
+
+
+TEST_CASE("SegmentExtrema")
+{
+  using namespace Ravl2;
+  using PixelT = uint8_t;
+  Array<PixelT,2> img({10,10});
+  img.fill(100);
+
+  // Setup a square in the middle of the image.
+  auto rng = img.range().shrink(2);
+  clip(img,rng).fill(10);
+
+  SegmentExtremaC<PixelT> segmentExtrema(8);
+
+  std::vector<BoundaryC> boundaries = segmentExtrema.Apply(img);
+
+  REQUIRE(!boundaries.empty());
+  CHECK(boundaries.size() == 2);
+  for(auto &boundary : boundaries) {
+    SPDLOG_INFO("Boundary: {} -> {}", boundary.BoundingBox(), boundary);
+  }
+
+  {
+    const BoundaryC &boundary = boundaries[0];
+
+    CHECK(boundary.BoundingBox() == rng);
+    CHECK(boundary.area() == rng.area());
+
+    for(auto it : boundary.edges()) {
+      //SPDLOG_INFO("Edge: {}", it);
+      REQUIRE(img.range().contains(it.LPixel()));
+      REQUIRE(img.range().contains(it.RPixel()));
+      CHECK(img[it.LPixel()] <= 20);
+      CHECK(img[it.RPixel()] >= 20);
+    }
+  }
+
 
 }
