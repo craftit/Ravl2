@@ -177,7 +177,7 @@ namespace Ravl2
       oldr.closed = max;
       
       // If we don't need the histogram, put it back in a pool
-      if(oldr.hist != nullptr && (oldr.total < minSize || (RealT(level - oldr.minValue) < minMargin) )) {
+      if(oldr.hist != nullptr && (oldr.total < minSize || ((level - oldr.minValue) < minMargin) )) {
 	PushHist(oldr.hist,level);
 	oldr.hist = nullptr;
       }
@@ -198,12 +198,12 @@ namespace Ravl2
     
     // For each grey level value in image.
     for(auto lit : clip(levels,valueRange)) {
-      SPDLOG_INFO("Level={}", clevel);
+      //ONDEBUG(SPDLOG_INFO("Level={}", clevel));
       
       // Go through linked list of pixels at the current brightness level.
       for(at = lit;at != nullptr;at = at->next) {
 	// Got a standard pixel.
-	SPDLOG_INFO("Pixel={} Region={}", static_cast<void *>(at), static_cast<void *>(at->region));
+	// ONDEBUG(SPDLOG_INFO("Pixel={} Region={}", static_cast<void *>(at), static_cast<void *>(at->region)));
 
         // Look at the region membership of the pixels surrounding the new
         // one.  n is the number of different regions found.
@@ -236,13 +236,13 @@ namespace Ravl2
     std::vector<ExtremaThresholdC> thresh(size_t(limitMaxValue + 2));
     size_t nthresh = 0;
     assert(limitMaxValue + 2 < std::numeric_limits<int>::max());
-    Array<uint32_t,1> chist(IndexRange<1>(0,int(limitMaxValue + 2)));
+    Array<uint32_t,1> chist(IndexRange<1>(0,limitMaxValue + 2));
     chist.fill(0);
 
     auto end = regionMap.begin() + labelAlloc;
 
     for(auto it = regionMap.begin();it != end;++it) {
-      if(it->total < minSize || RealT(it->maxValue - it->minValue) < minMargin) {
+      if(it->total < minSize || (it->maxValue - it->minValue) < minMargin) {
 	it->nThresh = 0;// Ingore these regions.
 	continue; // Not enough levels in the region.
       }
@@ -275,7 +275,7 @@ namespace Ravl2
       for(up=i+1; up < maxValue && i < maxValue; i++) {
 	auto area_i = chist[i];
 	if(area_i > maxSize) {
-	  //cerr << "Size limit reached. \n";
+          SPDLOG_INFO("Size limit reached. ");
 	  break; // Quit if area is too large.
 	}
         
@@ -283,12 +283,13 @@ namespace Ravl2
         if(half_perimeter_i == lastThresh)
           continue; // If the thresholds are the same, the next margin will only be shorter.
         lastThresh = half_perimeter_i;
-	while(up <= maxValue && chist[up] < half_perimeter_i)
-	  up++;
-	
+	while(up <= maxValue && chist[up] < half_perimeter_i) {
+          up++;
+        }
+
 	int margin = up - i;
 	SPDLOG_INFO("Margin={}", margin);
-	if(RealT(margin) > minMargin) { // && margin > prevMargin
+	if(margin > minMargin) { // && margin > prevMargin
 	  ExtremaThresholdC &et = thresh[nthresh++];
 	  et.pos = i;
  	  et.margin = margin;
@@ -297,14 +298,14 @@ namespace Ravl2
 	}
       }
       
-      if(it->closed == 0) { // Is region closed ?
+      if(it->closed == nullptr) { // Is region closed ?
 	ExtremaThresholdC &et = thresh[nthresh++];
 	et.pos = maxValue-1;
-	int margin = up - i;
-	et.margin = margin;
+	et.margin = up - i;
 	et.thresh = maxValue-1;	
       }
       //ONDEBUG(std::cerr << "NThresh=" <<  nthresh << "\n");
+      SPDLOG_INFO("Thresholds={} Kept={}", nthresh, it->nThresh);
       ExtremaThresholdC *newthresh = new ExtremaThresholdC[size_t(nthresh)];
       int nt = 0;
       
@@ -312,12 +313,13 @@ namespace Ravl2
       unsigned lastInd = 0;
       for(unsigned j = 0;j < nthresh;j++) {
 	auto size = chist[thresh[j].pos];
-	if((lastSize * 1.15) > size) { // Is size only slighly different ?
+	if((lastSize * 1.15) > size) { // Is size only slightly different ?
 	  if(thresh[j].margin > thresh[lastInd].margin) {
 	    newthresh[nt-1] = thresh[j]; // Move threshold if margin is bigger.
 	    newthresh[nt-1].area = chist[thresh[j].thresh];
             lastSize = size;
           }
+          SPDLOG_INFO("Rejecting threshold={} LastArea={} Area={}", thresh[j].thresh, size, chist[thresh[j].thresh]);
 	  continue; // Reject it, not enough difference.
 	}
 	newthresh[nt] = thresh[j];
@@ -334,7 +336,6 @@ namespace Ravl2
 	it->nThresh = 0;
 	delete [] newthresh;
       }
-      //cerr << "Thresholds=" << nthresh << " Kept=" << it->nThresh << "\n";
       SPDLOG_INFO("Thresholds={} Kept={}", nthresh, it->nThresh);
     } // for(SArray1dIterC<ExtremaRegionC> it(...
     //cerr << "SegmentExtremaBaseC::Thresholds() Interesting regions=" << regions <<" \n";

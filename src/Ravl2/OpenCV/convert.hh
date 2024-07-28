@@ -23,27 +23,6 @@ namespace Ravl2
     return cv::Mat(N, sizes.data(), cv::DataType<DataT>::type, reinterpret_cast<void*>(&m[minInd]));
   }
 
-  //! Create a buffer for a cv::Mat
-  //! This ensures that the cv::Mat is not destroyed before the array
-  class BufferCvMat
-      : public BufferBase
-  {
-  public:
-    explicit BufferCvMat(const cv::Mat& m)
-        : BufferBase(m.total()),
-          m_mat(m)
-    {}
-
-    [[nodiscard]] cv::Mat& mat()
-    { return m_mat; }
-
-    [[nodiscard]] const cv::Mat& mat() const
-    { return m_mat; }
-
-  private:
-    cv::Mat m_mat;
-  };
-
   //! Create a Ravl2::Array from a cv::Mat
   //! The type of the array must be the same as the cv::Mat
   //! This uses reference counting to ensure that the cv::Mat is not destroyed before the array
@@ -64,7 +43,10 @@ namespace Ravl2
       indexRange[i] = IndexRange<1>(0,m.size[int(i)]-1);
       strides[i] = m.step[int(i)] / sizeof(DataT);
     }
-    return Array<DataT,N>(reinterpret_cast<DataT*>(m.data), indexRange, strides, std::dynamic_pointer_cast<Buffer<DataT> >(std::make_shared<BufferCvMat>(m)));
+    auto dataPtr = reinterpret_cast<DataT*>(m.data);
+    return Array<DataT,N>(dataPtr, indexRange, strides,
+                          std::shared_ptr<DataT[]>(dataPtr,[val = cv::Mat(m)]([[maybe_unused]] DataT *delPtr)
+                          {assert(static_cast<void *>(delPtr) == val.data);}));
   }
 
   //! Create a Ravl2::ArrayView from a cv::Mat

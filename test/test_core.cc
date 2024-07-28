@@ -108,7 +108,7 @@ TEST_CASE("IndexRange", "[IndexRange]")
     CHECK_EQ(range2A[1].max(),6);
 
     //std::cout << "Range: " << range2A << " \n";
-    int count = 0;
+    size_t count = 0;
     for(auto at : range2A) {
       count++;
       //std::cout << at << " \n";
@@ -136,7 +136,7 @@ TEST_CASE("IndexRange", "[IndexRange]")
     CHECK_EQ(range2B[1].max(),7);
 
     //std::cout << "Range: " << range2B << " \n";
-    int count = 0;
+    size_t count = 0;
     for(auto at : range2B) {
       count++;
       //std::cout << at << " \n";
@@ -353,17 +353,35 @@ TEST_CASE("Array", "[Array]")
     CHECK_EQ(c,1320);
   }
 
+  SECTION("Conversion from a vector")
   {
     // Test conversion from a c++ vector
 
     std::vector<int> acvec {1,2,3};
     Ravl2::Array<int,1> anAccess(acvec);
 
+    CHECK(anAccess.range().min() == 0);
+    CHECK(anAccess.range().max() == 2);
     CHECK_EQ(anAccess.range().size(),3);
 
-    CHECK_EQ(acvec[0],1);
-    CHECK_EQ(acvec[1],2);
-    CHECK_EQ(acvec[2],3);
+    CHECK_EQ(anAccess[0],1);
+    CHECK_EQ(anAccess[1],2);
+    CHECK_EQ(anAccess[2],3);
+  }
+
+  SECTION("Move from a vector")
+  {
+    // Test move from a c++ vector
+
+    std::vector<int> acvec {1,2,3};
+    Ravl2::Array<int,1> anAccess(std::move(acvec));
+
+    CHECK(anAccess.range().min() == 0);
+    CHECK(anAccess.range().max() == 2);
+    CHECK_EQ(anAccess.range().size(),3);
+    CHECK_EQ(anAccess[0],1);
+    CHECK_EQ(anAccess[1],2);
+    CHECK_EQ(anAccess[2],3);
   }
 
 }
@@ -543,7 +561,7 @@ TEST_CASE("ArrayIter2Offset", "[ArrayIter<N>]")
   at = 0;
   for(int i = 0;i < 6;i++,at++)
   {
-    auto x = kernel.buffer()->data()[i];
+    auto x = kernel.buffer().get()[i];
     //SPDLOG_INFO("Buffer: {} ", x);
     CHECK_EQ(x,at);
   }

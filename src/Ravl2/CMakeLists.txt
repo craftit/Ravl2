@@ -17,7 +17,6 @@ include(GenerateExportHeader)
 add_library(Ravl2Core
     Index.cc Index.hh
     Array.cc Array.hh
-    Buffer.cc Buffer.hh
     ArrayIterZip.cc ArrayIterZip.hh
     ScanWindow.cc ScanWindow.hh
     Assert.hh

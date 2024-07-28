@@ -535,13 +535,16 @@ namespace Ravl2
       return a;
     }
 
-    //! Get total number of elements covered by range.
-    [[nodiscard]] int elements() const
+    //! Get total number of elements that should be allocated
+    //! for an array.  This will always be positive or zero.
+    [[nodiscard]] size_t elements() const
     {
       int n = 1;
       for(unsigned i = 0;i < N;i++)
         n *= m_range[i].size();
-      return n;
+      if(n < 0)
+        n = 0;
+      return size_t(n);
     }
 
     //! Is range empty ?

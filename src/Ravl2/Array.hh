@@ -9,7 +9,6 @@
 
 #include <array>
 #include "Ravl2/Index.hh"
-#include "Ravl2/Buffer.hh"
 
 namespace Ravl2
 {
@@ -661,6 +660,7 @@ namespace Ravl2
         : m_range(range)
       {}
 
+
   public:
 
       explicit constexpr ArrayView(DataT *data, const IndexRange<N> &range, const std::array<int,N> &strides)
@@ -860,20 +860,20 @@ namespace Ravl2
     //! Create an array of the given range.
     explicit constexpr Array(const IndexRange<N> &range)
      : ArrayView<DataT, N>(range),
-       m_buffer(new BufferVector<DataT>(range.elements()))
+       m_buffer(std::make_shared<DataT[]>(size_t(range.elements())))
     {
       this->make_strides(this->m_range);
-      this->m_data = &(m_buffer->data()[this->compute_origin_offset(range)]);
+      this->m_data = &(m_buffer.get()[this->compute_origin_offset(range)]);
     }
 
     //! Construct with an existing buffer
-    explicit constexpr Array(DataT *data, const IndexRange<N> &range, const std::array<int,N> &strides, const std::shared_ptr<Buffer<DataT> > &buffer)
+    explicit constexpr Array(DataT *data, const IndexRange<N> &range, const std::array<int,N> &strides, const std::shared_ptr<DataT[]> &buffer)
       : ArrayView<DataT, N>(data,range,strides),
-        m_buffer(std::move(buffer))
+        m_buffer(buffer)
     {}
 
     //! Construct with an existing buffer
-    explicit constexpr Array(DataT *data, const IndexRange<N> &range, const std::array<int,N> &strides, std::shared_ptr<Buffer<DataT> > &&buffer)
+    explicit constexpr Array(DataT *data, const IndexRange<N> &range, const std::array<int,N> &strides, std::shared_ptr<DataT[]> &&buffer)
         : ArrayView<DataT, N>(data,range,strides),
           m_buffer(std::move(buffer))
     {}
@@ -881,28 +881,28 @@ namespace Ravl2
     //! Create an array from a set of sizes.
     constexpr Array(std::initializer_list<IndexRange<1>> ranges)
       : ArrayView<DataT, N>(IndexRange<N>(ranges)),
-        m_buffer(std::make_shared<BufferVector<DataT> >(this->m_range.elements()))
+        m_buffer(std::make_shared<DataT[]>(this->m_range.elements()))
     {
       this->make_strides(this->m_range);
-      this->m_data = &(m_buffer->data()[this->compute_origin_offset(this->m_range)]);
+      this->m_data = &(m_buffer.get()[this->compute_origin_offset(this->m_range)]);
     }
 
     //! Create an array from a set of sizes.
     constexpr Array(std::initializer_list<size_t> sizes)
      : ArrayView<DataT, N>(IndexRange<N>(sizes)),
-       m_buffer(std::make_shared<BufferVector<DataT> >(this->m_range.elements()))
+       m_buffer(std::make_shared<DataT[]>(this->m_range.elements()))
     {
       this->make_strides(this->m_range);
-      this->m_data = &(m_buffer->data()[this->compute_origin_offset(this->m_range)]);
+      this->m_data = &(m_buffer.get()[this->compute_origin_offset(this->m_range)]);
     }
 
     //! Create an array from a set of sizes.
     constexpr Array(std::initializer_list<size_t> sizes, const DataT &fillData)
       : ArrayView<DataT, N>(IndexRange<N>(sizes)),
-	m_buffer(std::make_shared<BufferVector<DataT> >(this->m_range.elements(),fillData))
+	m_buffer(std::make_shared<DataT[]>(this->m_range.elements(),fillData))
     {
       this->make_strides(this->m_range);
-      this->m_data = &(m_buffer->data()[this->compute_origin_offset(this->m_range)]);
+      this->m_data = &(m_buffer.get()[this->compute_origin_offset(this->m_range)]);
     }
 
     //! Create an sub array with the requested 'range'
@@ -921,10 +921,10 @@ namespace Ravl2
     using ArrayView<DataT,N>::end;
 
     //! Access buffer.
-    [[nodiscard]] constexpr std::shared_ptr<Buffer<DataT> > &buffer()
+    [[nodiscard]] constexpr auto &buffer()
     { return m_buffer; }
   protected:
-    std::shared_ptr<Buffer<DataT> > m_buffer;
+    std::shared_ptr<DataT[]> m_buffer;
   };
 
 
@@ -940,20 +940,24 @@ namespace Ravl2
       //! Create an sub array with the requested 'range'
       //! Range must be entirely contained in the original array.
       constexpr ArrayView(Array<DataT,1> &original, const IndexRange<1> &range)
-         : m_range(range)
+         : m_data(original.origin_address()),
+           m_range(range)
       {
         if(!original.range().contains(range))
           throw std::out_of_range("requested range is outside that of the original array");
-        m_data = original.origin_address();
       }
 
       explicit constexpr ArrayView(const std::vector<DataT> &vec)
-          : m_range(vec.size())
-      {
-        m_data = vec.data();
-      }
+          : m_data(vec.data()),
+            m_range(vec.size())
+      {}
 
-      constexpr ArrayView() = default;
+      explicit constexpr ArrayView(DataT *data, const IndexRange<1> &range)
+         : m_data(data),
+            m_range(range)
+      {}
+
+    constexpr ArrayView() = default;
   protected:
       //! Create an array of the given size.
       explicit constexpr ArrayView(const IndexRange<1> &range)
@@ -1061,37 +1065,36 @@ namespace Ravl2
     {}
 
     explicit constexpr Array(std::vector<DataT> &&vec)
-     : ArrayView<DataT, 1>(IndexRange<1>(0,int(vec.size())-1)),
-       m_buffer(new BufferVector<DataT>(std::move(vec)))
-    {
-      this->m_data = m_buffer->data();
-    }
+     : ArrayView<DataT, 1>(vec.data(),IndexRange<1>(0,int(vec.size())-1)),
+       m_buffer(std::shared_ptr<DataT[]>(this->m_data,[aVec = std::move(vec)](DataT *delPtr){ assert(aVec.data() == delPtr);}))
+    {}
 
     explicit constexpr Array(const std::vector<DataT> &vec)
      : ArrayView<DataT, 1>(IndexRange<1>(0,int(vec.size())-1)),
-       m_buffer(new BufferVector<DataT>(vec))
+       m_buffer(std::make_shared<DataT[]>(vec.size()))
     {
-      this->m_data = m_buffer->data();
+      std::copy(vec.begin(),vec.end(),m_buffer.get());
+      this->m_data = m_buffer.get();
     }
 
     //! Create an array of the given size.
     explicit constexpr Array(const IndexRange<1> &range)
      : ArrayView<DataT, 1>(range),
-       m_buffer(new BufferVector<DataT>(range.elements()))
+       m_buffer(std::make_shared<DataT[]>(range.elements()))
     {
-      this->m_data = &m_buffer->data()[-range.min()];
+      this->m_data = &m_buffer.get()[-range.min()];
     }
 
     //! Construct an empty array
     explicit constexpr Array() = default;
 
     //! Access buffer.
-    [[nodiscard]] std::shared_ptr<Buffer<DataT> > &buffer()
+    [[nodiscard]] auto &buffer()
     { return m_buffer; }
 
     //! Begin iterator
   protected:
-    std::shared_ptr<Buffer<DataT> > m_buffer;
+    std::shared_ptr<DataT[]> m_buffer;
   };
 
   //! Take a sub array of the given array.

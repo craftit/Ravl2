@@ -73,16 +73,16 @@ namespace Ravl2 {
     using RealT = float;
 
     //! Constructor.
-    //! \param nMinSize - Minimum region size to detect.
+    //! \param minRegionSize - Minimum region size to detect.
     //! \param nMinMargin - Threshold for region stability.
     //! \param nlimitMaxValue - Maximum pixel value.
-    //! \param maxSize - Maximum region size.
-    SegmentExtremaBaseC(uint32_t nMinSize,RealT nMinMargin,int nlimitMaxValue = 255,size_t maxSize = 0)
+    //! \param maxRegionSize - Maximum region size.
+    SegmentExtremaBaseC(uint32_t minRegionSize,int nMinMargin,int nlimitMaxValue = 255,size_t maxRegionSize = 0)
       : stride(0),
         labelAlloc(1),
         origin(nullptr),
-	minSize(nMinSize),
-        maxSize(maxSize), // If 0 this gets set to the image size.
+	minSize(minRegionSize),
+        maxSize(maxRegionSize), // If 0 this gets set to the image size.
 	minMargin(nMinMargin),
 	limitMaxValue(std::max(nlimitMaxValue,3))
     {
@@ -170,7 +170,7 @@ namespace Ravl2 {
     
     size_t minSize = 0;
     size_t maxSize = 0;
-    RealT minMargin = 0;
+    int minMargin = 0;
     int limitMaxValue = 0; // Maximum image value that will be encountered.
 
     struct HistStackC {
@@ -240,7 +240,7 @@ namespace Ravl2 {
     : public SegmentExtremaBaseC
   {
   public:
-    SegmentExtremaC(uint32_t minRegionSize,RealT theMinMargin = 10,int nLimitMaxPixelValue = 255)
+    SegmentExtremaC(uint32_t minRegionSize,int theMinMargin = 10,int nLimitMaxPixelValue = 255)
       : SegmentExtremaBaseC(minRegionSize,theMinMargin,nLimitMaxPixelValue)
     {
       assert(minRegionSize > 0);
