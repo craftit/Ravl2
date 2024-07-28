@@ -4,10 +4,10 @@
 // General Public License (LGPL). See the lgpl.licence file for details or
 // see http://www.gnu.org/copyleft/lesser.html
 // file-header-ends-here
-#ifndef RAVLIMAGE_MATCHNORMALISEDCORRELATION_HEADER
-#define RAVLIMAGE_MATCHNORMALISEDCORRELATION_HEADER 1
 //! author="Charles Galambos"
 //! date="28/11/2002"
+
+#pragma once
 
 #include "Ravl2/Array.hh"
 #include "Ravl2/Image/SummedAreaTable2.hh"
@@ -18,6 +18,9 @@ namespace Ravl2 {
   
   class MatchNormalisedCorrelationC {
   public:
+    using ByteT = uint8_t;
+    using RealT = float;
+
     MatchNormalisedCorrelationC(const Array<ByteT,2> &img);
     //: 'img' is the image to search.
     
@@ -43,12 +46,7 @@ namespace Ravl2 {
   protected:
     RealT threshold;
     Array<ByteT,2> searchImg;
-    SummedAreaTable2C<IntT> sums; // Sums for searchImg
+    SummedAreaTable2C<int> sums; // Sums for searchImg
   };
 }
 
-
-
-
-
-#endif

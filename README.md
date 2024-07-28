@@ -8,9 +8,5 @@ Goals:
  - Efficient interoperability with other vision libraries such as opencv
  - Port algorithms from RAVL to use new c++ idioms
  
- 
 
-# Porting Notes
-
-    IndexRange2dC -> IndexRange<2>
 

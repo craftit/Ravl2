@@ -7,9 +7,7 @@
 //! author="Charles Galambos"
 
 #include "Ravl2/Image/MatchNormalisedCorrelation.hh"
-#include "Ravl2/Sums1d2.hh"
-#include "Ravl2/Image/Rectangle2dIter.hh"
-#include "Ravl2/Vector2d.hh"
+#include "Ravl2/Math/Sums1d2.hh"
 
 namespace Ravl2 {
   
@@ -35,12 +33,12 @@ namespace Ravl2 {
     return true;
   }
 
-  IntT SumOfProducts(const RangeBufferAccess2dC<ByteT> &templ,const RangeBufferAccess2dC<ByteT> &subImg) {
-    IntT sumxy = 0;
+  int SumOfProducts(const RangeBufferAccess2dC<ByteT> &templ,const RangeBufferAccess2dC<ByteT> &subImg) {
+    int sumxy = 0;
     // The following loop could probably be speeded up with some MMX code.
     for(BufferAccess2dIter2C<ByteT,ByteT> it2(templ,templ.Range2(),
 					      subImg,subImg.Range2());it2;it2++)
-      sumxy += (IntT) it2.data<0>() * it2.data<1>();
+      sumxy += (int) it2.data<0>() * it2.data<1>();
     return sumxy;
   }
   
@@ -67,10 +65,10 @@ namespace Ravl2 {
     for(Rectangle2dIterC itr(clippedSearchArea,templ.range());itr;itr++) {
       IndexRange<2> rect = itr.Window();
       RangeBufferAccess2dC<ByteT> subImg(searchImg,rect);
-      IntT sumxy = SumOfProducts(templ,subImg);
+      int sumxy = SumOfProducts(templ,subImg);
       
       // Calculate mean and variance for search image.
-      TFVectorC<IntT, 2>  rs = sums.Sum(rect);
+      TFVectorC<int, 2>  rs = sums.Sum(rect);
       RealT ssum = rs[0];
       RealT smean = (RealT) rs[0] / tarea;
       RealT svar = ((RealT) rs[1] -sqr((RealT) rs[0])/tarea) / (tarea-1);
