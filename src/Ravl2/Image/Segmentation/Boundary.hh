@@ -20,7 +20,11 @@ namespace Ravl2
 {
   class Polygon2dC;
 
-  enum class BoundaryTypeT { OUTSIDE, INSIDE };
+  //! Is the inside of the boundary on the left or right side of the boundary?n
+  enum class BoundaryTypeT { INSIDE_LEFT, INSIDE_RIGHT };
+
+  inline BoundaryTypeT reverse(BoundaryTypeT orient)
+  { return (orient == BoundaryTypeT::INSIDE_LEFT) ? BoundaryTypeT::INSIDE_RIGHT : BoundaryTypeT::INSIDE_LEFT; }
 
   //! Crack code boundary
 
@@ -39,20 +43,20 @@ namespace Ravl2
     //! Create the boundary from the list of edges with an appropriate orientation.
     // The 'edgeList' will be a part of boundary.  If orient is true, the object
     // is on the left of the boundary.
-    explicit BoundaryC(const std::vector<CrackC> & edgeList, bool orient = false)
+    explicit BoundaryC(const std::vector<CrackC> & edgeList, BoundaryTypeT orient = BoundaryTypeT::INSIDE_LEFT)
      : orientation(orient), mEdges(edgeList)
     {}
 
     //! Create the boundary from the list of edges with an appropriate orientation.
     // The 'edgeList' will be a part of boundary.  If orient is true, the object
     // is on the left of the boundary.
-    explicit BoundaryC(std::vector<CrackC> && edgeList, bool orient = false)
+    explicit BoundaryC(std::vector<CrackC> && edgeList,  BoundaryTypeT orient = BoundaryTypeT::INSIDE_LEFT)
       : orientation(orient), mEdges(std::move(edgeList))
     {}
 
     //! Empty boundary with orientation 'orient'.
     //! If orient is true, the object is on the left of the boundary.
-    explicit BoundaryC(bool orient)
+    explicit BoundaryC(BoundaryTypeT orient)
       : orientation(orient)
     {}
 
@@ -87,14 +91,14 @@ namespace Ravl2
     std::vector<BoundaryC> Order(const CrackC & firstCrack, bool orient = true);
     //!deprecated: Order boundary from edge. <br> Order the edgels of this boundary such that it can be traced continuously along the direction of the first edge. The orientation of the boundary is set according to 'orient'. If the boundary is open, 'firstCrack' and 'orient' are ignored.<br>  Note: There is a bug in this code which can cause an infinite loop for some edge patterns. In particular where the two edges go through the same vertex.
 
-    [[nodiscard]] bool Orient() const
+    [[nodiscard]] auto Orient() const
     { return orientation; }
     //: Return the orientation of the boundary.
     // true: object is on the left side of edges relative to their
     // direction;<br> false: on the right.
 
     void Invert()
-    { orientation = !orientation; }
+    { orientation = Ravl2::reverse(orientation); }
     //: Invert the boundary.
 
     //! Reverse the order of the edges.
@@ -134,9 +138,8 @@ namespace Ravl2
     { return mEdges; }
 
   private:
-    //! Orientation of the boundary. true means that
-    //! an object is on the left side of edges.
-    bool orientation = true;
+    //! Orientation of the boundary.
+    BoundaryTypeT orientation = BoundaryTypeT::INSIDE_LEFT;
 
     std::vector<CrackC> mEdges;
 
@@ -161,7 +164,7 @@ namespace Ravl2
   BoundaryC Line2Boundary(const BVertexC & startVertex, const BVertexC & endVertex);
 
   //: Creates a boundary around the rectangle.
-  BoundaryC toBoundary(IndexRange<2> rect, BoundaryTypeT type = BoundaryTypeT::OUTSIDE);
+  BoundaryC toBoundary(IndexRange<2> rect, BoundaryTypeT type = BoundaryTypeT::INSIDE_LEFT);
 
   template<typename ArrayT,typename DataT>
   requires WindowedArray<ArrayT,DataT,2>
@@ -193,7 +196,7 @@ namespace Ravl2
           mEdges.emplace_back(it.indexBR() + toIndex(1,0), CrackCodeT::CR_UP);
       }
     }
-    return BoundaryC(std::move(mEdges),true);
+    return BoundaryC(std::move(mEdges),BoundaryTypeT::INSIDE_LEFT);
   }
 
 }

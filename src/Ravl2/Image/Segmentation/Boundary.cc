@@ -49,7 +49,7 @@ namespace Ravl2
       edges.push_back(edge);
       edge.Left();
     }
-    return BoundaryC(std::move(edges), type == BoundaryTypeT::OUTSIDE);
+    return BoundaryC(std::move(edges), type);
   }
 
   int BoundaryC::area() const
@@ -85,7 +85,7 @@ namespace Ravl2
       SPDLOG_INFO("BoundaryC::area() Code {}  Area={} col={}", edge.crackCode(), area, col);
     }
 #endif
-    if(!orientation)
+    if(orientation == BoundaryTypeT::INSIDE_RIGHT)
       return -area;
     return area;
   }
@@ -99,7 +99,7 @@ namespace Ravl2
     for(auto it = mEdges.rbegin(); it != end; ++it) {
       newEdges.push_back(it->reversed());
     }
-    return BoundaryC(std::move(newEdges), !orientation);
+    return BoundaryC(std::move(newEdges), Ravl2::reverse(orientation));
   }
 
   BoundaryC &BoundaryC::BReverse()
@@ -114,7 +114,7 @@ namespace Ravl2
     if (empty())
       return bb;
     bb = IndexRange<2>::mostEmpty();
-    if(orientation) {
+    if(orientation == BoundaryTypeT::INSIDE_LEFT) {
       ONDEBUG(std::cerr << "BoundaryC::BoundingBox(), Object is on left. \n");
       for(auto edge : mEdges)
       {

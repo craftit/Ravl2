@@ -111,7 +111,7 @@ TEST_CASE("Check things are working properly", "[Boundary]")
   SECTION("Bounding box and areas")
   {
     IndexRange<2> rect(IndexRange<1>({1, 3}), IndexRange<1>({2, 4}));
-    BoundaryC bnd = toBoundary(rect, BoundaryTypeT::OUTSIDE);
+    BoundaryC bnd = toBoundary(rect, BoundaryTypeT::INSIDE_LEFT);
     //SPDLOG_INFO("Rect: {}  Bounds:{} ", rect, bnd);
 
     // Check the edges are closed and ordered
