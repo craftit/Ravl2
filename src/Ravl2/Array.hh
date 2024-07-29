@@ -308,16 +308,16 @@ namespace Ravl2
       return false;
     }
 
-    //! Begin iterator
+    //! vertexBegin iterator
     [[nodiscard]] constexpr ArrayIter<DataT,N> begin() const;
 
-    //! End iterator
+    //! vertexEnd iterator
     [[nodiscard]] constexpr ArrayIter<DataT,N> end() const;
 
-    //! Begin iterator
+    //! vertexBegin iterator
     [[nodiscard]] constexpr ArrayIter<const DataT,N> cbegin() const;
 
-    //! End iterator
+    //! vertexEnd iterator
     [[nodiscard]] constexpr ArrayIter<const DataT,N> cend() const;
 
     //! Get stride for dimension
@@ -594,16 +594,16 @@ namespace Ravl2
     [[nodiscard]] constexpr bool empty() const noexcept
     { return m_ranges->empty(); }
 
-    //! Begin iterator
+    //! vertexBegin iterator
     [[nodiscard]] constexpr ArrayIter<DataT,1> begin() const;
 
-    //! End iterator
+    //! vertexEnd iterator
     [[nodiscard]] constexpr ArrayIter<DataT,1> end() const;
 
-    //! Begin iterator
+    //! vertexBegin iterator
     [[nodiscard]] constexpr ArrayIter<const DataT,1> cbegin() const;
 
-    //! End iterator
+    //! vertexEnd iterator
     [[nodiscard]] constexpr ArrayIter<const DataT,1> cend() const;
 
     //! Get stride for dimension
@@ -1098,19 +1098,19 @@ namespace Ravl2
       [[nodiscard]] constexpr bool empty() const noexcept
       { return m_range.empty(); }
 
-      //! Begin iterator
+      //! vertexBegin iterator
       [[nodiscard]] constexpr ArrayIter<DataT,1> begin()
       { return ArrayIter<DataT,1>(m_data); }
 
-      //! End iterator
+      //! vertexEnd iterator
       [[nodiscard]] constexpr ArrayIter<DataT,1> end()
       { return ArrayIter<DataT,1>(m_data + m_range.size()); }
 
-    //! Begin iterator
+    //! vertexBegin iterator
     [[nodiscard]] constexpr ArrayIter<const DataT,1> begin() const
     { return ArrayIter<DataT,1>(m_data); }
 
-    //! End iterator
+    //! vertexEnd iterator
     [[nodiscard]] constexpr ArrayIter<const DataT,1> end() const
     { return ArrayIter<DataT,1>(m_data + m_range.size()); }
 
@@ -1184,7 +1184,7 @@ namespace Ravl2
     [[nodiscard]] auto &buffer()
     { return m_buffer; }
 
-    //! Begin iterator
+    //! vertexBegin iterator
   protected:
     std::shared_ptr<DataT[]> m_buffer;
   };

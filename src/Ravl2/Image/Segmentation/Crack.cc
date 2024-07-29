@@ -7,12 +7,15 @@
 //! date="26.10.1992"
 //! author="Radek Marik"
 
-// elementary boundary edge based on crack code
 
 #include "Ravl2/Image/Segmentation/Crack.hh"
 
 namespace Ravl2
 {
+
+  std::ostream & operator<<(std::ostream & s, const CrackC & crack)
+  { return s << crack.at() << ' ' << toString(crack.code().code()); }
+  //: Writes the elementary crack 'e' into the output stream 's'.
 
 }
 

@@ -117,9 +117,9 @@ namespace Ravl2
     std::vector<std::vector<CrackC> > ConvexHull() const;
 
     //! Get the bounding box around all pixels on the inside edge of the boundary.
-    IndexRange<2> BoundingBox() const;
+    IndexRange<2> boundingBox() const;
 
-    Polygon2dC Polygon2d(bool bHalfPixelOffset = false) const;
+    Polygon2dC polygon(bool bHalfPixelOffset = false) const;
     //: Convert a boundry to a polygon.
     //!param: bHalfPixelOffset - should (-0.5,-0.5) be added to the polygon points?
     // This assumes 'bnd' is a single ordered boundry (See BoundryC::OrderEdges();). 

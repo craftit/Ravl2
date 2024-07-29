@@ -32,22 +32,22 @@ namespace Ravl2
 
     for(int i=origin[0]; i <= endP[0]; i++) {
       edges.push_back(edge);
-      edge.Down();
+      edge.moveDown();
     }
     edge.turnCClock();
     for(int i=origin[1]; i <= endP[1]; i++) {
       edges.push_back(edge);
-      edge.Right();
+      edge.moveRight();
     }
     edge.turnCClock();
     for(int i=endP[1]; i >= origin[1]; i--) {
       edges.push_back(edge);
-      edge.Up();
+      edge.moveUp();
     }
     edge.turnCClock();
     for(int i=endP[0]; i >= origin[0]; i--) {
       edges.push_back(edge);
-      edge.Left();
+      edge.moveLeft();
     }
     return Boundary(std::move(edges), type);
   }
@@ -108,24 +108,24 @@ namespace Ravl2
     return *this;
   }
 
-  IndexRange<2> Boundary::BoundingBox() const
+  IndexRange<2> Boundary::boundingBox() const
   {
     IndexRange<2> bb;
     if (empty())
       return bb;
     bb = IndexRange<2>::mostEmpty();
     if(orientation == BoundaryOrientationT::INSIDE_LEFT) {
-      ONDEBUG(std::cerr << "BoundaryC::BoundingBox(), Object is on left. \n");
+      ONDEBUG(std::cerr << "BoundaryC::boundingBox(), Object is on left. \n");
       for(auto edge : mEdges)
       {
-	Index<2> vx = edge.LPixel();
+	Index<2> vx = edge.leftPixel();
 	bb.involve(vx);
       }
     } else {
-      ONDEBUG(std::cerr << "BoundaryC::BoundingBox(), Object is on right. \n");
+      ONDEBUG(std::cerr << "BoundaryC::boundingBox(), Object is on right. \n");
       for(auto edge : mEdges)
       {
-	Index<2> vx = edge.RPixel();
+	Index<2> vx = edge.rightPixel();
 	bb.involve(vx);
       }
     }

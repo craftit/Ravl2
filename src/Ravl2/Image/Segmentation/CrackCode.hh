@@ -80,7 +80,7 @@ namespace Ravl2
     {}
 
     //! Returns the crack code.
-    [[nodiscard]] inline constexpr CrackCodeT Code() const
+    [[nodiscard]] inline constexpr CrackCodeT code() const
     { return crackCode; }
 
     //! Returns the crack code.
@@ -89,7 +89,7 @@ namespace Ravl2
 
     //! Get relative crack code of direction 'cc' relative to this one.
     [[nodiscard]] constexpr RelativeCrackCodeT relative(const CrackCode & cc) const {
-      int rcode = int(cc.Code()) - int(Code());
+      int rcode = int(cc.code()) - int(code());
       if(rcode < 0) rcode += 4;
       else rcode %= 4;
       return static_cast<RelativeCrackCodeT>(rcode); 
@@ -97,10 +97,10 @@ namespace Ravl2
 
     //! Equality test
     [[nodiscard]] inline constexpr bool operator==(const CrackCode & cc) const
-    { return cc.Code() == Code(); }
+    { return cc.code() == code(); }
 
     [[nodiscard]] inline constexpr bool operator!=(const CrackCode & cc) const
-    { return cc.Code() != Code(); }
+    { return cc.code() != code(); }
     //: Returns true if the object content is not equal to 'cc'.
     
     inline constexpr const CrackCode & operator+=(const CrackCode & cc)  {
@@ -180,7 +180,7 @@ namespace Ravl2
 
   //! Write to a stream.
   inline std::ostream &operator<<(std::ostream &strm,const CrackCode &cc) {
-    strm << toString(cc.Code());
+    strm << toString(cc.code());
     return strm;
   }
 

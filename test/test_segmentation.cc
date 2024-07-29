@@ -30,10 +30,10 @@ TEST_CASE("FloodRegion", "[FloodRegion]")
     CHECK(flood.GrowRegion(at, FloodRegionLessThanThresholdC(15), boundary));
     for(auto it : boundary.edges()) {
       //SPDLOG_INFO("Edge: {}", it);
-      CHECK(img[it.LPixel()] == 10);
-      CHECK(img[it.RPixel()] == 99);
+      CHECK(img[it.leftPixel()] == 10);
+      CHECK(img[it.rightPixel()] == 99);
     }
-    CHECK(boundary.BoundingBox() == rng);
+    CHECK(boundary.boundingBox() == rng);
     SPDLOG_INFO("Boundary: {}  ({})", boundary.size(), size_t((rng.range(0).size() + rng.range(1).size()) * 2));
     CHECK(boundary.size() == size_t((rng.range(0).size() + rng.range(1).size()) * 2));
     CHECK(boundary.area() == rng.area());
@@ -80,21 +80,21 @@ TEST_CASE("SegmentExtrema")
   REQUIRE(!boundaries.empty());
   CHECK(boundaries.size() == 2);
   for(auto &boundary : boundaries) {
-    SPDLOG_INFO("Boundary: {} -> {}", boundary.BoundingBox(), boundary);
+    SPDLOG_INFO("Boundary: {} -> {}", boundary.boundingBox(), boundary);
   }
 
   {
     const Boundary &boundary = boundaries[0];
 
-    CHECK(boundary.BoundingBox() == rng);
+    CHECK(boundary.boundingBox() == rng);
     CHECK(boundary.area() == rng.area());
 
     for(auto it : boundary.edges()) {
       //SPDLOG_INFO("Edge: {}", it);
-      REQUIRE(img.range().contains(it.LPixel()));
-      REQUIRE(img.range().contains(it.RPixel()));
-      CHECK(img[it.LPixel()] <= 20);
-      CHECK(img[it.RPixel()] >= 20);
+      REQUIRE(img.range().contains(it.leftPixel()));
+      REQUIRE(img.range().contains(it.rightPixel()));
+      CHECK(img[it.leftPixel()] <= 20);
+      CHECK(img[it.rightPixel()] >= 20);
     }
   }
 }

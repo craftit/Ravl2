@@ -71,35 +71,35 @@ TEST_CASE("Check relative directions", "[CrackCodeC]")
 
   Index<2> start(5,6);
   CrackC edge(start,CrackCodeT::CR_DOWN);
-  Index<2> at = edge.RPixel();
+  Index<2> at = edge.rightPixel();
   ONDEBUG(std::cerr <<"iAt=" << at << " Start=" << start << "\n");
   EXPECT_EQ(at, (start + Index<2>(0,-1)));
-  EXPECT_EQ(start, edge.LPixel());
+  EXPECT_EQ(start, edge.leftPixel());
   // Go around a pixel clockwise.
   for(int i = 0;i < 5;i++) {
-    edge.Begin() = edge.End();
+    edge.vertexBegin() = edge.vertexEnd();
     edge.turnClock();
-    ONDEBUG(std::cerr <<"At=" << edge.RPixel() << " Code:" << edge.Code() << "\n");
-    EXPECT_NE(at, edge.LPixel());
+    ONDEBUG(std::cerr << "At=" << edge.rightPixel() << " code:" << edge.Code() << "\n");
+    EXPECT_NE(at, edge.leftPixel());
   }
   // Go around a pixel counter clockwise.
   edge = CrackC(start,CrackCodeT::CR_DOWN);
-  at = edge.LPixel();
+  at = edge.leftPixel();
   EXPECT_EQ(at,start)
   ONDEBUG(std::cerr <<"iAt=" << at << "\n");
   for(int i = 0;i < 5;i++) {
-    edge.Begin() = edge.End();
+    edge.vertexBegin() = edge.vertexEnd();
     edge.turnCClock();
-    ONDEBUG(std::cerr <<"At=" << edge.LPixel() << " Code:" << edge.Code() << "\n");
-    EXPECT_EQ(at, edge.LPixel());
+    ONDEBUG(std::cerr << "At=" << edge.leftPixel() << " code:" << edge.Code() << "\n");
+    EXPECT_EQ(at, edge.leftPixel());
   }
   //                               DOWN          RIGHT              UP                LEFT               None
   Index<2> offsets[5] = { Index<2>(0,-1),Index<2>(1,0),Index<2>(0,1),Index<2>(-1,0),Index<2>(0,0) };
   for(int i = 0;i < 5;i++) {
     edge = CrackC::fromPixel(start, CrackCode(i));
     //std::cerr <<" " << i << " RPixel=" << edge.RPixel() << "\n";
-    EXPECT_EQ(edge.LPixel(), start);
-    EXPECT_EQ(edge.RPixel(), (start + offsets[i]));
+    EXPECT_EQ(edge.leftPixel(), start);
+    EXPECT_EQ(edge.rightPixel(), (start + offsets[i]));
   }
 }
 
@@ -128,16 +128,16 @@ TEST_CASE("Check things are working properly", "[Boundary]")
     CHECK(bnd.size() == 12);
     ONDEBUG(std::cout << "Area=" << bnd.area() << "\n");
     CHECK(bnd.area() == rect.area());
-    IndexRange<2> tmpbb = bnd.BoundingBox();
+    IndexRange<2> tmpbb = bnd.boundingBox();
     EXPECT_EQ(tmpbb, rect);
     bnd.BReverse();
-    EXPECT_EQ(tmpbb, bnd.BoundingBox());
+    EXPECT_EQ(tmpbb, bnd.boundingBox());
     EXPECT_EQ(bnd.area(), rect.area());
     bnd.invert();
     ONDEBUG(cout << "RArea=" << bnd.area() << "\n");
     CHECK(-bnd.area() == rect.area());
 
-    IndexRange<2> bb = bnd.BoundingBox();
+    IndexRange<2> bb = bnd.boundingBox();
     ONDEBUG(std::cerr << "Bounding box=" << bb << " Inv=" << tmpbb << "\n");
     CHECK(bb == rect.expand(1));
   }
@@ -146,7 +146,7 @@ TEST_CASE("Check things are working properly", "[Boundary]")
     for(int i =0;i < 5;i++) {
       BoundaryVertex start({5, 5});
       CrackC edge(start, CrackCode(i));
-      auto m1 = ((toPoint<float>(edge.RPixel()) + toPoint<float>(edge.LPixel())) / 2.0f) + Point<float,2>({0.5,0.5});
+      auto m1 = ((toPoint<float>(edge.rightPixel()) + toPoint<float>(edge.leftPixel())) / 2.0f) + Point<float,2>({0.5, 0.5});
       CHECK(isNearZero<float>(euclidDistance(m1,edge.MidPoint<float>())(),1e-5f));
     }
   }
@@ -164,8 +164,8 @@ TEST_CASE("Check things are working properly", "[Boundary]")
 
     for(auto it : bounds.edges()) {
       //SPDLOG_INFO("Edge: {}  Left:{} ", it,it.LPixel());
-      CHECK(img[it.LPixel()] == 10);
-      CHECK(img[it.RPixel()] != 10);
+      CHECK(img[it.leftPixel()] == 10);
+      CHECK(img[it.rightPixel()] != 10);
     }
 
     //SPDLOG_INFO("Bounds Lengths: {}  ({})", bounds.size(), size_t((rng.range(0).size() + rng.range(1).size()) * 2));

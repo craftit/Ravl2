@@ -94,25 +94,25 @@ namespace Ravl2
       else if (down(beginAt) == endAt) mCode = CrackCodeT::CR_DOWN;
     }
 
-    constexpr CrackC &Down()
+    constexpr CrackC &moveDown()
     {
       mAt[0]++;
       return *this;
     }
 
-    constexpr CrackC &Up()
+    constexpr CrackC &moveUp()
     {
       mAt[0]--;
       return *this;
     }
 
-    constexpr CrackC &Right()
+    constexpr CrackC &moveRight()
     {
       mAt[1]++;
       return *this;
     }
 
-    constexpr CrackC &Left()
+    constexpr CrackC &moveLeft()
     {
       mAt[1]--;
       return *this;
@@ -124,11 +124,14 @@ namespace Ravl2
     static constexpr auto fromPixel(const Index<2> &pxl, const CrackCode & cc)
     {
       CrackC crack(pxl, cc);
-      switch (cc.Code()) {
+      switch (cc.code()) {
       case CrackCodeT::CR_DOWN :                 break;
-      case CrackCodeT::CR_RIGHT: crack.Down();         break;
-      case CrackCodeT::CR_UP   : crack.Down().Right(); break;
-      case CrackCodeT::CR_LEFT : crack.Right();        break;
+      case CrackCodeT::CR_RIGHT:
+        crack.moveDown();         break;
+      case CrackCodeT::CR_UP   :
+        crack.moveDown().moveRight(); break;
+      case CrackCodeT::CR_LEFT :
+        crack.moveRight();        break;
       case CrackCodeT::CR_NODIR:                 break;
       }
       return crack;
@@ -150,9 +153,9 @@ namespace Ravl2
 
 
     //! Returns the pixel on the right side of the crack.
-    [[nodiscard]] constexpr auto RPixel() const
+    [[nodiscard]] constexpr auto rightPixel() const
     {
-      switch (mCode.Code()) {
+      switch (mCode.code()) {
       case CrackCodeT::CR_DOWN : return Index<2>(mAt[0],mAt[1]-1);
       case CrackCodeT::CR_RIGHT: break;
       case CrackCodeT::CR_UP   : return Index<2>(mAt[0]-1,mAt[1]);
@@ -163,9 +166,9 @@ namespace Ravl2
     }
 
     //! Returns the pixel on the left side of the crack.
-    [[nodiscard]] constexpr auto LPixel() const
+    [[nodiscard]] constexpr auto leftPixel() const
     {
-      switch (mCode.Code()) {
+      switch (mCode.code()) {
       case CrackCodeT::CR_DOWN : break;
       case CrackCodeT::CR_RIGHT: return Index<2>(mAt[0]-1,mAt[1]);
       case CrackCodeT::CR_UP   : return Index<2>(mAt[0]-1,mAt[1]-1);
@@ -179,7 +182,7 @@ namespace Ravl2
     template<typename RealT>
     [[nodiscard]] constexpr Point<RealT,2> MidPoint() const
     {
-      switch(mCode.Code()) {
+      switch(mCode.code()) {
         case CrackCodeT::CR_DOWN : return Point<RealT,2>({RealT(mAt[0]) +RealT(0.5)  ,RealT(mAt[1])});
         case CrackCodeT::CR_RIGHT: return Point<RealT,2>({RealT(mAt[0])              ,RealT(mAt[1]) + RealT(0.5)});
         case CrackCodeT::CR_UP   : return Point<RealT,2>({RealT(mAt[0]) -RealT(0.5)  ,RealT(mAt[1])});
@@ -192,21 +195,21 @@ namespace Ravl2
 
 
     //! Returns the boundary vertex from which the elementary crack starts from.
-    [[nodiscard]] const constexpr BoundaryVertex2 & Begin() const
+    [[nodiscard]] constexpr const BoundaryVertex2 & vertexBegin() const
     { return mAt; }
 
     //! Returns the boundary vertex from which the elementary crack starts from.
-    constexpr BoundaryVertex2 & Begin()
+    constexpr BoundaryVertex2 & vertexBegin()
     { return mAt; }
 
     //! Returns the boundary vertex to which the elementary crack points to.
-    [[nodiscard]] constexpr BoundaryVertex2 End() const
-    { return crackStep(mAt, mCode.Code()); }
+    [[nodiscard]] constexpr BoundaryVertex2 vertexEnd() const
+    { return crackStep(mAt, mCode.code()); }
 
     //! reverse the direction of this crack.
     constexpr const CrackC & reverse()
     {
-      mAt = crackStep(mAt, mCode.Code());
+      mAt = crackStep(mAt, mCode.code());
       mCode.turnBack();
       return *this;
     }
@@ -216,7 +219,7 @@ namespace Ravl2
     {
       CrackCode cc = mCode;
       cc.turnBack();
-      return {crackStep(mAt, mCode.Code()), cc};
+      return {crackStep(mAt, mCode.code()), cc};
     }
 
     [[nodiscard]] constexpr BoundaryVertex2 &at()
@@ -232,7 +235,7 @@ namespace Ravl2
     { return mCode; }
 
     [[nodiscard]] constexpr CrackCodeT crackCode() const
-    { return mCode.Code(); }
+    { return mCode.code(); }
 
     //! Turns the crack code clockwise.
     // This is an in-place operation.
@@ -253,11 +256,9 @@ namespace Ravl2
     BoundaryVertex2 mAt;
     CrackCode mCode;
   };
-  
-  inline std::ostream & operator<<(std::ostream & s, const CrackC & crack)
-  { return s << crack.at() << ' ' << toString(crack.code().Code()); }
-  //: Writes the elementary crack 'e' into the output stream 's'.
-  
+
+  //! Writes the elementary crack 'e' into the output stream 's'.
+  std::ostream & operator<<(std::ostream & s, const CrackC & crack);
   std::istream & operator>>(std::istream & s,CrackC & crack);
 
 }
