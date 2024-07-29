@@ -111,7 +111,7 @@ TEST_CASE("ConnectedComponents")
   test[6][6] = 1;
   test[5][6] = 1;
   //cerr << test;
-  ConnectedComponentsBodyC<unsigned> conComp(false);
+  ConnectedComponents<unsigned> conComp(false);
   auto [segMap, regionCount] = conComp.apply(test);
 
   //cerr << "Regions=" << result.Data2() << "\n";
