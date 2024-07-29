@@ -133,7 +133,7 @@ TEST_CASE("Check things are working properly", "[Boundary]")
     bnd.BReverse();
     EXPECT_EQ(tmpbb, bnd.BoundingBox());
     EXPECT_EQ(bnd.area(), rect.area());
-    bnd.Invert();
+    bnd.invert();
     ONDEBUG(cout << "RArea=" << bnd.area() << "\n");
     CHECK(-bnd.area() == rect.area());
 

@@ -33,7 +33,7 @@ namespace Ravl2
   // the form of square tiles, the boundary follows the edges of the tiles.</p>
   //
   // <p>If the region has holes in it, or several regions are labelled with the
-  // same label, the object will include all of the relevant boundaries. These
+  // same label, the object will include all the relevant boundaries. These
   // can be separated using the <code>OrderEdges()</code> method.</p>
 
   class Boundary
@@ -81,15 +81,15 @@ namespace Ravl2
     // Note: The area of the region can be negative, if it is a 'hole' in
     // a plane. This can be inverted with the BReverse() method.
 
-    std::vector<Boundary> OrderEdges() const;
+    std::vector<Boundary> orderEdges() const;
     //: Generate a list of boundaries.
     // Each item in the list corresponds to a single complete boundary contour.<br>
     // The edges in each boundary are ordered along the boundary.<br> 
     // The direction of the boundaries is determined by the constructor.<br>
     // Boundaries that terminate at the edge of the array/image are left open.
 
-    std::vector<Boundary> Order(const CrackC & firstCrack, bool orient = true);
-    //!deprecated: Order boundary from edge. <br> Order the edgels of this boundary such that it can be traced continuously along the direction of the first edge. The orientation of the boundary is set according to 'orient'. If the boundary is open, 'firstCrack' and 'orient' are ignored.<br>  Note: There is a bug in this code which can cause an infinite loop for some edge patterns. In particular where the two edges go through the same vertex.
+    std::vector<Boundary> order(const CrackC & firstCrack, bool orient = true);
+    //!deprecated: Order boundary from edge. <br> order the edgels of this boundary such that it can be traced continuously along the direction of the first edge. The orientation of the boundary is set according to 'orient'. If the boundary is open, 'firstCrack' and 'orient' are ignored.<br>  Note: There is a bug in this code which can cause an infinite loop for some edge patterns. In particular where the two edges go through the same vertex.
 
     [[nodiscard]] auto Orient() const
     { return orientation; }
@@ -97,7 +97,7 @@ namespace Ravl2
     // true: object is on the left side of edges relative to their
     // direction;<br> false: on the right.
 
-    void Invert()
+    void invert()
     { orientation = Ravl2::reverse(orientation); }
     //: Invert the boundary.
 
