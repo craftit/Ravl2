@@ -24,7 +24,7 @@ int main(int argc,char **argv)
 {
   using namespace Ravl2;
 
-  CLI::App app{"App description"};
+  CLI::App app{"Corner detection example program"};
 
   int threshold = 30;
   int w = 3;

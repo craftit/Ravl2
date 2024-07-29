@@ -83,6 +83,9 @@ namespace Ravl2
     template<typename DataT, size_t N, size_t M>
     using Matrix = xt::xtensor_fixed<DataT, xt::xshape<N,M>>;
 
+    template<typename DataT,unsigned N>
+    using Tensor = xt::xtensor<DataT, N>;
+
     using Vector4f = Vector<float, 4>;
     using Vector3f = Vector<float, 3>;
     using Vector3d = Vector<double, 3>;
