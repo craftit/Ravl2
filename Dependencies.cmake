@@ -15,6 +15,10 @@ function(RAVL2_setup_dependencies)
   find_package(CLI11 QUIET)
   find_package(nlohmann_json QUIET)
 
+  # Sort out some blas
+  find_package(BLAS REQUIRED)
+  find_package(LAPACK REQUIRED)
+
   # For each dependency, see if it's
   # already been provided to us by a parent project
 
