@@ -20,21 +20,21 @@ namespace Ravl2
 {
   //: Segmentation map.
 
-  class SegmentationBodyC
+  class Segmentation
   {
   public:
-    SegmentationBodyC()
+    Segmentation()
       : labels(0)
     {}
     //: Default constructor.
     
-    SegmentationBodyC(const Array<unsigned, 2> &nsegmap,unsigned nlabels)
+    Segmentation(const Array<unsigned, 2> &nsegmap, unsigned nlabels)
       : segmap(nsegmap),
 	labels(nlabels)
     {}
     //: Constructor.
 
-    explicit SegmentationBodyC(const Array<int, 2> &nsegmap);
+    explicit Segmentation(const Array<int, 2> &nsegmap);
     //: Construct from an IntT image.
     // Negative values will be labeled as region 0.
 
@@ -118,11 +118,11 @@ namespace Ravl2
   //: Merge similar components smaller than 'thrSize'.
 
   template<class PixelT,class CmpT, typename RealT>
-  unsigned SegmentationBodyC::MergeComponents(Array<PixelT, 2> &dat,
-					   unsigned thrSize,
-					   RealT maxDist,
-					   CmpT &cmp,
-					   unsigned iter)
+  unsigned Segmentation::MergeComponents(Array<PixelT, 2> &dat,
+					 unsigned thrSize,
+					 RealT maxDist,
+					 CmpT &cmp,
+					 unsigned iter)
   {
     if(labels <= 1)
       return labels;

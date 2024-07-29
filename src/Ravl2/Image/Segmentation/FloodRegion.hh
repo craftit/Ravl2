@@ -125,7 +125,7 @@ namespace Ravl2
 
     //! Grow a region from 'seed' including all connected pixel less than or equal to threshold, generate a mask as the result.
     //! Returns true if the boundary has a non zero area.
-    bool GrowRegion(const Index<2> &seed,const InclusionTestT &inclusionCriteria,BoundaryC &boundary,size_t maxSize = 0);
+    bool GrowRegion(const Index<2> &seed, const InclusionTestT &inclusionCriteria, Boundary &boundary, size_t maxSize = 0);
 
     //: Grow a region from 'seed' including all connected pixel less than or equal to threshold, generate a mask as the result.
     // The mask images are generated with a boundary
@@ -245,15 +245,15 @@ namespace Ravl2
   
 
   template<class PixelT,class InclusionTestT>
-  bool FloodRegionC<PixelT,InclusionTestT>::GrowRegion(const Index<2> &seed,const InclusionTestT &inclusionCriteria,BoundaryC &boundary,[[maybe_unused]] size_t maxSize) {
+  bool FloodRegionC<PixelT,InclusionTestT>::GrowRegion(const Index<2> &seed, const InclusionTestT &inclusionCriteria, Boundary &boundary, [[maybe_unused]] size_t maxSize) {
     IndexRange<2> rng;
     if(!BaseGrowRegion(seed,inclusionCriteria,rng) || rng.area() <= 0) {
-      boundary = BoundaryC();
+      boundary = Boundary();
       return false;
     }
     rng = rng.expand(1);
     rng.clipBy(marki.range());
-    boundary = BoundaryC::traceBoundary(clip(marki,rng),id);
+    boundary = Boundary::traceBoundary(clip(marki, rng), id);
     return true;
   }
   

@@ -21,12 +21,12 @@ namespace Ravl2
 {
 
   //! Creates a boundary around the rectangle.
-  BoundaryC toBoundary(IndexRange<2> rect, BoundaryOrientationT type)
+  Boundary toBoundary(IndexRange<2> rect, BoundaryOrientationT type)
   {
     auto origin = rect.min();
     auto endP = rect.max();
-    BoundaryVertexC   oVertex(origin);      // to help to GNU C++ 2.6.0
-    CrackCodeC cr(CrackCodeT::CR_DOWN);
+    BoundaryVertex   oVertex(origin);      // to help to GNU C++ 2.6.0
+    CrackCode cr(CrackCodeT::CR_DOWN);
     CrackC      edge(oVertex, cr);
     std::vector<CrackC> edges;
 
@@ -34,25 +34,25 @@ namespace Ravl2
       edges.push_back(edge);
       edge.Down();
     }
-    edge.TurnCClock();
+    edge.turnCClock();
     for(int i=origin[1]; i <= endP[1]; i++) {
       edges.push_back(edge);
       edge.Right();
     }
-    edge.TurnCClock();
+    edge.turnCClock();
     for(int i=endP[1]; i >= origin[1]; i--) {
       edges.push_back(edge);
       edge.Up();
     }
-    edge.TurnCClock();
+    edge.turnCClock();
     for(int i=endP[0]; i >= origin[0]; i--) {
       edges.push_back(edge);
       edge.Left();
     }
-    return BoundaryC(std::move(edges), type);
+    return Boundary(std::move(edges), type);
   }
 
-  int BoundaryC::area() const
+  int Boundary::area() const
   {
     int area = 0; // region area
 
@@ -90,8 +90,8 @@ namespace Ravl2
     return area;
   }
 
-  //! Reverse the order of the edges.
-  [[nodiscard]] BoundaryC BoundaryC::reverse() const
+  //! reverse the order of the edges.
+  [[nodiscard]] Boundary Boundary::reverse() const
   {
     std::vector<CrackC> newEdges;
     newEdges.reserve(mEdges.size());
@@ -99,16 +99,16 @@ namespace Ravl2
     for(auto it = mEdges.rbegin(); it != end; ++it) {
       newEdges.push_back(it->reversed());
     }
-    return BoundaryC(std::move(newEdges), Ravl2::reverse(orientation));
+    return Boundary(std::move(newEdges), Ravl2::reverse(orientation));
   }
 
-  BoundaryC &BoundaryC::BReverse()
+  Boundary &Boundary::BReverse()
   {
     *this = reverse();
     return *this;
   }
 
-  IndexRange<2> BoundaryC::BoundingBox() const
+  IndexRange<2> Boundary::BoundingBox() const
   {
     IndexRange<2> bb;
     if (empty())
@@ -386,10 +386,10 @@ namespace Ravl2
 
 #endif
 
-  BoundaryC Line2Boundary(const BoundaryVertexC & startVertex, const BoundaryVertexC & endVertex)
+  Boundary Line2Boundary(const BoundaryVertex & startVertex, const BoundaryVertex & endVertex)
   {
     std::vector<CrackC> boundary;
-    BoundaryVertexC  vertex(startVertex);
+    BoundaryVertex  vertex(startVertex);
     using RealT = float;
     auto     startRow = RealT(startVertex[0]);
     auto     startCol = RealT(startVertex[1]);
@@ -502,11 +502,11 @@ namespace Ravl2
       }
     }
     //  cout << "Line2Boundary - size:" << boundary.size() << '\n';
-    return BoundaryC(std::move(boundary));
+    return Boundary(std::move(boundary));
   }
 
   //! Write out the boundary to a stream.
-  std::ostream & operator<<(std::ostream & os, const BoundaryC & bnd)
+  std::ostream & operator<<(std::ostream & os, const Boundary & bnd)
   {
     os << "BoundaryC: ";
     for(auto edge : bnd.edges()) {

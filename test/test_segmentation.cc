@@ -24,7 +24,7 @@ TEST_CASE("FloodRegion", "[FloodRegion]")
   {
     FloodRegionC<PixelT> flood(img);
 
-    BoundaryC boundary;
+    Boundary boundary;
     //SPDLOG_INFO("Seed: {}", at);
     CHECK(flood.GrowRegion(at, FloodRegionLessThanThresholdC(15), boundary));
     for(auto it : boundary.edges()) {
@@ -74,7 +74,7 @@ TEST_CASE("SegmentExtrema")
 
   SegmentExtremaC<PixelT> segmentExtrema(8);
 
-  std::vector<BoundaryC> boundaries = segmentExtrema.Apply(img);
+  std::vector<Boundary> boundaries = segmentExtrema.Apply(img);
 
   REQUIRE(!boundaries.empty());
   CHECK(boundaries.size() == 2);
@@ -83,7 +83,7 @@ TEST_CASE("SegmentExtrema")
   }
 
   {
-    const BoundaryC &boundary = boundaries[0];
+    const Boundary &boundary = boundaries[0];
 
     CHECK(boundary.BoundingBox() == rng);
     CHECK(boundary.area() == rng.area());
