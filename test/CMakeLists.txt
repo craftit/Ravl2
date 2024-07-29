@@ -17,7 +17,15 @@ endif()
 
 # ---- Dependencies ----
 
-include(${Catch2_SOURCE_DIR}/extras/Catch.cmake)
+find_package(Catch2 3 REQUIRED)
+
+# If we're using fetchContent, we need to add the Catch2 extra directory to the module path
+list(APPEND CMAKE_MODULE_PATH ${catch2_SOURCE_DIR}/extras)
+# The following is needed on ubuntu 24.04
+list(APPEND CMAKE_MODULE_PATH ${Catch2_DIR})
+
+include(CTest)
+include(Catch)
 
 # Provide a simple smoke test to make sure that the CLI works and can display a --help message
 add_test(NAME cli.has_help COMMAND intro --help)
