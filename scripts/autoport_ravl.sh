@@ -81,6 +81,7 @@ s/.Data3()/.data<2>()/g
 s/\.V()//g
 s/Index2dC/Index<2>/g
 s/IndexRange2dC/IndexRange<2>/g
+s/ImageRectangleC/IndexRange<2>/g
 s/IndexRangeC/IndexRange<1>/g
 s/\.ClipBy(/\.clipBy(/g
 s/Round(/int_round(/g

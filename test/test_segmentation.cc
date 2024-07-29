@@ -6,6 +6,7 @@
 #include <spdlog/spdlog.h>
 #include "Ravl2/Image/Segmentation/FloodRegion.hh"
 #include "Ravl2/Image/Segmentation/SegmentExtrema.hh"
+#include "Ravl2/Image/Segmentation/ConnectedComponents.hh"
 
 
 TEST_CASE("FloodRegion", "[FloodRegion]")
@@ -96,6 +97,31 @@ TEST_CASE("SegmentExtrema")
       CHECK(img[it.RPixel()] >= 20);
     }
   }
-
-
 }
+
+TEST_CASE("ConnectedComponents")
+{
+  using namespace Ravl2;
+  Array<unsigned,2> test({8,8},0);
+
+
+  test[1][1] = 1;
+  test[1][2] = 1;
+  test[2][1] = 1;
+  test[6][6] = 1;
+  test[5][6] = 1;
+  //cerr << test;
+  ConnectedComponentsBodyC<unsigned> conComp(false);
+  auto [segMap, regionCount] = conComp.apply(test);
+
+  //cerr << "Regions=" << result.Data2() << "\n";
+  //cerr << segMap;
+  CHECK(regionCount == 4);
+  CHECK(segMap[1][1] == segMap[1][2]);
+  CHECK(segMap[1][2] == segMap[2][1]);
+  CHECK(segMap[6][6] == segMap[5][6]);
+  CHECK(segMap[6][6] != segMap[1][1]);
+  CHECK(segMap[6][6] != segMap[0][0]);
+  CHECK(segMap[1][2] != segMap[0][0]);
+}
+

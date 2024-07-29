@@ -13,11 +13,11 @@
 namespace Ravl2
 {
 
-  //: Iterator which slides a 2x2 window over two arrays.
-  // The square can be accessed with DataBL,DataBR,DataUL and DataUR
-  // which access the following array elements. <p>
-  //  TL TR <br>
-  //  BL BR <br>
+  //! Iterator which slides a 2x2 window over two arrays.
+  //! The square can be accessed with DataBL,DataBR,DataUL and DataUR
+  //! which access the following array elements. <p>
+  //!  TL TR <br>
+  //!  BL BR <br>
   
   template<class Data1T,class Data2T>
   class Array2dSqr2Iter2C
@@ -48,7 +48,7 @@ namespace Ravl2
 
     //! Goto next element.
     // Return true if pixel is on the same row.
-    bool Next() {
+    bool next() {
       up1++;
       up2++;
       if(!this->cit.next())
@@ -72,11 +72,7 @@ namespace Ravl2
     { return this->cit.valid(); }
 
     void operator++() 
-    { Next(); }
-    //: Goto next element.
-
-    void operator++(int) 
-    { Next(); }
+    { next(); }
     //: Goto next element.
 
     [[nodiscard]] Data1T &DataBR1()
@@ -143,6 +139,10 @@ namespace Ravl2
     { return up2[-1]; }
     //: Access upper left data element
 
+    //! Index of the bottom right element.
+    template<unsigned N>
+    [[nodiscard]] Index<2> index() const
+    { return this->cit.template index<N>(); }
   protected:
     IndexRange<2> range1;
     IndexRange<2> range2;
