@@ -28,7 +28,7 @@ namespace Ravl2
 
   //! Crack code boundary
 
-  // <p>The class BoundaryC represents the 4-connected oriented boundary of an
+  // <p>The class Boundary represents the 4-connected oriented boundary of an
   // image/array region. If the image is interpreted as an array of pixels in
   // the form of square tiles, the boundary follows the edges of the tiles.</p>
   //
@@ -36,41 +36,41 @@ namespace Ravl2
   // same label, the object will include all of the relevant boundaries. These
   // can be separated using the <code>OrderEdges()</code> method.</p>
 
-  class BoundaryC
+  class Boundary
   {
   public:
 
     //! Create the boundary from the list of edges with an appropriate orientation.
     // The 'edgeList' will be a part of boundary.  If orient is true, the object
     // is on the left of the boundary.
-    explicit BoundaryC(const std::vector<CrackC> & edgeList, BoundaryOrientationT orient = BoundaryOrientationT::INSIDE_LEFT)
+    explicit Boundary(const std::vector<CrackC> & edgeList, BoundaryOrientationT orient = BoundaryOrientationT::INSIDE_LEFT)
      : orientation(orient), mEdges(edgeList)
     {}
 
     //! Create the boundary from the list of edges with an appropriate orientation.
     // The 'edgeList' will be a part of boundary.  If orient is true, the object
     // is on the left of the boundary.
-    explicit BoundaryC(std::vector<CrackC> && edgeList, BoundaryOrientationT orient = BoundaryOrientationT::INSIDE_LEFT)
+    explicit Boundary(std::vector<CrackC> && edgeList, BoundaryOrientationT orient = BoundaryOrientationT::INSIDE_LEFT)
       : orientation(orient), mEdges(std::move(edgeList))
     {}
 
     //! Empty boundary with orientation 'orient'.
     //! If orient is true, the object is on the left of the boundary.
-    explicit BoundaryC(BoundaryOrientationT orient)
+    explicit Boundary(BoundaryOrientationT orient)
       : orientation(orient)
     {}
 
-    BoundaryC() = default;
-    BoundaryC(const BoundaryC &) = default;
-    BoundaryC(BoundaryC &&) = default;
-    BoundaryC & operator=(const BoundaryC &) = default;
-    BoundaryC & operator=(BoundaryC &&) = default;
+    Boundary() = default;
+    Boundary(const Boundary &) = default;
+    Boundary(Boundary &&) = default;
+    Boundary & operator=(const Boundary &) = default;
+    Boundary & operator=(Boundary &&) = default;
 
     //! Creates an unsorted list of boundary elements (CrackC) from the edges between 'inLabel' pixels and other values
 
     template<typename ArrayT,typename DataT = typename ArrayT::value_type>
     requires WindowedArray<ArrayT,DataT,2>
-    static BoundaryC traceBoundary(const ArrayT &emask, DataT inLabel);
+    static Boundary traceBoundary(const ArrayT &emask, DataT inLabel);
 
     //BoundaryC(const std::vector<DLIterC<CrackC> > & edgeList, bool orient = true);
     //: Creates the boundary from the list of pointers to the elementary edges.
@@ -81,14 +81,14 @@ namespace Ravl2
     // Note: The area of the region can be negative, if it is a 'hole' in
     // a plane. This can be inverted with the BReverse() method.
 
-    std::vector<BoundaryC> OrderEdges() const;
+    std::vector<Boundary> OrderEdges() const;
     //: Generate a list of boundaries.
     // Each item in the list corresponds to a single complete boundary contour.<br>
     // The edges in each boundary are ordered along the boundary.<br> 
     // The direction of the boundaries is determined by the constructor.<br>
     // Boundaries that terminate at the edge of the array/image are left open.
 
-    std::vector<BoundaryC> Order(const CrackC & firstCrack, bool orient = true);
+    std::vector<Boundary> Order(const CrackC & firstCrack, bool orient = true);
     //!deprecated: Order boundary from edge. <br> Order the edgels of this boundary such that it can be traced continuously along the direction of the first edge. The orientation of the boundary is set according to 'orient'. If the boundary is open, 'firstCrack' and 'orient' are ignored.<br>  Note: There is a bug in this code which can cause an infinite loop for some edge patterns. In particular where the two edges go through the same vertex.
 
     [[nodiscard]] auto Orient() const
@@ -102,10 +102,10 @@ namespace Ravl2
     //: Invert the boundary.
 
     //! Reverse the order of the edges.
-    [[nodiscard]] BoundaryC reverse() const;
+    [[nodiscard]] Boundary reverse() const;
 
     //! Reverse the order of the edges.
-    BoundaryC & BReverse();
+    Boundary & BReverse();
 
     //! Compute the convex hull.
     // The convex hull is created from the original Jordan boundary using
@@ -143,34 +143,34 @@ namespace Ravl2
 
     std::vector<CrackC> mEdges;
 
-    std::unordered_map<BoundaryVertexC, std::array<BoundaryVertexC, 2> > CreateHashtable() const;
+    std::unordered_map<BoundaryVertex, std::array<BoundaryVertex, 2> > CreateHashtable() const;
     // Returns the hash table for the boundary; all end points which are only
     // connected to one other point will have at least one invalid
     // neighbour (-1, -1).
 
-    BoundaryC OrderContinuous(const std::unordered_map<BoundaryVertexC, std::array<BoundaryVertexC, 2> > & hashtable, const CrackC & firstCrack, bool orient) const;
+    Boundary OrderContinuous(const std::unordered_map<BoundaryVertex, std::array<BoundaryVertex, 2> > & hashtable, const CrackC & firstCrack, bool orient) const;
     // Returns a continuous boundary; if the boundary is open, 'orient' will be 
     // ignored and 'firstCrack' must be one of the end points of the boundary.
 
-    std::vector<BoundaryVertexC> FindEndpoints(const std::unordered_map<BoundaryVertexC, std::array<BoundaryVertexC, 2> > & hashtable) const;
+    std::vector<BoundaryVertex> FindEndpoints(const std::unordered_map<BoundaryVertex, std::array<BoundaryVertex, 2> > & hashtable) const;
     // Returns the endpoints of the boundary, i.e. if the boundary is closed,
     // the list will be empty.
   };
 
   //! Write out the boundary to a stream.
-  std::ostream & operator<<(std::ostream & os, const BoundaryC & bnd);
+  std::ostream & operator<<(std::ostream & os, const Boundary & bnd);
 
   //: Creates a boundary which connects both boundary vertexes.
-  BoundaryC Line2Boundary(const BoundaryVertexC & startVertex, const BoundaryVertexC & endVertex);
+  Boundary Line2Boundary(const BoundaryVertex & startVertex, const BoundaryVertex & endVertex);
 
   //: Creates a boundary around the rectangle.
-  BoundaryC toBoundary(IndexRange<2> rect, BoundaryOrientationT type = BoundaryOrientationT::INSIDE_LEFT);
+  Boundary toBoundary(IndexRange<2> rect, BoundaryOrientationT type = BoundaryOrientationT::INSIDE_LEFT);
 
   template<typename ArrayT,typename DataT>
   requires WindowedArray<ArrayT,DataT,2>
-  BoundaryC BoundaryC::traceBoundary(const ArrayT &emask, DataT inLabel)
+  Boundary Boundary::traceBoundary(const ArrayT &emask, DataT inLabel)
   {
-    BoundaryC ret;
+    Boundary ret;
     if(emask.range(0).size() < 3 || emask.range(1).size() < 3) {
       SPDLOG_ERROR("RegionMaskBodyC::Boundary(), Mask too small to compute boundary. ");
       return {};
@@ -196,14 +196,14 @@ namespace Ravl2
           mEdges.emplace_back(it.indexBR() + toIndex(1,0), CrackCodeT::CR_UP);
       }
     }
-    return BoundaryC(std::move(mEdges), BoundaryOrientationT::INSIDE_LEFT);
+    return Boundary(std::move(mEdges), BoundaryOrientationT::INSIDE_LEFT);
   }
 
 }
 
 namespace fmt
 {
-  template<> struct formatter<Ravl2::BoundaryC> : ostream_formatter {};
+  template<> struct formatter<Ravl2::Boundary> : ostream_formatter {};
 }
 
 

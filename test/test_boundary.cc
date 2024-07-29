@@ -34,19 +34,19 @@ TEST_CASE("Follow some codes", "[CrackCodeC]")
 {
   using namespace Ravl2;
 
-  CrackCodeC xcc(CrackCodeT::CR_UP);
-  CrackCodeC ycc(CrackCodeT::CR_RIGHT);
+  CrackCode xcc(CrackCodeT::CR_UP);
+  CrackCode ycc(CrackCodeT::CR_RIGHT);
   RelativeCrackCodeT rcc = xcc.Relative(ycc);
   EXPECT_EQ(rcc, RelativeCrackCodeT::CR_TO_RIGHT);
   
   for(int i = 0;i < 4;i++) {
-    CrackCodeC cc(i);
+    CrackCode cc(i);
     int ip = i + 1;
     if(ip >= 4)
       ip -= 4;
     rcc = cc.Relative(cc);
     EXPECT_EQ(rcc, RelativeCrackCodeT::CR_AHEAD);
-    CrackCodeC ipcc(ip);
+    CrackCode ipcc(ip);
     rcc = cc.Relative(ipcc);
     //std::cerr <<"CodeLeft=" << (int)rcc << "\n";
     EXPECT_EQ(rcc,RelativeCrackCodeT::CR_TO_LEFT);
@@ -57,7 +57,7 @@ TEST_CASE("Follow some codes", "[CrackCodeC]")
     int ipp = i + 2;
     if(ipp >= 4)
       ipp -= 4;;
-    CrackCodeC ippcc(ipp);
+    CrackCode ippcc(ipp);
     rcc = ippcc.Relative(cc);
     EXPECT_EQ(rcc,RelativeCrackCodeT::CR_BACK);
     rcc = cc.Relative(ippcc);
@@ -96,7 +96,7 @@ TEST_CASE("Check relative directions", "[CrackCodeC]")
   //                               DOWN          RIGHT              UP                LEFT               None
   Index<2> offsets[5] = { Index<2>(0,-1),Index<2>(1,0),Index<2>(0,1),Index<2>(-1,0),Index<2>(0,0) };
   for(int i = 0;i < 5;i++) {
-    edge = CrackC::fromPixel(start,CrackCodeC(i));
+    edge = CrackC::fromPixel(start, CrackCode(i));
     //std::cerr <<" " << i << " RPixel=" << edge.RPixel() << "\n";
     EXPECT_EQ(edge.LPixel(), start);
     EXPECT_EQ(edge.RPixel(), (start + offsets[i]));
@@ -111,7 +111,7 @@ TEST_CASE("Check things are working properly", "[Boundary]")
   SECTION("Bounding box and areas")
   {
     IndexRange<2> rect(IndexRange<1>({1, 3}), IndexRange<1>({2, 4}));
-    BoundaryC bnd = toBoundary(rect, BoundaryOrientationT::INSIDE_LEFT);
+    Boundary bnd = toBoundary(rect, BoundaryOrientationT::INSIDE_LEFT);
     //SPDLOG_INFO("Rect: {}  Bounds:{} ", rect, bnd);
 
     // Check the edges are closed and ordered
@@ -119,7 +119,7 @@ TEST_CASE("Check things are working properly", "[Boundary]")
       auto prevCode = bnd.edges().back();
       for(auto it : bnd.edges()) {
 	//SPDLOG_INFO("Crack: {} ", it);
-	CHECK(CrackStep(prevCode.at(), prevCode.crackCode()) == it.at());
+	CHECK(crackStep(prevCode.at(), prevCode.crackCode()) == it.at());
 	prevCode = it;
       }
     }
@@ -144,8 +144,8 @@ TEST_CASE("Check things are working properly", "[Boundary]")
   SECTION("Edge mid point")
   {
     for(int i =0;i < 5;i++) {
-      BoundaryVertexC start({5, 5});
-      CrackC edge(start,CrackCodeC(i));
+      BoundaryVertex start({5, 5});
+      CrackC edge(start, CrackCode(i));
       auto m1 = ((toPoint<float>(edge.RPixel()) + toPoint<float>(edge.LPixel())) / 2.0f) + Point<float,2>({0.5,0.5});
       CHECK(isNearZero<float>(euclidDistance(m1,edge.MidPoint<float>())(),1e-5f));
     }
@@ -160,7 +160,7 @@ TEST_CASE("Check things are working properly", "[Boundary]")
     Ravl2::fill(clip(img,rng),10);
     SPDLOG_INFO("Image: {}", img);
 
-    auto bounds = BoundaryC::traceBoundary(img,10);
+    auto bounds = Boundary::traceBoundary(img, 10);
 
     for(auto it : bounds.edges()) {
       //SPDLOG_INFO("Edge: {}  Left:{} ", it,it.LPixel());

@@ -30,8 +30,8 @@ namespace Ravl2
   //!
   //! </pre>
 
-  using BoundaryVertexC = Index<2>;
-  using BoundaryVertex2 = BoundaryVertexC;
+  using BoundaryVertex = Index<2>;
+  using BoundaryVertex2 = BoundaryVertex;
 
   [[nodiscard]] inline constexpr Index<2> right(const Index<2> &pxl)
   { return Index<2>(pxl[0],pxl[1]+1); }
@@ -69,7 +69,7 @@ namespace Ravl2
 
     // Create the crack with origin in the boundary vertex 'px' and with
     // direction 'cc'.
-    constexpr CrackC(const BoundaryVertex2 & px, const CrackCodeC & cc)
+    constexpr CrackC(const BoundaryVertex2 & px, const CrackCode & cc)
       : mAt(px),
 	mCode(cc)
     {}
@@ -121,7 +121,7 @@ namespace Ravl2
     // Creates the crack which starts at one corner of the pixel 'pxl'
     // and has the direction 'cc'. The corner of the pixel is chosen
     // in such way that the elementary crack is an elementary crack of the pixel.
-    static constexpr auto fromPixel(const Index<2> &pxl, const CrackCodeC & cc)
+    static constexpr auto fromPixel(const Index<2> &pxl, const CrackCode & cc)
     {
       CrackC crack(pxl, cc);
       switch (cc.Code()) {
@@ -201,22 +201,22 @@ namespace Ravl2
 
     //! Returns the boundary vertex to which the elementary crack points to.
     [[nodiscard]] constexpr BoundaryVertex2 End() const
-    { return CrackStep(mAt,mCode.Code()); }
+    { return crackStep(mAt, mCode.Code()); }
 
     //! Reverse the direction of this crack.
     constexpr const CrackC & Reverse()
     {
-      mAt = CrackStep(mAt,mCode.Code());
-      mCode.TurnBack();
+      mAt = crackStep(mAt, mCode.Code());
+      mCode.turnBack();
       return *this;
     }
 
     //! Reverse the direction of this crack.
     [[nodiscard]] constexpr CrackC reversed() const
     {
-      CrackCodeC cc = mCode;
-      cc.TurnBack();
-      return {CrackStep(mAt,mCode.Code()),cc};
+      CrackCode cc = mCode;
+      cc.turnBack();
+      return {crackStep(mAt, mCode.Code()), cc};
     }
 
     [[nodiscard]] constexpr BoundaryVertex2 &at()
@@ -225,10 +225,10 @@ namespace Ravl2
     [[nodiscard]] constexpr const BoundaryVertex2 &at() const
     { return mAt; }
 
-    [[nodiscard]] constexpr CrackCodeC &code()
+    [[nodiscard]] constexpr CrackCode &code()
     { return mCode; }
 
-    [[nodiscard]] constexpr const CrackCodeC &code() const
+    [[nodiscard]] constexpr const CrackCode &code() const
     { return mCode; }
 
     [[nodiscard]] constexpr CrackCodeT crackCode() const
@@ -237,21 +237,21 @@ namespace Ravl2
     //! Turns the crack code clockwise.
     // This is an in-place operation.
     inline constexpr auto & TurnClock()
-    { mCode.TurnClock(); return *this; }
+    { mCode.turnClock(); return *this; }
 
     //! Turns the crack code counterclockwise.
     // This is an in-place operation.
     inline constexpr auto & TurnCClock()
-    { mCode.TurnCClock(); return *this; }
+    { mCode.turnCClock(); return *this; }
 
     //! Turns the crack code backward.
     // This is an in-place operation.
     inline constexpr auto & TurnBack()
-    { mCode.TurnBack(); return *this; }
+    { mCode.turnBack(); return *this; }
 
   protected:
     BoundaryVertex2 mAt;
-    CrackCodeC mCode;
+    CrackCode mCode;
   };
   
   inline std::ostream & operator<<(std::ostream & s, const CrackC & crack)

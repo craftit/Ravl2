@@ -250,7 +250,7 @@ namespace Ravl2 {
     //!param:minRegionSize - Minimum region size to detect.
     //!param:minMargin - Threshold for region stability.
     
-    std::vector<BoundaryC> Apply(const Array<PixelT,2> &img) {
+    std::vector<Boundary> Apply(const Array<PixelT, 2> &img) {
       if(typeid(PixelT) == typeid(uint8_t)) // Should decided at compile time.
         SortPixelsByte(img);
       else
@@ -275,7 +275,7 @@ namespace Ravl2 {
     //: Apply operation to img.
     // Generates labeled images.
 
-    std::vector<BoundaryC> Apply(const Array<PixelT,2> &img,const IndexRangeSet<2> &roi) {
+    std::vector<Boundary> Apply(const Array<PixelT, 2> &img, const IndexRangeSet<2> &roi) {
       SortPixels(img,roi);
       GenerateRegions();
       Thresholds();
@@ -304,10 +304,10 @@ namespace Ravl2 {
     bool SortPixels(const Array<PixelT,2> &img,const IndexRangeSet<2> &roi);
     //: Build a list from a byte image in regions of interest.
 
-    std::vector<BoundaryC> GrowRegionBoundary(const Array<PixelT,2> &img);
+    std::vector<Boundary> GrowRegionBoundary(const Array<PixelT, 2> &img);
     //: Grow regions.
     
-    std::vector<BoundaryC> GrowRegionBoundary(ExtremaRegionC &region);
+    std::vector<Boundary> GrowRegionBoundary(ExtremaRegionC &region);
     //: Grow regions associated with a extrema.
     
     std::vector<Array<int,2> > GrowRegionMask(const Array<PixelT,2> &img);
@@ -464,12 +464,12 @@ namespace Ravl2 {
 
   
   template<class PixelT>
-  std::vector<BoundaryC> SegmentExtremaC<PixelT>::GrowRegionBoundary(const Array<PixelT,2> &img)
+  std::vector<Boundary> SegmentExtremaC<PixelT>::GrowRegionBoundary(const Array<PixelT, 2> &img)
   {
     //cerr << "SegmentExtremaBaseC::GrowRegions() \n";
     flood.SetupImage(img);
     
-    std::vector<BoundaryC> bounds;
+    std::vector<Boundary> bounds;
     bounds.reserve(size_t(img.range().area())/(minSize * 3u));
     if(labelAlloc == 0)
       return bounds;
@@ -490,10 +490,10 @@ namespace Ravl2 {
   }
   
   template<class PixelT>
-  std::vector<BoundaryC> SegmentExtremaC<PixelT>::GrowRegionBoundary(ExtremaRegionC &region) {
-    std::vector<BoundaryC> ret;
+  std::vector<Boundary> SegmentExtremaC<PixelT>::GrowRegionBoundary(ExtremaRegionC &region) {
+    std::vector<Boundary> ret;
     for(int i = 0;i < region.nThresh;i++) {
-      BoundaryC boundary;
+      Boundary boundary;
       if(flood.GrowRegion(region.minat, FloodRegionLessThanThresholdC<PixelT>(PixelT(region.thresh[i].thresh)), boundary, maxSize))
 	ret.push_back(boundary);
     }
