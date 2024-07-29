@@ -11,7 +11,8 @@
 #include "Ravl2/Image/GaussConvolve2d.hh"
 #include "Ravl2/Image/WarpScale.hh"
 
-namespace Ravl2 {
+namespace Ravl2
+{
 
     //! userlevel=Normal
     //: Image pyramid
@@ -62,7 +63,7 @@ namespace Ravl2 {
         //!param: img - Image to filter.
         //!param: scale - Scaling to apply.
         //!param: subSample - Sub sample the pixels in the image ?
-        //!param: imgScale - Scale of image passed to routine, use 1 if the image at the original scale.
+        //!param: imgScale - scale of image passed to routine, use 1 if the image at the original scale.
         //!return: resulting image.
 
         ImageC<PixelT> ScaleImage(const ImageC<PixelT> &img,RealT scale,bool subSample);
@@ -76,7 +77,7 @@ namespace Ravl2 {
         //: Find image with closest scale.
         //!param: reqScale - Requested scale.
         //!param: img - Image found
-        //!param: actualScale - Scale of image
+        //!param: actualScale - scale of image
         //!param: notSmaller - If true use the image with scale equal or larger size to that requested if one is available.
         //!return: Set to true if image found, only fails if class is not initialised.
 
@@ -147,7 +148,7 @@ namespace Ravl2 {
     //!param: img - Image to filter.
     //!param: scale - Scaling to apply.
     //!param: subSample - Sub sample the pixels in the image ?
-    //!param: imgScale - Scale of image passed to routine, use 1 if the image at the original scale.
+    //!param: imgScale - scale of image passed to routine, use 1 if the image at the original scale.
 
     template<typename PixelT,typename SumTypeT>
     ImageC<PixelT> ImagePyramidC<PixelT,SumTypeT>::ScaleImage(const ImageC<PixelT> &img,int scale,bool subSample,int imgScale) {
@@ -155,7 +156,7 @@ namespace Ravl2 {
       ImageC<PixelT> prepImage;
       ExtendImageCopy(img,scale-1,prepImage);
       GaussConvolve2dC<PixelT,PixelT,RealT,SumTypeT> filter(kernelSize);
-      ImageC<PixelT> filteredImage = filter.Apply(prepImage);
+      ImageC<PixelT> filteredImage = filter.apply(prepImage);
       if(!subSample) {
         images.Insert(Tuple3C<RealT,RealT,ImageC<PixelT> >(scale * imgScale,imgScale,filteredImage));
         return filteredImage;
@@ -191,14 +192,14 @@ namespace Ravl2 {
         prepImage = img;
       if(!subSample) {
         GaussConvolve2dC<PixelT,PixelT,RealT,SumTypeT> filter(kernelSize);
-        ImageC<PixelT> filteredImage = filter.Apply(prepImage);
+        ImageC<PixelT> filteredImage = filter.apply(prepImage);
         images.Insert(Tuple3C<RealT,RealT,ImageC<PixelT> >(scale,1.0,filteredImage));
         return filteredImage;
       }
       ImageC<SumTypeT> filteredImage;
       if (kernelSize > 1) {
         GaussConvolve2dC<PixelT,SumTypeT,RealT,SumTypeT> filter(kernelSize);
-        filteredImage = filter.Apply(prepImage);
+        filteredImage = filter.apply(prepImage);
       } else {
         filteredImage = ImageC<SumTypeT>(prepImage.Frame());
         for(Array2dIter2C<SumTypeT,PixelT> it(filteredImage,prepImage);it;it++)
@@ -215,7 +216,7 @@ namespace Ravl2 {
       IndexRange<2> subFrame(alignedFrame.Range1().Min() / scale, alignedFrame.Range1().Max() / scale,
                              alignedFrame.Range2().Min() / scale, alignedFrame.Range2().Max() / scale);
       WarpScaleC<SumTypeT,PixelT> warpScale(subFrame);
-      ImageC<PixelT> subImage = warpScale.Apply(ImageC<SumTypeT>(filteredImage, alignedFrame));
+      ImageC<PixelT> subImage = warpScale.apply(ImageC<SumTypeT>(filteredImage, alignedFrame));
       images.Insert(Tuple3C<RealT,RealT,ImageC<PixelT> >(scale,scale,subImage));
       return subImage;
     }
@@ -223,7 +224,7 @@ namespace Ravl2 {
     //: Find image with closest scale.
     //!param: reqScale - Requested scale.
     //!param: img - Image found
-    //!param: actualScale - Scale of image
+    //!param: actualScale - scale of image
 
     template<typename PixelT,typename SumTypeT>
     bool ImagePyramidC<PixelT,SumTypeT>::Find(RealT reqScale,ImageC<PixelT> &img,RealT &filterScale,RealT &pixelScale,bool notSmaller) const {

@@ -545,7 +545,7 @@ namespace Ravl2
       return ret;
     }
 
-    //! Scale range
+    //! scale range
     [[nodiscard]] Range<RealT,N> operator*(const Vector<RealT,N> &scale) const
     {
       Range<RealT,N> ret;
@@ -555,7 +555,7 @@ namespace Ravl2
       return ret;
     }
 
-    //! Scale range
+    //! scale range
     [[nodiscard]] Range<RealT,N> operator*(RealT scale) const
     {
       Range<RealT,N> ret;

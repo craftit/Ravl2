@@ -10,6 +10,7 @@
 #include "Ravl2/Geometry/CircleIter.hh"
 #include "Ravl2/Geometry/LineABC2d.hh"
 #include "Ravl2/Geometry/Affine.hh"
+#include "Ravl2/Geometry/ScaleTranslate.hh"
 
 #define CHECK_EQ(a,b) CHECK((a) == (b))
 #define CHECK_NE(a,b) CHECK_FALSE((a) == (b))
@@ -136,7 +137,7 @@ TEST_CASE("Circle2", "[Circle2]")
 #endif
 }
 
-TEST_CASE("AffineComposition", "[Affine<2>]")
+TEST_CASE("AffineComposition")
 {
   using namespace Ravl2;
   Affine<float,2> a1 = affineFromScaleAngleTranslation(toVector<float>(2,2), std::numbers::pi_v<float>/2, toVector<float>(0,0));
@@ -144,13 +145,20 @@ TEST_CASE("AffineComposition", "[Affine<2>]")
   Point<float,2> p = toPoint<float>(0,0);
   Point<float,2> pnt0 = a2(a1(p));
   //SPDLOG_INFO("At: {} {} ", pnt0(0), pnt0(1));
-  float diff = euclidDistance(pnt0,toPoint<float>(10,20))();
-  CHECK(diff < 0.001f);
+  CHECK(euclidDistance(pnt0,toPoint<float>(10,20))() < 0.001f);
   Point<float,2> pnt = a1(a2(p));
   //SPDLOG_INFO("At: {} {} ", pnt(0), pnt(1));
-  diff = euclidDistance(pnt,toPoint<float>(-40,20))();
-  CHECK(diff < 0.001f);
+  CHECK(euclidDistance(pnt,toPoint<float>(-40,20))() < 0.001f);
   Point<float,2> q = toPoint<float>(5,4);
-  diff = Ravl2::euclidDistance(a2(a1)(q),a2(a1(q)))();
-  CHECK(diff < 0.001f);
+  CHECK(Ravl2::euclidDistance(a2(a1)(q),a2(a1(q)))() < 0.001f);
+}
+
+TEST_CASE("ScaleTranslate")
+{
+  using namespace Ravl2;
+  ScaleTranslate<float, 2> a1(toVector<float>(2, 2), toVector<float>(1, 2));
+  CHECK(euclidDistance(a1(toPoint<float>(0,0)),toPoint<float>(1,2))() < 0.001f);
+  CHECK(euclidDistance(a1(toPoint<float>(1,1)),toPoint<float>(3,4))() < 0.001f);
+  ScaleTranslate<float, 2> a2(toVector<float>(2, 1), toVector<float>(1, 2));
+  CHECK(euclidDistance(a2(toPoint<float>(1,1)),toPoint<float>(3,3))() < 0.001f);
 }

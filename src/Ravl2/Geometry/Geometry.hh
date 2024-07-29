@@ -116,7 +116,7 @@ namespace Ravl2
 #endif
 
     // Define the concept of a point transform
-    template<typename TransformT,typename RealT = typename TransformT::ValueT,unsigned N = TransformT::dimension>
+    template<typename TransformT,typename RealT = typename TransformT::value_type,unsigned N = TransformT::dimension>
     concept PointTransform = requires(TransformT a, Point<RealT,N> pnt)
     {
       { a(pnt) } -> std::convertible_to<Point<RealT,N> >;

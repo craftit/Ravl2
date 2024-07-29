@@ -41,13 +41,13 @@ namespace Ravl2
     //! Compute the bounding rectangle for the point set.
     [[nodiscard]] Range<RealT,N> BoundingRectangle() const;
 
-    //! Translate point set by adding a vector.
+    //! translate point set by adding a vector.
     const PointSet &operator+=(const Vector<RealT,N> &offset);
 
-    //! Translate point set by subracting a vector.
+    //! translate point set by subracting a vector.
     const PointSet &operator-=(const Vector<RealT,N> &offset);
 
-    //! Scale the point set by multiplying the points by 'scale'.
+    //! scale the point set by multiplying the points by 'scale'.
     const PointSet &operator*=(RealT scale);
 
     //! Transform the points in place

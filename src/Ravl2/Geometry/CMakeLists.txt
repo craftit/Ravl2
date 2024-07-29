@@ -6,6 +6,7 @@ include(GenerateExportHeader)
 add_library (Ravl2Geometry
         Geometry.hh Geometry.cc
         Affine.cc Affine.hh
+        ScaleTranslate.cc ScaleTranslate.hh
         Affine2f.cc Affine2f.hh
         Affine3d.cc Affine3d.hh
         PointSet.cc PointSet.hh

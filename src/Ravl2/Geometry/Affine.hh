@@ -12,21 +12,26 @@
 namespace Ravl2
 {
 
-  //: General affine transformation.
+  //! General affine transformation.
   
   template<typename DataT, unsigned N>
   class Affine
   {
   public:
-    using ValueT = DataT;
+    using value_type = DataT;
     constexpr static unsigned dimension = N;
 
-    inline Affine();
-    //: Construct no-change transform.
-    
-    inline Affine(const Affine &Oth);
-    //: Copy constructor.
-    
+    //! Construct no-change transform.
+    inline Affine()
+    {
+      mT = xt::zeros<DataT>({N});
+      mSR = xt::eye<DataT>(N);
+    }
+
+
+    //! Copy constructor.
+    inline Affine(const Affine &Oth) = default;
+
     inline Affine(const Matrix<DataT,N,N> &SR, const Vector<DataT,N> &T);
     //: Construct from Scale/Rotate matrix and a translation vector.
     
@@ -36,11 +41,11 @@ namespace Ravl2
     inline const Vector<DataT,N> &Translation() const { return mT; }
     //: Constant access to the translation component of the transformation.
     
-    inline void Scale(const Vector<DataT,N> &xy);
+    inline void scale(const Vector<DataT, N> &xy);
     //: In place Scaling along the X & Y axis by value given in the vector.
     // If all values 1, then no effect.
     
-    inline void Translate(const Vector<DataT,N> &T);
+    inline void translate(const Vector<DataT, N> &T);
     //: Add a translation in direction T.
     
     inline Vector<DataT,N> operator*(const Vector<DataT,N> &In) const;
@@ -53,7 +58,7 @@ namespace Ravl2
     inline Affine<DataT,N> operator/(const Affine &In) const;
     //: 'In' / 'Out' = this;
 
-    Affine<DataT,N> Inverse() const;
+    Affine<DataT,N> inverse() const;
     //: Generate an inverse transformation.
     
     Matrix<DataT,N,N> &SRMatrix() { return mSR; }
@@ -66,9 +71,9 @@ namespace Ravl2
     //: Assignment.
 
     //! Check all components of transform are real.
-    [[nodiscard]] bool IsReal() const;
+    [[nodiscard]] bool isReal() const;
 
-    //! Transform Vector,  Scale, Rotate, Translate.
+    //! Transform Vector,  scale, Rotate, translate.
     // Take a vector and put it though the transformation.
     auto operator()(const Vector<DataT,N> &pnt) const
     {
@@ -90,36 +95,22 @@ namespace Ravl2
   /////////////////////////////////////////////////
   
   template<typename DataT,unsigned N>
-  inline Affine<DataT,N>::Affine()
-    : mSR()
-  {
-    mT = xt::zeros<DataT>({N});
-    mSR = xt::eye<DataT>(N);
-  }
-  
-  template<typename DataT,unsigned N>
-  inline Affine<DataT,N>::Affine(const Affine &Oth)
-    : mSR(Oth.mSR),
-      mT(Oth.mT)
-  {}
-  
-  template<typename DataT,unsigned N>
   inline Affine<DataT,N>::Affine(const Matrix<DataT,N,N> &SR, const Vector<DataT,N> &T)
     : mSR(SR),
       mT(T)
   {}
   
   template<typename DataT,unsigned N>
-  void Affine<DataT,N>::Scale(const Vector<DataT,N> &xy)
+  void Affine<DataT,N>::scale(const Vector<DataT, N> &xy)
   { mSR = xt::linalg::dot(mSR,xt::diag(xy)); }
   
   template<typename DataT,unsigned N>
-  inline void Affine<DataT,N>::Translate(const Vector<DataT,N> &T) {
+  inline void Affine<DataT,N>::translate(const Vector<DataT, N> &T) {
     mT += T;
   }
   
   template<typename DataT,unsigned N>
-  Affine<DataT,N> Affine<DataT,N>::Inverse(void) const {
+  Affine<DataT,N> Affine<DataT,N>::inverse(void) const {
     Affine<DataT,N> ret;
     ret.mSR = xt::linalg::inv(mSR);
     ret.mT = xt::linalg::dot(ret.mSR, mT);
@@ -151,7 +142,7 @@ namespace Ravl2
   }
   
   template<typename DataT,unsigned N>
-  bool Affine<DataT,N>::IsReal() const
+  bool Affine<DataT,N>::isReal() const
   {
     for(auto x : mSR) {
       if(std::isinf(x) || std::isnan(x))

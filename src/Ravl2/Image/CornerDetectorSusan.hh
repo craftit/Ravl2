@@ -26,7 +26,7 @@ namespace Ravl2
     //! threshold = Minimum level of cornerness to accept. <br>
     explicit CornerDetectorSusan(int threshold = 20);
 
-    [[nodiscard]] std::vector<CornerC> Apply(const Array<ByteT,2> &img) const;
+    [[nodiscard]] std::vector<CornerC> apply(const Array<ByteT, 2> &img) const;
     //: Get a list of corners from 'img'
 
   protected:

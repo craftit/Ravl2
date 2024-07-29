@@ -93,7 +93,7 @@ int main(int argc,char **argv)
     if(verbose) {
       SPDLOG_INFO("Extracting corners");
     }
-    corners = cornerDet.Apply(img);
+    corners = cornerDet.apply(img);
 
     if(verbose) {
       SPDLOG_INFO("Drawing {} corners", corners.size());

@@ -53,9 +53,9 @@ namespace Ravl2
     }
   }
 
-  std::vector<CornerC> CornerDetectorSusan::Apply(const Array<uint8_t,2> &img) const
+  std::vector<CornerC> CornerDetectorSusan::apply(const Array<ByteT, 2> &img) const
   {
-    ONDEBUG(SPDLOG_INFO("CornerDetectorSusan::Apply(), Called. "));
+    ONDEBUG(SPDLOG_INFO("CornerDetectorSusan::apply(), Called. "));
     Array<int,2> cornerImage(img.range());
     auto lst = Corners(img,cornerImage);
     Peaks(lst,cornerImage);
