@@ -10,7 +10,7 @@
 #include "Ravl2/Image/DrawFrame.hh"
 #include "Ravl2/ArrayIterZip.hh"
 
-#define DODEBUG 1
+#define DODEBUG 0
 #if DODEBUG
 #define ONDEBUG(x) x
 #else
@@ -130,7 +130,7 @@ namespace Ravl2
 
     auto offset = pix - origin;
     region.minat = toIndex((offset / stride)+1,(offset % stride)+1) + pixs.range().min();
-    SPDLOG_INFO("Region minat={} level={} Pix={} Offset={} Stride={} Origin={}", region.minat, level, static_cast<void *>(pix), offset, stride, static_cast<void *>(origin));
+    ONDEBUG(SPDLOG_INFO("Region minat={} level={} Pix={} Offset={} Stride={} Origin={}", region.minat, level, static_cast<void *>(pix), offset, stride, static_cast<void *>(origin)));
     RavlAssert(&pixs[region.minat] == pix);
     region.minValue = level;
     region.maxValue = valueRange.max();
@@ -225,14 +225,14 @@ namespace Ravl2
       }
       clevel++;
     }
-    SPDLOG_INFO("Regions labeled={}", labelAlloc);
+    ONDEBUG(SPDLOG_INFO("Regions labeled={}", labelAlloc));
   }
   
   //: Generate thresholds
   
   void SegmentExtremaBaseC::Thresholds()
   {
-    SPDLOG_INFO("Computing thresholds **********************************************");
+    ONDEBUG(SPDLOG_INFO("Computing thresholds **********************************************"));
     std::vector<ExtremaThresholdC> thresh(size_t(limitMaxValue + 2));
     size_t nthresh = 0;
     assert(limitMaxValue + 2 < std::numeric_limits<int>::max());
@@ -270,7 +270,7 @@ namespace Ravl2
       
       // Find thresholds.
       nthresh = 0;
-      SPDLOG_INFO("Min={} Max={} Init={} MaxSize={}", minValue, maxValue, i, maxSize);
+      ONDEBUG(SPDLOG_INFO("Min={} Max={} Init={} MaxSize={}", minValue, maxValue, i, maxSize));
       size_t lastThresh = 0;
       for(up=i+1; up < maxValue && i < maxValue; i++) {
 	auto area_i = chist[i];
@@ -288,13 +288,13 @@ namespace Ravl2
         }
 
 	int margin = up - i;
-	SPDLOG_INFO("Margin={}", margin);
+        ONDEBUG(SPDLOG_INFO("Margin={}", margin));
 	if(margin > minMargin) { // && margin > prevMargin
 	  ExtremaThresholdC &et = thresh[nthresh++];
 	  et.pos = i;
  	  et.margin = margin;
 	  et.thresh = i + margin/2;
-	  SPDLOG_INFO("Threshold={} Area={}", et.thresh, chist[et.thresh]);
+	  ONDEBUG(SPDLOG_INFO("Threshold={} Area={}", et.thresh, chist[et.thresh]));
 	}
       }
       
@@ -305,7 +305,7 @@ namespace Ravl2
 	et.thresh = maxValue-1;	
       }
       //ONDEBUG(std::cerr << "NThresh=" <<  nthresh << "\n");
-      SPDLOG_INFO("Thresholds={} Kept={}", nthresh, it->nThresh);
+      ONDEBUG(SPDLOG_INFO("Thresholds={} Kept={}", nthresh, it->nThresh));
       ExtremaThresholdC *newthresh = new ExtremaThresholdC[size_t(nthresh)];
       int nt = 0;
       
@@ -319,7 +319,7 @@ namespace Ravl2
 	    newthresh[nt-1].area = chist[thresh[j].thresh];
             lastSize = size;
           }
-          SPDLOG_INFO("Rejecting threshold={} LastArea={} Area={}", thresh[j].thresh, size, chist[thresh[j].thresh]);
+          ONDEBUG(SPDLOG_INFO("Rejecting threshold={} LastArea={} Area={}", thresh[j].thresh, size, chist[thresh[j].thresh]));
 	  continue; // Reject it, not enough difference.
 	}
 	newthresh[nt] = thresh[j];
@@ -336,7 +336,7 @@ namespace Ravl2
 	it->nThresh = 0;
 	delete [] newthresh;
       }
-      SPDLOG_INFO("Thresholds={} Kept={}", nthresh, it->nThresh);
+      ONDEBUG(SPDLOG_INFO("Thresholds={} Kept={}", nthresh, it->nThresh));
     } // for(SArray1dIterC<ExtremaRegionC> it(...
     //cerr << "SegmentExtremaBaseC::Thresholds() Interesting regions=" << regions <<" \n";
   }

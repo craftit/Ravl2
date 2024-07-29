@@ -393,7 +393,7 @@ namespace Ravl2 {
       it.template data<1>().next = tmp;
       tmp = &it.template data<1>();
     }
-    SPDLOG_INFO("SegmentExtremaC<PixelT>::SortPixels, Value Range={}", valueRange);
+    //SPDLOG_INFO("SegmentExtremaC<PixelT>::SortPixels, Value Range={}", valueRange);
     return true;
   }
   
