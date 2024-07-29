@@ -16,7 +16,7 @@
 namespace Ravl2
 {
 
-  SegmentationBodyC::SegmentationBodyC(const Array<int , 2> &nsegmap)
+  Segmentation::Segmentation(const Array<int , 2> &nsegmap)
       : segmap(nsegmap.range()),
         labels(0)
   {
@@ -30,7 +30,7 @@ namespace Ravl2
 
   //: Generate a table of region adjacencies.
   
-  std::vector<std::set<unsigned> > SegmentationBodyC::Adjacency(bool biDir)
+  std::vector<std::set<unsigned> > Segmentation::Adjacency(bool biDir)
   {
     std::vector<std::set<unsigned> > ret(labels);
     if(biDir) {
@@ -81,7 +81,7 @@ namespace Ravl2
   // only adjacenies from regions with a smaller id to those 
   // with a larger ID are generated
   
-  std::vector<std::map<unsigned,unsigned> > SegmentationBodyC::BoundaryLength(bool biDir) {
+  std::vector<std::map<unsigned,unsigned> > Segmentation::BoundaryLength(bool biDir) {
     std::vector<std::map<unsigned,unsigned> > ret(labels);
     if(biDir) {
       Array2dSqr2IterC<unsigned> it(segmap);
@@ -187,7 +187,7 @@ namespace Ravl2
   
   //: Generate a table of the length of the boundary for each region
   
-  std::vector<unsigned> SegmentationBodyC::LocalBoundaryLength()
+  std::vector<unsigned> Segmentation::LocalBoundaryLength()
   {
     std::vector<unsigned> ret(labels,0);
     Array2dSqr2IterC<unsigned> it(segmap);
@@ -237,7 +237,7 @@ namespace Ravl2
   
   //: recompute the areas from the original areas and a mapping.
   
-  std::vector<unsigned> SegmentationBodyC::RedoArea(std::vector<unsigned> area,std::vector<unsigned> map)
+  std::vector<unsigned> Segmentation::RedoArea(std::vector<unsigned> area, std::vector<unsigned> map)
   {
     std::vector<unsigned> ret(labels,0);
     assert(area.size() == map.size());
@@ -250,7 +250,7 @@ namespace Ravl2
   
   //: Compute the areas of all the segmented regions.
   
-  std::vector<unsigned> SegmentationBodyC::Areas() const {
+  std::vector<unsigned> Segmentation::Areas() const {
     // Compute areas of components
     std::vector<unsigned> area(labels+1,0);
     for(auto pix : segmap)
@@ -260,7 +260,7 @@ namespace Ravl2
   
   //: Compute the bounding box and area of each region in the segmentation.
   
-  std::vector<std::tuple<IndexRange<2>,unsigned> > SegmentationBodyC::BoundsAndArea() const {
+  std::vector<std::tuple<IndexRange<2>,unsigned> > Segmentation::BoundsAndArea() const {
     std::vector<std::tuple<IndexRange<2>,unsigned>  > ret(labels+1,std::tuple<IndexRange<2>,unsigned>(IndexRange<2>(),0));
     for(auto it = segmap.begin();it.valid();) {
       Index<2> at = it.index();
@@ -279,7 +279,7 @@ namespace Ravl2
 
   //: Make an array of labels mapping to themselves.
   
-  std::vector<unsigned> SegmentationBodyC::IdentityLabel() {
+  std::vector<unsigned> Segmentation::IdentityLabel() {
     // Make an identity mapping.
     std::vector<unsigned> minLab(labels);
     unsigned c = 0;
@@ -297,7 +297,7 @@ namespace Ravl2
   // which should have the same label. It is valid that a root item
   // of a tree has the same label value as the item index.
   
-  unsigned SegmentationBodyC::RelabelTable(std::vector<unsigned> &labelTable, unsigned currentMaxLabel) {
+  unsigned Segmentation::RelabelTable(std::vector<unsigned> &labelTable, unsigned currentMaxLabel) {
     auto end = labelTable.begin() + currentMaxLabel + 1;
     // Make all trees of labels to be with depth one.
     {
@@ -326,7 +326,7 @@ namespace Ravl2
   
   //: Compress newlabs and re-label segmentation.
   
-  unsigned SegmentationBodyC::CompressAndRelabel(std::vector<unsigned> &newLabs)
+  unsigned Segmentation::CompressAndRelabel(std::vector<unsigned> &newLabs)
   {
     // ------ Compress labels -----
     // First make sure they form a directed tree
@@ -361,7 +361,7 @@ namespace Ravl2
   
   //: Remove small components from map, label them as 0.
   
-  unsigned SegmentationBodyC::RemoveSmallComponents(unsigned thrSize) {
+  unsigned Segmentation::RemoveSmallComponents(unsigned thrSize) {
     if(labels <= 1)
       return labels;
     
@@ -392,7 +392,7 @@ namespace Ravl2
   //: Compute moments for each of the segmented regions.
   // if ignoreZero is true, region labeled 0 is ignored.
 
-  std::vector<Moments2<float> > SegmentationBodyC::ComputeMoments(bool ignoreZero)
+  std::vector<Moments2<float> > Segmentation::ComputeMoments(bool ignoreZero)
   {
     std::vector<Moments2<float>> ret(labels+1);
     
@@ -411,7 +411,7 @@ namespace Ravl2
   }
 
 
-  Array<uint8_t,2> SegmentationBodyC::ByteImage() const
+  Array<uint8_t,2> Segmentation::ByteImage() const
   {
     Array<uint8_t,2> byteimage(segmap.range());
     forEach<2>([](unsigned &seg,uint8_t &byte) { byte = uint8_t(seg); }, segmap,byteimage);

@@ -260,12 +260,12 @@ namespace Ravl2
   {
     auto end = list.end();
     for(auto it = list.begin();it != end;) {
-      ONDEBUG(SPDLOG_INFO("CornerDetectorSusan::Peaks: Processing corner at {}.",it->Location()));
-      auto pos = toIndex<2, float>(it->Location());
+      ONDEBUG(SPDLOG_INFO("CornerDetectorSusan::Peaks: Processing corner at {}.", it->location()));
+      auto pos = toIndex<2, float>(it->location());
       RavlAssertMsg(cornerMap.range().shrink(3).contains(pos),"CornerDetectorSusan::Peaks: Position {}  out of range {}  .",pos,cornerMap.range().shrink(3));
       if(!PeakDetect7(cornerMap, pos)) {
 	// Take element from end of list and move it here.
-        ONDEBUG(SPDLOG_INFO("CornerDetectorSusan::Peaks: Removing corner at {}.",it->Location()));
+        ONDEBUG(SPDLOG_INFO("CornerDetectorSusan::Peaks: Removing corner at {}.", it->location()));
 	*it = list.back();
 	end = list.erase(--end);
       } else {

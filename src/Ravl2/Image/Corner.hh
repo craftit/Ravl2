@@ -39,19 +39,19 @@ namespace Ravl2 {
     {}
     //: Constructor.
     
-    Point<float,2> &Location() 
+    Point<float,2> &location()
     { return loc; }
     //: Get location of corner.
     
-    const Point<float,2> &Location() const
+    const Point<float,2> &location() const
     { return loc; }
     //: Get location of corner.
     
-    Vector<float,2> &Gradient() 
+    Vector<float,2> &gradient()
     { return grad; }
     // Get gradient.
     
-    const Vector<float,2> &Gradient() const 
+    const Vector<float,2> &gradient() const
     { return grad; }
     // Get gradient.
     

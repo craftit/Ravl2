@@ -102,7 +102,7 @@ int main(int argc,char **argv)
     
     uint8_t val = 0;
     for(auto it : corners) {
-      auto pixelIndex = Ravl2::toIndex<2>(it.Location());
+      auto pixelIndex = Ravl2::toIndex<2>(it.location());
       Ravl2::IndexRange<2> rect = Ravl2::IndexRange<2>(pixelIndex,pixelIndex).expand(5);
       if(verbose) {
         SPDLOG_INFO("Drawing {} -> {}", pixelIndex, rect);
