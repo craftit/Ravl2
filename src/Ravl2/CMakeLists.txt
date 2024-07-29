@@ -9,6 +9,7 @@ find_package(spdlog REQUIRED)
 
 add_subdirectory(Geometry)
 add_subdirectory(Math)
+add_subdirectory(Pixel)
 add_subdirectory(Image)
 add_subdirectory(OpenCV)
 

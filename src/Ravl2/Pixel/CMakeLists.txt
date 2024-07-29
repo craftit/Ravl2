@@ -1,0 +1,37 @@
+
+include(GenerateExportHeader)
+
+add_library (Ravl2Pixel
+        RGBValue.hh RGBValue.cc
+#        RGBcYUV.cc RGBcYUV.hh
+#        YUVValue.hh
+#        YUVAValue.hh
+#        RGBAValue.hh
+#        BGRValue.hh
+#        IAValue.hh
+#        VYUValue.hh
+)
+
+add_library(ravl2::Ravl2Pixel ALIAS Ravl2Pixel)
+
+target_link_libraries(Ravl2Pixel PRIVATE RAVL2_options RAVL2_warnings)
+target_link_libraries(Ravl2Pixel PUBLIC Ravl2Core Ravl2Geometry)
+
+target_include_directories(Ravl2Pixel ${WARNING_GUARD} PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src>
+        $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/include>)
+
+target_compile_features(Ravl2Pixel PUBLIC cxx_std_20)
+
+set_target_properties(
+        Ravl2Pixel
+        PROPERTIES VERSION ${PROJECT_VERSION}
+        CXX_VISIBILITY_PRESET hidden
+        VISIBILITY_INLINES_HIDDEN YES)
+
+generate_export_header(Ravl2Pixel EXPORT_FILE_NAME ${PROJECT_BINARY_DIR}/include/ravl2/Ravl2Core_export.hpp)
+
+if(NOT BUILD_SHARED_LIBS)
+    target_compile_definitions(Ravl2Pixel PUBLIC SAMPLE_LIBRARY_STATIC_DEFINE)
+endif()
+
+
