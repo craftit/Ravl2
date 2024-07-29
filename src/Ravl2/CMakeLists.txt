@@ -25,7 +25,7 @@ add_library(Ravl2Core
 
 add_library(ravl2::Ravl2Core ALIAS Ravl2Core)
 
-target_link_libraries(Ravl2Core PRIVATE ravl2_options ravl2_warnings)
+target_link_libraries(Ravl2Core PRIVATE RAVL2_options RAVL2_warnings)
 
 # On apple we need to add lapack and blas
 if (APPLE)

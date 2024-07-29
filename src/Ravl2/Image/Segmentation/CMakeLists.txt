@@ -12,7 +12,7 @@ add_library (Ravl2ImageSegmentation
 
 add_library(ravl2::Ravl2ImageSegmentation ALIAS Ravl2ImageSegmentation)
 
-target_link_libraries(Ravl2ImageSegmentation PRIVATE ravl2_options ravl2_warnings
+target_link_libraries(Ravl2ImageSegmentation PRIVATE RAVL2_options RAVL2_warnings
 )
 
 target_link_libraries(Ravl2ImageSegmentation PUBLIC Ravl2Core Ravl2Image)

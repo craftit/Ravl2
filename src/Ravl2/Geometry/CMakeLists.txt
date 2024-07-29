@@ -23,7 +23,7 @@ add_library (Ravl2Geometry
 
 add_library(ravl2::Ravl2Geometry ALIAS Ravl2Geometry)
 
-target_link_libraries(Ravl2Geometry PRIVATE ravl2_options ravl2_warnings
+target_link_libraries(Ravl2Geometry PRIVATE RAVL2_options RAVL2_warnings
 )
 
 target_link_libraries(Ravl2Geometry PUBLIC Ravl2Core xtensor-blas)

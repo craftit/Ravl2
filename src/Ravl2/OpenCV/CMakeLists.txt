@@ -7,7 +7,7 @@ add_library (Ravl2OpenCV
 
 add_library(ravl2::Ravl2OpenCV ALIAS Ravl2OpenCV)
 
-target_link_libraries(Ravl2OpenCV PRIVATE ravl2_options ravl2_warnings)
+target_link_libraries(Ravl2OpenCV PRIVATE RAVL2_options RAVL2_warnings)
 target_link_libraries(Ravl2OpenCV PUBLIC Ravl2Image  ${OpenCV_LIBS})
 
 target_include_directories(Ravl2OpenCV ${WARNING_GUARD} PUBLIC

@@ -9,7 +9,7 @@ if(PROJECT_IS_TOP_LEVEL OR TEST_INSTALLED_VERSION)
 
   find_package(ravl2 CONFIG REQUIRED) # for intro, project_options, ...
 
-  if(NOT TARGET ravl2_options)
+  if(NOT TARGET RAVL2_options)
     message(FATAL_ERROR "Required config package not found!")
     return() # be strictly paranoid for Template Janitor github action! CK
   endif()
@@ -33,8 +33,8 @@ add_executable(tests test_core.cc test_math.cc test_geometry.cc test_image.cc te
         test_segmentation.cc)
 target_link_libraries(
   tests
-  PRIVATE ravl2::ravl2_warnings
-          ravl2::ravl2_options
+  PRIVATE ravl2::RAVL2_warnings
+          ravl2::RAVL2_options
           ravl2::Ravl2Core
           ravl2::Ravl2Geometry
           ravl2::Ravl2Math
@@ -69,8 +69,8 @@ catch_discover_tests(
 add_executable(constexpr_tests constexpr_tests.cpp)
 target_link_libraries(
   constexpr_tests
-  PRIVATE ravl2::ravl2_warnings
-          ravl2::ravl2_options
+  PRIVATE ravl2::RAVL2_warnings
+          ravl2::RAVL2_options
           ravl2::Ravl2Core
           Catch2::Catch2WithMain)
 
@@ -92,8 +92,8 @@ catch_discover_tests(
 add_executable(relaxed_constexpr_tests constexpr_tests.cpp)
 target_link_libraries(
   relaxed_constexpr_tests
-  PRIVATE ravl2::ravl2_warnings
-          ravl2::ravl2_options
+  PRIVATE ravl2::RAVL2_warnings
+          ravl2::RAVL2_options
           ravl2::Ravl2Core
           Catch2::Catch2WithMain)
 target_compile_definitions(relaxed_constexpr_tests PRIVATE -DCATCH_CONFIG_RUNTIME_STATIC_REQUIRE)

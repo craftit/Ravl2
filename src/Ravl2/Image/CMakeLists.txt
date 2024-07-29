@@ -21,7 +21,7 @@ add_library (Ravl2Image
 
 add_library(ravl2::Ravl2Image ALIAS Ravl2Image)
 
-target_link_libraries(Ravl2Image PRIVATE ravl2_options ravl2_warnings)
+target_link_libraries(Ravl2Image PRIVATE RAVL2_options RAVL2_warnings)
 target_link_libraries(Ravl2Image PUBLIC Ravl2Core Ravl2Geometry)
 
 target_include_directories(Ravl2Image ${WARNING_GUARD} PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src>

@@ -1,7 +1,7 @@
 include(CheckCXXCompilerFlag)
 
 macro(
-  ravl2_enable_hardening
+  RAVL2_enable_hardening
   target
   global
   ubsan_minimal_runtime)

@@ -1,4 +1,4 @@
-function(ravl2_check_libfuzzer_support var_name)
+function(RAVL2_check_libfuzzer_support var_name)
   set(LibFuzzerTestSource
       "
 #include <cstdint>

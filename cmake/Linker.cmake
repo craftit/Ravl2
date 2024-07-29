@@ -1,4 +1,4 @@
-macro(ravl2_configure_linker project_name)
+macro(RAVL2_configure_linker project_name)
   include(CheckCXXCompilerFlag)
 
   set(USER_LINKER_OPTION
@@ -18,7 +18,7 @@ macro(ravl2_configure_linker project_name)
         "Using custom linker: '${USER_LINKER_OPTION}', explicitly supported entries are ${USER_LINKER_OPTION_VALUES}")
   endif()
 
-  if(NOT ravl2_ENABLE_USER_LINKER)
+  if(NOT RAVL2_ENABLE_USER_LINKER)
     return()
   endif()
 

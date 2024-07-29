@@ -6,8 +6,8 @@ find_package(fmt)
 add_executable(fuzz_tester fuzz_tester.cpp)
 target_link_libraries(
   fuzz_tester
-  PRIVATE ravl2_options
-          ravl2_warnings
+  PRIVATE RAVL2_options
+          RAVL2_warnings
           fmt::fmt
           -coverage
           -fsanitize=fuzzer)

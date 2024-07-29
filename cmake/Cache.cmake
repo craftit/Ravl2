@@ -1,5 +1,5 @@
 # Enable cache if available
-function(ravl2_enable_cache)
+function(RAVL2_enable_cache)
   set(CACHE_OPTION
       "ccache"
       CACHE STRING "Compiler cache to be used")

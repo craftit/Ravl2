@@ -9,7 +9,7 @@ add_library (Ravl2Math
 
 add_library(ravl2::Ravl2Math ALIAS Ravl2Math)
 
-target_link_libraries(Ravl2Math PRIVATE ravl2_options ravl2_warnings)
+target_link_libraries(Ravl2Math PRIVATE RAVL2_options RAVL2_warnings)
 target_link_libraries(Ravl2Math PUBLIC Ravl2Image )
 
 target_include_directories(Ravl2Math ${WARNING_GUARD} PUBLIC

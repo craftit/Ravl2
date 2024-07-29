@@ -26,13 +26,13 @@ include(cmake/PreventInSourceBuilds.cmake)
 include(ProjectOptions.cmake)
 
 
-ravl2_setup_options()
+RAVL2_setup_options()
 
-ravl2_global_options()
+RAVL2_global_options()
 include(Dependencies.cmake)
-ravl2_setup_dependencies()
+RAVL2_setup_dependencies()
 
-ravl2_local_options()
+RAVL2_local_options()
 
 # don't know if this should be set globally from here or not...
 set(CMAKE_CXX_VISIBILITY_PRESET hidden)
@@ -46,13 +46,13 @@ string(
             8
             GIT_SHORT_SHA)
 
-target_compile_features(ravl2_options INTERFACE cxx_std_${CMAKE_CXX_STANDARD})
+target_compile_features(RAVL2_options INTERFACE cxx_std_${CMAKE_CXX_STANDARD})
 
-add_library(ravl2::ravl2_options ALIAS ravl2_options)
-add_library(ravl2::ravl2_warnings ALIAS ravl2_warnings)
+add_library(ravl2::RAVL2_options ALIAS RAVL2_options)
+add_library(ravl2::RAVL2_warnings ALIAS RAVL2_warnings)
 
-#add_library(ravl2::ravl2_options INTERFACE IMPORTED)
-#add_library(ravl2::ravl2_warnings INTERFACE IMPORTED)
+#add_library(ravl2::RAVL2_options INTERFACE IMPORTED)
+#add_library(ravl2::RAVL2_warnings INTERFACE IMPORTED)
 
 # configure files based on CMake configuration options
 add_subdirectory(configured_files)
@@ -65,7 +65,7 @@ if(NOT PROJECT_IS_TOP_LEVEL)
   return()
 endif()
 
-if(ravl2_BUILD_EXAMPLES)
+if(RAVL2_BUILD_EXAMPLES)
 #  message(AUTHOR_WARNING "Building Examples")
   add_subdirectory(examples)
 endif()
@@ -79,9 +79,9 @@ if(BUILD_TESTING)
 endif()
 
 
-if(ravl2_BUILD_FUZZ_TESTS)
+if(RAVL2_BUILD_FUZZ_TESTS)
   message(AUTHOR_WARNING "Building Fuzz Tests, using fuzzing sanitizer https://www.llvm.org/docs/LibFuzzer.html")
-  if (NOT ravl2_ENABLE_ADDRESS_SANITIZER AND NOT ravl2_ENABLE_THREAD_SANITIZER)
+  if (NOT RAVL2_ENABLE_ADDRESS_SANITIZER AND NOT RAVL2_ENABLE_THREAD_SANITIZER)
     message(WARNING "You need asan or tsan enabled for meaningful fuzz testing")
   endif()
   add_subdirectory(fuzz_test)
@@ -107,11 +107,11 @@ include(cmake/PackageProject.cmake)
 
 # Add other targets that you want installed here, by default we just package the one executable
 # we know we want to ship
-ravl2_package_project(
+RAVL2_package_project(
   TARGETS
 #  intro
-  ravl2_options
-  ravl2_warnings
+  RAVL2_options
+  RAVL2_warnings
   # FIXME: this does not work! CK
   # PRIVATE_DEPENDENCIES_CONFIGURED project_options project_warnings
 )
