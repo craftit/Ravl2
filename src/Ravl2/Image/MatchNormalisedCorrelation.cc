@@ -68,7 +68,7 @@ namespace Ravl2 {
       int sumxy = SumOfProducts(templ,subImg);
       
       // Calculate mean and variance for search image.
-      TFVectorC<int, 2>  rs = sums.Sum(rect);
+      Vector<int, 2>  rs = sums.Sum(rect);
       RealT ssum = rs[0];
       RealT smean = (RealT) rs[0] / tarea;
       RealT svar = ((RealT) rs[1] -sqr((RealT) rs[0])/tarea) / (tarea-1);

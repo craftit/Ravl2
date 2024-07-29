@@ -8,41 +8,37 @@
 #define RAVLIMAGE_MATCHPATCH_HEADER 1
 ///////////////////////////////////////////////////////////////////////////////////////
 //! author="Charles Galambos"
-//! rcsid="$Id$"
-//! lib=RavlImageProc
-//! docentry="Ravl.API.Images.Tracking"
-//! file="Ravl/Image/Processing/Tracking/MatchPatch.hh"
 
-#include "Ravl/Image/PeakDetector.hh"
-#include "Ravl/SquareIter.hh"
-#include "Ravl/Image/Matching.hh"
+#include "Ravl2/Image/PeakDetector.hh"
+#include "Ravl2/SquareIter.hh"
+#include "Ravl2/Image/Matching.hh"
 
-namespace RavlImageN {
+namespace Ravl2 {
   
   template<class DataT,class SumT>
-  SumT SearchMinAbsDifferenceCreep(const Array2dC<DataT> &patch,const Array2dC<DataT> &img,const Index2dC &start,Point2dC &rat,SumT &rminScore,int searchSize = 50) {
+  SumT SearchMinAbsDifferenceCreep(const Array<DataT,2> &patch,const Array<DataT,2> &img,const Index<2> &start,Point<RealT,2> &rat,SumT &rminScore,int searchSize = 50) {
     SumT minScore;
-    IndexRange2dC sarea(start,searchSize+8,searchSize+8);
-    sarea.ClipBy(img.Frame() - patch.Frame());
-    //cerr << "Img=" << img.Frame() << " SArea=" << sarea << "\n";
-    if(!sarea.Contains(start)) {
-      rat = Point2dC(-1,-1);
+    IndexRange<2> sarea(start,searchSize+8,searchSize+8);
+    sarea.clipBy(img.range() - patch.range());
+    //cerr << "Img=" << img.range() << " SArea=" << sarea << "\n";
+    if(!sarea.contains(start)) {
+      rat = Point<RealT,2>(-1,-1);
       minScore = rminScore = 100000000;
       return minScore;
     }
-    Array2dC<SumT> scoreMap(sarea);
-    scoreMap.Fill(-1);
+    Array<SumT,2> scoreMap(sarea);
+    scoreMap.fill(-1);
     MatchSumAbsDifference(patch,img,start,minScore);
-    Index2dC minAt = start;
+    Index<2> minAt = start;
     scoreMap[minAt] = minScore;
     
-    Index2dC lastMin;
+    Index<2> lastMin;
     int maxLoop = 10;
     do {
       //cerr << "Center at " << minAt << "\n";
       lastMin = minAt;
       for(SquareIterC it(searchSize,minAt);it;it++) {
-	if(!sarea.Contains(*it) || scoreMap[*it] > 0)
+	if(!sarea.contains(*it) || scoreMap[*it] > 0)
 	  continue;
 	SumT score;
 	//cerr << "Checking " << *it << "\n";

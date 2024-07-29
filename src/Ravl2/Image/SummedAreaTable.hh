@@ -6,20 +6,15 @@
 // file-header-ends-here
 #ifndef RAVLIMAGE_SUMMEDAREATABLE_HEADER
 #define RAVLIMAGE_SUMMEDAREATABLE_HEADER 1
-//! rcsid="$Id$"
 //! author="Charles Galambos"
 //! date="3/4/2002"
-//! docentry="Ravl.API.Images.Misc"
-//! lib=RavlImageProc
-//! file="Ravl/Image/Processing/Tools/SummedAreaTable.hh"
 
-#include "Ravl/Image/Image.hh"
-#include "Ravl/Array2dSqr2Iter2.hh"
-#include "Ravl/Image/DrawFrame.hh"
+#include "Ravl2/Array.hh"
+#include "Ravl2/Array2dSqr2Iter2.hh"
+#include "Ravl2/Image/DrawFrame.hh"
 
-namespace RavlImageN {
+namespace Ravl2 {
 
-  //! userlevel=Normal
   //: Summed Area Table.
   // This class allows the summing of any area in an image in constant time.
   // The class builds the table with a single pass over the input image. Once
@@ -28,7 +23,7 @@ namespace RavlImageN {
   
   template<class DataT>
   class SummedAreaTableC
-    : public Array2dC<DataT>
+    : public Array<DataT,2>
   {
   public:
     SummedAreaTableC()
@@ -36,22 +31,22 @@ namespace RavlImageN {
     //: Default constructor.
     
     template<class InT>
-    SummedAreaTableC(const Array2dC<InT> &in) 
+    SummedAreaTableC(const Array<InT,2> &in) 
     { BuildTable(in); }
     
     template<class InT>
-    void BuildTable(const Array2dC<InT> &in) {
-      clipRange = in.Frame();
-      IndexRange2dC rng(in.Frame());
-      rng.LCol()--;
-      rng.TRow()--;
+    void BuildTable(const Array<InT,2> &in) {
+      clipRange = in.range();
+      IndexRange<2> rng(in.range());
+      rng.min(1)--;
+      rng.min(0)--;
       if(this->Frame() != rng) {
 	DataT zero;
 	SetZero(zero); // We can't rely on '= 0' working.
-	(*this).Array2dC<DataT>::operator=(Array2dC<DataT>(rng));
+	(*this).Array<DataT,2>::operator=(Array<DataT,2>(rng));
 	DrawFrame((*this),zero,rng); // We only really need the top row and left column cleared.
       }
-      Array2dC<DataT> work((*this),in.Frame());
+      Array<DataT,2> work((*this),in.range());
       Array2dSqr2Iter2C<DataT,InT> it(work,in);
       // First pixel.
       it.DataTL1() = (DataT) it.DataTL2();
@@ -62,7 +57,7 @@ namespace RavlImageN {
 	it.DataTR1() = it.DataTL1() + (DataT) it.DataTR2();
 	rowSum += (DataT) it.DataBR2();
 	it.DataBR1() = it.DataTR1() + rowSum;
-      } while(it.Next()) ;
+      } while(it.next()) ;
       // Do rest of image.
       for(;it;) {
 	// Do beginning of row thing.
@@ -72,26 +67,26 @@ namespace RavlImageN {
 	do {
 	  rowSum += (DataT) it.DataBR2();
 	  it.DataBR1() = it.DataTR1() + rowSum;
-	} while(it.Next()) ;
+	} while(it.next()) ;
       }
     }
     //: Build table form an array of values.
     
-    DataT Sum(IndexRange2dC range) const {
-      range.ClipBy(clipRange);
-      if(range.Area() == 0)
-	return (*this)[this->Frame().Origin()]; // Return 0.
-      range.LCol()--;
-      range.TRow()--;
+    DataT Sum(IndexRange<2> range) const {
+      range.clipBy(clipRange);
+      if(range.area() == 0)
+	return (*this)[this->Frame().min()]; // Return 0.
+      range.min(1)--;
+      range.min(0)--;
       // Could speed this up by seperating out row accesses ?
       return (*this)[range.End()] - (*this)[range.TopRight()] - (*this)[range.BottomLeft()] + (*this)[range.TopLeft()];
     }
     //: Calculate the sum of the pixel's in the rectangle 'range'.
     
-    DataT VerticalDifference2(IndexRange2dC range,IntT mid) const {
+    DataT VerticalDifference2(IndexRange<2> range,IntT mid) const {
       // Could speed this up by seperating out row accesses ?
       return (*this)[range.TopLeft()] 
-	+ ((*this)[mid][range.RCol()] - (*this)[mid][range.LCol()]) * 2 
+	+ ((*this)[mid][range.max(1)] - (*this)[mid][range.min(1)]) * 2 
 	- (*this)[range.BottomLeft()] 
 	- (*this)[range.TopRight()]
 	+ (*this)[range.End()];
@@ -99,10 +94,10 @@ namespace RavlImageN {
     //: Calculate the diffrence between two halfs of the rectangle split vertically.
     // This mid point is an absolute row location and should be within the rectangle.
     
-    DataT HorizontalDifference2(IndexRange2dC range,IntT mid) const {
+    DataT HorizontalDifference2(IndexRange<2> range,IntT mid) const {
       // Could speed this up by seperating out row accesses ?
       return (*this)[range.TopLeft()]
-	+ ((*this)[range.BRow()][mid] - (*this)[range.TRow()][mid]) * 2 
+	+ ((*this)[range.max(0)][mid] - (*this)[range.min(0)][mid]) * 2 
 	- (*this)[range.BottomLeft()] 
 	+ (*this)[range.TopRight()]
 	- (*this)[range.End()];
@@ -110,28 +105,28 @@ namespace RavlImageN {
     //: Calculate the diffrence between two halfs of the rectangle split horizontally.
     // This mid point is an absolute column location and should be within the rectangle.
 
-    DataT VerticalDifference3(const IndexRange2dC &range,const IndexRangeC &rng) const {
-      RavlAssert(range.Range2().Contains(rng));
-      IndexRange2dC rng2(range.Range1(),rng);
+    DataT VerticalDifference3(const IndexRange<2> &range,const IndexRange<1> &rng) const {
+      RavlAssert(range.Range2().contains(rng));
+      IndexRange<2> rng2(range.Range1(),rng);
       return Sum(range) - Sum(rng2);
     }
     //: Calculate the diffrence between two halfs of the rectangle split vertially.
     // This mid point is an absolute row location and should be within the rectangle.
     
-    DataT HorizontalDifference3(const IndexRange2dC &range,const IndexRangeC &rng) const {
-      RavlAssert(range.Range1().Contains(rng));
-      IndexRange2dC rng2(rng,range.Range2());
+    DataT HorizontalDifference3(const IndexRange<2> &range,const IndexRange<1> &rng) const {
+      RavlAssert(range.Range1().contains(rng));
+      IndexRange<2> rng2(rng,range.Range2());
       return Sum(range) - Sum(rng2);
     }
     //: Calculate the diffrence between two rectangles one lying inside the other in the horizontal dimention.
     // This mid point is an absolute column location and should be within the rectangle.
     
-    const IndexRange2dC &ClipRange() const
+    const IndexRange<2> &ClipRange() const
     { return clipRange; }
     //: Return range of value positions. 
     
   protected:
-    IndexRange2dC clipRange;
+    IndexRange<2> clipRange;
   };
   
 }

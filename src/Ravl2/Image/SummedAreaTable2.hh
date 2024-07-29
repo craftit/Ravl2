@@ -6,21 +6,16 @@
 // file-header-ends-here
 #ifndef RAVLIMAGE_SUMMEDAREATABLE2_HEADER
 #define RAVLIMAGE_SUMMEDAREATABLE2_HEADER 1
-//! rcsid="$Id$"
 //! author="Charles Galambos"
 //! date="28/11/2002"
-//! docentry="Ravl.API.Images.Misc"
-//! lib=RavlImageProc
-//! file="Ravl/Image/Processing/Tools/SummedAreaTable2.hh"
 
-#include "Ravl/Image/Image.hh"
-#include "Ravl/Array2dSqr2Iter2.hh"
-#include "Ravl/Image/DrawFrame.hh"
-#include "Ravl/TFVector.hh"
+#include "Ravl2/Array.hh"
+#include "Ravl2/Array2dSqr2Iter2.hh"
+#include "Ravl2/Image/DrawFrame.hh"
+#include "Ravl2/TFVector.hh"
 
-namespace RavlImageN {
+namespace Ravl2 {
 
-  //! userlevel=Normal
   //: Summed area and sum of squares table.
   // This class allows the summing of any area in an image in constant time.
   // The class builds the table with a single pass over the input image. Once
@@ -31,7 +26,7 @@ namespace RavlImageN {
   
   template<class DataT>
   class SummedAreaTable2C
-    : public Array2dC<TFVectorC<DataT,2> >
+    : public Array<Vector<DataT,2,2> >
   {
   public:
     SummedAreaTable2C()
@@ -39,45 +34,45 @@ namespace RavlImageN {
     //: Default constructor
     
     template<class InT>
-    SummedAreaTable2C(const Array2dC<InT> &in) 
+    SummedAreaTable2C(const Array<InT,2> &in) 
     { BuildTable(in); }
 
   protected:    
     template<class InT>
-    inline static TFVectorC<DataT,2> SumAndSqr(const InT &data) { 
-      TFVectorC<DataT,2> ret;
+    inline static Vector<DataT,2> SumAndSqr(const InT &data) { 
+      Vector<DataT,2> ret;
       DataT val = static_cast<DataT>(data);
       ret[0] = val;
-      ret[1] = Sqr(val);
+      ret[1] =sqr(val);
       return ret;
     }
     //: Create vector containing value and its square.
     
   public:
     template<class InT>
-    void BuildTable(const Array2dC<InT> &in) {
-      clipRange = in.Frame();
-      IndexRange2dC rng(in.Frame());
-      rng.LCol()--;
-      rng.TRow()--;
+    void BuildTable(const Array<InT,2> &in) {
+      clipRange = in.range();
+      IndexRange<2> rng(in.range());
+      rng.min(1)--;
+      rng.min(0)--;
       if(this->Frame() != rng) {
-	TFVectorC<DataT,2> zero;
+	Vector<DataT,2> zero;
 	SetZero(zero);
-	(*this).Array2dC<TFVectorC<DataT,2> >::operator=(Array2dC<TFVectorC<DataT,2> >(rng));
+	(*this).Array<Vector<DataT,2,2> >::operator=(Array<Vector<DataT,2,2> >(rng));
 	DrawFrame((*this),zero,rng); // We only really need the top row and left column cleared.
       }
-      Array2dC<TFVectorC<DataT,2> > work((*this),in.Frame());
-      Array2dSqr2Iter2C<TFVectorC<DataT,2> ,InT> it(work,in);
+      Array<Vector<DataT,2,2> > work((*this),in.range());
+      Array2dSqr2Iter2C<Vector<DataT,2> ,InT> it(work,in);
       // First pixel.
       it.DataTL1() = SumAndSqr(it.DataTL2());
-      TFVectorC<DataT,2> rowSum = SumAndSqr(it.DataBL2());
+      Vector<DataT,2> rowSum = SumAndSqr(it.DataBL2());
       it.DataBL1() = it.DataTL1() + rowSum;
       // Do first row.
       do {
 	it.DataTR1() = it.DataTL1() + SumAndSqr(it.DataTR2());
 	rowSum += SumAndSqr(it.DataBR2());
 	it.DataBR1() = it.DataTR1() + rowSum;
-      } while(it.Next()) ;
+      } while(it.next()) ;
       // Do rest of image.
       for(;it;) {
 	// Do beginning of row thing.
@@ -87,53 +82,53 @@ namespace RavlImageN {
 	do {
 	  rowSum += SumAndSqr(it.DataBR2());
 	  it.DataBR1() = it.DataTR1() + rowSum;
-	} while(it.Next()) ;
+	} while(it.next()) ;
       }
     }
     //: Build table form an array of values.
     
-    TFVectorC<DataT,2> Sum(IndexRange2dC range) const {
-      range.ClipBy(clipRange);
-      if(range.Area() == 0)
-	return (*this)[this->Frame().Origin()]; // Return 0.
-      range.LCol()--;
-      range.TRow()--;
+    Vector<DataT,2> Sum(IndexRange<2> range) const {
+      range.clipBy(clipRange);
+      if(range.area() == 0)
+	return (*this)[this->Frame().min()]; // Return 0.
+      range.min(1)--;
+      range.min(0)--;
       // Could speed this up by seperating out row accesses ?
       return (*this)[range.End()] - (*this)[range.TopRight()] - (*this)[range.BottomLeft()] + (*this)[range.TopLeft()];
     }
     //: Calculate the sum and sum of squares of the pixel values in the rectangle 'range'.
     
-    RealT Sum1(IndexRange2dC range) const {
-      range.ClipBy(clipRange);
-      if(range.Area() == 0)
-	return (*this)[this->Frame().Origin()][0]; // Return 0.
-      range.LCol()--;
-      range.TRow()--;
+    RealT Sum1(IndexRange<2> range) const {
+      range.clipBy(clipRange);
+      if(range.area() == 0)
+	return (*this)[this->Frame().min()][0]; // Return 0.
+      range.min(1)--;
+      range.min(0)--;
       // Could speed this up by seperating out row accesses ?
       return (*this)[range.End()][0] - (*this)[range.TopRight()][0] - (*this)[range.BottomLeft()][0] + (*this)[range.TopLeft()][0];
     }
     //: Calculate the sum of the pixel's in the rectangle 'range'.
     
-    RealT Variance(IndexRange2dC range) const {
-      TFVectorC<DataT,2> sum = Sum(range);
-      RealT area = (RealT) range.Area();
-      return ((RealT) sum[1] - Sqr((RealT) sum[0])/area) / (area-1);
+    RealT Variance(IndexRange<2> range) const {
+      Vector<DataT,2> sum = Sum(range);
+      RealT area = (RealT) range.area();
+      return ((RealT) sum[1] -sqr((RealT) sum[0])/area) / (area-1);
     }
     //: Calculate variance of the image in 'range'.
     
-    IntT MeanVariance(IndexRange2dC range,RealT &mean,RealT &var) const {
-      TFVectorC<DataT,2> sum = Sum(range);
-      IntT area = range.Area();
+    IntT MeanVariance(IndexRange<2> range,RealT &mean,RealT &var) const {
+      Vector<DataT,2> sum = Sum(range);
+      IntT area = range.area();
       mean = (RealT) sum[0] / area;
-      var = ((RealT) sum[1] - Sqr((RealT) sum[0])/area) / (area-1);
+      var = ((RealT) sum[1] -sqr((RealT) sum[0])/area) / (area-1);
       return area;
     }
     //: Calculate mean, variance and area of the image in 'range'.
     
-    TFVectorC<DataT,2> VerticalDifference2(IndexRange2dC range,IntT mid) const {
+    Vector<DataT,2> VerticalDifference2(IndexRange<2> range,IntT mid) const {
       // Could speed this up by seperating out row accesses ?
       return (*this)[range.TopLeft()] 
-	+ ((*this)[mid][range.RCol()] - (*this)[mid][range.LCol()]) * 2 
+	+ ((*this)[mid][range.max(1)] - (*this)[mid][range.min(1)]) * 2 
 	- (*this)[range.BottomLeft()] 
 	- (*this)[range.TopRight()]
 	+ (*this)[range.End()];
@@ -141,10 +136,10 @@ namespace RavlImageN {
     //: Calculate the diffrence between two halfs of the rectangle split vertically.
     // This mid point is an absolute row location and should be within the rectangle.
     
-    TFVectorC<DataT,2> HorizontalDifference2(IndexRange2dC range,IntT mid) const {
+    Vector<DataT,2> HorizontalDifference2(IndexRange<2> range,IntT mid) const {
       // Could speed this up by seperating out row accesses ?
       return (*this)[range.TopLeft()]
-	+ ((*this)[range.BRow()][mid] - (*this)[range.TRow()][mid]) * 2 
+	+ ((*this)[range.max(0)][mid] - (*this)[range.min(0)][mid]) * 2 
 	- (*this)[range.BottomLeft()] 
 	+ (*this)[range.TopRight()]
 	- (*this)[range.End()];
@@ -152,47 +147,47 @@ namespace RavlImageN {
     //: Calculate the diffrence between two halfs of the rectangle split horizontally.
     // This mid point is an absolute column location and should be within the rectangle.
 
-    TFVectorC<DataT,2> VerticalDifference3(const IndexRange2dC &range,const IndexRangeC &rng) const {
-      RavlAssert(range.Range2().Contains(rng));
-      IndexRange2dC rng2(range.Range1(),rng);
+    Vector<DataT,2> VerticalDifference3(const IndexRange<2> &range,const IndexRange<1> &rng) const {
+      RavlAssert(range.Range2().contains(rng));
+      IndexRange<2> rng2(range.Range1(),rng);
       return Sum(range) - Sum(rng2);
     }
     //: Calculate the diffrence between two halfs of the rectangle split vertially.
     // This mid point is an absolute row location and should be within the rectangle.
     
-    TFVectorC<DataT,2> HorizontalDifference3(const IndexRange2dC &range,const IndexRangeC &rng) const {
-      RavlAssert(range.Range1().Contains(rng));
-      IndexRange2dC rng2(rng,range.Range2());
+    Vector<DataT,2> HorizontalDifference3(const IndexRange<2> &range,const IndexRange<1> &rng) const {
+      RavlAssert(range.Range1().contains(rng));
+      IndexRange<2> rng2(rng,range.Range2());
       return Sum(range) - Sum(rng2);
     }
     //: Calculate the diffrence between two rectangles one lying inside the other in the horizontal dimention.
     // This mid point is an absolute column location and should be within the rectangle.
     
-    void SetClipRange(IndexRange2dC &nClipRange) 
+    void SetClipRange(IndexRange<2> &nClipRange) 
     { clipRange = nClipRange; }
     //: Set the clip range.
     
-    const IndexRange2dC &ClipRange() const
+    const IndexRange<2> &ClipRange() const
     { return clipRange; }
     //: Return range of value positions. 
     
   protected:
-    IndexRange2dC clipRange;
+    IndexRange<2> clipRange;
   };
   
   template<class DataT>
-  ostream &operator<<(ostream &strm,const SummedAreaTable2C<DataT> &data) {
-    strm << static_cast<const Array2dC<TFVectorC<DataT,2> > &>(data);
+  std::ostream &operator<<(std::ostream &strm,const SummedAreaTable2C<DataT> &data) {
+    strm << static_cast<const Array<Vector<DataT,2,2> > &>(data);
     return strm;
   }
   //: Write to text stream.
   
   template<class DataT>
-  istream &operator>>(istream &strm,SummedAreaTable2C<DataT> &data) {
-    strm >> static_cast<Array2dC<TFVectorC<DataT,2> > &>(data);
-    IndexRange2dC clipRange = data.Frame();
-    clipRange.LCol()++;
-    clipRange.TRow()++;
+  std::istream &operator>>(std::istream &strm,SummedAreaTable2C<DataT> &data) {
+    strm >> static_cast<Array<Vector<DataT,2,2> > &>(data);
+    IndexRange<2> clipRange = data.range();
+    clipRange.min(1)++;
+    clipRange.min(0)++;
     data.SetClipRange(clipRange);
     return strm;
   }
@@ -200,17 +195,17 @@ namespace RavlImageN {
 
   template<class DataT>
   BinOStreamC &operator<<(BinOStreamC &strm,const SummedAreaTable2C<DataT> &data) {
-    strm << static_cast<const Array2dC<TFVectorC<DataT,2> > &>(data);
+    strm << static_cast<const Array<Vector<DataT,2,2> > &>(data);
     return strm;
   }
   //: Write to binary stream.
   
   template<class DataT>
   BinIStreamC &operator>>(BinIStreamC &strm,SummedAreaTable2C<DataT> &data) {
-    strm >> static_cast<Array2dC<TFVectorC<DataT,2> > &>(data);
-    IndexRange2dC clipRange = data.Frame();
-    clipRange.LCol()++;
-    clipRange.TRow()++;
+    strm >> static_cast<Array<Vector<DataT,2,2> > &>(data);
+    IndexRange<2> clipRange = data.range();
+    clipRange.min(1)++;
+    clipRange.min(0)++;
     data.SetClipRange(clipRange);
     return strm;
   }
