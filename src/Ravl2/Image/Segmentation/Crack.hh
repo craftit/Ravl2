@@ -203,15 +203,15 @@ namespace Ravl2
     [[nodiscard]] constexpr BoundaryVertex2 End() const
     { return crackStep(mAt, mCode.Code()); }
 
-    //! Reverse the direction of this crack.
-    constexpr const CrackC & Reverse()
+    //! reverse the direction of this crack.
+    constexpr const CrackC & reverse()
     {
       mAt = crackStep(mAt, mCode.Code());
       mCode.turnBack();
       return *this;
     }
 
-    //! Reverse the direction of this crack.
+    //! reverse the direction of this crack.
     [[nodiscard]] constexpr CrackC reversed() const
     {
       CrackCode cc = mCode;
@@ -236,17 +236,17 @@ namespace Ravl2
 
     //! Turns the crack code clockwise.
     // This is an in-place operation.
-    inline constexpr auto & TurnClock()
+    inline constexpr auto & turnClock()
     { mCode.turnClock(); return *this; }
 
     //! Turns the crack code counterclockwise.
     // This is an in-place operation.
-    inline constexpr auto & TurnCClock()
+    inline constexpr auto & turnCClock()
     { mCode.turnCClock(); return *this; }
 
     //! Turns the crack code backward.
     // This is an in-place operation.
-    inline constexpr auto & TurnBack()
+    inline constexpr auto & turnBack()
     { mCode.turnBack(); return *this; }
 
   protected:

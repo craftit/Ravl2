@@ -36,7 +36,7 @@ TEST_CASE("Follow some codes", "[CrackCodeC]")
 
   CrackCode xcc(CrackCodeT::CR_UP);
   CrackCode ycc(CrackCodeT::CR_RIGHT);
-  RelativeCrackCodeT rcc = xcc.Relative(ycc);
+  RelativeCrackCodeT rcc = xcc.relative(ycc);
   EXPECT_EQ(rcc, RelativeCrackCodeT::CR_TO_RIGHT);
   
   for(int i = 0;i < 4;i++) {
@@ -44,13 +44,13 @@ TEST_CASE("Follow some codes", "[CrackCodeC]")
     int ip = i + 1;
     if(ip >= 4)
       ip -= 4;
-    rcc = cc.Relative(cc);
+    rcc = cc.relative(cc);
     EXPECT_EQ(rcc, RelativeCrackCodeT::CR_AHEAD);
     CrackCode ipcc(ip);
-    rcc = cc.Relative(ipcc);
+    rcc = cc.relative(ipcc);
     //std::cerr <<"CodeLeft=" << (int)rcc << "\n";
     EXPECT_EQ(rcc,RelativeCrackCodeT::CR_TO_LEFT);
-    rcc = ipcc.Relative(cc);
+    rcc = ipcc.relative(cc);
     //std::cerr <<"CodeRight=" << (int)rcc << "\n";
     EXPECT_EQ(rcc,RelativeCrackCodeT::CR_TO_RIGHT);
     
@@ -58,9 +58,9 @@ TEST_CASE("Follow some codes", "[CrackCodeC]")
     if(ipp >= 4)
       ipp -= 4;;
     CrackCode ippcc(ipp);
-    rcc = ippcc.Relative(cc);
+    rcc = ippcc.relative(cc);
     EXPECT_EQ(rcc,RelativeCrackCodeT::CR_BACK);
-    rcc = cc.Relative(ippcc);
+    rcc = cc.relative(ippcc);
     EXPECT_EQ(rcc,RelativeCrackCodeT::CR_BACK);
   }
 }
@@ -78,7 +78,7 @@ TEST_CASE("Check relative directions", "[CrackCodeC]")
   // Go around a pixel clockwise.
   for(int i = 0;i < 5;i++) {
     edge.Begin() = edge.End();
-    edge.TurnClock();
+    edge.turnClock();
     ONDEBUG(std::cerr <<"At=" << edge.RPixel() << " Code:" << edge.Code() << "\n");
     EXPECT_NE(at, edge.LPixel());
   }
@@ -89,7 +89,7 @@ TEST_CASE("Check relative directions", "[CrackCodeC]")
   ONDEBUG(std::cerr <<"iAt=" << at << "\n");
   for(int i = 0;i < 5;i++) {
     edge.Begin() = edge.End();
-    edge.TurnCClock();
+    edge.turnCClock();
     ONDEBUG(std::cerr <<"At=" << edge.LPixel() << " Code:" << edge.Code() << "\n");
     EXPECT_EQ(at, edge.LPixel());
   }

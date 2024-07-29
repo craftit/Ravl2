@@ -29,7 +29,7 @@ namespace Ravl2
     CR_NODIR = 4
   };
   
-  //! Relative crack code
+  //! relative crack code
   // Symbol names of crack code, ordered counter-clockwise.
   
   enum class RelativeCrackCodeT : int {
@@ -88,7 +88,7 @@ namespace Ravl2
     { return crackCode; }
 
     //! Get relative crack code of direction 'cc' relative to this one.
-    [[nodiscard]] constexpr RelativeCrackCodeT Relative(const CrackCode & cc) const {
+    [[nodiscard]] constexpr RelativeCrackCodeT relative(const CrackCode & cc) const {
       int rcode = int(cc.Code()) - int(Code());
       if(rcode < 0) rcode += 4;
       else rcode %= 4;

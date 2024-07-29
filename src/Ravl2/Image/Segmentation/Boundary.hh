@@ -101,10 +101,10 @@ namespace Ravl2
     { orientation = Ravl2::reverse(orientation); }
     //: Invert the boundary.
 
-    //! Reverse the order of the edges.
+    //! reverse the order of the edges.
     [[nodiscard]] Boundary reverse() const;
 
-    //! Reverse the order of the edges.
+    //! reverse the order of the edges.
     Boundary & BReverse();
 
     //! Compute the convex hull.

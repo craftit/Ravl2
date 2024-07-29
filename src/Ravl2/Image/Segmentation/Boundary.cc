@@ -34,17 +34,17 @@ namespace Ravl2
       edges.push_back(edge);
       edge.Down();
     }
-    edge.TurnCClock();
+    edge.turnCClock();
     for(int i=origin[1]; i <= endP[1]; i++) {
       edges.push_back(edge);
       edge.Right();
     }
-    edge.TurnCClock();
+    edge.turnCClock();
     for(int i=endP[1]; i >= origin[1]; i--) {
       edges.push_back(edge);
       edge.Up();
     }
-    edge.TurnCClock();
+    edge.turnCClock();
     for(int i=endP[0]; i >= origin[0]; i--) {
       edges.push_back(edge);
       edge.Left();
@@ -90,7 +90,7 @@ namespace Ravl2
     return area;
   }
 
-  //! Reverse the order of the edges.
+  //! reverse the order of the edges.
   [[nodiscard]] Boundary Boundary::reverse() const
   {
     std::vector<CrackC> newEdges;
