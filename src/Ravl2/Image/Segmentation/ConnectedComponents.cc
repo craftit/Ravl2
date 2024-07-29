@@ -25,7 +25,7 @@ namespace Ravl2
   // which should have the same label. It is valid that a root item
   // of a tree has the same label value as the item index.
   
-  unsigned ConnectedComponentsBaseBodyC::RelabelTable(std::vector<unsigned> &labelTable) {
+  unsigned ConnectedComponentsBase::RelabelTable(std::vector<unsigned> &labelTable) {
     ONDEBUG(std::cerr << "ConnectedComponentsBaseBodyC::RelabelTable(), Called. MaxLabel:" << currentMaxLabel << "\n");
     
     // Make all trees of labels have a depth of one.

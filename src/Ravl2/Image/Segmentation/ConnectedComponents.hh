@@ -20,9 +20,9 @@ namespace Ravl2
 
   //: Connected component labelling base class
   
-  class ConnectedComponentsBaseBodyC {
+  class ConnectedComponentsBase {
   public:
-    ConnectedComponentsBaseBodyC(unsigned nmaxLabel=1000, bool ignore=false)
+    ConnectedComponentsBase(unsigned nmaxLabel=1000, bool ignore=false)
       : maxLabel(nmaxLabel), 
 	ignoreZero(ignore)
     {}
@@ -61,21 +61,21 @@ namespace Ravl2
   // will look for a connected region of identical pixel values.</p>
 
   template <class DataTypeT,class CompareT = ConnectedComponentsCompareC<DataTypeT> >
-  class ConnectedComponentsBodyC
-    : public ConnectedComponentsBaseBodyC
+  class ConnectedComponents
+    : public ConnectedComponentsBase
   {
   public:
-    ConnectedComponentsBodyC (unsigned nmaxLabel = 10000, bool setIgnoreZero=false,const CompareT &compMethod = CompareT())
-      : ConnectedComponentsBaseBodyC(nmaxLabel, setIgnoreZero),
-	compare(compMethod)
+    ConnectedComponents (unsigned nmaxLabel = 10000, bool setIgnoreZero=false, const CompareT &compMethod = CompareT())
+      : ConnectedComponentsBase(nmaxLabel, setIgnoreZero),
+        compare(compMethod)
     {}
     //: Constructor
     // (See handle class ConnectedComponentsC)
 
-    ConnectedComponentsBodyC (unsigned nmaxLabel,const CompareT &compMethod,const DataTypeT &zeroValue)
-      : ConnectedComponentsBaseBodyC(nmaxLabel, true),
-	compare(compMethod),
-	zero(zeroValue)
+    ConnectedComponents (unsigned nmaxLabel, const CompareT &compMethod, const DataTypeT &zeroValue)
+      : ConnectedComponentsBase(nmaxLabel, true),
+        compare(compMethod),
+        zero(zeroValue)
     {}
     //: Constructor
     // (See handle class ConnectedComponentsC)
@@ -94,7 +94,7 @@ namespace Ravl2
   // Implementation:
   
   template <class DataTypeT,class CompareT >
-  std::tuple<Array<unsigned,2>,unsigned> ConnectedComponentsBodyC<DataTypeT,CompareT>::apply (const Array<DataTypeT,2> &ip) {
+  std::tuple<Array<unsigned,2>,unsigned> ConnectedComponents<DataTypeT,CompareT>::apply (const Array<DataTypeT,2> &ip) {
     std::vector<unsigned> labelTable;
     labelTable.reserve(maxLabel+1);
     // If there are two labels for the same component, the bigger label bin
