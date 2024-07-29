@@ -144,11 +144,11 @@ namespace Ravl2
     } else { // Clipped.
       IndexRange<2> r1(Index<2>(innerRect.range(0).min(),outerRect.range(0).min()),Index<2>(innerRect.range(0).max(),innerRect.range(0).min()-1));
       if(r1.clipBy(dat.range())) {
-        dat.access(r1).fill(value);
+        fill(dat.access(r1),value);
       }
       IndexRange<2> r2(Index<2>(innerRect.range(0).min(),innerRect.range(1).max()+1),Index<2>(innerRect.range(0).max(),outerRect.range(1).max()));
       if(r2.clipBy(dat.range())) {
-        dat.access(r2).fill(value);
+        fill(dat.access(r2),value);
       }
     }
   }

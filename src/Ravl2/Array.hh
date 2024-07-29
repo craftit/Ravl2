@@ -135,6 +135,10 @@ namespace Ravl2
     [[nodiscard]] constexpr DataT &operator[](int i) const
     { return mPtr[i]; }
 
+    //! Access element point
+    [[nodiscard]] constexpr DataT *data() const
+    { return mPtr; }
+
   private:
     DataT *mPtr = nullptr;
   };
@@ -165,7 +169,7 @@ namespace Ravl2
 
   //! Add an offset to the iterator
   template<typename DataT>
-  [[nodiscard]] constexpr typename ArrayIter<DataT,1>::difference_type operator-(ArrayIter<DataT,1> o1,ArrayIter<DataT,1> o2)
+  [[nodiscard]] constexpr typename ArrayIter<DataT,1>::difference_type operator-(const ArrayIter<DataT,1> &o1,const ArrayIter<DataT,1> &o2)
   { return o1.data() - o2.data(); }
 
 
@@ -326,13 +330,6 @@ namespace Ravl2
     //! Access strides
     [[nodiscard]] constexpr const int *strides() const
     { return m_strides; }
-
-    //! Fill the array with a value
-    constexpr void fill(const DataT &value)
-    {
-      for(auto & it : *this)
-        it = value;
-    }
 
 #if 0
     //! Copy data from another array
@@ -616,13 +613,6 @@ namespace Ravl2
     //! Access strides
     [[nodiscard]] constexpr static const int *strides()
     { return &gStride1; }
-
-    //! Fill the array with a value
-    constexpr void fill(const DataT &value)
-    {
-      for(auto & it : *this)
-        it = value;
-    }
 
 #if 0
     //! Copy data from another array
@@ -950,6 +940,15 @@ namespace Ravl2
       this->m_data = &(m_buffer.get()[this->compute_origin_offset(range)]);
     }
 
+    //! Create an array of the given range.
+    explicit constexpr Array(const IndexRange<N> &range, const DataT &initialData)
+        : ArrayView<DataT, N>(range),
+          m_buffer(std::make_shared<DataT[]>(size_t(range.elements()),initialData))
+    {
+      this->make_strides(this->m_range);
+      this->m_data = &(m_buffer.get()[this->compute_origin_offset(range)]);
+    }
+
     //! Construct with an existing buffer
     explicit constexpr Array(DataT *data, const IndexRange<N> &range, const std::array<int,N> &strides, const std::shared_ptr<DataT[]> &buffer)
       : ArrayView<DataT, N>(data,range,strides),
@@ -966,6 +965,15 @@ namespace Ravl2
     constexpr Array(std::initializer_list<IndexRange<1>> ranges)
       : ArrayView<DataT, N>(IndexRange<N>(ranges)),
         m_buffer(std::make_shared<DataT[]>(this->m_range.elements()))
+    {
+      this->make_strides(this->m_range);
+      this->m_data = &(m_buffer.get()[this->compute_origin_offset(this->m_range)]);
+    }
+
+    //! Create an array from a set of sizes.
+    constexpr Array(std::initializer_list<IndexRange<1>> ranges, const DataT &data)
+        : ArrayView<DataT, N>(IndexRange<N>(ranges)),
+          m_buffer(std::make_shared<DataT[]>(this->m_range.elements(),data))
     {
       this->make_strides(this->m_range);
       this->m_data = &(m_buffer.get()[this->compute_origin_offset(this->m_range)]);
@@ -1194,16 +1202,34 @@ namespace Ravl2
 
   template<typename ArrayT,typename DataT = typename ArrayT::value_type,unsigned N = ArrayT::dimensions>
   requires WindowedArray<ArrayT,DataT,N>
-  constexpr auto clone(ArrayT &array)
+  constexpr auto clone(const ArrayT &array)
   {
     Array<DataT,N> ret(array.range());
     std::copy(array.begin(),array.end(),ret.begin());
     return ret;
   }
 
-  //! Take a sub array of the given array.
-  //! The range must be entirely contained in the original array and
-  //! must exist for the lifetime of the sub array.
+  template<typename ArrayT,typename DataT = typename ArrayT::value_type, typename OtherDataT>
+  requires WindowedArray<ArrayT,DataT,1>  && std::is_convertible_v<OtherDataT,DataT>
+  constexpr auto fill(const ArrayT &array, const OtherDataT &value)
+  {
+    // 1d arrays are simple
+    for(auto &at : array)
+      at = value;
+  }
+
+  template<typename ArrayT,typename DataT = typename ArrayT::value_type, typename OtherDataT, unsigned N = ArrayT::dimensions>
+  requires WindowedArray<ArrayT,DataT,N> && std::is_convertible_v<OtherDataT,DataT>
+  constexpr auto fill(const ArrayT &array,const OtherDataT &value)
+  {
+    // This produces faster code for Nd arrays
+    for(auto at = array.begin(); at.valid();) {
+      do {
+        *at = value;
+      } while(at.next());
+    }
+  }
+
   template<typename ArrayT,typename DataT = typename ArrayT::value_type,unsigned N = ArrayT::dimensions>
   requires WindowedArray<ArrayT,DataT,N>
   std::ostream &operator<<(std::ostream &os, const ArrayT &array)

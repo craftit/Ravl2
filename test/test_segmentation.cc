@@ -12,13 +12,12 @@ TEST_CASE("FloodRegion", "[FloodRegion]")
 {
   using namespace Ravl2;
   using PixelT = int;
-  Array<PixelT,2> img({10,10});
-  img.fill(99);
+  Array<PixelT,2> img({10,10}, 99);
   Index<2> at = toIndex(5,5);
 
   // Setup a square in the middle of the image.
   auto rng = img.range().shrink(2);
-  clip(img,rng).fill(10);
+  fill(clip(img,rng),10);
   //SPDLOG_INFO("Image: {}", img);
 
   SECTION("Test boundary creation")
@@ -67,12 +66,11 @@ TEST_CASE("SegmentExtrema")
 {
   using namespace Ravl2;
   using PixelT = uint8_t;
-  Array<PixelT,2> img({10,10});
-  img.fill(100);
+  Array<PixelT,2> img({10,10}, 100);
 
   // Setup a square in the middle of the image.
   auto rng = img.range().shrink(2);
-  clip(img,rng).fill(10);
+  fill(clip(img,rng),uint8_t(10));
 
   SegmentExtremaC<PixelT> segmentExtrema(8);
 

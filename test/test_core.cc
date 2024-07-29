@@ -394,8 +394,7 @@ TEST_CASE("Array", "[Array]")
       val[a] = i++;
     }
 
-    Ravl2::Array<int,3> val2(aRange);
-    val2.fill(0);
+    Ravl2::Array<int,3> val2(aRange, 0);
     auto dest = val[0][0];
     std::copy(dest.begin(),dest.end(),val2[0][1].begin());
     //! Copy data from another array

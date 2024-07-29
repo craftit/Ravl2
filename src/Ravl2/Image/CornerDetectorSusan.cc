@@ -68,7 +68,7 @@ namespace Ravl2
     if(img.empty())
       return cornerList;
     cornerList.reserve(size_t(img.range().area()/100));
-    cornerMap.fill(0);
+    fill(cornerMap,0);
     static const int max_no = 1850;
 
     ONDEBUG(size_t CCount = 0);

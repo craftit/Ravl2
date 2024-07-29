@@ -117,8 +117,7 @@ namespace Ravl2
       img = nimg;
       IndexRange<2> rng = img.range().expand(1);
       if(!marki.range().contains(rng)) {
-	marki = Array<int,2>(rng);
-	marki.fill(0);
+	marki = Array<int,2>(rng, 0);
 	id = 1;
       }
       return true;
@@ -181,7 +180,7 @@ namespace Ravl2
     
     // Lookout for id wrap around.
     if(id == 0) {
-      marki.fill(0);
+      fill(marki,0);
       id++;
     }
     

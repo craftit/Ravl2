@@ -153,12 +153,11 @@ TEST_CASE("Check things are working properly", "[Boundary]")
   SECTION("Tracing a labeled region")
   {
     using PixelT = int;
-    Array<PixelT,2> img({10,10});
-    img.fill(99);
+    Array<PixelT,2> img({10,10}, 99);
 
     // Setup a square in the middle of the image.
     auto rng = img.range().shrink(2);
-    clip(img,rng).fill(10);
+    Ravl2::fill(clip(img,rng),10);
     SPDLOG_INFO("Image: {}", img);
 
     auto bounds = BoundaryC::traceBoundary(img,10);

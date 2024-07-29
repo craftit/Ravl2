@@ -23,8 +23,7 @@
 
 TEST_CASE("BilinearInterpolation", "[Image]")
 {
-  Ravl2::Array<float,2> img({4,4});
-  img.fill(0.0f);
+  Ravl2::Array<float,2> img({4,4},0);
   img[1][1] = 1.0;
 
   for(int i = 0;i < 3;i++) {
@@ -45,8 +44,7 @@ TEST_CASE("BilinearInterpolation", "[Image]")
 TEST_CASE("PeakDetection", "[Image]")
 {
   using namespace Ravl2;
-  Array<int,2> img({10,10});
-  img.fill(0);
+  Array<int,2> img({10,10}, 0);
   Index<2> at({5,5});
 
   // Check 3x3
@@ -106,8 +104,7 @@ TEST_CASE("PeakDetection", "[Image]")
 TEST_CASE("SubPixelPeakDetection", "[Image]")
 {
   using namespace Ravl2;
-  Array<float,2> img({3,3});
-  img.fill(0);
+  Array<float,2> img({3,3} , 0);
   img[1][1] = 1;
   Point2f at = LocatePeakSubPixel(img,Index<2>({1,1}));
   ASSERT_FALSE(std::abs(at[0] - 1) > 0.000001f);
@@ -160,9 +157,8 @@ TEST_CASE("Array2Sqr2Iter2", "[Image]")
   for(auto &ita : data)
     ita = count++;
 
-  Array<int16_t,2> data2({4,4});
+  Array<int16_t,2> data2({4,4},1);
 
-  data2.fill(1);
   Array2dSqr2Iter2C<int,int16_t> it2(data,data2);
   ASSERT_TRUE(it2.valid());
   CHECK(it2.DataTL1() == 1);
