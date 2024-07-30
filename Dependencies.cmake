@@ -5,6 +5,14 @@ include(cmake/CPM.cmake)
 # targets
 function(RAVL2_setup_dependencies)
 
+  # Sort out some blas/lapack stuff
+  set(BLA_VENDOR "OpenBLAS")
+  #set(BLA_PREFER_PKGCONFIG ON)
+  find_package(BLAS REQUIRED)
+  find_package(LAPACK REQUIRED)
+  # print cmake version
+  message(STATUS "CMake version: ${CMAKE_VERSION}")
+
   # Try and use native packages if they're available
 
   find_package(fmt QUIET)
@@ -14,14 +22,6 @@ function(RAVL2_setup_dependencies)
   find_package(Catch2 3 QUIET)
   find_package(CLI11 QUIET)
   find_package(nlohmann_json QUIET)
-
-  # Sort out some blas/lapack stuff
-#  set(BLA_VENDOR "OpenBLAS")
-#  set(BLA_PREFER_PKGCONFIG ON)
-  find_package(BLAS REQUIRED)
-  find_package(LAPACK REQUIRED)
-  # print cmake version
-  message(STATUS "CMake version: ${CMAKE_VERSION}")
 
   # For each dependency, see if it's
   # already been provided to us by a parent project
