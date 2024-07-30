@@ -28,9 +28,8 @@ include(cmake/PreventInSourceBuilds.cmake)
 message(STATUS "CMake version: ${CMAKE_VERSION}")
 
 # Sort out some blas/lapack stuff
-set(BLA_VENDOR "OpenBLAS")
-set(BLA_PREFER_PKGCONFIG ON)
-
+#set(BLA_VENDOR "OpenBLAS")
+set(BLA_PKGCONFIG_BLAS "openblas")
 include(ProjectOptions.cmake)
 
 
