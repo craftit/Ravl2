@@ -67,37 +67,63 @@ TEST_CASE("SegmentExtrema")
 {
   using namespace Ravl2;
   using PixelT = uint8_t;
-  Array<PixelT,2> img({10,10}, 100);
 
-  // Setup a square in the middle of the image.
-  auto rng = img.range().shrink(2);
-  fill(clip(img,rng),uint8_t(10));
-
-  SegmentExtremaC<PixelT> segmentExtrema(8);
-
-  std::vector<Boundary> boundaries = segmentExtrema.Apply(img);
-
-  REQUIRE(!boundaries.empty());
-  CHECK(boundaries.size() == 2);
-  for(auto &boundary : boundaries) {
-    SPDLOG_INFO("Boundary: {} -> {}", boundary.boundingBox(), boundary);
-  }
-
+  SECTION("Basic test")
   {
-    const Boundary &boundary = boundaries[0];
+    Array<PixelT, 2> img({10, 10}, 100);
 
-    CHECK(boundary.boundingBox() == rng);
-    CHECK(boundary.area() == rng.area());
+    // Setup a square in the middle of the image.
+    auto rng = img.range().shrink(2);
+    fill(clip(img, rng), uint8_t(10));
 
-    for(auto it : boundary.edges()) {
-      //SPDLOG_INFO("Edge: {}", it);
-      REQUIRE(img.range().contains(it.leftPixel()));
-      REQUIRE(img.range().contains(it.rightPixel()));
-      CHECK(img[it.leftPixel()] <= 20);
-      CHECK(img[it.rightPixel()] >= 20);
+    SegmentExtremaC<PixelT> segmentExtrema(8);
+
+    std::vector<Boundary> boundaries = segmentExtrema.Apply(img);
+
+    REQUIRE(!boundaries.empty());
+    CHECK(boundaries.size() == 2);
+    for (auto &boundary: boundaries) {
+      SPDLOG_INFO("Boundary: {} -> {}", boundary.boundingBox(), boundary);
+    }
+
+    {
+      const Boundary &boundary = boundaries[0];
+
+      CHECK(boundary.boundingBox() == rng);
+      CHECK(boundary.area() == rng.area());
+
+      for (auto it: boundary.edges()) {
+        //SPDLOG_INFO("Edge: {}", it);
+        REQUIRE(img.range().contains(it.leftPixel()));
+        REQUIRE(img.range().contains(it.rightPixel()));
+        CHECK(img[it.leftPixel()] <= 20);
+        CHECK(img[it.rightPixel()] >= 20);
+      }
+    }
+  }
+  SECTION("Multi level")
+  {
+    using ByteT = uint8_t;
+    ImageC<ByteT> img({100,100}, 196);
+    DrawFrame(img,(ByteT) 128,IndexRange2dC(10,90,10,90),true);
+    DrawFrame(img,(ByteT) 196,IndexRange2dC(20,30,20,30),true);
+    DrawFrame(img,(ByteT) 64,IndexRange2dC(20,30,40,50),true);
+    DrawFrame(img,(ByteT) 196,IndexRange2dC(40,50,40,50),true);
+    SegmentExtremaC<ByteT> segExt(5);
+    DListC<BoundaryC> bnd = segExt.Apply(img);
+    DListC<ImageC<IntT> > segs = segExt.ApplyMask(img);
+    SPDLOG_INFO("Bounds: {}  Segs: {}", bnd.size(), segs.size());
+
+    for(DLIterC<ImageC<IntT> > it(segs);it;it++) {
+      IndexRange2dC frame = it->Frame();
+      frame.ClipBy(img.Frame());
+      for(Array2dIter2C<ByteT,IntT> iit(img,*it,frame);iit;iit++)
+        if(iit.Data2() != 0) iit.Data1() = 255;
     }
   }
 }
+
+
 
 TEST_CASE("ConnectedComponents")
 {
