@@ -19,14 +19,18 @@ macro(RAVL2_supports_sanitizers)
 endmacro()
 
 macro(RAVL2_setup_options)
-  option(RAVL2_ENABLE_HARDENING "Enable hardening" ON)
+  if(CMAKE_BUILD_TYPE STREQUAL "Debug" OR CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo" OR CMAKE_BUILD_TYPE STREQUAL "Default")
+    option(RAVL2_ENABLE_HARDENING "Enable hardening" ON)
+  else()
+    option(RAVL2_ENABLE_HARDENING "Enable hardening" OFF)
+  endif()
   option(RAVL2_ENABLE_COVERAGE "Enable coverage reporting" OFF)
   cmake_dependent_option(
-    RAVL2_ENABLE_GLOBAL_HARDENING
-    "Attempt to push hardening options to built dependencies"
-    ON
-    RAVL2_ENABLE_HARDENING
-    OFF)
+          RAVL2_ENABLE_GLOBAL_HARDENING
+          "Attempt to push hardening options to built dependencies"
+          ON
+          RAVL2_ENABLE_HARDENING
+          OFF)
 
   RAVL2_supports_sanitizers()
 
@@ -45,7 +49,12 @@ macro(RAVL2_setup_options)
     option(RAVL2_ENABLE_PCH "Enable precompiled headers" OFF)
     option(RAVL2_ENABLE_CACHE "Enable ccache" OFF)
   else()
-    option(RAVL2_ENABLE_IPO "Enable IPO/LTO" ON)
+    # LTO seems to stop debug builds from working
+    if(CMAKE_BUILD_TYPE STREQUAL "Debug" OR CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo")
+      option(RAVL2_ENABLE_IPO "Enable IPO/LTO" OFF)
+    else()
+      option(RAVL2_ENABLE_IPO "Enable IPO/LTO" ON)
+    endif()
     option(RAVL2_WARNINGS_AS_ERRORS "Treat Warnings As Errors" ON)
     option(RAVL2_ENABLE_USER_LINKER "Enable user-selected linker" OFF)
     option(RAVL2_ENABLE_SANITIZER_ADDRESS "Enable address sanitizer" ${SUPPORTS_ASAN})

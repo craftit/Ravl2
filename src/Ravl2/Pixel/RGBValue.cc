@@ -4,6 +4,7 @@
 
 namespace Ravl2
 {
+  static_assert(sizeof(RGBValueC<uint8_t>) == 3,"RGBValueC<uint8_t> is not packed");
 
   inline std::istream &operator>>(std::istream &strm,RGBValueC<uint8_t> &val) {
     int r,g,b;

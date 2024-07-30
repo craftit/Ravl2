@@ -22,12 +22,7 @@ namespace Ravl2
     constexpr static unsigned dimension = N;
 
     //! Construct no-change transform.
-    inline ScaleTranslate()
-    {
-      mT = xt::zeros<DataT>({N});
-      mS = xt::ones<DataT>({N});
-    }
-
+    inline ScaleTranslate() = default;
 
     //! Copy constructor.
     inline ScaleTranslate(const ScaleTranslate &Oth) = default;
@@ -52,10 +47,10 @@ namespace Ravl2
     //: Transform Vector,  Scale, Rotate, Translate.
     // Take a vector and put it though the transformation.
 
-    inline ScaleTranslate<DataT,N> operator*(const ScaleTranslate &In) const;
+    inline ScaleTranslate<DataT,N> operator*(const ScaleTranslate &in) const;
     //: Compose this transform with 'In'
 
-    inline ScaleTranslate<DataT,N> operator/(const ScaleTranslate &In) const;
+    inline ScaleTranslate<DataT,N> operator/(const ScaleTranslate &in) const;
     //: 'In' / 'Out' = this;
 
     ScaleTranslate<DataT,N> inverse() const;
@@ -88,8 +83,8 @@ namespace Ravl2
 
 
   protected:
-    Vector<DataT,N> mS; // Scale/rotate.
-    Vector<DataT,N> mT;   // Translate.
+    Vector<DataT,N> mS = xt::ones<DataT>({N}); // Scale/rotate.
+    Vector<DataT,N> mT = xt::zeros<DataT>({N});   // Translate.
   };
 
   /////////////////////////////////////////////////
@@ -130,8 +125,8 @@ namespace Ravl2
 
   template<typename DataT,unsigned N>
   ScaleTranslate<DataT,N> ScaleTranslate<DataT,N>::operator/(const ScaleTranslate<DataT,N> &in) const{
-    Vector<DataT,N> inverse = DataT(1)/in.scaleVector();
-    return ScaleTranslate(mS * inverse, inverse * (mT - in.translation()));
+    Vector<DataT,N> invScale = DataT(1)/in.scaleVector();
+    return ScaleTranslate(mS * invScale, invScale * (mT - in.translation()));
   }
 
   template<typename DataT,unsigned N>

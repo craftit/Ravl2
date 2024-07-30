@@ -48,14 +48,14 @@ namespace Ravl2
     inline void translate(const Vector<DataT, N> &T);
     //: Add a translation in direction T.
     
-    inline Vector<DataT,N> operator*(const Vector<DataT,N> &In) const;
+    inline Vector<DataT,N> operator*(const Vector<DataT,N> &in) const;
     //: Transform Vector,  Scale, Rotate, Translate.
     // Take a vector and put it though the transformation.
     
-    inline Affine<DataT,N> operator*(const Affine &In) const;
+    inline Affine<DataT,N> operator*(const Affine &in) const;
     //: Compose this transform with 'In'
     
-    inline Affine<DataT,N> operator/(const Affine &In) const;
+    inline Affine<DataT,N> operator/(const Affine &in) const;
     //: 'In' / 'Out' = this;
 
     Affine<DataT,N> inverse() const;
@@ -67,7 +67,7 @@ namespace Ravl2
     const Matrix<DataT,N,N> &SRMatrix() const { return mSR; }
     //: Get Scale/Rotate matrix.
     
-    inline Affine<DataT,N> &operator=(const Affine &Oth);
+    inline Affine<DataT,N> &operator=(const Affine &oth);
     //: Assignment.
 
     //! Check all components of transform are real.
@@ -124,20 +124,20 @@ namespace Ravl2
   }
   
   template<typename DataT,unsigned N>
-  Affine<DataT,N> Affine<DataT,N>::operator*(const Affine<DataT,N> &In) const{
-    return Affine(mSR * In.SRMatrix(), mSR * In.Translation() + mT);
+  Affine<DataT,N> Affine<DataT,N>::operator*(const Affine<DataT,N> &in) const{
+    return Affine(mSR * in.SRMatrix(), mSR * in.Translation() + mT);
   }
   
   template<typename DataT,unsigned N>
   Affine<DataT,N> Affine<DataT,N>::operator/(const Affine<DataT,N> &in) const{
-    Matrix<DataT,N,N> inverse = xt::linalg::inv(in.SRMatrix());
-    return Affine(mSR * inverse, inverse * (mT - in.Translation()));
+    Matrix<DataT,N,N> invSr = xt::linalg::inv(in.SRMatrix());
+    return Affine(mSR * invSr, invSr * (mT - in.Translation()));
   }
   
   template<typename DataT,unsigned N>
-  inline Affine<DataT,N> &Affine<DataT,N>::operator=(const Affine<DataT,N> &Oth) {
-    mSR = Oth.mSR;
-    mT = Oth.mT;
+  inline Affine<DataT,N> &Affine<DataT,N>::operator=(const Affine<DataT,N> &oth) {
+    mSR = oth.mSR;
+    mT = oth.mT;
     return *this;
   }
   

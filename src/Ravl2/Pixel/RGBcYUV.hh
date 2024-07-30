@@ -8,8 +8,8 @@
 #define RAVL_RGBCYUV_HEADER 1
 /////////////////////////////////////////////////////////////////////////
 
-#include "YUVValue.hh"
-#include "RGBValue.hh"
+#include "Ravl2/Pixel/YUVValue.hh"
+#include "Ravl2/Pixel/RGBValue.hh"
 
 namespace Ravl2 {
   extern const Matrix<float,3,3> ImageYUVtoRGBMatrix;
@@ -18,7 +18,7 @@ namespace Ravl2 {
   extern const Matrix<float,3,3> ImageRGBtoYUVMatrixStd;
   // Matrix to convert YUV values to RGB.
 
-  extern const Matrix<float,3,3> ImageRGBtoYUVMatrix;
+  extern const Matrix<const float,3,3> ImageRGBtoYUVMatrix;
   // Matrix to convert YUV values to RGB.
 
 #if 0

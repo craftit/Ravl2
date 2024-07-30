@@ -924,8 +924,6 @@ namespace Ravl2
     : public ArrayView<DataT,N>
   {
   public:
-    using value_type = DataT;
-    constexpr static unsigned dimensions = N;
 
     //! Create an empty array
     constexpr Array()
@@ -1107,11 +1105,11 @@ namespace Ravl2
       { return ArrayIter<DataT,1>(m_data + m_range.size()); }
 
     //! vertexBegin iterator
-    [[nodiscard]] constexpr ArrayIter<const DataT,1> begin() const
+    [[nodiscard]] constexpr ArrayIter<DataT,1> begin() const
     { return ArrayIter<DataT,1>(m_data); }
 
     //! vertexEnd iterator
-    [[nodiscard]] constexpr ArrayIter<const DataT,1> end() const
+    [[nodiscard]] constexpr ArrayIter<DataT,1> end() const
     { return ArrayIter<DataT,1>(m_data + m_range.size()); }
 
     //! Get the index of the given pointer within the array.
@@ -1119,15 +1117,6 @@ namespace Ravl2
       constexpr Index<1> indexOf(const DataT *ptr) const
       {
         return Index<1>({int(ptr - m_data)});
-      }
-
-      //! Fill array with value.
-      constexpr void fill(const DataT &val)
-      {
-        for(auto &at : *this) {
-          // cppcheck-suppress useStlAlgorithm
-          at = val;
-        }
       }
 
     [[nodiscard]] constexpr static int stride([[maybe_unused]] unsigned dim)
@@ -1177,6 +1166,13 @@ namespace Ravl2
       this->m_data = &m_buffer.get()[-range.min()];
     }
 
+    explicit constexpr Array(const IndexRange<1> &range,const DataT &initialData)
+      : ArrayView<DataT, 1>(range),
+	m_buffer(std::make_shared<DataT[]>(range.elements(),initialData))
+    {
+      this->m_data = &m_buffer.get()[-range.min()];
+    }
+
     //! Construct an empty array
     explicit constexpr Array() = default;
 
@@ -1219,7 +1215,7 @@ namespace Ravl2
   }
 
   template<typename ArrayT,typename DataT = typename ArrayT::value_type, typename OtherDataT, unsigned N = ArrayT::dimensions>
-  requires WindowedArray<ArrayT,DataT,N> && std::is_convertible_v<OtherDataT,DataT>
+  requires WindowedArray<ArrayT,DataT,N> && std::is_convertible_v<OtherDataT,DataT> && (N > 1)
   constexpr auto fill(const ArrayT &array,const OtherDataT &value)
   {
     // This produces faster code for Nd arrays

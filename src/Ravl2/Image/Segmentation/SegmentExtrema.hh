@@ -348,7 +348,7 @@ namespace Ravl2 {
     
     if(!levels.range().contains(valueRange))
       levels = Array<ExtremaChainPixelC *,1>(valueRange.expand(2));
-    levels.fill(nullptr);
+    fill(levels,nullptr);
     
     // Sort pixels into appropriate lists.
     RavlAssert(pixs.range().contains(img.range()));
@@ -434,7 +434,7 @@ namespace Ravl2 {
     
     if(!levels.range().contains(valueRange))
       levels = Array<ExtremaChainPixelC *,1>(valueRange.expand(2));
-    levels.fill(0);
+    fill(levels,0);
     
     // Clear chain image.
     

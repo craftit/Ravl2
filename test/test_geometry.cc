@@ -123,8 +123,8 @@ TEST_CASE("Circle2", "[Circle2]")
   CHECK(sqrMag < 0.01f);
   CHECK(std::abs(circle2.Radius() - 2) < 0.01f);
 
-  Circle2dC<float> circle;
 #if 0
+  Circle2dC<float> circle;
   RealT residual;
   if(!circle.FitLSQ(pnts,residual))
     return __LINE__;

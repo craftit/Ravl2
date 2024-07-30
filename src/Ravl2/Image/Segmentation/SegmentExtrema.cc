@@ -236,8 +236,7 @@ namespace Ravl2
     std::vector<ExtremaThresholdC> thresh(size_t(limitMaxValue + 2));
     size_t nthresh = 0;
     assert(limitMaxValue + 2 < std::numeric_limits<int>::max());
-    Array<uint32_t,1> chist(IndexRange<1>(0,limitMaxValue + 2));
-    chist.fill(0);
+    Array<uint32_t,1> chist(IndexRange<1>(0,limitMaxValue + 2),0);
 
     auto end = regionMap.begin() + labelAlloc;
 

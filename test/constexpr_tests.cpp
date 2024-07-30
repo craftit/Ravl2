@@ -3,6 +3,7 @@
 #include <catch2/catch_test_macros.hpp>
 #include "Ravl2/Array.hh"
 #include "Ravl2/ArrayIterZip.hh"
+#include "Ravl2/Geometry/Geometry.hh"
 
 TEST_CASE("Array iterators conform to c++ concepts.", "[Array]")
 {
@@ -44,7 +45,12 @@ TEST_CASE("Array iterators conform to c++ concepts.", "[Array]")
   static_assert(WindowedArray<ArrayView<int,1> ,int,1>, "ArrayView<int,2> does not satisfy WindowedArray");
   static_assert(WindowedArray<Array<int,1> ,int,1>, "Array<int,2> does not satisfy WindowedArray");
 
-
+  static_assert(sizeof(Vector2f) == 2*sizeof(float),"Vector2f is not packed");
+  static_assert(sizeof(Vector2d) == 2*sizeof(double),"Vector3d is not packed");
+  static_assert(sizeof(Vector3f) == 3*sizeof(float),"Vector3f is not packed");
+  static_assert(sizeof(Vector3d) == 3*sizeof(double),"Vector3d is not packed");
+  static_assert(sizeof(Matrix3f) == 9*sizeof(float),"Matrix3f is not packed");
+  static_assert(sizeof(Vector<uint8_t,3>) == 3*sizeof(uint8_t),"Vector<uint8_t,3> is not packed");
 }
 
 

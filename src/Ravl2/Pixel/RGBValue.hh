@@ -9,6 +9,7 @@
 
 #pragma once
 
+#include <array>
 #include "Ravl2/Geometry/Geometry.hh"
 
 namespace Ravl2

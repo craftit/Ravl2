@@ -170,7 +170,7 @@ namespace Ravl2
     {}
 
     //! Construct from a single value.
-    constexpr IndexRange(int at)
+    constexpr explicit IndexRange(int at)
       : m_min(at),
 	m_max(at)
     {}

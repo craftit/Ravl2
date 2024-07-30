@@ -96,19 +96,16 @@ namespace Ravl2
 
   };
 
+  //! Stream input.
   template<class CompT>
   inline
   std::istream &operator>>(std::istream &strm,YUVValueC<CompT> &val) 
-  { return strm >> ((Vector<CompT,3> &)(val)); }
-  //: Stream input.
-  
+  { return strm >> static_cast<Vector<CompT,3> &>(val); }
+
+  //! Stream output.
   template<class CompT>
   inline
   std::ostream &operator<<(std::ostream &strm,const YUVValueC<CompT> &val) 
-  { return strm << ((const Vector<CompT,3> &)(val)); }
-  //: Stream output.
+  { return strm << static_cast<const Vector<CompT,3> &>(val); }
 
 }
-
-
-#endif

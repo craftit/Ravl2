@@ -19,24 +19,22 @@ namespace Ravl2 {
    V = 0.877 (R-Y)
   */
 
-  static const float Init_RGBtoYUV_Matrix[] =
-    {  0.2990000000000,  0.5870000000000,  0.1140000000000,
-      -0.1471080000000, -0.2888040000000,  0.4359120000000,
-       0.6147770000000, -0.5147990000000, -0.0999780000000 };
-  
-  
-  const Matrix<float,3,3> ImageRGBtoYUVMatrixStd(Init_RGBtoYUV_Matrix );
-  
+  const Matrix<float,3,3> ImageRGBtoYUVMatrixStd(
+    { { 0.2990000000000f,  0.5870000000000f,  0.1140000000000f },
+    {-0.1471080000000f, -0.2888040000000f,  0.4359120000000f },
+    {0.6147770000000f, -0.5147990000000f, -0.0999780000000f }
+    });
+
   // So from YUV to RGB should just be the inverse:
 
-  static const float Init_YUVtoRGB_Matrix[] =
-    {1.0000000000000,  0.0000000000000,  1.1402508551881,
-     1.0000000000000, -0.3947313749117, -0.5808092090311,
-     1.0000000000000,  2.0325203252033,  0.0000000000000};
-  
-  const Matrix<float,3,3> ImageYUVtoRGBMatrix(Init_YUVtoRGB_Matrix);
-  
-  const Matrix<float,3,3> ImageRGBtoYUVMatrix(ImageRGBtoYUVMatrixStd * ((1./1.175)));
+  const Matrix<float,3,3> ImageYUVtoRGBMatrix(
+    {{1.0000000000000f,  0.0000000000000f,  1.1402508551881f},
+     {1.0000000000000f, -0.3947313749117f, -0.5808092090311f},
+     {1.0000000000000f,  2.0325203252033f,  0.0000000000000f}}
+    );
+
+#if 0
+  const Matrix<float,3,3> ImageRGBtoYUVMatrix = ImageRGBtoYUVMatrixStd * ((1./1.175));
   
   IntT *UBLookup() {
     static IntT values[256];
@@ -65,7 +63,7 @@ namespace Ravl2 {
   const IntT *RGBcYUV_ubLookup = UBLookup();
   const IntT *RGBcYUV_vrLookup = VRLookup();
   const IntT *RGBcYUV_uvgLookup = UVGLookup();
-
+#endif
 }
 
 

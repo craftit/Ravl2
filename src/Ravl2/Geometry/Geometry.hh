@@ -75,13 +75,13 @@ namespace Ravl2
     using ConstVectorViewT = std::span<const float>;
 
     template<typename DataT, size_t N>
-    using Point = xt::xtensor_fixed<DataT, xt::xshape<N>>;
+    using Point = xt::xtensor_fixed<DataT, xt::xshape<N>, XTENSOR_DEFAULT_LAYOUT,false>;
 
     template<typename DataT, size_t N>
-    using Vector = xt::xtensor_fixed<DataT, xt::xshape<N>>;
+    using Vector = xt::xtensor_fixed<DataT, xt::xshape<N>, XTENSOR_DEFAULT_LAYOUT,false>;
 
     template<typename DataT, size_t N, size_t M>
-    using Matrix = xt::xtensor_fixed<DataT, xt::xshape<N,M>>;
+    using Matrix = xt::xtensor_fixed<DataT, xt::xshape<N,M>, XTENSOR_DEFAULT_LAYOUT,false>;
 
     template<typename DataT,unsigned N>
     using Tensor = xt::xtensor<DataT, N>;
