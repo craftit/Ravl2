@@ -78,7 +78,7 @@ TEST_CASE("SegmentExtrema")
 
     SegmentExtremaC<PixelT> segmentExtrema(8);
 
-    std::vector<Boundary> boundaries = segmentExtrema.Apply(img);
+    std::vector<Boundary> boundaries = segmentExtrema.apply(img);
 
     REQUIRE(!boundaries.empty());
     CHECK(boundaries.size() == 2);
@@ -104,21 +104,21 @@ TEST_CASE("SegmentExtrema")
   SECTION("Multi level")
   {
     using ByteT = uint8_t;
-    ImageC<ByteT> img({100,100}, 196);
-    DrawFrame(img,(ByteT) 128,IndexRange2dC(10,90,10,90),true);
-    DrawFrame(img,(ByteT) 196,IndexRange2dC(20,30,20,30),true);
-    DrawFrame(img,(ByteT) 64,IndexRange2dC(20,30,40,50),true);
-    DrawFrame(img,(ByteT) 196,IndexRange2dC(40,50,40,50),true);
+    Array<ByteT,2> img({100,100}, 196);
+    DrawFilledFrame(img,ByteT(128),IndexRange<2>({{10,90},{10,90}}));
+    DrawFilledFrame(img,ByteT(196),IndexRange<2>({{20,30},{20,30}}));
+    DrawFilledFrame(img,ByteT(64),IndexRange<2>({{20,30},{40,50}}));
+    DrawFilledFrame(img,ByteT(196),IndexRange<2>({{40,50},{40,50}}));
     SegmentExtremaC<ByteT> segExt(5);
-    DListC<BoundaryC> bnd = segExt.Apply(img);
-    DListC<ImageC<IntT> > segs = segExt.ApplyMask(img);
+    std::vector<Boundary> bnd = segExt.apply(img);
+    std::vector<Array<int,2> > segs = segExt.applyMask(img);
     SPDLOG_INFO("Bounds: {}  Segs: {}", bnd.size(), segs.size());
 
-    for(DLIterC<ImageC<IntT> > it(segs);it;it++) {
-      IndexRange2dC frame = it->Frame();
-      frame.ClipBy(img.Frame());
-      for(Array2dIter2C<ByteT,IntT> iit(img,*it,frame);iit;iit++)
-        if(iit.Data2() != 0) iit.Data1() = 255;
+    for(auto &it : segs) {
+      IndexRange<2> frame = it.range();
+      frame.clipBy(img.range());
+      for(auto iit = begin(clip(img,frame),it);iit.valid();++iit)
+        if(iit.template data<1>() != 0) iit.template data<0>() = 255;
     }
   }
 }
@@ -140,7 +140,7 @@ TEST_CASE("ConnectedComponents")
   ConnectedComponents<unsigned> conComp(false);
   auto [segMap, regionCount] = conComp.apply(test);
 
-  //cerr << "Regions=" << result.Data2() << "\n";
+  //cerr << "Regions=" << result.data<1>() << "\n";
   //cerr << segMap;
   CHECK(regionCount == 4);
   CHECK(segMap[1][1] == segMap[1][2]);

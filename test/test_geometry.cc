@@ -69,11 +69,11 @@ TEST_CASE("PolygonIter", "[Polygon2dC]")
   unsigned int i = 0;
   for(Polygon2dIterC<float> it(polygon); it; ++it, ++i) {
     //SPDLOG_INFO("{} {}", it.Row(), it.RowIndexRange());
-    EXPECT_TRUE(range[0].contains(it.Row()));
-    EXPECT_TRUE(range[1].contains(it.RowIndexRange()));
+    EXPECT_TRUE(range[0].contains(it.row()));
+    EXPECT_TRUE(range[1].contains(it.rowIndexRange()));
     CHECK(i < expectedResult.size());
-    EXPECT_EQ(it.Row(), std::get<0>(expectedResult[i]));
-    EXPECT_EQ(it.RowIndexRange(), std::get<1>(expectedResult[i]));
+    EXPECT_EQ(it.row(), std::get<0>(expectedResult[i]));
+    EXPECT_EQ(it.rowIndexRange(), std::get<1>(expectedResult[i]));
   }
   EXPECT_EQ(i, expectedResult.size());
 }

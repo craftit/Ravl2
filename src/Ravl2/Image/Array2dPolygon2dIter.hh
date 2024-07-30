@@ -88,7 +88,7 @@ namespace Ravl2
 
   template<class DataT>
   void Array2dPolygon2dIterC<DataT>::First() {
-    m_polygonIter.First();
+    m_polygonIter.first();
     Next();
   }
 

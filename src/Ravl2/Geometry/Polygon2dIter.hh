@@ -61,40 +61,40 @@ namespace Ravl2
     //! Construct from a polygon
     [[maybe_unused]] inline explicit Polygon2dIterC(const Polygon2dC<RealT> &polygon)
       : m_polygon(polygon)
-    { First(); }
+    { first(); }
 
     //! Goto first scan line in the polygon.
-    void First();
+    void first();
 
     //! At valid position ?
     //! \return true if we're at a valid scanline.
-    [[nodiscard]] inline bool IsElm() const { return m_valid; }
+    [[nodiscard]] inline bool valid() const { return m_valid; }
 
     //! At a valid position ?
     //! \return true if we're at a valid scanline.
     operator bool() const
-    { return IsElm(); }
+    { return valid(); }
 
     //! Get the current row for the scanline
-    [[nodiscard]] inline const int &Row() const { return m_row; }
+    [[nodiscard]] inline const int &row() const { return m_row; }
 
     //! Get range.
     //! Largest error from radius should be less than 0.5
-    [[nodiscard]] inline const IndexRange<1> &RowIndexRange() const { return m_indexRange; }
+    [[nodiscard]] inline const IndexRange<1> &rowIndexRange() const { return m_indexRange; }
 
     //! Goto next scan line.
     //! Returns true if we're now at a valid scanline.
-    bool Next();
+    bool next();
 
     //! Goto next point.
     // Returns true if we're now at a valid scanline.
     bool operator++(int)
-    { return Next(); }
+    { return next(); }
 
     //! Goto next point.
     // Returns true if we're now at a valid scanline.
     bool operator++()
-    { return Next(); }
+    { return next(); }
   private:
     Polygon2dC<RealT> m_polygon;
     int m_row = 0;

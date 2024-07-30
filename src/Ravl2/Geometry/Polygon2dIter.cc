@@ -12,7 +12,7 @@ namespace Ravl2
 {
 
   template<typename RealT>
-  void Polygon2dIterC<RealT>::First() {
+  void Polygon2dIterC<RealT>::first() {
     m_iel = IELC();
     m_ael = AELC();
     if (m_polygon.size() <= 2) {
@@ -26,11 +26,11 @@ namespace Ravl2
     }
 
     m_row = m_iel.MinRow() - 1;
-    Next();
+    next();
   }
 
   template<typename RealT>
-  bool Polygon2dIterC<RealT>::Next() 
+  bool Polygon2dIterC<RealT>::next()
   {
     if ((m_valid = m_ael.Next(m_indexRange, m_row)))
       return true;
