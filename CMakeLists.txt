@@ -29,7 +29,7 @@ message(STATUS "CMake version: ${CMAKE_VERSION}")
 
 # Sort out some blas/lapack stuff
 #set(BLA_VENDOR "OpenBLAS")
-set(BLA_PKGCONFIG_BLAS "openblas")
+set(BLA_PKGCONFIG_BLAS -lopenblas)
 include(ProjectOptions.cmake)
 
 
