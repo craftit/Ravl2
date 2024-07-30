@@ -5,13 +5,8 @@ include(cmake/CPM.cmake)
 # targets
 function(RAVL2_setup_dependencies)
 
-  # Sort out some blas/lapack stuff
-  set(BLA_VENDOR "OpenBLAS")
-  #set(BLA_PREFER_PKGCONFIG ON)
   find_package(BLAS REQUIRED)
   find_package(LAPACK REQUIRED)
-  # print cmake version
-  message(STATUS "CMake version: ${CMAKE_VERSION}")
 
   # Try and use native packages if they're available
 

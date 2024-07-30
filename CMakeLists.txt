@@ -23,6 +23,14 @@ project(
   LANGUAGES CXX C)
 
 include(cmake/PreventInSourceBuilds.cmake)
+
+# print cmake version
+message(STATUS "CMake version: ${CMAKE_VERSION}")
+
+# Sort out some blas/lapack stuff
+set(BLA_VENDOR "OpenBLAS")
+set(BLA_PREFER_PKGCONFIG ON)
+
 include(ProjectOptions.cmake)
 
 
