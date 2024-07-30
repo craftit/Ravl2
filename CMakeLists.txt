@@ -28,10 +28,11 @@ include(cmake/PreventInSourceBuilds.cmake)
 message(STATUS "CMake version: ${CMAKE_VERSION}")
 
 # Sort out some blas/lapack stuff
+set(BLAS_LIBS /usr/lib/x86_64-linux-gnu/blas)
 set(BLA_VENDOR "Generic")
 set(BLA_PKGCONFIG_BLAS "blas")
-include(ProjectOptions.cmake)
 
+include(ProjectOptions.cmake)
 
 RAVL2_setup_options()
 
