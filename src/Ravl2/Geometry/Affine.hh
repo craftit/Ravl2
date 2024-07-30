@@ -77,13 +77,13 @@ namespace Ravl2
     // Take a vector and put it though the transformation.
     auto operator()(const Vector<DataT,N> &pnt) const
     {
-      return xt::linalg::dot(mSR,pnt) + mT;
+      return Vector<DataT,N>(xt::linalg::dot(mSR,pnt) + mT);
     }
 
     //: Compose this transform with 'In'
-    inline auto operator()(const Affine &In) const
+    inline auto operator()(const Affine &in) const
     {
-      return Affine(xt::linalg::dot(mSR,In.SRMatrix()), xt::linalg::dot(mSR,In.Translation()) + mT);
+      return Affine(xt::linalg::dot(mSR, in.SRMatrix()), xt::linalg::dot(mSR, in.Translation()) + mT);
     }
 
 

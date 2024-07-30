@@ -50,7 +50,7 @@ macro(RAVL2_setup_options)
     option(RAVL2_ENABLE_CACHE "Enable ccache" OFF)
   else()
     # LTO seems to stop debug builds from working
-    if(CMAKE_BUILD_TYPE STREQUAL "Debug" OR CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo")
+    if(CMAKE_BUILD_TYPE STREQUAL "Debug" OR CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo" OR CMAKE_BUILD_TYPE STREQUAL "Default")
       option(RAVL2_ENABLE_IPO "Enable IPO/LTO" OFF)
     else()
       option(RAVL2_ENABLE_IPO "Enable IPO/LTO" ON)
