@@ -434,7 +434,7 @@ namespace Ravl2 {
     
     if(!levels.range().contains(valueRange))
       levels = Array<ExtremaChainPixelC *,1>(valueRange.expand(2));
-    fill(levels,0);
+    fill(levels, nullptr);
     
     // Clear chain image.
     

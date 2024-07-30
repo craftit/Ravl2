@@ -15,7 +15,8 @@ function(RAVL2_setup_dependencies)
   find_package(CLI11 QUIET)
   find_package(nlohmann_json QUIET)
 
-  # Sort out some blas
+  # Sort out some blas/lapack stuff
+  set(BLA_VENDOR "OpenBLAS")
   find_package(BLAS REQUIRED)
   find_package(LAPACK REQUIRED)
 
