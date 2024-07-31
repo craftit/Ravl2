@@ -5,8 +5,8 @@ include(cmake/CPM.cmake)
 # targets
 function(RAVL2_setup_dependencies)
 
-  find_package(BLAS REQUIRED)
-  find_package(LAPACK REQUIRED)
+#  find_package(BLAS REQUIRED)
+#  find_package(LAPACK REQUIRED)
 
   # Try and use native packages if they're available
 
