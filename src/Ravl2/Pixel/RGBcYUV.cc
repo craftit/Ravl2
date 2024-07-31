@@ -33,9 +33,9 @@ namespace Ravl2 {
      {1.0000000000000f,  2.0325203252033f,  0.0000000000000f}}
     );
 
-#if 0
   const Matrix<float,3,3> ImageRGBtoYUVMatrix = ImageRGBtoYUVMatrixStd * ((1./1.175));
-  
+#if 0
+
   IntT *UBLookup() {
     static IntT values[256];
     IntT *off = &(values[128]);

@@ -1241,6 +1241,31 @@ namespace Ravl2
     return os;
   }
 
+  //! Get the address of the minimum element of the array.
+  template<typename ArrayT,typename DataT = typename ArrayT::value_type,unsigned N = ArrayT::dimensions>
+  requires WindowedArray<ArrayT,DataT,N>
+  [[nodiscard]] constexpr DataT *addressOfMin(ArrayT &arr)
+  {
+    const DataT *mPtr = arr.origin_address();
+    for(unsigned i = 0;i < N-1;i++)
+    { mPtr += arr.strides(i) * arr.range(i).min(); }
+    mPtr += arr.range(N-1).min(); // The last index always has a stride of 1.
+    return mPtr;
+  }
+
+  //! Get the address of the minimum element of the array.
+  template<typename ArrayT,typename DataT = typename ArrayT::value_type,unsigned N = ArrayT::dimensions>
+  requires WindowedArray<ArrayT,DataT,N>
+  [[nodiscard]] constexpr const DataT *addressOfMin(const ArrayT &arr)
+  {
+    const DataT *mPtr = arr.origin_address();
+    for(unsigned i = 0;i < N-1;i++)
+    { mPtr += arr.strides(i) * arr.range(i).min(); }
+    mPtr += arr.range(N-1).min();  // The last index always has a stride of 1.
+    return mPtr;
+  }
+
+
   void doNothing();
 
   // Let everyone know there's an implementation already generated for common cases

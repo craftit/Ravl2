@@ -6,12 +6,19 @@ find_package(fmt REQUIRED)
 find_package(spdlog REQUIRED)
 #find_package(lapack REQUIRED)
 #find_package(blas REQUIRED)
+find_package(dlib QUIET)
+
 
 add_subdirectory(Geometry)
 add_subdirectory(Math)
 add_subdirectory(Pixel)
 add_subdirectory(Image)
 add_subdirectory(OpenCV)
+
+# If dlib is found, add the dlib subdirectory
+if(TARGET dlib::dlib)
+    add_subdirectory(Dlib)
+endif()
 
 include(GenerateExportHeader)
 

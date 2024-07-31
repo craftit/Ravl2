@@ -18,7 +18,7 @@ namespace Ravl2 {
   extern const Matrix<float,3,3> ImageRGBtoYUVMatrixStd;
   // Matrix to convert YUV values to RGB.
 
-  extern const Matrix<const float,3,3> ImageRGBtoYUVMatrix;
+  extern const Matrix<float,3,3> ImageRGBtoYUVMatrix;
   // Matrix to convert YUV values to RGB.
 
 #if 0
