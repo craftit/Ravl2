@@ -23,14 +23,20 @@
 #pragma GCC diagnostic ignored "-Wuseless-cast"
 #endif
 #include <dlib/array2d.h>
+#include <dlib/matrix.h>
+
 #pragma GCC diagnostic pop
 
+#include "Ravl2/Geometry/Geometry.hh"
 #include "Ravl2/Array.hh"
 #include "Ravl2/Index.hh"
 #include "Ravl2/Assert.hh"
 
+// As Dlib uses template functions, we'll put this in a namespace to avoid potential conflicts.
+
 namespace Ravl2::DLibConvert
 {
+
   //! Returns the number of rows in the given image
   //!  ensures
   //!    - returns the number of rows in the given image
@@ -160,5 +166,25 @@ namespace Ravl2::DLibConvert
     }
     return ArrayView<DataT,2>(reinterpret_cast<DataT*>(image_data(anArray)), indexRange, {step/sizeof(DataT),1});
   }
+
+  //! Convert to a matrix.
+  //! Perhaps we should go straight to xtensor equivalent?
+
+  template<typename DataT, long num_rows = 0, long num_cols = 0, typename mem_manager = dlib::default_memory_manager, typename layout = dlib::row_major_layout>
+  requires (num_rows > 0) && (num_cols > 0)
+  Matrix<DataT,num_cols,num_rows> toMatrix(const dlib::matrix<DataT,num_rows,num_cols,mem_manager,layout>& m)
+  {
+    Matrix<DataT,num_cols,num_rows> ret;
+    for(long r = 0; r < num_rows; r++) {
+      for(long c = 0; c < num_cols; c++) {
+         ret(c,r) = m(r,c);
+      }
+    }
+    return ret;
+  }
+
+  // Deal with column vector: dlib::matrix<double,0,1>
+
+
 }
 
