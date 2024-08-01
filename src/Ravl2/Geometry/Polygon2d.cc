@@ -1,4 +1,4 @@
-// This file is part of RAVL, Recognition And Vision Library 
+// This file is part of RAVL, Recognition And Vision Library
 // Copyright (C) 2001, University of Surrey
 // This code may be redistributed under the terms of the GNU Lesser
 // General Public License (LGPL). See the lgpl.licence file for details or
@@ -11,22 +11,23 @@
 namespace Ravl2
 {
 
-  template<typename RealT>
-  Polygon2dC<RealT>::Polygon2dC(const Range<RealT,2> &range) {
+  template <typename RealT>
+  Polygon2dC<RealT>::Polygon2dC(const Range<RealT, 2> &range)
+  {
     InsLast(range.TopLeft());
     InsLast(range.TopRight());
     InsLast(range.BottomRight());
     InsLast(range.BottomLeft());
   }
 
-
-  template<typename RealT>
-  RealT Polygon2dC<RealT>::area() const {
+  template <typename RealT>
+  RealT Polygon2dC<RealT>::area() const
+  {
     RealT sum = 0.0;
-    if (!this -> empty()) {
+    if(!this->empty()) {
       auto pLast = CircularIter<PointArrayT>::Last(*this);
 
-      for (auto ptr = CircularIter<PointArrayT>::First(*this); ptr != pLast; ++ptr)
+      for(auto ptr = CircularIter<PointArrayT>::First(*this); ptr != pLast; ++ptr)
         sum += ptr.Data().X() * ptr.NextData().Y() - ptr.NextData().X() * ptr.Data().Y();
       // close the polygon
       sum += pLast.Data().X() * pLast.NextCrcData().Y() - pLast.NextCrcData().X() * pLast.Data().Y();
@@ -34,17 +35,15 @@ namespace Ravl2
     return sum * 0.5;
   }
 
-
-  template<typename RealT>
-  Point<RealT,2> Polygon2dC<RealT>::Centroid() const
+  template <typename RealT>
+  Point<RealT, 2> Polygon2dC<RealT>::Centroid() const
   {
     RealT x = 0.0;
     RealT y = 0.0;
-    if (!this->empty())
-    {
+    if(!this->empty()) {
       auto pLast = CircularIter<PointArrayT>::Last(*this);
 
-      for (auto ptr = CircularIter<PointArrayT>::First(*this); ptr != pLast; ptr++) {
+      for(auto ptr = CircularIter<PointArrayT>::First(*this); ptr != pLast; ptr++) {
         RealT temp = ptr.Data().X() * ptr.NextData().Y() - ptr.NextData().X() * ptr.Data().Y();
         x += (ptr.Data().X() + ptr.NextData().X()) * temp;
         y += (ptr.Data().Y() + ptr.NextData().Y()) * temp;
@@ -55,7 +54,7 @@ namespace Ravl2
       y += (pLast.Data().Y() + pLast.NextCrcData().Y()) * temp;
     }
     RealT scale = 1.0 / (6.0 * area());
-    return Point<RealT,2>(x * scale, y * scale);
+    return Point<RealT, 2>(x * scale, y * scale);
   }
 
 #if 0
@@ -391,4 +390,4 @@ namespace Ravl2
     return std::abs(overlap.area()) / Max(std::abs(thisArea),std::abs(polyArea));
   }
 #endif
-}
+}// namespace Ravl2

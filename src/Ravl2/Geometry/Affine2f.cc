@@ -1,4 +1,4 @@
-// This file is part of RAVL, Recognition And Vision Library 
+// This file is part of RAVL, Recognition And Vision Library
 // Copyright (C) 2001, University of Surrey
 // This code may be redistributed under the terms of the GNU Lesser
 // General Public License (LGPL). See the lgpl.licence file for details or
@@ -7,9 +7,8 @@
 
 #include "Ravl2/Geometry/Affine2f.hh"
 
-
-
-namespace RavlN {
+namespace RavlN
+{
 
 #if 0
   Affine2dC FitAffine(const SArray1dC<Point2dC> &org,const SArray1dC<Point2dC> &newPos, const SArray1dC<RealT> &weights)
@@ -396,4 +395,4 @@ namespace RavlN {
     return ret;
   }
 #endif
-}
+}// namespace RavlN

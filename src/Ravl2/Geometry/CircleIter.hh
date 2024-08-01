@@ -1,4 +1,4 @@
-// This file is part of RAVL, Recognition And Vision Library 
+// This file is part of RAVL, Recognition And Vision Library
 // Copyright (C) 2001, University of Surrey
 // This code may be redistributed under the terms of the GNU Lesser
 // General Public License (LGPL). See the lgpl.licence file for details or
@@ -15,15 +15,17 @@ namespace Ravl2
 {
   //! Iterate around a circle with integer coordinates.
   //! This does NOT move linearly around the circle, but through octants.
-  
+
   class CircleIterC
   {
   public:
     //! Constructor.
     explicit CircleIterC(unsigned int nradius = 1, const Index<2> &nOffset = Index<2>(0, 0))
-      : radius(int(nradius)),
-	offset(nOffset)
-    { First(); }
+        : radius(int(nradius)),
+          offset(nOffset)
+    {
+      First();
+    }
 
     //! Goto first point on circle.
     void First();
@@ -33,7 +35,9 @@ namespace Ravl2
 
     //! At a valid position ?
     [[nodiscard]] operator bool() const
-    { return IsElm(); }
+    {
+      return IsElm();
+    }
 
     //! Get point.
     // Largest error from radius should be less than 0.5
@@ -41,7 +45,9 @@ namespace Ravl2
 
     //! Get current point.
     [[nodiscard]] const Index<2> &operator*() const
-    { return data; }
+    {
+      return data;
+    }
 
     //! Goto next point.
     // Returns true if we're now at a valid point.
@@ -50,15 +56,18 @@ namespace Ravl2
     //! Goto next point.
     // Returns true if we're now at a valid point.
     bool operator++(int)
-    { return Next(); }
+    {
+      return Next();
+    }
+
   private:
     //:
-    int octant = 0; // Current octant.
+    int octant = 0;// Current octant.
     int radius = 1;
-    int d = 0,deltaE = 0,deltaSE = 0;
-    int x= 0;
+    int d = 0, deltaE = 0, deltaSE = 0;
+    int x = 0;
     int y = 0;
     Index<2> offset {};
     Index<2> data {};
   };
-}  
+}// namespace Ravl2

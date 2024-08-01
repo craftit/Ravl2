@@ -1,4 +1,4 @@
-// This file is part of RAVL, Recognition And Vision Library 
+// This file is part of RAVL, Recognition And Vision Library
 // Copyright (C) 2002, University of Surrey
 // This code may be redistributed under the terms of the GNU Lesser
 // General Public License (LGPL). See the lgpl.licence file for details or
@@ -14,36 +14,36 @@ namespace Ravl2
   std::string_view toString(CrackCodeT cc)
   {
     switch(cc) {
-    case CrackCodeT::CR_DOWN:
-      return "DOWN";
-    case CrackCodeT::CR_RIGHT:
-      return "RIGHT";
-    case CrackCodeT::CR_UP:
-      return "UP";
-    case CrackCodeT::CR_LEFT:
-      return "LEFT";
-    case CrackCodeT::CR_NODIR:
-      return "NODIR";
-    default:
-      return "Unknown";
+      case CrackCodeT::CR_DOWN:
+        return "DOWN";
+      case CrackCodeT::CR_RIGHT:
+        return "RIGHT";
+      case CrackCodeT::CR_UP:
+        return "UP";
+      case CrackCodeT::CR_LEFT:
+        return "LEFT";
+      case CrackCodeT::CR_NODIR:
+        return "NODIR";
+      default:
+        return "Unknown";
     }
   }
 
   std::string_view toString(RelativeCrackCodeT cc)
   {
     switch(cc) {
-    case RelativeCrackCodeT::CR_AHEAD:
-      return "AHEAD";
-    case RelativeCrackCodeT::CR_TO_LEFT:
-      return "TO_LEFT";
-    case RelativeCrackCodeT::CR_BACK:
-      return "BACK";
-    case RelativeCrackCodeT::CR_TO_RIGHT:
-      return "TO_RIGHT";
-    case RelativeCrackCodeT::CR_RNODIR:
-      return "RNODIR";
-    default:
-      return "Unknown";
+      case RelativeCrackCodeT::CR_AHEAD:
+        return "AHEAD";
+      case RelativeCrackCodeT::CR_TO_LEFT:
+        return "TO_LEFT";
+      case RelativeCrackCodeT::CR_BACK:
+        return "BACK";
+      case RelativeCrackCodeT::CR_TO_RIGHT:
+        return "TO_RIGHT";
+      case RelativeCrackCodeT::CR_RNODIR:
+        return "RNODIR";
+      default:
+        return "Unknown";
     }
   }
 
@@ -97,10 +97,4 @@ namespace Ravl2
     return false;
   }
 
-
-
-
-
-
-
-}
+}// namespace Ravl2

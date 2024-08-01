@@ -34,16 +34,15 @@ namespace Ravl2
     void SetupLUT(int form);
 
     //! Generate a corner map and a list of non zero components.
-    [[nodiscard]] std::vector<CornerC> Corners(const Array<ByteT,2> &img,Array<int,2> &cornerMap) const;
+    [[nodiscard]] std::vector<CornerC> Corners(const Array<ByteT, 2> &img, Array<int, 2> &cornerMap) const;
 
     //! Remove non-maximal peaks.
-    static void Peaks(std::vector<CornerC> &list,const Array<int,2> &cornerMap) ;
+    static void Peaks(std::vector<CornerC> &list, const Array<int, 2> &cornerMap);
 
   private:
-    std::array<uint8_t,516> Lut; // Brightness LUT.
+    std::array<uint8_t, 516> Lut;// Brightness LUT.
     const uint8_t *bp = nullptr;
     int threshold = 20;
   };
 
-}
-
+}// namespace Ravl2

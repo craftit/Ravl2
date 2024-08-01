@@ -1,4 +1,4 @@
-// This file is part of RAVL, Recognition And Vision Library 
+// This file is part of RAVL, Recognition And Vision Library
 // Copyright (C) 2003, University of Surrey
 // This code may be redistributed under the terms of the GNU Lesser
 // General Public License (LGPL). See the lgpl.licence file for details or
@@ -13,31 +13,28 @@
 
 #include "Ravl2/Array.hh"
 
-namespace Ravl2 {
+namespace Ravl2
+{
 
-  template<class StatT> class RegionSetC;
-  
+  template <class StatT>
+  class RegionSetC;
+
   //: Virtual segmentation class (provides interface for real classes)
-  
-  template<class PixelT, class StatT>
-  class SegmentRegionBodyC 
-    : public RCBodyVC 
-  { 
-  public: 
+
+  template <class PixelT, class StatT>
+  class SegmentRegionBodyC : public RCBodyVC
+  {
+  public:
     SegmentRegionBodyC() {}
     //: Default constructor.
-    
-    virtual RegionSetC<StatT> Apply(const ArrayAccess<PixelT,2> &in) {
+
+    virtual RegionSetC<StatT> Apply(const ArrayAccess<PixelT, 2> &in)
+    {
       std::cout << "This function cannot be used\n";
       return RegionSetC<StatT>();
     }
     //: Perform segmentation on "in"
   };
-  
 
-}
+}// namespace Ravl2
 #endif
-
-
-
-

@@ -1,4 +1,4 @@
-// This file is part of RAVL, Recognition And Vision Library 
+// This file is part of RAVL, Recognition And Vision Library
 // Copyright (C) 2001, University of Surrey
 // This code may be redistributed under the terms of the GNU Lesser
 // General Public License (LGPL). See the lgpl.licence file for details or
@@ -11,14 +11,15 @@
 #include "Ravl2/Pixel/YUVValue.hh"
 #include "Ravl2/Pixel/RGBValue.hh"
 
-namespace Ravl2 {
-  extern const Matrix<float,3,3> ImageYUVtoRGBMatrix;
-  // Matrix to convert YUV values to RGB.
-  
-  extern const Matrix<float,3,3> ImageRGBtoYUVMatrixStd;
+namespace Ravl2
+{
+  extern const Matrix<float, 3, 3> ImageYUVtoRGBMatrix;
   // Matrix to convert YUV values to RGB.
 
-  extern const Matrix<float,3,3> ImageRGBtoYUVMatrix;
+  extern const Matrix<float, 3, 3> ImageRGBtoYUVMatrixStd;
+  // Matrix to convert YUV values to RGB.
+
+  extern const Matrix<float, 3, 3> ImageRGBtoYUVMatrix;
   // Matrix to convert YUV values to RGB.
 
 #if 0
@@ -99,7 +100,6 @@ namespace Ravl2 {
   }
   //: Convert byte YUV422 values to byte RGB value.
 #endif
-}
-
+}// namespace Ravl2
 
 #endif

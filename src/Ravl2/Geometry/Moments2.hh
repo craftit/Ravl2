@@ -1,4 +1,4 @@
-// This file is part of RAVL, Recognition And Vision Library 
+// This file is part of RAVL, Recognition And Vision Library
 // Copyright (C) 2001, University of Surrey
 // This code may be redistributed under the terms of the GNU Lesser
 // General Public License (LGPL). See the lgpl.licence file for details or
@@ -18,7 +18,7 @@ namespace Ravl2
 
   //: The moments up to 2nd order in 2D space
 
-  template<class RealT>
+  template <class RealT>
   class Moments2
   {
   public:
@@ -32,7 +32,9 @@ namespace Ravl2
     //: Constructor from a set of values.
 
     void reset()
-    { m00 = m10 = m01 = m20 = m11 = m02 = 0.0; }
+    {
+      m00 = m10 = m01 = m20 = m11 = m02 = 0.0;
+    }
     //: reset all counters to zero.
 
     inline void addPixel(const Index<2> &pxl);
@@ -73,73 +75,107 @@ namespace Ravl2
     // the value 1 corresponds to a one-dimensional object.
 
     inline RealT M00() const
-    { return m00; }
+    {
+      return m00;
+    }
     //: Access 00 component.
 
     inline RealT M10() const
-    { return m10; }
+    {
+      return m10;
+    }
     //: Access 10 component.
 
     inline RealT M01() const
-    { return m01; }
+    {
+      return m01;
+    }
     //: Access 01 component.
 
     inline RealT M20() const
-    { return m20; }
+    {
+      return m20;
+    }
     //: Access 20 component.
 
     inline RealT M11() const
-    { return m11; }
+    {
+      return m11;
+    }
     //: Access 11 component.
 
     inline RealT M02() const
-    { return m02; }
+    {
+      return m02;
+    }
     //: Access 02 component.
 
     inline RealT &M00()
-    { return m00; }
+    {
+      return m00;
+    }
     //: Access 00 component.
 
     inline RealT &M10()
-    { return m10; }
+    {
+      return m10;
+    }
     //: Access 10 component.
 
     inline RealT &M01()
-    { return m01; }
+    {
+      return m01;
+    }
     //: Access 01 component.
 
     inline RealT &M20()
-    { return m20; }
+    {
+      return m20;
+    }
     //: Access 20 component.
 
     inline RealT &M11()
-    { return m11; }
+    {
+      return m11;
+    }
     //: Access 11 component.
 
     inline RealT &M02()
-    { return m02; }
+    {
+      return m02;
+    }
     //: Access 02 component.
 
     inline RealT area() const
-    { return m00; }
+    {
+      return m00;
+    }
     //: Returns the moment m00, ie the area of the 2 dimensional object.
 
     inline RealT centroidX() const
-    { return M10() / M00(); }
+    {
+      return M10() / M00();
+    }
     //: Returns the x co-ordinate of the centroid.
     // The M00 moment must not be 0.
 
     inline RealT centroidY() const
-    { return M01() / M00(); }
+    {
+      return M01() / M00();
+    }
     //: Returns the y co-ordinate of the centroid.
     // The M00 moment must not be 0.
 
     inline RealT varX() const
-    { return m20 / m00 -sqr(centroidX()); }
+    {
+      return m20 / m00 - sqr(centroidX());
+    }
     //: Returns the variance of the x.
 
     inline RealT varY() const
-    { return m02 / m00 -sqr(centroidY()); }
+    {
+      return m02 / m00 - sqr(centroidY());
+    }
     //: Returns the variance of the y.
 
     inline RealT slopeY() const;
@@ -162,7 +198,9 @@ namespace Ravl2
     //: Return the covariance matrix.
 
     Point<RealT, 2> centroid() const
-    { return Point<RealT, 2>({centroidX(), centroidY()}); }
+    {
+      return Point<RealT, 2>({centroidX(), centroidY()});
+    }
     //: Calculate the centroid.
 
     Moments2 operator+(const Moments2 &m) const
@@ -199,21 +237,21 @@ namespace Ravl2
     RealT m02 = 0;
   };
 
-  template<class RealT>
+  template <class RealT>
   std::ostream &
   operator<<(std::ostream &os, const Moments2<RealT> &mom);
 
-  template<class RealT>
+  template <class RealT>
   std::istream &
   operator>>(std::istream &is, Moments2<RealT> &mom);
 
   //: Return the covariance matrix.
 
-  template<class RealT>
+  template <class RealT>
   Matrix<RealT, 2, 2> Moments2<RealT>::covariance() const
   {
-    if (isNearZero(m00))
-      return Matrix<RealT, 2, 2>({{1, 0}, {0, 1}}); // if m00 is too small (prevent effective division by zero)
+    if(isNearZero(m00))
+      return Matrix<RealT, 2, 2>({{1, 0}, {0, 1}});// if m00 is too small (prevent effective division by zero)
     RealT cent1 = centroidX();
     RealT cent2 = centroidY();
     RealT diag = m11 / m00 - cent1 * cent2;
@@ -221,17 +259,17 @@ namespace Ravl2
                                 {diag, m02 / m00 - sqr(cent2)}});
   }
 
-  template<class RealT>
+  template <class RealT>
   Vector<RealT, 2> Moments2<RealT>::principalAxisSize() const
   {
     Matrix<RealT, 2, 2> mat = covariance();
     auto vec = xt::linalg::eigvalsh(mat);
-    if (vec[0] < vec[1])
+    if(vec[0] < vec[1])
       std::swap(vec[0], vec[1]);
     return vec;
   }
 
-  template<class RealT>
+  template <class RealT>
   std::ostream &operator<<(std::ostream &os, const Moments2<RealT> &mom)
   {
     os << mom.M00() << ' ' << mom.M10() << ' ' << mom.M01() << ' '
@@ -239,18 +277,16 @@ namespace Ravl2
     return os;
   }
 
-  template<class RealT>
+  template <class RealT>
   std::istream &operator>>(std::istream &is, Moments2<RealT> &mom)
   {
     is >> mom.m00 >> mom.m10 >> mom.m01
-       >> mom.m20 >> mom.m11 >> mom.m02;
+      >> mom.m20 >> mom.m11 >> mom.m02;
     return is;
   }
 
-
-  template<class RealT>
-  inline
-  void Moments2<RealT>::addPixel(const Index<2> &pxl)
+  template <class RealT>
+  inline void Moments2<RealT>::addPixel(const Index<2> &pxl)
   {
     auto a = RealT(pxl[0]);
     auto b = RealT(pxl[1]);
@@ -263,9 +299,8 @@ namespace Ravl2
     m20 += a * a;
   }
 
-  template<class RealT>
-  inline
-  void Moments2<RealT>::addPixel(const Point<RealT, 2> &pxl)
+  template <class RealT>
+  inline void Moments2<RealT>::addPixel(const Point<RealT, 2> &pxl)
   {
     RealT a = pxl[0];
     RealT b = pxl[1];
@@ -278,8 +313,7 @@ namespace Ravl2
     m20 += a * a;
   }
 
-
-  template<class RealT>
+  template <class RealT>
   void Moments2<RealT>::addPixel(const Point<RealT, 2> &pxl, RealT weight)
   {
     RealT a = pxl[0];
@@ -295,9 +329,8 @@ namespace Ravl2
     m20 += a * wa;
   }
 
-  template<class RealT>
-  inline
-  const Moments2<RealT> &Moments2<RealT>::operator+=(const Moments2<RealT> &m)
+  template <class RealT>
+  inline const Moments2<RealT> &Moments2<RealT>::operator+=(const Moments2<RealT> &m)
   {
     m00 += m.M00();
     m10 += m.M10();
@@ -308,9 +341,8 @@ namespace Ravl2
     return *this;
   }
 
-  template<class RealT>
-  inline
-  const Moments2<RealT> &Moments2<RealT>::operator-=(const Moments2<RealT> &m)
+  template <class RealT>
+  inline const Moments2<RealT> &Moments2<RealT>::operator-=(const Moments2<RealT> &m)
   {
     m00 -= m.M00();
     m10 -= m.M10();
@@ -321,44 +353,40 @@ namespace Ravl2
     return *this;
   }
 
-  template<class RealT>
-  inline
-  RealT Moments2<RealT>::slopeY() const
+  template <class RealT>
+  inline RealT Moments2<RealT>::slopeY() const
   {
     RealT det = m00 * m20 - m10 * m10;
-    if (isNearZero(det))
+    if(isNearZero(det))
       throw std::underflow_error("Moments2<RealT>::slopeY(), Determinant near zero. ");
     return (m00 * m11 - m10 * m01) / det;
   }
 
-  template<class RealT>
-  inline
-  RealT Moments2<RealT>::interceptY() const
+  template <class RealT>
+  inline RealT Moments2<RealT>::interceptY() const
   {
     RealT det = m00 * m20 - m10 * m10;
-    if (isNearZero(det))
+    if(isNearZero(det))
       throw std::underflow_error("Moments2::interceptY(), Determinant near zero. ");
     return (m20 * m01 - m10 * m11) / det;
   }
 
-  template<class RealT>
-  inline
-  RealT Moments2<RealT>::slopeX() const
+  template <class RealT>
+  inline RealT Moments2<RealT>::slopeX() const
   {
     RealT det = m00 * m02 - m01 * m01;
-    if (isNearZero(det))
+    if(isNearZero(det))
       throw std::underflow_error("Moments2::slopeX(), Determinant near zero. ");
     return (m00 * m11 - m01 * m10) / det;
   }
 
-  template<class RealT>
-  inline
-  RealT Moments2<RealT>::interceptX() const
+  template <class RealT>
+  inline RealT Moments2<RealT>::interceptX() const
   {
     RealT det = m00 * m02 - m01 * m01;
-    if (isNearZero(det))
+    if(isNearZero(det))
       throw std::underflow_error("Moments2::interceptX(), Determinant near zero. ");
     return (m02 * m10 - m01 * m11) / det;
   }
 
-}
+}// namespace Ravl2

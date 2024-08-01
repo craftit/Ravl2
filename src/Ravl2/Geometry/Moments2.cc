@@ -1,4 +1,4 @@
-// This file is part of RAVL, Recognition And Vision Library 
+// This file is part of RAVL, Recognition And Vision Library
 // Copyright (C) 2001, University of Surrey
 // This code may be redistributed under the terms of the GNU Lesser
 // General Public License (LGPL). See the lgpl.licence file for details or
@@ -7,7 +7,7 @@
 
 #include "Ravl2/Geometry/Moments2.hh"
 
-namespace Ravl2 {
-
+namespace Ravl2
+{
 
 }

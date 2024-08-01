@@ -1,4 +1,4 @@
-// This file is part of RAVL, Recognition And Vision Library 
+// This file is part of RAVL, Recognition And Vision Library
 // Copyright (C) 2002, University of Surrey
 // This code may be redistributed under the terms of the GNU Lesser
 // General Public License (LGPL). See the lgpl.licence file for details or
@@ -25,27 +25,27 @@ namespace Ravl2
   {
     auto origin = rect.min();
     auto endP = rect.max();
-    BoundaryVertex   oVertex(origin);      // to help to GNU C++ 2.6.0
+    BoundaryVertex oVertex(origin);// to help to GNU C++ 2.6.0
     CrackCode cr(CrackCodeT::CR_DOWN);
-    CrackC      edge(oVertex, cr);
+    CrackC edge(oVertex, cr);
     std::vector<CrackC> edges;
 
-    for(int i=origin[0]; i <= endP[0]; i++) {
+    for(int i = origin[0]; i <= endP[0]; i++) {
       edges.push_back(edge);
       edge.moveDown();
     }
     edge.turnCClock();
-    for(int i=origin[1]; i <= endP[1]; i++) {
+    for(int i = origin[1]; i <= endP[1]; i++) {
       edges.push_back(edge);
       edge.moveRight();
     }
     edge.turnCClock();
-    for(int i=endP[1]; i >= origin[1]; i--) {
+    for(int i = endP[1]; i >= origin[1]; i--) {
       edges.push_back(edge);
       edge.moveUp();
     }
     edge.turnCClock();
-    for(int i=endP[0]; i >= origin[0]; i--) {
+    for(int i = endP[0]; i >= origin[0]; i--) {
       edges.push_back(edge);
       edge.moveLeft();
     }
@@ -54,32 +54,32 @@ namespace Ravl2
 
   int Boundary::area() const
   {
-    int area = 0; // region area
+    int area = 0;// region area
 
 #if 1
-    for(auto edge : mEdges ) {
+    for(auto edge : mEdges) {
       // 5 or 2
       switch(edge.crackCode()) {
-	case CrackCodeT::CR_DOWN  : area -= edge.at()[1]; break;
-	case CrackCodeT::CR_UP    : area += edge.at()[1]; break;
-	case CrackCodeT::CR_RIGHT :
-	case CrackCodeT::CR_LEFT  : break;
-	case CrackCodeT::CR_NODIR : break;
+        case CrackCodeT::CR_DOWN: area -= edge.at()[1]; break;
+        case CrackCodeT::CR_UP: area += edge.at()[1]; break;
+        case CrackCodeT::CR_RIGHT:
+        case CrackCodeT::CR_LEFT: break;
+        case CrackCodeT::CR_NODIR: break;
       }
     }
 #else
-    int   col  = 0; // relative column of the boundary pixel
+    int col = 0;// relative column of the boundary pixel
     // This only works for ordered edges.
-    for(auto edge : mEdges ) {
-      switch (edge.crackCode())  {
-	case CrackCodeT::CR_DOWN  : area -= col;  break;
-	case CrackCodeT::CR_RIGHT : col++;        break;
-	case CrackCodeT::CR_UP    : area += col;  break;
-	case CrackCodeT::CR_LEFT  : col--;        break;
-	case CrackCodeT::CR_NODIR :
-	default       :
-	  RavlAssertMsg(0,"BoundaryC::area(), Illegal direction code. ");
-	  break;
+    for(auto edge : mEdges) {
+      switch(edge.crackCode()) {
+        case CrackCodeT::CR_DOWN: area -= col; break;
+        case CrackCodeT::CR_RIGHT: col++; break;
+        case CrackCodeT::CR_UP: area += col; break;
+        case CrackCodeT::CR_LEFT: col--; break;
+        case CrackCodeT::CR_NODIR:
+        default:
+          RavlAssertMsg(0, "BoundaryC::area(), Illegal direction code. ");
+          break;
       };
       ONDEBUG(std::cerr << "BoundaryC::area() Area=" << area << " col=" << col << "\n");
       SPDLOG_INFO("BoundaryC::area() Code {}  Area={} col={}", edge.crackCode(), area, col);
@@ -111,27 +111,24 @@ namespace Ravl2
   IndexRange<2> Boundary::boundingBox() const
   {
     IndexRange<2> bb;
-    if (empty())
+    if(empty())
       return bb;
     bb = IndexRange<2>::mostEmpty();
     if(orientation == BoundaryOrientationT::INSIDE_LEFT) {
       ONDEBUG(std::cerr << "BoundaryC::boundingBox(), Object is on left. \n");
-      for(auto edge : mEdges)
-      {
-	Index<2> vx = edge.leftPixel();
-	bb.involve(vx);
+      for(auto edge : mEdges) {
+        Index<2> vx = edge.leftPixel();
+        bb.involve(vx);
       }
     } else {
       ONDEBUG(std::cerr << "BoundaryC::boundingBox(), Object is on right. \n");
-      for(auto edge : mEdges)
-      {
-	Index<2> vx = edge.rightPixel();
-	bb.involve(vx);
+      for(auto edge : mEdges) {
+        Index<2> vx = edge.rightPixel();
+        bb.involve(vx);
       }
     }
     return bb;
   }
-
 
 #if 0
   //: Create a boundary from the edges between 'inLabel' pixels an other values
@@ -386,119 +383,119 @@ namespace Ravl2
 
 #endif
 
-  Boundary Line2Boundary(const BoundaryVertex & startVertex, const BoundaryVertex & endVertex)
+  Boundary Line2Boundary(const BoundaryVertex &startVertex, const BoundaryVertex &endVertex)
   {
     std::vector<CrackC> boundary;
-    BoundaryVertex  vertex(startVertex);
+    BoundaryVertex vertex(startVertex);
     using RealT = float;
-    auto     startRow = RealT(startVertex[0]);
-    auto     startCol = RealT(startVertex[1]);
-    RealT     k = 0;
-    RealT     kk = 0;
-    if (endVertex[0] == startVertex[0])
+    auto startRow = RealT(startVertex[0]);
+    auto startCol = RealT(startVertex[1]);
+    RealT k = 0;
+    RealT kk = 0;
+    if(endVertex[0] == startVertex[0])
       k = 0;
-    else if (endVertex[1] == startVertex[1])
+    else if(endVertex[1] == startVertex[1])
       kk = 0;
-    else if (std::abs(endVertex[0] - startVertex[0]) < std::abs(endVertex[1] - startVertex[1]))
+    else if(std::abs(endVertex[0] - startVertex[0]) < std::abs(endVertex[1] - startVertex[1]))
       k = (RealT(endVertex[0] - startVertex[0])) / RealT(endVertex[1] - startVertex[1]);
     else
       kk = (RealT(endVertex[1] - startVertex[1])) / RealT(endVertex[0] - startVertex[0]);
 
-    if (startVertex[1] < endVertex[1]) {  // 1 or 2 or 7 or 8 octant
-      if (startVertex[0] > endVertex[0]) {  // 1 or 2 octant
-	if ( -(endVertex[0]-startVertex[0]) < (endVertex[1]-startVertex[1]) ) {
-	  // 1. octant
-	  //        cout << "1. octant: " << k << '\n';
-	  while (vertex[1] < endVertex[1]) {
-	    boundary.push_back(CrackC(vertex,CrackCodeT::CR_RIGHT));
-	    vertex = right(vertex);
-	    if ( std::abs(startRow + k * (RealT(vertex[1]) - startCol) - RealT(vertex[0])) > RealT(0.5)) {
-	      boundary.push_back(CrackC(vertex,CrackCodeT::CR_UP));
-	      vertex = up(vertex);
-	    }
-	  }
-	} else { // 2. octant
-	  //        cout << "2. octant: " << kk << '\n';
-	  while (vertex[0] > endVertex[0]) {
-	    boundary.push_back(CrackC(vertex,CrackCodeT::CR_UP));
-	    vertex = up(vertex);
-	    if ( std::abs(startCol + kk *(RealT(vertex[0]) - startRow) - RealT(vertex[1])) > RealT(0.5) ) {
-	      boundary.push_back(CrackC(vertex,CrackCodeT::CR_RIGHT));
-	      vertex = right(vertex);
-	    }
-	  }
-	}
-      } else { // 7 or 8 octant
-	if ( (endVertex[0]-startVertex[0]) < (endVertex[1]-startVertex[1]) ) {
-	  // 8. octant
-	  //        cout << "8. octant: " << k << '\n';
-	  while (vertex[1] < endVertex[1]) {
-	    boundary.push_back(CrackC(vertex,CrackCodeT::CR_RIGHT));
-	    vertex = right(vertex);
-	    if (std::abs(startRow + k *(RealT(vertex[1]) - startCol) - RealT(vertex[0])) > RealT(0.5)) {
-	      boundary.push_back(CrackC(vertex,CrackCodeT::CR_DOWN));
-	      vertex = down(vertex);
-	    }
-	  }
-	} else { // 7. octant
-	  //        cout << "7. octant: " << kk << '\n';
-	  while (vertex[0] < endVertex[0]) {
-	    boundary.push_back(CrackC(vertex,CrackCodeT::CR_DOWN));
-	    vertex = down(vertex);
-	    if ( std::abs(startCol + kk *(RealT(vertex[0]) - startRow) - RealT(vertex[1])) > RealT(0.5)) {
-	      boundary.push_back(CrackC(vertex,CrackCodeT::CR_RIGHT));
-	      vertex = right(vertex);
-	    }
-	  }
-	}
+    if(startVertex[1] < endVertex[1]) {  // 1 or 2 or 7 or 8 octant
+      if(startVertex[0] > endVertex[0]) {// 1 or 2 octant
+        if(-(endVertex[0] - startVertex[0]) < (endVertex[1] - startVertex[1])) {
+          // 1. octant
+          //        cout << "1. octant: " << k << '\n';
+          while(vertex[1] < endVertex[1]) {
+            boundary.push_back(CrackC(vertex, CrackCodeT::CR_RIGHT));
+            vertex = right(vertex);
+            if(std::abs(startRow + k * (RealT(vertex[1]) - startCol) - RealT(vertex[0])) > RealT(0.5)) {
+              boundary.push_back(CrackC(vertex, CrackCodeT::CR_UP));
+              vertex = up(vertex);
+            }
+          }
+        } else {// 2. octant
+          //        cout << "2. octant: " << kk << '\n';
+          while(vertex[0] > endVertex[0]) {
+            boundary.push_back(CrackC(vertex, CrackCodeT::CR_UP));
+            vertex = up(vertex);
+            if(std::abs(startCol + kk * (RealT(vertex[0]) - startRow) - RealT(vertex[1])) > RealT(0.5)) {
+              boundary.push_back(CrackC(vertex, CrackCodeT::CR_RIGHT));
+              vertex = right(vertex);
+            }
+          }
+        }
+      } else {// 7 or 8 octant
+        if((endVertex[0] - startVertex[0]) < (endVertex[1] - startVertex[1])) {
+          // 8. octant
+          //        cout << "8. octant: " << k << '\n';
+          while(vertex[1] < endVertex[1]) {
+            boundary.push_back(CrackC(vertex, CrackCodeT::CR_RIGHT));
+            vertex = right(vertex);
+            if(std::abs(startRow + k * (RealT(vertex[1]) - startCol) - RealT(vertex[0])) > RealT(0.5)) {
+              boundary.push_back(CrackC(vertex, CrackCodeT::CR_DOWN));
+              vertex = down(vertex);
+            }
+          }
+        } else {// 7. octant
+          //        cout << "7. octant: " << kk << '\n';
+          while(vertex[0] < endVertex[0]) {
+            boundary.push_back(CrackC(vertex, CrackCodeT::CR_DOWN));
+            vertex = down(vertex);
+            if(std::abs(startCol + kk * (RealT(vertex[0]) - startRow) - RealT(vertex[1])) > RealT(0.5)) {
+              boundary.push_back(CrackC(vertex, CrackCodeT::CR_RIGHT));
+              vertex = right(vertex);
+            }
+          }
+        }
       }
-    } else { // 3 or 4 or 5 or 6 octant
-      if (startVertex[0] > endVertex[0]) { // 3 or 4 octant
-	if ( -(endVertex[0]-startVertex[0])  < -(endVertex[1]-startVertex[1])) {
-	  // 4. octant
-	  //        cout << "4. octant: " << k << '\n';
-	  while (vertex[1] > endVertex[1]) {
-	    boundary.push_back(CrackC(vertex,CrackCodeT::CR_LEFT));
-	    vertex = left(vertex);
-	    if (std::abs(startRow + k *(RealT(vertex[1]) - startCol) - RealT(vertex[0])) > RealT(0.5)) {
-	      boundary.push_back(CrackC(vertex,CrackCodeT::CR_UP));
-	      vertex = up(vertex);
-	    }
-	  }
-	} else { // 3. octant
-	  //        cout << "3. octant: " << kk << '\n';
-	  while (vertex[0] > endVertex[0]) {
-	    boundary.push_back(CrackC(vertex,CrackCodeT::CR_UP));
-	    vertex = up(vertex);
-	    if ( std::abs(startCol + kk *(RealT(vertex[0]) - startRow) - RealT(vertex[1])) > RealT(0.5)) {
-	      boundary.push_back(CrackC(vertex,CrackCodeT::CR_LEFT));
-	      vertex = left(vertex);
-	    }
-	  }
-	}
-      } else { // 5 or 6 octant
-	if (  (endVertex[0]-startVertex[0]) < -(endVertex[1]-startVertex[1]) ) {
-	  // 5. octant
-	  //        cout << "5. octant: " << k << '\n';
-	  while (vertex[1] > endVertex[1]) {
-	    boundary.push_back(CrackC(vertex,CrackCodeT::CR_LEFT));
-	    vertex = left(vertex);
-	    if ( std::abs(startRow + k *(RealT(vertex[1]) - startCol) - RealT(vertex[0])) > RealT(0.5)) {
-	      boundary.push_back(CrackC(vertex,CrackCodeT::CR_DOWN));
-	      vertex = down(vertex);
-	    }
-	  }
-	} else { // 6. octant
-	  //        cout << "6. octant: " << kk << '\n';
-	  while (vertex[0] < endVertex[0]) {
-	    boundary.push_back(CrackC(vertex,CrackCodeT::CR_DOWN));
-	    vertex = down(vertex);
-	    if (std::abs(startCol + kk *(RealT(vertex[0]) - startRow) - RealT(vertex[1])) > RealT(0.5)) {
-	      boundary.push_back(CrackC(vertex,CrackCodeT::CR_LEFT));
-	      vertex = left(vertex);
-	    }
-	  }
-	}
+    } else {                             // 3 or 4 or 5 or 6 octant
+      if(startVertex[0] > endVertex[0]) {// 3 or 4 octant
+        if(-(endVertex[0] - startVertex[0]) < -(endVertex[1] - startVertex[1])) {
+          // 4. octant
+          //        cout << "4. octant: " << k << '\n';
+          while(vertex[1] > endVertex[1]) {
+            boundary.push_back(CrackC(vertex, CrackCodeT::CR_LEFT));
+            vertex = left(vertex);
+            if(std::abs(startRow + k * (RealT(vertex[1]) - startCol) - RealT(vertex[0])) > RealT(0.5)) {
+              boundary.push_back(CrackC(vertex, CrackCodeT::CR_UP));
+              vertex = up(vertex);
+            }
+          }
+        } else {// 3. octant
+          //        cout << "3. octant: " << kk << '\n';
+          while(vertex[0] > endVertex[0]) {
+            boundary.push_back(CrackC(vertex, CrackCodeT::CR_UP));
+            vertex = up(vertex);
+            if(std::abs(startCol + kk * (RealT(vertex[0]) - startRow) - RealT(vertex[1])) > RealT(0.5)) {
+              boundary.push_back(CrackC(vertex, CrackCodeT::CR_LEFT));
+              vertex = left(vertex);
+            }
+          }
+        }
+      } else {// 5 or 6 octant
+        if((endVertex[0] - startVertex[0]) < -(endVertex[1] - startVertex[1])) {
+          // 5. octant
+          //        cout << "5. octant: " << k << '\n';
+          while(vertex[1] > endVertex[1]) {
+            boundary.push_back(CrackC(vertex, CrackCodeT::CR_LEFT));
+            vertex = left(vertex);
+            if(std::abs(startRow + k * (RealT(vertex[1]) - startCol) - RealT(vertex[0])) > RealT(0.5)) {
+              boundary.push_back(CrackC(vertex, CrackCodeT::CR_DOWN));
+              vertex = down(vertex);
+            }
+          }
+        } else {// 6. octant
+          //        cout << "6. octant: " << kk << '\n';
+          while(vertex[0] < endVertex[0]) {
+            boundary.push_back(CrackC(vertex, CrackCodeT::CR_DOWN));
+            vertex = down(vertex);
+            if(std::abs(startCol + kk * (RealT(vertex[0]) - startRow) - RealT(vertex[1])) > RealT(0.5)) {
+              boundary.push_back(CrackC(vertex, CrackCodeT::CR_LEFT));
+              vertex = left(vertex);
+            }
+          }
+        }
       }
     }
     //  cout << "Line2Boundary - size:" << boundary.size() << '\n';
@@ -506,7 +503,7 @@ namespace Ravl2
   }
 
   //! Write out the boundary to a stream.
-  std::ostream & operator<<(std::ostream & os, const Boundary & bnd)
+  std::ostream &operator<<(std::ostream &os, const Boundary &bnd)
   {
     os << "BoundaryC: ";
     for(auto edge : bnd.edges()) {
@@ -515,8 +512,4 @@ namespace Ravl2
     return os;
   }
 
-
-}
-
-
-
+}// namespace Ravl2

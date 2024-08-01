@@ -1,4 +1,4 @@
-// This file is part of RAVL, Recognition And Vision Library 
+// This file is part of RAVL, Recognition And Vision Library
 // Copyright (C) 2001, University of Surrey
 // This code may be redistributed under the terms of the GNU Lesser
 // General Public License (LGPL). See the lgpl.licence file for details or
@@ -14,17 +14,20 @@
 #define ONDEBUG(x)
 #endif
 
-namespace Ravl2 {
+namespace Ravl2
+{
 
   //: Constructor.
-  
-  Line2dIterC::Line2dIterC(const Index<2> &start,const Index<2> &end)
-  { First(start,end); }
-  
+
+  Line2dIterC::Line2dIterC(const Index<2> &start, const Index<2> &end)
+  {
+    First(start, end);
+  }
 
   //: Start line again.
-  
-  void Line2dIterC::First(const Index<2> &start,const Index<2> &end) {
+
+  void Line2dIterC::First(const Index<2> &start, const Index<2> &end)
+  {
     dx = (end[0] - start[0]);
     dy = (end[1] - start[1]);
     if(dx >= 0) {
@@ -40,7 +43,7 @@ namespace Ravl2 {
       dy *= -1;
     }
     if(dx >= dy) {
-      d = 2 *dy - dx;
+      d = 2 * dy - dx;
       incrE = 2 * dy;
       incrNE = 2 * (dy - dx);
     } else {
@@ -53,36 +56,36 @@ namespace Ravl2 {
     xe = end[0];
     ye = end[1];
     isElm = true;
-    ONDEBUG(std::cerr << "dx=" << dx <<" dy=" << dy << " incrE=" << incrE << " incrNE=" << incrNE << "\n");
+    ONDEBUG(std::cerr << "dx=" << dx << " dy=" << dy << " incrE=" << incrE << " incrNE=" << incrNE << "\n");
   }
 
-
   //: Goto next point.
-  
-  bool Line2dIterC::Next() {
+
+  bool Line2dIterC::Next()
+  {
     if(x == xe && y == ye) {
       isElm = false;
       return false;
     }
     if(dx >= dy) {
       if(d <= 0) {
-	d += incrE;
-	x += xc;
+        d += incrE;
+        x += xc;
       } else {
-	d += incrNE;
-	x += xc;
-	y += yc;
+        d += incrNE;
+        x += xc;
+        y += yc;
       }
     } else {
       if(d <= 0) {
-	d += incrE;
-	y += yc;
+        d += incrE;
+        y += yc;
       } else {
-	d += incrNE;
-	x += xc;
-	y += yc;
+        d += incrNE;
+        x += xc;
+        y += yc;
       }
     }
     return true;
   }
-}
+}// namespace Ravl2

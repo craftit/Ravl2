@@ -18,4 +18,4 @@ namespace Ravl2
   template class IndexRangeIterator<1>;
   template class IndexRangeIterator<2>;
   template class IndexRangeIterator<3>;
-}
+}// namespace Ravl2

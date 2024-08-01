@@ -1,4 +1,4 @@
-// This file is part of RAVL, Recognition And Vision Library 
+// This file is part of RAVL, Recognition And Vision Library
 // Copyright (C) 2003, University of Surrey
 // This code may be redistributed under the terms of the GNU Lesser
 // General Public License (LGPL). See the lgpl.licence file for details or
@@ -23,28 +23,25 @@ namespace Ravl2
   //! \param pnt - The point in the i/p image coord system for which the interpolated value is required.
   //! \return The interpolated value.
 
-  template<typename ArrayT,typename Point2T, typename PixelT = typename ArrayT::value_type,unsigned N=ArrayT::dimensions>
-  requires WindowedArray<ArrayT,PixelT,N>
+  template <typename ArrayT, typename Point2T, typename PixelT = typename ArrayT::value_type, unsigned N = ArrayT::dimensions>
+    requires WindowedArray<ArrayT, PixelT, N>
   [[nodiscard]] inline auto interpolateBilinear(const ArrayT &img, Point2T pnt)
   {
     const auto px = pnt[0];
     const auto py = pnt[1];
-    const auto fx = std::floor(px); // Row
-    const auto fy = std::floor(py); // Col
+    const auto fx = std::floor(px);// Row
+    const auto fy = std::floor(py);// Col
     const auto u = px - fx;
     const auto t = py - fy;
-    const auto onemu = (1.0f-u);
-    const auto onemt = (1.0f-t);
+    const auto onemu = (1.0f - u);
+    const auto onemt = (1.0f - t);
     const int ix = int(fx);
     const int iy = int(fy);
-    const auto* pixel1 = &((img)[ix][iy]);
-    const auto* pixel2 = &((img)[ix+1][iy]);
-    return (pixel1[0] * (onemt*onemu)) +
-		  (pixel1[1] * (t*onemu)) + 
-		  (pixel2[0] * (onemt*u)) +
-		  (pixel2[1] * (t*u));
+    const auto *pixel1 = &((img)[ix][iy]);
+    const auto *pixel2 = &((img)[ix + 1][iy]);
+    return (pixel1[0] * (onemt * onemu)) + (pixel1[1] * (t * onemu)) + (pixel2[0] * (onemt * u)) + (pixel2[1] * (t * u));
   }
 
-}
+}// namespace Ravl2
 
 #endif

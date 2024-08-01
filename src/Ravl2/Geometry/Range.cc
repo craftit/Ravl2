@@ -3,7 +3,7 @@
 
 namespace Ravl2
 {
-  template class Range<float,1>;
-  template class Range<float,2>;
+  template class Range<float, 1>;
+  template class Range<float, 2>;
 
-}
+}// namespace Ravl2

@@ -1,4 +1,4 @@
-// This file is part of RAVL, Recognition And Vision Library 
+// This file is part of RAVL, Recognition And Vision Library
 // Copyright (C) 2003, University of Surrey
 // This code may be redistributed under the terms of the GNU Lesser
 // General Public License (LGPL). See the lgpl.licence file for details or
@@ -12,28 +12,29 @@
 #include <vector>
 #include "Ravl2/Index.hh"
 
-namespace Ravl2 {
+namespace Ravl2
+{
   //! Rectangle set.
   //! Handles a set region defined by a set of non-overlapping rectangles.
   //! The methods in this class ensure that each part of the range is only
   //! covered by a single rectangle.
   //! The implementation is not particularly efficient, but it is simple.
   //! and should be fine for small numbers of rectangles.
-  
-  template<unsigned N>
-  class IndexRangeSet
-    : public std::vector<IndexRange<N>>
+
+  template <unsigned N>
+  class IndexRangeSet : public std::vector<IndexRange<N>>
   {
   public:
-    IndexRangeSet()
-    = default;
+    IndexRangeSet() = default;
 
     //! Constructor from a single range.
     explicit IndexRangeSet(const IndexRange<N> &rect)
-    { this->push_back(rect); }
+    {
+      this->push_back(rect);
+    }
 
     //! Subtract rect2 from rect1.
-    static IndexRangeSet subtract(const IndexRange<N> &rect1,const IndexRange<N> &rect2)
+    static IndexRangeSet subtract(const IndexRange<N> &rect1, const IndexRange<N> &rect2)
     {
       IndexRangeSet ret;
       if(!rect1.overlaps(rect2)) {
@@ -43,45 +44,45 @@ namespace Ravl2 {
       ret.reserve(4);
       IndexRange<N> remainder(rect1);
 
-      for(unsigned i = 0;i < N;++i) {
-	if(remainder.min(i) < rect2.min(i)) {
-	  IndexRange<N> r;
-	  for(unsigned j = 0;j < N;++j) {
-	    if(j == i) {
-	      r.min(j) = remainder.min(j);
-	      r.max(j) = rect2.min(j) - 1;
-	    } else {
-	      r.min(j) = remainder.min(j);
-	      r.max(j) = remainder.max(j);
-	    }
-	  }
-	  ret.push_back(r);
-	  remainder.min(i) = rect2.min(i); // Cut it down.
-	}
-	if(remainder.max(i) > rect2.max(i)) {
-	  IndexRange<N> r;
-	  for(unsigned j = 0;j < N;++j) {
-	    if(j == i) {
-	      r.min(j) = rect2.max(j) + 1;
-	      r.max(j) = remainder.max(j);
-	    } else {
-	      r.min(j) = remainder.min(j);
-	      r.max(j) = remainder.max(j);
-	    }
-	  }
-	  ret.push_back(r);
-	  remainder.max(i) = rect2.max(i); // Cut it down.
-	}
+      for(unsigned i = 0; i < N; ++i) {
+        if(remainder.min(i) < rect2.min(i)) {
+          IndexRange<N> r;
+          for(unsigned j = 0; j < N; ++j) {
+            if(j == i) {
+              r.min(j) = remainder.min(j);
+              r.max(j) = rect2.min(j) - 1;
+            } else {
+              r.min(j) = remainder.min(j);
+              r.max(j) = remainder.max(j);
+            }
+          }
+          ret.push_back(r);
+          remainder.min(i) = rect2.min(i);// Cut it down.
+        }
+        if(remainder.max(i) > rect2.max(i)) {
+          IndexRange<N> r;
+          for(unsigned j = 0; j < N; ++j) {
+            if(j == i) {
+              r.min(j) = rect2.max(j) + 1;
+              r.max(j) = remainder.max(j);
+            } else {
+              r.min(j) = remainder.min(j);
+              r.max(j) = remainder.max(j);
+            }
+          }
+          ret.push_back(r);
+          remainder.max(i) = rect2.max(i);// Cut it down.
+        }
       }
 
       return ret;
     }
 
     //! Add rect2 and rect1.
-    static IndexRangeSet add(const IndexRange<N> &rect1,const IndexRange<N> &rect2)
+    static IndexRangeSet add(const IndexRange<N> &rect1, const IndexRange<N> &rect2)
     {
       IndexRangeSet ret;
-      if(!rect1.overlaps(rect2)) { // No overlap.
+      if(!rect1.overlaps(rect2)) {// No overlap.
         ret.push_back(rect1);
         ret.push_back(rect2);
         return ret;
@@ -92,7 +93,7 @@ namespace Ravl2 {
         ret.insert(std::end(ret), std::begin(diff), std::end(diff));
         ret.push_back(rect2);
       } else {
-        auto diff = subtract(rect2,rect1);
+        auto diff = subtract(rect2, rect1);
         ret.insert(std::end(ret), std::begin(diff), std::end(diff));
         ret.push_back(rect1);
       }
@@ -108,7 +109,7 @@ namespace Ravl2 {
         return IndexRange<N>();
       IndexRange<N> ret(*it);
       ++it;
-      for(;it != end;++it)
+      for(; it != end; ++it)
         ret.involve(*it);
       return ret;
     }
@@ -135,13 +136,15 @@ namespace Ravl2 {
 
     //! Remove set from rect.
     [[nodiscard]] IndexRangeSet<N> subtractFrom(const IndexRange<N> &rect) const
-    { return IndexRangeSet<N>(rect).subtract(*this); }
+    {
+      return IndexRangeSet<N>(rect).subtract(*this);
+    }
 
     //! Add this rectangle to the set.
     [[nodiscard]] IndexRangeSet<N> add(const IndexRange<N> &rect) const
     {
       IndexRangeSet<N> ret = subtract(rect);
-      ret.push_back(rect); // Well it works doesn't it!!!!
+      ret.push_back(rect);// Well it works doesn't it!!!!
       return ret;
     }
 
@@ -180,6 +183,4 @@ namespace Ravl2 {
   // Let everyone know there's an implementation already generated for common cases
   extern template class IndexRangeSet<2>;
   extern template class IndexRangeSet<1>;
-}
-
-
+}// namespace Ravl2
