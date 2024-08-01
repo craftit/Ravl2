@@ -4,8 +4,8 @@ find_package(xtensor-blas REQUIRED)
 find_package(OpenCV REQUIRED)
 find_package(fmt REQUIRED)
 find_package(spdlog REQUIRED)
-#find_package(lapack REQUIRED)
-#find_package(blas REQUIRED)
+find_package(lapack REQUIRED)
+find_package(blas REQUIRED)
 find_package(dlib QUIET)
 
 

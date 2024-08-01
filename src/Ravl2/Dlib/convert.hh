@@ -4,6 +4,13 @@
 
 #pragma once
 
+#if 0
+#include "Ravl2/Geometry/Geometry.hh"
+// We need to convince dlib to that there is a cblas interface defined.
+// Otherwise both xtensor and dlib will try to define it.
+#define CBLAS_H 1
+#endif
+
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wdouble-promotion"
 #pragma GCC diagnostic ignored "-Wshadow"
@@ -24,10 +31,10 @@
 #endif
 #include <dlib/array2d.h>
 #include <dlib/matrix.h>
+#include <dlib/geometry/line.h>
 
 #pragma GCC diagnostic pop
 
-#include "Ravl2/Geometry/Geometry.hh"
 #include "Ravl2/Array.hh"
 #include "Ravl2/Index.hh"
 #include "Ravl2/Assert.hh"
@@ -70,17 +77,18 @@ namespace Ravl2::DLibConvert
               )
   {
     IndexRange<N> newRange({{0,rows-1},{0,cols-1}});
-    if constexpr (std::is_same_v<ArrayT,Array<DataT,N> >) {
-      img = ArrayT(newRange);
-    } else {
-      if(img.range().contains(newRange)) {
-        img = clip(img,newRange);
-        return ;
-      }
-      RavlAssertMsg(false,"set_image_size: Can't increase size of access type");
-      // If asserts are disabled, throw an exception
-      throw std::runtime_error("set_image_size: Can't increase size of access type");
+    if (img.range().contains(newRange)) {
+      img = clip(img, newRange);
+      return;
     }
+    if constexpr (std::is_same_v<ArrayT,Array<DataT,N> >) {
+      // I don't think set_image_size is expected to preserve the data?
+      img = ArrayT(newRange);
+      return;
+    }
+    RavlAssertMsg(false,"set_image_size: Can't increase size of access type");
+    // If asserts are disabled, throw an exception
+    throw std::runtime_error("set_image_size: Can't increase size of access type");
   }
 
   //! Address image data.
@@ -97,9 +105,7 @@ namespace Ravl2::DLibConvert
   template<typename ArrayT,typename DataT = typename ArrayT::value_type,unsigned N = ArrayT::dimensions>
   requires WindowedArray<ArrayT,DataT,N>
   void* image_data(ArrayT& img)
-  {
-    return addressOfMin(img);
-  }
+  { return addressOfMin(img); }
 
   //! Address image data.
   //! dlib always has an image origin at 0,0. This shifts the image origin to 0,0
@@ -167,6 +173,7 @@ namespace Ravl2::DLibConvert
     return ArrayView<DataT,2>(reinterpret_cast<DataT*>(image_data(anArray)), indexRange, {step/sizeof(DataT),1});
   }
 
+#if 0
   //! Convert to a matrix.
   //! Perhaps we should go straight to xtensor equivalent?
 
@@ -184,7 +191,7 @@ namespace Ravl2::DLibConvert
   }
 
   // Deal with column vector: dlib::matrix<double,0,1>
-
+#endif
 
 }
 
