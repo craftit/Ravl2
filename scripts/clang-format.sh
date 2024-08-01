@@ -10,3 +10,5 @@ else
     SRC_DIR=$DIR/../src
 fi
 
+
+find $SRC_DIR -type f \( -name "*.hh" -o -name "*.cc" \) -print0 | xargs -0 clang-format -i
