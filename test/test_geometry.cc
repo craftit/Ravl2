@@ -24,7 +24,7 @@
 #define ASSERT_NE(a,b) REQUIRE_FALSE((a) == (b))
 #define ASSERT_FLOAT_EQ(a,b) REQUIRE(Ravl2::isNearZero((a) -(b)))
 
-TEST_CASE("Moments", "[Moments2]")
+TEST_CASE("Moments")
 {
   using namespace Ravl2;
 
@@ -113,42 +113,68 @@ TEST_CASE("Vector and Matrix")
   }
 }
 
-TEST_CASE("PolygonIter", "[Polygon2dC]")
+TEST_CASE("Polygon")
 {
   using namespace Ravl2;
-  IndexRange<2> range(Index<2>(0,0), Index<2>(10,10));
+  SECTION( "Iterate over polygon. ")
+  {
+    IndexRange<2> range(Index<2>(0, 0), Index<2>(10, 10));
 
-  std::vector<std::tuple<int,IndexRange<1> >> expectedResult ({
-        {1,IndexRange<1>(0,1)},
-        {2,IndexRange<1>(0,2)},
-        {2,IndexRange<1>(9,9)},
-        {3,IndexRange<1>(0,4)},
-        {3,IndexRange<1>(9,9)},
-        {4,IndexRange<1>(0,5)},
-        {4,IndexRange<1>(8,9)},
-        {5,IndexRange<1>(0,9)},
-        {6,IndexRange<1>(0,9)},
-        {7,IndexRange<1>(0,9)},
-        {8,IndexRange<1>(0,9)},
-        {9,IndexRange<1>(0,9)}
-    });
+    std::vector<std::tuple<int, IndexRange<1> >> expectedResult({
+                                                                    {1, IndexRange<1>(0, 1)},
+                                                                    {2, IndexRange<1>(0, 2)},
+                                                                    {2, IndexRange<1>(9, 9)},
+                                                                    {3, IndexRange<1>(0, 4)},
+                                                                    {3, IndexRange<1>(9, 9)},
+                                                                    {4, IndexRange<1>(0, 5)},
+                                                                    {4, IndexRange<1>(8, 9)},
+                                                                    {5, IndexRange<1>(0, 9)},
+                                                                    {6, IndexRange<1>(0, 9)},
+                                                                    {7, IndexRange<1>(0, 9)},
+                                                                    {8, IndexRange<1>(0, 9)},
+                                                                    {9, IndexRange<1>(0, 9)}
+                                                                });
 
-  Polygon2dC<float> polygon;
-  polygon.push_back(Point<float,2>({0,0}));
-  polygon.push_back(Point<float,2>({5,7}));
-  polygon.push_back(Point<float,2>({0,10}));
-  polygon.push_back(Point<float,2>({10,10}));
-  polygon.push_back(Point<float,2>({10,0}));
-  unsigned int i = 0;
-  for(Polygon2dIterC<float> it(polygon); it; ++it, ++i) {
-    //SPDLOG_INFO("{} {}", it.Row(), it.RowIndexRange());
-    EXPECT_TRUE(range[0].contains(it.row()));
-    EXPECT_TRUE(range[1].contains(it.rowIndexRange()));
-    CHECK(i < expectedResult.size());
-    EXPECT_EQ(it.row(), std::get<0>(expectedResult[i]));
-    EXPECT_EQ(it.rowIndexRange(), std::get<1>(expectedResult[i]));
+    Polygon2dC<float> polygon;
+    polygon.push_back(Point<float, 2>({0, 0}));
+    polygon.push_back(Point<float, 2>({5, 7}));
+    polygon.push_back(Point<float, 2>({0, 10}));
+    polygon.push_back(Point<float, 2>({10, 10}));
+    polygon.push_back(Point<float, 2>({10, 0}));
+    unsigned int i = 0;
+    for (Polygon2dIterC<float> it(polygon); it; ++it, ++i) {
+      //SPDLOG_INFO("{} {}", it.Row(), it.RowIndexRange());
+      EXPECT_TRUE(range[0].contains(it.row()));
+      EXPECT_TRUE(range[1].contains(it.rowIndexRange()));
+      CHECK(i < expectedResult.size());
+      EXPECT_EQ(it.row(), std::get<0>(expectedResult[i]));
+      EXPECT_EQ(it.rowIndexRange(), std::get<1>(expectedResult[i]));
+    }
+    EXPECT_EQ(i, expectedResult.size());
   }
-  EXPECT_EQ(i, expectedResult.size());
+  SECTION( "Cereal ")
+  {
+    Polygon2dC<float> polygon;
+    polygon.push_back(Point<float, 2>({0, 0}));
+    polygon.push_back(Point<float, 2>({5, 7}));
+    polygon.push_back(Point<float, 2>({0, 10}));
+    polygon.push_back(Point<float, 2>({10, 10}));
+    polygon.push_back(Point<float, 2>({10, 0}));
+
+    std::stringstream ss;
+    {
+      cereal::JSONOutputArchive oarchive(ss);
+      oarchive(polygon);
+    }
+    //SPDLOG_INFO("Polygon2dC<float>: {}", ss.str());
+    {
+      cereal::JSONInputArchive iarchive(ss);
+      Polygon2dC<float> polygon2;
+      iarchive(polygon2);
+      CHECK(polygon.size() == polygon2.size());
+      CHECK(polygon == polygon2);
+    }
+  }
 }
 
 
