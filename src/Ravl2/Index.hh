@@ -131,7 +131,7 @@ namespace Ravl2
     //! end
     [[nodiscard]] constexpr const int *end() const
     {
-      return &(m_index[N]);
+      return &(m_index.data()[N]);
     }
 
     //! begin
