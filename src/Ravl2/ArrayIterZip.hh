@@ -62,22 +62,12 @@ namespace Ravl2
       for(unsigned i = 0; i < N - 1; i++) { mPtr += mAccess.stride(i) * mIndex[i]; }
     }
 
-    [[nodiscard]] constexpr ElementT &data()
+    [[nodiscard]] constexpr ElementT &data() const
     {
       return *mPtr;
     }
 
-    [[nodiscard]] constexpr ElementT *dataPtr()
-    {
-      return mPtr;
-    }
-
-    [[nodiscard]] constexpr const ElementT &data() const
-    {
-      return *mPtr;
-    }
-
-    [[nodiscard]] constexpr const ElementT *dataPtr() const
+    [[nodiscard]] constexpr ElementT *dataPtr() const
     {
       return mPtr;
     }
@@ -223,7 +213,7 @@ namespace Ravl2
     //! Access tuple of elements
     [[nodiscard]] constexpr value_type operator*() const
     {
-      return std::apply([](auto &...args) { return std::make_tuple(args.data()...); }, mIters);
+      return std::apply([](auto &...args) { return std::make_tuple(std::ref(args.data())...); }, mIters);
     }
 
     //! Compare iterators
@@ -294,7 +284,8 @@ namespace Ravl2
   }
 
   extern template class ArrayIterZipN<1, uint8_t, uint8_t>;
-  extern template class ArrayIterZipN<1, float, float>;
   extern template class ArrayIterZipN<2,uint8_t,uint8_t>;
+  extern template class ArrayIterZipN<1, float, float>;
   extern template class ArrayIterZipN<2,float,float>;
+
 }// namespace Ravl2

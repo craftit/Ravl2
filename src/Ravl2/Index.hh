@@ -16,6 +16,7 @@
 #include <fmt/ostream.h>
 #include <cereal/cereal.hpp>
 #include <cereal/types/array.hpp>
+#include <cereal/archives/json.hpp>
 
 namespace Ravl2
 {
@@ -50,13 +51,6 @@ namespace Ravl2
 
     //! Default constructor
     constexpr Index() = default;
-
-    //! Serialization support
-    template <class Archive>
-    void serialize( Archive & ar )
-    {
-      ar( m_index );
-    }
 
     //! Access location in the i th dimension.
     [[nodiscard]] constexpr int index(unsigned i) const noexcept
@@ -221,12 +215,6 @@ namespace Ravl2
       }
     }
 
-    //! Serialization support
-    template <class Archive>
-    void serialize( Archive & ar )
-    {
-      ar( m_min, m_max );
-    }
 
     //! Make size of range 0.
     void clear() noexcept
@@ -575,12 +563,6 @@ namespace Ravl2
       }
     }
 
-    //! Serialization support
-    template <class Archive>
-    void serialize( Archive & ar )
-    {
-      ar( m_range );
-    }
 
     //! Create the range which creates the most negative area.
     // This is useful if you want guarantee the first point involved in
@@ -883,6 +865,12 @@ namespace Ravl2
       return m_range;
     }
 
+    //! Access as an array of ranges
+    [[nodiscard]] const std::array<IndexRange<1>, N> &ranges() const
+    {
+      return m_range;
+    }
+
     [[nodiscard]] IndexRange<1> &range(unsigned i)
     {
       assert(i < N);
@@ -917,11 +905,6 @@ namespace Ravl2
     {
       assert(i < N);
       return m_range[i].max();
-    }
-
-    [[nodiscard]] const std::array<IndexRange<1>, N> &ranges() const
-    {
-      return m_range;
     }
 
     [[nodiscard]] IndexRange<1> *range_data()
@@ -1139,6 +1122,49 @@ namespace Ravl2
     end[0] = m_range[0].max() + 1;
     return IndexRangeIterator<N>(*this, end, true);
   }
+
+
+  //! Serialization support
+  template <class Archive, unsigned N>
+  void serialize( Archive & archive, Index<N> &ind)
+  {
+    cereal::size_type s = N;
+    archive(cereal::make_size_tag(s));
+    if (s != N) {
+      throw std::runtime_error("array has incorrect length");
+    }
+    for (auto& i : ind) {
+      archive(i);
+    }
+  }
+
+  //! Serialization support
+  template <class Archive>
+  void serialize( Archive & archive, IndexRange<1> & range )
+  {
+    cereal::size_type s = 2;
+    archive(cereal::make_size_tag(s));
+    if (s != 2) {
+      throw std::runtime_error("index range has incorrect length");
+    }
+    archive( range.min(), range.max() );
+  }
+
+  //! Serialization support
+  template <class Archive, unsigned N>
+  requires (N > 1)
+  void serialize( Archive & archive, IndexRange<N> & range )
+  {
+    cereal::size_type s = N;
+    archive(cereal::make_size_tag(s));
+    if (s != N) {
+      throw std::runtime_error("index range has incorrect length");
+    }
+    for (auto& r : range.ranges()) {
+      archive(r);
+    }
+  }
+
 
   // Let everyone know there's an implementation already generated for common cases
   extern template class Index<1>;

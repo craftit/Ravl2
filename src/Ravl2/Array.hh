@@ -9,6 +9,7 @@
 
 #include <array>
 #include <cereal/cereal.hpp>
+#include <spdlog/spdlog.h>
 #include "Ravl2/Index.hh"
 
 namespace Ravl2
@@ -752,7 +753,7 @@ namespace Ravl2
       m_strides[0] = s;
     }
 
-    constexpr int compute_origin_offset(const IndexRange<N> &range) const
+    [[nodiscard]] constexpr int compute_origin_offset(const IndexRange<N> &range) const
     {
       int off = 0;
       for(unsigned i = 0; i < N; i++) {
@@ -989,106 +990,6 @@ namespace Ravl2
 
   //! Access for an N dimensional element of an array.
 
-  template <typename DataT, unsigned N = 1>
-  class Array : public ArrayView<DataT, N>
-  {
-  public:
-    //! Create an empty array
-    constexpr Array() = default;
-
-    //! Create an array of the given range.
-    explicit constexpr Array(const IndexRange<N> &range)
-        : ArrayView<DataT, N>(range),
-          m_buffer(std::make_shared<DataT[]>(size_t(range.elements())))
-    {
-      this->make_strides(this->m_range);
-      this->m_data = &(m_buffer.get()[this->compute_origin_offset(range)]);
-    }
-
-    //! Create an array of the given range.
-    explicit constexpr Array(const IndexRange<N> &range, const DataT &initialData)
-        : ArrayView<DataT, N>(range),
-          m_buffer(std::make_shared<DataT[]>(size_t(range.elements()), initialData))
-    {
-      this->make_strides(this->m_range);
-      this->m_data = &(m_buffer.get()[this->compute_origin_offset(range)]);
-    }
-
-    //! Construct with an existing buffer
-    explicit constexpr Array(DataT *data, const IndexRange<N> &range, const std::array<int, N> &strides, const std::shared_ptr<DataT[]> &buffer)
-        : ArrayView<DataT, N>(data, range, strides),
-          m_buffer(buffer)
-    {}
-
-    //! Construct with an existing buffer
-    explicit constexpr Array(DataT *data, const IndexRange<N> &range, const std::array<int, N> &strides, std::shared_ptr<DataT[]> &&buffer)
-        : ArrayView<DataT, N>(data, range, strides),
-          m_buffer(std::move(buffer))
-    {}
-
-    //! Create an array from a set of sizes.
-    constexpr Array(std::initializer_list<IndexRange<1>> ranges)
-        : ArrayView<DataT, N>(IndexRange<N>(ranges)),
-          m_buffer(std::make_shared<DataT[]>(this->m_range.elements()))
-    {
-      this->make_strides(this->m_range);
-      this->m_data = &(m_buffer.get()[this->compute_origin_offset(this->m_range)]);
-    }
-
-    //! Create an array from a set of sizes.
-    constexpr Array(std::initializer_list<IndexRange<1>> ranges, const DataT &data)
-        : ArrayView<DataT, N>(IndexRange<N>(ranges)),
-          m_buffer(std::make_shared<DataT[]>(this->m_range.elements(), data))
-    {
-      this->make_strides(this->m_range);
-      this->m_data = &(m_buffer.get()[this->compute_origin_offset(this->m_range)]);
-    }
-
-    //! Create an array from a set of sizes.
-    constexpr Array(std::initializer_list<size_t> sizes)
-        : ArrayView<DataT, N>(IndexRange<N>(sizes)),
-          m_buffer(std::make_shared<DataT[]>(this->m_range.elements()))
-    {
-      this->make_strides(this->m_range);
-      this->m_data = &(m_buffer.get()[this->compute_origin_offset(this->m_range)]);
-    }
-
-    //! Create an array from a set of sizes.
-    constexpr Array(std::initializer_list<size_t> sizes, const DataT &fillData)
-        : ArrayView<DataT, N>(IndexRange<N>(sizes)),
-          m_buffer(std::make_shared<DataT[]>(this->m_range.elements(), fillData))
-    {
-      this->make_strides(this->m_range);
-      this->m_data = &(m_buffer.get()[this->compute_origin_offset(this->m_range)]);
-    }
-
-    //! Create an sub array with the requested 'range'
-    //! Range must be entirely contained in the original array.
-    constexpr Array(Array<DataT, N> &original, const IndexRange<N> &range)
-        : ArrayView<DataT, N>(original),
-          m_buffer(original.buffer())
-    {
-      if(!original.range().contains(range))
-        throw std::out_of_range("requested range is outside that of the original array");
-      this->m_range = range;
-      this->m_data = original.origin_address();
-    }
-
-    using ArrayView<DataT, N>::begin;
-    using ArrayView<DataT, N>::end;
-
-    //! Access buffer.
-    [[nodiscard]] constexpr auto &buffer()
-    {
-      return m_buffer;
-    }
-
-  protected:
-    std::shared_ptr<DataT[]> m_buffer;
-  };
-
-  //! Access for an N dimensional element of an array.
-
   template <typename DataT>
   class ArrayView<DataT, 1>
   {
@@ -1216,6 +1117,106 @@ namespace Ravl2
   protected:
     DataT *m_data = nullptr;
     IndexRange<1> m_range;
+  };
+
+  //! Access for an N dimensional element of an array.
+
+  template <typename DataT, unsigned N = 1>
+  class Array : public ArrayView<DataT, N>
+  {
+  public:
+    //! Create an empty array
+    constexpr Array() = default;
+
+    //! Create an array of the given range.
+    explicit constexpr Array(const IndexRange<N> &range)
+        : ArrayView<DataT, N>(range),
+          m_buffer(std::make_shared<DataT[]>(size_t(range.elements())))
+    {
+      this->make_strides(this->m_range);
+      this->m_data = &(m_buffer.get()[this->compute_origin_offset(range)]);
+    }
+
+    //! Create an array of the given range.
+    explicit constexpr Array(const IndexRange<N> &range, const DataT &initialData)
+        : ArrayView<DataT, N>(range),
+          m_buffer(std::make_shared<DataT[]>(size_t(range.elements()), initialData))
+    {
+      this->make_strides(this->m_range);
+      this->m_data = &(m_buffer.get()[this->compute_origin_offset(range)]);
+    }
+
+    //! Construct with an existing buffer
+    explicit constexpr Array(DataT *data, const IndexRange<N> &range, const std::array<int, N> &strides, const std::shared_ptr<DataT[]> &buffer)
+        : ArrayView<DataT, N>(data, range, strides),
+          m_buffer(buffer)
+    {}
+
+    //! Construct with an existing buffer
+    explicit constexpr Array(DataT *data, const IndexRange<N> &range, const std::array<int, N> &strides, std::shared_ptr<DataT[]> &&buffer)
+        : ArrayView<DataT, N>(data, range, strides),
+          m_buffer(std::move(buffer))
+    {}
+
+    //! Create an array from a set of sizes.
+    constexpr Array(std::initializer_list<IndexRange<1>> ranges)
+        : ArrayView<DataT, N>(IndexRange<N>(ranges)),
+          m_buffer(std::make_shared<DataT[]>(this->m_range.elements()))
+    {
+      this->make_strides(this->m_range);
+      this->m_data = &(m_buffer.get()[this->compute_origin_offset(this->m_range)]);
+    }
+
+    //! Create an array from a set of sizes.
+    constexpr Array(std::initializer_list<IndexRange<1>> ranges, const DataT &data)
+        : ArrayView<DataT, N>(IndexRange<N>(ranges)),
+          m_buffer(std::make_shared<DataT[]>(this->m_range.elements(), data))
+    {
+      this->make_strides(this->m_range);
+      this->m_data = &(m_buffer.get()[this->compute_origin_offset(this->m_range)]);
+    }
+
+    //! Create an array from a set of sizes.
+    constexpr Array(std::initializer_list<size_t> sizes)
+        : ArrayView<DataT, N>(IndexRange<N>(sizes)),
+          m_buffer(std::make_shared<DataT[]>(this->m_range.elements()))
+    {
+      this->make_strides(this->m_range);
+      this->m_data = &(m_buffer.get()[this->compute_origin_offset(this->m_range)]);
+    }
+
+    //! Create an array from a set of sizes.
+    constexpr Array(std::initializer_list<size_t> sizes, const DataT &fillData)
+        : ArrayView<DataT, N>(IndexRange<N>(sizes)),
+          m_buffer(std::make_shared<DataT[]>(this->m_range.elements(), fillData))
+    {
+      this->make_strides(this->m_range);
+      this->m_data = &(m_buffer.get()[this->compute_origin_offset(this->m_range)]);
+    }
+
+    //! Create an sub array with the requested 'range'
+    //! Range must be entirely contained in the original array.
+    constexpr Array(Array<DataT, N> &original, const IndexRange<N> &range)
+        : ArrayView<DataT, N>(original),
+          m_buffer(original.buffer())
+    {
+      if(!original.range().contains(range))
+        throw std::out_of_range("requested range is outside that of the original array");
+      this->m_range = range;
+      this->m_data = original.origin_address();
+    }
+
+    using ArrayView<DataT, N>::begin;
+    using ArrayView<DataT, N>::end;
+
+    //! Access buffer.
+    [[nodiscard]] constexpr auto &buffer()
+    {
+      return m_buffer;
+    }
+
+  protected:
+    std::shared_ptr<DataT[]> m_buffer;
   };
 
   //! Access for an N dimensional element of an array.
@@ -1351,19 +1352,62 @@ namespace Ravl2
     return mPtr;
   }
 
-  // Serialize an array to a stream
-  template<class Archive, typename ArrayT, typename DataT = typename ArrayT::value_type, unsigned N = ArrayT::dimensions>
-  void save(Archive & archive,
-            ArrayT const & m)
+
+  //! Helper to serialize the content of an array without the range.
+  template<typename ArrayT>
+  struct CerealDataBlock
   {
-    archive( m.x, m.y, m.z );
+    CerealDataBlock()
+        : mData(nullptr)
+    {}
+    explicit CerealDataBlock(ArrayT &data)
+        : mData(&data)
+    {}
+
+    template <typename ArchiveT>
+    void serialize(ArchiveT &archive) const
+    {
+      assert(mData != nullptr);
+      cereal::size_type size = mData->range().elements();
+      archive(cereal::make_size_tag(size));
+      if(size != mData->range().elements()) {
+        throw std::out_of_range("unexpected size");
+      }
+      for(auto &at : (*mData)) {
+        archive(at);
+      }
+    }
+    ArrayT *mData;
+  };
+
+
+  template <typename ArchiveT, typename ArrayT, typename DataT = typename ArrayT::value_type, unsigned N = ArrayT::dimensions>
+  requires WindowedArray<ArrayT, DataT, N>
+  void save(ArchiveT & archive,
+            ArrayT const & arr)
+  {
+    archive(cereal::make_nvp("range", arr.range()));
+    CerealDataBlock<const ArrayT> blk(arr);
+    archive(cereal::make_nvp("data", blk));
   }
 
-  template<class Archive, typename ArrayT>
-  void load(Archive & archive,
-            ArrayT & m)
+  template <typename ArchiveT, typename ArrayT, typename DataT = typename ArrayT::value_type, unsigned N = ArrayT::dimensions>
+  requires WindowedArray<ArrayT, DataT, N>
+  void load(ArchiveT & archive,
+            ArrayT & arr)
   {
-    archive( m.x, m.y, m.z );
+    IndexRange<N> range;
+    archive(cereal::make_nvp("range", range));
+    if constexpr (std::is_same_v<ArrayT, Array<DataT, N>>) {
+      arr = Array<DataT, N>(range);
+    } else {
+      if(!arr.range().contains(range)) {
+        throw std::out_of_range("requested range is outside that of the allocated array");
+      }
+      arr = clip(arr,range);
+    }
+    CerealDataBlock<ArrayT> blk(arr);
+    archive(cereal::make_nvp("data", blk));
   }
 
 
