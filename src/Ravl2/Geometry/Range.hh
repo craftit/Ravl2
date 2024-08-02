@@ -49,14 +49,6 @@ namespace Ravl2
     inline explicit Range(std::istream &s);
 
 
-    //! Serialization support
-    template <class Archive>
-    void serialize( Archive & ar )
-    {
-      ar( mMin, mMax );
-    }
-
-
     //! Returns the size of the range.
     [[nodiscard]] inline constexpr RealT size() const
     {
@@ -400,13 +392,6 @@ namespace Ravl2
       }
     }
 
-    //! Serialization support
-    template <class Archive>
-    void serialize( Archive & ar )
-    {
-      ar( mRanges );
-    }
-
     //! Set the origin of the range to 'newOrigin'
     // Returns a reference to this rectangle.
     const Range &SetOrigin(const Vector<RealT, N> &newOrigin)
@@ -727,6 +712,35 @@ namespace Ravl2
   {
     return IndexRange<1>(int_floor(ir.min()), int_ceil(ir.max()));
   }
+
+  //! Serialization support
+  template <class Archive, typename RealT>
+  void serialize( Archive & archive, Range<RealT, 1> & range )
+  {
+    cereal::size_type s = 2;
+    archive(cereal::make_size_tag(s));
+    if (s != 2) {
+      throw std::runtime_error("range has incorrect length");
+    }
+    archive( range.min(), range.max() );
+  }
+
+  //! Serialization support
+  template <class Archive,typename RealT, unsigned N>
+  requires (N > 1)
+  void serialize( Archive & archive, Range<RealT, N> & range )
+  {
+    cereal::size_type s = N;
+    archive(cereal::make_size_tag(s));
+    if (s != N) {
+      throw std::runtime_error("range has incorrect length");
+    }
+    for (auto& r : range.ranges()) {
+      archive(r);
+    }
+  }
+
+
 
   extern template class Range<float, 1>;
   extern template class Range<float, 2>;

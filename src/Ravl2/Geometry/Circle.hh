@@ -121,8 +121,12 @@ namespace Ravl2
       return std::abs(centre.EuclidDistance(p) - radius);
     }
 
-
-
+    //! Serialization support
+    template <class Archive>
+    void serialize( Archive & ar )
+    {
+      ar( cereal::make_nvp("pnt", centre), cereal::make_nvp("r", radius) );
+    }
   private:
     Point<RealT, 2> centre {};
     RealT radius = 0;

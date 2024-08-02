@@ -201,12 +201,15 @@ namespace Ravl2
 
     //! Serialization support
     template <class Archive>
-    void serialize( Archive & ar )
+    void serialize( Archive & archive )
     {
-      ar(point);
+      cereal::size_type size = 2;
+      archive(cereal::make_size_tag(size));
+      if(size != 2) {
+	throw std::runtime_error("Size mismatch");
+      }
+      ar(point[0], point[1]);
     }
-
-
   protected:
     std::array<Point<RealT, N>, 2> point;
   };

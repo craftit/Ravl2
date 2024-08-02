@@ -59,6 +59,20 @@ namespace Ravl2
       return *this;
     }
 
+    //! Serialization support
+    template <class Archive>
+    void serialize( Archive & archive )
+    {
+      cereal::size_type numPnts = this->size();
+      archive(cereal::make_size_tag(numPnts));
+      if(numPnts != this->size()) {
+	this->resize(numPnts);
+      }
+      for(auto &it : *this) {
+	archive(it);
+      }
+    }
+
   protected:
     static RealT pCot(const Point<RealT, 2> &oPointA, const Point<RealT, 2> &oPointB, const Point<RealT, 2> &oPointC)
     {
