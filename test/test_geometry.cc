@@ -2,6 +2,8 @@
 #include <numbers>
 #include <catch2/catch_test_macros.hpp>
 #include <spdlog/spdlog.h>
+#include <cereal/archives/json.hpp>
+
 #include "Ravl2/Math.hh"
 #include "Ravl2/Geometry/Moments2.hh"
 #include "Ravl2/Geometry/Circle.hh"
@@ -25,19 +27,44 @@ TEST_CASE("Moments", "[Moments2]")
 {
   using namespace Ravl2;
 
-  Moments2<double> moments;
-  moments.addPixel(Index<2>(0, 0));
-  moments.addPixel(Index<2>(1, 0));
-  moments.addPixel(Index<2>(0, 1));
-  moments.addPixel(Index<2>(1, 1));
+  SECTION("AddPixel")
+  {
+    Moments2<double> moments;
+    moments.addPixel(Index<2>(0, 0));
+    moments.addPixel(Index<2>(1, 0));
+    moments.addPixel(Index<2>(0, 1));
+    moments.addPixel(Index<2>(1, 1));
 
-  auto principal_axis = moments.principalAxisSize();
-  ASSERT_FLOAT_EQ(principal_axis[0], 0.25);
-  ASSERT_FLOAT_EQ(principal_axis[1], 0.25);
-  ASSERT_FLOAT_EQ(Moments2<double>::elongatedness(principal_axis), 0.0);
-  ASSERT_FLOAT_EQ(moments.centroid()[0], 0.5);
-  ASSERT_FLOAT_EQ(moments.centroid()[1], 0.5);
+    auto principal_axis = moments.principalAxisSize();
+    ASSERT_FLOAT_EQ(principal_axis[0], 0.25);
+    ASSERT_FLOAT_EQ(principal_axis[1], 0.25);
+    ASSERT_FLOAT_EQ(Moments2<double>::elongatedness(principal_axis), 0.0);
+    ASSERT_FLOAT_EQ(moments.centroid()[0], 0.5);
+    ASSERT_FLOAT_EQ(moments.centroid()[1], 0.5);
+  }
 
+  SECTION("Cereal IO")
+  {
+    Moments2<double> moments(1,2,3,4,5,6);
+
+    std::stringstream ss;
+    {
+      cereal::JSONOutputArchive oarchive(ss);
+      oarchive(moments);
+    }
+    SPDLOG_INFO("Json: {}", ss.str());
+    {
+      cereal::JSONInputArchive iarchive(ss);
+      Moments2<double> moments2;
+      iarchive(moments2);
+      ASSERT_FLOAT_EQ(moments2.M00(), 1);
+      ASSERT_FLOAT_EQ(moments2.M10(), 2);
+      ASSERT_FLOAT_EQ(moments2.M01(), 3);
+      ASSERT_FLOAT_EQ(moments2.M20(), 4);
+      ASSERT_FLOAT_EQ(moments2.M11(), 5);
+      ASSERT_FLOAT_EQ(moments2.M02(), 6);
+    }
+  }
 }
 
 TEST_CASE("PolygonIter", "[Polygon2dC]")
