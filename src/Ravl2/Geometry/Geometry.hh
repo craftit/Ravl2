@@ -9,6 +9,8 @@
 #include <cmath>
 #include <span>
 #include <fmt/ostream.h>
+#include <cereal/cereal.hpp>
+#include <cereal/types/array.hpp>
 
 #if USE_OPENCV
 #include <opencv2/core.hpp>
@@ -264,6 +266,25 @@ namespace Ravl2
   {
     return Vector<RealT, N>({RealT(data)...});
   }
+
+  //! Serialization support
+  template <class Archive, typename DataT, unsigned N>
+  void serialize( Archive & ar, Point<DataT, N> &pnt )
+  {
+    for(auto &it : pnt) {
+      ar(it);
+    }
+  }
+
+  //! Serialization support
+  template <class Archive, typename DataT, unsigned N, unsigned M>
+  void serialize( Archive & ar, Matrix<DataT, N, M> &mat )
+  {
+    for(auto &it : mat) {
+      ar(it);
+    }
+  }
+
 
 }// namespace Ravl2
 

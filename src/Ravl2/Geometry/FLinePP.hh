@@ -5,6 +5,7 @@
 // see http://www.gnu.org/copyleft/lesser.html
 // file-header-ends-here
 
+#include <array>
 #include "Ravl2/Geometry/Geometry.hh"
 #include "Ravl2/Assert.hh"
 
@@ -197,6 +198,14 @@ namespace Ravl2
       if(l2 == RealT(0)) throw std::underflow_error("FLinePPC::ParClosest(): Cannot find line parameter for zero-length line");
       return dot(v, pnt - point[0])() / l2;
     }
+
+    //! Serialization support
+    template <class Archive>
+    void serialize( Archive & ar )
+    {
+      ar(point);
+    }
+
 
   protected:
     std::array<Point<RealT, N>, 2> point;

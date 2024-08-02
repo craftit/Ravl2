@@ -130,7 +130,7 @@ namespace Ravl2
 
     auto offset = pix - origin;
     region.minat = toIndex((offset / stride) + 1, (offset % stride) + 1) + pixs.range().min();
-    ONDEBUG(SPDLOG_INFO("Region minat={} level={} Pix={} Offset={} Stride={} Origin={}", region.minat, level, static_cast<void *>(pix), offset, stride, static_cast<void *>(origin)));
+    ONDEBUG(SPDLOG_INFO("Region minat={} level={} Pix={} Offset={} Stride={} origin={}", region.minat, level, static_cast<void *>(pix), offset, stride, static_cast<void *>(origin)));
     RavlAssert(&pixs[region.minat] == pix);
     region.minValue = level;
     region.maxValue = valueRange.max();

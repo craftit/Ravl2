@@ -6,6 +6,7 @@ find_package(fmt REQUIRED)
 find_package(spdlog REQUIRED)
 find_package(LAPACK REQUIRED)
 find_package(BLAS REQUIRED)
+find_package(cereal REQUIRED)
 find_package(dlib QUIET)
 
 
@@ -41,7 +42,7 @@ if (APPLE)
 endif()
 
 
-target_link_libraries(Ravl2Core PUBLIC ${OpenCV_LIBS} fmt::fmt xtensor xtensor-blas spdlog::spdlog BLAS::BLAS LAPACK::LAPACK)
+target_link_libraries(Ravl2Core PUBLIC ${OpenCV_LIBS} cereal::cereal fmt::fmt xtensor xtensor-blas spdlog::spdlog BLAS::BLAS LAPACK::LAPACK)
 
 target_include_directories(Ravl2Core ${WARNING_GUARD} PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src>
         $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/include>)

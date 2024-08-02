@@ -121,6 +121,8 @@ namespace Ravl2
       return std::abs(centre.EuclidDistance(p) - radius);
     }
 
+
+
   private:
     Point<RealT, 2> centre {};
     RealT radius = 0;

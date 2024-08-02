@@ -14,6 +14,8 @@
 #include <iostream>
 #include <fmt/format.h>
 #include <fmt/ostream.h>
+#include <cereal/cereal.hpp>
+#include <cereal/types/array.hpp>
 
 namespace Ravl2
 {
@@ -48,6 +50,13 @@ namespace Ravl2
 
     //! Default constructor
     constexpr Index() = default;
+
+    //! Serialization support
+    template <class Archive>
+    void serialize( Archive & ar )
+    {
+      ar( m_index );
+    }
 
     //! Access location in the i th dimension.
     [[nodiscard]] constexpr int index(unsigned i) const noexcept
@@ -122,7 +131,7 @@ namespace Ravl2
     //! begin
     [[nodiscard]] constexpr int *begin()
     {
-      return m_index;
+      return m_index.data();
     }
 
     //! end
@@ -134,11 +143,11 @@ namespace Ravl2
     //! begin
     [[nodiscard]] constexpr const int *begin() const
     {
-      return m_index;
+      return m_index.data();
     }
 
   protected:
-    int m_index[N] = {0};
+    std::array<int,N> m_index = {0};
   };
 
   template <unsigned N>
@@ -210,6 +219,13 @@ namespace Ravl2
         m_min = init.begin()[0];
         m_max = init.begin()[1];
       }
+    }
+
+    //! Serialization support
+    template <class Archive>
+    void serialize( Archive & ar )
+    {
+      ar( m_min, m_max );
     }
 
     //! Make size of range 0.
@@ -557,6 +573,13 @@ namespace Ravl2
       for(unsigned i = 0; i < N; i++) {
         m_range[i] = ranges.begin()[i];
       }
+    }
+
+    //! Serialization support
+    template <class Archive>
+    void serialize( Archive & ar )
+    {
+      ar( m_range );
     }
 
     //! Create the range which creates the most negative area.

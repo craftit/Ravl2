@@ -85,6 +85,13 @@ namespace Ravl2
       return Affine(xt::linalg::dot(mSR, in.SRMatrix()), xt::linalg::dot(mSR, in.Translation()) + mT);
     }
 
+    //! Serialization support
+    template <class Archive>
+    void serialize( Archive & ar )
+    {
+      ar( cereal::make_nvp("SR", mSR), cereal::make_nvp("T", mT) );
+    }
+
   protected:
     Matrix<DataT, N, N> mSR;// Scale/rotate.
     Vector<DataT, N> mT;    // Translate.

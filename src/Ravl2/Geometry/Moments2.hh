@@ -228,6 +228,19 @@ namespace Ravl2
     }
     //: Swap X and Y co-ordinates.
 
+    //! Serialization support
+    template <class Archive>
+    void serialize( Archive & ar )
+    {
+      ar( cereal::make_nvp("m00", m00),
+          cereal::make_nvp("m10", m10),
+          cereal::make_nvp("m01", m01),
+          cereal::make_nvp("m20", m20),
+          cereal::make_nvp("m11", m11),
+          cereal::make_nvp("m02", m02));
+    }
+
+
   private:
     RealT m00 = 0;
     RealT m10 = 0;

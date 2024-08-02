@@ -12,14 +12,14 @@
 namespace Ravl2
 {
   //! Line in 2D space - equation Ax+By+C = 0
-  // The class LineABC2dC represents a line embedded in the 2D plane.
-  // The line is represented by the equation aa*x+bb*y+cc = 0.
+  //! The class LineABC2dC represents a line embedded in the 2D plane.
+  //! The line is represented by the equation aa*x+bb*y+cc = 0.
 
   template <typename RealT>
   class LineABC2dC
   {
   public:
-    //: Creates a degenerate line (0,0,0).
+    //! Creates a degenerate line (0,0,0).
     inline LineABC2dC()
         : normal({0.0, 0.0}), d(0.0)
     {}
@@ -58,117 +58,117 @@ namespace Ravl2
       return LineABC2dC<RealT>(normal, -dot(normal, pt));
     }
 
-    bool FitLSQ(const std::vector<Point<RealT, 2>> &points, RealT &residual);
-    //: Fit points to a line.
+    //! Fit points to a line.
     // 'residual' is from the least squares fit and can be used to assess
     // the quality of the fit.  Returns false if fit failed.
+    bool FitLSQ(const std::vector<Point<RealT, 2>> &points, RealT &residual);
 
-    //:-------------------------------------
-    //: Access to the elements of the object.
-
+    //! Returns the normal of the line.
     inline Vector<RealT, 2> Normal() const
     {
       return normal;
     }
-    //: Returns the normal of the line.
 
+    //! Returns the normal of the line normalized to have unit size.
     inline Vector<RealT, 2> UnitNormal() const
     {
       return normal / normal.Magnitude();
     }
-    //: Returns the normal of the line normalized to have unit size.
 
+    //! Returns the distance of the line from the origin of the coordinate
+    //! system.
     inline RealT Rho() const
     {
       return d / normal.Magnitude();
     }
-    //: Returns the distance of the line from the origin of the coordinate
-    //: system.
 
+    //! Returns parameter a.
     inline RealT A() const
     {
       return normal[0];
     }
-    //: Returns parameter a.
 
+    //! Returns parameter b.
     inline RealT B() const
     {
       return normal[1];
     }
-    //: Returns parameter b.
 
+    //! Returns parameter c.
     inline RealT C() const
     {
       return d;
     }
-    //: Returns parameter c.
 
+    //! Returns the value of x coordinate if the y coordinate is known.
+    //! If the parameter A() is zero, the zero is returned.
     inline RealT ValueX(const RealT y) const
     {
       return (A() == 0) ? 0.0 : (-B() * y - C()) / A();
     }
-    //: Returns the value of x coordinate if the y coordinate is known.
-    // If the parameter A() is zero, the zero is returned.
 
+    //! Returns the value of y coordinate if the x coordinate is known.
+    //! If the parameter B() is zero, the zero is returned.
     inline RealT ValueY(const RealT x) const
     {
       return (B() == 0) ? 0.0 : (-A() * x - C()) / B();
     }
-    //: Returns the value of y coordinate if the x coordinate is known.
-    // If the parameter B() is zero, the zero is returned.
 
-    //:--------------------------
-    //: Geometrical constructions.
-
+    //! Returns the value of the function A()*p[0]+B()*p[1]+C() often
+    //: used in geometrical computations.
     inline RealT Residuum(const Point<RealT, 2> &p) const
     {
       return (normal[0] * p[0] + normal[1] * p[1]) + d;
     }
-    //: Returns the value of the function A()*p[0]+B()*p[1]+C() often
-    //: used in geometrical computations.
 
+    //! Normalizes the equation so that the normal vector is unit.
     inline LineABC2dC &MakeUnitNormal();
-    //: Normalizes the equation so that the normal vector is unit.
 
+    //! Returns true if the lines are parallel.
     inline bool AreParallel(const LineABC2dC &line) const;
-    //: Returns true if the lines are parallel.
 
-    inline bool Intersection(const LineABC2dC &line, Point<RealT, 2> &here) const;
-    //: Find the intersection of two lines.
+    //! Find the intersection of two lines.
     // If the intersection doesn't exist, the function returns false.
     // The intersection is assigned to 'here'.
+    inline bool Intersection(const LineABC2dC &line, Point<RealT, 2> &here) const;
 
-    inline Point<RealT, 2> Intersection(const LineABC2dC &line) const;
-    //: Returns the intersection of both lines.
+    //! Returns the intersection of both lines.
     // If the intersection
     // doesn't exist, the function returns Point<RealT,2>(0,0).
+    inline Point<RealT, 2> Intersection(const LineABC2dC &line) const;
 
+    //! Returns the squared Euclidian distance of the 'point' from the line.
     inline RealT SqrEuclidDistance(const Point<RealT, 2> &point) const;
-    //: Returns the squared Euclidian distance of the 'point' from the line.
 
+    //! Returns the signed distance of the 'point' from the line.
+    // The return value is greater than 0 if the point is on the left
+    // side of the line. The left side of the line is determined
+    // by the direction of the normal.
     inline RealT SignedDistance(const Point<RealT, 2> &point) const
     {
       return Residuum(point) / normal.Magnitude();
     }
-    //: Returns the signed distance of the 'point' from the line.
-    // The return value is greater than 0 if the point is on the left
-    // side of the line. The left side of the line is determined
-    // by the direction of the normal.
 
+    //! Returns the distance of the 'point' from the line.
     inline RealT Distance(const Point<RealT, 2> &point) const
     {
       return std::abs(SignedDistance(point));
     }
-    //: Returns the distance of the 'point' from the line.
 
+    //! Returns the point which is the orthogonal projection of the 'point' to the line.
+    //! It is the same as intersection of this line with
+    //! the perpendicular line passing through the 'point'.
     inline Point<RealT, 2> Projection(const Point<RealT, 2> &point) const
     {
       return point - normal * (Residuum(point) / normal.SumOfSqr());
     }
-    //: Returns the point which is the orthogonal projection of the 'point'
-    //: to the line.
-    // It is the same as intersection of this line with
-    // the perpendicular line passing through the 'point'.
+
+    //! Serialization support
+    template <class Archive>
+    void serialize( Archive & ar )
+    {
+      ar(normal[0], normal[1], d);
+    }
 
   private:
     Vector<RealT, 2> normal;

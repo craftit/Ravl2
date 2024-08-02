@@ -17,6 +17,7 @@ function(RAVL2_setup_dependencies)
   find_package(Catch2 3 QUIET)
   find_package(CLI11 QUIET)
   find_package(nlohmann_json QUIET)
+  find_package(cereal QUIET)
 
   # For each dependency, see if it's
   # already been provided to us by a parent project
@@ -105,6 +106,19 @@ function(RAVL2_setup_dependencies)
     CPMAddPackage("gh:nlohmann/json@3.10.5")
   else()
     message(STATUS "Found native nlohmann_json::nlohmann_json")
+  endif()
+
+  if(NOT TARGET cereal::cereal)
+    cpmaddpackage(
+      NAME
+      cereal
+      GITHUB_REPOSITORY
+      "USCiLab/cereal"
+      GIT_TAG
+      "v1.3.2"
+    )
+  else()
+    message(STATUS "Found native cereal::cereal")
   endif()
 
 #  if(NOT TARGET tools::tools)

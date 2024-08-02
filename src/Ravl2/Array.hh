@@ -8,6 +8,7 @@
 #pragma once
 
 #include <array>
+#include <cereal/cereal.hpp>
 #include "Ravl2/Index.hh"
 
 namespace Ravl2
@@ -1267,7 +1268,7 @@ namespace Ravl2
       return m_buffer;
     }
 
-    //! vertexBegin iterator
+
   protected:
     std::shared_ptr<DataT[]> m_buffer;
   };
@@ -1349,6 +1350,22 @@ namespace Ravl2
     mPtr += arr.range(N - 1).min();// The last index always has a stride of 1.
     return mPtr;
   }
+
+  // Serialize an array to a stream
+  template<class Archive, typename ArrayT, typename DataT = typename ArrayT::value_type, unsigned N = ArrayT::dimensions>
+  void save(Archive & archive,
+            ArrayT const & m)
+  {
+    archive( m.x, m.y, m.z );
+  }
+
+  template<class Archive, typename ArrayT>
+  void load(Archive & archive,
+            ArrayT & m)
+  {
+    archive( m.x, m.y, m.z );
+  }
+
 
   void doNothing();
 

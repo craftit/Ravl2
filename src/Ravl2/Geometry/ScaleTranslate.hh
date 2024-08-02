@@ -75,10 +75,17 @@ namespace Ravl2
       return mS * pnt + mT;
     }
 
-    //: Compose this transform with 'In'
+    //! Compose this transform with 'In'
     inline auto operator()(const ScaleTranslate &In) const
     {
       return ScaleTranslate(mS * In.scaleVector(), mS * In.translation() + mT);
+    }
+
+    //! Serialization support
+    template <class Archive>
+    void serialize( Archive & ar )
+    {
+      ar( cereal::make_nvp("S",mS), cereal::make_nvp("T",mT));
     }
 
   protected:
