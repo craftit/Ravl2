@@ -267,26 +267,40 @@ namespace Ravl2
     return Vector<RealT, N>({RealT(data)...});
   }
 
-  //! Serialization support
-  template <class Archive, typename DataT, unsigned N>
-  void serialize( Archive & ar, Point<DataT, N> &pnt )
-  {
-    for(auto &it : pnt) {
-      ar(it);
-    }
-  }
-
-  //! Serialization support
-  template <class Archive, typename DataT, unsigned N, unsigned M>
-  void serialize( Archive & ar, Matrix<DataT, N, M> &mat )
-  {
-    for(auto &it : mat) {
-      ar(it);
-    }
-  }
-
-
 }// namespace Ravl2
+
+
+namespace xt {
+  //! Serialization support
+  template <class Archive, typename DataT, size_t N>
+  void serialize( Archive & archive, xt::xfixed_container<DataT, xt::fixed_shape<N>, xt::layout_type::row_major, false, xt::xtensor_expression_tag> &pnt )
+  {
+    cereal::size_type size = N;
+    archive(cereal::make_size_tag(size));
+    if(size != N) {
+      throw std::runtime_error("Size mismatch");
+    }
+    (void) pnt;
+    for(auto &it : pnt) {
+      archive(it);
+    }
+  }
+
+  //! Serialization support
+  template <class Archive, typename DataT, size_t N, size_t M>
+  void serialize( Archive & archive, Ravl2::Matrix<DataT, N, M> &mat )
+  {
+    cereal::size_type size = N * M;
+    archive(cereal::make_size_tag(size));
+    if(size != N * M) {
+      throw std::runtime_error("Size mismatch");
+    }
+    for(auto &it : mat) {
+      archive(it);
+    }
+  }
+
+}
 
 #if !USE_OPENCV
 #if FMT_VERSION >= 90000

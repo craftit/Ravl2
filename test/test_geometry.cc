@@ -5,6 +5,7 @@
 #include <cereal/archives/json.hpp>
 
 #include "Ravl2/Math.hh"
+#include "Ravl2/Geometry/Geometry.hh"
 #include "Ravl2/Geometry/Moments2.hh"
 #include "Ravl2/Geometry/Circle.hh"
 #include "Ravl2/Geometry/Polygon2d.hh"
@@ -67,6 +68,51 @@ TEST_CASE("Moments", "[Moments2]")
   }
 }
 
+TEST_CASE("Vector and Matrix")
+{
+  using namespace Ravl2;
+  SECTION( "Point<float,2> Cereal. ")
+  {
+    Point<float,2> p1({1,2});
+    std::stringstream ss;
+    {
+      cereal::JSONOutputArchive oarchive(ss);
+      //serialize(oarchive, p1);
+      oarchive(p1);
+    }
+    SPDLOG_INFO("Point<float,2>: {}", ss.str());
+    {
+      cereal::JSONInputArchive iarchive(ss);
+      Point<float,2> p2;
+      //serialize(iarchive, p2);
+      iarchive(p2);
+      CHECK(isNearZero(p1(0) - p2(0)));
+      CHECK(isNearZero(p1(1) - p2(1)));
+    }
+  }
+  SECTION( "Matrix<float,2,3> Cereal. ")
+  {
+    Matrix<float,2,3> m1({{1,2,3},{4,5,6}});
+    std::stringstream ss;
+    {
+      cereal::JSONOutputArchive oarchive(ss);
+      oarchive(m1);
+    }
+    // SPDLOG_INFO("Matrix<float,2,3>: {}", ss.str());
+    {
+      cereal::JSONInputArchive iarchive(ss);
+      Matrix<float,2,3> m2;
+      iarchive(m2);
+      CHECK(isNearZero(m1(0,0) - m2(0,0)));
+      CHECK(isNearZero(m1(0,1) - m2(0,1)));
+      CHECK(isNearZero(m1(0,2) - m2(0,2)));
+      CHECK(isNearZero(m1(1,0) - m2(1,0)));
+      CHECK(isNearZero(m1(1,1) - m2(1,1)));
+      CHECK(isNearZero(m1(1,2) - m2(1,2)));
+    }
+  }
+}
+
 TEST_CASE("PolygonIter", "[Polygon2dC]")
 {
   using namespace Ravl2;
@@ -85,7 +131,7 @@ TEST_CASE("PolygonIter", "[Polygon2dC]")
         {7,IndexRange<1>(0,9)},
         {8,IndexRange<1>(0,9)},
         {9,IndexRange<1>(0,9)}
-          });
+    });
 
   Polygon2dC<float> polygon;
   polygon.push_back(Point<float,2>({0,0}));
@@ -164,28 +210,77 @@ TEST_CASE("Circle2", "[Circle2]")
 #endif
 }
 
-TEST_CASE("AffineComposition")
+TEST_CASE("Affine")
 {
   using namespace Ravl2;
-  Affine<float,2> a1 = affineFromScaleAngleTranslation(toVector<float>(2,2), std::numbers::pi_v<float>/2, toVector<float>(0,0));
-  Affine<float,2> a2 = affineFromScaleAngleTranslation(toVector<float>(1,1), 0.0f, toVector<float>(10,20));
-  Point<float,2> p = toPoint<float>(0,0);
-  Point<float,2> pnt0 = a2(a1(p));
-  //SPDLOG_INFO("At: {} {} ", pnt0(0), pnt0(1));
-  CHECK(euclidDistance(pnt0,toPoint<float>(10,20))() < 0.001f);
-  Point<float,2> pnt = a1(a2(p));
-  //SPDLOG_INFO("At: {} {} ", pnt(0), pnt(1));
-  CHECK(euclidDistance(pnt,toPoint<float>(-40,20))() < 0.001f);
-  Point<float,2> q = toPoint<float>(5,4);
-  CHECK(Ravl2::euclidDistance(a2(a1)(q),a2(a1(q)))() < 0.001f);
+  SECTION( "Composition. ")
+  {
+    Affine<float, 2>
+      a1 = affineFromScaleAngleTranslation(toVector<float>(2, 2), std::numbers::pi_v<float> / 2, toVector<float>(0, 0));
+    Affine<float, 2> a2 = affineFromScaleAngleTranslation(toVector<float>(1, 1), 0.0f, toVector<float>(10, 20));
+    Point<float, 2> p = toPoint<float>(0, 0);
+    Point<float, 2> pnt0 = a2(a1(p));
+    //SPDLOG_INFO("At: {} {} ", pnt0(0), pnt0(1));
+    CHECK(euclidDistance(pnt0, toPoint<float>(10, 20))() < 0.001f);
+    Point<float, 2> pnt = a1(a2(p));
+    //SPDLOG_INFO("At: {} {} ", pnt(0), pnt(1));
+    CHECK(euclidDistance(pnt, toPoint<float>(-40, 20))() < 0.001f);
+    Point<float, 2> q = toPoint<float>(5, 4);
+    CHECK(Ravl2::euclidDistance(a2(a1)(q), a2(a1(q)))() < 0.001f);
+  }
+  SECTION( "Cereal. ")
+  {
+    Affine<float, 2>
+      a1 = affineFromScaleAngleTranslation(toVector<float>(1, 2), std::numbers::pi_v<float> / 3, toVector<float>(4, 5));
+    std::stringstream ss;
+    {
+      cereal::JSONOutputArchive oarchive(ss);
+      oarchive(a1);
+    }
+    //SPDLOG_INFO("Affine<float, 2>: {}", ss.str());
+    {
+      cereal::JSONInputArchive iarchive(ss);
+      Affine<float, 2> a2;
+      iarchive(a2);
+      CHECK(isNearZero(a1.Translation()[0] - a2.Translation()[0]));
+      CHECK(isNearZero(a1.Translation()[1] - a2.Translation()[1]));
+      CHECK(isNearZero(a1.SRMatrix()(0,0) - a2.SRMatrix()(0,0)));
+      CHECK(isNearZero(a1.SRMatrix()(0,1) - a2.SRMatrix()(0,1)));
+      CHECK(isNearZero(a1.SRMatrix()(1,0) - a2.SRMatrix()(1,0)));
+      CHECK(isNearZero(a1.SRMatrix()(1,1) - a2.SRMatrix()(1,1)));
+    }
+  }
+
 }
 
 TEST_CASE("ScaleTranslate")
 {
   using namespace Ravl2;
-  ScaleTranslate<float, 2> a1(toVector<float>(2, 2), toVector<float>(1, 2));
-  CHECK(euclidDistance(a1(toPoint<float>(0,0)),toPoint<float>(1,2))() < 0.001f);
-  CHECK(euclidDistance(a1(toPoint<float>(1,1)),toPoint<float>(3,4))() < 0.001f);
-  ScaleTranslate<float, 2> a2(toVector<float>(2, 1), toVector<float>(1, 2));
-  CHECK(euclidDistance(a2(toPoint<float>(1,1)),toPoint<float>(3,3))() < 0.001f);
+  SECTION( "Basic ops ")
+  {
+    ScaleTranslate<float, 2> a1(toVector<float>(2, 2), toVector<float>(1, 2));
+    CHECK(euclidDistance(a1(toPoint<float>(0, 0)), toPoint<float>(1, 2))() < 0.001f);
+    CHECK(euclidDistance(a1(toPoint<float>(1, 1)), toPoint<float>(3, 4))() < 0.001f);
+    ScaleTranslate<float, 2> a2(toVector<float>(2, 1), toVector<float>(1, 2));
+    CHECK(euclidDistance(a2(toPoint<float>(1, 1)), toPoint<float>(3, 3))() < 0.001f);
+  }
+  SECTION( "Cereal. ")
+  {
+    ScaleTranslate<float, 2> a1(toVector<float>(1, 2), toVector<float>(3, 4));
+    std::stringstream ss;
+    {
+      cereal::JSONOutputArchive oarchive(ss);
+      oarchive(a1);
+    }
+    //SPDLOG_INFO("ScaleTranslate<float, 2>: {}", ss.str());
+    {
+      cereal::JSONInputArchive iarchive(ss);
+      ScaleTranslate<float, 2> a2;
+      iarchive(a2);
+      CHECK(isNearZero(a1.translation()[0] - a2.translation()[0]));
+      CHECK(isNearZero(a1.translation()[1] - a2.translation()[1]));
+      CHECK(isNearZero(a1.scaleVector()[0] - a2.scaleVector()[0]));
+      CHECK(isNearZero(a1.scaleVector()[1] - a2.scaleVector()[1]));
+    }
+  }
 }
