@@ -4,6 +4,7 @@ find_package(xtensor-blas REQUIRED)
 find_package(OpenCV REQUIRED)
 find_package(fmt REQUIRED)
 find_package(spdlog REQUIRED)
+find_package(cereal REQUIRED)
 
 #if on apple and BLA_VENDOR is not set, set it to Apple
 if (APPLE AND NOT DEFINED BLA_VENDOR)
@@ -14,7 +15,6 @@ if (APPLE AND NOT DEFINED BLA_VENDOR)
     endif ()
 endif()
 
-find_package(cereal REQUIRED)
 find_package(BLAS REQUIRED)
 find_package(LAPACK REQUIRED)
 find_package(dlib QUIET)
