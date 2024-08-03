@@ -37,13 +37,9 @@ namespace Ravl2
     const int iy = int(fy);
     const auto *pixel1 = &((img)[ix][iy]);
     const auto *pixel2 = &((img)[ix + 1][iy]);
-#if 0
     const auto onemu = (1.0f - u);
     const auto onemt = (1.0f - t);
     return (pixel1[0] * (onemt * onemu)) + (pixel1[1] * (t * onemu)) + (pixel2[0] * (onemt * u)) + (pixel2[1] * (t * u));
-#else
-    return std::lerp(std::lerp(*pixel1, *(pixel1 + 1), u), std::lerp(*pixel2, *(pixel2 + 1), u), t);
-#endif
   }
 
 }// namespace Ravl2
