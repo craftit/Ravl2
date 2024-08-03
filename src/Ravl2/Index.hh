@@ -131,7 +131,7 @@ namespace Ravl2
     //! end
     [[nodiscard]] constexpr const int *end() const
     {
-      return &(m_index[N]);
+      return &(m_index.data()[N]);
     }
 
     //! begin
@@ -627,7 +627,7 @@ namespace Ravl2
     }
 
     //! Test if an index is contained within the range.
-    bool contains(const Index<N> &ind) const noexcept
+    [[nodiscard]] bool contains(const Index<N> &ind) const noexcept
     {
       for(unsigned i = 0; i < N; i++)
         if(!m_range[i].contains(ind[i]))
@@ -636,7 +636,7 @@ namespace Ravl2
     }
 
     //! Test if 'range' is contained with this one
-    bool contains(const IndexRange<N> &range) const noexcept
+    [[nodiscard]] bool contains(const IndexRange<N> &range) const noexcept
     {
       for(unsigned i = 0; i < N; i++)
         if(!m_range[i].contains(range.m_range[i]))
@@ -645,7 +645,7 @@ namespace Ravl2
     }
 
     //! Test if 'range' overlaps with this one
-    bool overlaps(const IndexRange<N> &range) const noexcept
+    [[nodiscard]] bool overlaps(const IndexRange<N> &range) const noexcept
     {
       for(unsigned i = 0; i < N; i++)
         if(!m_range[i].overlaps(range.m_range[i]))
@@ -654,7 +654,7 @@ namespace Ravl2
     }
 
     //! Shrink the range in from both ends by amount.
-    IndexRange<N> shrink(int amount) const noexcept
+    [[nodiscard]] IndexRange<N> shrink(int amount) const noexcept
     {
       IndexRange<N> ret;
       for(unsigned i = 0; i < N; i++)
@@ -663,7 +663,7 @@ namespace Ravl2
     }
 
     //! Shrink the range in from both ends by amount.
-    IndexRange<N> shrink(const Index<N> &ind) const noexcept
+    [[nodiscard]] IndexRange<N> shrink(const Index<N> &ind) const noexcept
     {
       IndexRange<N> ret;
       for(unsigned i = 0; i < N; i++)
@@ -673,7 +673,7 @@ namespace Ravl2
 
     //! Shrink the range by given size,
     //! min is increased by min of amount.min(), and max decreased by amount.max()
-    IndexRange<N> shrink(const IndexRange<N> &amount) const
+    [[nodiscard]] IndexRange<N> shrink(const IndexRange<N> &amount) const
     {
       IndexRange<N> ret;
       for(unsigned i = 0; i < N; i++)
@@ -682,7 +682,7 @@ namespace Ravl2
     }
 
     //! Shrink the range in from both ends by amount.
-    IndexRange<N> expand(int amount) const noexcept
+    [[nodiscard]] IndexRange<N> expand(int amount) const noexcept
     {
       IndexRange<N> ret;
       for(unsigned i = 0; i < N; i++)
@@ -691,7 +691,7 @@ namespace Ravl2
     }
 
     //! Shrink the range in from both ends by amount.
-    IndexRange<N> expand(const Index<N> &ind) const noexcept
+    [[nodiscard]] IndexRange<N> expand(const Index<N> &ind) const noexcept
     {
       IndexRange<N> ret;
       for(unsigned i = 0; i < N; i++)
@@ -726,7 +726,7 @@ namespace Ravl2
     }
 
     //! Add one range to another
-    IndexRange<N> operator+(const IndexRange<N> &ind) const noexcept
+    [[nodiscard]] IndexRange<N> operator+(const IndexRange<N> &ind) const noexcept
     {
       IndexRange<N> ret;
       for(unsigned i = 0; i < N; i++)
@@ -735,7 +735,7 @@ namespace Ravl2
     }
 
     //! Add one range to another
-    IndexRange<N> operator-(const IndexRange<N> &ind) const noexcept
+    [[nodiscard]] IndexRange<N> operator-(const IndexRange<N> &ind) const noexcept
     {
       IndexRange<N> ret;
       for(unsigned i = 0; i < N; i++)
@@ -743,8 +743,8 @@ namespace Ravl2
       return ret;
     }
 
-    //! Add one range to another
-    bool operator==(const IndexRange<N> &ind) const noexcept
+    //! Are two ranges equal.
+    [[nodiscard]] bool operator==(const IndexRange<N> &ind) const noexcept
     {
       for(unsigned i = 0; i < N; i++) {
         if(m_range[i] != ind.m_range[i])
@@ -753,7 +753,8 @@ namespace Ravl2
       return true;
     }
 
-    //! Add one range to another
+    //! Are two ranges not equal.
+    [[nodiscard]]
     bool operator!=(const IndexRange<N> &ind) const noexcept
     {
       for(unsigned i = 0; i < N; i++) {

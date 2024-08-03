@@ -196,6 +196,7 @@ namespace Ravl2
   };
 
   // Let everyone know there's an implementation already generated for common cases
+  extern template class IndexRangeSet<3>;
   extern template class IndexRangeSet<2>;
   extern template class IndexRangeSet<1>;
 }// namespace Ravl2

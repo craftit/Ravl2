@@ -33,12 +33,12 @@ namespace Ravl2
     const auto fy = std::floor(py);// Col
     const auto u = px - fx;
     const auto t = py - fy;
-    const auto onemu = (1.0f - u);
-    const auto onemt = (1.0f - t);
     const int ix = int(fx);
     const int iy = int(fy);
     const auto *pixel1 = &((img)[ix][iy]);
     const auto *pixel2 = &((img)[ix + 1][iy]);
+    const auto onemu = (1.0f - u);
+    const auto onemt = (1.0f - t);
     return (pixel1[0] * (onemt * onemu)) + (pixel1[1] * (t * onemu)) + (pixel2[0] * (onemt * u)) + (pixel2[1] * (t * u));
   }
 

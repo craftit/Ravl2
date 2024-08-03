@@ -10,6 +10,7 @@
 #include <numbers>
 #include <iostream>
 #include <vector>
+#include <cereal/cereal.hpp>
 #include "Ravl2/Math.hh"
 
 namespace Ravl2
@@ -58,39 +59,48 @@ namespace Ravl2
       return mVar;
     }
 
+    //! Access the number of samples.
     [[nodiscard]] const size_t &count() const
     {
       return mN;
     }
-    //: Access the number of samples.
 
+    //! Access the number of samples.
     [[nodiscard]] size_t &count()
     {
       return mN;
     }
-    //: Access the number of samples.
 
+    //! Access the mean.
     [[nodiscard]] RealT mean() const
     {
       return mMean;
     }
-    //: Access the mean.
 
+    //! Value of the normal (Gaussian) distribution at x, using this mean and variance.
     [[nodiscard]] RealT Gauss(RealT x) const;
-    //: Value of the normal (Gaussian) distribution at x, using this mean and variance.
 
+    //! Add another MeanVariance to this one.
     MeanVariance<RealT> &operator+=(const MeanVariance<RealT> &mv);
-    //: Add another MeanVariance to this one.
 
+    //! Add another sample
     MeanVariance<RealT> &operator+=(const RealT &value);
-    //: Add another sample
 
+    //! Remove another MeanVariance from this one.
     MeanVariance<RealT> &operator-=(const MeanVariance<RealT> &mv);
-    //: Remove another MeanVariance from this one.
 
-    MeanVariance<RealT> operator*(const MeanVariance<RealT> &oth) const;
-    //: Calculate the product of the two probability density functions.
+    //! Calculate the product of the two probability density functions.
     // (The number of samples is ignored)
+    MeanVariance<RealT> operator*(const MeanVariance<RealT> &oth) const;
+
+    //! Serialization support
+    template <class Archive>
+    void serialize( Archive & ar )
+    {
+      ar( cereal::make_nvp("n", mN),
+          cereal::make_nvp("mean", mMean),
+          cereal::make_nvp("variance", mVar));
+    }
 
   private:
     size_t mN = 0;

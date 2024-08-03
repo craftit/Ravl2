@@ -107,7 +107,7 @@ namespace Ravl2
   };
 
   //! Flood based region growing.
-  // Grow a region from 'seed' including all connected pixel less than or equal to threshold, generate a boundary as the result.
+  //! Grow a region from 'seed' including all connected pixel less than or equal to threshold, generate a boundary as the result.
 
   template <class PixelT, class InclusionTestT = FloodRegionLessThanThresholdC<PixelT>>
   class FloodRegionC
@@ -144,7 +144,7 @@ namespace Ravl2
     //! Returns true if the boundary has a non zero area.
     bool GrowRegion(const Index<2> &seed, const InclusionTestT &inclusionCriteria, Boundary &boundary, size_t maxSize = 0);
 
-    //: Grow a region from 'seed' including all connected pixel less than or equal to threshold, generate a mask as the result.
+    //! Grow a region from 'seed' including all connected pixel less than or equal to threshold, generate a mask as the result.
     // The mask images are generated with a boundary
     // Returns the region size.
     template <typename MaskT>
@@ -173,7 +173,7 @@ namespace Ravl2
     std::queue<FloodRegionLineC> pixQueue;
   };
 
-  //: Base grow region routine.
+  //! Base grow region routine.
   // A rewrite of code from: A Seed Fill Algorithm by Paul Heckbert from "Grahics Gems", Academic Press, 1990
 
   template <class PixelT, class InclusionTestT>

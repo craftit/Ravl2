@@ -149,6 +149,16 @@ namespace Ravl2
       mSum2 += sqr(value);
     }
 
+    //! Serialization support
+    template <class Archive>
+    void serialize( Archive & ar )
+    {
+      ar( cereal::make_nvp("n", mN),
+          cereal::make_nvp("sum", mSum),
+          cereal::make_nvp("sum2", mSum2));
+    }
+
+
   private:
     unsigned mN = 0;
     RealT mSum = 0; // Sum of data.
