@@ -1335,8 +1335,8 @@ namespace Ravl2
     requires WindowedArray<ArrayT, DataT, N>
   [[nodiscard]] constexpr DataT *addressOfMin(ArrayT &arr)
   {
-    const DataT *mPtr = arr.origin_address();
-    for(unsigned i = 0; i < N - 1; i++) { mPtr += arr.strides(i) * arr.range(i).min(); }
+    DataT *mPtr = arr.origin_address();
+    for(unsigned i = 0; i < N - 1; i++) { mPtr += arr.stride(i) * arr.range(i).min(); }
     mPtr += arr.range(N - 1).min();// The last index always has a stride of 1.
     return mPtr;
   }
@@ -1347,7 +1347,7 @@ namespace Ravl2
   [[nodiscard]] constexpr const DataT *addressOfMin(const ArrayT &arr)
   {
     const DataT *mPtr = arr.origin_address();
-    for(unsigned i = 0; i < N - 1; i++) { mPtr += arr.strides(i) * arr.range(i).min(); }
+    for(unsigned i = 0; i < N - 1; i++) { mPtr += arr.stride(i) * arr.range(i).min(); }
     mPtr += arr.range(N - 1).min();// The last index always has a stride of 1.
     return mPtr;
   }
