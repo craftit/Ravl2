@@ -565,6 +565,13 @@ namespace Ravl2
       }
     }
 
+    //! Helper to create from a variable number of arguments of dimension sizes.
+    template <typename... DataT>
+    [[nodiscard]] static IndexRange<N> fromSizes(DataT... data)
+    {
+      return IndexRange<N>({IndexRange<1>(0,data-1)...});
+    }
+
     //! Create the range which creates the most negative area.
     // This is useful if you want guarantee the first point involved in
     // the rectangle is always covered
