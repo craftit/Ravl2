@@ -927,16 +927,6 @@ namespace Ravl2
       return m_strides.data();
     }
 
-    //! Fill array with value.
-    // cppcheck-suppress functionConst
-    constexpr void fill(const DataT &val)
-    {
-      for(auto &at : *this) {
-        // cppcheck-suppress useStlAlgorithm
-        at = val;
-      }
-    }
-
   protected:
     DataT *m_data = nullptr;
     IndexRange<N> m_range;
@@ -1240,18 +1230,46 @@ namespace Ravl2
     return ArrayAccess<DataT, N>(range, array.origin_address(), array.strides());
   }
 
+  //! Copy data from a source array to destination array
+  template <typename Array1T, typename Array2T, unsigned N = Array1T::dimensions>
+  requires(WindowedArray<Array1T, typename Array1T::value_type, N> &&
+    WindowedArray<Array2T, typename Array2T::value_type, N>) && (N == 1) &&
+    std::is_convertible_v<typename Array2T::value_type, typename Array1T::value_type>
+  constexpr void copy(Array1T &dest, const Array2T &src)
+  {
+    assert(dest.range().contains(src.range()));
+    auto *srcPtr = addressOfMin(src);
+    std::copy(srcPtr, srcPtr + src.range().size(), dest.origin_address());
+  }
+
+  //! Copy data from a source array to destination array
+  template <typename Array1T, typename Array2T, typename Data1T = typename Array1T::value_type, unsigned N = Array1T::dimensions>
+  requires(WindowedArray<Array1T, typename Array1T::value_type, N> &&
+    WindowedArray<Array2T, typename Array2T::value_type, N>) && (N >= 2) &&
+    std::is_convertible_v<typename Array2T::value_type, typename Array1T::value_type>
+  constexpr void copy(Array1T &dest, const Array2T &src)
+  {
+    assert(dest.range().contains(src.range()));
+    auto iterDest = dest.begin();
+    auto iterSrc = src.begin();
+    const auto srcRowSize = src.range(N - 1).size();
+    for(; iterDest.valid(); iterDest.nextRow(),iterSrc.nextRow()) {
+      std::copy(iterSrc.data(), iterSrc.data() + srcRowSize, iterDest.data());
+    }
+  }
+
   template <typename ArrayT, typename DataT = typename ArrayT::value_type, unsigned N = ArrayT::dimensions>
     requires WindowedArray<ArrayT, DataT, N>
   constexpr auto clone(const ArrayT &array)
   {
     Array<DataT, N> ret(array.range());
-    std::copy(array.begin(), array.end(), ret.begin());
+    copy(ret, array);
     return ret;
   }
 
   template <typename ArrayT, typename DataT = typename ArrayT::value_type, typename OtherDataT>
     requires WindowedArray<ArrayT, DataT, 1> && std::is_convertible_v<OtherDataT, DataT>
-  constexpr auto fill(const ArrayT &array, const OtherDataT &value)
+  constexpr void fill(const ArrayT &array, const OtherDataT &value)
   {
     // 1d arrays are simple
     for(auto &at : array)
@@ -1260,13 +1278,14 @@ namespace Ravl2
 
   template <typename ArrayT, typename DataT = typename ArrayT::value_type, typename OtherDataT, unsigned N = ArrayT::dimensions>
     requires WindowedArray<ArrayT, DataT, N> && std::is_convertible_v<OtherDataT, DataT> && (N > 1)
-  constexpr auto fill(const ArrayT &array, const OtherDataT &value)
+  constexpr void fill(const ArrayT &array, const OtherDataT &value)
   {
-    // This produces faster code for Nd arrays
-    for(auto at = array.begin(); at.valid();) {
-      do {
-        *at = value;
-      } while(at.next());
+    if(array.empty())
+      return;
+    const size_t rowSize = size_t(array.range(N - 1).size());
+    // Fill row by row, this allows optimisations such as memset.
+    for(auto at = array.begin(); at.valid();at.nextRow()) {
+      std::fill(at.data(), at.data() + rowSize,value);
     }
   }
 
@@ -1306,22 +1325,11 @@ namespace Ravl2
   //! Get the address of the minimum element of the array.
   template <typename ArrayT, typename DataT = typename ArrayT::value_type, unsigned N = ArrayT::dimensions>
     requires WindowedArray<ArrayT, DataT, N>
-  [[nodiscard]] constexpr DataT *addressOfMin(ArrayT &arr)
+  [[nodiscard]] constexpr DataT *addressOfMin(const ArrayT &arr)
   {
     DataT *mPtr = arr.origin_address();
     for(unsigned i = 0; i < N - 1; i++) { mPtr += arr.stride(i) * arr.range(i).min(); }
-    mPtr += arr.range(N - 1).min();// The last index always has a stride of 1.
-    return mPtr;
-  }
-
-  //! Get the address of the minimum element of the array.
-  template <typename ArrayT, typename DataT = typename ArrayT::value_type, unsigned N = ArrayT::dimensions>
-    requires WindowedArray<ArrayT, DataT, N>
-  [[nodiscard]] constexpr const DataT *addressOfMin(const ArrayT &arr)
-  {
-    const DataT *mPtr = arr.origin_address();
-    for(unsigned i = 0; i < N - 1; i++) { mPtr += arr.stride(i) * arr.range(i).min(); }
-    mPtr += arr.range(N - 1).min();// The last index always has a stride of 1.
+      mPtr += arr.range(N - 1).min();// The last index always has a stride of 1.
     return mPtr;
   }
 

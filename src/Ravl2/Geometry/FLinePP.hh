@@ -5,6 +5,8 @@
 // see http://www.gnu.org/copyleft/lesser.html
 // file-header-ends-here
 
+#pragma  once
+
 #include <array>
 #include "Ravl2/Geometry/Geometry.hh"
 #include "Ravl2/Assert.hh"

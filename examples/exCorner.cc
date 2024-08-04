@@ -15,7 +15,7 @@
 #include "Ravl2/Image/CornerDetectorSusan.hh"
 #include "Ravl2/Image/DrawFrame.hh"
 #include "Ravl2/Image/DrawCross.hh"
-#include "Ravl2/OpenCV/convert.hh"
+#include "Ravl2/OpenCV/Image.hh"
 
 #include <opencv2/imgcodecs.hpp>
 #include <opencv2/highgui.hpp>

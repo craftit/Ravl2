@@ -2,7 +2,7 @@
 include(GenerateExportHeader)
 
 add_library (Ravl2OpenCV
-        convert.hh convert.cc
+        Image.hh Image.cc
 )
 
 add_library(ravl2::Ravl2OpenCV ALIAS Ravl2OpenCV)

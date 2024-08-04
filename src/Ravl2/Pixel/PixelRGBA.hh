@@ -4,111 +4,109 @@
 // General Public License (LGPL). See the lgpl.licence file for details or
 // see http://www.gnu.org/copyleft/lesser.html
 // file-header-ends-here
-#ifndef RAVLRGBAVALUE_HEADER
-#define RAVLRGBAVALUE_HEADER
-////////////////////////////////////////////////////////////////////
 //! author="Charles Galambos"
 //! date="24/01/2001"
 
-#include "Ravl2/TFVector.hh"
-#include "Ravl2/Image/RGBValue.hh"
+#pragma once
+
+#include <array>
+#include "Ravl2/Pixel/PixelRGB.hh"
+#include "Ravl2/Geometry/Geometry.hh"
 
 namespace Ravl2
 {
-
   //: RGBA Pixel.
 
   template <class CompT>
-  class RGBAValueC : public Vector<CompT, 4>
+  class PixelRGBA : public Vector<CompT, 4>
   {
   public:
-    RGBAValueC()
-    {}
-    //: Default constructor.
+    //! Default constructor.
     // Creates an undefined value.
+    PixelRGBA() = default;
 
-    RGBAValueC(const CompT &r, const CompT &g, const CompT &b, const CompT &a = CompT())
+    //! Construct from component values.
+    PixelRGBA(const CompT &r, const CompT &g, const CompT &b, const CompT &a = CompT())
     {
-      this->data[0] = r;
-      this->data[1] = g;
-      this->data[2] = b;
-      this->data[3] = a;
+      (*this)[0] = r;
+      (*this)[1] = g;
+      (*this)[2] = b;
+      (*this)[3] = a;
     }
-    //: Construct from component values.
 
+    //! Construct from another component type.
     template <class OCompT>
-    RGBAValueC(const RGBAValueC<OCompT> &oth)
+    PixelRGBA(const PixelRGBA<OCompT> &oth)
     {
-      this->data[0] = oth.Red();
-      this->data[1] = oth.Green();
-      this->data[2] = oth.Blue();
-      this->data[3] = oth.Alpha();
+      (*this)[0] = oth.Red();
+      (*this)[1] = oth.Green();
+      (*this)[2] = oth.Blue();
+      (*this)[3] = oth.Alpha();
     }
-    //: Construct from another component type.
 
-    RGBAValueC(const Vector<CompT, 4> &v)
+    //! Constructor from base class.
+    PixelRGBA(const Vector<CompT, 4> &v)
         : Vector<CompT, 4>(v)
     {}
-    //: Constructor from base class.
 
+    //! Construct from another 3 rgb pixel.
     template <class OCompT>
-    RGBAValueC(RGBValueC<OCompT> &oth, const CompT &alpha = CompT())
+    PixelRGBA(PixelRGB<OCompT> &oth, const CompT &alpha = {})
     {
-      this->data[0] = oth.Red();
-      this->data[1] = oth.Green();
-      this->data[2] = oth.Blue();
-      this->data[3] = alpha;
+      (*this)[0] = oth.Red();
+      (*this)[1] = oth.Green();
+      (*this)[2] = oth.Blue();
+      (*this)[3] = alpha;
     }
-    //: Construct from another 3 rgb pixel.
 
+    //! Returns the level of the red component.
     inline const CompT &Red() const
     {
-      return this->data[0];
+      return (*this)[0];
     }
-    // Returns the level of the red component.
 
+    //! Returns the level of the green component.
     inline const CompT &Green() const
     {
-      return this->data[1];
+      return (*this)[1];
     }
-    // Returns the level of the green component.
 
+    //! Returns the level of the blue component.
     inline const CompT &Blue() const
     {
-      return this->data[2];
+      return (*this)[2];
     }
-    // Returns the level of the blue component.
 
+    //! Returns the level of the alpha component.
     inline const CompT &Alpha() const
     {
-      return this->data[3];
+      return (*this)[3];
     }
-    // Returns the level of the alpha component.
 
+    //! Returns the level of the red component.
     inline CompT &Red()
     {
-      return this->data[0];
+      return (*this)[0];
     }
-    // Returns the level of the red component.
 
+    //! Returns the level of the green component.
     inline CompT &Green()
     {
-      return this->data[1];
+      return (*this)[1];
     }
-    // Returns the level of the green component.
 
+    //! Returns the level of the blue component.
     inline CompT &Blue()
     {
-      return this->data[2];
+      return (*this)[2];
     }
-    // Returns the level of the blue component.
 
+    //! Returns the level of the alpha component.
     inline CompT &Alpha()
     {
-      return this->data[3];
+      return (*this)[3];
     }
-    // Returns the level of the alpha component.
   };
+
 }// namespace Ravl2
 
-#endif

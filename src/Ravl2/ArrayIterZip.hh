@@ -42,7 +42,7 @@ namespace Ravl2
     }
 
   private:
-    constexpr inline void next_index() noexcept
+    constexpr inline void nextIndex() noexcept
     {
       for(unsigned i = N - 2; i > 0; --i) {
         ++mIndex[i];
@@ -55,9 +55,9 @@ namespace Ravl2
     }
 
   public:
-    constexpr void next_ptr() noexcept
+    constexpr void nextRow() noexcept
     {
-      next_index();
+      nextIndex();
       mPtr = mPtrStart;
       for(unsigned i = 0; i < N - 1; i++) { mPtr += mAccess.stride(i) * mIndex[i]; }
     }
@@ -142,7 +142,7 @@ namespace Ravl2
       std::apply([](auto &...args) { (args.next(), ...); }, mIters);
       if(std::get<0>(mIters).dataPtr() == mEnd) {
         // If we're at the end of the first dimension, reset all the iterators.
-        std::apply([](auto &...args) { (args.next_ptr(), ...); }, mIters);
+        std::apply([](auto &...args) { (args.nextRow(), ...); }, mIters);
         mEnd = std::get<0>(mIters).end();
         return false;
       }
@@ -156,7 +156,7 @@ namespace Ravl2
       std::apply([](auto &...args) { (args.next(), ...); }, mIters);
       if(std::get<0>(mIters).dataPtr() == mEnd) {
         // If we're at the end of the first dimension, reset all the iterators.
-        std::apply([](auto &...args) { (args.next_ptr(), ...); }, mIters);
+        std::apply([](auto &...args) { (args.nextRow(), ...); }, mIters);
         mEnd = std::get<0>(mIters).end();
       }
       return *this;

@@ -5,6 +5,8 @@ find_package(Qt6 COMPONENTS Core Gui REQUIRED)
 
 add_library (Ravl2Qt
     Image.hh Image.cc
+    Index.hh Index.cc
+    Geometry.hh Geometry.cc
 )
 
 add_library(ravl2::Ravl2Qt ALIAS Ravl2Qt)
