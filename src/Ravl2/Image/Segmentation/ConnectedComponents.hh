@@ -48,7 +48,7 @@ namespace Ravl2
     }
   };
 
-  //: Connected component labelling.
+  //! Connected component labelling.
   // <p>This class identifies each connected region in an image and labels it
   // with a unique integer.  The label set is contiguous, starting from 1.</p>
   //
@@ -87,8 +87,6 @@ namespace Ravl2
     DataTypeT zero {};// Zero value to use.
   };
 
-  /////////////////////////////////////////////////////////////////////////
-  // Implementation:
 
   template <class DataTypeT, class CompareT>
   std::tuple<Array<unsigned, 2>, unsigned> ConnectedComponents<DataTypeT, CompareT>::apply(const Array<DataTypeT, 2> &ip)

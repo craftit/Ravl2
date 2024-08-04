@@ -16,7 +16,7 @@
 namespace Ravl2
 {
 
-  //! /brief Boundary vertex
+  //! @brief Boundary vertex
   //! The relationship between pixel coordinates and boundary
   //! vertex is that the boundary vertex [i,j] is the up-left corner
   //! of the pixel (i,j). The figure contains the orientation of edges too.
@@ -53,19 +53,14 @@ namespace Ravl2
     return Index<2>(pxl[0] - 1, pxl[1]);
   }
 
-  //: Elementary boundary edge
-
-  // <p>The class CrackC represent an elementary edge of a discrete image.
-  // This elementary edge is located between two pixels. The edge is
-  // represented by its origin and its direction. This definition implies only
-  // 4 possible directions represented by Freeman code. Four elementary cracks
-  // around a pixel are oriented counter-clockwise about the centre of
-  // the pixel. For example, the top edge points to the left and
-  // its origin is at the upper-right corner of the pixel.</p>
-
-  // <p>Do not confuse this class with <a
-  // href="RavlImageN.EdgelC.html">EdgelC</a>, which is used to represent a
-  // string of edge pixels.</p>
+  //! @brief Elementary boundary edge
+  //! The class CrackC represent an elementary edge of a discrete image.
+  //! This elementary edge is located between two pixels. The edge is
+  //! represented by its origin and its direction. This definition implies only
+  //! 4 possible directions represented by Freeman code. Four elementary cracks
+  //! around a pixel are oriented counter-clockwise about the centre of
+  //! the pixel. For example, the top edge points to the left and
+  //! its origin is at the upper-right corner of the pixel.</p>
 
   class CrackC
   {

@@ -26,20 +26,20 @@ namespace Ravl2
   public:
     //! Default constructor.
     // Sets sums to zero.
-    Sums1d2C() = default;
+    constexpr Sums1d2C() = default;
 
     //! Constructor from sum elements.
-    Sums1d2C(unsigned nn, RealT nsum, RealT nsum2)
+    constexpr Sums1d2C(unsigned nn, RealT nsum, RealT nsum2)
         : mN(nn),
           mSum(nsum),
           mSum2(nsum2)
     {}
 
     //! Create a Sums1d2C from mean variance.
-    [[nodiscard]] static Sums1d2C<RealT> fromMeanVariance(unsigned n, RealT mean, RealT variance, bool useSampleStatistics = true);
+    [[nodiscard]] static constexpr Sums1d2C<RealT> fromMeanVariance(unsigned n, RealT mean, RealT variance, bool useSampleStatistics = true);
 
     //! Reset all counters.
-    void reset()
+    constexpr void reset()
     {
       mN = 0;
       mSum = 0;
@@ -47,7 +47,7 @@ namespace Ravl2
     }
 
     //! Add a point.
-    void operator+=(RealT val)
+    constexpr void operator+=(RealT val)
     {
       mN++;
       mSum += val;
@@ -55,7 +55,7 @@ namespace Ravl2
     }
 
     //! Remove a point.
-    void operator-=(RealT val)
+    constexpr void operator-=(RealT val)
     {
       mN--;
       mSum -= val;
@@ -63,7 +63,7 @@ namespace Ravl2
     }
 
     //! Add another set of sums.
-    void operator+=(const Sums1d2C &s)
+    constexpr void operator+=(const Sums1d2C &s)
     {
       mN += s.mN;
       mSum += s.mSum;
@@ -71,7 +71,7 @@ namespace Ravl2
     }
 
     //! Subtract another set of sums.
-    void operator-=(const Sums1d2C &s)
+    constexpr void operator-=(const Sums1d2C &s)
     {
       RavlAssert(s.mN < mN);
       mN += s.mN;
@@ -80,44 +80,44 @@ namespace Ravl2
     }
 
     //! Number of data points.
-    [[nodiscard]] auto size() const
+    [[nodiscard]] constexpr auto size() const
     {
       return mN;
     }
 
     //! Number of data points.
-    [[nodiscard]] auto N() const
+    [[nodiscard]] constexpr auto N() const
     {
       return mN;
     }
 
     //! Number of data points.
-    [[nodiscard]] auto count() const
+    [[nodiscard]] constexpr auto count() const
     {
       return mN;
     }
 
     //! Sum of all data points.
-    [[nodiscard]] RealT sum() const
+    [[nodiscard]] constexpr RealT sum() const
     {
       return mSum;
     }
 
     //! Sum of squares of all data points.
-    [[nodiscard]] RealT sum2() const
+    [[nodiscard]] constexpr RealT sum2() const
     {
       return mSum2;
     }
 
     //! Calculate the mean and variance for this sample.
     //!param: sampleStatistics - When true compute statistics as a sample of a random variable. (Normalise covariance by n-1 )
-    [[nodiscard]] MeanVariance<RealT> toMeanVariance(bool sampleStatistics = true) const
+    [[nodiscard]] constexpr MeanVariance<RealT> toMeanVariance(bool sampleStatistics = true) const
     {
       return MeanVariance<RealT>(mN, mean(), variance(sampleStatistics));
     }
 
     //! Compute the variance of the sample.
-    [[nodiscard]] RealT variance(bool sampleStatistics = true) const
+    [[nodiscard]] constexpr RealT variance(bool sampleStatistics = true) const
     {
       RealT rn = RealT(mN);
       RealT sn = rn;
@@ -128,7 +128,7 @@ namespace Ravl2
     }
 
     //! Compute the mean of the sample.
-    [[nodiscard]] RealT mean() const
+    [[nodiscard]] constexpr RealT mean() const
     {
       RealT rn = RealT(mN);
       return mSum / rn;
@@ -137,7 +137,7 @@ namespace Ravl2
     //! Add value as part of a rolling average.
     //!param: rollLen - Length of rolling average.
     //!param: value   - Value to add.
-    inline void AddRollingAverage(unsigned rollLength, RealT value)
+    inline constexpr void AddRollingAverage(unsigned rollLength, RealT value)
     {
       if(rollLength < mN) {
         RealT rollFraction = (RealT(rollLength - 1) / (RealT(rollLength)));
@@ -151,13 +151,12 @@ namespace Ravl2
 
     //! Serialization support
     template <class Archive>
-    void serialize( Archive & ar )
+    constexpr void serialize( Archive & ar )
     {
       ar( cereal::make_nvp("n", mN),
           cereal::make_nvp("sum", mSum),
           cereal::make_nvp("sum2", mSum2));
     }
-
 
   private:
     unsigned mN = 0;
@@ -166,7 +165,7 @@ namespace Ravl2
   };
 
   template <typename RealT>
-  Sums1d2C<RealT> Sums1d2C<RealT>::fromMeanVariance(unsigned n, RealT mean, RealT variance, bool useSampleStatistics)
+  constexpr Sums1d2C<RealT> Sums1d2C<RealT>::fromMeanVariance(unsigned n, RealT mean, RealT variance, bool useSampleStatistics)
   {
     RealT rn = RealT(n);
     RealT sum = mean * rn;

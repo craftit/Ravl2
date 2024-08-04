@@ -102,13 +102,13 @@ namespace Ravl2
 
   //! Get a perpendicular vector in 2d.
   template <typename DataT>
-  inline Vector<DataT, 2> perpendicular(const Vector<DataT, 2> &v)
+  inline constexpr Vector<DataT, 2> perpendicular(const Vector<DataT, 2> &v)
   {
     return {-v(1), v(0)};
   }
 
   template <typename T>
-  auto span(T t)
+  constexpr auto span(T t)
   {
     return std::span(t);
   }
@@ -117,7 +117,7 @@ namespace Ravl2
   //! This ensures that the span is constructed correctly from a view
   //! \param view The view to make a span
   template <typename CT, typename... S>
-  auto span(xt::xview<CT, S...> view)
+  constexpr auto span(xt::xview<CT, S...> view)
   {
     assert(view.is_contiguous());
     return std::span(view.begin(), view.size());
@@ -137,7 +137,21 @@ namespace Ravl2
   [[nodiscard]] std::string toString(Vector2d v);
   //std::string toString(const VectorT &v);
 
+  //! Compute the l2 norm of a vector
   template <typename RealT, unsigned N>
+  [[nodiscard]] RealT norm_l2(const Vector<RealT, N> &v)
+  {
+    return xt::linalg::norm(v, 2);
+  }
+
+  //! Compute the angle between two vectors
+  template <typename RealT, unsigned long N>
+  [[nodiscard]] constexpr RealT angle(const Vector<RealT, N> &a, const Vector<RealT, N> &b)
+  {
+    return RealT(std::acos((xt::linalg::dot(a, b) / (norm_l2(a) * norm_l2(b)))()));
+  }
+
+  template <typename RealT, unsigned long N>
   constexpr RealT squaredEuclidDistance(const Point<RealT, N> &a, const Point<RealT, N> &b)
   {
     RealT sum = 0;
@@ -145,13 +159,6 @@ namespace Ravl2
       sum += sqr(a(i) - b(i));
     }
     return sum;
-  }
-
-  template <typename Pnt1T, typename Pnt2T>
-  constexpr auto euclidDistance(Pnt1T a, Pnt2T b)
-  {
-    auto diff = xt::eval(a - b);
-    return xt::eval(xt::sqrt(xt::sum(diff * diff)));
   }
 
   template <typename RealT, unsigned N>
@@ -163,6 +170,10 @@ namespace Ravl2
     }
     return std::sqrt(sum);
   }
+
+  template <typename Pnt1T, typename Pnt2T>
+  constexpr auto euclidDistance(Pnt1T a, Pnt2T b)
+  { return xt::linalg::norm(a-b,2); }
 
   template <typename RealT = float, unsigned N>
   constexpr auto euclidDistance(const Index<N> &a, const Index<N> &b)

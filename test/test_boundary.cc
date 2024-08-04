@@ -147,7 +147,7 @@ TEST_CASE("Check things are working properly", "[Boundary]")
       BoundaryVertex start({5, 5});
       CrackC edge(start, CrackCode(i));
       auto m1 = ((toPoint<float>(edge.rightPixel()) + toPoint<float>(edge.leftPixel())) / 2.0f) + Point<float,2>({0.5, 0.5});
-      CHECK(isNearZero<float>(euclidDistance(m1,edge.MidPoint<float>())(),1e-5f));
+      CHECK(isNearZero<float>(euclidDistance(m1,edge.MidPoint<float>()),1e-5f));
     }
   }
   SECTION("Tracing a labeled region")
