@@ -22,7 +22,7 @@ namespace Ravl2
     if(dr.empty())
       return;// Nothing to draw around.
     auto arr = dat.access(dr);
-    std::fill(arr.begin(), arr.end(), value);
+    std::ranges::fill(arr.begin(), arr.end(), value);
   }
 
   //! Draw a rectangle in an image.

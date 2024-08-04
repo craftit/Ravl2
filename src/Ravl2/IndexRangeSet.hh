@@ -25,16 +25,16 @@ namespace Ravl2
   class IndexRangeSet : public std::vector<IndexRange<N>>
   {
   public:
-    IndexRangeSet() = default;
+    constexpr IndexRangeSet() = default;
 
     //! Constructor from a single range.
-    explicit IndexRangeSet(const IndexRange<N> &rect)
+    explicit constexpr IndexRangeSet(const IndexRange<N> &rect)
     {
       this->push_back(rect);
     }
 
     //! Subtract rect2 from rect1.
-    static IndexRangeSet subtract(const IndexRange<N> &rect1, const IndexRange<N> &rect2)
+    static constexpr IndexRangeSet subtract(const IndexRange<N> &rect1, const IndexRange<N> &rect2)
     {
       IndexRangeSet ret;
       if(!rect1.overlaps(rect2)) {
@@ -79,7 +79,7 @@ namespace Ravl2
     }
 
     //! Add rect2 and rect1.
-    static IndexRangeSet add(const IndexRange<N> &rect1, const IndexRange<N> &rect2)
+    static constexpr IndexRangeSet add(const IndexRange<N> &rect1, const IndexRange<N> &rect2)
     {
       IndexRangeSet ret;
       if(!rect1.overlaps(rect2)) {// No overlap.
@@ -101,7 +101,7 @@ namespace Ravl2
     }
 
     //! Get axis align enclosing rectangle for set.
-    [[nodiscard]] IndexRange<N> enclosingRange() const
+    [[nodiscard]] constexpr IndexRange<N> enclosingRange() const
     {
       auto it = this->begin();
       auto end = this->end();
@@ -115,7 +115,7 @@ namespace Ravl2
     }
 
     //! Remove 'rect' rectangle from the region given by the set.
-    [[nodiscard]] IndexRangeSet<N> subtract(const IndexRange<N> &rect) const
+    [[nodiscard]] constexpr IndexRangeSet<N> subtract(const IndexRange<N> &rect) const
     {
       IndexRangeSet<N> ret;
       for(auto it : *this) {
@@ -126,7 +126,7 @@ namespace Ravl2
     }
 
     //! Remove 'rectset' from the region given by the set.
-    [[nodiscard]] IndexRangeSet<N> subtract(const IndexRangeSet<N> &rectSet) const
+    [[nodiscard]] constexpr IndexRangeSet<N> subtract(const IndexRangeSet<N> &rectSet) const
     {
       IndexRangeSet<N> ret = (*this);
       for(auto it : rectSet)
@@ -135,13 +135,13 @@ namespace Ravl2
     }
 
     //! Remove set from rect.
-    [[nodiscard]] IndexRangeSet<N> subtractFrom(const IndexRange<N> &rect) const
+    [[nodiscard]] constexpr IndexRangeSet<N> subtractFrom(const IndexRange<N> &rect) const
     {
       return IndexRangeSet<N>(rect).subtract(*this);
     }
 
     //! Add this rectangle to the set.
-    [[nodiscard]] IndexRangeSet<N> add(const IndexRange<N> &rect) const
+    [[nodiscard]] constexpr IndexRangeSet<N> add(const IndexRange<N> &rect) const
     {
       IndexRangeSet<N> ret = subtract(rect);
       ret.push_back(rect);// Well it works doesn't it!!!!
@@ -149,7 +149,7 @@ namespace Ravl2
     }
 
     //! Add rectangle set to this set.
-    [[nodiscard]] IndexRangeSet<N> add(const IndexRangeSet<N> &rect) const
+    [[nodiscard]] constexpr IndexRangeSet<N> add(const IndexRangeSet<N> &rect) const
     {
       IndexRangeSet<N> ret(*this);
       for(auto it : rect)
@@ -158,7 +158,7 @@ namespace Ravl2
     }
 
     //! Does this set completely contain 'rect' ?
-    [[nodiscard]] bool contains(const IndexRange<N> &rect) const
+    [[nodiscard]] constexpr bool contains(const IndexRange<N> &rect) const
     {
       IndexRangeSet<N> remainder(rect);
       for(auto it : *this) {
@@ -170,7 +170,7 @@ namespace Ravl2
     }
 
     //! Total area of the set.
-    [[nodiscard]] int area() const
+    [[nodiscard]] constexpr int area() const
     {
       int ret = 0;
       for(auto it : *this) {
@@ -181,7 +181,7 @@ namespace Ravl2
 
     //! Serialization support
     template <class Archive>
-    void serialize( Archive & archive)
+    constexpr void serialize( Archive & archive)
     {
       cereal::size_type s = this->size();
       archive(cereal::make_size_tag(s));

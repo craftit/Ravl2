@@ -21,22 +21,22 @@ namespace Ravl2
   {
   public:
     //! Construct a circle with radius of 1 centered on the origin.
-    inline Circle2dC() = default;
+    inline constexpr Circle2dC() = default;
 
     //! Constructor.
-    inline Circle2dC(const Point<RealT, 2> &at, RealT rad)
+    inline constexpr Circle2dC(const Point<RealT, 2> &at, RealT rad)
         : centre(at),
           radius(rad)
     {}
 
     //! Generate circle from 3 points on its circumference
-    Circle2dC(const Point<RealT, 2> &p1, const Point<RealT, 2> &p2, const Point<RealT, 2> &p3)
+    constexpr Circle2dC(const Point<RealT, 2> &p1, const Point<RealT, 2> &p2, const Point<RealT, 2> &p3)
     {
       Fit(p1, p2, p3);
     }
 
     //! Fit circle to a set of points.
-    inline explicit Circle2dC(const std::vector<Point<RealT, 2>> &points)
+    inline constexpr explicit Circle2dC(const std::vector<Point<RealT, 2>> &points)
     {
       RealT tmp;
       FitLSQ(points, tmp);
@@ -44,7 +44,7 @@ namespace Ravl2
 
     //! Fit a circle from 3 points on its circumference
     //! Returns false if the points are collinear.
-    bool Fit(const Point<RealT, 2> &p0, const Point<RealT, 2> &p1, const Point<RealT, 2> &p2)
+    constexpr bool Fit(const Point<RealT, 2> &p0, const Point<RealT, 2> &p1, const Point<RealT, 2> &p2)
     {
       Vector<RealT, 2> a1({p1[1] - p0[1], p0[0] - p1[0]});
       Vector<RealT, 2> a2({p2[1] - p1[1], p1[0] - p2[0]});
@@ -66,64 +66,64 @@ namespace Ravl2
     bool FitLSQ(const std::vector<Point<RealT, 2>> &points, RealT &residual);
 
     //! Constant access to radius.
-    inline RealT &Radius()
+    inline constexpr RealT &Radius()
     {
       return radius;
     }
 
     //! Constant access to radius.
-    inline RealT Radius() const
+    inline constexpr RealT Radius() const
     {
       return radius;
     }
 
     //! Centre of circle.
-    inline Point<RealT, 2> &Centre()
+    inline constexpr Point<RealT, 2> &Centre()
     {
       return centre;
     }
 
     //! Constant access to centre of circle.
-    inline Point<RealT, 2> Centre() const
+    inline constexpr Point<RealT, 2> Centre() const
     {
       return centre;
     }
 
     //! Is point inside circle ?
-    inline bool IsInside(const Point<RealT, 2> &point) const
+    inline constexpr bool IsInside(const Point<RealT, 2> &point) const
     {
-      return (centre.SqrEuclidDistance(point) < (radius * radius));
+      return squaredEuclidDistance(centre, point) < (radius * radius);
     }
 
     //! Find the closest point on the circle to 'point'.
-    inline Point<RealT, 2> Projection(const Point<RealT, 2> &point) const
+    inline constexpr Point<RealT, 2> Projection(const Point<RealT, 2> &point) const
     {
       Vector<RealT, 2> dir = point - centre;
-      return centre + (radius / dir.Norm()) * dir;
+      return centre + (radius / norm_l2(dir)) * dir;
     }
 
     //! Angle between origin and point p.
-    inline RealT Angle(const Point<RealT, 2> &p) const
+    inline constexpr RealT Angle(const Point<RealT, 2> &p) const
     {
-      return Vector<RealT, 2>(p - centre).Angle();
+      return angle(p,centre);
     }
 
     //! Get point on circle at given angle.
-    inline Point<RealT, 2> Value(RealT angle) const
+    inline constexpr Point<RealT, 2> Value(RealT angle) const
     {
-      return Point<RealT, 2>(centre[0] + radius * Cos(angle),
-                             centre[1] + radius * Sin(angle));
+      return toPoint<RealT>(centre[0] + radius * std::cos(angle),
+                             centre[1] + radius * std::sin(angle));
     }
 
     //! Distance to closest point on perimeter.
-    inline RealT Distance(const Point<RealT, 2> &p) const
+    inline constexpr RealT Distance(const Point<RealT, 2> &p) const
     {
-      return std::abs(centre.EuclidDistance(p) - radius);
+      return std::abs(euclidDistance(centre,p) - radius);
     }
 
     //! Serialization support
     template <class Archive>
-    void serialize( Archive & ar )
+    constexpr void serialize( Archive & ar )
     {
       ar( cereal::make_nvp("pnt", centre), cereal::make_nvp("r", radius) );
     }
@@ -131,5 +131,8 @@ namespace Ravl2
     Point<RealT, 2> centre {};
     RealT radius = 0;
   };
+
+  // Let everyone know there's an implementation already generated for common cases
+  extern template class Circle2dC<float>;
 
 }// namespace Ravl2

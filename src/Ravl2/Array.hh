@@ -10,6 +10,7 @@
 #include <array>
 #include <cereal/cereal.hpp>
 #include <spdlog/spdlog.h>
+#include "Ravl2/Sentinel.hh"
 #include "Ravl2/Index.hh"
 
 namespace Ravl2
@@ -29,7 +30,7 @@ namespace Ravl2
   template <typename DataT, unsigned N>
   class ArrayIter;
 
-  // Declaration of the concept “WindowedArray”, which is satisfied by any type “T”
+  //! Declaration of the concept “WindowedArray”, which is satisfied by any type “ArrayT”
 
   template <typename ArrayT, typename DataT = typename ArrayT::value_type, unsigned N = ArrayT::dimension>
   concept WindowedArray = requires(ArrayT a, Index<N> ind, IndexRange<N> rng) {
@@ -337,13 +338,15 @@ namespace Ravl2
     [[nodiscard]] constexpr ArrayIter<DataT, N> begin() const;
 
     //! vertexEnd iterator
-    [[nodiscard]] constexpr ArrayIter<DataT, N> end() const;
+    [[nodiscard]] constexpr Sentinel end() const
+    { return {}; }
 
     //! vertexBegin iterator
     [[nodiscard]] constexpr ArrayIter<const DataT, N> cbegin() const;
 
     //! vertexEnd iterator
-    [[nodiscard]] constexpr ArrayIter<const DataT, N> cend() const;
+    [[nodiscard]] constexpr Sentinel cend() const
+    { return {}; }
 
     //! Get stride for dimension
     [[nodiscard]] constexpr int stride(unsigned dim) const
@@ -689,22 +692,10 @@ namespace Ravl2
     return ArrayIter<DataT, 1>(&m_data[m_ranges->min()]);
   }
 
-  template <typename DataT, unsigned int N>
-  constexpr ArrayIter<DataT, N> ArrayAccess<DataT, N>::end() const
-  {
-    return ArrayIter<DataT, N>::end(m_ranges, m_data, m_strides);
-  }
-
   template <typename DataT>
   constexpr ArrayIter<const DataT, 1> ArrayAccess<DataT, 1>::cbegin() const
   {
     return ArrayIter<const DataT, 1>(&m_data[m_ranges->min()]);
-  }
-
-  template <typename DataT, unsigned int N>
-  constexpr ArrayIter<const DataT, N> ArrayAccess<DataT, N>::cend() const
-  {
-    return ArrayIter<const DataT, N>::end(m_ranges, m_data, m_strides);
   }
 
   template <typename DataT, unsigned int N>
@@ -915,11 +906,8 @@ namespace Ravl2
     }
 
     //! Get end iterator
-    [[nodiscard]] constexpr ArrayIter<DataT, N> end() const
-    {
-      assert(m_range.empty() || m_data != nullptr);
-      return ArrayIter<DataT, N>::end(m_range, m_data, m_strides);
-    }
+    [[nodiscard]] constexpr Sentinel end() const
+    { return {}; }
 
     //! Get begin iterator
     [[nodiscard]] constexpr ArrayIter<const DataT, N> cbegin() const
@@ -929,11 +917,8 @@ namespace Ravl2
     }
 
     //! Get end iterator
-    [[nodiscard]] constexpr ArrayIter<const DataT, N> cend() const
-    {
-      assert(m_range.empty() || m_data != nullptr);
-      return ArrayIter<const DataT, N>::end(m_range, m_data, m_strides);
-    }
+    [[nodiscard]] constexpr Sentinel cend() const
+    { return {}; }
 
     //! access range of first index array
     [[nodiscard]] constexpr const IndexRange<N> &range() const

@@ -18,6 +18,8 @@
 #include <cereal/types/array.hpp>
 #include <cereal/archives/json.hpp>
 
+#include "Ravl2/Sentinel.hh"
+
 namespace Ravl2
 {
   //! N-dimensional index.
@@ -188,7 +190,7 @@ namespace Ravl2
 
     //! Create a range from a size.
     //! The range will be from 0 to size-1.
-    static IndexRange<1> fromSize(int size)
+    static constexpr IndexRange<1> fromSize(int size)
     {
       return {0, size - 1};
     }
@@ -196,13 +198,13 @@ namespace Ravl2
     //! Create the range which creates the most negative area.
     // This is useful if you want guarantee the first point involved in
     // the rectangle is always covered
-    static IndexRange<1> mostEmpty()
+    static constexpr auto mostEmpty()
     {
-      return {std::numeric_limits<int>::max(), std::numeric_limits<int>::min()};
+      return IndexRange<1>(std::numeric_limits<int>::max(), std::numeric_limits<int>::min());
     }
 
     //! Default constructor
-    IndexRange(std::initializer_list<int> init)
+    constexpr IndexRange(std::initializer_list<int> init)
     {
       assert(init.size() > 0);
       if(init.size() == 1) {
@@ -217,31 +219,31 @@ namespace Ravl2
 
 
     //! Make size of range 0.
-    void clear() noexcept
+    constexpr void clear() noexcept
     {
       m_max = m_min - 1;
     }
 
     //! Test if range is empty
-    [[nodiscard]] bool empty() const noexcept
+    [[nodiscard]] constexpr bool empty() const noexcept
     {
       return m_min > m_max;
     }
 
     //! Get the size of the range in each dimension.
-    [[nodiscard]] int size() const noexcept
+    [[nodiscard]] constexpr int size() const noexcept
     {
       return (m_max - m_min) + 1;
     }
 
     //! Get the area of the range.
-    [[nodiscard]] int area() const noexcept
+    [[nodiscard]] constexpr int area() const noexcept
     {
       return size();
     }
 
     //! Get size of given dimension
-    [[nodiscard]] int size([[maybe_unused]] unsigned n) const noexcept
+    [[nodiscard]] constexpr int size([[maybe_unused]] unsigned n) const noexcept
     {
       assert(n == 0);
       return size();
@@ -249,56 +251,56 @@ namespace Ravl2
 
     //! Get number of elements covered by range.
     // This only works for positive range sizes.
-    [[nodiscard]] size_t elements() const
+    [[nodiscard]] constexpr size_t elements() const
     {
       return std::max(static_cast<size_t>(size()), static_cast<size_t>(0));
     }
 
     //! Test if an index is contained within the range.
-    [[nodiscard]] bool contains(int ind) const noexcept
+    [[nodiscard]] constexpr bool contains(int ind) const noexcept
     {
       return (ind >= m_min && ind <= m_max);
     }
 
     //! Test if an index is contained within the range.
-    [[nodiscard]] bool contains(Index<1> ind) const noexcept
+    [[nodiscard]] constexpr bool contains(Index<1> ind) const noexcept
     {
       return (ind[0] >= m_min && ind[0] <= m_max);
     }
 
     //! Test if 'range' is contained with this one
-    [[nodiscard]] bool contains(const IndexRange<1> &range) const noexcept
+    [[nodiscard]] constexpr bool contains(const IndexRange<1> &range) const noexcept
     {
       return (contains(range.m_min) && contains(range.m_max));
     }
 
     //! Test if 'range' overlaps with this one
-    [[nodiscard]] bool overlaps(const IndexRange<1> &range) const noexcept
+    [[nodiscard]] constexpr bool overlaps(const IndexRange<1> &range) const noexcept
     {
       return (range.m_min <= m_max && range.m_max >= m_min);
     }
 
     //! Shrink the range in from both ends by amount.
-    [[nodiscard]] IndexRange<1> shrink(int amount) const
+    [[nodiscard]] constexpr IndexRange<1> shrink(int amount) const
     {
       return {m_min + amount, m_max - amount};
     }
 
     //! Shrink the range by given size,
     //! min is increased by min of amount.min(), and max decreased by amount.max()
-    [[nodiscard]] IndexRange<1> shrink(const IndexRange<1> &amount) const
+    [[nodiscard]] constexpr IndexRange<1> shrink(const IndexRange<1> &amount) const
     {
       return {m_min - amount.min(), m_max - amount.max()};
     }
 
     //! Shrink the range in from both ends by amount.
-    [[nodiscard]] IndexRange<1> expand(int amount) const
+    [[nodiscard]] constexpr IndexRange<1> expand(int amount) const
     {
       return {m_min - amount, m_max + amount};
     }
 
     //! Shift range by given values.
-    IndexRange<1> &operator+=(int ind)
+    constexpr IndexRange<1> &operator+=(int ind)
     {
       m_min += ind;
       m_max += ind;
@@ -306,75 +308,75 @@ namespace Ravl2
     }
 
     //! Shift this range in dimension n by the given 'amount'
-    void shift([[maybe_unused]] unsigned n, int amount)
+    constexpr void shift([[maybe_unused]] unsigned n, int amount)
     {
       assert(n == 0);
       m_min += amount;
       m_max += amount;
     }
 
-    [[nodiscard]] auto &range([[maybe_unused]] unsigned i)
+    [[nodiscard]] constexpr auto &range([[maybe_unused]] unsigned i)
     {
       assert(i == 0);
       return *this;
     }
 
-    [[nodiscard]] const auto &range([[maybe_unused]] unsigned i) const
+    [[nodiscard]] constexpr const auto &range([[maybe_unused]] unsigned i) const
     {
       assert(i == 0);
       return *this;
     }
 
     //! Smallest index in all dimensions.
-    [[nodiscard]] int min() const
+    [[nodiscard]] constexpr int min() const
     {
       return m_min;
     }
 
     //! largest index in all dimensions.
-    [[nodiscard]] int max() const
+    [[nodiscard]] constexpr int max() const
     {
       return m_max;
     }
 
     //! Smallest index in all dimensions.
-    [[nodiscard]] int &min()
+    [[nodiscard]] constexpr int &min()
     {
       return m_min;
     }
 
     //! largest index in all dimensions.
-    [[nodiscard]] int &max()
+    [[nodiscard]] constexpr int &max()
     {
       return m_max;
     }
 
-    [[nodiscard]] int &min([[maybe_unused]] unsigned i)
+    [[nodiscard]] constexpr int &min([[maybe_unused]] unsigned i)
     {
       assert(i == 0);
       return min();
     }
 
-    [[nodiscard]] int min([[maybe_unused]] unsigned i) const
+    [[nodiscard]] constexpr int min([[maybe_unused]] unsigned i) const
     {
       assert(i == 0);
       return min();
     }
 
-    [[nodiscard]] int &max([[maybe_unused]] unsigned i)
+    [[nodiscard]] constexpr int &max([[maybe_unused]] unsigned i)
     {
       assert(i == 0);
       return max();
     }
 
-    [[nodiscard]] int max([[maybe_unused]] unsigned i) const
+    [[nodiscard]] constexpr int max([[maybe_unused]] unsigned i) const
     {
       assert(i == 0);
       return max();
     }
 
     //! Create a new index clipped so it is within the range.
-    [[nodiscard]] int clip(int index) const
+    [[nodiscard]] constexpr int clip(int index) const
     {
       if(index < m_min)
         return m_min;
@@ -384,14 +386,14 @@ namespace Ravl2
     }
 
     //! Clip index so it is within the range.
-    [[nodiscard]] IndexRange<1> clip(const IndexRange<1> &range) const
+    [[nodiscard]] constexpr IndexRange<1> clip(const IndexRange<1> &range) const
     {
       return {clip(range.min()), clip(range.max())};
     }
 
     //! Clip range in place
     //! Returns true if the range is still valid.
-    bool clipBy(const IndexRange<1> &range)
+    constexpr bool clipBy(const IndexRange<1> &range)
     {
       m_min = std::max(m_min, range.min());
       m_max = std::min(m_max, range.max());
@@ -399,50 +401,50 @@ namespace Ravl2
     }
 
     //! Add offset to range
-    [[nodiscard]] IndexRange<1> operator+(int ind) const
+    [[nodiscard]] constexpr IndexRange<1> operator+(int ind) const
     {
       return {m_min + ind, m_max + ind};
     }
 
     //! Add offset to range
-    [[nodiscard]] IndexRange<1> operator-(int ind) const
+    [[nodiscard]] constexpr IndexRange<1> operator-(int ind) const
     {
       return {m_min - ind, m_max - ind};
     }
 
     //! Add ranges
-    [[nodiscard]] IndexRange<1> operator+(IndexRange<1> ind) const
+    [[nodiscard]] constexpr IndexRange<1> operator+(IndexRange<1> ind) const
     {
       return {m_min + ind.m_min, m_max + ind.m_max};
     }
 
     //! Subtract ranges
-    [[nodiscard]] IndexRange<1> operator-(IndexRange<1> ind) const
+    [[nodiscard]] constexpr IndexRange<1> operator-(IndexRange<1> ind) const
     {
       return {m_min - ind.m_min, m_max - ind.m_max};
     }
 
     //! Are two ranges equal.
-    bool operator==(const IndexRange<1> &ind) const noexcept
+    constexpr bool operator==(const IndexRange<1> &ind) const noexcept
     {
       return m_min == ind.m_min && m_max == ind.m_max;
     }
 
     //! Are two ranges not equal.
-    bool operator!=(const IndexRange<1> &ind) const noexcept
+    constexpr bool operator!=(const IndexRange<1> &ind) const noexcept
     {
       return m_min != ind.m_min || m_max != ind.m_max;
     }
 
     //! Access range of given dimension.
-    [[nodiscard]] const IndexRange<1> &operator[]([[maybe_unused]] unsigned i) const
+    [[nodiscard]] constexpr const IndexRange<1> &operator[]([[maybe_unused]] unsigned i) const
     {
       assert(i == 0);
       return *this;
     }
 
     //! Access range of given dimension.
-    [[nodiscard]] IndexRange<1> &operator[]([[maybe_unused]] unsigned i)
+    [[nodiscard]] constexpr IndexRange<1> &operator[]([[maybe_unused]] unsigned i)
     {
       assert(i == 0);
       return *this;
@@ -450,7 +452,7 @@ namespace Ravl2
 
     //! Modify range to include given index.
     //! Returns true if ind is within the range.
-    inline bool involve(int ind)
+    inline constexpr bool involve(int ind)
     {
       bool inside = true;
       if(ind > m_max) {
@@ -466,7 +468,7 @@ namespace Ravl2
 
     //! Modify range to include given index.
     //! Returns true if rng is within this range.
-    inline bool involve(const IndexRange<1> &rng)
+    inline constexpr bool involve(const IndexRange<1> &rng)
     {
       bool inside = true;
       if(rng.m_max > m_max) {
@@ -481,19 +483,19 @@ namespace Ravl2
     }
 
     //! Start of the range.
-    [[nodiscard]] IndexRangeIterator<1> begin() const;
+    [[nodiscard]] constexpr IndexRangeIterator<1> begin() const;
 
     //! One passed the end of the range.
-    [[nodiscard]] IndexRangeIterator<1> end() const;
+    [[nodiscard]] constexpr IndexRangeIterator<1> end() const;
 
     //! Access as ptr to array of 1d ranges
-    [[nodiscard]] IndexRange<1> *range_data()
+    [[nodiscard]] constexpr IndexRange<1> *range_data()
     {
       return this;
     }
 
     //! Access as ptr to array of 1d ranges
-    [[nodiscard]] const IndexRange<1> *range_data() const
+    [[nodiscard]] constexpr const IndexRange<1> *range_data() const
     {
       return this;
     }
@@ -538,7 +540,7 @@ namespace Ravl2
 
     //! Construct from sizes for each dimension.
     //! The ranges will have a zero origin.
-    IndexRange(std::initializer_list<size_t> sizes) noexcept
+    constexpr IndexRange(std::initializer_list<size_t> sizes) noexcept
     {
       assert(sizes.size() == N);
       for(unsigned i = 0; i < N; i++)
@@ -547,7 +549,7 @@ namespace Ravl2
 
     //! Construct from ranges for each dimension.
 
-    IndexRange(std::initializer_list<std::initializer_list<int>> init) noexcept
+    constexpr IndexRange(std::initializer_list<std::initializer_list<int>> init) noexcept
     {
       assert(init.size() == N);
       for(unsigned i = 0; i < N; i++) {
@@ -555,7 +557,7 @@ namespace Ravl2
       }
     }
 
-    IndexRange(std::initializer_list<IndexRange<1>> ranges) noexcept
+    constexpr IndexRange(std::initializer_list<IndexRange<1>> ranges) noexcept
     {
       assert(ranges.size() == N);
       for(unsigned i = 0; i < N; i++) {
@@ -563,11 +565,10 @@ namespace Ravl2
       }
     }
 
-
     //! Create the range which creates the most negative area.
     // This is useful if you want guarantee the first point involved in
     // the rectangle is always covered
-    static IndexRange<N> mostEmpty()
+    static constexpr IndexRange<N> mostEmpty()
     {
       IndexRange<N> ret;
       for(unsigned i = 0; i < N; i++)
@@ -576,13 +577,13 @@ namespace Ravl2
     }
 
     //! Make size of range 0.
-    void clear() noexcept
+    constexpr void clear() noexcept
     {
       m_range[0].clear();
     }
 
     //! Get the size of the range in each dimension.
-    [[nodiscard]] Index<N> size() const noexcept
+    [[nodiscard]] constexpr Index<N> size() const noexcept
     {
       Index<N> ret;
       for(unsigned i = 0; i < N; i++)
@@ -591,13 +592,13 @@ namespace Ravl2
     }
 
     //! Get size of given dimension
-    [[nodiscard]] int size(unsigned n) const noexcept
+    [[nodiscard]] constexpr int size(unsigned n) const noexcept
     {
       return m_range[n].size();
     }
 
     //! Get the area of the range.
-    [[nodiscard]] int area() const noexcept
+    [[nodiscard]] constexpr int area() const noexcept
     {
       int a = 1;
       for(unsigned i = 0; i < N; i++)
@@ -607,7 +608,7 @@ namespace Ravl2
 
     //! Get total number of elements that should be allocated
     //! for an array.  This will always be positive or zero.
-    [[nodiscard]] size_t elements() const
+    [[nodiscard]] constexpr size_t elements() const
     {
       int n = 1;
       for(unsigned i = 0; i < N; i++)
@@ -618,7 +619,7 @@ namespace Ravl2
     }
 
     //! Is range empty ?
-    [[nodiscard]] bool empty() const noexcept
+    [[nodiscard]] constexpr bool empty() const noexcept
     {
       for(unsigned i = 0; i < N; i++)
         if(m_range[i].empty())
@@ -627,7 +628,7 @@ namespace Ravl2
     }
 
     //! Test if an index is contained within the range.
-    [[nodiscard]] bool contains(const Index<N> &ind) const noexcept
+    [[nodiscard]] constexpr bool contains(const Index<N> &ind) const noexcept
     {
       for(unsigned i = 0; i < N; i++)
         if(!m_range[i].contains(ind[i]))
@@ -636,7 +637,7 @@ namespace Ravl2
     }
 
     //! Test if 'range' is contained with this one
-    [[nodiscard]] bool contains(const IndexRange<N> &range) const noexcept
+    [[nodiscard]] constexpr bool contains(const IndexRange<N> &range) const noexcept
     {
       for(unsigned i = 0; i < N; i++)
         if(!m_range[i].contains(range.m_range[i]))
@@ -645,7 +646,7 @@ namespace Ravl2
     }
 
     //! Test if 'range' overlaps with this one
-    [[nodiscard]] bool overlaps(const IndexRange<N> &range) const noexcept
+    [[nodiscard]] constexpr bool overlaps(const IndexRange<N> &range) const noexcept
     {
       for(unsigned i = 0; i < N; i++)
         if(!m_range[i].overlaps(range.m_range[i]))
@@ -654,7 +655,7 @@ namespace Ravl2
     }
 
     //! Shrink the range in from both ends by amount.
-    [[nodiscard]] IndexRange<N> shrink(int amount) const noexcept
+    [[nodiscard]] constexpr IndexRange<N> shrink(int amount) const noexcept
     {
       IndexRange<N> ret;
       for(unsigned i = 0; i < N; i++)
@@ -663,7 +664,7 @@ namespace Ravl2
     }
 
     //! Shrink the range in from both ends by amount.
-    [[nodiscard]] IndexRange<N> shrink(const Index<N> &ind) const noexcept
+    [[nodiscard]] constexpr IndexRange<N> shrink(const Index<N> &ind) const noexcept
     {
       IndexRange<N> ret;
       for(unsigned i = 0; i < N; i++)
@@ -673,7 +674,7 @@ namespace Ravl2
 
     //! Shrink the range by given size,
     //! min is increased by min of amount.min(), and max decreased by amount.max()
-    [[nodiscard]] IndexRange<N> shrink(const IndexRange<N> &amount) const
+    [[nodiscard]] constexpr IndexRange<N> shrink(const IndexRange<N> &amount) const
     {
       IndexRange<N> ret;
       for(unsigned i = 0; i < N; i++)
@@ -682,7 +683,7 @@ namespace Ravl2
     }
 
     //! Shrink the range in from both ends by amount.
-    [[nodiscard]] IndexRange<N> expand(int amount) const noexcept
+    [[nodiscard]] constexpr IndexRange<N> expand(int amount) const noexcept
     {
       IndexRange<N> ret;
       for(unsigned i = 0; i < N; i++)
@@ -691,7 +692,7 @@ namespace Ravl2
     }
 
     //! Shrink the range in from both ends by amount.
-    [[nodiscard]] IndexRange<N> expand(const Index<N> &ind) const noexcept
+    [[nodiscard]] constexpr IndexRange<N> expand(const Index<N> &ind) const noexcept
     {
       IndexRange<N> ret;
       for(unsigned i = 0; i < N; i++)
@@ -700,7 +701,7 @@ namespace Ravl2
     }
 
     //! Shift range by given values.
-    IndexRange<N> &operator+=(const Index<N> &ind) noexcept
+    constexpr IndexRange<N> &operator+=(const Index<N> &ind) noexcept
     {
       for(unsigned i = 0; i < N; i++)
         m_range[i] += ind[i];
@@ -708,7 +709,7 @@ namespace Ravl2
     }
 
     //! Shift range by given values.
-    IndexRange<N> operator+(const Index<N> &ind) const noexcept
+    constexpr IndexRange<N> operator+(const Index<N> &ind) const noexcept
     {
       IndexRange<N> ret;
       for(unsigned i = 0; i < N; i++)
@@ -717,7 +718,7 @@ namespace Ravl2
     }
 
     //! Shift range by given values.
-    IndexRange<N> operator-(const Index<N> &ind) const noexcept
+    constexpr IndexRange<N> operator-(const Index<N> &ind) const noexcept
     {
       IndexRange<N> ret;
       for(unsigned i = 0; i < N; i++)
@@ -726,7 +727,7 @@ namespace Ravl2
     }
 
     //! Add one range to another
-    [[nodiscard]] IndexRange<N> operator+(const IndexRange<N> &ind) const noexcept
+    [[nodiscard]] constexpr IndexRange<N> operator+(const IndexRange<N> &ind) const noexcept
     {
       IndexRange<N> ret;
       for(unsigned i = 0; i < N; i++)
@@ -735,7 +736,7 @@ namespace Ravl2
     }
 
     //! Add one range to another
-    [[nodiscard]] IndexRange<N> operator-(const IndexRange<N> &ind) const noexcept
+    [[nodiscard]] constexpr IndexRange<N> operator-(const IndexRange<N> &ind) const noexcept
     {
       IndexRange<N> ret;
       for(unsigned i = 0; i < N; i++)
@@ -744,7 +745,7 @@ namespace Ravl2
     }
 
     //! Are two ranges equal.
-    [[nodiscard]] bool operator==(const IndexRange<N> &ind) const noexcept
+    [[nodiscard]] constexpr bool operator==(const IndexRange<N> &ind) const noexcept
     {
       for(unsigned i = 0; i < N; i++) {
         if(m_range[i] != ind.m_range[i])
@@ -755,7 +756,7 @@ namespace Ravl2
 
     //! Are two ranges not equal.
     [[nodiscard]]
-    bool operator!=(const IndexRange<N> &ind) const noexcept
+    constexpr bool operator!=(const IndexRange<N> &ind) const noexcept
     {
       for(unsigned i = 0; i < N; i++) {
         if(m_range[i] != ind.m_range[i])
@@ -765,13 +766,13 @@ namespace Ravl2
     }
 
     //! Shift this range in dimension n by the given 'amount'
-    void shift(unsigned n, int amount)
+    constexpr void shift(unsigned n, int amount)
     {
       m_range[n] += amount;
     }
 
     //! Smallest index in all dimensions.
-    [[nodiscard]] Index<N> min() const
+    [[nodiscard]] constexpr Index<N> min() const
     {
       Index<N> min;
       for(unsigned i = 0; i < N; i++)
@@ -780,7 +781,7 @@ namespace Ravl2
     }
 
     //! largest index in all dimensions.
-    [[nodiscard]] Index<N> max() const
+    [[nodiscard]] constexpr Index<N> max() const
     {
       Index<N> max;
       for(unsigned i = 0; i < N; i++)
@@ -789,7 +790,7 @@ namespace Ravl2
     }
 
     //! Create a new index clipped so it is within the range.
-    [[nodiscard]] Index<N> clip(const Index<N> &index) const
+    [[nodiscard]] constexpr Index<N> clip(const Index<N> &index) const
     {
       Index<N> ret;
       for(unsigned i = 0; i < N; i++)
@@ -799,7 +800,7 @@ namespace Ravl2
 
     //! Clip range in place
     //! Returns true if the range is still valid.
-    bool clipBy(const IndexRange<N> &range)
+    constexpr bool clipBy(const IndexRange<N> &range)
     {
       bool valid = true;
       for(unsigned i = 0; i < N; i++)
@@ -808,21 +809,21 @@ namespace Ravl2
     }
 
     //! Access range of given dimension.
-    [[nodiscard]] const IndexRange<1> &operator[](unsigned i) const
+    [[nodiscard]] constexpr const IndexRange<1> &operator[](unsigned i) const
     {
       assert(i < N);
       return m_range[i];
     }
 
     //! Access range of given dimension.
-    [[nodiscard]] IndexRange<1> &operator[](unsigned i)
+    [[nodiscard]] constexpr IndexRange<1> &operator[](unsigned i)
     {
       assert(i < N);
       return m_range[i];
     }
 
     //! Clip index so it is within the range.
-    [[nodiscard]] IndexRange<N> clip(const IndexRange<N> &range) const
+    [[nodiscard]] constexpr IndexRange<N> clip(const IndexRange<N> &range) const
     {
       IndexRange<N> ret;
       for(unsigned i = 0; i < N; i++)
@@ -832,7 +833,7 @@ namespace Ravl2
 
     //! Involve an index in the range.
     //! Returns true if ind is within the range.
-    bool involve(const Index<N> &ind)
+    constexpr bool involve(const Index<N> &ind)
     {
       bool ret = true;
       for(unsigned i = 0; i < N; i++) {
@@ -844,7 +845,7 @@ namespace Ravl2
 
     //! Involve another index range in this range.
     //! Returns true if ind is within the range.
-    bool involve(const IndexRange<N> &rng)
+    constexpr bool involve(const IndexRange<N> &rng)
     {
       bool ret = true;
       for(unsigned i = 0; i < N; i++) {
@@ -855,13 +856,14 @@ namespace Ravl2
     }
 
     //! Start of the range.
-    [[nodiscard]] IndexRangeIterator<N> begin() const;
+    [[nodiscard]] constexpr IndexRangeIterator<N> begin() const;
 
     //! One passed the end of the range.
-    [[nodiscard]] IndexRangeIterator<N> end() const;
+    [[nodiscard]] constexpr Sentinel end() const
+    { return {}; }
 
     //! Access as an array of ranges
-    [[nodiscard]] std::array<IndexRange<1>, N> &ranges()
+    [[nodiscard]] constexpr std::array<IndexRange<1>, N> &ranges()
     {
       return m_range;
     }
@@ -872,48 +874,48 @@ namespace Ravl2
       return m_range;
     }
 
-    [[nodiscard]] IndexRange<1> &range(unsigned i)
+    [[nodiscard]] constexpr IndexRange<1> &range(unsigned i)
     {
       assert(i < N);
       return m_range[i];
     }
 
-    [[nodiscard]] const IndexRange<1> &range(unsigned i) const
+    [[nodiscard]] constexpr const IndexRange<1> &range(unsigned i) const
     {
       assert(i < N);
       return m_range[i];
     }
 
-    [[nodiscard]] int &min(unsigned i)
+    [[nodiscard]] constexpr int &min(unsigned i)
     {
       assert(i < N);
       return m_range[i].min();
     }
 
-    [[nodiscard]] int min(unsigned i) const
+    [[nodiscard]] constexpr int min(unsigned i) const
     {
       assert(i < N);
       return m_range[i].min();
     }
 
-    [[nodiscard]] int &max(unsigned i)
+    [[nodiscard]] constexpr int &max(unsigned i)
     {
       assert(i < N);
       return m_range[i].max();
     }
 
-    [[nodiscard]] int max(unsigned i) const
+    [[nodiscard]] constexpr int max(unsigned i) const
     {
       assert(i < N);
       return m_range[i].max();
     }
 
-    [[nodiscard]] IndexRange<1> *range_data()
+    [[nodiscard]] constexpr IndexRange<1> *range_data()
     {
       return m_range.data();
     }
 
-    [[nodiscard]] const IndexRange<1> *range_data() const
+    [[nodiscard]] constexpr const IndexRange<1> *range_data() const
     {
       return m_range.data();
     }
@@ -940,21 +942,21 @@ namespace Ravl2
     using value_type = int;
     using difference_type = int;
 
-    IndexRangeIterator() = default;
+    constexpr IndexRangeIterator() = default;
 
     //! Constructor iterator
-    explicit IndexRangeIterator(int at)
+    explicit constexpr IndexRangeIterator(int at)
         : m_at(at)
     {}
 
     //! Access index.
-    int operator*() const
+    constexpr int operator*() const
     {
       return m_at;
     }
 
     //! Increment
-    IndexRangeIterator<1> operator++(int)
+    constexpr IndexRangeIterator<1> operator++(int)
     {
       auto ret = *this;
       ++m_at;
@@ -962,33 +964,33 @@ namespace Ravl2
     }
 
     //! Increment
-    IndexRangeIterator<1> &operator++()
+    constexpr IndexRangeIterator<1> &operator++()
     {
       ++m_at;
       return *this;
     }
 
     //! Decrement
-    IndexRangeIterator<1> &operator--()
+    constexpr IndexRangeIterator<1> &operator--()
     {
       m_at--;
       return *this;
     }
 
     //! Decrement
-    IndexRangeIterator<1> operator--(int)
+    constexpr IndexRangeIterator<1> operator--(int)
     {
       auto ret = *this;
       m_at--;
       return ret;
     }
 
-    [[nodiscard]] bool operator!=(const IndexRangeIterator<1> &other) const
+    [[nodiscard]] constexpr bool operator!=(const IndexRangeIterator<1> &other) const
     {
       return other.m_at != m_at;
     }
 
-    [[nodiscard]] bool operator==(const IndexRangeIterator<1> &other) const
+    [[nodiscard]] constexpr bool operator==(const IndexRangeIterator<1> &other) const
     {
       return other.m_at == m_at;
     }
@@ -998,13 +1000,13 @@ namespace Ravl2
   };
 
   //! Start of the range.
-  inline IndexRangeIterator<1> IndexRange<1>::begin() const
+  inline constexpr IndexRangeIterator<1> IndexRange<1>::begin() const
   {
     return IndexRangeIterator<1> {m_min};
   }
 
   //! One passed the end of the range.
-  inline IndexRangeIterator<1> IndexRange<1>::end() const
+  inline constexpr IndexRangeIterator<1> IndexRange<1>::end() const
   {
     return IndexRangeIterator<1> {m_max + 1};
   }
@@ -1019,12 +1021,12 @@ namespace Ravl2
     using difference_type = int;
 
     //! Default constructor, creates an invalid iterator.
-    IndexRangeIterator() = default;
+    constexpr IndexRangeIterator() = default;
 
     //! Constructor iterator from a range and a position.
     //! The position must be within the range.
     // cppcheck-suppress functionStatic
-    IndexRangeIterator(const IndexRange<N> &range, const Index<N> &at)
+    constexpr IndexRangeIterator(const IndexRange<N> &range, const Index<N> &at)
         : m_range(&range),
           m_at(at)
     {
@@ -1033,7 +1035,7 @@ namespace Ravl2
 
     //! Constructor iterator from a range and a position.
     // cppcheck-suppress functionStatic
-    IndexRangeIterator(const IndexRange<N> &range, const Index<N> &at, [[maybe_unused]] bool noRangeCheck)
+    constexpr IndexRangeIterator(const IndexRange<N> &range, const Index<N> &at, [[maybe_unused]] bool noRangeCheck)
         : m_range(&range),
           m_at(at)
     {
@@ -1041,13 +1043,13 @@ namespace Ravl2
     }
 
     //! Access current index.
-    [[nodiscard]] const Index<N> &operator*() const
+    [[nodiscard]] constexpr const Index<N> &operator*() const
     {
       return m_at;
     }
 
     //! Increment position.
-    IndexRangeIterator<N> &operator++()
+    constexpr IndexRangeIterator<N> &operator++()
     {
       for(unsigned i = N - 1; i > 0; --i) {
         ++m_at[i];
@@ -1060,7 +1062,7 @@ namespace Ravl2
     }
 
     //! Increment position.
-    IndexRangeIterator<N> operator++(int)
+    constexpr IndexRangeIterator<N> operator++(int)
     {
       IndexRangeIterator<N> ret = *this;
       operator++();
@@ -1069,31 +1071,31 @@ namespace Ravl2
 
     //! Are we at the end of the range?
     //! In the case of this iterator we have all we need to know internally.
-    [[nodiscard]] bool done() const
+    [[nodiscard]] constexpr bool done() const
     {
       return m_at[0] > m_range->max()[0];
     }
 
     //! Are we at the end of the range?
-    [[nodiscard]] bool valid() const
+    [[nodiscard]] constexpr bool valid() const
     {
       return m_at[0] <= m_range->max()[0];
     }
 
     //! Equality test.
-    [[nodiscard]] bool operator==(const IndexRangeIterator<N> &other) const
+    [[nodiscard]] constexpr bool operator==(const IndexRangeIterator<N> &other) const
     {
       return m_at == other.m_at;
     }
 
     //! Equality test.
-    [[nodiscard]] bool operator!=(const IndexRangeIterator<N> &other) const
+    [[nodiscard]] constexpr bool operator!=(const IndexRangeIterator<N> &other) const
     {
       return m_at != other.m_at;
     }
 
     //! Compute the distance between two iterators in terms of number of increments.
-    [[nodiscard]] difference_type operator-(const IndexRangeIterator<N> &other) const
+    [[nodiscard]] constexpr difference_type operator-(const IndexRangeIterator<N> &other) const
     {
       assert(m_range == other.m_range);
       assert(m_range != nullptr);
@@ -1110,24 +1112,14 @@ namespace Ravl2
 
   //! Start of the range.
   template <unsigned N>
-  inline IndexRangeIterator<N> IndexRange<N>::begin() const
+  inline constexpr IndexRangeIterator<N> IndexRange<N>::begin() const
   {
     return IndexRangeIterator<N>(*this, min());
   }
 
-  //! One passed the end of the range.
-  template <unsigned N>
-  inline IndexRangeIterator<N> IndexRange<N>::end() const
-  {
-    Index<N> end = min();
-    end[0] = m_range[0].max() + 1;
-    return IndexRangeIterator<N>(*this, end, true);
-  }
-
-
   //! Serialization support
   template <class Archive, unsigned N>
-  void serialize( Archive & archive, Index<N> &ind)
+  constexpr void serialize( Archive & archive, Index<N> &ind)
   {
     cereal::size_type s = N;
     archive(cereal::make_size_tag(s));
@@ -1141,7 +1133,7 @@ namespace Ravl2
 
   //! Serialization support
   template <class Archive>
-  void serialize( Archive & archive, IndexRange<1> & range )
+  constexpr void serialize( Archive & archive, IndexRange<1> & range )
   {
     cereal::size_type s = 2;
     archive(cereal::make_size_tag(s));
@@ -1154,7 +1146,7 @@ namespace Ravl2
   //! Serialization support
   template <class Archive, unsigned N>
   requires (N > 1)
-  void serialize( Archive & archive, IndexRange<N> & range )
+  constexpr void serialize( Archive & archive, IndexRange<N> & range )
   {
     cereal::size_type s = N;
     archive(cereal::make_size_tag(s));
@@ -1165,7 +1157,6 @@ namespace Ravl2
       archive(r);
     }
   }
-
 
   // Let everyone know there's an implementation already generated for common cases
   extern template class Index<1>;

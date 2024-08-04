@@ -40,6 +40,7 @@ add_library(Ravl2Core
     ScanWindow.cc ScanWindow.hh
     Assert.hh
     IndexRangeSet.cc IndexRangeSet.hh
+    Sentinel.cc Sentinel.hh
 )
 
 add_library(ravl2::Ravl2Core ALIAS Ravl2Core)

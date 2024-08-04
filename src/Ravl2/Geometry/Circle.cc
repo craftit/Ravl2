@@ -12,5 +12,7 @@
 
 namespace Ravl2
 {
+  // Let everyone know there's an implementation already generated for common cases
+  template class Circle2dC<float>;
 
 }

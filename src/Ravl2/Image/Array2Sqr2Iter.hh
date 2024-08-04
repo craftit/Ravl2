@@ -22,12 +22,12 @@ namespace Ravl2
   class Array2dSqr2IterC
   {
   public:
-    Array2dSqr2IterC() = default;
+    constexpr Array2dSqr2IterC() = default;
     //: Default constructor.
 
     template <typename ArrayT>
       requires WindowedArray<ArrayT, DataT, 2>
-    explicit Array2dSqr2IterC(const ArrayT &narray)
+    explicit constexpr Array2dSqr2IterC(const ArrayT &narray)
         : range({{narray.range(0).min() + 1, narray.range(0).max()},
                  {narray.range(1).min() + 1, narray.range(1).max()}})
     {
@@ -37,7 +37,7 @@ namespace Ravl2
     }
     //: Constructor.
 
-    bool next()
+    constexpr bool next()
     {
       up++;
       if(!this->cit.next()) {
@@ -49,7 +49,7 @@ namespace Ravl2
     //: Goto next element.
     // Returns true if its on the same row.
 
-    bool Next(int n)
+    constexpr bool Next(int n)
     {
       bool sameRow = true;
       for(int i = 0; i < n; i++) {
@@ -69,108 +69,108 @@ namespace Ravl2
     // This will NOT automatically go to the next row.
     // Returns true if is a valid element.
 
-    operator bool() const
+    constexpr operator bool() const
     {
       return this->cit.valid();
     }
     //: Test if iterator is at a valid element.
 
-    [[nodiscard]] bool valid() const noexcept
+    [[nodiscard]] constexpr bool valid() const noexcept
     {
       return this->cit.valid();
     }
 
-    void operator++()
+    constexpr void operator++()
     {
       next();
     }
     //: Goto next element.
 
-    void operator++(int)
+    constexpr void operator++(int)
     {
       next();
     }
     //: Goto next element.
 
-    DataT &operator*()
+    constexpr DataT &operator*()
     {
       return *this->cit;
     }
     //: Access bottom right data element
 
-    const DataT &operator*() const
+    constexpr const DataT &operator*() const
     {
       return *this->cit;
     }
     //: Access bottom right data element
 
-    DataT &DataBR()
+    constexpr DataT &DataBR()
     {
       return *this->cit;
     }
     //: Access bottom right data element
 
-    const DataT &DataBR() const
+    constexpr const DataT &DataBR() const
     {
       return *this->cit;
     }
     //: Access bottom right data element
 
-    DataT &DataBL()
+    constexpr DataT &DataBL()
     {
       return this->cit.data()[-1];
     }
     //: Access bottom left data element
 
-    const DataT &DataBL() const
+    constexpr const DataT &DataBL() const
     {
       return this->cit.data()[-1];
     }
     //: Access bottom left data element
 
-    DataT &DataTR()
+    constexpr DataT &DataTR()
     {
       return *up;
     }
     //: Access upper right data element
 
-    const DataT &DataTR() const
+    constexpr const DataT &DataTR() const
     {
       return *up;
     }
     //: Access upper right data element
 
-    DataT &DataTL()
+    constexpr DataT &DataTL()
     {
       return up[-1];
     }
     //: Access upper left data element.
 
-    const DataT &DataTL() const
+    constexpr const DataT &DataTL() const
     {
       return up[-1];
     }
     //: Access upper left data element
 
     //! Get the index of the DataBR() element.
-    [[nodiscard]] auto indexBR() const
+    [[nodiscard]] constexpr auto indexBR() const
     {
       return this->cit.index();
     }
 
     //! Get the index of the DataBR() element.
-    [[nodiscard]] auto indexTR() const
+    [[nodiscard]] constexpr auto indexTR() const
     {
       return this->cit.index() + toIndex(-1, 0);
     }
 
     //! Get the index of the DataBR() element.
-    [[nodiscard]] auto indexTL() const
+    [[nodiscard]] constexpr auto indexTL() const
     {
       return this->cit.index() + toIndex(-1, -1);
     }
 
-    [[nodiscard]] auto indexBL() const
+    [[nodiscard]] constexpr auto indexBL() const
     {
       return this->cit.index() + toIndex(0, -1);
     }

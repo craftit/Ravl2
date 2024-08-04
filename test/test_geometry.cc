@@ -247,12 +247,12 @@ TEST_CASE("Affine")
     Point<float, 2> p = toPoint<float>(0, 0);
     Point<float, 2> pnt0 = a2(a1(p));
     //SPDLOG_INFO("At: {} {} ", pnt0(0), pnt0(1));
-    CHECK(euclidDistance(pnt0, toPoint<float>(10, 20))() < 0.001f);
+    CHECK(euclidDistance(pnt0, toPoint<float>(10, 20)) < 0.001f);
     Point<float, 2> pnt = a1(a2(p));
     //SPDLOG_INFO("At: {} {} ", pnt(0), pnt(1));
-    CHECK(euclidDistance(pnt, toPoint<float>(-40, 20))() < 0.001f);
+    CHECK(euclidDistance(pnt, toPoint<float>(-40, 20)) < 0.001f);
     Point<float, 2> q = toPoint<float>(5, 4);
-    CHECK(Ravl2::euclidDistance(a2(a1)(q), a2(a1(q)))() < 0.001f);
+    CHECK(Ravl2::euclidDistance(a2(a1)(q), a2(a1(q))) < 0.001f);
   }
   SECTION( "Cereal. ")
   {
@@ -285,10 +285,10 @@ TEST_CASE("ScaleTranslate")
   SECTION( "Basic ops ")
   {
     ScaleTranslate<float, 2> a1(toVector<float>(2, 2), toVector<float>(1, 2));
-    CHECK(euclidDistance(a1(toPoint<float>(0, 0)), toPoint<float>(1, 2))() < 0.001f);
-    CHECK(euclidDistance(a1(toPoint<float>(1, 1)), toPoint<float>(3, 4))() < 0.001f);
+    CHECK(euclidDistance(a1(toPoint<float>(0, 0)), toPoint<float>(1, 2)) < 0.001f);
+    CHECK(euclidDistance(a1(toPoint<float>(1, 1)), toPoint<float>(3, 4)) < 0.001f);
     ScaleTranslate<float, 2> a2(toVector<float>(2, 1), toVector<float>(1, 2));
-    CHECK(euclidDistance(a2(toPoint<float>(1, 1)), toPoint<float>(3, 3))() < 0.001f);
+    CHECK(euclidDistance(a2(toPoint<float>(1, 1)), toPoint<float>(3, 3)) < 0.001f);
   }
   SECTION( "Cereal. ")
   {

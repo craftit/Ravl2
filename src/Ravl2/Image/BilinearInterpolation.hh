@@ -25,7 +25,7 @@ namespace Ravl2
 
   template <typename ArrayT, typename Point2T, typename PixelT = typename ArrayT::value_type, unsigned N = ArrayT::dimensions>
     requires WindowedArray<ArrayT, PixelT, N>
-  [[nodiscard]] inline auto interpolateBilinear(const ArrayT &img, Point2T pnt)
+  [[nodiscard]] constexpr auto interpolateBilinear(const ArrayT &img, Point2T pnt)
   {
     const auto px = pnt[0];
     const auto py = pnt[1];

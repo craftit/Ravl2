@@ -78,7 +78,7 @@ namespace Ravl2
   class ScanWindow
   {
   public:
-    ScanWindow(const Ravl2::ArrayAccess<DataT, N> &img, const IndexRange<N> &window)
+    constexpr ScanWindow(const Ravl2::ArrayAccess<DataT, N> &img, const IndexRange<N> &window)
         : mWindowRange(window),
           mArea(img.range() - window),
           mAt(mArea, img.origin_address(), img.strides())
@@ -86,7 +86,7 @@ namespace Ravl2
       assert(!mArea.empty());
     }
 
-    ScanWindow(const Ravl2::ArrayView<DataT, N> &img, const IndexRange<N> &window)
+    constexpr ScanWindow(const Ravl2::ArrayView<DataT, N> &img, const IndexRange<N> &window)
         : mWindowRange(window),
           mArea(img.range() - window),
           mAt(mArea, img.origin_address(), img.strides())
@@ -95,43 +95,43 @@ namespace Ravl2
     }
 
     //! Get the window area we're scanning over.
-    [[nodiscard]] const IndexRange<N> &scanArea() const
+    [[nodiscard]] constexpr const IndexRange<N> &scanArea() const
     {
       return mArea;
     }
 
     //! Move to the next window position.
-    void operator++()
+    constexpr void operator++()
     {
       ++mAt;
     }
 
     //! Next element, return true if we're on the same row.
-    bool next()
+    constexpr bool next()
     {
       return mAt.next();
     }
 
     //! Test if we're at the end of the window.
-    [[nodiscard]] bool done() const
+    [[nodiscard]] constexpr bool done() const
     {
       return mAt.done();
     }
 
     //! Test if we're at a valid element.
-    [[nodiscard]] bool valid() const
+    [[nodiscard]] constexpr bool valid() const
     {
       return mAt.valid();
     }
 
     //! Get the current window
-    [[nodiscard]] ArrayAccess<DataT, N> window() const
+    [[nodiscard]] constexpr ArrayAccess<DataT, N> window() const
     {
       return ArrayAccess<DataT, N>(mWindowRange, &(*mAt), mAt.strides());
     }
 
     //! Index of the window in the image.
-    [[nodiscard]] Index<N> index() const
+    [[nodiscard]] constexpr Index<N> index() const
     {
       return mAt.index();
     }

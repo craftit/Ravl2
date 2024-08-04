@@ -14,7 +14,7 @@
 
 TEST_CASE("Index")
 {
-  SECTION("IndexRange 2 Cereal IO")
+  SECTION("Index 2 Cereal IO")
   {
     Ravl2::Index<2> ind1({4,6});
     std::stringstream ss;
@@ -75,6 +75,30 @@ TEST_CASE("IndexRange", "[IndexRange]")
     CHECK_EQ(newRange2.size(),3);
   }
 
+  SECTION("IndexRange<2> Iterators")
+  {
+    Ravl2::IndexRange<2> range2B{{1,2},{3,4}};
+    CHECK_EQ(range2B.area(),4);
+    auto iter = range2B.begin();
+    CHECK(iter.valid());
+    CHECK(!iter.done());
+    Ravl2::Sentinel sent;
+
+    for(int i = 0;i < 4;++i) {
+      CHECK(iter.valid());
+      CHECK(!iter.done());
+      CHECK(sent != iter);
+      CHECK(!(sent == iter));
+      ++iter;
+    }
+    CHECK(!iter.valid());
+    CHECK(iter.done());
+    CHECK(sent == iter);
+    CHECK(!(sent != iter));
+  }
+
+
+  SECTION("IndexRange<2> Iteration")
   {
     Ravl2::IndexRange<2> range2A{5,7};
     CHECK_EQ(range2A[0].size(),5);
