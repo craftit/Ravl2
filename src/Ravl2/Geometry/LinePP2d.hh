@@ -10,7 +10,7 @@
 #pragma once
 
 #include "Ravl2/Geometry/Geometry.hh"
-#include "Ravl2/Geometry/FLinePP.hh"
+#include "Ravl2/Geometry/LinePP.hh"
 #include "Ravl2/Index.hh"
 #include "Ravl2/Geometry/Range.hh"
 
@@ -20,20 +20,20 @@ namespace Ravl2
   //: Line defined by 2 points in 2-dimensional space.
 
   template <typename RealT>
-  class LinePP2dC : public FLinePPC<RealT, 2>
+  class LinePP2dC : public LinePP<RealT, 2>
   {
   public:
     LinePP2dC() = default;
     //: Default constructor.
     // The contents of the line are undefined.
 
-    explicit LinePP2dC(const FLinePPC<RealT, 2> &Base)
-        : FLinePPC<RealT, 2>(Base)
+    explicit LinePP2dC(const LinePP<RealT, 2> &Base)
+        : LinePP<RealT, 2>(Base)
     {}
     //: Constructor from base class
 
     LinePP2dC(const Point<RealT, 2> &Start, const Point<RealT, 2> &End)
-        : FLinePPC<RealT, 2>(Start, End)
+        : LinePP<RealT, 2>(Start, End)
     {}
     //: Construct a line from two points.
 

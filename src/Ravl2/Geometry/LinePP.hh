@@ -17,13 +17,13 @@ namespace Ravl2
   //! Line in N dimensional space define by two points.
 
   template <typename RealT, unsigned int N>
-  class FLinePPC
+  class LinePP
   {
   public:
-    constexpr FLinePPC() = default;
+    constexpr LinePP() = default;
 
     //! Create line from start and end points
-    constexpr FLinePPC(const Point<RealT, N> &start, const Point<RealT, N> &end)
+    constexpr LinePP(const Point<RealT, N> &start, const Point<RealT, N> &end)
     {
       point[0] = start;
       point[1] = end;
@@ -31,15 +31,15 @@ namespace Ravl2
     //: Construct from two points.
 
     //! Create line from start and end points
-    static constexpr FLinePPC<RealT, N> fromPoints(const Point<RealT, N> &start, const Point<RealT, N> &end)
+    static constexpr LinePP<RealT, N> fromPoints(const Point<RealT, N> &start, const Point<RealT, N> &end)
     {
-      return FLinePPC<RealT, N>(start, end);
+      return LinePP<RealT, N>(start, end);
     }
 
     //! Create line from start point and direction
-    static constexpr FLinePPC<RealT, N> fromStartAndDirection(const Point<RealT, N> &start, const Vector<RealT, N> &direction)
+    static constexpr LinePP<RealT, N> fromStartAndDirection(const Point<RealT, N> &start, const Vector<RealT, N> &direction)
     {
-      return FLinePPC<RealT, N>(start, start + direction);
+      return LinePP<RealT, N>(start, start + direction);
     }
 
     //! Returns the start point of the line segment.
@@ -115,14 +115,14 @@ namespace Ravl2
     }
 
     //! Returns the line segment translated into the new position.
-    constexpr FLinePPC<RealT, N> operator+(const Vector<RealT, N> &v) const
+    constexpr LinePP<RealT, N> operator+(const Vector<RealT, N> &v) const
     {
-      return FLinePPC<RealT, N>(Point<RealT, N>(P1() + v), Point<RealT, N>(P2() + v));
+      return LinePP<RealT, N>(Point<RealT, N>(P1() + v), Point<RealT, N>(P2() + v));
     }
 
     //! Moves the line segment into the new position.
     // The operator is equivalent to the member function Translate().
-    constexpr FLinePPC<RealT, N> &operator+=(const Vector<RealT, N> &v)
+    constexpr LinePP<RealT, N> &operator+=(const Vector<RealT, N> &v)
     {
       point[0] += v;
       point[1] += v;
@@ -131,7 +131,7 @@ namespace Ravl2
 
     //! Moves the line segment into the new position.
     // The member function is equivalent to the operator+=.
-    constexpr FLinePPC<RealT, N> &Translate(const Vector<RealT, N> &v)
+    constexpr LinePP<RealT, N> &Translate(const Vector<RealT, N> &v)
     {
       return operator+=(v);
     }
@@ -145,9 +145,9 @@ namespace Ravl2
     }
 
     //! Returns a line with swapped endpoints
-    constexpr FLinePPC<RealT, N> Swapped() const
+    constexpr LinePP<RealT, N> Swapped() const
     {
-      return FLinePPC<RealT, N>(P2(), P1());
+      return LinePP<RealT, N>(P2(), P1());
     }
 
     //! Get the direction of the line segment as a free vector.
@@ -159,7 +159,7 @@ namespace Ravl2
     }
 
     //! Translates the line segment to start in the point 'p'.
-    constexpr FLinePPC<RealT, N> &FixStart(const Point<RealT, N> &p)
+    constexpr LinePP<RealT, N> &FixStart(const Point<RealT, N> &p)
     {
       Ravl2::Vector<RealT, N> vec = point[1] - point[0];
       point[0] = p;
@@ -168,7 +168,7 @@ namespace Ravl2
     }
 
     //! Translates the line segment to end in the point 'p'.
-    constexpr FLinePPC<RealT, N> &FixEnd(const Point<RealT, N> &p)
+    constexpr LinePP<RealT, N> &FixEnd(const Point<RealT, N> &p)
     {
       Ravl2::Vector<RealT, N> vec = point[1] - point[0];
       point[0] = p - vec;
@@ -214,21 +214,21 @@ namespace Ravl2
   };
 
   template <typename RealT, unsigned int N>
-  inline std::ostream &operator<<(std::ostream &s, const FLinePPC<RealT, N> &dat)
+  inline std::ostream &operator<<(std::ostream &s, const LinePP<RealT, N> &dat)
   {
     s << dat.P1() << ' ' << dat.P2();
     return s;
   }
 
   template <typename RealT, unsigned int N>
-  inline std::istream &operator>>(std::istream &s, FLinePPC<RealT, N> &dat)
+  inline std::istream &operator>>(std::istream &s, LinePP<RealT, N> &dat)
   {
     s >> dat.P1() >> dat.P2();
     return s;
   }
 
   // Let everyone know there's an implementation already generated for common cases
-  extern template class FLinePPC<float,2>;
-  extern template class FLinePPC<float,3>;
+  extern template class LinePP<float, 2>;
+  extern template class LinePP<float, 3>;
 
 }// namespace Ravl2

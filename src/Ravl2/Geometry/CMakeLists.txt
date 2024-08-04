@@ -13,7 +13,7 @@ add_library (Ravl2Geometry
         Moments2.cc Moments2.hh
         CircleIter.cc CircleIter.hh
         Circle.cc Circle.hh
-        FLinePP.hh FLinePP.cc
+        LinePP.hh LinePP.cc
         LinePP2d.hh LinePP2d.cc
 #        LineABC2d.cc LineABC2d.hh
         Line2dIter.hh Line2dIter.cc
