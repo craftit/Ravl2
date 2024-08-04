@@ -563,6 +563,13 @@ namespace Ravl2
       }
     }
 
+    //! Create a range from a sizes.
+    //! The range[i] will be from 0 to size[i]-1.
+    template<typename ...IndexT>
+    [[nodiscard]] static IndexRange<N> fromSize(IndexT... sizes)
+    {
+      return IndexRange<N>({size_t(sizes)...});
+    }
 
     //! Create the range which creates the most negative area.
     // This is useful if you want guarantee the first point involved in

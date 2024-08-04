@@ -153,7 +153,7 @@ Ravl2::Array<float,2> ConvolveKernelView(const Ravl2::Array<float,2> &matrix,
   Ravl2::Array<float,2> result(scanRange);
   for(auto si : scanRange) {
     Ravl2::IndexRange<2> rng = kernel.range() + si;
-    auto view = matrix.access(rng);
+    auto view = clip(matrix,rng);
     float sum = 0;
     for(auto it = Ravl2::begin(kernel,view);it.valid();) {
       do {

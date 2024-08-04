@@ -520,7 +520,7 @@ TEST_CASE("ArrayIter2View", "[ArrayIter<N>]")
   //SPDLOG_INFO("Strides: {} {} ", matrix.strides()[0], matrix.strides()[1]);
 
   Ravl2::IndexRange<2> win({2, 2});
-  auto view = matrix.access(win);
+  auto view = clip(matrix,win);
   //auto view = matrix.view(win);
 
   int targetSum = 0;
@@ -575,7 +575,7 @@ TEST_CASE("ShiftView", "Array<N>")
   for(auto si : scanRange)
   {
     Ravl2::IndexRange<2> rng = kernel.range() + si;
-    auto view = matrix.access(rng);
+    auto view = clip(matrix,rng);
     //auto view = matrix.view(rng);
 
     int sum1 = 0;

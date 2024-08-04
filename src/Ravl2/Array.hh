@@ -806,36 +806,6 @@ namespace Ravl2
       }
     }
 
-    //! Get a view of the array with the requested 'range'
-    [[nodiscard]] constexpr ArrayView<DataT, N> view(const IndexRange<N> &range)
-    {
-      return ArrayView<DataT, N>(m_data, range, m_strides);
-    }
-
-    //! Get a view of the array with the requested 'range'
-    [[nodiscard]] constexpr ArrayView<const DataT, N> view(const IndexRange<N> &range) const
-    {
-      assert(m_range.contains(range));
-      assert(m_data != nullptr);
-      return ArrayView<const DataT, N>(m_data, range, m_strides);
-    }
-
-    //! Get an access of the array with the requested 'range'
-    [[nodiscard]] constexpr ArrayAccess<DataT, N> access(const IndexRange<N> &range)
-    {
-      assert(m_range.contains(range));
-      assert(m_data != nullptr);
-      return ArrayAccess<DataT, N>(range.range_data(), m_data, m_strides.data());
-    }
-
-    //! Get an access of the array with the requested 'range'
-    [[nodiscard]] constexpr ArrayAccess<const DataT, N> access(const IndexRange<N> &range) const
-    {
-      assert(m_range.contains(range));
-      assert(m_data != nullptr);
-      return ArrayAccess<const DataT, N>(range.range_data(), m_data, m_strides.data());
-    }
-
     //! Access address of origin element
     //! Note: this may not point to a valid element
     [[nodiscard]] constexpr DataT *origin_address() const
@@ -1314,6 +1284,24 @@ namespace Ravl2
       } while(at.next());
     }
   }
+
+  //! Get a view of the array, the returned object is a non-owning view of the array that has its own
+  //! bounds.
+  template <typename ArrayT, typename DataT = typename ArrayT::value_type, unsigned N = ArrayT::dimensions>
+    requires WindowedArray<ArrayT, DataT, 1>
+  [[nodiscard]] constexpr ArrayView<DataT, N> view(const ArrayT &array)
+  {
+    return ArrayView<DataT, N>(array);
+  }
+
+  //! Get an access to the array,
+  template <typename ArrayT, typename DataT = typename ArrayT::value_type, unsigned N = ArrayT::dimensions>
+    requires WindowedArray<ArrayT, DataT, 1>
+  [[nodiscard]] constexpr ArrayAccess<DataT, N> access(const ArrayT &array)
+  {
+    return ArrayAccess<DataT, N>(array);
+  }
+
 
   template <typename ArrayT, typename DataT = typename ArrayT::value_type, unsigned N = ArrayT::dimensions>
     requires WindowedArray<ArrayT, DataT, N>

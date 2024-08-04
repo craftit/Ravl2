@@ -18,7 +18,7 @@ find_package(cereal REQUIRED)
 find_package(BLAS REQUIRED)
 find_package(LAPACK REQUIRED)
 find_package(dlib QUIET)
-
+find_package(Qt5 QUIET)
 
 add_subdirectory(Geometry)
 add_subdirectory(Math)
@@ -29,6 +29,10 @@ add_subdirectory(OpenCV)
 # If dlib is found, add the dlib subdirectory
 if(TARGET dlib::dlib)
     add_subdirectory(Dlib)
+endif()
+
+if(TARGET Qt6::Core)
+    add_subdirectory(Qt)
 endif()
 
 include(GenerateExportHeader)

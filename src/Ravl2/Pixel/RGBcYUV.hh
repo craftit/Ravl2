@@ -9,7 +9,7 @@
 /////////////////////////////////////////////////////////////////////////
 
 #include "Ravl2/Pixel/YUVValue.hh"
-#include "Ravl2/Pixel/RGBValue.hh"
+#include "Ravl2/Pixel/PixelRGB.hh"
 
 namespace Ravl2
 {

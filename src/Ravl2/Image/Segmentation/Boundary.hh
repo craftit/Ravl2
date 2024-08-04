@@ -129,7 +129,7 @@ namespace Ravl2
     IndexRange<2> boundingBox() const;
 
     Polygon2dC polygon(bool bHalfPixelOffset = false) const;
-    //: Convert a boundry to a polygon.
+    //: Convert a boundary to a polygon.
     //!param: bHalfPixelOffset - should (-0.5,-0.5) be added to the polygon points?
     // This assumes 'bnd' is a single ordered boundry (See BoundryC::OrderEdges();).
     // Straight edges are compressed into a single segment.

@@ -18,15 +18,15 @@ namespace Ravl2
   //: RGB Pixel base class.
 
   template <class CompT>
-  class RGBValueC : public Vector<CompT, 3>
+  class PixelRGB : public Vector<CompT, 3>
   {
   public:
     //! Default constructor.
     // Creates an undefined value.
-    RGBValueC() = default;
+    PixelRGB() = default;
 
     //! Construct from component values.
-    RGBValueC(const CompT &r, const CompT &g, const CompT &b)
+    PixelRGB(const CompT &r, const CompT &g, const CompT &b)
     {
       (*this)[0] = r;
       (*this)[1] = g;
@@ -35,7 +35,7 @@ namespace Ravl2
 
     //! Construct from another component type.
     template <class OCompT>
-    explicit RGBValueC(const RGBValueC<OCompT> &oth)
+    explicit PixelRGB(const PixelRGB<OCompT> &oth)
     {
       (*this)[0] = CompT(oth.Red());
       (*this)[1] = CompT(oth.Green());
@@ -43,7 +43,7 @@ namespace Ravl2
     }
 
     //! Constructor from base class.
-    explicit RGBValueC(const Vector<CompT, 3> &v)
+    explicit PixelRGB(const Vector<CompT, 3> &v)
         : Vector<CompT, 3>(v)
     {}
 
@@ -109,24 +109,24 @@ namespace Ravl2
 
   //! Stream input.
   template <class CompT>
-  inline std::istream &operator>>(std::istream &strm, RGBValueC<CompT> &val)
+  inline std::istream &operator>>(std::istream &strm, PixelRGB<CompT> &val)
   {
     return strm >> val[0] >> val[1] >> val[2];
   }
 
   //! Stream output.
   template <class CompT>
-  inline std::ostream &operator<<(std::ostream &strm, const RGBValueC<CompT> &val)
+  inline std::ostream &operator<<(std::ostream &strm, const PixelRGB<CompT> &val)
   {
     return strm << val[0] << ' ' << val[1] << ' ' << val[2];
   }
 
   //! Stream input.
   // This is to make sure bytes are handled as numeric values.
-  inline std::istream &operator>>(std::istream &strm, RGBValueC<uint8_t> &val);
+  inline std::istream &operator>>(std::istream &strm, PixelRGB<uint8_t> &val);
 
   //! Stream output.
   // This is to make sure bytes are handled as numeric values.
-  inline std::ostream &operator<<(std::ostream &strm, const RGBValueC<uint8_t> &val);
+  inline std::ostream &operator<<(std::ostream &strm, const PixelRGB<uint8_t> &val);
 
 }// namespace Ravl2

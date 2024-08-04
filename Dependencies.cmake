@@ -19,6 +19,10 @@ function(RAVL2_setup_dependencies)
   find_package(nlohmann_json QUIET)
   find_package(cereal QUIET)
 
+  # Optional dependencies, we won't build them if they're not found
+  find_package(Qt6 COMPONENTS Core GUI QUIET)
+  find_package(dlib QUIET)
+
   # For each dependency, see if it's
   # already been provided to us by a parent project
 
@@ -119,6 +123,19 @@ function(RAVL2_setup_dependencies)
     )
   else()
     message(STATUS "Found native cereal::cereal")
+  endif()
+
+  if(NOT TARGET Qt6::Core OR NOT TARGET Qt6::Gui)
+    message(STATUS "Qt6 not found, building without Qt support")
+  else()
+    message(STATUS "Found native Qt6 ")
+    message(STATUS "Headers are in ${Qt6Core_INCLUDE_DIRS}")
+  endif()
+
+  if(NOT TARGET dlib::dlib)
+    message(STATUS "dlib not found, building without dlib support")
+  else()
+    message(STATUS "Found native dlib::dlib ")
   endif()
 
 #  if(NOT TARGET tools::tools)
