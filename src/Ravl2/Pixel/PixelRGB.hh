@@ -10,7 +10,7 @@
 #pragma once
 
 #include <array>
-#include "Ravl2/Geometry/Geometry.hh"
+#include "Ravl2/Types.hh"
 
 namespace Ravl2
 {

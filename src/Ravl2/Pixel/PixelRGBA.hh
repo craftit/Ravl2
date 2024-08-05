@@ -10,8 +10,8 @@
 #pragma once
 
 #include <array>
+#include "Ravl2/Types.hh"
 #include "Ravl2/Pixel/PixelRGB.hh"
-#include "Ravl2/Geometry/Geometry.hh"
 
 namespace Ravl2
 {

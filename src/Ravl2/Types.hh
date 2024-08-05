@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include <span>
 #include <fmt/ostream.h>
 #include <cereal/cereal.hpp>
 #include <cereal/types/array.hpp>
