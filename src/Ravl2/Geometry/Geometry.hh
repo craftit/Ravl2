@@ -4,17 +4,9 @@
 
 #pragma once
 
-#define USE_OPENCV 0
-
 #include <cmath>
 #include <span>
-#include <fmt/ostream.h>
-#include <cereal/cereal.hpp>
-#include <cereal/types/array.hpp>
 
-#if USE_OPENCV
-#include <opencv2/core.hpp>
-#else
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wdouble-promotion"
 #pragma GCC diagnostic ignored "-Wshadow"
@@ -33,73 +25,13 @@
 #ifdef __clang__
 #pragma GCC diagnostic ignored "-Wimplicit-float-conversion"
 #endif
-#include <xtensor/xio.hpp>
-#include <xtensor/xtensor.hpp>
-#include <xtensor/xview.hpp>
-#include <xtensor/xrandom.hpp>
-#include <xtensor/xadapt.hpp>
-#include <xtensor/xsort.hpp>
-#include <xtensor/xnorm.hpp>
-#include <xtensor/xnpy.hpp>
-#include <xtensor/xmath.hpp>
-#include <xtensor/xreducer.hpp>
 #include <xtensor-blas/xlinalg.hpp>
 #pragma GCC diagnostic pop
-#endif
 
-#include "Ravl2/Index.hh"
-#include "Ravl2/Math.hh"
+#include "Ravl2/Types.hh"
 
 namespace Ravl2
 {
-#if USE_OPENCV
-  using Point2f = cv::Vec2f;
-  using Point2d = cv::Vec2d;
-  using Matrix22f = cv::Matx22f;
-  using Vector2f = cv::Vec2f;
-  using Vector2d = cv::Vec2d;
-  using Vector3f = cv::Vec3f;
-  using Vector3d = cv::Vec3d;
-  using Vector3d = cv::Vec3d;
-  //using VectorT = cv::Vec;
-#else
-  template <typename DataT>
-  using VectorT = xt::xtensor<DataT, 1>;
-
-  template <typename DataT>
-  using TensorT = xt::xarray<DataT>;
-
-  template <typename DataT>
-  using MatrixT = xt::xtensor<DataT, 2>;
-
-  using EmbeddingMatrixT = xt::xtensor<float, 2>;
-  using VectorViewT = std::span<float>;
-  using ConstVectorViewT = std::span<const float>;
-
-  template <typename DataT, size_t N>
-  using Point = xt::xtensor_fixed<DataT, xt::xshape<N>, XTENSOR_DEFAULT_LAYOUT, false>;
-
-  template <typename DataT, size_t N>
-  using Vector = xt::xtensor_fixed<DataT, xt::xshape<N>, XTENSOR_DEFAULT_LAYOUT, false>;
-
-  template <typename DataT, size_t N, size_t M>
-  using Matrix = xt::xtensor_fixed<DataT, xt::xshape<N, M>, XTENSOR_DEFAULT_LAYOUT, false>;
-
-  template <typename DataT, unsigned N>
-  using Tensor = xt::xtensor<DataT, N>;
-
-  using Vector4f = Vector<float, 4>;
-  using Vector3f = Vector<float, 3>;
-  using Vector3d = Vector<double, 3>;
-  using Vector2f = Vector<float, 2>;
-  using Vector2d = Vector<double, 2>;
-  using Point2f = Point<float, 2>;
-  using Point2d = Point<double, 2>;
-  using AngleAxisf = Vector4f;
-
-  using Matrix2f = Matrix<float, 2, 2>;
-  using Matrix3f = Matrix<float, 3, 3>;
-
   //! Get a perpendicular vector in 2d.
   template <typename DataT>
   inline constexpr Vector<DataT, 2> perpendicular(const Vector<DataT, 2> &v)
@@ -122,20 +54,12 @@ namespace Ravl2
     assert(view.is_contiguous());
     return std::span(view.begin(), view.size());
   }
-#endif
 
   // Define the concept of a point transform
   template <typename TransformT, typename RealT = typename TransformT::value_type, unsigned N = TransformT::dimension>
   concept PointTransform = requires(TransformT a, Point<RealT, N> pnt) {
     { a(pnt) } -> std::convertible_to<Point<RealT, N>>;
   };
-
-  //! Convert to a string
-  [[nodiscard]] std::string toString(Vector3f v);
-  [[nodiscard]] std::string toString(Vector3d v);
-  [[nodiscard]] std::string toString(Vector2f v);
-  [[nodiscard]] std::string toString(Vector2d v);
-  //std::string toString(const VectorT &v);
 
   //! Compute the l2 norm of a vector
   template <typename RealT, unsigned N>
@@ -281,53 +205,3 @@ namespace Ravl2
 }// namespace Ravl2
 
 
-namespace xt {
-  //! Serialization support
-  template <class Archive, typename DataT, size_t N>
-  void serialize( Archive & archive, xt::xfixed_container<DataT, xt::fixed_shape<N>, xt::layout_type::row_major, false, xt::xtensor_expression_tag> &pnt )
-  {
-    cereal::size_type size = N;
-    archive(cereal::make_size_tag(size));
-    if(size != N) {
-      throw std::runtime_error("Size mismatch");
-    }
-    (void) pnt;
-    for(auto &it : pnt) {
-      archive(it);
-    }
-  }
-
-  //! Serialization support
-  template <class Archive, typename DataT, size_t N, size_t M>
-  void serialize( Archive & archive, Ravl2::Matrix<DataT, N, M> &mat )
-  {
-    cereal::size_type size = N * M;
-    archive(cereal::make_size_tag(size));
-    if(size != N * M) {
-      throw std::runtime_error("Size mismatch");
-    }
-    for(auto &it : mat) {
-      archive(it);
-    }
-  }
-
-}
-
-#if !USE_OPENCV
-#if FMT_VERSION >= 90000
-template <>
-struct fmt::formatter<xt::xarray<float>> : fmt::ostream_formatter {
-};
-template <>
-struct fmt::formatter<Ravl2::Point2f> : fmt::ostream_formatter {
-};
-//template <> struct fmt::formatter<xt::xtensor<float,1> > : ostream_formatter{};
-template <>
-struct fmt::formatter<xt::xarray<float>::shape_type> : fmt::ostream_formatter {
-};
-template <>
-struct fmt::formatter<xt::xtensor_container<xt::uvector<float>, 2, xt::layout_type::row_major>> : fmt::ostream_formatter {
-};
-//template <> struct fmt::formatter<std::span<float> > : ostream_formatter{};
-#endif
-#endif

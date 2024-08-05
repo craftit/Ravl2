@@ -31,7 +31,7 @@ if(TARGET dlib::dlib)
     add_subdirectory(Dlib)
 endif()
 
-if(TARGET Qt6::Core)
+if(TARGET Qt${QT_VERSION_MAJOR}::Core)
     add_subdirectory(Qt)
 endif()
 
@@ -45,6 +45,7 @@ add_library(Ravl2Core
     Assert.hh
     IndexRangeSet.cc IndexRangeSet.hh
     Sentinel.cc Sentinel.hh
+    Types.cc Types.hh
 )
 
 add_library(ravl2::Ravl2Core ALIAS Ravl2Core)

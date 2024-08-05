@@ -20,8 +20,12 @@ function(RAVL2_setup_dependencies)
   find_package(cereal QUIET)
 
   # Optional dependencies, we won't build them if they're not found
-  find_package(Qt6 COMPONENTS Core GUI QUIET)
+
   find_package(dlib QUIET)
+
+  find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Widgets)
+  find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS  Core Gui Widgets)
+
 
   # For each dependency, see if it's
   # already been provided to us by a parent project
@@ -125,10 +129,10 @@ function(RAVL2_setup_dependencies)
     message(STATUS "Found native cereal::cereal")
   endif()
 
-  if(NOT TARGET Qt6::Core OR NOT TARGET Qt6::Gui)
-    message(STATUS "Qt6 not found, building without Qt support")
+  if(NOT TARGET Qt${QT_VERSION_MAJOR}::Core AND NOT TARGET Qt${QT_VERSION_MAJOR}::Core)
+    message(STATUS "Qt${QT_VERSION_MAJOR} not found, building without Qt support")
   else()
-    message(STATUS "Found native Qt6 ")
+    message(STATUS "Found native Qt${QT_VERSION_MAJOR} ")
     message(STATUS "Headers are in ${Qt6Core_INCLUDE_DIRS}")
   endif()
 

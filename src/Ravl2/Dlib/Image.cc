@@ -1,12 +1,29 @@
 
-#include "Ravl2/Dlib/convert.hh"
+#include "Ravl2/Dlib/Image.hh"
 
-namespace Ravl2::DLibConvert
+namespace Ravl2
 {
+
+  using namespace DLibConvert;
 
   // Check that the DlibArray2d concept is satisfied by dlib::array2d.
   static_assert(DlibArray2d<dlib::array2d<float>>, "dlib::array2d<float> does not satisfy DlibArray2d concept");
-
   static_assert(DlibArray2d<Array<float, 2>>, "Array<float,2> does not satisfy DlibArray2d concept");
 
-}// namespace Ravl2::DLibConvert
+  //! Create a dlib RGB image from a Ravl2::Array
+  //! This creates a view, it is up to the user to ensure the array2d is not destroyed before the view.
+  dlib::array2d<dlib::rgb_pixel> toDlibRGB(const ArrayView<PixelRGB<uint8_t>, 2> &anArray)
+  {
+    dlib::array2d<dlib::rgb_pixel> ret(anArray.range().size()[0], anArray.range().size()[1]);
+    for(int r = 0; r < anArray.range().size()[0]; r++) {
+      for(int c = 0; c < anArray.range().size()[1]; c++) {
+        ret[r][c].red = anArray[r][c].Red();
+        ret[r][c].green = anArray[r][c].Green();
+        ret[r][c].blue = anArray[r][c].Blue();
+      }
+    }
+    return ret;
+  }
+
+
+}// namespace Ravl2

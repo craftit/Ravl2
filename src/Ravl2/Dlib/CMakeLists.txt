@@ -4,7 +4,7 @@ include(GenerateExportHeader)
 message(STATUS "Found Dlib, building compatibility library")
 
 add_library (Ravl2Dlib
-    convert.hh convert.cc
+        Image.hh Image.cc
 )
 
 add_library(ravl2::Ravl2Dlib ALIAS Ravl2Dlib)

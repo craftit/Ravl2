@@ -909,6 +909,15 @@ namespace Ravl2
       return m_range.range_data();
     }
 
+    //! Inplace clipping of the array bounds.
+    //! This clips the array to be within the given range.
+    //! Returns false if the resulting array is empty.
+    bool clipBy(const IndexRange<N> &range)
+    {
+      return m_range.clipBy(range);
+    }
+
+
     //! Is array empty ?
     [[nodiscard]] constexpr bool empty() const noexcept
     {
@@ -1010,6 +1019,14 @@ namespace Ravl2
     [[nodiscard]] constexpr const IndexRange<1> &range() const
     {
       return m_range;
+    }
+
+    //! Inplace clipping of the array bounds.
+    //! This clips the array to be within the given range.
+    //! Returns false if the resulting array is empty.
+    bool clipBy(const IndexRange<1> &range)
+    {
+      return m_range.clipBy(range);
     }
 
     //! Is array empty ?
