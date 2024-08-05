@@ -1160,6 +1160,12 @@ namespace Ravl2
       return m_buffer;
     }
 
+    //! Access buffer.
+    [[nodiscard]] constexpr const auto &buffer() const
+    {
+      return m_buffer;
+    }
+
   protected:
     std::shared_ptr<DataT[]> m_buffer;
   };

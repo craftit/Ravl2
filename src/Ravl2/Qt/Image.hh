@@ -107,10 +107,12 @@ namespace Ravl2
     // Make a shared pointer to the image data so it doesn't get deleted when the QImage goes out of scope
     IndexRange<2> rng = IndexRange<2>::fromSize(image.width(), image.height());
     auto bytesPerLine = image.bytesPerLine();
-    if((bytesPerLine % sizeof(DataT)) != 0)
+    if((size_t(bytesPerLine) % sizeof(DataT)) != 0)
       throw std::runtime_error("Invalid bytes per line, not a multiple of sizeof(T)");
-    auto dataPtr = reinterpret_cast<const DataT *>(image.bits());
-    return Array<DataT, 2>(dataPtr,rng,{bytesPerLine / sizeof(DataT),1},std::shared_ptr<DataT[]>(dataPtr, [img = image]([[maybe_unused]] DataT *delPtr) {}));
+    // We need to const cast the data pointer as QImage::bits() returns a const uchar *
+    // Maybe we should restrict this to only allow use with 'const DataT' ?
+    auto dataPtr = const_cast<DataT *>(reinterpret_cast<const DataT *>(image.bits()));
+    return Array<DataT, 2>(dataPtr,rng,{int(ssize_t(bytesPerLine) / ssize_t(sizeof(DataT))),1},std::shared_ptr<DataT[]>(dataPtr, [img = image]([[maybe_unused]] DataT *delPtr) {}));
   }
 
 
@@ -152,12 +154,12 @@ namespace Ravl2
       IndexRange<2> newRng = array.range();
       auto targetBytePerLine = (bytesPerLine + 3) & ~3;
       newRng[0].max() = newRng[0].min() + int((targetBytePerLine / ssize_t(sizeof(DataT))) - 1);
-      assert(newRng[0].size() * sizeof(DataT) % 4 == 0);
+      assert(newRng[0].size() * ssize_t(sizeof(DataT)) % 4 == 0);
       // Adjust the range to match the new bytes per line
       Array<DataT, 2> newArray(newRng);
       copy(array, clip(newArray,array.range()));
       // Check we've achieved the correct bytes per line
-      assert((newArray.stride(0) * sizeof(DataT)) % 4 == 0);
+      assert((newArray.stride(0) * ssize_t(sizeof(DataT))) % 4 == 0);
       return toQImage<DataT, CopyModeT::Never>(newArray);
     }
     return QImage(reinterpret_cast<uchar *>(addressOfMin(array)),
@@ -174,5 +176,9 @@ namespace Ravl2
   extern template QImage toQImage<PixelRGBA<uint16_t>>(const Array<PixelRGBA<uint16_t>, 2> &array);
   extern template QImage toQImage<PixelRGBA<float>>(const Array<PixelRGBA<float>, 2> &array);
 
+  extern template Array<uint8_t, 2> toArray<uint8_t>(const QImage &image);
+  extern template Array<uint16_t, 2> toArray<uint16_t>(const QImage &image);
+  extern template Array<PixelRGB<uint8_t>, 2> toArray<PixelRGB<uint8_t>>(const QImage &image);
+  extern template Array<PixelRGBA<uint8_t>, 2> toArray<PixelRGBA<uint8_t>>(const QImage &image);
 
 }
