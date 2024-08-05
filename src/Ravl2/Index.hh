@@ -123,25 +123,49 @@ namespace Ravl2
     {
       return !operator==(ind);
     }
-
+    
     //! begin
     [[nodiscard]] constexpr int *begin()
     {
       return m_index.data();
     }
-
+    
+    //! end
+    [[nodiscard]] constexpr int *end()
+    {
+      return &(m_index.data()[N]);
+    }
+    
+    //! begin
+    [[nodiscard]] constexpr const int *begin() const
+    {
+      return m_index.data();
+    }
+    
     //! end
     [[nodiscard]] constexpr const int *end() const
     {
       return &(m_index.data()[N]);
     }
 
-    //! begin
-    [[nodiscard]] constexpr const int *begin() const
+    //! Access as const ptr.
+    [[nodiscard]] constexpr const int *data() const
     {
       return m_index.data();
     }
-
+    
+    //! Access as ptr.
+    [[nodiscard]] constexpr int *data()
+    {
+      return m_index.data();
+    }
+    
+    //! Access size
+    [[nodiscard]] constexpr size_t size() const
+    {
+      return size_t(N);
+    }
+  
   protected:
     std::array<int,N> m_index = {0};
   };

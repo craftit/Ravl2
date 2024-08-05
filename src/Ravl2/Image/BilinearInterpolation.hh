@@ -16,7 +16,7 @@
 
 namespace Ravl2
 {
-  //! \brief Bilinear interpolation
+  //! @brief Bilinear interpolation
   //! This function performs bi-linear interpolation on a 2D image, it does not perform any bounds checking.
   //! It also assumes the image is continuous in memory, with the first index being the row and the second index being the column.
   //! \param img - The input image

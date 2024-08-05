@@ -16,8 +16,7 @@ namespace Ravl2
   cv::Mat toCvMat(const ArrayT &m)
   {
     Index<N> sizes = m.range().size();
-    Index<N> minInd = m.range().min();
-    return cv::Mat(N, sizes.data(), cv::DataType<DataT>::type, reinterpret_cast<void *>(&m[minInd]));
+    return cv::Mat(N, sizes.data(), cv::DataType<DataT>::type, addressOfMin(m));
   }
 
   //! Create a Ravl2::Array from a cv::Mat
@@ -27,7 +26,6 @@ namespace Ravl2
   template <typename DataT, unsigned N>
   Array<DataT, N> toArray(const cv::Mat &m)
   {
-    IndexRange<N> sizes;
     if(m.dims != N)
       throw std::runtime_error("fromCvMat: cv::Mat has wrong number of dimensions");
     if(m.type() != cv::DataType<DataT>::type) {
@@ -38,7 +36,7 @@ namespace Ravl2
     std::array<int, N> strides;
     for(unsigned i = 0; i < N; ++i) {
       indexRange[i] = IndexRange<1>(0, m.size[int(i)] - 1);
-      strides[i] = m.step[int(i)] / sizeof(DataT);
+      strides[i] = int(m.step[int(i)] / sizeof(DataT));
     }
     auto dataPtr = reinterpret_cast<DataT *>(m.data);
     return Array<DataT, N>(dataPtr, indexRange, strides,
@@ -52,7 +50,6 @@ namespace Ravl2
   template <typename DataT, unsigned N>
   ArrayView<DataT, N> toArrayView(const cv::Mat &m)
   {
-    IndexRange<N> sizes;
     if(m.dims != N)
       throw std::runtime_error("fromCvMat: cv::Mat has wrong number of dimensions");
     if(m.type() != cv::DataType<DataT>::type) {
@@ -63,9 +60,25 @@ namespace Ravl2
     std::array<int, N> strides;
     for(unsigned i = 0; i < N; ++i) {
       indexRange[i] = IndexRange<1>(0, m.size[int(i)] - 1);
-      strides[i] = m.step[int(i)] / sizeof(DataT);
+      strides[i] = int(m.step[int(i)] / sizeof(DataT));
     }
     return ArrayView<DataT, N>(reinterpret_cast<DataT *>(m.data), indexRange, strides);
   }
-
+  
+  // Instantiate the template functions for the types we need often
+  extern template cv::Mat toCvMat(const Array<uint8_t, 2> &m);
+  extern template cv::Mat toCvMat(const Array<float, 2> &m);
+  extern template cv::Mat toCvMat(const Array<double, 2> &m);
+  extern template cv::Mat toCvMat(const Array<uint8_t, 3> &m);
+  
+  extern template Array<uint8_t, 2> toArray<uint8_t, 2>(const cv::Mat &m);
+  extern template Array<float, 2> toArray<float, 2>(const cv::Mat &m);
+  extern template Array<double, 2> toArray<double, 2>(const cv::Mat &m);
+  extern template Array<uint8_t, 3> toArray<uint8_t, 3>(const cv::Mat &m);
+  
+  extern template ArrayView<uint8_t, 2> toArrayView<uint8_t, 2>(const cv::Mat &m);
+  extern template ArrayView<float, 2> toArrayView<float, 2>(const cv::Mat &m);
+  extern template ArrayView<double, 2> toArrayView<double, 2>(const cv::Mat &m);
+  extern template ArrayView<uint8_t, 3> toArrayView<uint8_t, 3>(const cv::Mat &m);
+  
 }// namespace Ravl2

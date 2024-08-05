@@ -133,6 +133,7 @@ namespace Ravl2
   extern template cv::Vec<float, 3> toCvVec(const Vector<float, 3> &vec);
   extern template cv::Vec<double, 2> toCvVec(const Vector<double, 2> &vec);
   extern template cv::Vec<double, 3> toCvVec(const Vector<double, 3> &vec);
+  
   extern template cv::Mat toCvMat(const Matrix<float, 3, 3> &mat);
   extern template cv::Mat toCvMat(const Matrix<double, 3, 3> &mat);
   extern template cv::Mat toCvMat(const Matrix<float, 4, 4> &mat);
