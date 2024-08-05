@@ -47,9 +47,12 @@ namespace Ravl2
     if constexpr (std::is_same_v<DataT, PixelRGBA<uint16_t>>) {
       return QImage::Format_RGBA64;
     }
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+    // Only available in Qt 6
     if constexpr (std::is_same_v<DataT, PixelRGBA<float>>) {
       return QImage::Format_RGBA32FPx4;
     }
+#endif
 
     throw std::runtime_error("Unknown qt pixel type");
   }

@@ -40,8 +40,8 @@ namespace Ravl2
 
   //! Convert to fixed size cv matrix
   template<typename RealT,unsigned N, unsigned M>
-  cv::Matx<RealT, N, M> toCvMatx(const Matrix<RealT,N,M> &mat) {
-    cv::Matx<RealT, N, M> result;
+  auto toCvMatx(const Matrix<RealT,N,M> &mat) {
+    cv::Matx<RealT, int(N), int(M)> result;
     for(unsigned i = 0; i < N; ++i) {
       for(unsigned j = 0; j < M; ++j) {
 	result(i, j) = mat(i, j);
@@ -68,7 +68,7 @@ namespace Ravl2
 
   //! Fixed size matrix conversions
   template<typename RealT, unsigned N, unsigned M>
-  Matrix<RealT,N,M> toMatrix(const cv::Matx<RealT, N, M> &mat) {
+  Matrix<RealT,N,M> toMatrix(const cv::Matx<RealT, int(N), int(M)> &mat) {
     Matrix<RealT,N,M> result;
     for(unsigned i = 0; i < N; ++i) {
       for(unsigned j = 0; j < M; ++j) {
@@ -81,7 +81,7 @@ namespace Ravl2
 
   //! To Vector
   template<typename RealT, unsigned N>
-  Vector<RealT,N> toVector(const cv::Vec<RealT, N> &vec)
+  Vector<RealT,N> toVector(const cv::Vec<RealT, int(N)> &vec)
   {
     Vector<RealT,N> result;
     for(unsigned i = 0; i < N; ++i) {

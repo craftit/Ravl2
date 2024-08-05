@@ -1,7 +1,9 @@
 
 include(GenerateExportHeader)
 
-find_package(Qt6 COMPONENTS Core Gui REQUIRED)
+find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Widgets)
+find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS  Core Gui Widgets)
+
 
 add_library (Ravl2Qt
     Image.hh Image.cc
@@ -12,7 +14,7 @@ add_library (Ravl2Qt
 add_library(ravl2::Ravl2Qt ALIAS Ravl2Qt)
 
 target_link_libraries(Ravl2Qt PRIVATE RAVL2_options RAVL2_warnings)
-target_link_libraries(Ravl2Qt PUBLIC Ravl2Image Qt6::Core Qt6::Gui)
+target_link_libraries(Ravl2Qt PUBLIC Ravl2Image Qt${QT_VERSION_MAJOR}::Core Qt${QT_VERSION_MAJOR}::Gui)
 
 target_include_directories(Ravl2Qt ${WARNING_GUARD} PUBLIC
         $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src>
