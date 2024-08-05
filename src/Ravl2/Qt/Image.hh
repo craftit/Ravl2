@@ -136,7 +136,14 @@ namespace Ravl2
   QImage toQImage(const Array<DataT, 2> &array)
   {
     assert(array.stride(0) > 0);
-    qsizetype bytesPerLine = ssize_t(array.stride(0)) * ssize_t(sizeof(DataT));
+    // Handle QImage needing bytesperline as different type depending on Qt version
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+    using QtBytesPerLineT = qsizetype;
+#else
+    using QtBytesPerLineT = int;
+#endif
+
+    QtBytesPerLineT bytesPerLine = ssize_t(array.stride(0)) * ssize_t(sizeof(DataT));
     if((bytesPerLine % 4) != 0) {
       // QImage requires the bytes per line to be a multiple of 4
       if(copyMode == CopyModeT::Never) {
@@ -151,10 +158,11 @@ namespace Ravl2
       copy(array, clip(newArray,array.range()));
       // Check we've achieved the correct bytes per line
       assert((newArray.stride(0) * sizeof(DataT)) % 4 == 0);
+      return toQImage<DataT, CopyModeT::Never>(newArray);
     }
     return QImage(reinterpret_cast<uchar *>(addressOfMin(array)),
 		  array.range(0).size(), array.range(1).size(),
-		  bytesPerLine,
+                  bytesPerLine,
 		  toQImageFormat<DataT, copyMode>());
   }
 
