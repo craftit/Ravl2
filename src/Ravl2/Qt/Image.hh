@@ -145,7 +145,7 @@ namespace Ravl2
     using QtBytesPerLineT = int;
 #endif
 
-    QtBytesPerLineT bytesPerLine = ssize_t(array.stride(0)) * ssize_t(sizeof(DataT));
+    QtBytesPerLineT bytesPerLine = QtBytesPerLineT(ssize_t(array.stride(0)) * ssize_t(sizeof(DataT)));
     if((bytesPerLine % 4) != 0) {
       // QImage requires the bytes per line to be a multiple of 4
       if(copyMode == CopyModeT::Never) {

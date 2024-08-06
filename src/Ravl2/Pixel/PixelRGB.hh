@@ -11,14 +11,15 @@
 
 #include <array>
 #include "Ravl2/Types.hh"
+#include "Ravl2/Pixel/Pixel.hh"
 
 namespace Ravl2
 {
 
-  //: RGB Pixel base class.
+  //: RGB Pixel base class, this is for convenience only.
 
   template <class CompT>
-  class PixelRGB : public Vector<CompT, 3>
+  class PixelRGB : public Pixel<CompT, ImageChannel::Red, ImageChannel::Green, ImageChannel::Blue>
   {
   public:
     //! Default constructor.
@@ -95,7 +96,7 @@ namespace Ravl2
     //! the NTSC RGB color system.
     [[nodiscard]] inline CompT NTSC_Y()
     {
-      return CompT(0.299f * float((*this)[0]) + 0.587f * float((*this)[1]) + 0.114f * float((*this)[2]));
+      return get<ImageChannel::Luminance>(*this);
     }
 
     //! Calculate intensity of the pixel.

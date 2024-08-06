@@ -37,8 +37,6 @@ namespace Ravl2
 {
   namespace DLibConvert
   {
-    using namespace dlib;
-    
     //! Returns the number of rows in the given image
     //!  ensures
     //!    - returns the number of rows in the given image
