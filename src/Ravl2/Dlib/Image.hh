@@ -24,8 +24,6 @@
 #endif
 #include <dlib/array2d.h>
 #include <dlib/matrix.h>
-#include <dlib/geometry/line.h>
-
 #pragma GCC diagnostic pop
 
 #include "Ravl2/Array.hh"
@@ -161,7 +159,27 @@ namespace Ravl2
       { image_data(img) } -> std::convertible_to<const void *>;
       { width_step(img) } -> std::convertible_to<long>;
     };
-
+    
+    //! Create a dlib array2d from a Ravl2::ArrayView, Ravl2::Array or Ravl2::ArrayAccess
+    template<typename ArrayT, typename DataT = ArrayT::value_type, unsigned N = ArrayT::dimensions>
+    class DLibArray
+      : public ArrayT
+    {
+    public:
+      DLibArray(const ArrayT &anArray)
+        : ArrayT(anArray)
+      {}
+      
+      //! Provide the dlib array2d interface
+      int nc() const { return num_columns(*this); }
+      
+      int nr() const { return num_rows(*this); }
+      
+      void set_size(int rows, int cols) { set_image_size(*this, rows, cols); }
+      
+      const DataT *operator[](int r) const { return &(*this)(r, 0); }
+    };
+    
   } // namespace DLibConvert
 
 
@@ -181,8 +199,20 @@ namespace Ravl2
   }
 
   //! Create a dlib RGB image from a Ravl2::Array
-  dlib::array2d<dlib::rgb_pixel> toDlibRGB(const ArrayView<PixelRGB<uint8_t>, 2> &anArray);
-
+  [[nodiscard]] dlib::array2d<dlib::rgb_pixel> toDlib(const ArrayView<PixelRGB<uint8_t>, 2> &anArray);
+  
+//  //! Create a dlib grey image from a Ravl2::Array
+//  [[nodiscard]] dlib::array2d<uint8_t > toDlib(const ArrayView<uint8_t, 2> &anArray);
+//
+//  //! Create a dlib grey image from a Ravl2::Array
+//  [[nodiscard]] dlib::array2d<uint16_t > toDlib(const ArrayView<uint16_t, 2> &anArray);
+  
+  //! Create a dlib image from a Ravl2::Array
+  template <typename ArrayT, typename DataT = typename ArrayT::type>
+  requires DLibConvert::DlibArray2d<ArrayT>
+  [[nodiscard]] inline DLibConvert::DLibArray<ArrayT> toDlib(const ArrayT &anArray)
+  { return DLibConvert::DLibArray<ArrayT>(anArray); }
+  
 #if 0
   //! Convert to a matrix.
   //! Perhaps we should go straight to xtensor equivalent?
