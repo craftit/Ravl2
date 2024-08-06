@@ -168,7 +168,7 @@ namespace Ravl2
       : public ArrayT
     {
     public:
-      DLibArray(const ArrayT &anArray)
+      explicit DLibArray(const ArrayT &anArray)
         : ArrayT(anArray)
       {}
       
