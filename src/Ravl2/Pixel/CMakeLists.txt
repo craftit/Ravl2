@@ -2,14 +2,11 @@
 include(GenerateExportHeader)
 
 add_library (Ravl2Pixel
+        Pixel.cc Pixel.hh
+        Colour.cc Colour.hh
         PixelRGB.hh PixelRGB.cc
         PixelRGBA.hh PixelRGBA.cc
-        RGBcYUV.cc RGBcYUV.hh
-#        YUVValue.hh
-#        YUVAValue.hh
-#        BGRValue.hh
-#        IAValue.hh
-#        VYUValue.hh
+#        RGBcYUV.cc RGBcYUV.hh
 )
 
 add_library(ravl2::Ravl2Pixel ALIAS Ravl2Pixel)

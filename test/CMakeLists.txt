@@ -45,7 +45,8 @@ add_executable(tests
         test_image.cc
         test_draw.cc
         test_boundary.cc
-        test_segmentation.cc)
+        test_segmentation.cc
+        test_pixel.cc)
 target_link_libraries(
   tests
   PRIVATE ravl2::RAVL2_warnings
