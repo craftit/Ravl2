@@ -11,6 +11,8 @@ namespace Ravl2
 {
 
   //! Image channel types.
+  // It would be possible to turn this into set of classes with static constexpr members specifying the behaviour for
+  // a channel.  So far this has not been necessary, and would make it even more complicated to use.
 
   enum class ImageChannel
   {
@@ -210,6 +212,8 @@ namespace Ravl2
   //! Define some common formats
   using PixelRGB8 = Pixel<uint8_t, ImageChannel::Red, ImageChannel::Green, ImageChannel::Blue>;
   using PixelRGBA8 = Pixel<uint8_t, ImageChannel::Red, ImageChannel::Green, ImageChannel::Blue, ImageChannel::Alpha>;
+  using PixelRGB16 = Pixel<uint16_t, ImageChannel::Red, ImageChannel::Green, ImageChannel::Blue>;
+  using PixelRGBA16 = Pixel<uint16_t, ImageChannel::Red, ImageChannel::Green, ImageChannel::Blue, ImageChannel::Alpha>;
   using PixelRGB32F = Pixel<float, ImageChannel::Red, ImageChannel::Green, ImageChannel::Blue>;
   using PixelRGBA32F = Pixel<float, ImageChannel::Red, ImageChannel::Green, ImageChannel::Blue, ImageChannel::Alpha>;
   using PixelBGR8 = Pixel<uint8_t, ImageChannel::Blue, ImageChannel::Green, ImageChannel::Red>;
