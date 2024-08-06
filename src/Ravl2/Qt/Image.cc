@@ -15,7 +15,7 @@ namespace Ravl2
 
   template Array<uint8_t, 2> toArray<uint8_t>(const QImage &image);
   template Array<uint16_t, 2> toArray<uint16_t>(const QImage &image);
-  template Array<PixelRGB<uint8_t>, 2> toArray<PixelRGB<uint8_t>>(const QImage &image);
-  template Array<PixelRGBA<uint8_t>, 2> toArray<PixelRGBA<uint8_t>>(const QImage &image);
+  template Array<PixelRGB8, 2> toArray<PixelRGB8>(const QImage &image);
+  template Array<PixelRGBA8, 2> toArray<PixelRGBA8>(const QImage &image);
 
 }

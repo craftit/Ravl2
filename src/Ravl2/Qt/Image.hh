@@ -7,8 +7,8 @@
 #include <QtGui/QImage>
 #include "Ravl2/Assert.hh"
 #include "Ravl2/Array.hh"
-#include "Ravl2/Pixel/PixelRGB.hh"
-#include "Ravl2/Pixel/PixelRGBA.hh"
+#include "Ravl2/Pixel/Pixel.hh"
+#include "Ravl2/Pixel/Colour.hh"
 #include "Ravl2/ArrayIterZip.hh"
 
 namespace Ravl2
@@ -169,6 +169,6 @@ namespace Ravl2
   extern template Array<uint8_t, 2> toArray<uint8_t>(const QImage &image);
   extern template Array<uint16_t, 2> toArray<uint16_t>(const QImage &image);
   extern template Array<PixelRGB8, 2> toArray<PixelRGB8>(const QImage &image);
-  extern template Array<PixelRGB8, 2> toArray<PixelRGB8>(const QImage &image);
+  extern template Array<PixelRGBA8, 2> toArray<PixelRGBA8>(const QImage &image);
 
 }
