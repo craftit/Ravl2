@@ -42,7 +42,7 @@ namespace Ravl2
   //! | float      | Red,Green,Blue               | [0, 1]     | 0      | NA      | Yes      |
   //! | float      | Alpha                        | [0, 1]     | 0      | 1       | Yes      |
   //! | float      | Luminance                    | [0, 1]     | 0      | NA      | Yes      |
-  //! | float      | ChrominanceU, ChrominanceV   | [-1, 1]    | 0      | NA      | Yes      |
+  //! | float      | ChrominanceU, ChrominanceV   | [-0.5, 0.5]    | 0      | NA      | Yes      |
   //! | float      | Hue, Saturation, Value       | [0, 1]     | 0      | NA      | Yes      |
   //! | float      | Lightness                    | [0, 1]     | 0      | NA      | Yes      |
   //! | float      | Count, Label, Depth, Unused  |  User Def  | 0      | NA      | No       |
@@ -108,8 +108,8 @@ namespace Ravl2
   struct PixelTypeTraits<DataT, channel>
   {
     static constexpr bool isNormalized = PixelChannelTraits<channel>::isNormalized;
-    static constexpr DataT min = DataT(-1);
-    static constexpr DataT max = DataT(1);
+    static constexpr DataT min = DataT(-0.5);
+    static constexpr DataT max = DataT(0.5);
     static constexpr DataT offset = 0;
   };
 
@@ -145,7 +145,14 @@ namespace Ravl2
     {
       //SPDLOG_INFO("Normalized channel {} -> {}  Type:{} <- {} ",toString(channel), (PixelTypeTraits<CompT, channel>::max - PixelTypeTraits<CompT, channel>::min) / (PixelTypeTraits<PixelValueTypeT, channel>::max - PixelTypeTraits<PixelValueTypeT, channel>::min), typeid(CompT).name(), typeid(PixelValueTypeT).name());
       // If the channel is normalized then we need to scale the value to the correct range.
-      return CompT((pixel - PixelTypeTraits<PixelValueTypeT, channel>::offset ) * (PixelTypeTraits<CompT, channel>::max - PixelTypeTraits<CompT, channel>::min) / (PixelTypeTraits<PixelValueTypeT, channel>::max - PixelTypeTraits<PixelValueTypeT, channel>::min) + PixelTypeTraits<CompT, channel>::offset);
+      auto raw = (pixel - PixelTypeTraits<PixelValueTypeT, channel>::offset ) * (PixelTypeTraits<CompT, channel>::max - PixelTypeTraits<CompT, channel>::min) / (PixelTypeTraits<PixelValueTypeT, channel>::max - PixelTypeTraits<PixelValueTypeT, channel>::min) + PixelTypeTraits<CompT, channel>::offset;
+      // Check if we're converting to a floating point type.
+      if constexpr(std::is_floating_point_v<CompT>)
+      {
+        return raw;
+      }
+      // If we're converting to an integer type then we need to clamp the value.
+      return CompT(std::clamp(int_round(raw), int(PixelTypeTraits<CompT, channel>::min), int(PixelTypeTraits<CompT, channel>::max)));
     }
     // If the channel is not normalized then we can just return the value.
     return CompT(pixel);

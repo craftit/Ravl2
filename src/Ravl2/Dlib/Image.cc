@@ -12,14 +12,14 @@ namespace Ravl2
 
   //! Create a dlib RGB image from a Ravl2::Array
   //! This creates a view, it is up to the user to ensure the array2d is not destroyed before the view.
-  dlib::array2d<dlib::rgb_pixel> toDlib(const ArrayView<PixelRGB<uint8_t>, 2> &anArray)
+  dlib::array2d<dlib::rgb_pixel> toDlib(const ArrayView<PixelRGB8, 2> &anArray)
   {
     dlib::array2d<dlib::rgb_pixel> ret(anArray.range().size()[0], anArray.range().size()[1]);
     for(int r = 0; r < anArray.range().size()[0]; r++) {
       for(int c = 0; c < anArray.range().size()[1]; c++) {
-        ret[r][c].red = anArray[r][c].Red();
-        ret[r][c].green = anArray[r][c].Green();
-        ret[r][c].blue = anArray[r][c].Blue();
+        ret[r][c].red = anArray[r][c].get<ImageChannel::Red>();
+        ret[r][c].green = anArray[r][c].get<ImageChannel::Green>();
+        ret[r][c].blue = anArray[r][c].get<ImageChannel::Blue>();
       }
     }
     return ret;

@@ -29,7 +29,7 @@
 #include "Ravl2/Array.hh"
 #include "Ravl2/Index.hh"
 #include "Ravl2/Assert.hh"
-#include "Ravl2/Pixel/PixelRGB.hh"
+#include "Ravl2/Pixel/Pixel.hh"
 
 // As Dlib uses template functions, we'll put this in a namespace to avoid potential conflicts.
 
@@ -199,7 +199,7 @@ namespace Ravl2
   }
 
   //! Create a dlib RGB image from a Ravl2::Array
-  [[nodiscard]] dlib::array2d<dlib::rgb_pixel> toDlib(const ArrayView<PixelRGB<uint8_t>, 2> &anArray);
+  [[nodiscard]] dlib::array2d<dlib::rgb_pixel> toDlib(const ArrayView<PixelRGB8, 2> &anArray);
   
 //  //! Create a dlib grey image from a Ravl2::Array
 //  [[nodiscard]] dlib::array2d<uint8_t > toDlib(const ArrayView<uint8_t, 2> &anArray);
