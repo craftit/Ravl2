@@ -200,13 +200,16 @@ namespace Ravl2
 
   //! Create a dlib RGB image from a Ravl2::Array
   [[nodiscard]] dlib::array2d<dlib::rgb_pixel> toDlib(const ArrayView<PixelRGB8, 2> &anArray);
-  
-//  //! Create a dlib grey image from a Ravl2::Array
-//  [[nodiscard]] dlib::array2d<uint8_t > toDlib(const ArrayView<uint8_t, 2> &anArray);
-//
-//  //! Create a dlib grey image from a Ravl2::Array
-//  [[nodiscard]] dlib::array2d<uint16_t > toDlib(const ArrayView<uint16_t, 2> &anArray);
-  
+
+  //! Create a dlib grey image from a Ravl2::Array
+  [[nodiscard]] dlib::array2d<uint8_t> toDlib(const ArrayView<Ravl2::PixelY8, 2> &anArray);
+
+  //! Create a dlib grey image from a Ravl2::Array
+  [[nodiscard]] dlib::array2d<uint8_t > toDlib(const ArrayView<uint8_t, 2> &anArray);
+
+  //! Create a dlib grey image from a Ravl2::Array
+  [[nodiscard]] dlib::array2d<uint16_t > toDlib(const ArrayView<uint16_t, 2> &anArray);
+
   //! Create a dlib image from a Ravl2::Array
   template <typename ArrayT, typename DataT = typename ArrayT::type>
   requires DLibConvert::DlibArray2d<ArrayT>

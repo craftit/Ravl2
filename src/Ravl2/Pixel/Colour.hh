@@ -7,6 +7,7 @@
 #include <array>
 #include "Ravl2/Pixel/Pixel.hh"
 #include "Ravl2/Array.hh"
+#include "Ravl2/ArrayIterZip.hh"
 
 namespace Ravl2
 {
@@ -145,6 +146,26 @@ namespace Ravl2
   {
     // Go through channel by channel converting as needed
     (target.template set<TargetChannels>(get<TargetChannels,TargetCompT>(source)), ...);
+  }
+
+  //! Copy data from a source array to destination array
+  template <typename Array1T, typename Array2T, typename Data1T = typename Array1T::value_type, unsigned N = Array1T::dimensions>
+    requires(WindowedArray<Array1T, typename Array1T::value_type, N> &&
+             WindowedArray<Array2T, typename Array2T::value_type, N>) && (N >= 2)
+  constexpr void convert(Array1T &dest, const Array2T &src)
+  {
+    // Check if we can reallocate 'dest', that if it is an Array, and the size is different
+    if constexpr (std::is_same_v<Array1T, Array<Data1T, N>>) {
+      if (!dest.range().contains(src.range())) {
+        dest = Array1T(src.range());
+      }
+    }
+    auto iter = begin(dest, src);
+    while(iter.valid()) {
+      do {
+        assign(iter.template data<0>(), iter.template data<1>());
+      } while(iter.next());
+    }
   }
 
 

@@ -250,6 +250,8 @@ namespace Ravl2
     }
   };
 
+
+
   //! Stream output
   template <class CompT, ImageChannel... Channels>
   inline std::ostream &operator<<(std::ostream &strm, const Pixel<CompT, Channels...> &val)
@@ -284,6 +286,8 @@ namespace Ravl2
   }
 
   //! Define some common formats
+  using PixelY8 = Pixel<uint8_t, ImageChannel::Luminance>;
+  using PixelY16 = Pixel<uint16_t, ImageChannel::Luminance>;
   using PixelRGB8 = Pixel<uint8_t, ImageChannel::Red, ImageChannel::Green, ImageChannel::Blue>;
   using PixelRGBA8 = Pixel<uint8_t, ImageChannel::Red, ImageChannel::Green, ImageChannel::Blue, ImageChannel::Alpha>;
   using PixelRGB16 = Pixel<uint16_t, ImageChannel::Red, ImageChannel::Green, ImageChannel::Blue>;

@@ -24,7 +24,20 @@ namespace Ravl2
     }
     return ret;
   }
-  
+
+  //! Create a dlib grey image from a Ravl2::Array
+  [[nodiscard]] dlib::array2d<uint8_t> toDlib(const ArrayView<Ravl2::PixelY8, 2> &anArray)
+  {
+    dlib::array2d<uint8_t> ret(anArray.range().size()[0], anArray.range().size()[1]);
+    for(int r = 0; r < anArray.range().size()[0]; r++) {
+      for(int c = 0; c < anArray.range().size()[1]; c++) {
+         ret[r][c] = anArray[r][c].get<ImageChannel::Luminance>();
+      }
+    }
+    return ret;
+  }
+
+
   //! Create a dlib grey image from a Ravl2::Array
   dlib::array2d<uint8_t > toDlib(const ArrayView<uint8_t, 2> &anArray)
   {
