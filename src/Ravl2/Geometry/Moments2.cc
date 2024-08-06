@@ -9,5 +9,6 @@
 
 namespace Ravl2
 {
-
+  template class Moments2<float>;
+  template class Moments2<double>;
 }
