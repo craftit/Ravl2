@@ -78,4 +78,10 @@ namespace Ravl2
   const std::array<int,256> ColorConversion::mRGBcYUV_vrLookup = VRLookup();
   const std::array<int,256 * 256> ColorConversion::mRGBcYUV_uvgLookup = UVGLookup();
 
+
+  template void convert(Array<PixelY8, 3> &dest, const Array<PixelYUV8, 3> &src);
+  template void convert(Array<PixelYUV8, 3> &dest, const Array<PixelY8, 3> &src);
+  template void convert(Array<PixelRGB8, 3> &dest, const Array<PixelYUV8, 3> &src);
+  template void convert(Array<PixelRGB8, 3> &dest, const Array<PixelY8, 3> &src);
+
 }// namespace Ravl2

@@ -7,6 +7,7 @@
 #include <limits>
 #include <numeric>
 #include <array>
+#include <cstdint>
 #include <spdlog/spdlog.h>
 #include "Ravl2/Types.hh"
 
@@ -25,7 +26,7 @@ namespace Ravl2
   //! | uint8_t    | Red,Green,Blue               | [0, 255]   | 0      | NA      | Yes      |
   //! | uint8_t    | Alpha                        | [0, 255]   | 0      | 255     | Yes      |
   //! | uint8_t    | Luminance                    | [0, 255]   | 0      | NA      | Yes      |
-  //! | uint8_t    | ChrominanceU, ChrominanceV   | [0, 255]   | 128    | NA      | Yes      |
+  //! | uint8_t    | ChrominanceU, ChrominanceV   | [0, 255]   | 128    | 128     | Yes      |
   //! | uint8_t    | Hue, Saturation, Value       | [0, 255]   | 0      | NA      | Yes      |
   //! | uint8_t    | Lightness                    | [0, 255]   | 0      | NA      | Yes      |
   //! | uint8_t    | Count, Label, Depth, Unused  | [0, 255]   | 0      | NA      | No       |
@@ -34,7 +35,7 @@ namespace Ravl2
   //! | uint16_t   | Red,Green,Blue               | [0, 65535] | 0      | NA      | Yes      |
   //! | uint16_t   | Alpha                        | [0, 65535] | 0      | 65535   | Yes      |
   //! | uint16_t   | Luminance                    | [0, 65535] | 0      | NA      | Yes      |
-  //! | uint16_t   | ChrominanceU, ChrominanceV   | [0, 65535] | 32768  | NA      | Yes      |
+  //! | uint16_t   | ChrominanceU, ChrominanceV   | [0, 65535] | 32768  | 32768   | Yes      |
   //! | uint16_t   | Hue, Saturation, Value       | [0, 65535] | 0      | NA      | Yes      |
   //! | uint16_t   | Lightness                    | [0, 65535] | 0      | NA      | Yes      |
   //! | uint16_t   | Count, Label, Depth, Unused  | [0, 65535] | 0      | NA      | No       |
@@ -42,7 +43,7 @@ namespace Ravl2
   //! | float      | Red,Green,Blue               | [0, 1]     | 0      | NA      | Yes      |
   //! | float      | Alpha                        | [0, 1]     | 0      | 1       | Yes      |
   //! | float      | Luminance                    | [0, 1]     | 0      | NA      | Yes      |
-  //! | float      | ChrominanceU, ChrominanceV   | [-0.5, 0.5]    | 0      | NA      | Yes      |
+  //! | float      | ChrominanceU, ChrominanceV   | [-0.5, 0.5]| 0      | 0       | Yes      |
   //! | float      | Hue, Saturation, Value       | [0, 1]     | 0      | NA      | Yes      |
   //! | float      | Lightness                    | [0, 1]     | 0      | NA      | Yes      |
   //! | float      | Count, Label, Depth, Unused  |  User Def  | 0      | NA      | No       |
@@ -100,6 +101,7 @@ namespace Ravl2
     static constexpr DataT min = (std::is_integral_v<DataT> ? 0 : DataT(0));
     static constexpr DataT max = (std::is_integral_v<DataT> ? std::numeric_limits<DataT>::max() : DataT(1));
     static constexpr DataT offset = 0;
+    static constexpr DataT defaultValue = 0;
   };
 
   //! Deal with floating point chroma types
@@ -111,6 +113,7 @@ namespace Ravl2
     static constexpr DataT min = DataT(-0.5);
     static constexpr DataT max = DataT(0.5);
     static constexpr DataT offset = 0;
+    static constexpr DataT defaultValue = 0;
   };
 
   //! Some traits for channels with a pixel type
@@ -122,6 +125,7 @@ namespace Ravl2
     static constexpr int min = 0;
     static constexpr int max = std::numeric_limits<DataT>::max();
     static constexpr int offset = 0;
+    static constexpr DataT defaultValue = 0;
   };
 
   //! Deal with unsigned integer chroma types
@@ -133,6 +137,7 @@ namespace Ravl2
     static constexpr int min = std::numeric_limits<DataT>::min();
     static constexpr int max = std::numeric_limits<DataT>::max();
     static constexpr int offset = std::numeric_limits<DataT>::max()/2;
+    static constexpr DataT defaultValue = offset;
   };
 
 
@@ -231,13 +236,16 @@ namespace Ravl2
     {
       if constexpr(hasChannel<channel>()) {
         return Ravl2::get<channel,TargetTypeT>((*this)[channelIndex<channel>()]);
-      }
-      // If we don't the alpha channel then return the default value.
-      if constexpr(channel == ImageChannel::Alpha) {
+      } else if constexpr(channel == ImageChannel::Alpha) {
+        // If we don't the alpha channel then return the default value.
          return PixelTypeTraits<TargetTypeT, channel>::max;
+      } else if constexpr(channel == ImageChannel::ChrominanceU || channel == ImageChannel::ChrominanceV) {
+        // Chroma channels have a default value of grey
+         return PixelTypeTraits<TargetTypeT, channel>::defaultValue;
+      } else {
+        // Report an error if we don't have the channel.
+        static_assert(hasChannel<channel>(), "Channel not present");
       }
-      // Report an error if we don't have the channel.
-      static_assert(hasChannel<channel>(), "Channel not present");
       return TargetTypeT();
     }
 
@@ -249,8 +257,6 @@ namespace Ravl2
       (set<OChannels>(other.template get<OChannels>()), ...);
     }
   };
-
-
 
   //! Stream output
   template <class CompT, ImageChannel... Channels>
@@ -316,5 +322,7 @@ namespace Ravl2
 template<typename CompT, Ravl2::ImageChannel... Channels>
 struct fmt::formatter<Ravl2::Pixel<CompT,Channels...>> : fmt::ostream_formatter {
 };
-//template <> struct fmt::formatter<std::span<float> > : ostream_formatter{};
+template <>
+struct fmt::formatter<Ravl2::ImageChannel> : fmt::ostream_formatter {
+};
 #endif
