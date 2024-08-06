@@ -4,15 +4,53 @@
 
 #pragma once
 
+#include <limits>
+#include <numeric>
 #include <array>
+#include <spdlog/spdlog.h>
 #include "Ravl2/Types.hh"
 
 namespace Ravl2
 {
 
   //! Image channel types.
-  // It would be possible to turn this into set of classes with static constexpr members specifying the behaviour for
-  // a channel.  So far this has not been necessary, and would make it even more complicated to use.
+  //! It would be possible to turn this into set of classes with static constexpr members specifying the behaviour for
+  //! a channel.  So far this has not been necessary, and would make it even more complicated to use.
+  //!
+  //! Following is a table showing the pixel type, and channels that can be used with it, the range of values for each channel
+  //! and the offset for the channel.  The offset is used to convert the channel value to the correct range.
+  //!
+  //! | Pixel Type | Channels                     | Range      | Offset | Default | Rescaled |
+  //! |------------|------------------------------|------------|--------|---------|----------|
+  //! | uint8_t    | Red,Green,Blue               | [0, 255]   | 0      | NA      | Yes      |
+  //! | uint8_t    | Alpha                        | [0, 255]   | 0      | 255     | Yes      |
+  //! | uint8_t    | Luminance                    | [0, 255]   | 0      | NA      | Yes      |
+  //! | uint8_t    | ChrominanceU, ChrominanceV   | [0, 255]   | 128    | NA      | Yes      |
+  //! | uint8_t    | Hue, Saturation, Value       | [0, 255]   | 0      | NA      | Yes      |
+  //! | uint8_t    | Lightness                    | [0, 255]   | 0      | NA      | Yes      |
+  //! | uint8_t    | Count, Label, Depth, Unused  | [0, 255]   | 0      | NA      | No       |
+  //! | uint8_t    | Signal                       | [0, 255]   | 0      | NA      | Yes      |
+  //! | uint16_t   | Red,Green,Blue               | [0, 65535] | 0      | NA      | Yes      |
+  //! | uint16_t   | Red,Green,Blue               | [0, 65535] | 0      | NA      | Yes      |
+  //! | uint16_t   | Alpha                        | [0, 65535] | 0      | 65535   | Yes      |
+  //! | uint16_t   | Luminance                    | [0, 65535] | 0      | NA      | Yes      |
+  //! | uint16_t   | ChrominanceU, ChrominanceV   | [0, 65535] | 32768  | NA      | Yes      |
+  //! | uint16_t   | Hue, Saturation, Value       | [0, 65535] | 0      | NA      | Yes      |
+  //! | uint16_t   | Lightness                    | [0, 65535] | 0      | NA      | Yes      |
+  //! | uint16_t   | Count, Label, Depth, Unused  | [0, 65535] | 0      | NA      | No       |
+  //! | uint16_t   | Signal                       | [0, 65535] | 0      | NA      | Yes      |
+  //! | float      | Red,Green,Blue               | [0, 1]     | 0      | NA      | Yes      |
+  //! | float      | Alpha                        | [0, 1]     | 0      | 1       | Yes      |
+  //! | float      | Luminance                    | [0, 1]     | 0      | NA      | Yes      |
+  //! | float      | ChrominanceU, ChrominanceV   | [-1, 1]    | 0      | NA      | Yes      |
+  //! | float      | Hue, Saturation, Value       | [0, 1]     | 0      | NA      | Yes      |
+  //! | float      | Lightness                    | [0, 1]     | 0      | NA      | Yes      |
+  //! | float      | Count, Label, Depth, Unused  |  User Def  | 0      | NA      | No       |
+  //! | float      | Signal                       | [0, 1]     | 0      | NA      | Yes      |
+  //! |------------|------------------------------|------------|--------|---------|----------|
+  //!
+  //! The default value is the value used when the channel is not present in the pixel initialization.
+
 
   enum class ImageChannel
   {
@@ -36,10 +74,15 @@ namespace Ravl2
     Unused
   };
 
+  //! Get name for a channel.
+  std::string_view toString(ImageChannel channel);
+
+  std::ostream &operator<<(std::ostream &strm, const ImageChannel &channel);
+  std::istream &operator>>(std::istream &strm, ImageChannel &channel);
+
   //! Setup some traits for the ImageChannel enum types
   template<ImageChannel channel>
-  struct ImageChannelTraits
-  {
+  struct PixelChannelTraits {
     static constexpr bool isRGB = (channel == ImageChannel::Red || channel == ImageChannel::Green || channel == ImageChannel::Blue || channel == ImageChannel::Alpha);
     static constexpr bool isYUV = (channel == ImageChannel::Luminance || channel == ImageChannel::ChrominanceU || channel == ImageChannel::ChrominanceV);
     static constexpr bool isHSV = (channel == ImageChannel::Hue || channel == ImageChannel::Saturation || channel == ImageChannel::Value);
@@ -47,42 +90,66 @@ namespace Ravl2
 
     //! Check if channel is an absolute value or scaled from 0 to 1. For example in float images the values are usually in the range [0, 1].
     //! When converting the colour values from a byte to a float image the values are scaled to the range [0, 1].
-    static constexpr bool isNormalized = !(channel == ImageChannel::Count || channel == ImageChannel::Label || channel == ImageChannel::Depth
-      || channel == ImageChannel::Unused);
+    static constexpr bool isNormalized = !(channel == ImageChannel::Count || channel == ImageChannel::Label || channel == ImageChannel::Depth || channel == ImageChannel::Unused);
   };
 
   //! Some traits for channels with a pixel type
   template<typename DataT, ImageChannel channel>
-  struct ImageTypeTraits
-  {
-    static constexpr bool isNormalized = ImageChannelTraits<channel>::isNormalized;
-    static constexpr DataT min = (std::is_integral_v<DataT> ? std::numeric_limits<DataT>::min() : DataT(0));
+  struct PixelTypeTraits {
+    static constexpr bool isNormalized = PixelChannelTraits<channel>::isNormalized;
+    static constexpr DataT min = (std::is_integral_v<DataT> ? 0 : DataT(0));
     static constexpr DataT max = (std::is_integral_v<DataT> ? std::numeric_limits<DataT>::max() : DataT(1));
     static constexpr DataT offset = 0;
   };
 
-  //! Some traits for channels with a pixel type
-  template<ImageChannel channel>
-  struct ImageTypeTraits<uint8_t, channel>
+  //! Deal with floating point chroma types
+  template<typename DataT, ImageChannel channel>
+   requires (std::is_floating_point_v<DataT> && (channel == ImageChannel::ChrominanceU || channel == ImageChannel::ChrominanceV))
+  struct PixelTypeTraits<DataT, channel>
   {
-    using DataT = uint8_t;
-    static constexpr bool isNormalized = ImageChannelTraits<channel>::isNormalized;
-    static constexpr DataT minValue = std::numeric_limits<DataT>::min();
-    static constexpr DataT maxValue = std::numeric_limits<DataT>::max();
-    static constexpr DataT offset = (channel == ImageChannel::ChrominanceU || channel == ImageChannel::ChrominanceV ? DataT(128) : DataT(0));
+    static constexpr bool isNormalized = PixelChannelTraits<channel>::isNormalized;
+    static constexpr DataT min = DataT(-1);
+    static constexpr DataT max = DataT(1);
+    static constexpr DataT offset = 0;
   };
 
   //! Some traits for channels with a pixel type
-  template<ImageChannel channel>
-  struct ImageTypeTraits<uint16_t, channel>
+  template<typename DataT, ImageChannel channel>
+    requires std::is_signed_v<DataT> && std::is_integral_v<DataT>
+  struct PixelTypeTraits<DataT, channel>
   {
-    using DataT = uint8_t;
-    static constexpr bool isNormalized = ImageChannelTraits<channel>::isNormalized;
-    static constexpr DataT minValue = std::numeric_limits<DataT>::min();
-    static constexpr DataT maxValue = std::numeric_limits<DataT>::max();
-    static constexpr DataT offset = (channel == ImageChannel::ChrominanceU || channel == ImageChannel::ChrominanceV ? DataT(128*256) : DataT(0));
+    static constexpr bool isNormalized = PixelChannelTraits<channel>::isNormalized;
+    static constexpr int min = 0;
+    static constexpr int max = std::numeric_limits<DataT>::max();
+    static constexpr int offset = 0;
   };
 
+  //! Deal with unsigned integer chroma types
+  template<typename DataT, ImageChannel channel>
+   requires (std::is_integral_v<DataT> && std::is_unsigned_v<DataT> && (channel == ImageChannel::ChrominanceU || channel == ImageChannel::ChrominanceV))
+  struct PixelTypeTraits<DataT, channel>
+  {
+    static constexpr bool isNormalized = PixelChannelTraits<channel>::isNormalized;
+    static constexpr int min = std::numeric_limits<DataT>::min();
+    static constexpr int max = std::numeric_limits<DataT>::max();
+    static constexpr int offset = std::numeric_limits<DataT>::max()/2;
+  };
+
+
+  //! Convert a pixel value to a different type follow the channel conversion rules.
+  template<ImageChannel channel, typename CompT, typename PixelValueTypeT>
+  constexpr CompT get(PixelValueTypeT pixel)
+  {
+    // If the channel is normalized then we need to scale the value to the correct range.
+    if constexpr(PixelTypeTraits<CompT, channel>::isNormalized)
+    {
+      //SPDLOG_INFO("Normalized channel {} -> {}  Type:{} <- {} ",toString(channel), (PixelTypeTraits<CompT, channel>::max - PixelTypeTraits<CompT, channel>::min) / (PixelTypeTraits<PixelValueTypeT, channel>::max - PixelTypeTraits<PixelValueTypeT, channel>::min), typeid(CompT).name(), typeid(PixelValueTypeT).name());
+      // If the channel is normalized then we need to scale the value to the correct range.
+      return CompT((pixel - PixelTypeTraits<PixelValueTypeT, channel>::offset ) * (PixelTypeTraits<CompT, channel>::max - PixelTypeTraits<CompT, channel>::min) / (PixelTypeTraits<PixelValueTypeT, channel>::max - PixelTypeTraits<PixelValueTypeT, channel>::min) + PixelTypeTraits<CompT, channel>::offset);
+    }
+    // If the channel is not normalized then we can just return the value.
+    return CompT(pixel);
+  }
 
   //! Pixel type, it is formed by a data type and set of channels.
   //! By convention when a channel is floating point the values
@@ -112,6 +179,8 @@ namespace Ravl2
     {
       assign(other);
     }
+
+
   private:
     template<ImageChannel channel, std::size_t... Is>
     static constexpr std::size_t getIndexImpl(std::index_sequence<Is...>)
@@ -150,11 +219,19 @@ namespace Ravl2
     }
 
     //! Get a single channel.
-    template<ImageChannel channel>
-    [[nodiscard]] constexpr CompT get() const
+    template<ImageChannel channel,typename TargetTypeT = CompT>
+    [[nodiscard]] constexpr TargetTypeT get() const
     {
+      if constexpr(hasChannel<channel>()) {
+        return Ravl2::get<channel,TargetTypeT>((*this)[channelIndex<channel>()]);
+      }
+      // If we don't the alpha channel then return the default value.
+      if constexpr(channel == ImageChannel::Alpha) {
+         return PixelTypeTraits<TargetTypeT, channel>::max;
+      }
+      // Report an error if we don't have the channel.
       static_assert(hasChannel<channel>(), "Channel not present");
-      return (*this)[channelIndex<channel>()];
+      return TargetTypeT();
     }
 
     //! Assign from another pixel, mapping the channels.
@@ -165,16 +242,6 @@ namespace Ravl2
       (set<OChannels>(other.template get<OChannels>()), ...);
     }
   };
-
-  //! Assign converted pixel value to another.
-  template<typename TargetCompT, ImageChannel... TargetChannels,
-           typename SourceCompT, ImageChannel... SourceChannels>
-  constexpr void assign(Pixel<TargetCompT, TargetChannels...> &target,
-	    const Pixel<SourceCompT, SourceChannels...> &source)
-  {
-    // Go through channel by channel converting as needed
-    (target.template set<TargetChannels>(get<TargetChannels>(source)), ...);
-  }
 
   //! Stream output
   template <class CompT, ImageChannel... Channels>
@@ -233,3 +300,10 @@ namespace Ravl2
 
 
 }
+
+#if FMT_VERSION >= 90000
+template<typename CompT, Ravl2::ImageChannel... Channels>
+struct fmt::formatter<Ravl2::Pixel<CompT,Channels...>> : fmt::ostream_formatter {
+};
+//template <> struct fmt::formatter<std::span<float> > : ostream_formatter{};
+#endif

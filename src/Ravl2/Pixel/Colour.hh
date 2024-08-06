@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include <array>
 #include "Ravl2/Pixel/Pixel.hh"
 #include "Ravl2/Array.hh"
 
@@ -25,101 +26,126 @@ namespace Ravl2
     //! Matrix to convert YUV values to RGB.
     static const Matrix<float, 3, 3> mImageRGBtoYUVMatrix;
 
+    //! Byte conversion tables for YUV to RGB
     static const std::array<int,256> mRGBcYUV_ubLookup;
     static const std::array<int,256> mRGBcYUV_vrLookup;
     static const std::array<int,256 * 256> mRGBcYUV_uvgLookup;
 
     // Specialization for Luminance conversion
     template<typename CompT, typename PixelType>
-     requires std::is_same_v<typename PixelType::value_type, uint8_t>
+     requires std::is_same_v<typename PixelType::value_type, uint8_t> && std::is_same_v<CompT, uint8_t> && (PixelType::template hasChannels<ImageChannel::Luminance,ImageChannel::ChrominanceV>())
     static constexpr CompT convert(const PixelType &pixel, std::integral_constant<ImageChannel, ImageChannel::Red>)
     {
-      int iy = pixel.template get<ImageChannel::Luminance>();
-      int v = pixel.template get<ImageChannel::ChrominanceV>();
+      int iy = pixel.template get<ImageChannel::Luminance,uint8_t>();
+      int v = pixel.template get<ImageChannel::ChrominanceV,uint8_t>();
       int tmp = iy + mRGBcYUV_vrLookup[std::size_t(v)];
-      return std::clamp(tmp,0,255);
+      return get<ImageChannel::Red,CompT>(uint8_t(std::clamp(tmp,0,255)));
     }
 
     template<typename CompT, typename PixelType>
-    requires std::is_same_v<typename PixelType::value_type, uint8_t>
+    requires std::is_same_v<typename PixelType::value_type, uint8_t>  && std::is_same_v<CompT, uint8_t> && (PixelType::template hasChannels<ImageChannel::Luminance,ImageChannel::ChrominanceV,ImageChannel::ChrominanceU>())
     static constexpr CompT convert(const PixelType &pixel, std::integral_constant<ImageChannel, ImageChannel::Green>)
     {
-      int iy = pixel.template get<ImageChannel::Luminance>();
-      int v = pixel.template get<ImageChannel::ChrominanceV>();
-      int u = pixel.template get<ImageChannel::ChrominanceU>();
+      int iy = pixel.template get<ImageChannel::Luminance,uint8_t>();
+      int v = pixel.template get<ImageChannel::ChrominanceV,uint8_t>();
+      int u = pixel.template get<ImageChannel::ChrominanceU,uint8_t>();
       int tmp = iy + mRGBcYUV_uvgLookup[std::size_t(u + 256 * v)];
-      return std::clamp(tmp,0,255);
+      return get<ImageChannel::Green,CompT>(uint8_t(std::clamp(tmp,0,255)));
     }
 
     template<typename CompT, typename PixelType>
-    requires std::is_same_v<typename PixelType::value_type, uint8_t>
+    requires std::is_same_v<typename PixelType::value_type, uint8_t> && std::is_same_v<CompT, uint8_t> && (PixelType::template hasChannels<ImageChannel::Luminance,ImageChannel::ChrominanceU>())
     static constexpr CompT convert(const PixelType &pixel, std::integral_constant<ImageChannel, ImageChannel::Blue>)
     {
-      int iy = pixel.template get<ImageChannel::Luminance>();
-      int u = pixel.template get<ImageChannel::ChrominanceU>();
+      int iy = pixel.template get<ImageChannel::Luminance,uint8_t>();
+      int u = pixel.template get<ImageChannel::ChrominanceU,uint8_t>();
       auto tmp = iy + mRGBcYUV_ubLookup[std::size_t(u)];
-      return std::clamp(tmp,0,255);
+      return get<ImageChannel::Blue,CompT>(uint8_t(std::clamp(tmp,0,255)));
     }
 
     // Specialization for Luminance conversion
     template<typename CompT, typename PixelType>
+      requires (PixelType::template hasChannels<ImageChannel::Red,ImageChannel::Green,ImageChannel::Blue>())
     static constexpr CompT convert(const PixelType &pixel, std::integral_constant<ImageChannel, ImageChannel::Luminance>)
     {
-      return WorkingT(0.299) * WorkingT(pixel.template get<ImageChannel::Red>()) + WorkingT(0.587) * WorkingT(pixel.template get<ImageChannel::Green>()) + WorkingT(0.114) * WorkingT(pixel.template get<ImageChannel::Blue>());
+      return get<ImageChannel::Luminance,CompT>(0.299f * pixel.template get<ImageChannel::Red,float>() + 0.587f * WorkingT(pixel.template get<ImageChannel::Green,float>()) + 0.114f * pixel.template get<ImageChannel::Blue,float>());
     }
 
     // Specialization for Intensity conversion
     template<typename CompT, typename PixelType>
+      requires (PixelType::template hasChannels<ImageChannel::Red,ImageChannel::Green,ImageChannel::Blue>())
     static constexpr CompT convert(const PixelType &pixel, std::integral_constant<ImageChannel, ImageChannel::Intensity>)
     {
-      return 0.2126 * pixel.template get<ImageChannel::Red>() + 0.7152 * pixel.template get<ImageChannel::Green>() + 0.0722 * pixel.template get<ImageChannel::Blue>();
+      return get<ImageChannel::Intensity,CompT>(0.2126f * pixel.template get<ImageChannel::Red,float>() + 0.7152f * pixel.template get<ImageChannel::Green,float>() + 0.0722f * pixel.template get<ImageChannel::Blue,float>());
     }
 
     // Specialization for ChrominanceU conversion
     template<typename CompT, typename PixelType>
+      requires (PixelType::template hasChannels<ImageChannel::Red,ImageChannel::Green,ImageChannel::Blue>())
     static constexpr CompT convert(const PixelType &pixel, std::integral_constant<ImageChannel, ImageChannel::ChrominanceU>)
     {
-      return -0.14713 * pixel.template get<ImageChannel::Red>() - 0.28886 * pixel.template get<ImageChannel::Green>() + 0.436 * pixel.template get<ImageChannel::Blue>();
+      return get<ImageChannel::ChrominanceU,CompT>(-0.14713f * pixel.template get<ImageChannel::Red,float>() - 0.28886f * pixel.template get<ImageChannel::Green,float>() + 0.436f * pixel.template get<ImageChannel::Blue,float>());
     }
 
     // Specialization for ChrominanceV conversion
     template<typename CompT, typename PixelType>
+      requires (PixelType::template hasChannels<ImageChannel::Red,ImageChannel::Green,ImageChannel::Blue>())
     static constexpr CompT convert(const PixelType &pixel, std::integral_constant<ImageChannel, ImageChannel::ChrominanceV>)
     {
-      return 0.615 * pixel.template get<ImageChannel::Red>() - 0.51499 * pixel.template get<ImageChannel::Green>() - 0.10001 * pixel.template get<ImageChannel::Blue>();
+      return get<ImageChannel::ChrominanceV,CompT>(0.615f * pixel.template get<ImageChannel::Red,float>() - 0.51499f * pixel.template get<ImageChannel::Green,float>() - 0.10001f * pixel.template get<ImageChannel::Blue,float>());
     }
 
     // Specialization for recovering Red from YUV
     template<typename CompT, typename PixelType>
+      requires (PixelType::template hasChannels<ImageChannel::Luminance,ImageChannel::ChrominanceV>()) && (!std::is_same_v<typename PixelType::value_type, uint8_t>)
     static constexpr CompT convert(const PixelType &pixel, std::integral_constant<ImageChannel, ImageChannel::Red>)
     {
-      return 1.0 * pixel.template get<ImageChannel::Luminance>() + 0.0 * pixel.template get<ImageChannel::ChrominanceU>() + 1.13983 * pixel.template get<ImageChannel::ChrominanceV>();
+      return get<ImageChannel::Red,CompT>(1.0f * pixel.template get<ImageChannel::Luminance,float>() + 1.13983f * pixel.template get<ImageChannel::ChrominanceV,float>());
     }
 
     // Specialization for recovering Green from YUV
     template<typename CompT, typename PixelType>
+      requires (PixelType::template hasChannels<ImageChannel::Luminance,ImageChannel::ChrominanceU,ImageChannel::ChrominanceV>()) && (!std::is_same_v<typename PixelType::value_type, uint8_t>)
     static constexpr CompT convert(const PixelType &pixel, std::integral_constant<ImageChannel, ImageChannel::Green>)
     {
-      return 1.0 * pixel.template get<ImageChannel::Luminance>() - 0.39465 * pixel.template get<ImageChannel::ChrominanceU>() - 0.58060 * pixel.template get<ImageChannel::ChrominanceV>();
+      return get<ImageChannel::Green,CompT>(1.0f * pixel.template get<ImageChannel::Luminance,float>() - 0.39465f * pixel.template get<ImageChannel::ChrominanceU,float>() - 0.58060f * pixel.template get<ImageChannel::ChrominanceV,float>());
     }
 
     // Specialization for recovering Blue from YUV
     template<typename CompT, typename PixelType>
+      requires (PixelType::template hasChannels<ImageChannel::Luminance,ImageChannel::ChrominanceU>()) && (!std::is_same_v<typename PixelType::value_type, uint8_t>)
     static constexpr CompT convert(const PixelType &pixel, std::integral_constant<ImageChannel, ImageChannel::Blue>)
     {
-      return 1.0 * pixel.template get<ImageChannel::Luminance>() + 2.03211 * pixel.template get<ImageChannel::ChrominanceU>() + 0.0 * pixel.template get<ImageChannel::ChrominanceV>();
+      return get<ImageChannel::Blue,CompT>(1.0f * pixel.template get<ImageChannel::Luminance,float>() + 2.03211f * pixel.template get<ImageChannel::ChrominanceU,float>());
     }
+
+    // Just change datatype as needed
+    template<typename CompT, typename PixelType, ImageChannel channel>
+      requires (PixelType::template hasChannel<channel>())
+    static constexpr CompT convert(const PixelType &pixel, std::integral_constant<ImageChannel, channel>)
+    {
+      return pixel.template get<channel,CompT>();
+    }
+
   };
 
   //! Get the value of channel from the pixel, compute if possible
   template<ImageChannel target, typename CompT, typename SourceCompT, ImageChannel... Channels>
   [[nodiscard]] constexpr CompT get(const Pixel<SourceCompT, Channels...> &pixel)
   {
-    if constexpr (Pixel<SourceCompT, Channels...>::template hasChannel<target>())
-    {
-      return CompT(pixel.template get<target>());
-    }
     return ColorConversion::convert<CompT>(pixel, std::integral_constant<ImageChannel, target>{});
   }
+
+
+  //! Assign converted pixel value to another.
+  template<typename TargetCompT, ImageChannel... TargetChannels,
+            typename SourceCompT, ImageChannel... SourceChannels>
+  constexpr void assign(Pixel<TargetCompT, TargetChannels...> &target,
+                        const Pixel<SourceCompT, SourceChannels...> &source)
+  {
+    // Go through channel by channel converting as needed
+    (target.template set<TargetChannels>(get<TargetChannels,TargetCompT>(source)), ...);
+  }
+
 
 }
