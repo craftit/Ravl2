@@ -46,7 +46,7 @@ namespace Ravl2
   //! | float      | ChrominanceU, ChrominanceV   | [-0.5, 0.5]| 0      | 0       | Yes      |
   //! | float      | Hue, Saturation, Value       | [0, 1]     | 0      | NA      | Yes      |
   //! | float      | Lightness                    | [0, 1]     | 0      | NA      | Yes      |
-  //! | float      | Count, Label, Depth, Unused  |  User Def  | 0      | NA      | No       |
+  //! | float      | Count, Label, Depth, Unused  |  Undef     | 0      | NA      | No       |
   //! | float      | Signal                       | [0, 1]     | 0      | NA      | Yes      |
   //! |------------|------------------------------|------------|--------|---------|----------|
   //!
@@ -291,7 +291,7 @@ namespace Ravl2
     return strm;
   }
 
-  //! Define some common formats
+  //! Define some common formats to save typing
   using PixelY8 = Pixel<uint8_t, ImageChannel::Luminance>;
   using PixelY16 = Pixel<uint16_t, ImageChannel::Luminance>;
   using PixelRGB8 = Pixel<uint8_t, ImageChannel::Red, ImageChannel::Green, ImageChannel::Blue>;

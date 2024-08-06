@@ -13,6 +13,7 @@ namespace Ravl2
 {
 
   //! Define a struct to handle color conversions
+  //! This is here to work around the fact that we can't partially specialize functions in a namespace
 
   struct ColorConversion
   {

@@ -13,38 +13,29 @@
 
 namespace Ravl2
 {
-  //! Define allowed copy modes for converting between QImage and ArrayView.
-  //! If auto is selected data will be copied / converted if the QImage format is
-  //! not compatible with the ArrayView type
-  enum class CopyModeT
-  {
-    Never,
-    Auto,
-    Always
-  };
 
   //! Convert a Ravl2 pixel type to a QImage format
 
   template<class DataT, CopyModeT copyMode = CopyModeT::Auto>
-  constexpr inline QImage::Format toQImageFormat()
+  constexpr QImage::Format toQImageFormat()
   {
-    if constexpr (std::is_same_v<DataT, uint8_t>) {
+    if constexpr (std::is_same_v<DataT, uint8_t> || std::is_same_v<DataT, PixelY8>) {
       return QImage::Format_Grayscale8;
     }
-    if constexpr (std::is_same_v<DataT, uint16_t>) {
+    if constexpr (std::is_same_v<DataT, uint16_t> || std::is_same_v<DataT, PixelY16>) {
       return QImage::Format_Grayscale16;
     }
-    if constexpr (std::is_same_v<DataT, PixelRGB<uint8_t>>) {
+    if constexpr (std::is_same_v<DataT, PixelRGB8>) {
       return QImage::Format_RGB888;
     }
-    if constexpr (std::is_same_v<DataT, PixelRGB<uint16_t>>) {
-      static_assert(copyMode == CopyModeT::Never, "PixelRGB<uint16_t> is not supported");
+    if constexpr (std::is_same_v<DataT, PixelRGB16>) {
+      static_assert(copyMode == CopyModeT::Never, "PixelRGB16 is not supported");
       return QImage::Format_Invalid;
     }
-    if constexpr (std::is_same_v<DataT, PixelRGBA<uint8_t>>) {
+    if constexpr (std::is_same_v<DataT, PixelRGBA8>) {
       return QImage::Format_RGBA8888;
     }
-    if constexpr (std::is_same_v<DataT, PixelRGBA<uint16_t>>) {
+    if constexpr (std::is_same_v<DataT, PixelRGBA16>) {
       return QImage::Format_RGBA64;
     }
 #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
@@ -162,7 +153,7 @@ namespace Ravl2
       assert((newArray.stride(0) * ssize_t(sizeof(DataT))) % 4 == 0);
       return toQImage<DataT, CopyModeT::Never>(newArray);
     }
-    return QImage(reinterpret_cast<uchar *>(addressOfMin(array)),
+    return QImage(reinterpret_cast<uint8_t *>(addressOfMin(array)),
 		  array.range(0).size(), array.range(1).size(),
                   bytesPerLine,
 		  toQImageFormat<DataT, copyMode>());
@@ -171,14 +162,13 @@ namespace Ravl2
   //! Declare some common instantiations
   extern template QImage toQImage<uint8_t>(const Array<uint8_t, 2> &array);
   extern template QImage toQImage<uint16_t>(const Array<uint16_t, 2> &array);
-  extern template QImage toQImage<PixelRGB<uint8_t>>(const Array<PixelRGB<uint8_t>, 2> &array);
-  extern template QImage toQImage<PixelRGBA<uint8_t>>(const Array<PixelRGBA<uint8_t>, 2> &array);
-  extern template QImage toQImage<PixelRGBA<uint16_t>>(const Array<PixelRGBA<uint16_t>, 2> &array);
-  extern template QImage toQImage<PixelRGBA<float>>(const Array<PixelRGBA<float>, 2> &array);
+  extern template QImage toQImage<PixelRGB8>(const Array<PixelRGB8, 2> &array);
+  extern template QImage toQImage<PixelRGBA8>(const Array<PixelRGBA8, 2> &array);
+  extern template QImage toQImage<PixelRGBA32F>(const Array<PixelRGBA32F, 2> &array);
 
   extern template Array<uint8_t, 2> toArray<uint8_t>(const QImage &image);
   extern template Array<uint16_t, 2> toArray<uint16_t>(const QImage &image);
-  extern template Array<PixelRGB<uint8_t>, 2> toArray<PixelRGB<uint8_t>>(const QImage &image);
-  extern template Array<PixelRGBA<uint8_t>, 2> toArray<PixelRGBA<uint8_t>>(const QImage &image);
+  extern template Array<PixelRGB8, 2> toArray<PixelRGB8>(const QImage &image);
+  extern template Array<PixelRGB8, 2> toArray<PixelRGB8>(const QImage &image);
 
 }
