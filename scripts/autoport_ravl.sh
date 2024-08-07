@@ -74,9 +74,14 @@ s/\.Erode()/\.shrink(1)/g
 s/\.Dilate()/\.expand(1)/g
 s/Contains(/contains(/g
 s/\.Next()/\.next()/g
-s/.Data1()/.data<0>()/g
-s/.Data2()/.data<1>()/g
-s/.Data3()/.data<2>()/g
+s/\.Data1()/\.data<0>()/g
+s/\.Data2()/\.data<1>()/g
+s/\.Data3()/\.data<2>()/g
+
+s/\.Range1()/\.range(0)/g
+s/\.Range2()/\.range(1)/g
+s/\.Max()/\.max()/g
+s/\.Min()/\.min()/g
 
 s/\.V()//g
 s/Index2dC/Index<2>/g

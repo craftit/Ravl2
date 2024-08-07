@@ -24,8 +24,8 @@ namespace Ravl2
     int cols = imgTemplate.range().Cols();
     switch(cols) {// Choose cols.
       case 8: {
-        BufferAccess2dIter2C<ByteT, ByteT> it(imgTemplate, imgTemplate.Range1(), imgTemplate.Range2(),
-                                              img, srect.Range1(), srect.Range2());
+        BufferAccess2dIter2C<ByteT, ByteT> it(imgTemplate, imgTemplate.range(0), imgTemplate.range(1),
+                                              img, srect.range(0), srect.range(1));
 
         __asm__ volatile("\n\t pxor       %%mm7, %%mm7 "
                          "\n\t pxor       %%mm6, %%mm6 "
@@ -62,8 +62,8 @@ namespace Ravl2
       } break;
 
       case 16: {
-        BufferAccess2dIter2C<ByteT, ByteT> it(imgTemplate, imgTemplate.Range1(), imgTemplate.Range2(),
-                                              img, srect.Range1(), srect.Range2());
+        BufferAccess2dIter2C<ByteT, ByteT> it(imgTemplate, imgTemplate.range(0), imgTemplate.range(1),
+                                              img, srect.range(0), srect.range(1));
 
         __asm__ volatile("\n\t pxor       %%mm7, %%mm7 "
                          "\n\t pxor       %%mm6, %%mm6 "
@@ -113,11 +113,11 @@ namespace Ravl2
       default:
         RangeBufferAccess2dC<ByteT> subImg(img, srect);
         if(cols < 8) {// 1 - 7
-          for(BufferAccess2dIter2C<ByteT, ByteT> it(imgTemplate, imgTemplate.Range2(), subImg, subImg.Range2()); it; it++)
+          for(BufferAccess2dIter2C<ByteT, ByteT> it(imgTemplate, imgTemplate.range(1), subImg, subImg.range(1)); it; it++)
             diff += std::abs((IntT)it.data<0>() - (IntT)it.data<1>());
         } else if(cols < 16) {// 9 - 15
 
-          BufferAccess2dIter2C<ByteT, ByteT> it(imgTemplate, imgTemplate.Range2(), subImg, subImg.Range2());
+          BufferAccess2dIter2C<ByteT, ByteT> it(imgTemplate, imgTemplate.range(1), subImg, subImg.range(1));
           __asm__ volatile("\n\t pxor       %%mm7, %%mm7 "
                            "\n\t pxor       %%mm6, %%mm6 "
                            : : "m"(cols));// Dummy arg to fix bug in gcc 2.95.3
@@ -154,7 +154,7 @@ namespace Ravl2
           diff += diff1;
         } else {// 17 and upwards.
 
-          BufferAccess2dIter2C<ByteT, ByteT> it(imgTemplate, imgTemplate.Range2(), subImg, subImg.Range2());
+          BufferAccess2dIter2C<ByteT, ByteT> it(imgTemplate, imgTemplate.range(1), subImg, subImg.range(1));
           __asm__ volatile("\n\t pxor       %%mm7, %%mm7 "
                            "\n\t pxor       %%mm6, %%mm6 "
                            : : "m"(cols));// Dummy arg to fix bug in gcc 2.95.3

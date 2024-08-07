@@ -76,14 +76,14 @@ namespace Ravl2 {
     RealT sum;
     // Transform in x direction
     Array<RealT,2> horizontal(src.range());
-    IndexRange<1> rowRange = src.Range1();
-    IndexRange<1> colRange = src.Range2();
+    IndexRange<1> rowRange = src.range(0);
+    IndexRange<1> colRange = src.range(1);
     for(Array2dIterC<RealT> it(horizontal);it;it++) {
       Index<2> at = it.Index();
       IntT i = at[0];
       IntT j = at[1];
       sum = 0.0;
-      for (k = rowRange.Min(); k <= rowRange.Max(); k++)
+      for (k = rowRange.min(); k <= rowRange.max(); k++)
 	sum += src[k][j] * Cos(RealT(2*k+1)*pi*RealT(i)/(RealT(2*src.Cols())));
       *it = sum;
     }
@@ -94,7 +94,7 @@ namespace Ravl2 {
       IntT i = at[0];
       IntT j = at[1];
       sum = 0.0;
-      for (k = colRange.Min(); k <= colRange.Max(); k++)
+      for (k = colRange.min(); k <= colRange.max(); k++)
 	sum += horizontal[i][k] * Cos(RealT(2*k+1)*pi*RealT(j)/(RealT(2*src.Rows()))); 
       *it = Alpha(i,src.Cols()) * Alpha(j,src.Rows())*sum; 
     }
@@ -105,8 +105,8 @@ namespace Ravl2 {
     if(dest.range() != src.range())
       dest = Array<RealT,2>(src.range());
     int i,j,k;
-    IndexRange<1> rowRange = src.Range1();
-    IndexRange<1> colRange = src.Range2();
+    IndexRange<1> rowRange = src.range(0);
+    IndexRange<1> colRange = src.range(1);
     RealT sum;
     // Transform in x direction
     Array<RealT,2> horizontal(src.range());
@@ -115,7 +115,7 @@ namespace Ravl2 {
       IntT i = at[0];
       IntT j = at[1];
       sum = 0.0;
-      for (k = rowRange.Min(); k <= rowRange.Max(); k++)
+      for (k = rowRange.min(); k <= rowRange.max(); k++)
 	sum += Alpha(k,src.Cols())*src[k][j]*Cos(RealT(2*i+1)*pi*RealT(k)/(RealT(2*src.Cols())));  
       *it = sum;
     }
@@ -126,7 +126,7 @@ namespace Ravl2 {
       IntT i = at[0];
       IntT j = at[1];
       sum = 0.0;
-      for (k = colRange.Min(); k <= colRange.Max(); k++)
+      for (k = colRange.min(); k <= colRange.max(); k++)
 	sum += Alpha(k, src.Rows())*horizontal[i][k]*Cos(RealT(2*j+1)*pi*RealT(k)/(RealT(2*src.Rows()))); 
       *it = sum;
     }
@@ -256,7 +256,7 @@ namespace Ravl2 {
     
     //////// Scale coefficients
     
-    BufferAccess2dIterC<RealT> it(dest,dest.Range2());
+    BufferAccess2dIterC<RealT> it(dest,dest.range(1));
     *it *= scaleDC;
     if(!it.next())
       return ; // Must be 1x1
@@ -422,7 +422,7 @@ namespace Ravl2 {
   {
     int rows,n;
     Array<RealT,2> s(fi.range()); //double s[512][512];
-    for(BufferAccess2dIter2C<RealT,RealT> it(s,s.Range2(),fi,fi.Range2());it;it++)
+    for(BufferAccess2dIter2C<RealT,RealT> it(s,s.range(1),fi,fi.range(1));it;it++)
       it.data<0>() = it.data<1>();
     for (rows=0; rows<N; rows++) {
       for(n=0; n < N/2; n++) {
@@ -436,7 +436,7 @@ namespace Ravl2 {
   {
     int cols,n;
     Array<RealT,2> s(fi.range()); //double s[512][512];
-    for(BufferAccess2dIter2C<RealT,RealT> it(s,s.Range2(),fi,fi.Range2());it;it++)
+    for(BufferAccess2dIter2C<RealT,RealT> it(s,s.range(1),fi,fi.range(1));it;it++)
       it.data<0>() = it.data<1>();    
     for (cols=0; cols<N; cols++) {
       RangeBufferAccessC<RealT > firow = fi[cols]; 

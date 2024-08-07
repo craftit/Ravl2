@@ -224,8 +224,8 @@ namespace Ravl2
       alignedFrame = filteredImage.range().AlignWithin((kernelSize - 1) >> 1);
     else
       alignedFrame = filteredImage.range();
-    IndexRange<2> subFrame(alignedFrame.Range1().Min() / scale, alignedFrame.Range1().Max() / scale,
-                           alignedFrame.Range2().Min() / scale, alignedFrame.Range2().Max() / scale);
+    IndexRange<2> subFrame(alignedFrame.range(0).min() / scale, alignedFrame.range(0).max() / scale,
+                           alignedFrame.range(1).min() / scale, alignedFrame.range(1).max() / scale);
     WarpScaleC<SumTypeT, PixelT> warpScale(subFrame);
     Array<PixelT, 2> subImage = warpScale.apply(Array<SumTypeT, 2>(filteredImage, alignedFrame));
     images.Insert(std::tuple<RealT, RealT, Array<PixelT, 2>>(scale, scale, subImage));

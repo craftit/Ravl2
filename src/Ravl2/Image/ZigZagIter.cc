@@ -40,30 +40,30 @@ namespace Ravl2 {
     //cerr << "Current=" << at << "\n";
     int row = at[0] + at[1];
     if((row % 2) == 0) { // Wprk out direction of row.
-      if(at[1] == rect.Range2().Max()) {
-	if(at[0] == rect.Range1().Max()) {
+      if(at[1] == rect.range(1).max()) {
+	if(at[0] == rect.range(0).max()) {
 	  ok = false;
 	  return false;
 	}
 	at[0]++;
 	return true;
       }
-      if(at[0] == rect.Range1().Min()) {
+      if(at[0] == rect.range(0).min()) {
 	at[1]++;
 	return true;
       }
       at[0]--;
       at[1]++;
     } else {
-      if(at[0] == rect.Range1().Max()) {
-	if(at[1] == rect.Range2().Max()) {
+      if(at[0] == rect.range(0).max()) {
+	if(at[1] == rect.range(1).max()) {
 	  ok = false;
 	  return false;
 	}
 	at[1]++;
 	return true;
       }
-      if(at[1] == rect.Range2().Min()) {
+      if(at[1] == rect.range(1).min()) {
 	at[0]++;
 	return true;
       }

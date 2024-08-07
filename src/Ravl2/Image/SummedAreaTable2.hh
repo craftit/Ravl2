@@ -159,8 +159,8 @@ namespace Ravl2
 
     Vector<DataT, 2> VerticalDifference3(const IndexRange<2> &range, const IndexRange<1> &rng) const
     {
-      RavlAssert(range.Range2().contains(rng));
-      IndexRange<2> rng2(range.Range1(), rng);
+      RavlAssert(range.range(1).contains(rng));
+      IndexRange<2> rng2(range.range(0), rng);
       return Sum(range) - Sum(rng2);
     }
     //: Calculate the diffrence between two halfs of the rectangle split vertially.
@@ -168,8 +168,8 @@ namespace Ravl2
 
     Vector<DataT, 2> HorizontalDifference3(const IndexRange<2> &range, const IndexRange<1> &rng) const
     {
-      RavlAssert(range.Range1().contains(rng));
-      IndexRange<2> rng2(rng, range.Range2());
+      RavlAssert(range.range(0).contains(rng));
+      IndexRange<2> rng2(rng, range.range(1));
       return Sum(range) - Sum(rng2);
     }
     //: Calculate the diffrence between two rectangles one lying inside the other in the horizontal dimention.

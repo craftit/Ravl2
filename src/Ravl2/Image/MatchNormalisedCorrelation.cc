@@ -39,8 +39,8 @@ namespace Ravl2
   {
     int sumxy = 0;
     // The following loop could probably be speeded up with some MMX code.
-    for(BufferAccess2dIter2C<ByteT, ByteT> it2(templ, templ.Range2(),
-                                               subImg, subImg.Range2());
+    for(BufferAccess2dIter2C<ByteT, ByteT> it2(templ, templ.range(1),
+                                               subImg, subImg.range(1));
         it2; it2++)
       sumxy += (int)it2.data<0>() * it2.data<1>();
     return sumxy;
