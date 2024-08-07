@@ -16,21 +16,21 @@ namespace Ravl2
   //! Global stride for 1 dimensional arrays. Always has a value of 1.
   extern const int gStride1;
 
-  template<typename DataT, unsigned N>
+  template <typename DataT, unsigned N>
   class Array;
 
-  template<typename DataT, unsigned N>
+  template <typename DataT, unsigned N>
   class ArrayAccess;
 
-  template<typename DataT, unsigned N>
+  template <typename DataT, unsigned N>
   class ArrayView;
 
-  template<typename DataT, unsigned N>
+  template <typename DataT, unsigned N>
   class ArrayIter;
 
-//! Declaration of the concept “WindowedArray”, which is satisfied by any type “ArrayT”
+  //! Declaration of the concept “WindowedArray”, which is satisfied by any type “ArrayT”
 
-  template<typename ArrayT, typename DataT = typename ArrayT::value_type, unsigned N = ArrayT::dimension>
+  template <typename ArrayT, typename DataT = typename ArrayT::value_type, unsigned N = ArrayT::dimension>
   concept WindowedArray = requires(ArrayT a, Index<N> ind, IndexRange<N> rng) {
     { ArrayT::dimensions } -> std::convertible_to<unsigned>;
     { a[ind] } -> std::convertible_to<DataT>;
@@ -91,7 +91,7 @@ namespace Ravl2
 
     //! Add an offset to the iterator
     template <typename IntegerT>
-    requires std::is_integral_v<IntegerT>
+      requires std::is_integral_v<IntegerT>
     constexpr ArrayIter<DataT, 1> &operator+=(IntegerT offset)
     {
       mPtr += offset;
@@ -100,7 +100,7 @@ namespace Ravl2
 
     //! Add an offset to the iterator
     template <typename IntegerT>
-    requires std::is_integral_v<IntegerT>
+      requires std::is_integral_v<IntegerT>
     constexpr ArrayIter<DataT, 1> &operator-=(IntegerT offset)
     {
       mPtr -= offset;
@@ -161,7 +161,7 @@ namespace Ravl2
 
   //! Add to the iterator
   template <typename DataT, typename IntegerT>
-  requires std::is_integral_v<IntegerT>
+    requires std::is_integral_v<IntegerT>
   [[nodiscard]] constexpr ArrayIter<DataT, 1> operator+(const ArrayIter<DataT, 1> &it, IntegerT offset)
   {
     return ArrayIter<DataT, 1>(it.data() + offset);
@@ -169,7 +169,7 @@ namespace Ravl2
 
   //! Subtract from the iterator
   template <typename DataT, typename IntegerT>
-  requires std::is_integral_v<IntegerT>
+    requires std::is_integral_v<IntegerT>
   [[nodiscard]] constexpr ArrayIter<DataT, 1> operator-(const ArrayIter<DataT, 1> &it, IntegerT offset)
   {
     return ArrayIter<DataT, 1>(it.data() + offset);
@@ -177,7 +177,7 @@ namespace Ravl2
 
   //! Add to the iterator
   template <typename DataT, typename IntegerT>
-  requires std::is_integral_v<IntegerT>
+    requires std::is_integral_v<IntegerT>
   [[nodiscard]] constexpr ArrayIter<DataT, 1> operator+(IntegerT offset, const ArrayIter<DataT, 1> &it)
   {
     return ArrayIter<DataT, 1>(offset + it.data());
@@ -185,7 +185,7 @@ namespace Ravl2
 
   //! Subtract from the iterator
   template <typename DataT, typename IntegerT>
-  requires std::is_integral_v<IntegerT>
+    requires std::is_integral_v<IntegerT>
   [[nodiscard]] constexpr ArrayIter<DataT, 1> operator-(IntegerT offset, const ArrayIter<DataT, 1> &it)
   {
     return ArrayIter<DataT, 1>(offset + it.data());
@@ -227,7 +227,7 @@ namespace Ravl2
     {}
 
     template <typename ArrayT>
-    requires WindowedArray<ArrayT, DataT, 1>
+      requires WindowedArray<ArrayT, DataT, 1>
     explicit constexpr ArrayAccess(ArrayT &array)
         : m_ranges(array.range().range_data()),
           m_data(array.origin_address())
@@ -555,17 +555,13 @@ namespace Ravl2
       return m_buffer;
     }
 
-
   protected:
     std::shared_ptr<DataT[]> m_buffer;
   };
 
-
   //! Copy data from a source array to destination array
   template <typename Array1T, typename Array2T>
-  requires(WindowedArray<Array1T, typename Array1T::value_type, 1> &&
-           WindowedArray<Array2T, typename Array2T::value_type, 1>)&&
-  std::is_convertible_v<typename Array2T::value_type, typename Array1T::value_type>
+    requires(WindowedArray<Array1T, typename Array1T::value_type, 1> && WindowedArray<Array2T, typename Array2T::value_type, 1>) && std::is_convertible_v<typename Array2T::value_type, typename Array1T::value_type>
   constexpr void copy(const Array1T &dest, const Array2T &src)
   {
     auto *srcPtr = addressOfMin(src);
@@ -576,7 +572,7 @@ namespace Ravl2
   }
 
   template <typename ArrayT, typename DataT = typename ArrayT::value_type, typename OtherDataT>
-  requires WindowedArray<ArrayT, DataT, 1> && std::is_convertible_v<OtherDataT, DataT>
+    requires WindowedArray<ArrayT, DataT, 1> && std::is_convertible_v<OtherDataT, DataT>
   constexpr void fill(const ArrayT &array, const OtherDataT &value)
   {
     // 1d arrays are simple
@@ -584,11 +580,10 @@ namespace Ravl2
       at = value;
   }
 
-
   //! Get a view of the array, the returned object is a non-owning view of the array that has its own
   //! bounds.
   template <typename ArrayT, typename DataT = typename ArrayT::value_type, unsigned N = ArrayT::dimensions>
-  requires WindowedArray<ArrayT, DataT, 1>
+    requires WindowedArray<ArrayT, DataT, 1>
   [[nodiscard]] constexpr ArrayView<DataT, N> view(const ArrayT &array)
   {
     return ArrayView<DataT, N>(array);
@@ -596,20 +591,18 @@ namespace Ravl2
 
   //! Get an access to the array,
   template <typename ArrayT, typename DataT = typename ArrayT::value_type, unsigned N = ArrayT::dimensions>
-  requires WindowedArray<ArrayT, DataT, 1>
+    requires WindowedArray<ArrayT, DataT, 1>
   [[nodiscard]] constexpr ArrayAccess<DataT, N> access(const ArrayT &array)
   {
     return ArrayAccess<DataT, N>(array);
   }
 
-
   namespace detail
   {
     //! Helper to serialize the content of an array without the range.
 
-    template<typename ArrayT>
-    struct CerealDataBlock
-    {
+    template <typename ArrayT>
+    struct CerealDataBlock {
       CerealDataBlock()
           : mData(nullptr)
       {}
@@ -618,30 +611,30 @@ namespace Ravl2
           : mData(&data)
       {}
 
-      template<typename ArchiveT>
+      template <typename ArchiveT>
       void serialize(ArchiveT &archive) const
       {
         assert(mData != nullptr);
         cereal::size_type size = mData->range().elements();
         archive(cereal::make_size_tag(size));
-        if (size != mData->range().elements()) {
+        if(size != mData->range().elements()) {
           throw std::out_of_range("unexpected size");
         }
-        for (auto &at: (*mData)) {
+        for(auto &at : (*mData)) {
           archive(at);
         }
       }
 
       ArrayT *mData;
     };
-  }
+  }// namespace detail
 
   //! Serialize the content of an array.
 
   template <typename ArchiveT, typename ArrayT, typename DataT = typename ArrayT::value_type, unsigned N = ArrayT::dimensions>
-  requires WindowedArray<ArrayT, DataT, N>
-  void save(ArchiveT & archive,
-            ArrayT const & arr)
+    requires WindowedArray<ArrayT, DataT, N>
+  void save(ArchiveT &archive,
+            ArrayT const &arr)
   {
     archive(cereal::make_nvp("range", arr.range()));
     detail::CerealDataBlock<const ArrayT> blk(arr);
@@ -651,24 +644,23 @@ namespace Ravl2
   //! Deserialize the content of an array.
 
   template <typename ArchiveT, typename ArrayT, typename DataT = typename ArrayT::value_type, unsigned N = ArrayT::dimensions>
-  requires WindowedArray<ArrayT, DataT, N>
-  void load(ArchiveT & archive,
-            ArrayT & arr)
+    requires WindowedArray<ArrayT, DataT, N>
+  void load(ArchiveT &archive,
+            ArrayT &arr)
   {
     IndexRange<N> range;
     archive(cereal::make_nvp("range", range));
-    if constexpr (std::is_same_v<ArrayT, Array<DataT, N>>) {
+    if constexpr(std::is_same_v<ArrayT, Array<DataT, N>>) {
       arr = Array<DataT, N>(range);
     } else {
       if(!arr.range().contains(range)) {
         throw std::out_of_range("requested range is outside that of the allocated array");
       }
-      arr = clip(arr,range);
+      arr = clip(arr, range);
     }
     detail::CerealDataBlock<ArrayT> blk(arr);
     archive(cereal::make_nvp("data", blk));
   }
-
 
   //! Some common instantiations
 
@@ -680,5 +672,4 @@ namespace Ravl2
   extern template class ArrayAccess<float, 1>;
   extern template class ArrayIter<float, 1>;
 
-
-}
+}// namespace Ravl2

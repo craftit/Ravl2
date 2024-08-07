@@ -97,7 +97,9 @@ namespace Ravl2
 
   template <typename Pnt1T, typename Pnt2T>
   constexpr auto euclidDistance(Pnt1T a, Pnt2T b)
-  { return xt::linalg::norm(a-b,2); }
+  {
+    return xt::linalg::norm(a - b, 2);
+  }
 
   template <typename RealT = float, unsigned N>
   constexpr auto euclidDistance(const Index<N> &a, const Index<N> &b)
@@ -203,5 +205,3 @@ namespace Ravl2
   }
 
 }// namespace Ravl2
-
-

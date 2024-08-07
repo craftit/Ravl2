@@ -123,25 +123,25 @@ namespace Ravl2
     {
       return !operator==(ind);
     }
-    
+
     //! begin
     [[nodiscard]] constexpr int *begin()
     {
       return m_index.data();
     }
-    
+
     //! end
     [[nodiscard]] constexpr int *end()
     {
       return &(m_index.data()[N]);
     }
-    
+
     //! begin
     [[nodiscard]] constexpr const int *begin() const
     {
       return m_index.data();
     }
-    
+
     //! end
     [[nodiscard]] constexpr const int *end() const
     {
@@ -153,21 +153,21 @@ namespace Ravl2
     {
       return m_index.data();
     }
-    
+
     //! Access as ptr.
     [[nodiscard]] constexpr int *data()
     {
       return m_index.data();
     }
-    
+
     //! Access size
     [[nodiscard]] constexpr size_t size() const
     {
       return size_t(N);
     }
-  
+
   protected:
-    std::array<int,N> m_index = {0};
+    std::array<int, N> m_index = {0};
   };
 
   template <unsigned N>
@@ -240,7 +240,6 @@ namespace Ravl2
         m_max = init.begin()[1];
       }
     }
-
 
     //! Make size of range 0.
     constexpr void clear() noexcept
@@ -593,7 +592,7 @@ namespace Ravl2
 
     //! Create a range from a sizes.
     //! The range[i] will be from 0 to size[i]-1.
-    template<typename ...IndexT>
+    template <typename... IndexT>
     [[nodiscard]] static IndexRange<N> fromSize(IndexT... sizes)
     {
       return IndexRange<N>({size_t(sizes)...});
@@ -894,7 +893,9 @@ namespace Ravl2
 
     //! One passed the end of the range.
     [[nodiscard]] constexpr Sentinel end() const
-    { return {}; }
+    {
+      return {};
+    }
 
     //! Access as an array of ranges
     [[nodiscard]] constexpr std::array<IndexRange<1>, N> &ranges()
@@ -1153,41 +1154,41 @@ namespace Ravl2
 
   //! Serialization support
   template <class Archive, unsigned N>
-  constexpr void serialize( Archive & archive, Index<N> &ind)
+  constexpr void serialize(Archive &archive, Index<N> &ind)
   {
     cereal::size_type s = N;
     archive(cereal::make_size_tag(s));
-    if (s != N) {
+    if(s != N) {
       throw std::runtime_error("array has incorrect length");
     }
-    for (auto& i : ind) {
+    for(auto &i : ind) {
       archive(i);
     }
   }
 
   //! Serialization support
   template <class Archive>
-  constexpr void serialize( Archive & archive, IndexRange<1> & range )
+  constexpr void serialize(Archive &archive, IndexRange<1> &range)
   {
     cereal::size_type s = 2;
     archive(cereal::make_size_tag(s));
-    if (s != 2) {
+    if(s != 2) {
       throw std::runtime_error("index range has incorrect length");
     }
-    archive( range.min(), range.max() );
+    archive(range.min(), range.max());
   }
 
   //! Serialization support
   template <class Archive, unsigned N>
-  requires (N > 1)
-  constexpr void serialize( Archive & archive, IndexRange<N> & range )
+    requires(N > 1)
+  constexpr void serialize(Archive &archive, IndexRange<N> &range)
   {
     cereal::size_type s = N;
     archive(cereal::make_size_tag(s));
-    if (s != N) {
+    if(s != N) {
       throw std::runtime_error("index range has incorrect length");
     }
-    for (auto& r : range.ranges()) {
+    for(auto &r : range.ranges()) {
       archive(r);
     }
   }

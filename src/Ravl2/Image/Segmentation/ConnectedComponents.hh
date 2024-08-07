@@ -87,7 +87,6 @@ namespace Ravl2
     DataTypeT zero {};// Zero value to use.
   };
 
-
   template <class DataTypeT, class CompareT>
   std::tuple<Array<unsigned, 2>, unsigned> ConnectedComponents<DataTypeT, CompareT>::apply(const Array<DataTypeT, 2> &ip)
   {

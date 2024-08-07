@@ -28,7 +28,8 @@ namespace Ravl2
 
     template <class RealT>
     explicit Line2dIterC(const LinePP2dC<RealT> &line)
-        : Line2dIterC(toIndex(line.P1()), toIndex(line.P2())) {}
+        : Line2dIterC(toIndex(line.P1()), toIndex(line.P2()))
+    {}
     //: Constructor.
 
     void First(const Index<2> &start, const Index<2> &end);

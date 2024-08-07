@@ -96,14 +96,16 @@ namespace Ravl2
   [[nodiscard]] std::string toString(Vector2d v);
   //std::string toString(const VectorT &v);
 
-  template<typename DataT>
+  template <typename DataT>
   inline bool is16ByteAligned(const DataT *data)
-  { return (reinterpret_cast<uintptr_t>(data) & static_cast<uintptr_t>(0xf)) == 0; }
+  {
+    return (reinterpret_cast<uintptr_t>(data) & static_cast<uintptr_t>(0xf)) == 0;
+  }
 
   //! This is a hack to prevent the compiler optimizing away benchmark code
   void doNothing();
 
-}
+}// namespace Ravl2
 
 #if FMT_VERSION >= 90000
 template <>
@@ -122,17 +124,18 @@ struct fmt::formatter<xt::xtensor_container<xt::uvector<float>, 2, xt::layout_ty
 //template <> struct fmt::formatter<std::span<float> > : ostream_formatter{};
 #endif
 
-namespace xt {
+namespace xt
+{
   //! Serialization support
   template <class Archive, typename DataT, size_t N>
-  void serialize( Archive & archive, xt::xfixed_container<DataT, xt::fixed_shape<N>, xt::layout_type::row_major, false, xt::xtensor_expression_tag> &pnt )
+  void serialize(Archive &archive, xt::xfixed_container<DataT, xt::fixed_shape<N>, xt::layout_type::row_major, false, xt::xtensor_expression_tag> &pnt)
   {
     cereal::size_type size = N;
     archive(cereal::make_size_tag(size));
     if(size != N) {
       throw std::runtime_error("Size mismatch");
     }
-    (void) pnt;
+    (void)pnt;
     for(auto &it : pnt) {
       archive(it);
     }
@@ -140,7 +143,7 @@ namespace xt {
 
   //! Serialization support
   template <class Archive, typename DataT, size_t N, size_t M>
-  void serialize( Archive & archive, Ravl2::Matrix<DataT, N, M> &mat )
+  void serialize(Archive &archive, Ravl2::Matrix<DataT, N, M> &mat)
   {
     cereal::size_type size = N * M;
     archive(cereal::make_size_tag(size));
@@ -151,4 +154,4 @@ namespace xt {
       archive(it);
     }
   }
-}
+}// namespace xt

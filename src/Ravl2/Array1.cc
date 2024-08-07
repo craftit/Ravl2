@@ -16,4 +16,4 @@ namespace Ravl2
   template class ArrayAccess<float, 1>;
   template class ArrayIter<float, 1>;
 
-}
+}// namespace Ravl2

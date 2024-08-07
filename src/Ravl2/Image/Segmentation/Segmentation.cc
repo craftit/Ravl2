@@ -407,7 +407,9 @@ namespace Ravl2
         ret[*it].addPixel(it.index());
       }
     } else {
-      for(auto it = segmap.begin(); it.valid(); ++it) { ret[*it].addPixel(it.index()); }
+      for(auto it = segmap.begin(); it.valid(); ++it) {
+        ret[*it].addPixel(it.index());
+      }
     }
     return ret;
   }

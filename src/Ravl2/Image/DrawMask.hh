@@ -18,14 +18,13 @@ namespace Ravl2
   //! Where the mask is non-zero, the image is set to the 'value'.
 
   template <typename ArrayTargetT,
-    typename ArrayMaskT,
-    typename PixelTestT,
-    typename DataT = typename ArrayTargetT::value_type,
-    typename MaskT = typename ArrayMaskT::value_type,
-    unsigned N = ArrayTargetT::dimensions>
-  requires WindowedArray<ArrayTargetT, DataT, N>
-  void DrawMask(ArrayTargetT &img, const ArrayMaskT &mask, const DataT &value,
-		PixelTestT test = [](const MaskT &mask) { return mask > 0; })
+            typename ArrayMaskT,
+            typename PixelTestT,
+            typename DataT = typename ArrayTargetT::value_type,
+            typename MaskT = typename ArrayMaskT::value_type,
+            unsigned N = ArrayTargetT::dimensions>
+    requires WindowedArray<ArrayTargetT, DataT, N>
+  void DrawMask(ArrayTargetT &img, const ArrayMaskT &mask, const DataT &value, PixelTestT test = [](const MaskT &mask) { return mask > 0; })
   {
     IndexRange<N> rng = img.range();
     rng.clipBy(mask.range());
@@ -33,7 +32,7 @@ namespace Ravl2
       return;
     for(auto it = begin(img, mask, rng); it; it++) {
       if(test(it.template data<1>()))
-	it.template data<0>() = value;
+        it.template data<0>() = value;
     }
   }
 

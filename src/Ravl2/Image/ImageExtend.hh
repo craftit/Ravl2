@@ -27,13 +27,13 @@ namespace Ravl2
   //!    CopyModeT::Always - Always reallocate the image, even if it's large enough.
 
   template <CopyModeT copyPolicy = CopyModeT::Auto, typename Array1T, typename InT = typename Array1T::value_type, unsigned N = Array1T::dimensions>
-   requires WindowedArray<Array1T, InT, N>
+    requires WindowedArray<Array1T, InT, N>
   bool resizeArray(Array1T &image, const IndexRange<N> &range)
   {
     if constexpr(copyPolicy == CopyModeT::Never) {
       if(!image.range().contains(range)) {
-	// Cannot resize in place.
-	throw std::runtime_error("Image not large enough and cannot resize.");
+        // Cannot resize in place.
+        throw std::runtime_error("Image not large enough and cannot resize.");
       }
       image.clipBy(range);
       return false;
@@ -41,10 +41,10 @@ namespace Ravl2
       // Is this an image we can resize in place?
       static_assert(std::is_same_v<Array1T, Array<InT, N>>, "Cannot resize in place if image is not an Array.");
       if constexpr(copyPolicy == CopyModeT::Auto) {
-	if(image.range().contains(range)) {
-	  image.clipBy(range);
-	  return false;
-	}
+        if(image.range().contains(range)) {
+          image.clipBy(range);
+          return false;
+        }
       }
       // Yes we can resize in place.
       image = Array<InT, N>(range);
@@ -52,22 +52,21 @@ namespace Ravl2
     }
   }
 
-
   //! @brief Extend an image by n pixels in all directions by filling new pixels with 'borderValue'.
   //! If 'result' image is large enough it will be used for results, otherwise it will
   //! be replaced with an image of a suitable size.
   //! @param result The image to extend.
-  //! 
+  //!
 
   template <typename Array1T, typename InT = typename Array1T::value_type,
-    typename Array2T = Array1T, typename OutT = Array2T::value_type,unsigned N = Array1T::dimensions>
+            typename Array2T = Array1T, typename OutT = Array2T::value_type, unsigned N = Array1T::dimensions>
     requires WindowedArray<Array1T, InT, N> && WindowedArray<Array2T, OutT, N>
   void extendImageFill(Array2T &result, const Array1T &image, unsigned n, const OutT &borderValue)
   {
     IndexRange<2> rect = image.range().expand(int(n));
     resizeArray(result, rect);
     // Copy centre of image
-    copy(clip(result, image.range()),image);
+    copy(clip(result, image.range()), image);
     // Take care of border
     DrawFrame(result, borderValue, n, rect);
   }
@@ -77,23 +76,23 @@ namespace Ravl2
   //! be replaced with an image of a suitable size.
 
   template <typename Array1T, typename InT = typename Array1T::value_type,
-    typename Array2T = Array1T, typename OutT = Array2T::value_type,unsigned N = Array1T::dimensions>
+            typename Array2T = Array1T, typename OutT = Array2T::value_type, unsigned N = Array1T::dimensions>
     requires WindowedArray<Array1T, InT, N> && WindowedArray<Array2T, OutT, N>
   void extendImageCopy(Array1T &result, const Array2T &image, unsigned n)
   {
     const IndexRange<2> rect = image.range().expand(int(n));
     resizeArray(result, rect);
     // Copy centre of image
-    copy(clip(result, image.range()),image);
+    copy(clip(result, image.range()), image);
     if(n <= 0) {
-      return; // Nothing to do.
+      return;// Nothing to do.
     }
     // Take care of border
     // Extend rows first.
     const auto minCol = image.range(1).min();
     const auto maxCol = image.range(1).max();
-    const IndexRange<1> leftRect = IndexRange<1>(rect.min(1), minCol-1);
-    const IndexRange<1> rightRect = IndexRange<1>(maxCol+1, rect.max(1));
+    const IndexRange<1> leftRect = IndexRange<1>(rect.min(1), minCol - 1);
+    const IndexRange<1> rightRect = IndexRange<1>(maxCol + 1, rect.max(1));
     for(int r : image.range(0)) {
       const OutT value1 = image[r][minCol];
       const OutT value2 = image[r][maxCol];
@@ -118,7 +117,7 @@ namespace Ravl2
   //! be replaced with an image of a suitable size.
 
   template <class DataT>
-  void extendImageMirror(Array<DataT,2> &result, const Array<DataT,2> &image, unsigned n)
+  void extendImageMirror(Array<DataT, 2> &result, const Array<DataT, 2> &image, unsigned n)
   {
     if(image.range(0).size() < int(n) || image.range(1).size() < int(n)) {
       SPDLOG_WARN("Image too small to mirror.");
@@ -127,7 +126,7 @@ namespace Ravl2
     const IndexRange<2> rect = image.range().expand(int(n));
     resizeArray(result, rect);
     // Copy centre of image
-    copy(clip(result, image.range()),image);
+    copy(clip(result, image.range()), image);
     // Take care of border
     // Extend rows first.
     for(int r = image.range().min(0); r <= image.range().max(0); r++) {
@@ -155,7 +154,7 @@ namespace Ravl2
   }
 
   // Instantiate the most common types.
-  extern template bool resizeArray<CopyModeT::Auto>(Array<uint8_t , 2> &, const IndexRange<2> &);
+  extern template bool resizeArray<CopyModeT::Auto>(Array<uint8_t, 2> &, const IndexRange<2> &);
   extern template void extendImageFill(Array<uint8_t, 2> &, const Array<uint8_t, 2> &, unsigned, const uint8_t &);
   extern template void extendImageCopy(Array<uint8_t, 2> &, const Array<uint8_t, 2> &, unsigned);
   extern template void extendImageMirror(Array<uint8_t, 2> &, const Array<uint8_t, 2> &, unsigned);

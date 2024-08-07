@@ -24,7 +24,6 @@ namespace Ravl2
   class Range<RealT, 1>
   {
   public:
-
     // Creates the index range <0, dim-1>.
     inline explicit constexpr Range(RealT size = 0)
         : mMin(0),
@@ -47,7 +46,6 @@ namespace Ravl2
 
     //! Creates the index range from the input stream.
     inline explicit Range(std::istream &s);
-
 
     //! Returns the size of the range.
     [[nodiscard]] inline constexpr RealT size() const
@@ -715,31 +713,30 @@ namespace Ravl2
 
   //! Serialization support
   template <class Archive, typename RealT>
-  constexpr void serialize( Archive & archive, Range<RealT, 1> & range )
+  constexpr void serialize(Archive &archive, Range<RealT, 1> &range)
   {
     cereal::size_type s = 2;
     archive(cereal::make_size_tag(s));
-    if (s != 2) {
+    if(s != 2) {
       throw std::runtime_error("range has incorrect length");
     }
-    archive( range.min(), range.max() );
+    archive(range.min(), range.max());
   }
 
   //! Serialization support
-  template <class Archive,typename RealT, unsigned N>
-  requires (N > 1)
-  constexpr void serialize( Archive & archive, Range<RealT, N> & range )
+  template <class Archive, typename RealT, unsigned N>
+    requires(N > 1)
+  constexpr void serialize(Archive &archive, Range<RealT, N> &range)
   {
     cereal::size_type s = N;
     archive(cereal::make_size_tag(s));
-    if (s != N) {
+    if(s != N) {
       throw std::runtime_error("range has incorrect length");
     }
-    for (auto& r : range.ranges()) {
+    for(auto &r : range.ranges()) {
       archive(r);
     }
   }
-
 
   extern template class Range<float, 1>;
   extern template class Range<float, 2>;

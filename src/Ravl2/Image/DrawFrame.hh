@@ -25,7 +25,7 @@ namespace Ravl2
     IndexRange<2> dr = rect.clip(dat.range());
     if(dr.empty())
       return;// Nothing to draw around.
-    auto arr = clip(dat,dr);
+    auto arr = clip(dat, dr);
     std::ranges::fill(arr.begin(), arr.end(), value);
   }
 
@@ -149,11 +149,11 @@ namespace Ravl2
     } else {// Clipped.
       IndexRange<2> r1(Index<2>(innerRect.range(0).min(), outerRect.range(0).min()), Index<2>(innerRect.range(0).max(), innerRect.range(0).min() - 1));
       if(r1.clipBy(dat.range())) {
-        fill(clip(dat,r1), value);
+        fill(clip(dat, r1), value);
       }
       IndexRange<2> r2(Index<2>(innerRect.range(0).min(), innerRect.range(1).max() + 1), Index<2>(innerRect.range(0).max(), outerRect.range(1).max()));
       if(r2.clipBy(dat.range())) {
-        fill(clip(dat,r2), value);
+        fill(clip(dat, r2), value);
       }
     }
   }

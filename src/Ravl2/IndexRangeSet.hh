@@ -181,18 +181,17 @@ namespace Ravl2
 
     //! Serialization support
     template <class Archive>
-    constexpr void serialize( Archive & archive)
+    constexpr void serialize(Archive &archive)
     {
       cereal::size_type s = this->size();
       archive(cereal::make_size_tag(s));
       if(s != this->size()) {
         this->resize(s);
       }
-      for (auto& i : *this) {
+      for(auto &i : *this) {
         archive(i);
       }
     }
-
   };
 
   // Let everyone know there's an implementation already generated for common cases

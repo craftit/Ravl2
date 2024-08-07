@@ -18,4 +18,3 @@
 #include "Ravl2/Image/DrawMask.hh"
 #include "Ravl2/Image/DrawPolygon.hh"
 //#include "Ravl2/Image/Font.hh"
-

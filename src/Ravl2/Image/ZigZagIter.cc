@@ -1,4 +1,4 @@
-// This file is part of RAVL, Recognition And Vision Library 
+// This file is part of RAVL, Recognition And Vision Library
 // Copyright (C) 2003, University of Surrey
 // This code may be redistributed under the terms of the GNU Lesser
 // General Public License (LGPL). See the lgpl.licence file for details or
@@ -7,14 +7,15 @@
 
 #include "Ravl2/Image/ZigZagIter.hh"
 
-namespace Ravl2 {
-  
+namespace Ravl2
+{
+
   //: Constuctor
-  
+
   ZigZagIterC::ZigZagIterC(const IndexRange<2> &nrect)
-    : at(nrect.min()),
-      rect(nrect),
-      ok(true)
+      : at(nrect.min()),
+        rect(nrect),
+        ok(true)
   {
     if(nrect.range(0).size() != nrect.range(1).size()) {
       ok = false;
@@ -22,12 +23,13 @@ namespace Ravl2 {
     }
     //cerr << "Init=" << at << " \n";
     if(rect.area() == 0)
-      ok = false; 
+      ok = false;
   }
-  
+
   //: Goto first index in sequence.
-  
-  bool ZigZagIterC::First() {
+
+  bool ZigZagIterC::First()
+  {
     if(rect.area() == 0)
       return false;
     at = rect.min();
@@ -35,42 +37,43 @@ namespace Ravl2 {
   }
 
   //: Goto next pixel in scan pattern.
-  
-  bool ZigZagIterC::Next() {
+
+  bool ZigZagIterC::Next()
+  {
     //cerr << "Current=" << at << "\n";
     int row = at[0] + at[1];
-    if((row % 2) == 0) { // Wprk out direction of row.
+    if((row % 2) == 0) {// Wprk out direction of row.
       if(at[1] == rect.range(1).max()) {
-	if(at[0] == rect.range(0).max()) {
-	  ok = false;
-	  return false;
-	}
-	at[0]++;
-	return true;
+        if(at[0] == rect.range(0).max()) {
+          ok = false;
+          return false;
+        }
+        at[0]++;
+        return true;
       }
       if(at[0] == rect.range(0).min()) {
-	at[1]++;
-	return true;
+        at[1]++;
+        return true;
       }
       at[0]--;
       at[1]++;
     } else {
       if(at[0] == rect.range(0).max()) {
-	if(at[1] == rect.range(1).max()) {
-	  ok = false;
-	  return false;
-	}
-	at[1]++;
-	return true;
+        if(at[1] == rect.range(1).max()) {
+          ok = false;
+          return false;
+        }
+        at[1]++;
+        return true;
       }
       if(at[1] == rect.range(1).min()) {
-	at[0]++;
-	return true;
+        at[0]++;
+        return true;
       }
       at[0]++;
       at[1]--;
     }
-    
+
     return true;
   }
-}
+}// namespace Ravl2

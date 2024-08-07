@@ -76,11 +76,11 @@ namespace Ravl2
     [[nodiscard]] constexpr DataT &operator[](const Index<N> &ind)
     {
       DataT *mPtr = m_data;
-      for(unsigned i = 0; i < N-1; i++) {
+      for(unsigned i = 0; i < N - 1; i++) {
         assert(m_ranges[i].contains(ind[i]));
         mPtr += m_strides[i] * ind[i];
       }
-      mPtr += ind[N-1];
+      mPtr += ind[N - 1];
       return *mPtr;
     }
 
@@ -114,11 +114,11 @@ namespace Ravl2
     [[nodiscard]] constexpr const DataT &operator[](const Index<N> &ind) const
     {
       const DataT *mPtr = m_data;
-      for(unsigned i = 0; i < N-1; i++) {
+      for(unsigned i = 0; i < N - 1; i++) {
         assert(m_ranges[i].contains(ind[i]));
         mPtr += m_strides[i] * ind[i];
       }
-      mPtr += ind[N-1];
+      mPtr += ind[N - 1];
       return *mPtr;
     }
 
@@ -159,14 +159,18 @@ namespace Ravl2
 
     //! vertexEnd iterator
     [[nodiscard]] constexpr Sentinel end() const
-    { return {}; }
+    {
+      return {};
+    }
 
     //! vertexBegin iterator
     [[nodiscard]] constexpr ArrayIter<const DataT, N> cbegin() const;
 
     //! vertexEnd iterator
     [[nodiscard]] constexpr Sentinel cend() const
-    { return {}; }
+    {
+      return {};
+    }
 
     //! Get stride for dimension
     [[nodiscard]] constexpr int stride(unsigned dim) const
@@ -266,10 +270,10 @@ namespace Ravl2
     {
       nextIndex();
       mPtr = m_access.origin_address();
-      for(unsigned i = 0; i < N-1; i++) {
+      for(unsigned i = 0; i < N - 1; i++) {
         mPtr += m_access.stride(i) * mIndex[i];
       }
-      mPtr += mIndex[N-1];
+      mPtr += mIndex[N - 1];
       mEnd = mPtr + m_access.strides()[N - 1] * m_access.range(N - 1).size();
     }
 
@@ -369,7 +373,6 @@ namespace Ravl2
     Index<N> mIndex {};// Index of the beginning of the last dimension.
     ArrayAccess<DataT, N> m_access;
   };
-
 
   template <typename DataT, unsigned int N>
   constexpr ArrayIter<const DataT, N> ArrayAccess<DataT, N>::cbegin() const
@@ -538,7 +541,9 @@ namespace Ravl2
 
     //! Get end iterator
     [[nodiscard]] constexpr Sentinel end() const
-    { return {}; }
+    {
+      return {};
+    }
 
     //! Get begin iterator
     [[nodiscard]] constexpr ArrayIter<const DataT, N> cbegin() const
@@ -549,7 +554,9 @@ namespace Ravl2
 
     //! Get end iterator
     [[nodiscard]] constexpr Sentinel cend() const
-    { return {}; }
+    {
+      return {};
+    }
 
     //! access range of first index array
     [[nodiscard]] constexpr const IndexRange<N> &range() const
@@ -577,7 +584,6 @@ namespace Ravl2
     {
       return m_range.clipBy(range);
     }
-
 
     //! Is array empty ?
     [[nodiscard]] constexpr bool empty() const noexcept
@@ -722,16 +728,14 @@ namespace Ravl2
 
   //! Copy data from a source array to destination array
   template <typename Array1T, typename Array2T, unsigned N = Array1T::dimensions>
-  requires(WindowedArray<Array1T, typename Array1T::value_type, N> &&
-    WindowedArray<Array2T, typename Array2T::value_type, N>) && (N >= 2) &&
-    std::is_convertible_v<typename Array2T::value_type, typename Array1T::value_type>
+    requires(WindowedArray<Array1T, typename Array1T::value_type, N> && WindowedArray<Array2T, typename Array2T::value_type, N>) && (N >= 2) && std::is_convertible_v<typename Array2T::value_type, typename Array1T::value_type>
   constexpr void copy(const Array1T &dest, const Array2T &src)
   {
     assert(dest.range().contains(src.range()));
     auto iterDest = dest.begin();
     auto iterSrc = src.begin();
     const auto srcRowSize = src.range(N - 1).size();
-    for(; iterDest.valid(); iterDest.nextRow(),iterSrc.nextRow()) {
+    for(; iterDest.valid(); iterDest.nextRow(), iterSrc.nextRow()) {
       std::copy(iterSrc.data(), iterSrc.data() + srcRowSize, iterDest.data());
     }
   }
@@ -745,7 +749,6 @@ namespace Ravl2
     return ret;
   }
 
-
   template <typename ArrayT, typename DataT = typename ArrayT::value_type, typename OtherDataT, unsigned N = ArrayT::dimensions>
     requires WindowedArray<ArrayT, DataT, N> && std::is_convertible_v<OtherDataT, DataT> && (N > 1)
   constexpr void fill(const ArrayT &array, const OtherDataT &value)
@@ -754,11 +757,10 @@ namespace Ravl2
       return;
     const size_t rowSize = size_t(array.range(N - 1).size());
     // Fill row by row, this allows optimisations such as memset.
-    for(auto at = array.begin(); at.valid();at.nextRow()) {
-      std::fill(at.data(), at.data() + rowSize,value);
+    for(auto at = array.begin(); at.valid(); at.nextRow()) {
+      std::fill(at.data(), at.data() + rowSize, value);
     }
   }
-
 
   template <typename ArrayT, typename DataT = typename ArrayT::value_type, unsigned N = ArrayT::dimensions>
     requires WindowedArray<ArrayT, DataT, N>

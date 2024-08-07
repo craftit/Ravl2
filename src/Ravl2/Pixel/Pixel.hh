@@ -52,7 +52,6 @@ namespace Ravl2
   //!
   //! The default value is the value used when the channel is not present in the pixel initialization.
 
-
   enum class ImageChannel
   {
     Intensity,
@@ -61,9 +60,9 @@ namespace Ravl2
     Blue,
     Alpha,
     Luminance,
-    ChrominanceU, //!< For uint8_t images the value is +128
-    ChrominanceV, //!< For uint8_t images the value is +128
-    Luminance2, //!< In YUV 4:2:2, this is the second luma value
+    ChrominanceU,//!< For uint8_t images the value is +128
+    ChrominanceV,//!< For uint8_t images the value is +128
+    Luminance2,  //!< In YUV 4:2:2, this is the second luma value
     Hue,
     Saturation,
     Value,
@@ -82,7 +81,7 @@ namespace Ravl2
   std::istream &operator>>(std::istream &strm, ImageChannel &channel);
 
   //! Setup some traits for the ImageChannel enum types
-  template<ImageChannel channel>
+  template <ImageChannel channel>
   struct PixelChannelTraits {
     static constexpr bool isRGB = (channel == ImageChannel::Red || channel == ImageChannel::Green || channel == ImageChannel::Blue || channel == ImageChannel::Alpha);
     static constexpr bool isYUV = (channel == ImageChannel::Luminance || channel == ImageChannel::ChrominanceU || channel == ImageChannel::ChrominanceV);
@@ -95,7 +94,7 @@ namespace Ravl2
   };
 
   //! Some traits for channels with a pixel type
-  template<typename DataT, ImageChannel channel>
+  template <typename DataT, ImageChannel channel>
   struct PixelTypeTraits {
     static constexpr bool isNormalized = PixelChannelTraits<channel>::isNormalized;
     static constexpr DataT min = (std::is_integral_v<DataT> ? 0 : DataT(0));
@@ -105,10 +104,9 @@ namespace Ravl2
   };
 
   //! Deal with floating point chroma types
-  template<typename DataT, ImageChannel channel>
-   requires (std::is_floating_point_v<DataT> && (channel == ImageChannel::ChrominanceU || channel == ImageChannel::ChrominanceV))
-  struct PixelTypeTraits<DataT, channel>
-  {
+  template <typename DataT, ImageChannel channel>
+    requires(std::is_floating_point_v<DataT> && (channel == ImageChannel::ChrominanceU || channel == ImageChannel::ChrominanceV))
+  struct PixelTypeTraits<DataT, channel> {
     static constexpr bool isNormalized = PixelChannelTraits<channel>::isNormalized;
     static constexpr DataT min = DataT(-0.5);
     static constexpr DataT max = DataT(0.5);
@@ -117,10 +115,9 @@ namespace Ravl2
   };
 
   //! Some traits for channels with a pixel type
-  template<typename DataT, ImageChannel channel>
+  template <typename DataT, ImageChannel channel>
     requires std::is_signed_v<DataT> && std::is_integral_v<DataT>
-  struct PixelTypeTraits<DataT, channel>
-  {
+  struct PixelTypeTraits<DataT, channel> {
     static constexpr bool isNormalized = PixelChannelTraits<channel>::isNormalized;
     static constexpr int min = 0;
     static constexpr int max = std::numeric_limits<DataT>::max();
@@ -129,31 +126,27 @@ namespace Ravl2
   };
 
   //! Deal with unsigned integer chroma types
-  template<typename DataT, ImageChannel channel>
-   requires (std::is_integral_v<DataT> && std::is_unsigned_v<DataT> && (channel == ImageChannel::ChrominanceU || channel == ImageChannel::ChrominanceV))
-  struct PixelTypeTraits<DataT, channel>
-  {
+  template <typename DataT, ImageChannel channel>
+    requires(std::is_integral_v<DataT> && std::is_unsigned_v<DataT> && (channel == ImageChannel::ChrominanceU || channel == ImageChannel::ChrominanceV))
+  struct PixelTypeTraits<DataT, channel> {
     static constexpr bool isNormalized = PixelChannelTraits<channel>::isNormalized;
     static constexpr int min = std::numeric_limits<DataT>::min();
     static constexpr int max = std::numeric_limits<DataT>::max();
-    static constexpr int offset = std::numeric_limits<DataT>::max()/2;
+    static constexpr int offset = std::numeric_limits<DataT>::max() / 2;
     static constexpr DataT defaultValue = offset;
   };
 
-
   //! Convert a pixel value to a different type follow the channel conversion rules.
-  template<ImageChannel channel, typename CompT, typename PixelValueTypeT>
+  template <ImageChannel channel, typename CompT, typename PixelValueTypeT>
   constexpr CompT get(PixelValueTypeT pixel)
   {
     // If the channel is normalized then we need to scale the value to the correct range.
-    if constexpr(PixelTypeTraits<CompT, channel>::isNormalized)
-    {
+    if constexpr(PixelTypeTraits<CompT, channel>::isNormalized) {
       //SPDLOG_INFO("Normalized channel {} -> {}  Type:{} <- {} ",toString(channel), (PixelTypeTraits<CompT, channel>::max - PixelTypeTraits<CompT, channel>::min) / (PixelTypeTraits<PixelValueTypeT, channel>::max - PixelTypeTraits<PixelValueTypeT, channel>::min), typeid(CompT).name(), typeid(PixelValueTypeT).name());
       // If the channel is normalized then we need to scale the value to the correct range.
-      auto raw = (pixel - PixelTypeTraits<PixelValueTypeT, channel>::offset ) * (PixelTypeTraits<CompT, channel>::max - PixelTypeTraits<CompT, channel>::min) / (PixelTypeTraits<PixelValueTypeT, channel>::max - PixelTypeTraits<PixelValueTypeT, channel>::min) + PixelTypeTraits<CompT, channel>::offset;
+      auto raw = (pixel - PixelTypeTraits<PixelValueTypeT, channel>::offset) * (PixelTypeTraits<CompT, channel>::max - PixelTypeTraits<CompT, channel>::min) / (PixelTypeTraits<PixelValueTypeT, channel>::max - PixelTypeTraits<PixelValueTypeT, channel>::min) + PixelTypeTraits<CompT, channel>::offset;
       // Check if we're converting to a floating point type.
-      if constexpr(std::is_floating_point_v<CompT>)
-      {
+      if constexpr(std::is_floating_point_v<CompT>) {
         return raw;
       }
       // If we're converting to an integer type then we need to clamp the value.
@@ -168,9 +161,8 @@ namespace Ravl2
   //! are in the range [0, 1], otherwise the values use the full
   //! range of the data type.
 
-  template<typename CompT, ImageChannel... Channels>
-  class Pixel
-    : public Vector<CompT, sizeof...(Channels)>
+  template <typename CompT, ImageChannel... Channels>
+  class Pixel : public Vector<CompT, sizeof...(Channels)>
   {
   public:
     using value_type = CompT;
@@ -180,21 +172,20 @@ namespace Ravl2
     Pixel() = default;
 
     //! Unpack from parameter pack.
-    template<typename... Args>
+    template <typename... Args>
     explicit Pixel(Args... args)
-      : Vector<CompT, sizeof...(Channels)>({CompT(args)...})
+        : Vector<CompT, sizeof...(Channels)>({CompT(args)...})
     {}
 
     //! Construct from another pixel, mapping the channels.
-    template<typename OCompT, ImageChannel... OChannels>
+    template <typename OCompT, ImageChannel... OChannels>
     explicit Pixel(const Pixel<OCompT, OChannels...> &other)
     {
       assign(other);
     }
 
-
   private:
-    template<ImageChannel channel, std::size_t... Is>
+    template <ImageChannel channel, std::size_t... Is>
     static constexpr std::size_t getIndexImpl(std::index_sequence<Is...>)
     {
       return ((Channels == channel ? Is : 0) + ...);
@@ -202,28 +193,28 @@ namespace Ravl2
 
   public:
     //! Get the index of a channel.
-    template<ImageChannel channel>
+    template <ImageChannel channel>
     [[nodiscard]] static constexpr std::size_t channelIndex()
     {
-      return getIndexImpl<channel>(std::make_index_sequence<sizeof...(Channels)>{});
+      return getIndexImpl<channel>(std::make_index_sequence<sizeof...(Channels)> {});
     }
 
     //! Check if a channel is present.
-    template<ImageChannel channel>
+    template <ImageChannel channel>
     [[nodiscard]] static constexpr bool hasChannel()
     {
       return ((Channels == channel) || ...);
     }
 
     //! Check if a list of channels are present.
-    template<ImageChannel... OChannels>
+    template <ImageChannel... OChannels>
     [[nodiscard]] static constexpr bool hasChannels()
     {
       return ((hasChannel<OChannels>()) && ...);
     }
 
     //! Set a single channel.
-    template<ImageChannel channel>
+    template <ImageChannel channel>
     constexpr void set(const CompT &value)
     {
       static_assert(hasChannel<channel>(), "Channel not present");
@@ -231,17 +222,17 @@ namespace Ravl2
     }
 
     //! Get a single channel.
-    template<ImageChannel channel,typename TargetTypeT = CompT>
+    template <ImageChannel channel, typename TargetTypeT = CompT>
     [[nodiscard]] constexpr TargetTypeT get() const
     {
       if constexpr(hasChannel<channel>()) {
-        return Ravl2::get<channel,TargetTypeT>((*this)[channelIndex<channel>()]);
+        return Ravl2::get<channel, TargetTypeT>((*this)[channelIndex<channel>()]);
       } else if constexpr(channel == ImageChannel::Alpha) {
         // If we don't the alpha channel then return the default value.
-         return PixelTypeTraits<TargetTypeT, channel>::max;
+        return PixelTypeTraits<TargetTypeT, channel>::max;
       } else if constexpr(channel == ImageChannel::ChrominanceU || channel == ImageChannel::ChrominanceV) {
         // Chroma channels have a default value of grey
-         return PixelTypeTraits<TargetTypeT, channel>::defaultValue;
+        return PixelTypeTraits<TargetTypeT, channel>::defaultValue;
       } else {
         // Report an error if we don't have the channel.
         static_assert(hasChannel<channel>(), "Channel not present");
@@ -251,7 +242,7 @@ namespace Ravl2
 
     //! Assign from another pixel, mapping the channels.
     //! This will leave pixels with no matching channels unchanged.
-    template<typename OCompT, ImageChannel... OChannels>
+    template <typename OCompT, ImageChannel... OChannels>
     constexpr void assign(const Pixel<OCompT, OChannels...> &other)
     {
       (set<OChannels>(other.template get<OChannels>()), ...);
@@ -264,24 +255,21 @@ namespace Ravl2
     {
       archive(static_cast<Vector<CompT, sizeof...(Channels)> &>(*this));
     }
-
   };
 
   //! Stream output
   template <class CompT, ImageChannel... Channels>
   inline std::ostream &operator<<(std::ostream &strm, const Pixel<CompT, Channels...> &val)
   {
-    for (std::size_t i = 0; i < sizeof...(Channels); ++i)
-    {
+    for(std::size_t i = 0; i < sizeof...(Channels); ++i) {
       if(i != 0) {
-	strm << ' ';
+        strm << ' ';
       }
       // If we're working with int8_t or uint8_t make sure they are treated as numeric.
-      if constexpr (std::is_same_v<CompT, int8_t> || std::is_same_v<CompT, uint8_t>)
-      {
-	strm << int(val[i]);
+      if constexpr(std::is_same_v<CompT, int8_t> || std::is_same_v<CompT, uint8_t>) {
+        strm << int(val[i]);
       } else {
-	strm << val[i];
+        strm << val[i];
       }
     }
     return strm;
@@ -291,8 +279,7 @@ namespace Ravl2
   template <class CompT, ImageChannel... Channels>
   inline std::istream &operator>>(std::istream &strm, Pixel<CompT, Channels...> &val)
   {
-    for (std::size_t i = 0; i < sizeof...(Channels); ++i)
-    {
+    for(std::size_t i = 0; i < sizeof...(Channels); ++i) {
       CompT tmp;
       strm >> tmp;
       val[i] = tmp;
@@ -324,12 +311,11 @@ namespace Ravl2
   extern template class Pixel<uint8_t, ImageChannel::Luminance, ImageChannel::ChrominanceU, ImageChannel::ChrominanceV>;
   extern template class Pixel<float, ImageChannel::Luminance, ImageChannel::ChrominanceU, ImageChannel::ChrominanceV>;
 
-
-}
+}// namespace Ravl2
 
 #if FMT_VERSION >= 90000
-template<typename CompT, Ravl2::ImageChannel... Channels>
-struct fmt::formatter<Ravl2::Pixel<CompT,Channels...>> : fmt::ostream_formatter {
+template <typename CompT, Ravl2::ImageChannel... Channels>
+struct fmt::formatter<Ravl2::Pixel<CompT, Channels...>> : fmt::ostream_formatter {
 };
 template <>
 struct fmt::formatter<Ravl2::ImageChannel> : fmt::ostream_formatter {

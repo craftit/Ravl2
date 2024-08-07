@@ -61,15 +61,15 @@ namespace Ravl2
 
     //! Serialization support
     template <class Archive>
-    void serialize( Archive & archive )
+    void serialize(Archive &archive)
     {
       cereal::size_type numPnts = this->size();
       archive(cereal::make_size_tag(numPnts));
       if(numPnts != this->size()) {
-	this->resize(numPnts);
+        this->resize(numPnts);
       }
       for(auto &it : *this) {
-	archive(it);
+        archive(it);
       }
     }
 

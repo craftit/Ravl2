@@ -5,7 +5,7 @@
 // see http://www.gnu.org/copyleft/lesser.html
 // file-header-ends-here
 
-#pragma  once
+#pragma once
 
 #include <array>
 #include "Ravl2/Geometry/Geometry.hh"
@@ -200,15 +200,16 @@ namespace Ravl2
 
     //! Serialization support
     template <class Archive>
-    constexpr void serialize( Archive & archive )
+    constexpr void serialize(Archive &archive)
     {
       cereal::size_type size = 2;
       archive(cereal::make_size_tag(size));
       if(size != 2) {
-	throw std::runtime_error("Size mismatch");
+        throw std::runtime_error("Size mismatch");
       }
       ar(point[0], point[1]);
     }
+
   protected:
     std::array<Point<RealT, N>, 2> point;
   };

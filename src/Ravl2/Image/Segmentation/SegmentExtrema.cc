@@ -92,13 +92,21 @@ namespace Ravl2
     //cerr << "SegmentExtremaBaseC::ConnectedLabels(), Pix=" << ((void *) pix) << "\n";
     int n = 0;
     ExtremaRegionC *l1 = FindLabel(pix + 1);
-    if(l1 != nullptr) { labelArray[n++] = l1; }
+    if(l1 != nullptr) {
+      labelArray[n++] = l1;
+    }
     ExtremaRegionC *l2 = FindLabel(pix + stride);
-    if(l2 != nullptr && l2 != l1) { labelArray[n++] = l2; }
+    if(l2 != nullptr && l2 != l1) {
+      labelArray[n++] = l2;
+    }
     ExtremaRegionC *l3 = FindLabel(pix - 1);
-    if(l3 != nullptr && l3 != l1 && l3 != l2) { labelArray[n++] = l3; }
+    if(l3 != nullptr && l3 != l1 && l3 != l2) {
+      labelArray[n++] = l3;
+    }
     ExtremaRegionC *l4 = FindLabel(pix - stride);
-    if(l4 != nullptr && l4 != l1 && l4 != l2 && l4 != l3) { labelArray[n++] = l4; }
+    if(l4 != nullptr && l4 != l1 && l4 != l2 && l4 != l3) {
+      labelArray[n++] = l4;
+    }
     return n;
   }
 

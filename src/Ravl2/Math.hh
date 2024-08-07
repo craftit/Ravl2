@@ -50,6 +50,9 @@ namespace Ravl2
 
   //! Returns the square of 'x'.
   template <typename DataT>
-  inline constexpr DataT sqr(const DataT &x) { return x * x; }
+  inline constexpr DataT sqr(const DataT &x)
+  {
+    return x * x;
+  }
 
 }// namespace Ravl2

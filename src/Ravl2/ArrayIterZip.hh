@@ -59,7 +59,9 @@ namespace Ravl2
     {
       nextIndex();
       mPtr = mPtrStart;
-      for(unsigned i = 0; i < N - 1; i++) { mPtr += mAccess.stride(i) * mIndex[i]; }
+      for(unsigned i = 0; i < N - 1; i++) {
+        mPtr += mAccess.stride(i) * mIndex[i];
+      }
     }
 
     [[nodiscard]] constexpr ElementT &data() const
@@ -76,7 +78,9 @@ namespace Ravl2
     {
       Index<N> ret = mIndex;
       auto rowStart = mPtrStart;
-      for(unsigned i = 0; i < N - 1; i++) { rowStart += mAccess.stride(i) * mIndex[i]; }
+      for(unsigned i = 0; i < N - 1; i++) {
+        rowStart += mAccess.stride(i) * mIndex[i];
+      }
       ret[N - 1] += int(mPtr - rowStart);
       return ret;
     }
@@ -284,8 +288,8 @@ namespace Ravl2
   }
 
   extern template class ArrayIterZipN<1, uint8_t, uint8_t>;
-  extern template class ArrayIterZipN<2,uint8_t,uint8_t>;
+  extern template class ArrayIterZipN<2, uint8_t, uint8_t>;
   extern template class ArrayIterZipN<1, float, float>;
-  extern template class ArrayIterZipN<2,float,float>;
+  extern template class ArrayIterZipN<2, float, float>;
 
 }// namespace Ravl2

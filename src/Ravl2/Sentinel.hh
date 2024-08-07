@@ -19,30 +19,42 @@ namespace Ravl2
 
   //! Compare two sentinels for equality, always returns true.
   inline constexpr bool operator==([[maybe_unused]] const Sentinel &lhs, [[maybe_unused]] const Sentinel &rhs)
-  { return true; }
+  {
+    return true;
+  }
 
   //! Compare two sentinels for inequality, always returns false.
   inline constexpr bool operator!=([[maybe_unused]] const Sentinel &lhs, [[maybe_unused]] const Sentinel &rhs)
-  { return false; }
+  {
+    return false;
+  }
 
   //! Compare with a iterator which implements the .done() method.
   template <typename IterT>
   inline constexpr bool operator==([[maybe_unused]] const Sentinel &lhs, const IterT &rhs)
-  { return rhs.done(); }
+  {
+    return rhs.done();
+  }
 
   //! Compare with a iterator which implements the .done() method.
   template <typename IterT>
   inline constexpr bool operator==(const IterT &lhs, [[maybe_unused]] const Sentinel &rhs)
-  { return lhs.done(); }
+  {
+    return lhs.done();
+  }
 
   //! Compare with a iterator which implements the .done() method.
   template <typename IterT>
   inline constexpr bool operator!=([[maybe_unused]] const Sentinel &lhs, const IterT &rhs)
-  { return !rhs.done(); }
+  {
+    return !rhs.done();
+  }
 
   //! Compare with a iterator which implements the .done() method.
   template <typename IterT>
   inline constexpr bool operator!=(const IterT &lhs, [[maybe_unused]] const Sentinel &rhs)
-  { return !lhs.done(); }
+  {
+    return !lhs.done();
+  }
 
-}
+}// namespace Ravl2

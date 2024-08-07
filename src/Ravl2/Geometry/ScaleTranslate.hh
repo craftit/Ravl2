@@ -84,9 +84,9 @@ namespace Ravl2
 
     //! Serialization support
     template <class Archive>
-    void serialize( Archive & ar )
+    void serialize(Archive &ar)
     {
-      ar( cereal::make_nvp("S",mS), cereal::make_nvp("T",mT));
+      ar(cereal::make_nvp("S", mS), cereal::make_nvp("T", mT));
     }
 
   protected:
