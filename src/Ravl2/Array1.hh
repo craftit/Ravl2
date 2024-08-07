@@ -13,7 +13,7 @@
 namespace Ravl2
 {
 
-//! Global stride for 1 dimensional arrays. Always has a value of 1.
+  //! Global stride for 1 dimensional arrays. Always has a value of 1.
   extern const int gStride1;
 
   template<typename DataT, unsigned N>
@@ -242,20 +242,23 @@ namespace Ravl2
     //! Access indexed element
     [[nodiscard]] inline constexpr DataT &operator[](int i) noexcept
     {
-      assert((*m_ranges).contains(i));
+      assert(m_ranges != nullptr);
+      assert(m_ranges->contains(i));
       return m_data[i];
     }
 
     //! Access indexed element
     [[nodiscard]] inline constexpr DataT &operator[](Index<1> i) noexcept
     {
-      assert((*m_ranges).contains(i));
+      assert(m_ranges != nullptr);
+      assert(m_ranges->contains(i));
       return m_data[i.index(0)];
     }
 
     //! Access indexed element.
     [[nodiscard]] inline constexpr const DataT &operator[](int i) const noexcept
     {
+      assert(m_ranges != nullptr);
       assert(m_ranges->contains(i));
       return m_data[i];
     }
@@ -263,6 +266,7 @@ namespace Ravl2
     //! Access indexed element.
     [[nodiscard]] inline constexpr const DataT &operator[](Index<1> i) const noexcept
     {
+      assert(m_ranges != nullptr);
       assert(m_ranges->contains(i));
       return m_data[i.index(0)];
     }
@@ -270,12 +274,14 @@ namespace Ravl2
     //! Range of index's for row
     [[nodiscard]] constexpr const IndexRange<1> &range() const
     {
+      assert(m_ranges != nullptr);
       return *m_ranges;
     }
 
     //! Range of index's for dim
     [[nodiscard]] constexpr const IndexRange<1> &range([[maybe_unused]] unsigned i) const
     {
+      assert(m_ranges != nullptr);
       assert(i == 0);
       return *m_ranges;
     }
@@ -283,6 +289,7 @@ namespace Ravl2
     //! Access range data
     [[nodiscard]] constexpr const IndexRange<1> *range_data() const
     {
+      assert(m_ranges != nullptr);
       return m_ranges;
     }
 
@@ -561,9 +568,11 @@ namespace Ravl2
   std::is_convertible_v<typename Array2T::value_type, typename Array1T::value_type>
   constexpr void copy(const Array1T &dest, const Array2T &src)
   {
-    assert(dest.range().contains(src.range()));
     auto *srcPtr = addressOfMin(src);
-    std::copy(srcPtr, srcPtr + src.range().size(), dest.origin_address());
+    auto copySize = std::min(dest.range().size(), src.range().size());
+    if(copySize <= 0)
+      return;
+    std::copy(srcPtr, srcPtr + copySize, addressOfMin(dest));
   }
 
   template <typename ArrayT, typename DataT = typename ArrayT::value_type, typename OtherDataT>
@@ -574,6 +583,7 @@ namespace Ravl2
     for(auto &at : array)
       at = value;
   }
+
 
   //! Get a view of the array, the returned object is a non-owning view of the array that has its own
   //! bounds.

@@ -8,6 +8,7 @@
 #include "Ravl2/Image/Array2Sqr2Iter.hh"
 #include "Ravl2/Image/Array2Sqr2Iter2.hh"
 #include "Ravl2/Image/Matching.hh"
+#include "Ravl2/Image/ImageExtend.hh"
 
 #define CHECK_EQ(a,b) CHECK((a) == (b))
 #define CHECK_NE(a,b) CHECK_FALSE((a) == (b))
@@ -210,3 +211,37 @@ TEST_CASE("matchSumAbsDifference")
   }
 }
 
+TEST_CASE("imageExtend")
+{
+  using namespace Ravl2;
+  Array<int,2> img({3,3});
+  int val = 0;
+  for(auto &it : img)
+    it = val++;
+#if 0
+  {
+    Array<int, 2> result;
+    extendImageFill(result,img,2,-1);
+    CHECK(result[result.range().min()] == -1);
+    CHECK(result[result.range().max()] == -1);
+  }
+#endif
+
+  {
+    Array<int, 2> result;
+    extendImageCopy(result, img, 2);
+    CHECK(result.range() == img.range().expand(2));
+    CHECK(result[result.range().min()] == img[img.range().min()]);
+    CHECK(result[result.range().max()] == img[img.range().max()]);
+  }
+
+#if 0
+  {
+    Array<int, 2> result;
+    extendImageMirror(result,img,2);
+    CHECK(result[result.range().min()] == img[img.range().min()]);
+    CHECK(result[result.range().max()] == img[img.range().max()]);
+  }
+#endif
+
+}

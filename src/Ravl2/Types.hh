@@ -96,6 +96,13 @@ namespace Ravl2
   [[nodiscard]] std::string toString(Vector2d v);
   //std::string toString(const VectorT &v);
 
+  template<typename DataT>
+  inline bool is16ByteAligned(const DataT *data)
+  { return (reinterpret_cast<uintptr_t>(data) & static_cast<uintptr_t>(0xf)) == 0; }
+
+  //! This is a hack to prevent the compiler optimizing away benchmark code
+  void doNothing();
+
 }
 
 #if FMT_VERSION >= 90000
@@ -144,5 +151,4 @@ namespace xt {
       archive(it);
     }
   }
-
 }

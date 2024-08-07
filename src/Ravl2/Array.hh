@@ -76,10 +76,11 @@ namespace Ravl2
     [[nodiscard]] constexpr DataT &operator[](const Index<N> &ind)
     {
       DataT *mPtr = m_data;
-      for(unsigned i = 0; i < N; i++) {
+      for(unsigned i = 0; i < N-1; i++) {
         assert(m_ranges[i].contains(ind[i]));
         mPtr += m_strides[i] * ind[i];
       }
+      mPtr += ind[N-1];
       return *mPtr;
     }
 
@@ -113,10 +114,11 @@ namespace Ravl2
     [[nodiscard]] constexpr const DataT &operator[](const Index<N> &ind) const
     {
       const DataT *mPtr = m_data;
-      for(unsigned i = 0; i < N; i++) {
+      for(unsigned i = 0; i < N-1; i++) {
         assert(m_ranges[i].contains(ind[i]));
         mPtr += m_strides[i] * ind[i];
       }
+      mPtr += ind[N-1];
       return *mPtr;
     }
 
@@ -264,9 +266,10 @@ namespace Ravl2
     {
       nextIndex();
       mPtr = m_access.origin_address();
-      for(unsigned i = 0; i < N; i++) {
+      for(unsigned i = 0; i < N-1; i++) {
         mPtr += m_access.stride(i) * mIndex[i];
       }
+      mPtr += mIndex[N-1];
       mEnd = mPtr + m_access.strides()[N - 1] * m_access.range(N - 1).size();
     }
 
@@ -711,12 +714,11 @@ namespace Ravl2
   //! must exist for the lifetime of the sub array.
   template <typename ArrayT, typename DataT = typename ArrayT::value_type, unsigned N = ArrayT::dimensions>
     requires WindowedArray<ArrayT, DataT, N>
-  constexpr auto clip(ArrayT &array, const IndexRange<N> &range)
+  constexpr auto clip(const ArrayT &array, const IndexRange<N> &range)
   {
     assert(array.range().contains(range));
     return ArrayAccess<DataT, N>(range, array.origin_address(), array.strides());
   }
-
 
   //! Copy data from a source array to destination array
   template <typename Array1T, typename Array2T, unsigned N = Array1T::dimensions>
@@ -779,12 +781,12 @@ namespace Ravl2
   [[nodiscard]] constexpr DataT *addressOfMin(const ArrayT &arr)
   {
     DataT *mPtr = arr.origin_address();
-    for(unsigned i = 0; i < N - 1; i++) { mPtr += arr.stride(i) * arr.range(i).min(); }
-      mPtr += arr.range(N - 1).min();// The last index always has a stride of 1.
+    for(unsigned i = 0; i < N - 1; i++) {
+      mPtr += arr.stride(i) * arr.range(i).min();
+    }
+    mPtr += arr.range(N - 1).min();// The last index always has a stride of 1.
     return mPtr;
   }
-
-  void doNothing();
 
   // Let everyone know there's an implementation already generated for common cases
   extern template class Array<uint8_t, 2>;

@@ -3,11 +3,6 @@
 
 namespace Ravl2
 {
-  const int gStride1 = 1;
-
-  void doNothing()
-  {}
-
   template class Array<uint8_t, 2>;
   template class ArrayIter<uint8_t, 2>;
   template class ArrayAccess<uint8_t, 2>;

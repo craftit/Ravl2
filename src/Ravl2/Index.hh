@@ -277,7 +277,9 @@ namespace Ravl2
     // This only works for positive range sizes.
     [[nodiscard]] constexpr size_t elements() const
     {
-      return std::max(static_cast<size_t>(size()), static_cast<size_t>(0));
+      const auto theSize = size();
+      if(theSize < 0) return 0;
+      return static_cast<size_t>(theSize);
     }
 
     //! Test if an index is contained within the range.

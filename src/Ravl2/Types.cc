@@ -28,4 +28,8 @@ namespace Ravl2
     return fmt::format("({},{})", v[0], v[1]);
   }
 
+
+  void doNothing()
+  {}
+
 }

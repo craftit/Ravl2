@@ -17,6 +17,7 @@
 
 #include "Ravl2/Geometry/Geometry.hh"
 
+#include "Ravl2/Types.hh"
 #include "Ravl2/Array.hh"
 #include "Ravl2/ScanWindow.hh"
 #include "Ravl2/ArrayIterZip.hh"
@@ -37,11 +38,9 @@ int main(int nargs,char **argv)
   return 0;
 }
 
-template<typename DataT>
-static inline bool Is16ByteAligned(const DataT *data)
-{ return (((unsigned long int) data) & 0xf) == 0; }
 
 #if RAVL2_USE_SSE
+using Ravl2::is16ByteAligned;
 void SSEConvolveKernelF(const float *vi, // Scanned image, probably not aligned.
                         const float *vk, // Kernel, expected to be aligned.
                         size_t rows,
@@ -54,11 +53,11 @@ void SSEConvolveKernelF(const float *vi, // Scanned image, probably not aligned.
   __m128 sum = _mm_setzero_ps ();
   const size_t cols4 = cols >> 2;
 
-  if(Is16ByteAligned(vk) && ((cols & 0x3) == 0)) {
+  if(is16ByteAligned(vk) && ((cols & 0x3) == 0)) {
     // Kernel is byte aligned.
     for(size_t i = rows; i > 0; i--) {
       const float *vir = vi; // Image row.
-      if(Is16ByteAligned(vir)) {
+      if(is16ByteAligned(vir)) {
         for(size_t j = cols4; j > 0; j--) {
           sum = _mm_add_ps(sum,_mm_mul_ps(_mm_load_ps(vk),_mm_load_ps(vir)));
           vk += 4;
@@ -81,7 +80,7 @@ void SSEConvolveKernelF(const float *vi, // Scanned image, probably not aligned.
     float remainder = 0;
     for(size_t i = rows; i > 0; i--) {
       const float *vir = vi; // Image row.
-      if(Is16ByteAligned(vir)) {
+      if(is16ByteAligned(vir)) {
         for(size_t j = cols4; j > 0; j--) {
           sum = _mm_add_ps(sum,_mm_mul_ps(_mm_loadu_ps(vk),_mm_load_ps(vir)));
           vk += 4;

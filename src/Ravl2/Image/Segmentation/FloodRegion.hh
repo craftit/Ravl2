@@ -148,7 +148,7 @@ namespace Ravl2
     // The mask images are generated with a boundary
     // Returns the region size.
     template <typename MaskT>
-    size_t GrowRegion(const Index<2> &seed, const InclusionTestT &inclusionCriteria, Array<MaskT, 2> &mask, int padding = 0, size_t maxSize = 0);
+    size_t GrowRegion(const Index<2> &seed, const InclusionTestT &inclusionCriteria, Array<MaskT, 2> &mask, unsigned padding = 0, size_t maxSize = 0);
 
     Array<int, 2> &MarkImage()
     {
@@ -280,7 +280,7 @@ namespace Ravl2
 
   template <class PixelT, class InclusionTestT>
   template <typename MaskT>
-  size_t FloodRegionC<PixelT, InclusionTestT>::GrowRegion(const Index<2> &seed, const InclusionTestT &inclusionCriteria, Array<MaskT, 2> &mask, int padding, size_t maxSize)
+  size_t FloodRegionC<PixelT, InclusionTestT>::GrowRegion(const Index<2> &seed, const InclusionTestT &inclusionCriteria, Array<MaskT, 2> &mask, unsigned padding, size_t maxSize)
   {
     IndexRange<2> rng;
 
@@ -290,7 +290,7 @@ namespace Ravl2
     }
 
     // Extract region.
-    mask = Array<MaskT, 2>(rng.expand(padding));
+    mask = Array<MaskT, 2>(rng.expand(int(padding)));
     if(padding > 0)
       DrawFrame(mask, MaskT(0), padding, mask.range());
     size_t size = 0;

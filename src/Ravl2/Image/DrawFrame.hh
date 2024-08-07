@@ -92,9 +92,9 @@ namespace Ravl2
   //! The rectangle is assumed to be the outer one and the image will be filled inside it by 'width' pixels.
   template <typename ArrayT, typename DataT = typename ArrayT::value_type>
     requires WindowedArray<ArrayT, DataT, 2>
-  void DrawFrame(ArrayT &dat, const DataT &value, int width, const IndexRange<2> &outerRect)
+  void DrawFrame(ArrayT &dat, const DataT &value, unsigned width, const IndexRange<2> &outerRect)
   {
-    IndexRange<2> innerRect = outerRect.shrink(width);
+    IndexRange<2> innerRect = outerRect.shrink(int(width));
     IndexRange<2> outerClipped = outerRect;
     if(!outerClipped.clipBy(dat.range()) || width == 0)
       return;// Nothing to draw.
@@ -107,9 +107,9 @@ namespace Ravl2
     int ColN = outerClipped.range(1).size();                                                                                // Number of columns.
     if(outerRect.range(0).min() == outerClipped.range(0).min() && outerRect.range(0).max() == outerClipped.range(0).max()) {// The innerRect wasn't clipped.
       // Do horizontal lines.
-      for(int i = 0; i < width; i++) {
-        DataT *it1 = &(dat[outerClipped.range(1).min() + i][outerClipped.range(0).min()]);
-        DataT *it2 = &(dat[outerClipped.range(1).max() - i][outerClipped.range(0).min()]);
+      for(unsigned i = 0; i < width; i++) {
+        DataT *it1 = &(dat[outerClipped.range(1).min() + int(i)][outerClipped.range(0).min()]);
+        DataT *it2 = &(dat[outerClipped.range(1).max() - int(i)][outerClipped.range(0).min()]);
         eor = &(it1[ColN]);
         for(; it1 != eor;) {
           *(it1++) = value;
@@ -118,17 +118,17 @@ namespace Ravl2
       }
     } else {
       // Do top and bottom lines separately
-      for(int i = 0; i < width; i++) {
-        if(dat.range(0).min() <= (outerRect.range(0).min() - i)) {
+      for(unsigned i = 0; i < width; i++) {
+        if(dat.range(0).min() <= (outerRect.range(0).min() - int(i))) {
           // Do top horizontal line.
-          DataT *it1 = &(dat[outerRect.range(1).min() - i][outerClipped.range(0).min()]);
+          DataT *it1 = &(dat[outerRect.range(1).min() - int(i)][outerClipped.range(0).min()]);
           eor = &(it1[ColN]);
           for(; it1 != eor;)
             *(it1++) = value;
         }
-        if(dat.range(0).max() >= (outerRect.range(0).max() + i)) {
+        if(dat.range(0).max() >= (outerRect.range(0).max() + int(i))) {
           // Do bottom horizontal line.
-          DataT *it1 = &(dat[outerRect.range(1).max() + i][outerClipped.range(0).min()]);
+          DataT *it1 = &(dat[outerRect.range(1).max() + int(i)][outerClipped.range(0).min()]);
           eor = &(it1[ColN]);
           for(; it1 != eor;)
             *(it1++) = value;
