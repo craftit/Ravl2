@@ -218,14 +218,13 @@ TEST_CASE("imageExtend")
   int val = 0;
   for(auto &it : img)
     it = val++;
-#if 0
+
   {
     Array<int, 2> result;
     extendImageFill(result,img,2,-1);
     CHECK(result[result.range().min()] == -1);
     CHECK(result[result.range().max()] == -1);
   }
-#endif
 
   {
     Array<int, 2> result;
@@ -235,13 +234,12 @@ TEST_CASE("imageExtend")
     CHECK(result[result.range().max()] == img[img.range().max()]);
   }
 
-#if 0
   {
     Array<int, 2> result;
     extendImageMirror(result,img,2);
-    CHECK(result[result.range().min()] == img[img.range().min()]);
-    CHECK(result[result.range().max()] == img[img.range().max()]);
+    // Since we have a 3x3 image, the result should be 7x7, with outer corners mirroring the internal opposite corner.
+    CHECK(result[result.range().min()] == img[img.range().max()]);
+    CHECK(result[result.range().max()] == img[img.range().min()]);
   }
-#endif
 
 }
