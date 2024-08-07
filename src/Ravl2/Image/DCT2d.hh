@@ -44,7 +44,7 @@ namespace Ravl2
   //! @brief  Unpack components of image vec in a zig zag pattern from the to left corner of 'img'.
   void UnpackZigZag(const VectorT<float> &vec, Array<float, 2> &img);
 
-  //! Class implementing Fast DCT
+  //! @brief Class implementing Fast DCT
   //! class ChanDCT is an encapsulation of software (URL:
   //! ftp://etro.vub.ac.be/pub/COMPRESSION/DCT_ALGORITHMS/) written by
   //! Charilaos A. Christopoulos (Email:chchrist@etro.vub.ac.be), based on
@@ -64,9 +64,6 @@ namespace Ravl2
 
     //! Construct DCT for image of 'size' rows by 'size' columns
     explicit ChanDCTC(unsigned int size);
-
-    //! Destructor.
-    ~ChanDCTC();
 
     //! Setup tables for dct of given size.
     //! @param: size - Size of dct image.
@@ -94,15 +91,12 @@ namespace Ravl2
     }
 
   private:
-    const ChanDCTC &operator=(const ChanDCTC &oth)
-    {
-      return *this;
-    }
+    const ChanDCTC &operator=(const ChanDCTC &oth) = delete;
     //: Make assigment operator private.
 
     int N = 0;
     int m = 0;
-    RealT *cosines = nullptr;
+    std::vector<RealT> cosines;
 
     RealT scaleDC = 0;
     RealT scaleMix = 0;
@@ -150,9 +144,6 @@ namespace Ravl2
     //! You must call Initialise to set up the transform before performing a dct transform.
     VecRadDCTC() = default;
 
-    //! Destructor.
-    ~VecRadDCTC();
-
     //! Initialise for image of 'size' by 'size'
     //! @param: size - Size of input image. Must be a power of 2
     //! @param: pts  - Size of output image .Must be a power of 2
@@ -176,7 +167,7 @@ namespace Ravl2
     void DCT(const Array<RealT, 2> &src, Array<RealT, 2> &dest) const;
 
     //! Access the size of a side of the input dct rectangle.
-    [[nodiscard]] int Size() const
+    [[nodiscard]] auto Size() const
     {
       return N;
     }
@@ -188,25 +179,19 @@ namespace Ravl2
     }
 
   private:
-    //! Free all array's
-    void DeleteArrays();
-
     //! Make assigment operator private.
-    const VecRadDCTC &operator=(const VecRadDCTC &oth)
-    {
-      return *this;
-    }
+    const VecRadDCTC &operator=(const VecRadDCTC &oth) = delete;
 
     typedef RealT LFloatT;// Local definition of a float.
 
-    int N = 0;
+    size_t N = 0;
     int N0 = 0;
     int m = 0;
-    LFloatT *ct = nullptr;
-    LFloatT *ct2d = nullptr;
-    unsigned int **r = nullptr;
-
-    LFloatT *cosine_array = nullptr;
+    std::vector<LFloatT> ct;
+    std::vector<LFloatT> ct2d;
+    std::vector<unsigned int> rpData;
+    std::vector<unsigned int *> r;
+    std::vector<LFloatT> cosine_array;
     unsigned int MASK[2] = {0, 0};
 
     LFloatT scaleDC = 0;

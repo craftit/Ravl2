@@ -28,7 +28,10 @@
 
 #include "Ravl2/Image/DCT2d.hh"
 #include "Ravl2/Assert.hh"
+#include "Ravl2/ArrayIterZip.hh"
 #include "Ravl2/Image/ZigZagIter.hh"
+
+// Suppress useless warnings from the original code.
 
 #define PIO2 1.5707966327f
 
@@ -40,7 +43,7 @@ namespace Ravl2
     RavlAssert(n <= img.range().area());
     VectorT<float> ret = xt::empty<float>({n});
     ZigZagIterC zit(img.range());
-    for(auto it : ret) {
+    for(auto &it : ret) {
       assert(zit.valid());
       it = img[*zit];
       ++zit;
@@ -57,11 +60,11 @@ namespace Ravl2
       img[*zit] = *it;
   }
 
-  static inline constexpr float Alpha(int u, unsigned int N)
+  static inline constexpr float Alpha(int u,  int N)
   {
     if(u == 0)
       return std::sqrt(1 / float(N));
-    else if((u > 0) && (u < int(N)))
+    else if((u > 0) && (u < N))
       return std::sqrt(2 / float(N));
     else
       return 0.0f;
@@ -70,12 +73,10 @@ namespace Ravl2
 
   void DCT(const Array<float, 2> &src, Array<float, 2> &dest)
   {
-    RavlAssertMsg(src.Rows() == src.Cols(), "DCT(): Images must be square.");
+    RavlAssertMsg(src.range().size(0) == src.range().size(1), "DCT(): Images must be square.");
 
     if(dest.range() != src.range())
       dest = Array<float, 2>(src.range());
-    int i, j, k;
-    float sum;
     // Transform in x direction
     Array<float, 2> horizontal(src.range());
     IndexRange<1> rowRange = src.range(0);
@@ -84,9 +85,9 @@ namespace Ravl2
       Index<2> at = it.index();
       int i = at[0];
       int j = at[1];
-      sum = 0.0;
-      for(k = rowRange.min(); k <= rowRange.max(); k++)
-        sum += src[k][j] * std::cos(float(2 * k + 1) * std::numbers::pi_v<float> * float(i) / (float(2 * src.Cols())));
+      float sum = 0.0;
+      for(auto k = rowRange.min(); k <= rowRange.max(); k++)
+        sum += src[k][j] * std::cos(float(2 * k + 1) * std::numbers::pi_v<float> * float(i) / (float(2 * src.range().size(1))));
       *it = sum;
     }
 
@@ -95,31 +96,29 @@ namespace Ravl2
       Index<2> at = it.index();
       int i = at[0];
       int j = at[1];
-      sum = 0.0;
-      for(k = colRange.min(); k <= colRange.max(); k++)
-        sum += horizontal[i][k] * std::cos(float(2 * k + 1) * std::numbers::pi_v<float> * float(j) / (float(2 * src.Rows())));
-      *it = Alpha(i, src.Cols()) * Alpha(j, src.Rows()) * sum;
+      float sum = 0.0;
+      for(auto k = colRange.min(); k <= colRange.max(); k++)
+        sum += horizontal[i][k] * std::cos(float(2 * k + 1) * std::numbers::pi_v<float> * float(j) / (float(2 * src.range().size(0))));
+      *it = Alpha(i, src.range().size(1)) * Alpha(j, src.range().size(0)) * sum;
     }
   }
 
   void IDCT(const Array<float, 2> &src, Array<float, 2> &dest)
   {
-    RavlAssertMsg(src.Rows() == src.Cols(), "IDCT(): Images must be square.");
+    RavlAssertMsg(src.range().size(0) == src.range().size(1), "IDCT(): Images must be square.");
     if(dest.range() != src.range())
       dest = Array<float, 2>(src.range());
-    int i, j, k;
     IndexRange<1> rowRange = src.range(0);
     IndexRange<1> colRange = src.range(1);
-    float sum;
     // Transform in x direction
     Array<float, 2> horizontal(src.range());
     for(auto it = horizontal.begin(); it.valid(); it++) {
       Index<2> at = it.index();
       int i = at[0];
       int j = at[1];
-      sum = 0.0;
-      for(k = rowRange.min(); k <= rowRange.max(); k++)
-        sum += Alpha(k, src.Cols()) * src[k][j] * std::cos(float(2 * i + 1) * pi * float(k) / (float(2 * src.Cols())));
+      float sum = 0.0f;
+      for(auto k = rowRange.min(); k <= rowRange.max(); k++)
+        sum += Alpha(k, src.range().size(1)) * src[k][j] * std::cos(float(2 * i + 1) * std::numbers::pi_v<float> * float(k) / (float(2 * src.range().size(1))));
       *it = sum;
     }
 
@@ -128,9 +127,9 @@ namespace Ravl2
       Index<2> at = it.index();
       int i = at[0];
       int j = at[1];
-      sum = 0.0;
-      for(k = colRange.min(); k <= colRange.max(); k++)
-        sum += Alpha(k, src.Rows()) * horizontal[i][k] * std::cos(float(2 * j + 1) * pi * float(k) / (float(2 * src.Rows())));
+      float sum = 0.0f;
+      for(auto k = colRange.min(); k <= colRange.max(); k++)
+        sum += Alpha(k, src.range().size(0)) * horizontal[i][k] * std::cos(float(2 * j + 1) * std::numbers::pi_v<float> * float(k) / (float(2 * src.range().size(0))));
       *it = sum;
     }
   }
@@ -143,34 +142,22 @@ namespace Ravl2
 
   ***************************************************************************/
 
-  //: Default constructor.
-
   ChanDCTC::ChanDCTC(unsigned int size)
   {
     if(size > 0)
       Setup(size);
   }
 
-  ChanDCTC::~ChanDCTC()
-  {
-    delete[] cosines;
-  }
-
-  //: Setup tables for dct of given size.
-  //!param:size - Size of dct image.
-
   void ChanDCTC::Setup(unsigned int size)
   {
-    if(cosines != nullptr)
-      delete[] cosines;
     if(size == 0) {
       m = 0;
       N = 0;
       return;
     }
     m = int_ceil( std::log(size) / std::log(2.0));
-    N = std::pow(2, m);
-    cosines = new RealT[N];
+    N = 1 << m;
+    cosines.resize(size_t(N));
     makecosinetable();
     scaleDC = 1.0f / RealT(N);
     scaleMix = std::sqrt(2.0f) / RealT(N);
@@ -180,32 +167,31 @@ namespace Ravl2
   void ChanDCTC::dct_in_place(Array<RealT, 2> &dest) const
   {
     int n1, k, j, i, i1, l, n2, rows, cols;//p
-    double c, xt;
-    RealT *p;
+    const RealT *p;
     rowsinputmapping(dest);
     for(rows = 0; rows < N; rows++) {
       auto destrow = dest[rows];
-      p = cosines;
+      p = cosines.data();
       n2 = N;
       for(k = 1; k < m; k++) {
         n1 = n2;
         n2 = n2 >> 1;
         for(j = 0; j < n2; j++) {
-          c = *(p++);
+          auto c = *(p++);
           RealT *rowi = &(destrow[j]);
           for(i = j; i < N; i += n1, rowi += n1) {
             RealT &rowl = (rowi)[n2];
-            xt = *rowi - rowl;
+            auto xt = *rowi - rowl;
             *rowi += rowl;
             rowl = 2 * xt * c;
           }
         }
       }
-      c = *(p++);
+      auto c = *(p++);
       for(i = 0; i < N; i += 2) {
         RealT &rowi = destrow[i];
         RealT &rowi1 = (&rowi)[1];
-        xt = rowi;
+        auto xt = rowi;
         rowi += rowi1;
         rowi1 = (xt - rowi1) * c;
       }
@@ -215,29 +201,29 @@ namespace Ravl2
     rowspostadditions(dest);
     columnsinputmapping(dest);
     for(cols = 0; cols < N; cols++) {
-      p = cosines;
+      p = cosines.data();
       n2 = N;
       for(k = 1; k < m; k++) {
         n1 = n2;
         n2 = n2 >> 1;
         for(j = 0; j < n2; j++) {
-          c = *(p++);
+          auto c = *(p++);
           for(i = j; i < N; i += n1) {
             l = i + n2;
             RealT &coli = dest[i][cols];
             RealT &coll = dest[l][cols];
-            xt = coli - coll;
+            auto xt = coli - coll;
             coli += coll;
             coll = 2 * xt * c;
           }
         }
       }
-      c = *(p++);
+      auto c = *(p++);
       for(i = 0; i < N; i += 2) {
         i1 = i + 1;
         RealT &coli = dest[i][cols];
         RealT &coli1 = dest[i1][cols];
-        xt = coli;
+        auto xt = coli;
         coli += coli1;
         coli1 = (xt - coli1) * c;
       }
@@ -247,7 +233,7 @@ namespace Ravl2
 
     //////// Scale coefficients
 
-    BufferAccess2dIterC<RealT> it(dest, dest.range(1));
+    auto it = dest.begin();
     *it *= scaleDC;
     if(!it.next())
       return;// Must be 1x1
@@ -256,7 +242,7 @@ namespace Ravl2
       *it *= scaleMix;
     } while(it.next());
 
-    while(it) {
+    while(it.valid()) {
       *it *= scaleMix;
       if(!it.next())
         break;
@@ -268,14 +254,14 @@ namespace Ravl2
 
   void ChanDCTC::DCT(const Array<RealT, 2> &src, Array<RealT, 2> &dest) const
   {
-    RavlAssert(src.Cols() == (size_t)N && src.Rows() == (size_t)N);
+    RavlAssert(src.range().size(1) == (size_t)N && src.range().size(0) == (size_t)N);
     dest = clone(src);
     dct_in_place(dest);
   }
 
   Array<ChanDCTC::RealT, 2> ChanDCTC::DCT(const Array<RealT, 2> &im) const
   {
-    RavlAssert(im.Cols() == (size_t)N && im.Rows() == (size_t)N);
+    RavlAssert(im.range().size(1) == (size_t)N && im.range().size(0) == (size_t)N);
     Array<RealT, 2> ret = clone(im);
     dct_in_place(ret);
     return ret;
@@ -283,19 +269,17 @@ namespace Ravl2
 
   void ChanDCTC::makecosinetable()
   {
-    int n1, k, j, n2, p;
-
-    n2 = N;
-    p = 0;
-    for(k = 1; k < m; k++) {
-      n1 = n2;
+    auto n2 = N;
+    int p = 0;
+    for(int k = 1; k < m; k++) {
+      auto n1 = n2;
       n2 = n2 >> 1;
-      auto e = std::numbers::pi_v<RealT> / (n1 << 1);
-      for(j = 0; j < n2; j++) {
-        cosines[p++] = std::cos(((j << 2) + 1) * e);
+      auto e = std::numbers::pi_v<RealT> / float(n1 << 1);
+      for(int j = 0; j < n2; j++) {
+        cosines[size_t(p++)] = std::cos(float((j << 2) + 1) * e);
       }
     }
-    cosines[p++] = std::cos(std::numbers::pi_v<RealT> / 4);
+    cosines[size_t(p++)] = std::cos(std::numbers::pi_v<RealT> / 4);
   }
 
   void ChanDCTC::columnspostadditions(Array<RealT, 2> &fi) const
@@ -410,8 +394,7 @@ namespace Ravl2
   {
     int rows, n;
     Array<RealT, 2> s(fi.range());//double s[512][512];
-    for(BufferAccess2dIter2C<RealT, RealT> it(s, s.range(1), fi, fi.range(1)); it; it++)
-      it.data<0>() = it.data<1>();
+    copy(s,fi);
     for(rows = 0; rows < N; rows++) {
       for(n = 0; n < N / 2; n++) {
         fi[n][rows] = s[2 * n][rows];
@@ -424,8 +407,7 @@ namespace Ravl2
   {
     int cols, n;
     Array<RealT, 2> s(fi.range());//double s[512][512];
-    for(BufferAccess2dIter2C<RealT, RealT> it(s, s.range(1), fi, fi.range(1)); it; it++)
-      it.data<0>() = it.data<1>();
+    copy(s,fi);
     for(cols = 0; cols < N; cols++) {
       auto firow = fi[cols];
       auto srow = s[cols];
@@ -452,64 +434,39 @@ namespace Ravl2
 
   void VecRadDCTC::Setup(unsigned int size, unsigned int pts)
   {
-    // Already been set up ?
-    if(r != nullptr)
-      DeleteArrays();
+    m = int_ceil(std::log(size) / std::log(2));
+    N = 1 << m;
+    N0 = 1 << int_ceil(std::log(pts) / std::log(2));// must be power of 2
 
-    m = int_ceil(std::log(size) / std::log(2.0));
-    N = std::pow(2, m);
-    N0 = std::pow(2, int_ceil(std::log(pts) / std::log(2.0f)));// must be power of 2
-
-    int i;
     // Allocate ptr array.
-    r = new unsigned int *[N];
+    r.resize(size_t(N));
 
-    // Allocate space, and initalise ptr array.
-    unsigned *rp = new unsigned int[N * N];
-    for(i = 0; i < N; i++, rp += N)
-      r[i] = rp;
+    // Allocate space, and initialise ptr array.
+    rpData.resize(N * N);
+    auto rp = rpData.data();
+    for(int i = 0; i < int(N); i++, rp += N)
+      r[size_t(i)] = rp;
 
-    cosine_array = new LFloatT[N * m];
-    ct = new LFloatT[N];
-    ct2d = new LFloatT[N * N * m];
+    cosine_array.resize(N * size_t(m));
+    ct.resize(N);
+    ct2d.resize(N * N * size_t(m));
 
     MASK[0] = 0;
-    MASK[1] = ~((-1) << m);
+    MASK[1] = ~((-1u) << m);
 
     lut_of_cos();
     expand1d_lookup_table();
     make2Darray();
 
-    scaleDC = 1.0f / (LFloatT)N;
-    scaleMix = std::sqrt(2.0f) / (LFloatT)N;
+    scaleDC = 1.0f / LFloatT(N);
+    scaleMix = std::sqrt(2.0f) / LFloatT(N);
     scaleAC = 2.0f * scaleDC;
-  }
-
-  VecRadDCTC::~VecRadDCTC()
-  {
-    DeleteArrays();
-  }
-
-  //: Free all array's
-
-  void VecRadDCTC::DeleteArrays()
-  {
-    if(r != 0)
-      delete[] r[0];
-    delete[] r;
-
-    delete[] cosine_array;
-    delete[] ct;
-    delete[] ct2d;
-
-    r = nullptr;
   }
 
   void VecRadDCTC::dct_in_place(Array<RealT, 2> &dest, bool modifyOutputRect) const
   {
-    int stage, q, bB;
+    int q;
     int i, j;
-    int k1, k2, yi, xj, mmax, istep, step;
     //LFloatT sum1,sum2,diff1,diff2;
 
     firo3(dest);
@@ -517,14 +474,13 @@ namespace Ravl2
     /* decimation in time DCT */
 
     /* Perform the first stage of the transform */
-    istep = 2;
-    step = 0;
+    size_t step = 0;
 
-    for(yi = 0; yi < N; yi += 2) {
+    for(int yi = 0; yi < int(N); yi += 2) {
       auto dest_yi1 = dest[yi];
       auto dest_yi2 = dest[yi + 1];
 
-      for(xj = 0; xj < N; xj += 2) {
+      for(int xj = 0; xj < int(N); xj += 2) {
         int xj1 = xj;
         int xj2 = xj1 + 1;
 
@@ -533,10 +489,12 @@ namespace Ravl2
         RealT S2 = dest_yi1[xj2];
         RealT S3 = dest_yi2[xj2];
 
-        LFloatT sum1 = LFloatT(S0 + S1);
-        LFloatT sum2 = LFloatT(S2 + S3);
-        LFloatT diff1 = LFloatT(S0 - S1);
-        LFloatT diff2 = LFloatT(S2 - S3);
+#pragma GCC diagnostic ignored "-Wuseless-cast"
+
+        auto sum1 = LFloatT(S0 + S1);
+        auto sum2 = LFloatT(S2 + S3);
+        auto diff1 = LFloatT(S0 - S1);
+        auto diff2 = LFloatT(S2 - S3);
 
         dest_yi1[xj1] = sum1 + sum2;
         dest_yi2[xj1] = (diff1 + diff2) * ct2d[step++];
@@ -545,22 +503,20 @@ namespace Ravl2
       }
     }
 
-    /* Perfrom the remaining stages of the transform */
-    stage = 0;
-    bB = 1;
-    mmax = 2;
-    while(N > mmax) {
-      stage++;
+    /* Perform the remaining stages of the transform */
+    int bB = 1;
+    int mmax = 2;
+    while(int(N) > mmax) {
       bB = bB << 2;
       q = N0 * N0 / bB;
-      istep = 2 * mmax;
+      auto istep = 2 * mmax;
 
-      for(k1 = 0; k1 < mmax; k1++) {
-        for(k2 = 0; k2 < mmax; k2++) {
-          for(yi = k1; yi < N; yi += istep) {
+      for(int k1 = 0; k1 < mmax; k1++) {
+        for(int k2 = 0; k2 < mmax; k2++) {
+          for(int yi = k1; yi < int(N); yi += istep) {
             auto dest_yi1 = dest[yi];
             auto dest_yi2 = dest[yi + mmax];
-            for(xj = k2; xj < N; xj += istep) {
+            for(int xj = k2; xj < int(N); xj += istep) {
               int xj1 = xj;
               int xj2 = xj1 + mmax;
 
@@ -569,10 +525,10 @@ namespace Ravl2
               RealT S2 = dest_yi1[xj2];
               RealT S3 = dest_yi2[xj2];
 
-              LFloatT sum1 = LFloatT(S0 + S1);
-              LFloatT sum2 = LFloatT(S2 + S3);
-              LFloatT diff1 = LFloatT(S0 - S1);
-              LFloatT diff2 = LFloatT(S2 - S3);
+              auto sum1 = LFloatT(S0 + S1);
+              auto sum2 = LFloatT(S2 + S3);
+              auto diff1 = LFloatT(S0 - S1);
+              auto diff2 = LFloatT(S2 - S3);
 
               if(q <= 1) {
                 dest_yi1[xj1] = sum1 + sum2;
@@ -610,14 +566,14 @@ namespace Ravl2
 
   void VecRadDCTC::DCT(const Array<RealT, 2> &src, Array<RealT, 2> &dest) const
   {
-    RavlAssert(src.Cols() == (size_t)N && src.Rows() == (size_t)N);
+    RavlAssert(src.range().size(1) == (size_t)N && src.range().size(0) == (size_t)N);
     dest = clone(src);
     dct_in_place(dest);
   }
 
   Array<VecRadDCTC::RealT, 2> VecRadDCTC::DCT(const Array<RealT, 2> &im) const
   {
-    RavlAssert(im.Cols() == (size_t)N && im.Rows() == (size_t)N);
+    RavlAssert(im.range().size(1) == (size_t)N && im.range().size(0) == (size_t)N);
     Array<RealT, 2> ret = clone(im);
     dct_in_place(ret);
     return ret;
@@ -625,25 +581,23 @@ namespace Ravl2
 
   void VecRadDCTC::lut_of_cos()
   {
-    int e, i, k, l, p, t, inc, len, mm1;
+    std::vector<unsigned int> et(static_cast<unsigned long>(N));
+    size_t p = 0;
+    int mm1 = m - 1;
+    unsigned e = 1;
 
-    std::vector<unsigned int> et(N);
-    p = 0;
-    mm1 = m - 1;
-    e = 1;
-
-    for(k = 0; k < m; k++) {
-      len = 1;
-      inc = N;
-      i = 0;
+    for(int k = 0; k < m; k++) {
+      int len = 1;
+      auto inc = unsigned(N);
+      size_t i = 0;
       et[i] = e;
       i++;
-      ct[p] = LFloatT(2.0f * std::cos(PIO2 * e / N));
+      ct[p] = LFloatT(2.0f * std::cos(PIO2 * RealT(e) / RealT(N)));
       p++;
-      for(t = 0; t < mm1; t++) {
-        for(l = 0; l < len; l++) {
-          et[i] = et[l] + inc;
-          ct[p] = LFloatT(2.0f * std::cos(et[i] * PIO2 / N));
+      for(int t = 0; t < mm1; t++) {
+        for(int l = 0; l < len; l++) {
+          et[i] = et[size_t(l)] + inc;
+          ct[p] = LFloatT(2.0f * std::cos(RealT(et[i]) * PIO2 / RealT(N)));
           i++;
           p++;
         }
@@ -657,24 +611,23 @@ namespace Ravl2
 
   void VecRadDCTC::expand1d_lookup_table()
   {
-    int i, j, k, l, p, q, r, Bs, bB, bls, ble, ncb = 0, value, step;
-    double c;
-    value = 0;
+    size_t ncb = 0;
 
-    Bs = N;
-    bB = bls = 1;
-    p = 0;
-    step = 0;
+    auto Bs = N;
+    size_t bB = 1;
+    size_t bls = 1;
+    int p = 0;
+    size_t step = 0;
 
-    for(k = 0; k < m; k++) {
+    for(int k = 0; k < m; k++) {
       Bs = Bs >> 1;
-      q = N / bB;
-      r = N % bB;
-      ble = step;
+      auto q = N / bB;
+      auto xr = N % bB;
+      auto ble = step;
       bls = bls << 1;
 
       if(q == 1) {
-        ncb = r;
+        ncb = xr;
       }
       if(q < 1) {
         ncb = 0;
@@ -683,14 +636,13 @@ namespace Ravl2
         ncb = bB;
       }
 
-      for(j = 0; j < Bs; j++) {
-        l = ble;
-        c = ct[p];
+      for(size_t j = 0; j < Bs; j++) {
+        auto l = ble;
+        auto c = ct[size_t(p)];
         p++;
-        for(i = 0; i < ncb; i++) {
+        for(size_t i = 0; i < ncb; i++) {
           cosine_array[l + step] = 1.0f;
-          cosine_array[step + l + bB] = (LFloatT)c;
-          value++;
+          cosine_array[step + l + bB] = LFloatT(c);
           l++;
         }
 
@@ -703,39 +655,36 @@ namespace Ravl2
 
   void VecRadDCTC::make2Darray()
   {
-    int ND1, MD1;
-    int k1, k2, yi, yi1, yi2, xj, xj1, xj2, mmax, istep, cos_step, step;
+    size_t ND1 = 0;
+    size_t MD1 = 0;
+    size_t cos_step = 0;
+    size_t step = 0;
 
-    ND1 = 0;
-    MD1 = 0;
-    cos_step = 0;
-    step = 0;
-
-    for(yi = 0; yi < N; yi += 2) {
-      yi1 = yi + MD1;
-      yi2 = yi1 + 1;
-      for(xj = 0; xj < N; xj += 2) {
-        xj1 = xj + ND1;
-        xj2 = xj1 + 1;
+    for(size_t yi = 0; yi < N; yi += 2) {
+      size_t yi1 = yi + MD1;
+      size_t yi2 = yi1 + 1;
+      for(size_t xj = 0; xj < N; xj += 2) {
+        size_t xj1 = xj + ND1;
+        size_t xj2 = xj1 + 1;
         ct2d[step++] = cosine_array[yi2] * cosine_array[xj1];
         ct2d[step++] = cosine_array[yi1] * cosine_array[xj2];
         ct2d[step++] = cosine_array[yi2] * cosine_array[xj2];
       }
     }
     /* Find cosines for the remaining stages of the transform */
-    mmax = 2;
+    size_t mmax = 2;
     while(N > mmax) {
-      cos_step += N;
-      istep = 2 * mmax;
+      cos_step += size_t(N);
+      auto istep = 2 * mmax;
 
-      for(k1 = 0; k1 < mmax; k1++) {
-        for(k2 = 0; k2 < mmax; k2++) {
-          for(yi = k1; yi < N; yi += istep) {
-            yi1 = yi + MD1;
-            yi2 = yi1 + mmax;
-            for(xj = k2; xj < N; xj += istep) {
-              xj1 = xj + ND1;
-              xj2 = xj1 + mmax;
+      for(size_t k1 = 0; k1 < mmax; k1++) {
+        for(size_t k2 = 0; k2 < mmax; k2++) {
+          for(size_t yi = k1; yi < N; yi += istep) {
+            size_t yi1 = yi + MD1;
+            size_t yi2 = yi1 + mmax;
+            for(size_t xj = k2; xj < N; xj += istep) {
+              size_t xj1 = xj + ND1;
+              size_t xj2 = xj1 + mmax;
 
               ct2d[step++] = cosine_array[cos_step + yi2] * cosine_array[cos_step + xj1];
               ct2d[step++] = cosine_array[cos_step + yi1] * cosine_array[cos_step + xj2];
@@ -751,12 +700,11 @@ namespace Ravl2
 
   void VecRadDCTC::firo3(Array<RealT, 2> &fi) const
   {
-    int i, j, eo, group, nog, p, q, F, M, rows, cols;
+    int  eo, group, nog, p, q, F;
 
-    M = m;
     bitreversalrows();
-    for(rows = 0; rows < N; rows++) {
-      M = m;
+    for(size_t rows = 0; rows < N; rows++) {
+      auto M = m;
       eo = M % 2;
       M = m >> 1;
       group = nog = 1 << M;
@@ -765,15 +713,15 @@ namespace Ravl2
       /*..................... M=even/odd ..........................*/
 
       //cerr << "VecRadDCTC::firo3 Loop1 \n";
-      for(i = 0; i < (nog - 1); i++) {
+      for(int i = 0; i < (nog - 1); i++) {
         F = 0;
         q = i << M;
         p = q >> 1;
-        for(j = 1; j < group; j++) {
+        for(int j = 1; j < group; j++) {
           F = 1 - F;
           q++;
-          auto a = (((r[p][rows]) << 1) ^ (MASK[F])); /* CC*/
-          Swap(fi[a][rows], fi[q][rows]);
+          auto a = (((r[size_t(p)][rows]) << 1) ^ (MASK[F])); /* CC*/
+          std::swap(fi[int(a)][int(rows)], fi[q][int(rows)]);
           p += F;
         }
         group--;
@@ -786,17 +734,17 @@ namespace Ravl2
         group = nog;
         //cerr << "VecRadDCTC::firo3 Loop2 \n";
 
-        for(i = 1; i < nog; i++) {
+        for(int i = 1; i < nog; i++) {
           F = 0;
           q = i << M;
           p = q >> 1;
           p--;
           q--;
-          for(j = 1; j < group; j++) {
+          for(int j = 1; j < group; j++) {
             q--;
-            auto a = ((r[p][rows] << 1) ^ MASK[F]); /* CC*/
+            auto a = ((r[size_t(p)][rows] << 1) ^ MASK[F]); /* CC*/
             auto b = q;                             /*CC*/
-            std::swap(fi[a][rows], fi[b][rows]);
+            std::swap(fi[int(a)][int(rows)], fi[b][int(rows)]);
             F = 1 - F;
             p -= F;
           }
@@ -810,10 +758,10 @@ namespace Ravl2
     //cerr << "VecRadDCTC::firo3 Loop3 \n";
 
     /* Input reordering for the columns */
-    for(cols = 0; cols < N; cols++) {
+    for(int cols = 0; cols < int(N); cols++) {
       auto ficol = fi[cols];
-      unsigned *rcol = r[cols];
-      M = m;
+      const unsigned *rcol = r[size_t(cols)];
+      auto M = m;
       eo = M % 2;
       M = m >> 1;
       group = nog = 1 << M;
@@ -821,16 +769,16 @@ namespace Ravl2
 
       /*..................... M=even/odd ..........................*/
 
-      for(i = 0; i < (nog - 1); i++) {
+      for(int i = 0; i < (nog - 1); i++) {
         F = 0;
         q = i << M;
         p = q >> 1;
-        for(j = 1; j < group; j++) {
+        for(int j = 1; j < group; j++) {
           F = 1 - F;
           q++;
           auto a = ((rcol[p] << 1) ^ MASK[F]); /* CC*/
           auto b = q;                          /*CC*/
-          std::swap(ficol[a], ficol[b]);
+          std::swap(ficol[int(a)], ficol[b]);
           p += F;
         }
         group--;
@@ -841,17 +789,17 @@ namespace Ravl2
         group = nog;
         //cerr << "VecRadDCTC::firo3 Loop4 \n";
 
-        for(i = 1; i < nog; i++) {
+        for(int i = 1; i < nog; i++) {
           F = 0;
           q = i << M;
           p = q >> 1;
           p--;
           q--;
-          for(j = 1; j < group; j++) {
+          for(int j = 1; j < group; j++) {
             q--;
             auto a = ((rcol[p] << 1) ^ MASK[F]); /* CC*/
             auto b = q;                          /*CC*/
-            std::swap(ficol[a], ficol[b]);
+            std::swap(ficol[int(a)], ficol[b]);
             F = 1 - F;
             p -= F;
           }
@@ -863,13 +811,11 @@ namespace Ravl2
 
   void VecRadDCTC::bitreversalrows() const
   {
-    int i, j, l, rows;
-
-    for(rows = 0; rows < N; rows++) {
-      l = 1;
+    for(size_t rows = 0; rows < N; rows++) {
+      size_t  l = 1;
       r[0][rows] = 0;
-      for(i = 1; i < m; i++) {
-        for(j = 0; j < l; j++) {
+      for(size_t i = 1; i < size_t(m); i++) {
+        for(size_t j = 0; j < l; j++) {
           unsigned &val = r[j][rows];
           val <<= 1;
           r[j + l][rows] = val + 1;
@@ -881,13 +827,12 @@ namespace Ravl2
 
   void VecRadDCTC::bitreversalcolumns() const
   {
-    int i, j, l, cols;
-    for(cols = 0; cols < N; cols++) {
-      l = 1;
+    for(size_t cols = 0; cols < N; cols++) {
+      size_t l = 1;
       unsigned *rc = r[cols];
       rc[0] = 0;
-      for(i = 1; i < m; i++) {
-        for(j = 0; j < l; j++) {
+      for(size_t i = 1; i < size_t(m); i++) {
+        for(size_t j = 0; j < l; j++) {
           unsigned *val = &(rc[j]);
           (*val) <<= 1;
           val[l] = (*val) + 1;
@@ -902,19 +847,19 @@ namespace Ravl2
     /* Do divisions by 2 */
     {
       auto firow = fi[0];
-      for(int j = 1; j < N; j++)
+      for(int j = 1; j < int(N); j++)
         firow[j] *= 0.5f;
     }
-    for(int i = 1; i < N; i++) {
+    for(int i = 1; i < int(N); i++) {
       auto firow = fi[i];
       firow[0] *= 0.5f;
-      for(int j = 1; j < N; j++)
+      for(int j = 1; j < int(N); j++)
         firow[j] *= 0.25f;
     }
 
     /* Postadditions for the rows */
-    for(int cols = 0; cols < N; cols++) {
-      int step = N;
+    for(int cols = 0; cols < int(N); cols++) {
+      int step = int(N);
       int loops = 1;
       for(int k = 1; k < m; k++) {
         step = step >> 1;
@@ -933,9 +878,9 @@ namespace Ravl2
     }
 
     /* Postaditions for the columns */
-    for(int rows = 0; rows < N; rows++) {
+    for(int rows = 0; rows < int(N); rows++) {
       auto firow = fi[rows];
-      int step = N;
+      int step = int(N);
       int loops = 1;
       for(int k = 1; k < m; k++) {
         step = step >> 1;

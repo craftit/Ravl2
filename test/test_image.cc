@@ -10,6 +10,7 @@
 #include "Ravl2/Image/Matching.hh"
 #include "Ravl2/Image/ImageExtend.hh"
 #include "Ravl2/Image/ZigZagIter.hh"
+#include "Ravl2/Image/DCT2d.hh"
 
 #define CHECK_EQ(a,b) CHECK((a) == (b))
 #define CHECK_NE(a,b) CHECK_FALSE((a) == (b))
@@ -283,6 +284,70 @@ TEST_CASE("ZigZagIter")
       }
       CHECK(img.range().elements() == size_t(val - 1));
       //SPDLOG_INFO("ZigZagIter:{}", img);
+    }
+  }
+
+}
+
+
+TEST_CASE("DiscreteCosineTransform (DCT)")
+{
+  using namespace Ravl2;
+  using RealT = float;
+  Array<RealT,2> img({16,16});
+
+  // Generate random image.
+  auto Random1 = []() -> RealT { return RealT(rand() % 256) / 256; };
+  for(auto &it : img)
+    it = Random1();
+
+  img[3][3] = 1;
+  img[4][3] = 1;
+  img[4][4] = 1;
+  img[3][4] = 1;
+  Array<RealT,2> res;
+  DCT(img,res);
+  //SPDLOG_INFO("Res:{}", res);
+
+  SECTION("Check reference inverse DCT.")
+  {
+    Array<RealT, 2> rimg;
+    IDCT(res, rimg);
+
+    for (auto it = begin(rimg, img); it.valid(); ++it) {
+      CHECK(std::abs(it.template data<0>() - it.template data<1>()) < 0.001f);
+    }
+  }
+
+  SECTION("ChanDCT.")
+  {
+    ChanDCTC chandct(unsigned(img.range(0).size()));
+    Array<RealT, 2> cimg = chandct.DCT(img);
+    //SPDLOG_INFO("ChanRes:{}", cimg);
+    for (auto it = begin(cimg, res); it.valid(); ++it) {
+      CHECK(std::abs(it.template data<0>() - it.template data<1>()) < 0.001f);
+    }
+
+    for (int i = 0; i < 50000; i++)
+      cimg = chandct.DCT(img);
+  }
+
+  SECTION("VecRadDCT.")
+  {
+    // This only computes the first 6 coefficients.
+    unsigned nPts = 6;
+    VecRadDCTC vrdct(unsigned(img.range(0).size()), nPts);
+    Array<RealT, 2> cimg2;
+    for (int i = 0; i < 50000; i++)
+      cimg2 = vrdct.DCT(img);
+
+    //SPDLOG_INFO("VecRadRes:{}", cimg2);
+    unsigned count = 0;
+    for (auto it = begin(cimg2, res); it.valid(); ++it) {
+      CHECK(std::abs(it.template data<0>() - it.template data<1>()) < 0.001f);
+      count++;
+      if(count > nPts)
+        break;
     }
   }
 
