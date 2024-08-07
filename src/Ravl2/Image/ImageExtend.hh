@@ -25,6 +25,7 @@ namespace Ravl2
   //!    CopyModeT::Never - Never reallocate the image, throw an exception if it's not large enough.
   //!    CopyModeT::Auto - Reallocate the image if it's not large enough, just change its size if it is.
   //!    CopyModeT::Always - Always reallocate the image, even if it's large enough.
+
   template <CopyModeT copyPolicy = CopyModeT::Auto, typename Array1T, typename InT = typename Array1T::value_type, unsigned N = Array1T::dimensions>
   bool resizeArray(Array1T &image, const IndexRange<N> &range)
   {
@@ -70,66 +71,60 @@ namespace Ravl2
     DrawFrame(result, borderValue, n, rect);
   }
 
-  //: Extend an image by n pixels in all directions using a copy of its border pixel
-  // If 'result' image is large enough it will be used for results, otherwise it will
-  // be replaced with an image of a suitable size.
+  //! @brief Extend an image by n pixels in all directions using a copy of its border pixel
+  //! If 'result' image is large enough it will be used for results, otherwise it will
+  //! be replaced with an image of a suitable size.
 
   template <class DataT>
-  void ExtendImageCopy(const ImageC<DataT> &image, int n, ImageC<DataT> &result)
+  void extendImageCopy(Array<DataT,2> &result, const Array<DataT,2> &image, int n)
   {
     assert(n > 0);
-    IndexRange<2> rect = image.Frame().Expand(n);
+    IndexRange<2> rect = image.range().expand(n);
     resizeArray(result, rect);
     // Copy centre of image
-    ImageC<DataT> orgImage(result, image.Frame());
-    for(BufferAccess2dIter2C<DataT, DataT> it(orgImage, orgImage.Range2(), image, image.Range2()); it; it++)
-      it.Data1() = it.Data2();
+    copy(clip(result, image.range()),image);
+
     // Take care of border
     // Extend rows first.
-    for(int r = image.Frame().TRow(); r <= image.Frame().BRow(); r++) {
-      DataT value1 = result[r][image.LCol()];
-      DataT value2 = result[r][image.RCol()];
-      DataT *at1 = &(result[r][rect.LCol()]);
-      DataT *end1 = &(at1[n]);
-      DataT *at2 = &(result[r][image.RCol() + 1]);
-      for(; at1 < end1; at1++, at2++) {
-        *at1 = value1;
-        *at2 = value2;
-      }
+    IndexRange<1> leftRect = IndexRange<1>(rect.min(1), image.range(1).min()-1);
+    IndexRange<1> rightRect = IndexRange<1>(image.range(1).max()+1, rect.max(1));
+
+    for(int r : image.range(0)) {
+      DataT value1 = result[r][image.range(1).min()];
+      DataT value2 = result[r][image.range(1).max()];
+      fill(clip(result[r], leftRect), value1);
+      fill(clip(result[r], rightRect), value2);
     }
+
     // Take care of top of image.
-    for(int r = rect.TRow(); r < image.Frame().TRow(); r++) {
-      for(BufferAccessIter2C<DataT, DataT> it(result[r], result[image.Frame().TRow()]); it; it++)
-        it.Data1() = it.Data2();
+    for(int r = rect.min(0); r < image.range().min(0); r++) {
+      copy(result[r], result[image.range().min(0)]);
     }
     // Take care of bottom of image.
-    for(int r = image.Frame().BRow() + 1; r <= result.BRow(); r++) {
-      for(BufferAccessIter2C<DataT, DataT> it(result[r], result[image.Frame().BRow()]); it; it++)
-        it.Data1() = it.Data2();
+    for(int r = image.range().max(0) + 1; r <= result.max(0); r++) {
+      copy(result[r], result[image.range().max(0)]);
     }
   }
 
-  //: Extend an image by n pixels in all directions by mirroring the border region
-  // If 'result' image is large enough it will be used for results, otherwise it will
-  // be replaced with an image of a suitable size.
+  //! @brief  Extend an image by n pixels in all directions by mirroring the border region
+  //! If 'result' image is large enough it will be used for results, otherwise it will
+  //! be replaced with an image of a suitable size.
+
   template <class DataT>
-  void ExtendImageMirror(const ImageC<DataT> &image, int n, ImageC<DataT> &result)
+  void extendImageMirror(Array<DataT,2> &result, const Array<DataT,2> &image, int n)
   {
     assert(n > 0);
-    assert(image.Frame().Rows() > 1);
-    assert(image.Frame().Cols() > 1);
-    IndexRange<2> rect = image.Frame().Expand(n);
-    if(!result.Frame().Contains(rect))// Is result rectangle big enough.
-      result = ImageC<DataT>(rect);
+    assert(image.range().Rows() >= n);
+    assert(image.range().Cols() >= n);
+    IndexRange<2> rect = image.range().expand(n);
+    resizeArray(result, rect);
     // Copy centre of image
-    ImageC<DataT> orgImage(result, image.Frame());
-    for(BufferAccess2dIter2C<DataT, DataT> it(orgImage, orgImage.Range2(), image, image.Range2()); it; it++)
-      it.Data1() = it.Data2();
+    copy(clip(result, image.range()),image);
     // Take care of border
     // Extend rows first.
-    for(int r = image.Frame().TRow(); r <= image.Frame().BRow(); r++) {
-      DataT *org1 = &(result[r][image.LCol()]);
-      DataT *org2 = &(result[r][image.RCol()]);
+    for(int r = image.range().min(0); r <= image.range().max(0); r++) {
+      DataT *org1 = &(result[r][image.range().min(1)]);
+      DataT *org2 = &(result[r][image.range().max(1)]);
       DataT *at1 = org1 - 1;
       DataT *at2 = org2 + 1;
       org1++;
@@ -140,17 +135,19 @@ namespace Ravl2
         *at2 = *org2;
       }
     }
-    // Take care of top of image.
-    int ra1 = image.TRow();
+    // Take care of top and bottom of image.
+    int ra1 = image.range().min(0);
     int ra2 = ra1 - 1;
-    int rb1 = image.BRow();
+    int rb1 = image.range().max(0);
     int rb2 = rb1 + 1;
-    for(ra1++, rb1--; rb2 <= rect.BRow(); ra1++, ra2--, rb1--, rb2++) {
-      for(BufferAccessIter2C<DataT, DataT> it(result[ra2], result[ra1]); it; it++)
-        it.Data1() = it.Data2();
-      for(BufferAccessIter2C<DataT, DataT> it(result[rb2], result[rb1]); it; it++)
-        it.Data1() = it.Data2();
+    for(ra1++, rb1--; rb2 <= rect.max(0); ra1++, ra2--, rb1--, rb2++) {
+      copy(result[ra2], result[ra1]);
+      copy(result[rb2], result[rb1]);
     }
   }
+
+  // Instantiate the most common types.
+  extern template bool resizeArray<CopyModeT::Auto>(Array<uint8_t , 2> &, const IndexRange<2> &);
+  extern template void extendImageFill(Array<uint8_t, 2> &, const Array<uint8_t, 2> &, int, const uint8_t &);
 
 }// namespace Ravl2
