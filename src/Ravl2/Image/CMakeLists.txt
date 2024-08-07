@@ -23,6 +23,7 @@ add_library (Ravl2Image
         WarpScale.cc WarpScale.hh
         ImageExtend.cc ImageExtend.hh
         ZigZagIter.cc ZigZagIter.hh
+        DCT2d.cc DCT2d.hh
         #        MatchNormalisedCorrelation.cc MatchNormalisedCorrelation.hh
 )
 

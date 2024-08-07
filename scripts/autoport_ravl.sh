@@ -112,10 +112,8 @@ s/img\.LCol()/img\.range().min(1)/g
 s/img\.RCol()/img\.range().max(1)/g
 
 # .Rows() and .Cols() -> .size(0) and .size(1)
-s/image\.Rows()/image\.range()\.size(0)/g
-s/image\.Cols()/image\.range()\.size(1)/g
-s/img\.Rows()/img\.range()\.size(0)/g
-s/img\.Cols()/img\.range()\.size(1)/g
+s/\.Rows()/\.range()\.size(0)/g
+s/\.Cols()/\.range()\.size(1)/g
 
 # Replace Frame().TRow() with .range().range(0).min()
 s/\.TRow()/\.min(0)/g
@@ -146,6 +144,7 @@ s/\.InsLast(/\.push_back(/g
 s/\.Add(/\.add(/g
 s/:Add(/:add(/g
 s/ Add(/ add(/g
+s/\.Index()/\.index()/g
 
 # Update math
 s/Matrix2dC/Matrix<RealT,2,2>/g
@@ -162,13 +161,14 @@ s/Tuple2C</std::tuple</g
 s/Tuple3C</std::tuple</g
 
 # Replace Abs() with std::abs()
-s/Abs(/std::abs(/g
-s/Sqrt(/std::sqrt(/g
-s/Exp(/std::exp(/g
-s/ Sqr(/sqr(/g
-
-# Pow() -> std::pow()
-s/Pow(/std::pow(/g
+s/ Abs(/ std::abs(/g
+s/ Sqrt(/ std::sqrt(/g
+s/ Exp(/ std::exp(/g
+s/ Sqr(/ sqr(/g
+s/ Log(/ std::log(/g
+s/ Cos(/ std::cos(/g
+s/ Sin(/ std::sin(/g
+s/ Pow(/ std::pow(/g
 
 # Deal with images
 s/ImageC<\([^>]*\)>/Array<\1,2>/g
