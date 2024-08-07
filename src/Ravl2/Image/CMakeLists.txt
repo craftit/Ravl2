@@ -22,6 +22,7 @@ add_library (Ravl2Image
         ImagePyramid.cc ImagePyramid.hh
         WarpScale.cc WarpScale.hh
         ImageExtend.cc ImageExtend.hh
+        ZigZagIter.cc ZigZagIter.hh
         #        MatchNormalisedCorrelation.cc MatchNormalisedCorrelation.hh
 )
 

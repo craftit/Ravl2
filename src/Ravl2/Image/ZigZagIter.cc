@@ -4,32 +4,33 @@
 // General Public License (LGPL). See the lgpl.licence file for details or
 // see http://www.gnu.org/copyleft/lesser.html
 // file-header-ends-here
-//! rcsid="$Id$"
-//! lib=RavlMath
-//! file="Ravl/Math/Sequence/ZigZagIter.cc"
 
 #include "Ravl2/Image/ZigZagIter.hh"
 
-namespace RavlN {
+namespace Ravl2 {
   
   //: Constuctor
   
-  ZigZagIterC::ZigZagIterC(const IndexRange2dC &nrect)
-    : at(nrect.Origin()),
+  ZigZagIterC::ZigZagIterC(const IndexRange<2> &nrect)
+    : at(nrect.min()),
       rect(nrect),
       ok(true)
-  { 
+  {
+    if(nrect.range(0).size() != nrect.range(1).size()) {
+      ok = false;
+      throw std::runtime_error("ZigZagIterC: Rectangle must be square.");
+    }
     //cerr << "Init=" << at << " \n";
-    if(rect.Area() == 0)
+    if(rect.area() == 0)
       ok = false; 
   }
   
   //: Goto first index in sequence.
   
   bool ZigZagIterC::First() {
-    if(rect.Area() == 0)
+    if(rect.area() == 0)
       return false;
-    at = rect.Origin();
+    at = rect.min();
     return true;
   }
 
@@ -37,7 +38,7 @@ namespace RavlN {
   
   bool ZigZagIterC::Next() {
     //cerr << "Current=" << at << "\n";
-    int row = at[0].V() + at[1].V();
+    int row = at[0] + at[1];
     if((row % 2) == 0) { // Wprk out direction of row.
       if(at[1] == rect.Range2().Max()) {
 	if(at[0] == rect.Range1().Max()) {

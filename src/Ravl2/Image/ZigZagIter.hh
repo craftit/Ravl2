@@ -4,33 +4,28 @@
 // General Public License (LGPL). See the lgpl.licence file for details or
 // see http://www.gnu.org/copyleft/lesser.html
 // file-header-ends-here
-#ifndef RAVL_ZIGZAGITER_HEADER
-#define RAVL_ZIGZAGITER_HEADER 1
-//! rcsid="$Id$"
-//! lib=RavlMath
 //! author="Charles Galambos"
-//! file="Ravl/Math/Sequence/ZigZagIter.hh"
-//! docentry="Ravl.API.Math.Sequences"
 
-#include "Ravl/IndexRange2d.hh"
+#pragma once
 
-namespace RavlN {
+#include "Ravl2/Index.hh"
+
+namespace Ravl2 {
   
-  //! userlevel=Normal
-  //: Iterate a rectangle in a Zig Zag pattern from the top left corner.
-  // Usefull when dealing with DCT coefficients.
+  //! @brief Iterate a rectangle in a Zig Zag pattern from the top left corner.
+  //! Usefull when dealing with DCT coefficients.
   
   class ZigZagIterC {
   public:
-    ZigZagIterC(const IndexRange2dC &nrect);
-    //: Constuctor
-    // Note: rectangle must be square at the moment.
-    
-    IndexRange2dC &Frame()
+    //! Constuctor
+    //! Rectangle must be square.
+    ZigZagIterC(const IndexRange<2> &nrect);
+
+    IndexRange<2> &Frame()
     { return rect; }
     //: Access image frame.
     
-    const IndexRange2dC &Frame() const
+    const IndexRange<2> &Frame() const
     { return rect; }
     //: Access image frame.
     
@@ -41,11 +36,11 @@ namespace RavlN {
     { return ok; }
     //: Test if we're at a valid element.
     
-    const Index2dC &Data() const
+    const Index<2> &Data() const
     { return at; }
     //: Get current pixel;
   
-    const Index2dC &operator*() const 
+    const Index<2> &operator*() const 
     { return at; }
     //: Get current pixel;
     
@@ -61,11 +56,10 @@ namespace RavlN {
     //: Test if we're at a valid element.
     
   protected:
-    Index2dC at;
-    IndexRange2dC rect;
-    bool ok;
+    Index<2> at;
+    IndexRange<2> rect;
+    bool ok = false;
   };
 }
 
 
-#endif

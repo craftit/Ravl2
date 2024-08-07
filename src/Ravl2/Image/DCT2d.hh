@@ -20,41 +20,35 @@
 // Modified by Charles Galambos.
 #ifndef RAVLIMAGE_DCT2D_HEADER
 #define RAVLIMAGE_DCT2D_HEADER 1
-//! userlevel=Normal
 //! author="Brendt Wohlberg, Modified by Charles Galambos"
 //! license=own
-//! rcsid="$Id$"
-//! lib=RavlImageProc
-//! docentry="Ravl.API.Images.Transforms"
-//! file="Ravl/Image/Processing/Filters/Misc/DCT2d.hh"
 
-#include "Ravl/Image/Image.hh"
+#include "Ravl2/Array.hh"
 
 
-namespace RavlN {
+namespace Ravl2 {
   class VectorC;
 };
 
-namespace RavlImageN {
+namespace Ravl2 {
   
-  void DCT(const ImageC<RealT>& src,ImageC<RealT>& dest);
+  void DCT(const Array<RealT,2>& src,Array<RealT,2>& dest);
   //: Perform DCT on src, result in dest
   // Note: the classes ChanDCTC or VecRadDCTC should be faster than this.
   
   // Only works on square images.
   
-  void IDCT(const ImageC<RealT>& src, ImageC<RealT>& dest);
+  void IDCT(const Array<RealT,2>& src, Array<RealT,2>& dest);
   //: Perform Inverse DCT on src, result in dest
   // Only works on square images.
   
-  VectorC PackZigZag(const ImageC<RealT> &img,UIntT n);
+  VectorC PackZigZag(const Array<RealT,2> &img,unsigned n);
   //: Pack first n components of image 'img' in a zig zag pattern from the to left corner of 'img'.
   
-  void UnpackZigZag(const VectorC &vec,ImageC<RealT> &img);
+  void UnpackZigZag(const VectorC &vec,Array<RealT,2> &img);
   //: Unpack components of image vec in a zig zag pattern from the to left corner of 'img'.
   
   //:-
-  //! userlevel=Normal
   //: Class implementing Fast DCT
   // class ChanDCT is an encapsulation of sofware (URL:
   // ftp://etro.vub.ac.be/pub/COMPRESSION/DCT_ALGORITHMS/) written by
@@ -80,17 +74,17 @@ namespace RavlImageN {
     //: Setup tables for dct of given size.
     //!param:size - Size of dct image.
     
-    void dct_in_place(ImageC<RealT>& im) const;
+    void dct_in_place(Array<RealT,2>& im) const;
     //: Do an inplace dct of im.
     
-    ImageC<RealT> operator()(const ImageC<RealT>& im) const
+    Array<RealT,2> operator()(const Array<RealT,2>& im) const
     { return DCT(im); }
     //: Compute the dct of im.
     
-    ImageC<RealT> DCT(const ImageC<RealT>& im) const;
+    Array<RealT,2> DCT(const Array<RealT,2>& im) const;
     //: Compute the DCT of im, return the result.
     
-    void DCT(const ImageC<RealT>& src, ImageC<RealT>& dest) const;
+    void DCT(const Array<RealT,2>& src, Array<RealT,2>& dest) const;
     //: Compute the dct of 'src', place the result in 'dest'.
     
     IntT Size() const
@@ -111,16 +105,15 @@ namespace RavlImageN {
     RealT scaleAC;
 
     void makecosinetable();
-    void columnspostadditions(ImageC<RealT>& fi) const;
-    void rowspostadditions(ImageC<RealT>& fi) const;
-    void rowsbitreversal(ImageC<RealT>& fi) const;
-    void columnsbitreversal(ImageC<RealT>& fi) const;
-    void columnsinputmapping(ImageC<RealT>& fi) const;
-    void rowsinputmapping(ImageC<RealT>& fi) const;
+    void columnspostadditions(Array<RealT,2>& fi) const;
+    void rowspostadditions(Array<RealT,2>& fi) const;
+    void rowsbitreversal(Array<RealT,2>& fi) const;
+    void columnsbitreversal(Array<RealT,2>& fi) const;
+    void columnsinputmapping(Array<RealT,2>& fi) const;
+    void rowsinputmapping(Array<RealT,2>& fi) const;
 
   };
 
-  //! userlevel=Normal
   
   //: Class implementing Fast DCT
   // This class allows a subset of the DCT coefficents to be calculated.
@@ -160,19 +153,19 @@ namespace RavlImageN {
     //!param: size - Size of input image. Must be a power of 2
     //!param: pts  - Size of output image .Must be a power of 2
     
-    void dct_in_place(ImageC<RealT>& im,bool modifyOutputRect = false) const;
+    void dct_in_place(Array<RealT,2>& im,bool modifyOutputRect = false) const;
     //: Compute the dct in place.
     //!param: im = Image to compute DCT on.
     //!param: modifyOutputRect = If true change image frame to be of the correct scale, otherwise result is left in top left of the original image.
     // Note the size of m will be reduced.
     
-    ImageC<RealT> operator()(const ImageC<RealT>& im) const
+    Array<RealT,2> operator()(const Array<RealT,2>& im) const
     { return DCT(im); }
     
-    ImageC<RealT> DCT(const ImageC<RealT>& im) const;
+    Array<RealT,2> DCT(const Array<RealT,2>& im) const;
     //: Compute the DCT of img.
     
-    void DCT(const ImageC<RealT>& src, ImageC<RealT>& dest) const;
+    void DCT(const Array<RealT,2>& src, Array<RealT,2>& dest) const;
     //: Compute the DCT of src, place the result in 'dest'.
     
     IntT Size() const
@@ -212,8 +205,8 @@ namespace RavlImageN {
     void make2Darray();
     void bitreversalrows() const;
     void bitreversalcolumns() const;
-    void firo3(ImageC<RealT>& fi) const;
-    void post_adds(ImageC<RealT>& fi) const;
+    void firo3(Array<RealT,2>& fi) const;
+    void post_adds(Array<RealT,2>& fi) const;
 
   };
   

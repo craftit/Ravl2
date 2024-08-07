@@ -22,71 +22,66 @@
 //    Software Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 // file-header-ends-here
-//! rcsid="$Id$"
-//! lib=RavlImageProc
 //! license=own
-//! file="Ravl/Image/Processing/Filters/DCT2d.cc"
 
 // Modified by Charles Galambos
 
-#include "Ravl/Image/DCT2d.hh"
-#include "Ravl/Array2dIter.hh"
-#include "Ravl/StdConst.hh"
-#include "Ravl/Vector.hh"
-#include "Ravl/ZigZagIter.hh"
-#include "Ravl/SArray1dIter.hh"
+#include "Ravl2/Image/DCT2d.hh"
+#include "Ravl2/StdConst.hh"
+#include "Ravl2/Vector.hh"
+#include "Ravl2/ZigZagIter.hh"
 
 #define PIO2 1.5707966327
 
-namespace RavlImageN {
+namespace Ravl2 {
   using namespace RavlConstN;
   
   //: Pack first n components of image 'img' in a zig zag pattern from the to left corner of 'img'.
   
-  VectorC PackZigZag(const ImageC<RealT> &img,UIntT n) {
-    RavlAssert(n <= img.Frame().Area());
+  VectorC PackZigZag(const Array<RealT,2> &img,unsigned n) {
+    RavlAssert(n <= img.range().area());
     VectorC ret(n);
     SArray1dIterC<RealT> it(ret);
-    for(ZigZagIterC zit(img.Frame());it;zit++,it++)
+    for(ZigZagIterC zit(img.range());it;zit++,it++)
       *it = img[*zit];
     return ret;
   }
   
   //: Unpack components of image vec in a zig zag pattern from the to left corner of 'img'.
   
-  void UnpackZigZag(const VectorC &vec,ImageC<RealT> &img) {
-    RavlAssert(vec.Size() <= img.Frame().Area());
+  void UnpackZigZag(const VectorC &vec,Array<RealT,2> &img) {
+    RavlAssert(vec.size() <= img.range().area());
     SArray1dIterC<RealT> it(vec);
-    for(ZigZagIterC zit(img.Frame());it;zit++,it++)
+    for(ZigZagIterC zit(img.range());it;zit++,it++)
       img[*zit] = *it;
   }
   
   
-  static inline RealT Alpha(IndexC u, unsigned int N) {
+  static inline RealT Alpha(int u, unsigned int N) {
     if (u == 0)
-      return Sqrt(1/double(N));
+      return std::sqrt(1/double(N));
     else if ((u > 0) && (u < N))
-      return Sqrt(2/double(N));
+      return std::sqrt(2/double(N));
     else
       return 0.0;
   }
   
   
-  void DCT(const ImageC<RealT> & src, ImageC<RealT> & dest) {
+  void DCT(const Array<RealT,2> & src, Array<RealT,2> & dest) {
     RavlAssertMsg(src.Rows() == src.Cols(),"DCT(): Images must be square.");
     
-    if(dest.Frame() != src.Frame())
-      dest = ImageC<RealT>(src.Frame());
-    IndexC i,j,k;
+    if(dest.range() != src.range())
+      dest = Array<RealT,2>(src.range());
+    int i,j,k;
     RealT sum;
     // Transform in x direction
-    ImageC<RealT> horizontal(src.Frame());
-    IndexRangeC rowRange = src.Range1();
-    IndexRangeC colRange = src.Range2();
+    Array<RealT,2> horizontal(src.range());
+    IndexRange<1> rowRange = src.Range1();
+    IndexRange<1> colRange = src.Range2();
     for(Array2dIterC<RealT> it(horizontal);it;it++) {
-      Index2dC at = it.Index();
-      IntT i = at[0].V();
-      IntT j = at[1].V();
+      Index<2> at = it.Index();
+      IntT i = at[0];
+      IntT j = at[1];
       sum = 0.0;
       for (k = rowRange.Min(); k <= rowRange.Max(); k++)
 	sum += src[k][j] * Cos(RealT(2*k+1)*pi*RealT(i)/(RealT(2*src.Cols())));
@@ -95,9 +90,9 @@ namespace RavlImageN {
     
     // Transform in y direction
     for(Array2dIterC<RealT> it(dest);it;it++) {
-      Index2dC at = it.Index();
-      IntT i = at[0].V();
-      IntT j = at[1].V();
+      Index<2> at = it.Index();
+      IntT i = at[0];
+      IntT j = at[1];
       sum = 0.0;
       for (k = colRange.Min(); k <= colRange.Max(); k++)
 	sum += horizontal[i][k] * Cos(RealT(2*k+1)*pi*RealT(j)/(RealT(2*src.Rows()))); 
@@ -105,20 +100,20 @@ namespace RavlImageN {
     }
   }
   
-  void IDCT(const ImageC<RealT>& src, ImageC<RealT>& dest) {
+  void IDCT(const Array<RealT,2>& src, Array<RealT,2>& dest) {
     RavlAssertMsg(src.Rows() == src.Cols(),"IDCT(): Images must be square.");
-    if(dest.Frame() != src.Frame())
-      dest = ImageC<RealT>(src.Frame());
-    IndexC i,j,k;
-    IndexRangeC rowRange = src.Range1();
-    IndexRangeC colRange = src.Range2();
+    if(dest.range() != src.range())
+      dest = Array<RealT,2>(src.range());
+    int i,j,k;
+    IndexRange<1> rowRange = src.Range1();
+    IndexRange<1> colRange = src.Range2();
     RealT sum;
     // Transform in x direction
-    ImageC<RealT> horizontal(src.Frame());
+    Array<RealT,2> horizontal(src.range());
     for(Array2dIterC<RealT> it(horizontal);it;it++) {
-      Index2dC at = it.Index();
-      IntT i = at[0].V();
-      IntT j = at[1].V();
+      Index<2> at = it.Index();
+      IntT i = at[0];
+      IntT j = at[1];
       sum = 0.0;
       for (k = rowRange.Min(); k <= rowRange.Max(); k++)
 	sum += Alpha(k,src.Cols())*src[k][j]*Cos(RealT(2*i+1)*pi*RealT(k)/(RealT(2*src.Cols())));  
@@ -127,9 +122,9 @@ namespace RavlImageN {
     
     // Transform in y direction
     for(Array2dIterC<RealT> it(dest);it;it++) {
-      Index2dC at = it.Index();
-      IntT i = at[0].V();
-      IntT j = at[1].V();
+      Index<2> at = it.Index();
+      IntT i = at[0];
+      IntT j = at[1];
       sum = 0.0;
       for (k = colRange.Min(); k <= colRange.Max(); k++)
 	sum += Alpha(k, src.Rows())*horizontal[i][k]*Cos(RealT(2*j+1)*pi*RealT(k)/(RealT(2*src.Rows()))); 
@@ -183,7 +178,7 @@ namespace RavlImageN {
       return ;
     }
     m = (unsigned int)Ceil(Log(size)/log(2.0));
-    N = (unsigned int)Pow(2.0, m);
+    N = (unsigned int)std::pow(2.0, m);
     cosines = new RealT [N];
     makecosinetable();
     scaleDC = 1.0/(RealT)N;
@@ -191,7 +186,7 @@ namespace RavlImageN {
     scaleAC = 2.0 * scaleDC;    
   }
   
-  void ChanDCTC::dct_in_place(ImageC<RealT>& dest) const
+  void ChanDCTC::dct_in_place(Array<RealT,2>& dest) const
   {
     int n1,k,j,i,i1,l,n2,rows,cols; //p
     double c,xt;
@@ -263,34 +258,34 @@ namespace RavlImageN {
     
     BufferAccess2dIterC<RealT> it(dest,dest.Range2());
     *it *= scaleDC;
-    if(!it.Next())
+    if(!it.next())
       return ; // Must be 1x1
     // Do first row.
     do {
       *it *= scaleMix;
-    } while(it.Next());
+    } while(it.next());
     
     while(it) {
       *it *= scaleMix;
-      if(!it.Next())
+      if(!it.next())
 	break;
       do {
 	*it *= scaleAC;
-      } while(it.Next());
+      } while(it.next());
     } 
   }
   
-  void ChanDCTC::DCT(const ImageC<RealT>& src, ImageC<RealT>& dest) const
+  void ChanDCTC::DCT(const Array<RealT,2>& src, Array<RealT,2>& dest) const
   {
-    RavlAssert( src.Cols() == (SizeT) N && src.Rows() == (SizeT) N ); 
+    RavlAssert( src.Cols() == (size_t) N && src.Rows() == (size_t) N ); 
     dest = src.Copy();
     dct_in_place(dest);
   }
 
-  ImageC<RealT> ChanDCTC::DCT(const ImageC<RealT>& im) const
+  Array<RealT,2> ChanDCTC::DCT(const Array<RealT,2>& im) const
   {
-    RavlAssert( im.Cols() == (SizeT) N && im.Rows() == (SizeT) N ); 
-    ImageC<RealT> ret(im.Copy());
+    RavlAssert( im.Cols() == (size_t) N && im.Rows() == (size_t) N ); 
+    Array<RealT,2> ret(im.Copy());
     dct_in_place(ret);
     return ret;
   }
@@ -313,7 +308,7 @@ namespace RavlImageN {
     cosines[p++] = Cos (pi_4);
   }
 
-  void ChanDCTC::columnspostadditions(ImageC<RealT>& fi) const
+  void ChanDCTC::columnspostadditions(Array<RealT,2>& fi) const
   {
     int step,loops,k,ep,j,i,l,cols;
 
@@ -341,7 +336,7 @@ namespace RavlImageN {
     }
   }
 
-  void ChanDCTC::rowspostadditions(ImageC<RealT>& fi) const
+  void ChanDCTC::rowspostadditions(Array<RealT,2>& fi) const
   {
     int step,loops,k,ep,j,i,l,rows;
 
@@ -370,7 +365,7 @@ namespace RavlImageN {
         
   }
 
-  void ChanDCTC::rowsbitreversal(ImageC<RealT>& fi) const
+  void ChanDCTC::rowsbitreversal(Array<RealT,2>& fi) const
   {
     int v1, v2, v3,i,j,k,cols;
     double xt;
@@ -400,7 +395,7 @@ namespace RavlImageN {
     }
   }
 
-  void ChanDCTC::columnsbitreversal(ImageC<RealT>& fi) const
+  void ChanDCTC::columnsbitreversal(Array<RealT,2>& fi) const
   {
     int v1, v2, v3,i,j,k,rows;
     /* reverse columns */
@@ -423,12 +418,12 @@ namespace RavlImageN {
     }
   }
 
-  void ChanDCTC::columnsinputmapping(ImageC<RealT>& fi) const
+  void ChanDCTC::columnsinputmapping(Array<RealT,2>& fi) const
   {
     int rows,n;
-    ImageC<RealT> s(fi.Frame()); //double s[512][512];
+    Array<RealT,2> s(fi.range()); //double s[512][512];
     for(BufferAccess2dIter2C<RealT,RealT> it(s,s.Range2(),fi,fi.Range2());it;it++)
-      it.Data1() = it.Data2();
+      it.data<0>() = it.data<1>();
     for (rows=0; rows<N; rows++) {
       for(n=0; n < N/2; n++) {
 	fi[n][rows]     = s[2*n][rows];
@@ -437,12 +432,12 @@ namespace RavlImageN {
     }
   }
   
-  void ChanDCTC::rowsinputmapping(ImageC<RealT>& fi) const
+  void ChanDCTC::rowsinputmapping(Array<RealT,2>& fi) const
   {
     int cols,n;
-    ImageC<RealT> s(fi.Frame()); //double s[512][512];
+    Array<RealT,2> s(fi.range()); //double s[512][512];
     for(BufferAccess2dIter2C<RealT,RealT> it(s,s.Range2(),fi,fi.Range2());it;it++)
-      it.Data1() = it.Data2();    
+      it.data<0>() = it.data<1>();    
     for (cols=0; cols<N; cols++) {
       RangeBufferAccessC<RealT > firow = fi[cols]; 
       RangeBufferAccessC<RealT > srow = s[cols]; 
@@ -495,15 +490,15 @@ namespace RavlImageN {
       DeleteArrays();
     
     m = (unsigned int)Ceil(Log(size)/Log(2.0));
-    N = (unsigned int)Pow(2.0, (RealT )m);
-    N0 = (unsigned int)Pow(2.0, Ceil(Log(pts)/Log(2.0))); // must be power of 2
+    N = (unsigned int)std::pow(2.0, (RealT )m);
+    N0 = (unsigned int)std::pow(2.0, Ceil(Log(pts)/Log(2.0))); // must be power of 2
     
     int i;
     // Allocate ptr array.
     r = new unsigned int * [N];
     
     // Allocate space, and initalise ptr array.
-    UIntT *rp = new unsigned int [N*N];
+    unsigned *rp = new unsigned int [N*N];
     for (i = 0; i < N; i++,rp += N)
       r[i] = rp;
     
@@ -542,7 +537,7 @@ namespace RavlImageN {
     r = 0;
   }
 
-  void VecRadDCTC::dct_in_place(ImageC<RealT>& dest,bool modifyOutputRect) const
+  void VecRadDCTC::dct_in_place(Array<RealT,2>& dest,bool modifyOutputRect) const
   {
     int stage,q,bB;
     int i,j;
@@ -642,18 +637,18 @@ namespace RavlImageN {
     }
     
     if(modifyOutputRect)
-      dest = ImageC<RealT>(dest,IndexRange2dC(0,N0-1,0, N0-1));
+      dest = Array<RealT,2>(dest,IndexRange<2>(0,N0-1,0, N0-1));
   }
   
-  void VecRadDCTC::DCT(const ImageC<RealT>& src, ImageC<RealT>& dest) const {
-    RavlAssert( src.Cols() == (SizeT) N && src.Rows() == (SizeT)N );
+  void VecRadDCTC::DCT(const Array<RealT,2>& src, Array<RealT,2>& dest) const {
+    RavlAssert( src.Cols() == (size_t) N && src.Rows() == (size_t)N );
     dest = src.Copy();
     dct_in_place(dest);
   }
 
-  ImageC<RealT> VecRadDCTC::DCT(const ImageC<RealT>& im) const {
-    RavlAssert( im.Cols() == (SizeT) N && im.Rows() == (SizeT)N );
-    ImageC<RealT> ret = im.Copy();
+  Array<RealT,2> VecRadDCTC::DCT(const Array<RealT,2>& im) const {
+    RavlAssert( im.Cols() == (size_t) N && im.Rows() == (size_t)N );
+    Array<RealT,2> ret = im.Copy();
     dct_in_place(ret);
     return ret;
   }
@@ -662,7 +657,7 @@ namespace RavlImageN {
   {
     int e,i,k,l,p,t,inc,len,mm1;
 
-    SArray1dC<unsigned int> et(N);
+    std::vector<unsigned int> et(N);
     p=0; mm1=m-1; e=1;
 
     for(k=0; k<m; k++)
@@ -770,7 +765,7 @@ namespace RavlImageN {
   
   }
 
-  void VecRadDCTC::firo3(ImageC<RealT>& fi) const
+  void VecRadDCTC::firo3(Array<RealT,2>& fi) const
   {
     int i,j,eo,group,nog,p,q,F,M,rows,cols;
     
@@ -827,7 +822,7 @@ namespace RavlImageN {
     /* Input reordering for the columns */
     for (cols=0; cols<N; cols++) {
       RangeBufferAccessC<RealT > ficol = fi[cols];
-      UIntT  *rcol = r[cols];
+      unsigned  *rcol = r[cols];
       M=m;
       eo = M%2; M = m>>1;
       group = nog = 1<<M;
@@ -880,7 +875,7 @@ namespace RavlImageN {
       r[0][rows]=0;
       for(i=1; i < m; i++){
 	for(j=0; j < l; j++) {
-	  UIntT &val = r[j][rows]; 
+	  unsigned &val = r[j][rows]; 
 	  val <<= 1; 
 	  r[j+l][rows]=val + 1; 
 	}
@@ -894,11 +889,11 @@ namespace RavlImageN {
     int i,j,l,cols;
     for (cols=0; cols<N; cols++) {
       l=1;
-      UIntT *rc = r[cols];
+      unsigned *rc = r[cols];
       rc[0]=0;
       for(i=1; i < m; i++) {
 	for(j=0; j < l; j++) {
-	  UIntT *val = &(rc[j]);
+	  unsigned *val = &(rc[j]);
 	  (*val) <<= 1;
 	  val[l]=(*val) +  1;
 	}
@@ -907,7 +902,7 @@ namespace RavlImageN {
     } /* end for cols */
   }
   
-  void VecRadDCTC::post_adds(ImageC<RealT>& fi) const
+  void VecRadDCTC::post_adds(Array<RealT,2>& fi) const
   {
     /* Do divisions by 2 */
     {
