@@ -17,44 +17,51 @@ namespace Ravl2 {
   
   class ZigZagIterC {
   public:
-    //! Constuctor
+    //! Construct an empty iterator.
+    ZigZagIterC() = default;
+
+    //! Constructor
     //! Rectangle must be square.
     ZigZagIterC(const IndexRange<2> &nrect);
 
+    //! Access image frame.
     IndexRange<2> &Frame()
     { return rect; }
-    //: Access image frame.
-    
+
+    //! Access image frame.
     const IndexRange<2> &Frame() const
     { return rect; }
-    //: Access image frame.
-    
+
+    //! Goto first index in sequence.
     bool First();
-    //: Goto first index in sequence.
-    
+
+    //! Test if we're at a valid element.
     bool IsElm() const
     { return ok; }
-    //: Test if we're at a valid element.
-    
-    const Index<2> &Data() const
+
+    //! Test if we're at a valid element.
+    [[nodiscard]] bool valid() const
+    { return ok; }
+
+    //! Get current pixel;
+    [[nodiscard]] const Index<2> &Data() const
     { return at; }
-    //: Get current pixel;
-  
-    const Index<2> &operator*() const 
+
+    //! Get current pixel;
+    [[nodiscard]] const Index<2> &operator*() const
     { return at; }
-    //: Get current pixel;
-    
+
+    //! Goto next pixel in scan pattern.
     bool Next();
-    //: Goto next pixel in scan pattern.
-    
-    bool operator++(int)
+
+    //! Goto next pixel in scan pattern.
+    bool operator++()
     { return Next(); }
-    //: Goto next pixel in scan pattern.
-    
+
+    //! Test if we're at a valid element.
     operator bool() const
     { return ok; }
-    //: Test if we're at a valid element.
-    
+
   protected:
     Index<2> at;
     IndexRange<2> rect;

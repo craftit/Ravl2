@@ -27,21 +27,20 @@
 // Modified by Charles Galambos
 
 #include "Ravl2/Image/DCT2d.hh"
-#include "Ravl2/StdConst.hh"
-#include "Ravl2/Vector.hh"
-#include "Ravl2/ZigZagIter.hh"
+#include "Ravl2/Assert.hh"
+#include "Ravl2/Image/ZigZagIter.hh"
 
 #define PIO2 1.5707966327
 
-namespace Ravl2 {
-  using namespace RavlConstN;
-  
+namespace Ravl2
+{
+
   //: Pack first n components of image 'img' in a zig zag pattern from the to left corner of 'img'.
   
-  VectorC PackZigZag(const Array<RealT,2> &img,unsigned n) {
+  VectorC PackZigZag(const Array<float,2> &img,unsigned n) {
     RavlAssert(n <= img.range().area());
     VectorC ret(n);
-    SArray1dIterC<RealT> it(ret);
+    SArray1dIterC<float> it(ret);
     for(ZigZagIterC zit(img.range());it;zit++,it++)
       *it = img[*zit];
     return ret;
@@ -49,15 +48,15 @@ namespace Ravl2 {
   
   //: Unpack components of image vec in a zig zag pattern from the to left corner of 'img'.
   
-  void UnpackZigZag(const VectorC &vec,Array<RealT,2> &img) {
+  void UnpackZigZag(const VectorC &vec,Array<float,2> &img) {
     RavlAssert(vec.size() <= img.range().area());
-    SArray1dIterC<RealT> it(vec);
+    SArray1dIterC<float> it(vec);
     for(ZigZagIterC zit(img.range());it;zit++,it++)
       img[*zit] = *it;
   }
   
   
-  static inline RealT Alpha(int u, unsigned int N) {
+  static inline float Alpha(int u, unsigned int N) {
     if (u == 0)
       return std::sqrt(1/double(N));
     else if ((u > 0) && (u < N))
@@ -67,67 +66,67 @@ namespace Ravl2 {
   }
   
   
-  void DCT(const Array<RealT,2> & src, Array<RealT,2> & dest) {
+  void DCT(const Array<float,2> & src, Array<float,2> & dest) {
     RavlAssertMsg(src.Rows() == src.Cols(),"DCT(): Images must be square.");
     
     if(dest.range() != src.range())
-      dest = Array<RealT,2>(src.range());
+      dest = Array<float,2>(src.range());
     int i,j,k;
-    RealT sum;
+    float sum;
     // Transform in x direction
-    Array<RealT,2> horizontal(src.range());
+    Array<float,2> horizontal(src.range());
     IndexRange<1> rowRange = src.range(0);
     IndexRange<1> colRange = src.range(1);
-    for(Array2dIterC<RealT> it(horizontal);it;it++) {
+    for(Array2dIterC<float> it(horizontal);it;it++) {
       Index<2> at = it.Index();
-      IntT i = at[0];
-      IntT j = at[1];
+      int i = at[0];
+      int j = at[1];
       sum = 0.0;
       for (k = rowRange.min(); k <= rowRange.max(); k++)
-	sum += src[k][j] * Cos(RealT(2*k+1)*pi*RealT(i)/(RealT(2*src.Cols())));
+	sum += src[k][j] * Cos(float(2*k+1)*pi*float(i)/(float(2*src.Cols())));
       *it = sum;
     }
     
     // Transform in y direction
-    for(Array2dIterC<RealT> it(dest);it;it++) {
+    for(Array2dIterC<float> it(dest);it;it++) {
       Index<2> at = it.Index();
-      IntT i = at[0];
-      IntT j = at[1];
+      int i = at[0];
+      int j = at[1];
       sum = 0.0;
       for (k = colRange.min(); k <= colRange.max(); k++)
-	sum += horizontal[i][k] * Cos(RealT(2*k+1)*pi*RealT(j)/(RealT(2*src.Rows()))); 
+	sum += horizontal[i][k] * Cos(float(2*k+1)*pi*float(j)/(float(2*src.Rows())));
       *it = Alpha(i,src.Cols()) * Alpha(j,src.Rows())*sum; 
     }
   }
   
-  void IDCT(const Array<RealT,2>& src, Array<RealT,2>& dest) {
+  void IDCT(const Array<float,2>& src, Array<float,2>& dest) {
     RavlAssertMsg(src.Rows() == src.Cols(),"IDCT(): Images must be square.");
     if(dest.range() != src.range())
-      dest = Array<RealT,2>(src.range());
+      dest = Array<float,2>(src.range());
     int i,j,k;
     IndexRange<1> rowRange = src.range(0);
     IndexRange<1> colRange = src.range(1);
-    RealT sum;
+    float sum;
     // Transform in x direction
-    Array<RealT,2> horizontal(src.range());
-    for(Array2dIterC<RealT> it(horizontal);it;it++) {
+    Array<float,2> horizontal(src.range());
+    for(Array2dIterC<float> it(horizontal);it;it++) {
       Index<2> at = it.Index();
-      IntT i = at[0];
-      IntT j = at[1];
+      int i = at[0];
+      int j = at[1];
       sum = 0.0;
       for (k = rowRange.min(); k <= rowRange.max(); k++)
-	sum += Alpha(k,src.Cols())*src[k][j]*Cos(RealT(2*i+1)*pi*RealT(k)/(RealT(2*src.Cols())));  
+	sum += Alpha(k,src.Cols())*src[k][j]*Cos(float(2*i+1)*pi*float(k)/(float(2*src.Cols())));
       *it = sum;
     }
     
     // Transform in y direction
-    for(Array2dIterC<RealT> it(dest);it;it++) {
+    for(Array2dIterC<float> it(dest);it;it++) {
       Index<2> at = it.Index();
-      IntT i = at[0];
-      IntT j = at[1];
+      int i = at[0];
+      int j = at[1];
       sum = 0.0;
       for (k = colRange.min(); k <= colRange.max(); k++)
-	sum += Alpha(k, src.Rows())*horizontal[i][k]*Cos(RealT(2*j+1)*pi*RealT(k)/(RealT(2*src.Rows()))); 
+	sum += Alpha(k, src.Rows())*horizontal[i][k]*Cos(float(2*j+1)*pi*float(k)/(float(2*src.Rows())));
       *it = sum;
     }
   }
@@ -305,7 +304,7 @@ namespace Ravl2 {
 	cosines[p++] = Cos(((j<<2)+1)*e);
       }
     }
-    cosines[p++] = Cos (pi_4);
+    cosines[p++] = Cos(pi_4);
   }
 
   void ChanDCTC::columnspostadditions(Array<RealT,2>& fi) const
@@ -514,7 +513,7 @@ namespace Ravl2 {
     make2Darray();
 
     scaleDC = 1.0f/(LFloatT)N;
-    scaleMix = sqrt(2.0f)/(LFloatT)N;
+    scaleMix = std::sqrt(2.0f)/(LFloatT)N;
     scaleAC = 2.0f * scaleDC;
   }
 
@@ -557,8 +556,8 @@ namespace Ravl2 {
       RangeBufferAccessC<RealT > dest_yi2 = dest[yi + 1];
       
       for (xj=0; xj<N; xj +=2) {
-	IntT xj1=xj;
-	IntT xj2=xj1+1;
+	int xj1=xj;
+	int xj2=xj1+1;
 	
 	RealT S0=dest_yi1[xj1]; 
 	RealT S1=dest_yi2[xj1];
@@ -593,8 +592,8 @@ namespace Ravl2 {
 	    RangeBufferAccessC<RealT > dest_yi1 = dest[yi];
 	    RangeBufferAccessC<RealT > dest_yi2 = dest[yi+mmax];
 	    for (xj=k2; xj<N; xj+=istep) {
-	      IntT xj1=xj;
-	      IntT xj2=xj1+mmax;
+	      int xj1=xj;
+	      int xj2=xj1+mmax;
 	      
 	      RealT S0=dest_yi1[xj1];
 	      RealT S1=dest_yi2[xj1];
@@ -646,7 +645,7 @@ namespace Ravl2 {
     dct_in_place(dest);
   }
 
-  Array<RealT,2> VecRadDCTC::DCT(const Array<RealT,2>& im) const {
+  Array<VecRadDCTC::RealT,2> VecRadDCTC::DCT(const Array<RealT,2>& im) const {
     RavlAssert( im.Cols() == (size_t) N && im.Rows() == (size_t)N );
     Array<RealT,2> ret = im.Copy();
     dct_in_place(ret);
@@ -785,7 +784,7 @@ namespace Ravl2 {
 	  F=0; q=i<<M; p=q>>1;
 	  for(j=1; j<group; j++) {
 	    F=1-F; q++;
-	    IntT a=(((r[p][rows])<<1)^(MASK[F])); /* CC*/
+	    auto a=(((r[p][rows])<<1)^(MASK[F])); /* CC*/
 	    Swap(fi[a][rows],fi[q][rows]);
 	    p += F;
 	  }
@@ -805,8 +804,8 @@ namespace Ravl2 {
 	    for(j=1; j<group; j++)
 	      {
 		q--;
-		IntT a=((r[p][rows]<<1)^MASK[F]); /* CC*/
-		IntT b=q;  /*CC*/
+		auto a=((r[p][rows]<<1)^MASK[F]); /* CC*/
+		auto b=q;  /*CC*/
 		Swap(fi[a][rows],fi[b][rows]);
 		F=1-F;   p -= F;
 	      }
@@ -836,8 +835,8 @@ namespace Ravl2 {
 	  for(j=1; j<group; j++)
 	    {
 	      F=1-F; q++;
-	      IntT a=((rcol[p]<<1)^MASK[F]); /* CC*/
-	      IntT b=q;  /*CC*/
+	      auto a=((rcol[p]<<1)^MASK[F]); /* CC*/
+	      auto b=q;  /*CC*/
 	      Swap(ficol[a],ficol[b]);
 	      p += F;
 	    }
@@ -855,8 +854,8 @@ namespace Ravl2 {
 	    for(j=1; j<group; j++)
 	      {
 		q--;
-		IntT a=((rcol[p]<<1)^MASK[F]); /* CC*/
-		IntT b=q;  /*CC*/
+		auto a=((rcol[p]<<1)^MASK[F]); /* CC*/
+		auto b=q;  /*CC*/
 		Swap(ficol[a],ficol[b]);
 		F=1-F;   p -= F;
 	      }
@@ -907,28 +906,28 @@ namespace Ravl2 {
     /* Do divisions by 2 */
     {
       RangeBufferAccessC<RealT > firow = fi[0];
-      for (IntT j=1; j<N; j++) 
+      for (int j=1; j<N; j++) 
 	firow[j] *= 0.5;
     }
-    for (IntT i=1; i<N; i++) {
+    for (int i=1; i<N; i++) {
       RangeBufferAccessC<RealT > firow = fi[i];
       firow[0] *= 0.5;
-      for (IntT j=1; j<N; j++) 
+      for (int j=1; j<N; j++) 
 	firow[j] *= 0.25;
     }    
     
     /* Postadditions for the rows */
-    for (IntT cols=0; cols<N; cols++) {
-      IntT step = N;
-      IntT loops = 1;
-      for (IntT k=1; k<m; k++)  {
+    for (int cols=0; cols<N; cols++) {
+      int step = N;
+      int loops = 1;
+      for (int k=1; k<m; k++)  {
 	step = step >> 1;
-	IntT ep = step >> 1;
+	int ep = step >> 1;
 	loops = loops << 1;
-	for (IntT j=0; j < (step>>1); j++) {
-	  IntT l=ep;
-	  for (IntT i=1; i<loops; i++)  {
-	    IntT z = l+step;
+	for (int j=0; j < (step>>1); j++) {
+	  int l=ep;
+	  for (int i=1; i<loops; i++)  {
+	    int z = l+step;
 	    fi[z][cols] -= fi[l][cols];
 	    l =z;
 	  }
@@ -938,18 +937,18 @@ namespace Ravl2 {
     }
     
     /* Postaditions for the columns */
-    for (IntT rows=0; rows<N; rows++) {
+    for (int rows=0; rows<N; rows++) {
       RangeBufferAccessC<RealT > firow = fi[rows];
-      IntT step =N;
-      IntT loops = 1;
-      for (IntT k=1; k<m; k++)  {
+      int step =N;
+      int loops = 1;
+      for (int k=1; k<m; k++)  {
 	step = step>>1;
-	IntT ep = step>>1;
+	int ep = step>>1;
 	loops = loops <<1;
-	for (IntT j=0; j<(step>>1); j++) {
-	  IntT l=ep;
-	  for (IntT i=1; i<loops; i++)  {
-	    IntT z = l+step;
+	for (int j=0; j<(step>>1); j++) {
+	  int l=ep;
+	  for (int i=1; i<loops; i++)  {
+	    int z = l+step;
 	    firow[z] -= firow[l];
 	    l = z;
 	  }

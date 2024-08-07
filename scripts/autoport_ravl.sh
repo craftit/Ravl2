@@ -82,6 +82,7 @@ s/\.Range1()/\.range(0)/g
 s/\.Range2()/\.range(1)/g
 s/\.Max()/\.max()/g
 s/\.Min()/\.min()/g
+s/\.Frame()/\.range()/g
 
 s/\.V()//g
 s/Index2dC/Index<2>/g
@@ -109,12 +110,6 @@ s/img\.TRow()/img\.range().min(0)/g
 s/img\.BRow()/img\.range().max(0)/g
 s/img\.LCol()/img\.range().min(1)/g
 s/img\.RCol()/img\.range().max(1)/g
-
-# ImageC has .Range1() and .Range2() methods, replace with .range(0) and .range(1)
-s/image\.Range1()/image\.range(0)/g
-s/image\.Range2()/image\.range(1)/g
-s/img\.Range1()/img\.range(0)/g
-s/img\.Range2()/img\.range(1)/g
 
 # .Rows() and .Cols() -> .size(0) and .size(1)
 s/image\.Rows()/image\.range()\.size(0)/g

@@ -18,48 +18,45 @@
 //    Software Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 // Modified by Charles Galambos.
-#ifndef RAVLIMAGE_DCT2D_HEADER
-#define RAVLIMAGE_DCT2D_HEADER 1
 //! author="Brendt Wohlberg, Modified by Charles Galambos"
 //! license=own
+
+#pragma once
 
 #include "Ravl2/Array.hh"
 
 
 namespace Ravl2 {
   class VectorC;
-};
 
-namespace Ravl2 {
-  
-  void DCT(const Array<RealT,2>& src,Array<RealT,2>& dest);
-  //: Perform DCT on src, result in dest
-  // Note: the classes ChanDCTC or VecRadDCTC should be faster than this.
-  
-  // Only works on square images.
-  
-  void IDCT(const Array<RealT,2>& src, Array<RealT,2>& dest);
-  //: Perform Inverse DCT on src, result in dest
-  // Only works on square images.
-  
-  VectorC PackZigZag(const Array<RealT,2> &img,unsigned n);
-  //: Pack first n components of image 'img' in a zig zag pattern from the to left corner of 'img'.
-  
-  void UnpackZigZag(const VectorC &vec,Array<RealT,2> &img);
-  //: Unpack components of image vec in a zig zag pattern from the to left corner of 'img'.
-  
-  //:-
-  //: Class implementing Fast DCT
-  // class ChanDCT is an encapsulation of sofware (URL:
+  //! Perform DCT on src, result in dest
+  //! Note: the classes ChanDCTC or VecRadDCTC should be faster than this.
+  //! Only works on square images.
+  void DCT(const Array<float,2>& src,Array<float,2>& dest);
+
+  //! Perform Inverse DCT on src, result in dest
+  //! Only works on square images.
+  void IDCT(const Array<float,2>& src, Array<float,2>& dest);
+
+  //! Pack first n components of image 'img' in a zig zag pattern from the to left corner of 'img'.
+  VectorC PackZigZag(const Array<float,2> &img,unsigned n);
+
+  //! Unpack components of image vec in a zig zag pattern from the to left corner of 'img'.
+  void UnpackZigZag(const VectorC &vec,Array<float,2> &img);
+
+  //! Class implementing Fast DCT
+  // class ChanDCT is an encapsulation of software (URL:
   // ftp://etro.vub.ac.be/pub/COMPRESSION/DCT_ALGORITHMS/) written by
   // Charilaos A. Christopoulos (Email:chchrist@etro.vub.ac.be), based on
   // the paper: <p>
   // S. C. Chan and K. L. Ho, "A new two-dimensional fast cosine transform 
   // algorithm", IEEE Trans. on Signal Processing, Vol. 39, No. 2, pp. 481-485,
   // Feb. 1991.
-  
+
   class ChanDCTC {
   public:
+    using RealT = float;
+
     ChanDCTC();
     //: Default constructor.
     // 'Setup' must be called before DCT computation.
@@ -87,7 +84,7 @@ namespace Ravl2 {
     void DCT(const Array<RealT,2>& src, Array<RealT,2>& dest) const;
     //: Compute the dct of 'src', place the result in 'dest'.
     
-    IntT Size() const
+    auto Size() const
     { return N; }
     //: Access the size of a side of the dct rectangle.
     
@@ -115,11 +112,11 @@ namespace Ravl2 {
   };
 
   
-  //: Class implementing Fast DCT
+  //! Class implementing Fast DCT
   // This class allows a subset of the DCT coefficents to be calculated.
   // NOTE: This class is NOT thread safe.
   //
-  // class VecRadDCT is an encapsulation of sofware (URL:
+  // class VecRadDCT is an encapsulation of software (URL:
   // ftp://etro.vub.ac.be/pub/COMPRESSION/DCT_ALGORITHMS/) written by
   // Charilaos A. Christopoulos (Email:chchrist@etro.vub.ac.be), based on
   // the papers: <p>
@@ -136,6 +133,8 @@ namespace Ravl2 {
   
   class VecRadDCTC {
   public:
+    using RealT = float;
+
     VecRadDCTC(unsigned int size, unsigned int pts);
     //: Constructor.
     //!param: size - Size of input image. Must be a power of 2
@@ -168,11 +167,11 @@ namespace Ravl2 {
     void DCT(const Array<RealT,2>& src, Array<RealT,2>& dest) const;
     //: Compute the DCT of src, place the result in 'dest'.
     
-    IntT Size() const
+    int Size() const
     { return N; }
     //: Access the size of a side of the input dct rectangle.
     
-    IntT OutputSize() const
+    int OutputSize() const
     { return N0; }
     //: Access the size of the output array.
     
@@ -213,4 +212,3 @@ namespace Ravl2 {
 }
 
 
-#endif
