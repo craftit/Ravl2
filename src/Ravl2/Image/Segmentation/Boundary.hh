@@ -32,29 +32,29 @@ namespace Ravl2
     return (orient == BoundaryOrientationT::INSIDE_LEFT) ? BoundaryOrientationT::INSIDE_RIGHT : BoundaryOrientationT::INSIDE_LEFT;
   }
 
-  //! Crack code boundary
+  //! @brief Crack code boundary
 
-  // <p>The class Boundary represents the 4-connected oriented boundary of an
-  // image/array region. If the image is interpreted as an array of pixels in
-  // the form of square tiles, the boundary follows the edges of the tiles.</p>
-  //
-  // <p>If the region has holes in it, or several regions are labelled with the
-  // same label, the object will include all the relevant boundaries. These
-  // can be separated using the <code>OrderEdges()</code> method.</p>
+  //! The class Boundary represents the 4-connected oriented boundary of an
+  //! image/array region. If the image is interpreted as an array of pixels in
+  //! the form of square tiles, the boundary follows the edges of the tiles.
+  //!
+  //! If the region has holes in it, or several regions are labelled with the
+  //! same label, the object will include all the relevant boundaries. These
+  //! can be separated using the <code>OrderEdges()</code> method.
 
   class Boundary
   {
   public:
     //! Create the boundary from the list of edges with an appropriate orientation.
-    // The 'edgeList' will be a part of boundary.  If orient is true, the object
-    // is on the left of the boundary.
+    //! The 'edgeList' will be a part of boundary.  If orient is true, the object
+    //! is on the left of the boundary.
     explicit Boundary(const std::vector<CrackC> &edgeList, BoundaryOrientationT orient = BoundaryOrientationT::INSIDE_LEFT)
         : orientation(orient), mEdges(edgeList)
     {}
 
     //! Create the boundary from the list of edges with an appropriate orientation.
-    // The 'edgeList' will be a part of boundary.  If orient is true, the object
-    // is on the left of the boundary.
+    //! The 'edgeList' will be a part of boundary.  If orient is true, the object
+    //! is on the left of the boundary.
     explicit Boundary(std::vector<CrackC> &&edgeList, BoundaryOrientationT orient = BoundaryOrientationT::INSIDE_LEFT)
         : orientation(orient), mEdges(std::move(edgeList))
     {}
@@ -81,34 +81,33 @@ namespace Ravl2
     //: Creates the boundary from the list of pointers to the elementary edges.
     // If orient is true, the object is on the left of the boundary.
 
+    //! @brief Get the area of the region which is determined by the 'boundary'.
+    //! Note: The area of the region can be negative, if it is a 'hole' in
+    //! a plane. This can be inverted with the BReverse() method.
     int area() const;
-    //: Get the area of the region which is determined by the 'boundary'.
-    // Note: The area of the region can be negative, if it is a 'hole' in
-    // a plane. This can be inverted with the BReverse() method.
 
+    //! @brief Generate a list of boundaries.
+    //! Each item in the list corresponds to a single complete boundary contour.<br>
+    //! The edges in each boundary are ordered along the boundary.<br>
+    //! The direction of the boundaries is determined by the constructor.<br>
+    //! Boundaries that terminate at the edge of the array/image are left open.
     std::vector<Boundary> orderEdges() const;
-    //: Generate a list of boundaries.
-    // Each item in the list corresponds to a single complete boundary contour.<br>
-    // The edges in each boundary are ordered along the boundary.<br>
-    // The direction of the boundaries is determined by the constructor.<br>
-    // Boundaries that terminate at the edge of the array/image are left open.
 
-    std::vector<Boundary> order(const CrackC &firstCrack, bool orient = true);
     //!deprecated: Order boundary from edge. <br> order the edgels of this boundary such that it can be traced continuously along the direction of the first edge. The orientation of the boundary is set according to 'orient'. If the boundary is open, 'firstCrack' and 'orient' are ignored.<br>  Note: There is a bug in this code which can cause an infinite loop for some edge patterns. In particular where the two edges go through the same vertex.
+    std::vector<Boundary> order(const CrackC &firstCrack, bool orient = true);
 
+    //! @brief Return the orientation of the boundary.
+    //! @return true: object is on the left side of edges relative to their direction;<br> false: on the right.
     [[nodiscard]] auto Orient() const
     {
       return orientation;
     }
-    //: Return the orientation of the boundary.
-    // true: object is on the left side of edges relative to their
-    // direction;<br> false: on the right.
 
+    //! In place invert the boundary.
     void invert()
     {
       orientation = Ravl2::reverse(orientation);
     }
-    //: Invert the boundary.
 
     //! reverse the order of the edges.
     [[nodiscard]] Boundary reverse() const;
@@ -128,11 +127,11 @@ namespace Ravl2
     //! Get the bounding box around all pixels on the inside edge of the boundary.
     IndexRange<2> boundingBox() const;
 
+    //! @brief Convert a boundary to a polygon.
+    //! @param: bHalfPixelOffset - should (-0.5,-0.5) be added to the polygon points?
+    //! This assumes 'bnd' is a single ordered boundary (See BoundryC::OrderEdges();).
+    //! Straight edges are compressed into a single segment.
     Polygon2dC polygon(bool bHalfPixelOffset = false) const;
-    //: Convert a boundary to a polygon.
-    //!param: bHalfPixelOffset - should (-0.5,-0.5) be added to the polygon points?
-    // This assumes 'bnd' is a single ordered boundry (See BoundryC::OrderEdges();).
-    // Straight edges are compressed into a single segment.
 
     //! Get number of endges in the boundry
     [[nodiscard]] auto size() const
@@ -158,27 +157,27 @@ namespace Ravl2
 
     std::vector<CrackC> mEdges;
 
+    //! Returns the hash table for the boundary; all end points which are only
+    //! connected to one other point will have at least one invalid
+    //! neighbour (-1, -1).
     std::unordered_map<BoundaryVertex, std::array<BoundaryVertex, 2>> CreateHashtable() const;
-    // Returns the hash table for the boundary; all end points which are only
-    // connected to one other point will have at least one invalid
-    // neighbour (-1, -1).
 
+    //! Returns a continuous boundary; if the boundary is open, 'orient' will be
+    //! ignored and 'firstCrack' must be one of the end points of the boundary.
     Boundary OrderContinuous(const std::unordered_map<BoundaryVertex, std::array<BoundaryVertex, 2>> &hashtable, const CrackC &firstCrack, bool orient) const;
-    // Returns a continuous boundary; if the boundary is open, 'orient' will be
-    // ignored and 'firstCrack' must be one of the end points of the boundary.
 
+    //! Returns the endpoints of the boundary, i.e. if the boundary is closed,
+    //! the list will be empty.
     std::vector<BoundaryVertex> FindEndpoints(const std::unordered_map<BoundaryVertex, std::array<BoundaryVertex, 2>> &hashtable) const;
-    // Returns the endpoints of the boundary, i.e. if the boundary is closed,
-    // the list will be empty.
   };
 
   //! Write out the boundary to a stream.
   std::ostream &operator<<(std::ostream &os, const Boundary &bnd);
 
-  //: Creates a boundary which connects both boundary vertexes.
+  //! Creates a boundary which connects both boundary vertexes.
   Boundary Line2Boundary(const BoundaryVertex &startVertex, const BoundaryVertex &endVertex);
 
-  //: Creates a boundary around the rectangle.
+  //! Creates a boundary around the rectangle.
   Boundary toBoundary(IndexRange<2> rect, BoundaryOrientationT type = BoundaryOrientationT::INSIDE_LEFT);
 
   template <typename ArrayT, typename DataT>

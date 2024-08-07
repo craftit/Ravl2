@@ -70,6 +70,10 @@ namespace Ravl2
     DrawFrame(result, borderValue, n, rect);
   }
 
+  //: Extend an image by n pixels in all directions using a copy of its border pixel
+  // If 'result' image is large enough it will be used for results, otherwise it will
+  // be replaced with an image of a suitable size.
+
   template <class DataT>
   void ExtendImageCopy(const ImageC<DataT> &image, int n, ImageC<DataT> &result)
   {
@@ -104,10 +108,10 @@ namespace Ravl2
         it.Data1() = it.Data2();
     }
   }
-  //: Extend an image by n pixels in all directions using a copy of its border pixel
+
+  //: Extend an image by n pixels in all directions by mirroring the border region
   // If 'result' image is large enough it will be used for results, otherwise it will
   // be replaced with an image of a suitable size.
-
   template <class DataT>
   void ExtendImageMirror(const ImageC<DataT> &image, int n, ImageC<DataT> &result)
   {
@@ -148,8 +152,5 @@ namespace Ravl2
         it.Data1() = it.Data2();
     }
   }
-  //: Extend an image by n pixels in all directions by mirroring the border region
-  // If 'result' image is large enough it will be used for results, otherwise it will
-  // be replaced with an image of a suitable size.
 
 }// namespace Ravl2
