@@ -8,37 +8,74 @@
 
 #pragma once
 
+#include "Ravl2/Types.hh"
 #include "Ravl2/Array.hh"
 #include "Ravl2/Image/DrawFrame.hh"
 
 namespace Ravl2
 {
+  //! @brief In place create or fill in a result array to ensure it covers a target index range.
+  //! @param image The target image that should be covered, this image will be modified to have the given range.
+  //! @param range The index range that should be covered.
+  //! @return true if the image was extended, false if it was already large enough.
+  //! This leaves any new pixels in the result image with undefined values, this maybe
+  //! the whole image.
+  //! This slightly abuses the copyPolicy parameter as it doesn't copy the image content.
+  //! Here's its effect:
+  //!    CopyModeT::Never - Never reallocate the image, throw an exception if it's not large enough.
+  //!    CopyModeT::Auto - Reallocate the image if it's not large enough, just change its size if it is.
+  //!    CopyModeT::Always - Always reallocate the image, even if it's large enough.
+  template <CopyModeT copyPolicy = CopyModeT::Auto, typename Array1T, typename InT = typename Array1T::value_type, unsigned N = Array1T::dimensions>
+  bool resizeArray(Array1T &image, const IndexRange<N> &range)
+  {
+    if constexpr(copyPolicy == CopyModeT::Never) {
+      if(!image.range().contains(range)) {
+	// Cannot resize in place.
+	throw std::runtime_error("Image not large enough and cannot resize.");
+      }
+      image.clipBy(range);
+      return false;
+    } else {
+      // Is this an image we can resize in place?
+      static_assert(std::is_same_v<Array1T, Array<InT, N>>, "Cannot resize in place if image is not an Array.");
+      if constexpr(copyPolicy == CopyModeT::Auto) {
+	if(image.range().contains(range)) {
+	  image.clipBy(range);
+	  return false;
+	}
+      }
+      // Yes we can resize in place.
+      image = Array<InT, N>(range);
+      return true;
+    }
+  }
 
-  template <class DataT>
-  void ExtendImageFill(const ImageC<DataT> &image, int n, ImageC<DataT> &result, const DataT &borderValue)
+
+  //! @brief Extend an image by n pixels in all directions by filling new pixels with 'borderValue'.
+  //! If 'result' image is large enough it will be used for results, otherwise it will
+  //! be replaced with an image of a suitable size.
+  //! @param result The image to extend.
+  //! 
+
+  template <typename Array1T, typename InT = typename Array1T::value_type,
+    typename Array2T = Array1T, typename OutT = Array2T::value_type,unsigned N = Array1T::dimensions>
+  void extendImageFill(Array2T &result, const Array1T &image, int n, const OutT &borderValue)
   {
     assert(n > 0);
-    IndexRange<2> rect = image.Frame().Expand(n);
-    if(!result.Frame().Contains(rect))// Is result rectangle big enough.
-      result = ImageC<DataT>(rect);
+    IndexRange<2> rect = image.range().expand(n);
+    resizeArray(result, rect);
     // Copy centre of image
-    ImageC<DataT> orgImage(result, image.Frame());
-    for(BufferAccess2dIter2C<DataT, DataT> it(orgImage, orgImage.Range2(), image, image.Range2()); it; it++)
-      it.Data1() = it.Data2();
+    copy(clip(result, image.range()),image);
     // Take care of border
     DrawFrame(result, borderValue, n, rect);
   }
-  //: <a name="ExtendImage">Extend an image by n pixels in all directions by filling new pixels with 'borderValue'</a>
-  // If 'result' image is large enough it will be used for results, otherwise it will
-  // be replaced with an image of a suitable size.
 
   template <class DataT>
   void ExtendImageCopy(const ImageC<DataT> &image, int n, ImageC<DataT> &result)
   {
     assert(n > 0);
     IndexRange<2> rect = image.Frame().Expand(n);
-    if(!result.Frame().Contains(rect))// Is result rectangle big enough.
-      result = ImageC<DataT>(rect);
+    resizeArray(result, rect);
     // Copy centre of image
     ImageC<DataT> orgImage(result, image.Frame());
     for(BufferAccess2dIter2C<DataT, DataT> it(orgImage, orgImage.Range2(), image, image.Range2()); it; it++)

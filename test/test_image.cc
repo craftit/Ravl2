@@ -3,7 +3,7 @@
 #include <spdlog/spdlog.h>
 
 #include "Ravl2/Image/BilinearInterpolation.hh"
-#include "Ravl2/Image/WarpScale2d.hh"
+#include "Ravl2/Image/WarpScale.hh"
 #include "Ravl2/Image/PeakDetector.hh"
 #include "Ravl2/Image/Array2Sqr2Iter.hh"
 #include "Ravl2/Image/Array2Sqr2Iter2.hh"

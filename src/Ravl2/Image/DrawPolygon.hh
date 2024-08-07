@@ -15,7 +15,10 @@
 namespace Ravl2
 {
 
-  //! Draw a polygon into the image
+  //! @brief Draw a filled polygon into the image
+  //! @param dat The image to draw into
+  //! @param value The value to draw
+  //! @param poly The polygon to draw
   template <typename ArrayT, typename CoordT = float, typename DataT = typename ArrayT::value_type>
     requires WindowedArray<ArrayT, DataT, 2>
   void DrawFilledPolygon(ArrayT &dat, const DataT &value, const Polygon2dC<CoordT> &poly)
@@ -25,7 +28,11 @@ namespace Ravl2
       *it = value;
   }
 
-  //: Draw a poly line into the image.
+  //! @brief Draw a poly line into the image.
+  //! @param dat The image to draw into
+  //! @param value The value to draw
+  //! @param poly The polygon to draw
+
   template <typename ArrayT, typename CoordT = float, typename DataT = typename ArrayT::value_type>
     requires WindowedArray<ArrayT, DataT, 2>
   void DrawPolygon(ArrayT &dat, const DataT &value, const Polygon2dC<CoordT> &poly)
@@ -39,8 +46,12 @@ namespace Ravl2
     }
   }
 
-  //: Draw a shaded polygon into the image
-  // This function requires that DataT has a working operator*(double) function
+  //! @brief Draw a filled, shaded polygon into the image
+  //! This function requires that DataT has a working operator*(double) and += function
+  //! @param dat The image to draw into
+  //! @param values The pixel values to interpolate between, one per vertex of the polygon
+  //! @param poly The polygon to draw
+
   template <typename ArrayT, typename CoordT = float, typename DataT = typename ArrayT::value_type>
     requires WindowedArray<ArrayT, DataT, 2>
   void DrawShadedPolygon(ArrayT &dat, const std::vector<DataT> &values, const Polygon2dC<CoordT> &poly)
@@ -69,8 +80,12 @@ namespace Ravl2
     }
   }
 
-  //: Draw a shaded polygon into the image
-  // This function requires that DataT has a working operator*(double) function
+  //! @brief Draw a shaded line polygon into the image
+  //! This function requires that DataT has a working operator*(double) function
+  //! @param dat The image to draw into
+  //! @param values The pixel values to interpolate between, one per vertex of the polygon
+  //! @param poly The polygon to draw
+
   template <typename ArrayT, typename CoordT = float, typename DataT = typename ArrayT::value_type>
     requires WindowedArray<ArrayT, DataT, 2>
   void DrawPolygon(ArrayT &dat, const std::vector<DataT> &values, const Polygon2dC<CoordT> &poly)

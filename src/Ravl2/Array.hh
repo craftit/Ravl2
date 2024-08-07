@@ -30,16 +30,6 @@ namespace Ravl2
   template <typename DataT, unsigned N>
   class ArrayIter;
 
-  //! Define allowed copy modes for converting between Arrays
-  //! If auto is selected data will be copied / converted if the format is
-  //! not compatible with the target type
-  enum class CopyModeT : uint8_t
-  {
-    Never,
-    Auto,
-    Always
-  };
-
   //! Declaration of the concept “WindowedArray”, which is satisfied by any type “ArrayT”
 
   template <typename ArrayT, typename DataT = typename ArrayT::value_type, unsigned N = ArrayT::dimension>

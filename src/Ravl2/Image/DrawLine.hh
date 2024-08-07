@@ -16,7 +16,10 @@
 namespace Ravl2
 {
 
-  //! Draw a line in an image.
+  //! @brief Draw a pixel wide line in an image.
+  //! @param Dat The image to draw the line in.
+  //! @param Value The value to set the pixels to.
+  //! @param aLine The line to draw.
   template <typename ArrayT, typename CoordTypeT, typename DataT = typename ArrayT::value_type, unsigned N = ArrayT::dimensions>
     requires WindowedArray<ArrayT, DataT, N>
   void DrawLine(ArrayT Dat, const DataT &Value, const LinePP2dC<CoordTypeT> &aLine)
@@ -28,7 +31,12 @@ namespace Ravl2
       Dat[*it] = Value;
   }
 
-  //! Draw a line in an image.
+  //! @brief Draw a pixel wide line between two pixels in an image.
+  //! @param Dat The image to draw the line in.
+  //! @param Value The value to set the pixels to.
+  //! @param From The start pixel.
+  //! @param To The end pixel.
+
   template <typename ArrayT, typename DataT = typename ArrayT::ValueT, unsigned N = ArrayT::dimensions>
     requires WindowedArray<ArrayT, DataT, N>
   void DrawLine(ArrayT Dat, const DataT &Value, const Index<2> &From, const Index<2> &To)
@@ -43,8 +51,13 @@ namespace Ravl2
     DrawLine(Dat, Value, LinePP2dC<float>(toPoint<float>(From), toPoint<float>(To)));
   }
 
-  //! Draw a line in an image, shaded between two colours <code>valuefrom</code> and <code>valueto</code>
+  //! @brief Draw a pixel wide line in an image, shaded between two colours <code>valuefrom</code> and <code>valueto</code>
   //! This function requires that DataT has a working operator*(double) function
+  //! @param Dat The image to draw the line in.
+  //! @param ValueFrom The value to set the pixels to at the start of the line.
+  //! @param ValueTo The value to set the pixels to at the end of the line.
+  //! @param Line The line to draw.
+
   template <typename ArrayT, typename CoordTypeT, typename DataT = typename ArrayT::ValueT, unsigned N = ArrayT::dimensions>
     requires WindowedArray<ArrayT, DataT, N>
   void DrawLine(ArrayT &Dat, const DataT &ValueFrom, const DataT &ValueTo, const LinePP2dC<CoordTypeT> &Line)
@@ -61,8 +74,14 @@ namespace Ravl2
     }
   }
 
-  //! Draw a line in an image, shaded between two colours <code>valuefrom</code> and <code>valueto</code>
+  //! @brief  Draw a line in an image, shaded between two colours <code>valuefrom</code> and <code>valueto</code>
   //! This function requires that DataT has a working operator*(double) function
+  //! @param dat The image to draw the line in.
+  //! @param valueFrom The value to set the pixels to at the start of the line.
+  //! @param valueTo The value to set the pixels to at the end of the line.
+  //! @param from The start pixel.
+  //! @param to The end pixel.
+
   template <typename ArrayT, typename CoordTypeT = float, typename DataT = typename ArrayT::ValueT, unsigned N = ArrayT::dimensions>
     requires WindowedArray<ArrayT, DataT, N>
   void DrawLine(ArrayT &dat, const DataT &valuefrom, const DataT &valueto, const Index<2> &from, const Index<2> &to)

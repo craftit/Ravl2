@@ -40,7 +40,7 @@ namespace Ravl2
     }
 #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
     // Only available in Qt 6
-    if constexpr (std::is_same_v<DataT, PixelRGBA<float>>) {
+    if constexpr (std::is_same_v<DataT, PixelRGBA32F>) {
       return QImage::Format_RGBA32FPx4;
     }
 #endif

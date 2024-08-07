@@ -13,7 +13,11 @@
 namespace Ravl2
 {
 
-  //! Draw a rectangle in an image.
+  //! @brief Draw a filled rectangle in an image.
+  //! @param dat The image to draw the rectangle in.
+  //! @param value The value to set the pixels to.
+  //! @param rect The rectangle to draw.
+
   template <typename ArrayT, typename DataT = typename ArrayT::value_type>
     requires WindowedArray<ArrayT, DataT, 2>
   void DrawFilledFrame(ArrayT &dat, const DataT &value, const IndexRange<2> &rect)

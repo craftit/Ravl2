@@ -15,14 +15,15 @@
 namespace Ravl2
 {
 
-  //! Rescale an image by sampling points with bilinear interpolation
-  //!param: img - input image
-  //!param: scale - output image size is input size <i>divided</i> by <code>scale</code>
-  //!param: result - output image
+  //! Rescale an image by sampling points with bilinear interpolation.
+  //! This is good for up scaling images, but may cause aliasing when downscaling.
+  //! @param: img - input image
+  //! @param: scale - output image size is input size <i>divided</i> by <code>scale</code>
+  //! @param: result - output image
   // If <code>result</code> is empty, the correct size is computed.
 
   template <class InT, class OutT, typename RealT = float>
-  bool WarpScaleBilinear(const Array<InT, 2> &img,
+  bool warpScaleBilinear(const Array<InT, 2> &img,
                          const Vector2f &scale,// Distance between samples in the input image.
                          Array<OutT, 2> &result// Output of scaling. The image must be of the appropriate size
   )
@@ -108,120 +109,141 @@ namespace Ravl2
     return true;
   }
 
+  //! Rescale an image
+  //! @param: img - input image
+  //! @param: result - output image
+  //! This version computes the scaling factor from the input and output image sizes
+
   template <class InT, class OutT>
-  bool WarpScaleBilinear(const Array<InT, 2> &img, Array<OutT, 2> &result)
+  bool warpScaleBilinear(const Array<InT, 2> &img, Array<OutT, 2> &result)
   {
     if(result.range().empty()) return false;
     // Distance between samples in the input image.
     Vector2f scale({float(img.range().size(0)) / float(result.Rows()),
                     float(img.range().size(1)) / float(result.Cols())});
 
-    return WarpScaleBilinear(img, scale, result);
+    return warpScaleBilinear(img, scale, result);
   }
-  //: Rescale an image
-  //!param: img - input image
-  //!param: result - output image
-  // This version computes the scaling factor from the input and output image sizes
 
-  //:--
-  template <class InT, class OutT>
-  inline void WS_prepareRow(const Array<InT, 2> &img, int srcRowI, double srcColR, double scaleColR,
-                            OutT *resPtr, int resCols)
+  namespace detail
   {
-    //cerr << "srcRowI:" << srcRowI << endl;
-    //cerr << "srcColR:" << srcColR << endl;
-    //cerr << "scaleColR:" << scaleColR << endl;
-    //cerr << "resCols:" << resCols << endl;
-    int srcColI = int_floor(srcColR);
-    double t = srcColR - srcColI;
+    //! Internal helper function for WarpSubsample
 
-    const InT *srcPtr = &(img)[srcRowI][srcColI];
+    template<class InT, class OutT>
+    inline void
+    WS_prepareRow(const Array<InT, 2> &img, int srcRowI, double srcColR, double scaleColR,
+		  OutT *resPtr, int resCols)
+    {
+      //cerr << "srcRowI:" << srcRowI << endl;
+      //cerr << "srcColR:" << srcColR << endl;
+      //cerr << "scaleColR:" << scaleColR << endl;
+      //cerr << "resCols:" << resCols << endl;
+      int srcColI = int_floor(srcColR);
+      double t = srcColR - srcColI;
 
-    InT pixVal = *srcPtr;
-    //cerr << "pixVal:" << pixVal << endl;
-    srcPtr++;
-    for(int i = 0; i < resCols; i++) {
-      //cerr << "i:" << i << endl;
-      //first partial pixel in the row
-      const double onemt = 1. - t;
-      OutT resPixel = OutT(pixVal) * onemt;
+      const InT *srcPtr = &(img)[srcRowI][srcColI];
 
-      //all full pixels
-      const double srcLastColR = srcColR + scaleColR;
-      const int srcLastColI = int_floor(srcLastColR);
-      for(srcColI++; srcColI < srcLastColI; srcColI++) {
-        resPixel += OutT(*srcPtr);
-        srcPtr++;
-      }
-
-      //last partial pixel
-      t = srcLastColR - srcLastColI;
-      pixVal = *srcPtr;
+      InT pixVal = *srcPtr;
+      //cerr << "pixVal:" << pixVal << endl;
       srcPtr++;
-      //cerr << "t:" << t << endl;
-      if(t > 1e-5) {
-        resPixel += OutT(pixVal) * t;
-      }
+      for(int i = 0; i < resCols; i++) {
+	//cerr << "i:" << i << endl;
+	//first partial pixel in the row
+	const double onemt = 1. - t;
+	OutT resPixel = OutT(pixVal) * onemt;
 
-      *resPtr = resPixel;
-      resPtr++;
-      srcColR = srcLastColR;
-      srcColI = srcLastColI;
+	//all full pixels
+	const double srcLastColR = srcColR + scaleColR;
+	const int srcLastColI = int_floor(srcLastColR);
+	for(srcColI++; srcColI < srcLastColI; srcColI++) {
+	  resPixel += OutT(*srcPtr);
+	  srcPtr++;
+	}
+
+	//last partial pixel
+	t = srcLastColR - srcLastColI;
+	pixVal = *srcPtr;
+	srcPtr++;
+	//cerr << "t:" << t << endl;
+	if(t > 1e-5) {
+	  resPixel += OutT(pixVal) * t;
+	}
+
+	*resPtr = resPixel;
+	resPtr++;
+	srcColR = srcLastColR;
+	srcColI = srcLastColI;
+      }
+    }
+
+    //! Internal helper function for WarpSubsample
+    //! the only difference with previous function is that this adds pixels to result
+
+    template<class InT, class OutT>
+    void
+    WS_prepareRowAdd(const Array<InT, 2> &img, int srcRowI, double srcColR, double scaleColR,
+		     OutT *resPtr, int resCols)
+    {
+      int srcColI = int_floor(srcColR);
+      double t = srcColR - srcColI;
+
+      const InT *srcPtr = &(img)[srcRowI][srcColI];
+
+      InT pixVal = *srcPtr;
+      srcPtr++;
+      for(int i = 0; i < resCols; i++) {
+	//first partial pixel in the row
+	const double onemt = 1. - t;
+	OutT resPixel = OutT(pixVal) * onemt;
+
+	//all full pixels
+	const double srcLastColR = srcColR + scaleColR;
+	const int srcLastColI = int_floor(srcLastColR);
+	for(srcColI++; srcColI < srcLastColI; srcColI++) {
+	  resPixel += OutT(*srcPtr);
+	  srcPtr++;
+	}
+
+	//last partial pixel
+	t = srcLastColR - srcLastColI;
+	pixVal = *srcPtr;//this could read outside the row, but the value will not be used
+	srcPtr++;
+	if(t > 1e-5) {
+	  resPixel += OutT(pixVal) * t;
+	}
+
+	*resPtr += resPixel;
+	resPtr++;
+	srcColR = srcLastColR;
+	srcColI = srcLastColI;
+      }
     }
   }
 
-  //the only difference with previous function is that this adds pixels to result
-  template <class InT, class OutT>
-  inline void WS_prepareRowAdd(const Array<InT, 2> &img, int srcRowI, double srcColR, double scaleColR,
-                               OutT *resPtr, int resCols)
-  {
-    int srcColI = int_floor(srcColR);
-    double t = srcColR - srcColI;
+  //! @brief Fast image subsample
+  //! This function subsamples an image by taking the average of the pixels in the input image
+  //! over the area of the output pixel.
+  //! This function won't do supersampling with this function.
+  //! @param img - input image
+  //! @param scale - The scale is the distance between samples in the input image.
+  //! @param result - output image, output image size is input size <i>divided</i> by <code>scale</code>
 
-    const InT *srcPtr = &(img)[srcRowI][srcColI];
-
-    InT pixVal = *srcPtr;
-    srcPtr++;
-    for(int i = 0; i < resCols; i++) {
-      //first partial pixel in the row
-      const double onemt = 1. - t;
-      OutT resPixel = OutT(pixVal) * onemt;
-
-      //all full pixels
-      const double srcLastColR = srcColR + scaleColR;
-      const int srcLastColI = int_floor(srcLastColR);
-      for(srcColI++; srcColI < srcLastColI; srcColI++) {
-        resPixel += OutT(*srcPtr);
-        srcPtr++;
-      }
-
-      //last partial pixel
-      t = srcLastColR - srcLastColI;
-      pixVal = *srcPtr;//this could read outside the row, but the value will not be used
-      srcPtr++;
-      if(t > 1e-5) {
-        resPixel += OutT(pixVal) * t;
-      }
-
-      *resPtr += resPixel;
-      resPtr++;
-      srcColR = srcLastColR;
-      srcColI = srcLastColI;
-    }
-  }
-
-  template <class InT, class OutT, typename RealAccumT = double>
-  bool WarpSubsample(const Array<InT, 2> &img,
-                     Vector2f scale,       // Distance between samples in the input image.
-                     Array<OutT, 2> &result// Output of scaling. The image must be of the appropriate size
+  template <typename Array1T, typename InT = typename Array1T::value_type,
+           typename Array2T = Array1T, typename OutT = Array2T::value_type,unsigned N = Array1T::dimensions,
+	   typename RealAccumT = double>
+    requires WindowedArray<Array1T, InT, N> &&
+             WindowedArray<Array1T, OutT, N> &&
+               (N >= 2)
+  void warpSubsample(const Array1T &img,
+                     Vector2f scale,
+		     Array2T &result
   )
   {
-    //cout << "WarpSubsample scale:" << scale << endl;
     //we can't do supersampling
-    if(scale[0] < 1 || scale[1] < 1)
-      return false;
-
-    //cout << "src frame:" << img.range() << std::endl;
+    if(scale[0] < 1.0f || scale[1] < 1.0f) {
+      SPDLOG_WARN("WarpSubsample: scale must be >= 1.0");
+      throw std::runtime_error("WarpSubsample: scale must be >= 1.0");
+    }
 
     const IndexRange<2> &imgFrame = img.range();
     IndexRange<2> rng(
@@ -230,12 +252,13 @@ namespace Ravl2
       IndexRange<1>(int_ceil(imgFrame[1].min() / scale[1]),
                     int_floor((imgFrame[1].max() - 0) / scale[1])));
 
-    if(result.range().empty()) {
-      result = Array<OutT, 2>(rng);
-    } else {
-      if(!rng.contains(result.range())) {
-        std::cerr << "Resulting image is too large\n";
-        return false;
+    if(!result.range().contains(rng)) {
+      //! Can we resize the result?
+      if constexpr (!std::is_same_v<Array2T, Array<OutT,N>>) {
+	SPDLOG_WARN("Resulting image is too large");
+	throw std::runtime_error("Resulting image is too large");
+      } else {
+	result = Array<OutT, 2>(rng);
       }
     }
 
@@ -256,7 +279,7 @@ namespace Ravl2
     int srcRowI = int_floor(srcRowR);
     RealAccumT u = srcRowR - srcRowI;
 
-    WS_prepareRow(img, srcRowI, origin[1], scale[1], bufferRow.data(), resCols);
+    detail::WS_prepareRow(img, srcRowI, origin[1], scale[1], bufferRow.data(), resCols);
     //if(!CheckRow(buffer, resCols, scale[1])) return false;
 
     for(int j = 0; j < resRows; j++) {
@@ -274,14 +297,14 @@ namespace Ravl2
       //cerr << "srcLastRowI:" << srcLastRowI << endl;
       for(srcRowI++; srcRowI < srcLastRowI; srcRowI++) {
         //cerr << "srcRowI:" << srcRowI << endl;
-        WS_prepareRowAdd(img, srcRowI, origin[1], scale[1], bufferRes.data(), resCols);
+	detail::WS_prepareRowAdd(img, srcRowI, origin[1], scale[1], bufferRes.data(), resCols);
       }
 
       //last partial pixel
       u = srcLastRowR - srcLastRowI;
       //cerr << "u:" << u << endl;
       if(u > 1e-5) {
-        WS_prepareRow(img, srcRowI, origin[1], scale[1], bufferRow.data(), resCols);
+        detail::WS_prepareRow(img, srcRowI, origin[1], scale[1], bufferRow.data(), resCols);
         //if(!CheckRow(buffer, resCols, scale[1])) return false;
         for(int i = 0; i < resCols; i++) {
           bufferRes[i] += bufferRow[i] * u;
@@ -290,7 +313,7 @@ namespace Ravl2
         //check if we need buffer for next iteration
         if(j + 1 < resRows) {
           //cerr << "u srcRowI:" << srcRowI << endl;
-          WS_prepareRow(img, srcRowI, origin[1], scale[1], bufferRow.data(), resCols);
+	  detail::WS_prepareRow(img, srcRowI, origin[1], scale[1], bufferRow.data(), resCols);
           //if(!CheckRow(buffer, resCols, scale[1])) return false;
         }
       }
@@ -305,9 +328,6 @@ namespace Ravl2
       srcRowR = srcLastRowR;
       srcRowI = srcLastRowI;
     }
-
-    return true;
   }
-  //: Fast image subsample
 
 }// namespace Ravl2

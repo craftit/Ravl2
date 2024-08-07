@@ -91,4 +91,9 @@ namespace Ravl2
     DrawPolygon(dat, value, poly);
   }
 
+  //! Instance some common types.
+  extern template void DrawCircle<Array<uint8_t ,2>>(Array<uint8_t ,2> &, const uint8_t &value, const Index<2> &center, unsigned radius);
+  //extern template void DrawFilledCircle<Array<uint8_t ,2>, uint8_t, float>(Array<uint8_t ,2> &, const uint8_t &value, const Point<float, 2> &center, float radius);
+  //extern template void DrawCircle<Array<uint8_t ,2>>(Array<uint8_t ,2> &, const uint8_t &value, const Point<float, 2> &center, float radius);
+
 }// namespace Ravl2

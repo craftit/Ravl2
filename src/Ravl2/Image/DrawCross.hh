@@ -28,7 +28,8 @@ namespace Ravl2
         dat[at - off1] = value;
       }
     } else {
-      // Cross is not entirely in the image.
+      // Cross is not entirely in the image, so check each pixel.
+      // The crosses are typically small, so it is faster to check each pixel.
       if(dat.range().contains(at))
         dat[at] = value;
       for(int i = 1; i < pixelSize; i++) {

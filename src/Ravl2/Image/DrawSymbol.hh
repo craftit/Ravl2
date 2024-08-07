@@ -4,12 +4,11 @@
 // General Public License (LGPL). See the lgpl.licence file for details or
 // see http://www.gnu.org/copyleft/lesser.html
 // file-header-ends-here
-#ifndef RAVLIMAGE_DRAWSYMBOL_HEADER
-#define RAVLIMAGE_DRAWSYMBOL_HEADER 1
-///////////////////////////////////////////////////////////////////
 //! author="Bill Christmas"
 //! date="25/3/2013"
 //! example=exDraw.cc
+
+#pragma once
 
 #include "Ravl2/Image/DrawCircle.hh"
 #include "Ravl2/Image/DrawCross.hh"
@@ -20,4 +19,3 @@
 #include "Ravl2/Image/DrawPolygon.hh"
 //#include "Ravl2/Image/Font.hh"
 
-#endif

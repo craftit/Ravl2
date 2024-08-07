@@ -256,6 +256,15 @@ namespace Ravl2
     {
       (set<OChannels>(other.template get<OChannels>()), ...);
     }
+
+    //! Serialization support
+    //! Just do the same thing as the vector.
+    template <typename ArchiveT>
+    void serialize(ArchiveT &archive)
+    {
+      archive(static_cast<Vector<CompT, sizeof...(Channels)> &>(*this));
+    }
+
   };
 
   //! Stream output
