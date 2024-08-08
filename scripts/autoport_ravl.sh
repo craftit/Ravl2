@@ -10,10 +10,6 @@ else
     SRC_DIR=$DIR/../src
 fi
 
-# Find all the header and source files in the src directory
-files=$(find $SRC_DIR -type f -name "*.hh" -o -name "*.cc")
-#echo "$files"
-
 # Create a temporary file for the sed script
 sed_script_file=$(mktemp)
 
@@ -110,9 +106,9 @@ s/img\.BRow()/img\.range().max(0)/g
 s/img\.LCol()/img\.range().min(1)/g
 s/img\.RCol()/img\.range().max(1)/g
 
-# .Rows() and .Cols() -> .size(0) and .size(1)
-s/\.Rows()/\.range()\.size(0)/g
-s/\.Cols()/\.range()\.size(1)/g
+# .Rows() and .Cols()
+s/\.Rows()/\.range(0)\.size()/g
+s/\.Cols()/\.range(1)\.size()/g
 
 # Replace Frame().TRow() with .range().range(0).min()
 s/\.TRow()/\.min(0)/g
@@ -216,12 +212,32 @@ s/RavlError/SPDLOG_ERROR/g
 # Other types, do them last to avoid conflicts
 s/UIntT/unsigned/g
 s/SizeT/size_t/g
+
+# Classes
+s/StringC/std::string/g
+s/ByteT/uint8_t/g
+s/UByteT/uint8_t/g
+s/FontC/BitmapFont/g
+
+
 EOF
 
-echo "Applying sed script $sed_script_file to files in $SRC_DIR"
-
-# Apply the sed script to the files
-echo "$files" | xargs sed -i -f "$sed_script_file"
+# For each argument passed to the script
+for arg in "$@" ; do
+  # Is the target a text file?
+  if [ -f $arg ]; then
+    # Format the file
+    echo "Porting $arg"
+    sed -i -f "$sed_script_file" $arg
+  else
+    # Format all source files in the directory
+    # Find all the header and source files in the src directory
+    #files=$(find $SRC_DIR -type f -name "*.hh" -o -name "*.cc")
+    #echo "$files"
+    echo "Porting directory $arg"
+    find $SRC_DIR -type f \( -name "*.hh" -o -name "*.cc" \) -print0 | xargs -0 sed -i -f "$sed_script_file"
+  fi
+done
 
 # Clean up the temporary file
-#rm "$sed_script_file"
+rm "$sed_script_file"

@@ -5,18 +5,14 @@
 // see http://www.gnu.org/copyleft/lesser.html
 // file-header-ends-here
 
-#include "Ravl2/Image/Font.hh"
-#include "Ravl2/Image/PSFFont.h"
 #include <vector>
+#include <exception>
+#include <spdlog/spdlog.h>
+#include <fstream>
+#include "Ravl2/Image/BitmapFont.hh"
 #include "Ravl2/Resource.hh"
 
 /////////////////////////////////////
-// Font file information
-
-/*! rcsid="$Id$" */
-/*! lib=RavlImage */
-/*! license=own */
-/*! file="Ravl/Image/Base/PSFFont.h" */
 
 /* /// PSF1 /////////////////////////////////////////////////////////// */
 
@@ -80,134 +76,141 @@ namespace Ravl2 {
 
   //: Load the default font.
   
-  static FontC LoadDefaultFont() {
-    StringC fontName = Resource("RAVL/Fonts","default8x16.psf");
-    FontC defaultFont = LoadPSF1(fontName);
-    if(!defaultFont.IsValid())
-      std::cerr << "WARNING: Can't load default font '" << fontName << "'\n";
+  static BitmapFont LoadDefaultFont() {
+    std::string fontName = findFileResource("fonts","default8x16.psf");
+    if(fontName.empty()) {
+      SPDLOG_ERROR("Can't find default font");
+      throw std::runtime_error("Can't find default font");
+    }
+    BitmapFont defaultFont = LoadPSF1(fontName);
+    if(!defaultFont.IsValid()) {
+      SPDLOG_ERROR("Can't load default font '{}'", fontName);
+      throw std::runtime_error("Can't load default font");
+    }
     return defaultFont;
   }
   
   //: Access default font.
   
-  FontC &DefaultFont() {
-    static FontC defaultFont = LoadDefaultFont();
+  BitmapFont &DefaultFont() {
+    static BitmapFont defaultFont = LoadDefaultFont();
     return defaultFont;
   }
   
   //: Load default font.
   
-  FontC::FontC(bool)
+  BitmapFont::BitmapFont(bool)
   { (*this) = DefaultFont(); }
   
   //: Get the offset to the center of the string.
   
-  Index<2> FontC::Center(const StringC &text) const {
-    return Size(text)/2;
+  Index<2> BitmapFont::Center(const std::string &text) const {
+    auto theSize = Size(text);
+    return toIndex(theSize[0] / 2, theSize[1] / 2);
   }
 
   //: Compute the size of image required to render 'text'.
   
-  Index<2> FontC::Size(const StringC &text) const {
-    const char *at = text.chars();
+  Index<2> BitmapFont::Size(const std::string &text) const {
+    const char *at = text.data();
     const char *eos = &(at[text.length()]);
-    IntT maxHeight = 0;
-    IntT cols = 0;
+    int maxHeight = 0;
+    int cols = 0;
     for(;at != eos;at++) {
-      const IndexRange<2> &ind = glyphs[*at].range(); 
-      if((IntT) ind.range().size(0) > maxHeight)
-	maxHeight = ind.range().size(0);
-      cols += ind.range().size(1);
+      const IndexRange<2> &ind = glyphs[size_t(*at)].range();
+      if(ind.range(0).size() > maxHeight)
+	maxHeight = ind.range(0).size();
+      cols += ind.range(1).size();
     }
-    return Index<2>(maxHeight,cols);    
+    return Index<2>({maxHeight,cols});
   }
 
   ////////////////////////////////////////////////////////////////
   
-  FontC LoadPSF1(const StringC &fontFile) {
+  BitmapFont LoadPSF1(const std::string &fontFile) {
     ONDEBUG(std::cerr << "LoadPSF1() Loading font " << fontFile << "\n");
-    psf1_header hdr; //: psf file
+    psf1_header hdr {}; //: psf file
     
-    IStreamC inf(fontFile);
+    std::ifstream inf(fontFile);
     if(!inf) {
-      std::cerr << "LoadPSF1(), Failed to open font file '" << fontFile << "'\n";
-      return FontC();
+      SPDLOG_ERROR("Failed to open font file '{}'", fontFile);
+      return BitmapFont();
     }
     
     // Read the header.
     
-    inf.read((char *) &hdr,sizeof(psf1_header));    
+    inf.read(reinterpret_cast<char *>( &hdr),sizeof(psf1_header));
     if((hdr.magic[0] != PSF1_MAGIC0) || (hdr.magic[1] != PSF1_MAGIC1))
-      return FontC(); // Not a PSF1 font.
-    int height = hdr.charsize;
-    int ng = 255;
+      return {}; // Not a PSF1 font.
+    size_t height = hdr.charsize;
+    size_t ng = 255;
     if(hdr.mode & PSF1_MODE512)
       ng = 512;
     
-    std::vector<Array<ByteT,2> > glyphs(ng);
-    std::vector<ByteT > buf(height);
-    for(SArray1dIterC<Array<ByteT,2> > it(glyphs);it;it++) {
+    std::vector<Array<uint8_t,2> > glyphs(ng);
+    std::vector<uint8_t > buf(height);
+    for(auto it: glyphs) {
       // Read glyph
-      Array<ByteT,2> img(height,8);
-      *it = img;
-      inf.read((char *) &(buf[0]),height);
-      for(IntT i=0;i < height;i++) {
+      Array<uint8_t,2> img({height,8});
+      it = img;
+      inf.read(reinterpret_cast<char *>(&(buf[0])),std::streamsize(height));
+      for(size_t i=0;i < height;++i) {
 	int dat = buf[i]; 
-	for(IntT j = 0;j < 8;j++) {
+	for(int j = 0;j < 8;++j) {
 	  if((dat >> (7-j)) & 1) 
-	    img[i][j]=255;
+	    img[int(i)][j]=255;
 	  else
-	    img[i][j]=0;
+	    img[int(i)][j]=0;
 	}
       }
     }
     
-    return FontC(glyphs);
+    return BitmapFont(glyphs);
   }
 
   //: Load PSF2 font.
   
-  FontC LoadPSF2(const StringC &fontFile) {
-    ONDEBUG(std::cerr << "LoadPSF2() Loading font " << fontFile << "\n");
-    IStreamC inf(fontFile);
+  BitmapFont LoadPSF2(const std::string &fontFile)
+  {
+    std::ifstream inf(fontFile);
     if(!inf) {
-      std::cerr << "LoadPSF2(), Failed to open font file '" << fontFile << "'\n";
-      return FontC();
+      SPDLOG_ERROR("Failed to open font file '{}'", fontFile);
+      return {};
     }
-    psf2_header hdr;    
-    inf.read((char *) &hdr,sizeof(hdr));
+    psf2_header hdr {};
+    inf.read(reinterpret_cast<char *>(&hdr),sizeof(hdr));
     if(hdr.magic[0] != PSF2_MAGIC0 || hdr.magic[1] != PSF2_MAGIC1 ||
        hdr.magic[2] != PSF2_MAGIC2 || hdr.magic[3] != PSF2_MAGIC3) {
-      return FontC(); // Not a PSF2 font.
+      SPDLOG_ERROR("Invalid magic number in font file '{}'", fontFile);
+      return {}; // Not a PSF2 font.
     }
     
     // Should byteswap header here if needed.
     
-    std::vector<Array<ByteT,2> > glyphs(hdr.length);
-    std::vector<ByteT > buf(hdr.charsize); 
+    std::vector<Array<uint8_t,2> > glyphs(hdr.length);
+    std::vector<uint8_t > buf(hdr.charsize); 
     inf.seekg(hdr.headersize);
-    for(SArray1dIterC<Array<ByteT,2> > it(glyphs);it;it++) {
+    for(auto & it : glyphs) {
       // Read glyph
-      Array<ByteT,2> img(hdr.height,hdr.width);
-      *it = img;
-      inf.read((char *) &(buf[0]),hdr.charsize);
+      Array<uint8_t,2> img({hdr.height,hdr.width});
+      it = img;
+      inf.read(reinterpret_cast<char *>(&(buf[0])),hdr.charsize);
       int at = 0;
       // The following loop could be much faster, will do
       // something about it if anyone is interested.
-      for(unsigned i=0;i < hdr.height;i++) {
-	for(unsigned j = 0;j < hdr.width;j++) {
-	  char dat = buf[at + (j/8)];
+      for(int i=0;i < int(hdr.height);++i) {
+	for(int j = 0;j < int(hdr.width);++j) {
+	  auto dat = buf[size_t(at + (j/8))];
 	  if((dat >> ((7-j) % 8)) & 1) 
 	    img[i][j]=255;
 	  else
 	    img[i][j]=0;
 	}
-        
-        at += ((hdr.width + 7) / 8);
+        at += int((hdr.width + 7) / 8);
       }
     }
     
-    return FontC(glyphs);
+    return BitmapFont(glyphs);
   }
   
 }

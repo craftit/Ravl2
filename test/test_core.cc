@@ -17,6 +17,7 @@
 #include "Ravl2/Array.hh"
 #include "Ravl2/ArrayIterZip.hh"
 #include "Ravl2/ScanWindow.hh"
+#include "Ravl2/Resource.hh"
 
 #define CHECK_EQ(a,b) CHECK((a) == (b))
 #define ASSERT_EQ(a,b) REQUIRE((a) == (b))
@@ -754,3 +755,21 @@ TEST_CASE("AnotherIterTest", "[ArrayIter]")
   }
   CHECK_FALSE(cit.valid());
 }
+
+
+TEST_CASE("Resources")
+{
+  //SPDLOG_INFO("Dump:\n{}", Ravl2::dumpResourcePaths());
+
+  // See if we can find a built in file
+  std::string path = Ravl2::findFileResource("config","env.json");
+  CHECK(!path.empty());
+  //SPDLOG_INFO("Found env.json at {}", path);
+
+  // Check we can find the default font
+  std::string fontName = Ravl2::findFileResource("fonts","default8x16.psf");
+  CHECK(!fontName.empty());
+
+
+}
+

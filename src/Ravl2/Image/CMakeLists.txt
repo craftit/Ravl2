@@ -24,6 +24,8 @@ add_library (Ravl2Image
         ImageExtend.cc ImageExtend.hh
         ZigZagIter.cc ZigZagIter.hh
         DCT2d.cc DCT2d.hh
+        BitmapFont.cc BitmapFont.hh
+        DrawText.cc DrawText.hh
         #        MatchNormalisedCorrelation.cc MatchNormalisedCorrelation.hh
 )
 

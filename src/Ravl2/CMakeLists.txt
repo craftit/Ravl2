@@ -47,6 +47,7 @@ add_library(Ravl2Core
     IndexRangeSet.cc IndexRangeSet.hh
     Sentinel.cc Sentinel.hh
     Types.cc Types.hh
+    Resource.cc Resource.hh
 )
 
 add_library(ravl2::Ravl2Core ALIAS Ravl2Core)
@@ -63,6 +64,13 @@ target_link_libraries(Ravl2Core PUBLIC ${OpenCV_LIBS} cereal::cereal fmt::fmt xt
 
 target_include_directories(Ravl2Core ${WARNING_GUARD} PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src>
         $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/include>)
+
+message(STATUS "RAVL2 Binary     : ${PROJECT_BINARY_DIR}")
+message(STATUS "RAVL2 Installing : ${CMAKE_INSTALL_PREFIX}")
+message(STATUS "RAVL2 Source     : ${PROJECT_SOURCE_DIR}")
+
+target_compile_definitions(Ravl2Core PRIVATE -DRAVL_SOURCE_DIR="${PROJECT_SOURCE_DIR}" -DRAVL_BINARY_DIR="${PROJECT_BINARY_DIR}" -DRAVL_INSTALL_PREFIX="${CMAKE_INSTALL_PREFIX}")
+
 
 target_compile_features(Ravl2Core PUBLIC cxx_std_20)
 

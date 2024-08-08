@@ -17,21 +17,23 @@ namespace Ravl2
   //! Draw a mask into an image.
   //! Where the mask is non-zero, the image is set to the 'value'.
 
-  template <typename ArrayTargetT,
-            typename ArrayMaskT,
-            typename PixelTestT,
-            typename DataT = typename ArrayTargetT::value_type,
-            typename MaskT = typename ArrayMaskT::value_type,
-            unsigned N = ArrayTargetT::dimensions>
-    requires WindowedArray<ArrayTargetT, DataT, N>
-  void DrawMask(ArrayTargetT &img, const ArrayMaskT &mask, const DataT &value, PixelTestT test = [](const MaskT &mask) { return mask > 0; })
+  template<typename ArrayTargetT,
+      typename ArrayMaskT,
+      typename PixelTestT,
+      typename DataT = typename ArrayTargetT::value_type,
+      typename MaskT = typename ArrayMaskT::value_type,
+      unsigned N = ArrayTargetT::dimensions>
+  requires WindowedArray<ArrayTargetT, DataT, N>
+  void DrawMask(ArrayTargetT &img, const ArrayMaskT &mask, const DataT &value, Index<N> offset = {},
+                PixelTestT test = [](const MaskT &mask) { return mask > 0; })
   {
-    IndexRange<N> rng = img.range();
-    rng.clipBy(mask.range());
-    if(rng.area() < 1)
+    IndexRange<2> drawRect = mask.range() + offset; // Get rectangle.
+    drawRect.clipBy(img.range());
+    if (drawRect.area() <= 0)
       return;
-    for(auto it = begin(img, mask, rng); it; it++) {
-      if(test(it.template data<1>()))
+    IndexRange<2> maskRect = drawRect - offset;
+    for (auto it = begin(clip(img,drawRect), clip(mask,maskRect)); it.valid(); ++it) {
+      if (test(it.template data<1>()))
         it.template data<0>() = value;
     }
   }

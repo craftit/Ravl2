@@ -425,6 +425,13 @@ namespace Ravl2
       return m_min <= m_max;
     }
 
+    //! Create a new range that has the same size size but
+    //! with the min shifted at the given index.
+    [[nodiscard]] constexpr IndexRange<1> shiftedMin(int ind) const
+    {
+      return {ind, ind + (m_max - m_min)};
+    }
+
     //! Add offset to range
     [[nodiscard]] constexpr IndexRange<1> operator+(int ind) const
     {
@@ -839,6 +846,16 @@ namespace Ravl2
       for(unsigned i = 0; i < N; i++)
         valid &= m_range[i].clipBy(range.range(i));
       return valid;
+    }
+
+    //! Create a new range that has the same size size but
+    //! with the min shifted at the given index.
+    [[nodiscard]] constexpr IndexRange<N> shiftedMin(const Index<N> &newMinIndex) const
+    {
+      IndexRange<N> ret;
+      for(unsigned i = 0; i < N; i++)
+        ret[i] = m_range[i].shiftedMin(newMinIndex[i]);
+      return ret;
     }
 
     //! Access range of given dimension.
