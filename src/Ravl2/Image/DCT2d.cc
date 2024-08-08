@@ -26,6 +26,7 @@
 
 // Modified by Charles Galambos
 
+#include <numbers>
 #include "Ravl2/Image/DCT2d.hh"
 #include "Ravl2/Assert.hh"
 #include "Ravl2/ArrayIterZip.hh"
@@ -426,6 +427,11 @@ namespace Ravl2
 
   ***************************************************************************/
 
+#ifndef __clang__
+#pragma GCC diagnostic ignored "-Wuseless-cast"
+#endif
+
+
   VecRadDCTC::VecRadDCTC(unsigned int size, unsigned int pts)
   {
     if(size > 0)
@@ -488,8 +494,6 @@ namespace Ravl2
         RealT S1 = dest_yi2[xj1];
         RealT S2 = dest_yi1[xj2];
         RealT S3 = dest_yi2[xj2];
-
-#pragma GCC diagnostic ignored "-Wuseless-cast"
 
         auto sum1 = LFloatT(S0 + S1);
         auto sum2 = LFloatT(S2 + S3);
