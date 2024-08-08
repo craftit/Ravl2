@@ -4,16 +4,11 @@
 // General Public License (LGPL). See the lgpl.licence file for details or
 // see http://www.gnu.org/copyleft/lesser.html
 // file-header-ends-here
-//! rcsid="$Id$"
-//! lib=RavlImage
-//! file="Ravl/Image/Base/Font.cc"
 
-#include "Ravl/Image/Font.hh"
-#include "Ravl/Stream.hh"
-#include "Ravl/Image/PSFFont.h"
-#include "Ravl/SArray1d.hh"
-#include "Ravl/SArray1dIter.hh"
-#include "Ravl/Resource.hh"
+#include "Ravl2/Image/Font.hh"
+#include "Ravl2/Image/PSFFont.h"
+#include <vector>
+#include "Ravl2/Resource.hh"
 
 /////////////////////////////////////
 // Font file information
@@ -81,7 +76,7 @@ struct psf2_header {
 #define ONDEBUG(x)
 #endif
 
-namespace RavlImageN {
+namespace Ravl2 {
 
   //: Load the default font.
   
@@ -107,30 +102,30 @@ namespace RavlImageN {
   
   //: Get the offset to the center of the string.
   
-  Index2dC FontC::Center(const StringC &text) const {
+  Index<2> FontC::Center(const StringC &text) const {
     return Size(text)/2;
   }
 
   //: Compute the size of image required to render 'text'.
   
-  Index2dC FontC::Size(const StringC &text) const {
+  Index<2> FontC::Size(const StringC &text) const {
     const char *at = text.chars();
     const char *eos = &(at[text.length()]);
     IntT maxHeight = 0;
     IntT cols = 0;
     for(;at != eos;at++) {
-      const IndexRange2dC &ind = glyphs[*at].Frame(); 
-      if((IntT) ind.Rows() > maxHeight)
-	maxHeight = ind.Rows();
-      cols += ind.Cols();
+      const IndexRange<2> &ind = glyphs[*at].range(); 
+      if((IntT) ind.range().size(0) > maxHeight)
+	maxHeight = ind.range().size(0);
+      cols += ind.range().size(1);
     }
-    return Index2dC(maxHeight,cols);    
+    return Index<2>(maxHeight,cols);    
   }
 
   ////////////////////////////////////////////////////////////////
   
   FontC LoadPSF1(const StringC &fontFile) {
-    ONDEBUG(cerr << "LoadPSF1() Loading font " << fontFile << "\n");
+    ONDEBUG(std::cerr << "LoadPSF1() Loading font " << fontFile << "\n");
     psf1_header hdr; //: psf file
     
     IStreamC inf(fontFile);
@@ -149,11 +144,11 @@ namespace RavlImageN {
     if(hdr.mode & PSF1_MODE512)
       ng = 512;
     
-    SArray1dC<ImageC<ByteT> > glyphs(ng);
-    SArray1dC<ByteT > buf(height);
-    for(SArray1dIterC<ImageC<ByteT> > it(glyphs);it;it++) {
+    std::vector<Array<ByteT,2> > glyphs(ng);
+    std::vector<ByteT > buf(height);
+    for(SArray1dIterC<Array<ByteT,2> > it(glyphs);it;it++) {
       // Read glyph
-      ImageC<ByteT> img(height,8);
+      Array<ByteT,2> img(height,8);
       *it = img;
       inf.read((char *) &(buf[0]),height);
       for(IntT i=0;i < height;i++) {
@@ -173,7 +168,7 @@ namespace RavlImageN {
   //: Load PSF2 font.
   
   FontC LoadPSF2(const StringC &fontFile) {
-    ONDEBUG(cerr << "LoadPSF2() Loading font " << fontFile << "\n");
+    ONDEBUG(std::cerr << "LoadPSF2() Loading font " << fontFile << "\n");
     IStreamC inf(fontFile);
     if(!inf) {
       std::cerr << "LoadPSF2(), Failed to open font file '" << fontFile << "'\n";
@@ -188,19 +183,19 @@ namespace RavlImageN {
     
     // Should byteswap header here if needed.
     
-    SArray1dC<ImageC<ByteT> > glyphs(hdr.length);
-    SArray1dC<ByteT > buf(hdr.charsize); 
+    std::vector<Array<ByteT,2> > glyphs(hdr.length);
+    std::vector<ByteT > buf(hdr.charsize); 
     inf.seekg(hdr.headersize);
-    for(SArray1dIterC<ImageC<ByteT> > it(glyphs);it;it++) {
+    for(SArray1dIterC<Array<ByteT,2> > it(glyphs);it;it++) {
       // Read glyph
-      ImageC<ByteT> img(hdr.height,hdr.width);
+      Array<ByteT,2> img(hdr.height,hdr.width);
       *it = img;
       inf.read((char *) &(buf[0]),hdr.charsize);
       int at = 0;
       // The following loop could be much faster, will do
       // something about it if anyone is interested.
-      for(UIntT i=0;i < hdr.height;i++) {
-	for(UIntT j = 0;j < hdr.width;j++) {
+      for(unsigned i=0;i < hdr.height;i++) {
+	for(unsigned j = 0;j < hdr.width;j++) {
 	  char dat = buf[at + (j/8)];
 	  if((dat >> ((7-j) % 8)) & 1) 
 	    img[i][j]=255;

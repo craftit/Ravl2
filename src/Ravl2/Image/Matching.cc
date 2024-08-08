@@ -21,7 +21,7 @@ namespace Ravl2
   {
     diff = 0;
     INITMMX;
-    int cols = imgTemplate.range().Cols();
+    int cols = imgTemplate.range().range().size(1);
     switch(cols) {// Choose cols.
       case 8: {
         BufferAccess2dIter2C<ByteT, ByteT> it(imgTemplate, imgTemplate.range(0), imgTemplate.range(1),

@@ -41,7 +41,8 @@ namespace Ravl2
 
   VectorT<float> packZigZag(const Array<float, 2> &img, unsigned n)
   {
-    RavlAssert(n <= img.range().area());
+    RavlAssert(int(n) <= img.range().area());
+    n = std::min(n, unsigned(img.range().elements()));
     VectorT<float> ret = xt::empty<float>({n});
     ZigZagIterC zit(img.range());
     for(auto &it : ret) {
@@ -55,7 +56,7 @@ namespace Ravl2
   void
   unpackZigZag(Array<float, 2> &img, const VectorT<float> &vec)
   {
-    RavlAssert(vec.size() <= img.range().area());
+    RavlAssert(vec.size() <= img.range().elements());
     auto it = vec.begin();
     const auto end = vec.end();
     for(ZigZagIterC zit(img.range()); it != end; ++zit, ++it)
@@ -259,14 +260,14 @@ namespace Ravl2
   void
   ChanDCT::forwardDCT(Array<RealT, 2> &dest, const Array<RealT, 2> &src) const
   {
-    RavlAssert(src.range().size(1) == (size_t)N && src.range().size(0) == (size_t)N);
+    RavlAssert(src.range().size(1) == N && src.range().size(0) == N);
     dest = clone(src);
     dct_in_place(dest);
   }
 
   Array<ChanDCT::RealT, 2> ChanDCT::forwardDCT(const Array<RealT, 2> &im) const
   {
-    RavlAssert(im.range().size(1) == (size_t)N && im.range().size(0) == (size_t)N);
+    RavlAssert(im.range().size(1) == N && im.range().size(0) == N);
     Array<RealT, 2> ret = clone(im);
     dct_in_place(ret);
     return ret;
@@ -575,14 +576,14 @@ namespace Ravl2
   void
   VecRadDCT::forwardDCT(Array<RealT, 2> &dest, const Array<RealT, 2> &src) const
   {
-    RavlAssert(src.range().size(1) == (size_t)N && src.range().size(0) == (size_t)N);
+    RavlAssert(src.range().size(1) == int(N) && src.range().size(0) == int(N));
     dest = clone(src);
     inPlaceDCT(dest);
   }
 
   Array<VecRadDCT::RealT, 2> VecRadDCT::forwardDCT(const Array<RealT, 2> &im) const
   {
-    RavlAssert(im.range().size(1) == (size_t)N && im.range().size(0) == (size_t)N);
+    RavlAssert(im.range().size(1) == int(N) && im.range().size(0) == int(N));
     Array<RealT, 2> ret = clone(im);
     inPlaceDCT(ret);
     return ret;

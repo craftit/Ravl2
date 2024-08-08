@@ -63,7 +63,7 @@ namespace Ravl2
     auto valuesEnd = values.end();
     // Draw shaded polygon
     for(Polygon2dIterC<CoordT> it(dat, poly); it; it++) {
-      auto pnt = toPoint<float>(it.Index());
+      auto pnt = toPoint<float>(it.index());
       // Calculate barycentric coords
       auto coord = poly.BarycentricCoordinate(pnt);
       // Calculate interpolated value

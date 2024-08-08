@@ -75,7 +75,7 @@ namespace Ravl2
 
     Index<2> Index()
     {
-      return Index<2>(m_polygonIter[0], m_arrayIter.Index());
+      return Index<2>(m_polygonIter[0], m_arrayIter.index());
     }
     //: Access to the current index in the array
 

@@ -7,20 +7,16 @@
 #ifndef RAVLIMAGE_FONT_HEADER
 #define RAVLIMAGE_FONT_HEADER 1
 ////////////////////////////////////////////////////////////////////////////
-//! rcsid="$Id$"
-//! lib=RavlImage
 //! author="Charles Galambos"
 //! docentry="Ravl.API.Images.Drawing"
-//! file="Ravl/Image/Base/Font.hh"
 //! example=exFont.cc
 
-#include "Ravl/SArray1d.hh"
-#include "Ravl/Image/Image.hh"
-#include "Ravl/Array2dIter2.hh"
+#include <vector>
+#include "Ravl2/Array.hh"
+#include "Ravl2/Array2dIter2.hh"
 
-namespace RavlImageN {
+namespace Ravl2 {
   
-  //! userlevel=Normal
   //: Font for rendering text.
   
   class FontC {
@@ -33,43 +29,43 @@ namespace RavlImageN {
     explicit FontC(bool);
     //: Load default font.
     
-    FontC(SArray1dC<ImageC<ByteT> > &nGlyphs)
+    FontC(std::vector<Array<ByteT,2> > &nGlyphs)
       : glyphs(nGlyphs)
     {}
     //: Constructor from array of image.
     
-    ImageC<ByteT> &operator[](IntT let)
+    Array<ByteT,2> &operator[](IntT let)
     { return glyphs[let]; }
     //: Access character.
     
-    const ImageC<ByteT> &operator[](IntT let) const
+    const Array<ByteT,2> &operator[](IntT let) const
     { return glyphs[let]; }
     //: Access character.
     
-    SArray1dC<ImageC<ByteT> > &Glyphs()
+    std::vector<Array<ByteT,2> > &Glyphs()
     { return glyphs; }
     //: Access image array.
     
-    const SArray1dC<ImageC<ByteT> > &Glyphs() const
+    const std::vector<Array<ByteT,2> > &Glyphs() const
     { return glyphs; }
     //: Access image array.
     
     bool IsValid() const
-    { return glyphs.Size() != 0; }
+    { return glyphs.size() != 0; }
     //: Is this a valid font.
     
-    Index2dC Center(const StringC &text) const;
+    Index<2> Center(const StringC &text) const;
     //: Get the offset to the centre of the string.
     
-    Index2dC Size(const StringC &text) const;
+    Index<2> Size(const StringC &text) const;
     //: Compute the size of image required to render 'text'.
     
-    UIntT Count() const
-    { return glyphs.Size(); }
+    unsigned Count() const
+    { return glyphs.size(); }
     //: Count the number of glyphs in the font.
     
   protected:
-    SArray1dC<ImageC<ByteT> > glyphs;
+    std::vector<Array<ByteT,2> > glyphs;
   };
   
   FontC LoadPSF1(const StringC &fontFile);
@@ -86,26 +82,26 @@ namespace RavlImageN {
   template<class DataT>
   void DrawText(const FontC &font,
 		const DataT &value,
-		const Index2dC &offset,
+		const Index<2> &offset,
 		const StringC &text,
-		ImageC<DataT> &image) 
+		Array<DataT,2> &image) 
   {
     RavlAssert(font.IsValid());
-    Index2dC at(offset);
+    Index<2> at(offset);
     const char *p = text.chars();
     const char *eos = &p[text.length()];
     for(;p != eos;p++) {
-      const ImageC<ByteT> &glyph = font[(UIntT) *((UByteT *) p)];
-      IndexRange2dC drawRect = glyph.Frame(); // Get rectangle.
+      const Array<ByteT,2> &glyph = font[(unsigned) *((UByteT *) p)];
+      IndexRange<2> drawRect = glyph.range(); // Get rectangle.
       drawRect.SetOrigin(at); 
-      drawRect.ClipBy(image.Frame());
-      if(drawRect.Area() <= 0) 
+      drawRect.clipBy(image.range());
+      if(drawRect.area() <= 0) 
 	continue;
-      for(Array2dIter2C<DataT,ByteT> it(Array2dC<DataT>(image,drawRect),glyph,false);it;it++) {
-	if(it.Data2() != 0)
-	  it.Data1() = value;
+      for(Array2dIter2C<DataT,ByteT> it(Array<DataT,2>(image,drawRect),glyph,false);it;it++) {
+	if(it.data<1>() != 0)
+	  it.data<0>() = value;
       }
-      at.Col() += glyph.Frame().Cols();
+      at[1] += glyph.range().range().size(1);
     }
   }
 
@@ -115,9 +111,9 @@ namespace RavlImageN {
   template<class DataT>
   void DrawTextCenter(const FontC &font,
 		const DataT &value,
-		const Index2dC &centre,
+		const Index<2> &centre,
 		const StringC &text,
-		ImageC<DataT> &image) 
+		Array<DataT,2> &image) 
   { 
     RavlAssert(font.IsValid());
     DrawText(font,value,centre - font.Center(text),text,image); 
@@ -127,9 +123,9 @@ namespace RavlImageN {
 
 
   template<class DataT>
-  void DrawText(ImageC<DataT> &image,
+  void DrawText(Array<DataT,2> &image,
                 const DataT &value,
-		const Index2dC &offset,
+		const Index<2> &offset,
 		const StringC &text
 		) 
   { DrawText(DefaultFont(), value, offset, text, image); }
@@ -137,9 +133,9 @@ namespace RavlImageN {
   // Text is positioned below and to right of "offset", using the default font.
 
   template<class DataT>
-  void DrawTextCenter(ImageC<DataT> &image,
+  void DrawTextCenter(Array<DataT,2> &image,
                 const DataT &value,
-		const Index2dC &centre,
+		const Index<2> &centre,
 		const StringC &text
 		) 
   { DrawTextCenter(DefaultFont(), value, centre, text, image); }
