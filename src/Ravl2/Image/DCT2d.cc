@@ -62,7 +62,7 @@ namespace Ravl2
       img[*zit] = *it;
   }
 
-  static inline constexpr float Alpha(int u,  int N)
+  static inline constexpr float alpha(int u, int N)
   {
     if(u == 0)
       return std::sqrt(1 / float(N));
@@ -102,7 +102,7 @@ namespace Ravl2
       float sum = 0.0;
       for(auto k = colRange.min(); k <= colRange.max(); k++)
         sum += horizontal[i][k] * std::cos(float(2 * k + 1) * std::numbers::pi_v<float> * float(j) / (float(2 * src.range().size(0))));
-      *it = Alpha(i, src.range().size(1)) * Alpha(j, src.range().size(0)) * sum;
+      *it = alpha(i, src.range().size(1)) * alpha(j, src.range().size(0)) * sum;
     }
   }
 
@@ -122,7 +122,7 @@ namespace Ravl2
       int j = at[1];
       float sum = 0.0f;
       for(auto k = rowRange.min(); k <= rowRange.max(); k++)
-        sum += Alpha(k, src.range().size(1)) * src[k][j] * std::cos(float(2 * i + 1) * std::numbers::pi_v<float> * float(k) / (float(2 * src.range().size(1))));
+        sum += alpha(k, src.range().size(1)) * src[k][j] * std::cos(float(2 * i + 1) * std::numbers::pi_v<float> * float(k) / (float(2 * src.range().size(1))));
       *it = sum;
     }
 
@@ -133,7 +133,7 @@ namespace Ravl2
       int j = at[1];
       float sum = 0.0f;
       for(auto k = colRange.min(); k <= colRange.max(); k++)
-        sum += Alpha(k, src.range().size(0)) * horizontal[i][k] * std::cos(float(2 * j + 1) * std::numbers::pi_v<float> * float(k) / (float(2 * src.range().size(0))));
+        sum += alpha(k, src.range().size(0)) * horizontal[i][k] * std::cos(float(2 * j + 1) * std::numbers::pi_v<float> * float(k) / (float(2 * src.range().size(0))));
       *it = sum;
     }
   }
@@ -468,8 +468,8 @@ namespace Ravl2
     expand1d_lookup_table();
     make2Darray();
 
-    scaleDC = 1.0f / LFloatT(N);
-    scaleMix = std::sqrt(2.0f) / LFloatT(N);
+    scaleDC = 1.0f / RealT(N);
+    scaleMix = std::sqrt(2.0f) / RealT(N);
     scaleAC = 2.0f * scaleDC;
   }
 
@@ -477,7 +477,7 @@ namespace Ravl2
   {
     int q;
     int i, j;
-    //LFloatT sum1,sum2,diff1,diff2;
+    //RealT sum1,sum2,diff1,diff2;
 
     firo3(im);
 
@@ -499,10 +499,10 @@ namespace Ravl2
         RealT S2 = dest_yi1[xj2];
         RealT S3 = dest_yi2[xj2];
 
-        auto sum1 = LFloatT(S0 + S1);
-        auto sum2 = LFloatT(S2 + S3);
-        auto diff1 = LFloatT(S0 - S1);
-        auto diff2 = LFloatT(S2 - S3);
+        auto sum1 = RealT(S0 + S1);
+        auto sum2 = RealT(S2 + S3);
+        auto diff1 = RealT(S0 - S1);
+        auto diff2 = RealT(S2 - S3);
 
         dest_yi1[xj1] = sum1 + sum2;
         dest_yi2[xj1] = (diff1 + diff2) * ct2d[step++];
@@ -533,10 +533,10 @@ namespace Ravl2
               RealT S2 = dest_yi1[xj2];
               RealT S3 = dest_yi2[xj2];
 
-              auto sum1 = LFloatT(S0 + S1);
-              auto sum2 = LFloatT(S2 + S3);
-              auto diff1 = LFloatT(S0 - S1);
-              auto diff2 = LFloatT(S2 - S3);
+              auto sum1 = RealT(S0 + S1);
+              auto sum2 = RealT(S2 + S3);
+              auto diff1 = RealT(S0 - S1);
+              auto diff2 = RealT(S2 - S3);
 
               if(q <= 1) {
                 dest_yi1[xj1] = sum1 + sum2;
@@ -601,12 +601,12 @@ namespace Ravl2
       size_t i = 0;
       et[i] = e;
       i++;
-      ct[p] = LFloatT(2.0f * std::cos(PIO2 * RealT(e) / RealT(N)));
+      ct[p] = RealT(2.0f * std::cos(PIO2 * RealT(e) / RealT(N)));
       p++;
       for(int t = 0; t < mm1; t++) {
         for(int l = 0; l < len; l++) {
           et[i] = et[size_t(l)] + inc;
-          ct[p] = LFloatT(2.0f * std::cos(RealT(et[i]) * PIO2 / RealT(N)));
+          ct[p] = RealT(2.0f * std::cos(RealT(et[i]) * PIO2 / RealT(N)));
           i++;
           p++;
         }
@@ -651,7 +651,7 @@ namespace Ravl2
         p++;
         for(size_t i = 0; i < ncb; i++) {
           cosine_array[l + step] = 1.0f;
-          cosine_array[step + l + bB] = LFloatT(c);
+          cosine_array[step + l + bB] = RealT(c);
           l++;
         }
 

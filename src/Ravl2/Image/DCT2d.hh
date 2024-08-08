@@ -184,21 +184,20 @@ namespace Ravl2
     //! Make assigment operator private.
     const VecRadDCT &operator=(const VecRadDCT &oth) = delete;
 
-    typedef RealT LFloatT;// Local definition of a float.
 
     size_t N = 0; //!< Input size
     int N0 = 0;  //!< Output size
     int m = 0;
-    std::vector<LFloatT> ct;
-    std::vector<LFloatT> ct2d;
+    std::vector<RealT> ct;
+    std::vector<RealT> ct2d;
     std::vector<unsigned int> rpData;
     std::vector<unsigned int *> r;
-    std::vector<LFloatT> cosine_array;
+    std::vector<RealT> cosine_array;
     unsigned int MASK[2] = {0, 0};
 
-    LFloatT scaleDC = 0;
-    LFloatT scaleMix = 0;
-    LFloatT scaleAC = 0;
+    RealT scaleDC = 0;
+    RealT scaleMix = 0;
+    RealT scaleAC = 0;
 
     void lut_of_cos();
     void expand1d_lookup_table();
