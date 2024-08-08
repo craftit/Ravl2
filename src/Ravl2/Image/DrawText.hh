@@ -26,12 +26,13 @@ namespace Ravl2
   //! Text is positioned below and to right of "offset".
 
   template<typename ArrayTargetT,
+      typename ValueT,
       typename DataT = typename ArrayTargetT::value_type,
       unsigned N = ArrayTargetT::dimensions>
-    requires WindowedArray<ArrayTargetT, DataT, N>
+    requires WindowedArray<ArrayTargetT, DataT, N> && std::is_convertible_v<ValueT, DataT>
   void DrawText(ArrayTargetT &image,
                 const BitmapFont &font,
-                const DataT &value,
+                const ValueT &value,
                 const Index<2> &offset,
                 const std::string &text
                 )
@@ -48,10 +49,14 @@ namespace Ravl2
   //! Draw text on image, centred.
   //! Text is centred on "centre".
 
-  template<class DataT>
-  void DrawTextCenter(Array<DataT,2> &image,
+  template<typename ArrayTargetT,
+      typename ValueT,
+      typename DataT = typename ArrayTargetT::value_type,
+      unsigned N = ArrayTargetT::dimensions>
+  requires WindowedArray<ArrayTargetT, DataT, N> && std::is_convertible_v<ValueT, DataT>
+  void DrawTextCenter(ArrayTargetT &image,
                       const BitmapFont &font,
-                      const DataT &value,
+                      const ValueT &value,
                       const Index<2> &centre,
                       const std::string &text)
   {
@@ -62,9 +67,13 @@ namespace Ravl2
   //! Draw text on image.
   //! Text is positioned below and to right of "offset", using the default font.
 
-  template<class DataT>
-  void DrawText(Array<DataT,2> &image,
-                const DataT &value,
+  template<typename ArrayTargetT,
+      typename ValueT,
+      typename DataT = typename ArrayTargetT::value_type,
+      unsigned N = ArrayTargetT::dimensions>
+  requires WindowedArray<ArrayTargetT, DataT, N> && std::is_convertible_v<ValueT, DataT>
+  void DrawText(ArrayTargetT &image,
+                const ValueT &value,
                 const Index<2> &offset,
                 const std::string &text
   )
@@ -72,9 +81,13 @@ namespace Ravl2
 
   //! Draw text on image, centred.
   //! Text is centred on "centre", using the default font.
-  template<class DataT>
-  void DrawTextCenter(Array<DataT,2> &image,
-                      const DataT &value,
+  template<typename ArrayTargetT,
+      typename ValueT,
+      typename DataT = typename ArrayTargetT::value_type,
+      unsigned N = ArrayTargetT::dimensions>
+  requires WindowedArray<ArrayTargetT, DataT, N> && std::is_convertible_v<ValueT, DataT>
+  void DrawTextCenter(ArrayTargetT &image,
+                      const ValueT &value,
                       const Index<2> &centre,
                       const std::string &text
   )

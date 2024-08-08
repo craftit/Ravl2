@@ -20,12 +20,11 @@ namespace Ravl2
   template<typename ArrayTargetT,
       typename ArrayMaskT,
       typename PixelTestT,
+      typename ValueT,
       typename DataT = typename ArrayTargetT::value_type,
-      typename MaskT = typename ArrayMaskT::value_type,
       unsigned N = ArrayTargetT::dimensions>
-  requires WindowedArray<ArrayTargetT, DataT, N>
-  void DrawMask(ArrayTargetT &img, const ArrayMaskT &mask, const DataT &value, Index<N> offset = {},
-                PixelTestT test = [](const MaskT &mask) { return mask > 0; })
+  requires WindowedArray<ArrayTargetT, DataT, N> && std::is_convertible_v<ValueT, DataT>
+  void DrawMask(ArrayTargetT &img, const ArrayMaskT &mask, const ValueT &value, Index<N> offset,PixelTestT test)
   {
     IndexRange<2> drawRect = mask.range() + offset; // Get rectangle.
     drawRect.clipBy(img.range());
@@ -36,6 +35,18 @@ namespace Ravl2
       if (test(it.template data<1>()))
         it.template data<0>() = value;
     }
+  }
+
+  template<typename ArrayTargetT,
+      typename ArrayMaskT,
+      typename ValueT,
+      typename DataT = typename ArrayTargetT::value_type,
+      typename MaskT = typename ArrayMaskT::value_type,
+      unsigned N = ArrayTargetT::dimensions>
+  requires WindowedArray<ArrayTargetT, DataT, N> && std::is_convertible_v<ValueT, DataT>
+  void DrawMask(ArrayTargetT &img, const ArrayMaskT &mask, const ValueT &value, Index<N> offset = {})
+  {
+    DrawMask(img, mask, value, offset, [](const MaskT &maskValue) -> bool { return maskValue > 0; });
   }
 
 }// namespace Ravl2

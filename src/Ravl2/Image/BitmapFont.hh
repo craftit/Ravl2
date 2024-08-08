@@ -25,10 +25,7 @@ namespace Ravl2 {
     {}
     //: Default constructor.
     // Creates an empty font.
-    
-    explicit BitmapFont(bool);
-    //: Load default font.
-    
+
     BitmapFont(std::vector<Array<uint8_t,2> > &nGlyphs)
       : glyphs(nGlyphs)
     {}

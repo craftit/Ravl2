@@ -350,5 +350,5 @@ TEST_CASE("DiscreteCosineTransform (forwardDCT)")
         break;
     }
   }
-
 }
+

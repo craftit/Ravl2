@@ -12,8 +12,6 @@
 #include "Ravl2/Image/BitmapFont.hh"
 #include "Ravl2/Resource.hh"
 
-/////////////////////////////////////
-
 /* /// PSF1 /////////////////////////////////////////////////////////// */
 
 #define PSF1_MAGIC0     0x36
@@ -64,7 +62,6 @@ struct psf2_header {
 
 /////////////////////////////////////
 
-
 #define DODEBUG 0
 #if DODEBUG
 #define ONDEBUG(x) x
@@ -90,20 +87,13 @@ namespace Ravl2 {
     return defaultFont;
   }
   
-  //: Access default font.
-  
+
   BitmapFont &DefaultFont() {
     static BitmapFont defaultFont = LoadDefaultFont();
     return defaultFont;
   }
-  
-  //: Load default font.
-  
-  BitmapFont::BitmapFont(bool)
-  { (*this) = DefaultFont(); }
-  
-  //: Get the offset to the center of the string.
-  
+
+
   Index<2> BitmapFont::Center(const std::string &text) const {
     auto theSize = Size(text);
     return toIndex(theSize[0] / 2, theSize[1] / 2);
@@ -128,10 +118,10 @@ namespace Ravl2 {
   ////////////////////////////////////////////////////////////////
   
   BitmapFont LoadPSF1(const std::string &fontFile) {
-    ONDEBUG(std::cerr << "LoadPSF1() Loading font " << fontFile << "\n");
+    ONDEBUG(SPDLOG_INFO("LoadPSF1() Loading font '{}'", fontFile));
     psf1_header hdr {}; //: psf file
     
-    std::ifstream inf(fontFile);
+    std::ifstream inf(fontFile, std::ios::binary);
     if(!inf) {
       SPDLOG_ERROR("Failed to open font file '{}'", fontFile);
       return BitmapFont();
@@ -140,22 +130,29 @@ namespace Ravl2 {
     // Read the header.
     
     inf.read(reinterpret_cast<char *>( &hdr),sizeof(psf1_header));
-    if((hdr.magic[0] != PSF1_MAGIC0) || (hdr.magic[1] != PSF1_MAGIC1))
+    if((hdr.magic[0] != PSF1_MAGIC0) || (hdr.magic[1] != PSF1_MAGIC1) || !inf) {
+      SPDLOG_ERROR("Invalid magic number in font file '{}'", fontFile);
       return {}; // Not a PSF1 font.
+    }
     size_t height = hdr.charsize;
     size_t ng = 255;
     if(hdr.mode & PSF1_MODE512)
       ng = 512;
-    
+
+    ONDEBUG(SPDLOG_INFO("LoadPSF1() Found {} characters with height {}", ng, height));
+
     std::vector<Array<uint8_t,2> > glyphs(ng);
     std::vector<uint8_t > buf(height);
-    for(auto it: glyphs) {
+    for(auto &it: glyphs) {
       // Read glyph
       Array<uint8_t,2> img({height,8});
-      it = img;
-      inf.read(reinterpret_cast<char *>(&(buf[0])),std::streamsize(height));
+      inf.read(reinterpret_cast<char *>(buf.data()),std::streamsize(height));
+      if(!inf) {
+        SPDLOG_ERROR("Failed to read font file '{}'", fontFile);
+        return {};
+      }
       for(size_t i=0;i < height;++i) {
-	int dat = buf[i]; 
+	auto dat = buf[i];
 	for(int j = 0;j < 8;++j) {
 	  if((dat >> (7-j)) & 1) 
 	    img[int(i)][j]=255;
@@ -163,7 +160,9 @@ namespace Ravl2 {
 	    img[int(i)][j]=0;
 	}
       }
+      it = img;
     }
+    ONDEBUG(SPDLOG_INFO("LoadPSF1() Loaded font '{}' with {} characters. ", fontFile, glyphs.size()));
     
     return BitmapFont(glyphs);
   }
@@ -172,7 +171,7 @@ namespace Ravl2 {
   
   BitmapFont LoadPSF2(const std::string &fontFile)
   {
-    std::ifstream inf(fontFile);
+    std::ifstream inf(fontFile, std::ios::binary);
     if(!inf) {
       SPDLOG_ERROR("Failed to open font file '{}'", fontFile);
       return {};
