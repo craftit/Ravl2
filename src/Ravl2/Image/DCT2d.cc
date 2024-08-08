@@ -39,7 +39,7 @@
 namespace Ravl2
 {
 
-  VectorT<float> PackZigZag(const Array<float, 2> &img, unsigned n)
+  VectorT<float> packZigZag(const Array<float, 2> &img, unsigned n)
   {
     RavlAssert(n <= img.range().area());
     VectorT<float> ret = xt::empty<float>({n});
@@ -52,7 +52,7 @@ namespace Ravl2
     return ret;
   }
 
-  void UnpackZigZag(const VectorT<float> &vec, Array<float, 2> &img)
+  void unpackZigZag(const VectorT<float> &vec, Array<float, 2> &img)
   {
     RavlAssert(vec.size() <= img.range().area());
     auto it = vec.begin();
@@ -72,9 +72,9 @@ namespace Ravl2
   }
 
 
-  void DCT(const Array<float, 2> &src, Array<float, 2> &dest)
+  void forwardDCT(const Array<float, 2> &src, Array<float, 2> &dest)
   {
-    RavlAssertMsg(src.range().size(0) == src.range().size(1), "DCT(): Images must be square.");
+    RavlAssertMsg(src.range().size(0) == src.range().size(1), "forwardDCT(): Images must be square.");
 
     if(dest.range() != src.range())
       dest = Array<float, 2>(src.range());
@@ -104,9 +104,9 @@ namespace Ravl2
     }
   }
 
-  void IDCT(const Array<float, 2> &src, Array<float, 2> &dest)
+  void inverseDCT(const Array<float, 2> &src, Array<float, 2> &dest)
   {
-    RavlAssertMsg(src.range().size(0) == src.range().size(1), "IDCT(): Images must be square.");
+    RavlAssertMsg(src.range().size(0) == src.range().size(1), "inverseDCT(): Images must be square.");
     if(dest.range() != src.range())
       dest = Array<float, 2>(src.range());
     IndexRange<1> rowRange = src.range(0);
@@ -143,13 +143,13 @@ namespace Ravl2
 
   ***************************************************************************/
 
-  ChanDCTC::ChanDCTC(unsigned int size)
+  ChanDCT::ChanDCT(unsigned int size)
   {
     if(size > 0)
-      Setup(size);
+      setup(size);
   }
 
-  void ChanDCTC::Setup(unsigned int size)
+  void ChanDCT::setup(unsigned int size)
   {
     if(size == 0) {
       m = 0;
@@ -165,7 +165,7 @@ namespace Ravl2
     scaleAC = 2.0f * scaleDC;
   }
 
-  void ChanDCTC::dct_in_place(Array<RealT, 2> &dest) const
+  void ChanDCT::dct_in_place(Array<RealT, 2> &dest) const
   {
     int n1, k, j, i, i1, l, n2, rows, cols;//p
     const RealT *p;
@@ -253,14 +253,14 @@ namespace Ravl2
     }
   }
 
-  void ChanDCTC::DCT(const Array<RealT, 2> &src, Array<RealT, 2> &dest) const
+  void ChanDCT::forwardDCT(const Array<RealT, 2> &src, Array<RealT, 2> &dest) const
   {
     RavlAssert(src.range().size(1) == (size_t)N && src.range().size(0) == (size_t)N);
     dest = clone(src);
     dct_in_place(dest);
   }
 
-  Array<ChanDCTC::RealT, 2> ChanDCTC::DCT(const Array<RealT, 2> &im) const
+  Array<ChanDCT::RealT, 2> ChanDCT::forwardDCT(const Array<RealT, 2> &im) const
   {
     RavlAssert(im.range().size(1) == (size_t)N && im.range().size(0) == (size_t)N);
     Array<RealT, 2> ret = clone(im);
@@ -268,7 +268,7 @@ namespace Ravl2
     return ret;
   }
 
-  void ChanDCTC::makecosinetable()
+  void ChanDCT::makecosinetable()
   {
     auto n2 = N;
     int p = 0;
@@ -283,7 +283,7 @@ namespace Ravl2
     cosines[size_t(p++)] = std::cos(std::numbers::pi_v<RealT> / 4);
   }
 
-  void ChanDCTC::columnspostadditions(Array<RealT, 2> &fi) const
+  void ChanDCT::columnspostadditions(Array<RealT, 2> &fi) const
   {
     int step, loops, k, ep, j, i, l, cols;
 
@@ -311,7 +311,7 @@ namespace Ravl2
     }
   }
 
-  void ChanDCTC::rowspostadditions(Array<RealT, 2> &fi) const
+  void ChanDCT::rowspostadditions(Array<RealT, 2> &fi) const
   {
     int step, loops, k, ep, j, i, l, rows;
 
@@ -339,7 +339,7 @@ namespace Ravl2
     }
   }
 
-  void ChanDCTC::rowsbitreversal(Array<RealT, 2> &fi) const
+  void ChanDCT::rowsbitreversal(Array<RealT, 2> &fi) const
   {
     int v1, v2, v3, i, j, k, cols;
 
@@ -368,7 +368,7 @@ namespace Ravl2
     }
   }
 
-  void ChanDCTC::columnsbitreversal(Array<RealT, 2> &fi) const
+  void ChanDCT::columnsbitreversal(Array<RealT, 2> &fi) const
   {
     int v1, v2, v3, i, j, k, rows;
     /* reverse columns */
@@ -391,7 +391,7 @@ namespace Ravl2
     }
   }
 
-  void ChanDCTC::columnsinputmapping(Array<RealT, 2> &fi) const
+  void ChanDCT::columnsinputmapping(Array<RealT, 2> &fi) const
   {
     int rows, n;
     Array<RealT, 2> s(fi.range());//double s[512][512];
@@ -404,7 +404,7 @@ namespace Ravl2
     }
   }
 
-  void ChanDCTC::rowsinputmapping(Array<RealT, 2> &fi) const
+  void ChanDCT::rowsinputmapping(Array<RealT, 2> &fi) const
   {
     int cols, n;
     Array<RealT, 2> s(fi.range());//double s[512][512];
@@ -432,13 +432,13 @@ namespace Ravl2
 #endif
 
 
-  VecRadDCTC::VecRadDCTC(unsigned int size, unsigned int pts)
+  VecRadDCT::VecRadDCT(unsigned int size, unsigned int pts)
   {
     if(size > 0)
-      Setup(size, pts);
+      setup(size, pts);
   }
 
-  void VecRadDCTC::Setup(unsigned int size, unsigned int pts)
+  void VecRadDCT::setup(unsigned int size, unsigned int pts)
   {
     m = int_ceil(std::log(size) / std::log(2));
     N = 1 << m;
@@ -469,13 +469,13 @@ namespace Ravl2
     scaleAC = 2.0f * scaleDC;
   }
 
-  void VecRadDCTC::dct_in_place(Array<RealT, 2> &dest, bool modifyOutputRect) const
+  void VecRadDCT::inPlaceDCT(Array<RealT, 2> &im, bool modifyOutputRect) const
   {
     int q;
     int i, j;
     //LFloatT sum1,sum2,diff1,diff2;
 
-    firo3(dest);
+    firo3(im);
 
     /* decimation in time DCT */
 
@@ -483,8 +483,8 @@ namespace Ravl2
     size_t step = 0;
 
     for(int yi = 0; yi < int(N); yi += 2) {
-      auto dest_yi1 = dest[yi];
-      auto dest_yi2 = dest[yi + 1];
+      auto dest_yi1 = im[yi];
+      auto dest_yi2 = im[yi + 1];
 
       for(int xj = 0; xj < int(N); xj += 2) {
         int xj1 = xj;
@@ -518,8 +518,8 @@ namespace Ravl2
       for(int k1 = 0; k1 < mmax; k1++) {
         for(int k2 = 0; k2 < mmax; k2++) {
           for(int yi = k1; yi < int(N); yi += istep) {
-            auto dest_yi1 = dest[yi];
-            auto dest_yi2 = dest[yi + mmax];
+            auto dest_yi1 = im[yi];
+            auto dest_yi2 = im[yi + mmax];
             for(int xj = k2; xj < int(N); xj += istep) {
               int xj1 = xj;
               int xj2 = xj1 + mmax;
@@ -550,40 +550,40 @@ namespace Ravl2
       mmax = istep;
     }
 
-    post_adds(dest);
+    post_adds(im);
     //Scale coefficients
-    dest[0][0] *= scaleDC;
-    auto destzero = dest[0];
+    im[0][0] *= scaleDC;
+    auto destzero = im[0];
     for(i = 1; i < N0; i++) {
-      dest[i][0] *= scaleMix;
+      im[i][0] *= scaleMix;
       destzero[i] *= scaleMix;
     }
     for(i = 1; i < N0; i++) {
-      auto desti = dest[i];
+      auto desti = im[i];
       for(j = 1; j < N0; j++)
         desti[j] *= scaleAC;
     }
 
     if(modifyOutputRect)
-      dest = Array<RealT, 2>(dest, IndexRange<2>({{0, N0 - 1},{ 0, N0 - 1}}));
+      im = Array<RealT, 2>(im, IndexRange<2>({{0, N0 - 1}, {0, N0 - 1}}));
   }
 
-  void VecRadDCTC::DCT(const Array<RealT, 2> &src, Array<RealT, 2> &dest) const
+  void VecRadDCT::forwardDCT(const Array<RealT, 2> &src, Array<RealT, 2> &dest) const
   {
     RavlAssert(src.range().size(1) == (size_t)N && src.range().size(0) == (size_t)N);
     dest = clone(src);
-    dct_in_place(dest);
+    inPlaceDCT(dest);
   }
 
-  Array<VecRadDCTC::RealT, 2> VecRadDCTC::DCT(const Array<RealT, 2> &im) const
+  Array<VecRadDCT::RealT, 2> VecRadDCT::forwardDCT(const Array<RealT, 2> &im) const
   {
     RavlAssert(im.range().size(1) == (size_t)N && im.range().size(0) == (size_t)N);
     Array<RealT, 2> ret = clone(im);
-    dct_in_place(ret);
+    inPlaceDCT(ret);
     return ret;
   }
 
-  void VecRadDCTC::lut_of_cos()
+  void VecRadDCT::lut_of_cos()
   {
     std::vector<unsigned int> et(static_cast<unsigned long>(N));
     size_t p = 0;
@@ -613,7 +613,7 @@ namespace Ravl2
     }
   }
 
-  void VecRadDCTC::expand1d_lookup_table()
+  void VecRadDCT::expand1d_lookup_table()
   {
     size_t ncb = 0;
 
@@ -657,7 +657,7 @@ namespace Ravl2
     }
   }
 
-  void VecRadDCTC::make2Darray()
+  void VecRadDCT::make2Darray()
   {
     size_t ND1 = 0;
     size_t MD1 = 0;
@@ -702,7 +702,7 @@ namespace Ravl2
     } /* while */
   }
 
-  void VecRadDCTC::firo3(Array<RealT, 2> &fi) const
+  void VecRadDCT::firo3(Array<RealT, 2> &fi) const
   {
     int  eo, group, nog, p, q, F;
 
@@ -813,7 +813,7 @@ namespace Ravl2
     } /* end for rows */
   }
 
-  void VecRadDCTC::bitreversalrows() const
+  void VecRadDCT::bitreversalrows() const
   {
     for(size_t rows = 0; rows < N; rows++) {
       size_t  l = 1;
@@ -829,7 +829,7 @@ namespace Ravl2
     } /* end for rows */
   }
 
-  void VecRadDCTC::bitreversalcolumns() const
+  void VecRadDCT::bitreversalcolumns() const
   {
     for(size_t cols = 0; cols < N; cols++) {
       size_t l = 1;
@@ -846,7 +846,7 @@ namespace Ravl2
     } /* end for cols */
   }
 
-  void VecRadDCTC::post_adds(Array<RealT, 2> &fi) const
+  void VecRadDCT::post_adds(Array<RealT, 2> &fi) const
   {
     /* Do divisions by 2 */
     {

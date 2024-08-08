@@ -290,7 +290,7 @@ TEST_CASE("ZigZagIter")
 }
 
 
-TEST_CASE("DiscreteCosineTransform (DCT)")
+TEST_CASE("DiscreteCosineTransform (forwardDCT)")
 {
   using namespace Ravl2;
   using RealT = float;
@@ -306,13 +306,13 @@ TEST_CASE("DiscreteCosineTransform (DCT)")
   img[4][4] = 1;
   img[3][4] = 1;
   Array<RealT,2> res;
-  DCT(img,res);
+  forwardDCT(img, res);
   //SPDLOG_INFO("Res:{}", res);
 
-  SECTION("Check reference inverse DCT.")
+  SECTION("Check reference inverse forwardDCT.")
   {
     Array<RealT, 2> rimg;
-    IDCT(res, rimg);
+    inverseDCT(res, rimg);
 
     for (auto it = begin(rimg, img); it.valid(); ++it) {
       CHECK(std::abs(it.template data<0>() - it.template data<1>()) < 0.001f);
@@ -321,25 +321,25 @@ TEST_CASE("DiscreteCosineTransform (DCT)")
 
   SECTION("ChanDCT.")
   {
-    ChanDCTC chandct(unsigned(img.range(0).size()));
-    Array<RealT, 2> cimg = chandct.DCT(img);
+    ChanDCT chandct(unsigned(img.range(0).size()));
+    Array<RealT, 2> cimg = chandct.forwardDCT(img);
     //SPDLOG_INFO("ChanRes:{}", cimg);
     for (auto it = begin(cimg, res); it.valid(); ++it) {
       CHECK(std::abs(it.template data<0>() - it.template data<1>()) < 0.001f);
     }
 
     for (int i = 0; i < 50000; i++)
-      cimg = chandct.DCT(img);
+      cimg = chandct.forwardDCT(img);
   }
 
   SECTION("VecRadDCT.")
   {
     // This only computes the first 6 coefficients.
     unsigned nPts = 6;
-    VecRadDCTC vrdct(unsigned(img.range(0).size()), nPts);
+    VecRadDCT vrdct(unsigned(img.range(0).size()), nPts);
     Array<RealT, 2> cimg2;
     for (int i = 0; i < 50000; i++)
-      cimg2 = vrdct.DCT(img);
+      cimg2 = vrdct.forwardDCT(img);
 
     //SPDLOG_INFO("VecRadRes:{}", cimg2);
     unsigned count = 0;

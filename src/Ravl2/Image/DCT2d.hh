@@ -29,22 +29,22 @@
 namespace Ravl2
 {
 
-  //! @brief Perform DCT on src, result in dest
-  //! Note: the classes ChanDCTC or VecRadDCTC should be faster than this.
+  //! @brief Perform forwardDCT on src, result in dest
+  //! Note: the classes ChanDCTC or VecRadDCT should be faster than this.
   //! Only works on square images.
-  void DCT(const Array<float, 2> &src, Array<float, 2> &dest);
+  void forwardDCT(const Array<float, 2> &src, Array<float, 2> &dest);
 
-  //! @brief Perform Inverse DCT on src, result in dest
+  //! @brief Perform Inverse forwardDCT on src, result in dest
   //! Only works on square images.
-  void IDCT(const Array<float, 2> &src, Array<float, 2> &dest);
+  void inverseDCT(const Array<float, 2> &src, Array<float, 2> &dest);
 
   //! @brief  Pack first n components of image 'img' in a zig zag pattern from the to left corner of 'img'.
-  VectorT<float> PackZigZag(const Array<float, 2> &img, unsigned n);
+  VectorT<float> packZigZag(const Array<float, 2> &img, unsigned n);
 
   //! @brief  Unpack components of image vec in a zig zag pattern from the to left corner of 'img'.
-  void UnpackZigZag(const VectorT<float> &vec, Array<float, 2> &img);
+  void unpackZigZag(const VectorT<float> &vec, Array<float, 2> &img);
 
-  //! @brief Class implementing Fast DCT
+  //! @brief Class implementing Fast forwardDCT
   //! class ChanDCT is an encapsulation of software (URL:
   //! ftp://etro.vub.ac.be/pub/COMPRESSION/DCT_ALGORITHMS/) written by
   //! Charilaos A. Christopoulos (Email:chchrist@etro.vub.ac.be), based on
@@ -53,21 +53,21 @@ namespace Ravl2
   //! algorithm", IEEE Trans. on Signal Processing, Vol. 39, No. 2, pp. 481-485,
   //! Feb. 1991.
 
-  class ChanDCTC
+  class ChanDCT
   {
   public:
     using RealT = float;
 
     //! Default constructor.
     // 'Setup' must be called before DCT computation.
-    ChanDCTC() = default;
+    ChanDCT() = default;
 
-    //! Construct DCT for image of 'size' rows by 'size' columns
-    explicit ChanDCTC(unsigned int size);
+    //! Construct forwardDCT for image of 'size' rows by 'size' columns
+    explicit ChanDCT(unsigned int size);
 
-    //! Setup tables for dct of given size.
-    //! @param: size - Size of dct image.
-    void Setup(unsigned int size);
+    //! setup tables for dct of given size.
+    //! @param: size - size of dct image.
+    void setup(unsigned int size);
 
     //! Do an inplace dct of im.
     void dct_in_place(Array<RealT, 2> &im) const;
@@ -75,23 +75,23 @@ namespace Ravl2
     //! Compute the dct of im.
     Array<RealT, 2> operator()(const Array<RealT, 2> &im) const
     {
-      return DCT(im);
+      return forwardDCT(im);
     }
 
-    //! Compute the DCT of im, return the result.
-    [[nodiscard]] Array<RealT, 2> DCT(const Array<RealT, 2> &im) const;
+    //! Compute the forwardDCT of im, return the result.
+    [[nodiscard]] Array<RealT, 2> forwardDCT(const Array<RealT, 2> &im) const;
 
     //! Compute the dct of 'src', place the result in 'dest'.
-    void DCT(const Array<RealT, 2> &src, Array<RealT, 2> &dest) const;
+    void forwardDCT(const Array<RealT, 2> &src, Array<RealT, 2> &dest) const;
 
     //! Access the size of a side of the dct rectangle.
-    [[nodiscard]] auto Size() const
+    [[nodiscard]] auto size() const
     {
       return N;
     }
 
   private:
-    const ChanDCTC &operator=(const ChanDCTC &oth) = delete;
+    const ChanDCT &operator=(const ChanDCT &oth) = delete;
     //: Make assigment operator private.
 
     int N = 0;
@@ -111,9 +111,9 @@ namespace Ravl2
     void rowsinputmapping(Array<RealT, 2> &fi) const;
   };
 
-  //! Class implementing Fast DCT
-  //! This class allows a subset of the DCT coefficients to be calculated.
-  //! NOTE: This class is NOT thread safe.
+  //! Class implementing Fast forwardDCT
+  //! This class allows a subset of the forwardDCT coefficients to be calculated.
+  //! It is faster than ChanDCT for small numbers of coefficients.
   //
   // class VecRadDCT is an encapsulation of software (URL:
   // ftp://etro.vub.ac.be/pub/COMPRESSION/DCT_ALGORITHMS/) written by
@@ -130,62 +130,62 @@ namespace Ravl2
   // transform", To be presented at the VII European Signal Processing Conference ,
   // September 13-16, 1994, Edinburgh, Scotland.
 
-  class VecRadDCTC
+  class VecRadDCT
   {
   public:
     using RealT = float;
 
     //! Constructor.
-    //! @param: size - Size of input image. Must be a power of 2
-    //! @param: pts  - Size of output image .Must be a power of 2
-    VecRadDCTC(unsigned int size, unsigned int pts);
+    //! @param: size - size of input image. Must be a power of 2
+    //! @param: pts  - size of output image .Must be a power of 2
+    VecRadDCT(unsigned int size, unsigned int pts);
 
     //! Default constructor.
     //! You must call Initialise to set up the transform before performing a dct transform.
-    VecRadDCTC() = default;
+    VecRadDCT() = default;
 
     //! Initialise for image of 'size' by 'size'
-    //! @param: size - Size of input image. Must be a power of 2
-    //! @param: pts  - Size of output image .Must be a power of 2
-    void Setup(unsigned int size, unsigned int pts);
+    //! @param: size - size of input image. Must be a power of 2
+    //! @param: pts  - size of output image .Must be a power of 2
+    void setup(unsigned int size, unsigned int pts);
 
     //! Compute the dct in place.
-    //! @param: im = Image to compute DCT on.
+    //! @param: im = Image to compute forwardDCT on.
     //! @param: modifyOutputRect = If true change image frame to be of the correct scale, otherwise result is left in top left of the original image.
     //! Note the size of m will be reduced.
-    void dct_in_place(Array<RealT, 2> &im, bool modifyOutputRect = false) const;
+    void inPlaceDCT(Array<RealT, 2> &im, bool modifyOutputRect = false) const;
 
     Array<RealT, 2> operator()(const Array<RealT, 2> &im) const
     {
-      return DCT(im);
+      return forwardDCT(im);
     }
 
-    //! Compute the DCT of img.
-    [[nodiscard]] Array<RealT, 2> DCT(const Array<RealT, 2> &im) const;
+    //! Compute the forwardDCT of img.
+    [[nodiscard]] Array<RealT, 2> forwardDCT(const Array<RealT, 2> &im) const;
 
-    //! Compute the DCT of src, place the result in 'dest'.
-    void DCT(const Array<RealT, 2> &src, Array<RealT, 2> &dest) const;
+    //! Compute the forwardDCT of src, place the result in 'dest'.
+    void forwardDCT(const Array<RealT, 2> &src, Array<RealT, 2> &dest) const;
 
     //! Access the size of a side of the input dct rectangle.
-    [[nodiscard]] auto Size() const
+    [[nodiscard]] auto size() const
     {
       return N;
     }
 
     //! Access the size of the output array.
-    [[nodiscard]] int OutputSize() const
+    [[nodiscard]] int outputSize() const
     {
       return N0;
     }
 
   private:
     //! Make assigment operator private.
-    const VecRadDCTC &operator=(const VecRadDCTC &oth) = delete;
+    const VecRadDCT &operator=(const VecRadDCT &oth) = delete;
 
     typedef RealT LFloatT;// Local definition of a float.
 
-    size_t N = 0;
-    int N0 = 0;
+    size_t N = 0; //!< Input size
+    int N0 = 0;  //!< Output size
     int m = 0;
     std::vector<LFloatT> ct;
     std::vector<LFloatT> ct2d;

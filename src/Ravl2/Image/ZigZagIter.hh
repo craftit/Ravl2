@@ -14,7 +14,7 @@ namespace Ravl2
 {
 
   //! @brief Iterate a rectangle in a Zig Zag pattern from the top left corner.
-  //! Usefull when dealing with DCT coefficients.
+  //! Usefull when dealing with forwardDCT coefficients.
 
   class ZigZagIterC
   {
