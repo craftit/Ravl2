@@ -41,7 +41,6 @@ s/include "Ravl\/SysLog\.hh"/include <spdlog\/spdlog.h>/g
 /\/\/! rcsid=/d
 /\/\/! lib=/d
 /\/\/! file=/d
-/\/\/! docentry=/d
 /\/\/! userlevel=/d
 
 # Update some container types

@@ -32,17 +32,17 @@ namespace Ravl2
   //! @brief Perform forwardDCT on src, result in dest
   //! Note: the classes ChanDCTC or VecRadDCT should be faster than this.
   //! Only works on square images.
-  void forwardDCT(const Array<float, 2> &src, Array<float, 2> &dest);
+  void forwardDCT(Array<float, 2> &dest, const Array<float, 2> &src);
 
   //! @brief Perform Inverse forwardDCT on src, result in dest
   //! Only works on square images.
-  void inverseDCT(const Array<float, 2> &src, Array<float, 2> &dest);
+  void inverseDCT(Array<float, 2> &dest, const Array<float, 2> &src);
 
   //! @brief  Pack first n components of image 'img' in a zig zag pattern from the to left corner of 'img'.
   VectorT<float> packZigZag(const Array<float, 2> &img, unsigned n);
 
   //! @brief  Unpack components of image vec in a zig zag pattern from the to left corner of 'img'.
-  void unpackZigZag(const VectorT<float> &vec, Array<float, 2> &img);
+  void unpackZigZag(Array<float, 2> &img, const VectorT<float> &vec);
 
   //! @brief Class implementing Fast forwardDCT
   //! class ChanDCT is an encapsulation of software (URL:
@@ -82,7 +82,7 @@ namespace Ravl2
     [[nodiscard]] Array<RealT, 2> forwardDCT(const Array<RealT, 2> &im) const;
 
     //! Compute the dct of 'src', place the result in 'dest'.
-    void forwardDCT(const Array<RealT, 2> &src, Array<RealT, 2> &dest) const;
+    void forwardDCT(Array<RealT, 2> &dest, const Array<RealT, 2> &src) const;
 
     //! Access the size of a side of the dct rectangle.
     [[nodiscard]] auto size() const
@@ -155,6 +155,7 @@ namespace Ravl2
     //! Note the size of m will be reduced.
     void inPlaceDCT(Array<RealT, 2> &im, bool modifyOutputRect = false) const;
 
+    //! Compute the dct of img.
     Array<RealT, 2> operator()(const Array<RealT, 2> &im) const
     {
       return forwardDCT(im);
@@ -164,7 +165,8 @@ namespace Ravl2
     [[nodiscard]] Array<RealT, 2> forwardDCT(const Array<RealT, 2> &im) const;
 
     //! Compute the forwardDCT of src, place the result in 'dest'.
-    void forwardDCT(const Array<RealT, 2> &src, Array<RealT, 2> &dest) const;
+    void
+    forwardDCT(Array<RealT, 2> &dest, const Array<RealT, 2> &src) const;
 
     //! Access the size of a side of the input dct rectangle.
     [[nodiscard]] auto size() const

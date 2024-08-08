@@ -52,7 +52,8 @@ namespace Ravl2
     return ret;
   }
 
-  void unpackZigZag(const VectorT<float> &vec, Array<float, 2> &img)
+  void
+  unpackZigZag(Array<float, 2> &img, const VectorT<float> &vec)
   {
     RavlAssert(vec.size() <= img.range().area());
     auto it = vec.begin();
@@ -72,7 +73,8 @@ namespace Ravl2
   }
 
 
-  void forwardDCT(const Array<float, 2> &src, Array<float, 2> &dest)
+  void
+  forwardDCT(Array<float, 2> &dest, const Array<float, 2> &src)
   {
     RavlAssertMsg(src.range().size(0) == src.range().size(1), "forwardDCT(): Images must be square.");
 
@@ -104,7 +106,8 @@ namespace Ravl2
     }
   }
 
-  void inverseDCT(const Array<float, 2> &src, Array<float, 2> &dest)
+  void
+  inverseDCT(Array<float, 2> &dest, const Array<float, 2> &src)
   {
     RavlAssertMsg(src.range().size(0) == src.range().size(1), "inverseDCT(): Images must be square.");
     if(dest.range() != src.range())
@@ -253,7 +256,8 @@ namespace Ravl2
     }
   }
 
-  void ChanDCT::forwardDCT(const Array<RealT, 2> &src, Array<RealT, 2> &dest) const
+  void
+  ChanDCT::forwardDCT(Array<RealT, 2> &dest, const Array<RealT, 2> &src) const
   {
     RavlAssert(src.range().size(1) == (size_t)N && src.range().size(0) == (size_t)N);
     dest = clone(src);
@@ -568,7 +572,8 @@ namespace Ravl2
       im = Array<RealT, 2>(im, IndexRange<2>({{0, N0 - 1}, {0, N0 - 1}}));
   }
 
-  void VecRadDCT::forwardDCT(const Array<RealT, 2> &src, Array<RealT, 2> &dest) const
+  void
+  VecRadDCT::forwardDCT(Array<RealT, 2> &dest, const Array<RealT, 2> &src) const
   {
     RavlAssert(src.range().size(1) == (size_t)N && src.range().size(0) == (size_t)N);
     dest = clone(src);

@@ -306,13 +306,13 @@ TEST_CASE("DiscreteCosineTransform (forwardDCT)")
   img[4][4] = 1;
   img[3][4] = 1;
   Array<RealT,2> res;
-  forwardDCT(img, res);
+  forwardDCT(res, img);
   //SPDLOG_INFO("Res:{}", res);
 
   SECTION("Check reference inverse forwardDCT.")
   {
     Array<RealT, 2> rimg;
-    inverseDCT(res, rimg);
+    inverseDCT(rimg, res);
 
     for (auto it = begin(rimg, img); it.valid(); ++it) {
       CHECK(std::abs(it.template data<0>() - it.template data<1>()) < 0.001f);
