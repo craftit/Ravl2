@@ -20,7 +20,7 @@ namespace Ravl2
   //! @param: img - input image
   //! @param: scale - output image size is input size <i>divided</i> by <code>scale</code>
   //! @param: result - output image
-  // If <code>result</code> is empty, the correct size is computed.
+  //! If <code>result</code> is empty, the correct size is computed.
 
   template <class InT, class OutT, typename RealT = float>
   bool warpScaleBilinear(const Array<InT, 2> &img,

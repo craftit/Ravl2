@@ -26,6 +26,8 @@ add_library (Ravl2Image
         DCT2d.cc DCT2d.hh
         BitmapFont.cc BitmapFont.hh
         DrawText.cc DrawText.hh
+        WarpAffine.hh WarpAffine.cc
+        WarpProjective.hh
         #        MatchNormalisedCorrelation.cc MatchNormalisedCorrelation.hh
 )
 

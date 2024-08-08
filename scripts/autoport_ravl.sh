@@ -156,7 +156,7 @@ s/Tuple2C</std::tuple</g
 s/Tuple3C</std::tuple</g
 
 # Replace Abs() with std::abs()
-s/ Abs(/ std::abs(/g
+s/Abs(/std::abs(/g
 s/ Sqrt(/ std::sqrt(/g
 s/ Exp(/ std::exp(/g
 s/ Sqr(/ sqr(/g
