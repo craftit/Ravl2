@@ -221,9 +221,9 @@ namespace Ravl2
   }// namespace detail
 
   //! @brief Fast image subsample
-  //! This function subsamples an image by taking the average of the pixels in the input image
+  //! This function sub-samples an image by taking the average of the pixels in the input image
   //! over the area of the output pixel.
-  //! This function won't do supersampling with this function.
+  //! This function won't do super-sampling with this function.
   //! @param img - input image
   //! @param scale - The scale is the distance between samples in the input image.
   //! @param result - output image, output image size is input size <i>divided</i> by <code>scale</code>
@@ -236,7 +236,7 @@ namespace Ravl2
                      Vector2f scale,
                      Array2T &result)
   {
-    //we can't do supersampling
+    // We can't do super-sampling
     if(scale[0] < 1.0f || scale[1] < 1.0f) {
       SPDLOG_WARN("WarpSubsample: scale must be >= 1.0");
       throw std::runtime_error("WarpSubsample: scale must be >= 1.0");

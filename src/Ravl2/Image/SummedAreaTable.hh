@@ -4,10 +4,10 @@
 // General Public License (LGPL). See the lgpl.licence file for details or
 // see http://www.gnu.org/copyleft/lesser.html
 // file-header-ends-here
-#ifndef RAVLIMAGE_SUMMEDAREATABLE_HEADER
-#define RAVLIMAGE_SUMMEDAREATABLE_HEADER 1
 //! author="Charles Galambos"
 //! date="3/4/2002"
+
+#pragma once
 
 #include "Ravl2/Array.hh"
 #include "Ravl2/Array2dSqr2Iter2.hh"
@@ -26,10 +26,10 @@ namespace Ravl2
   class SummedAreaTableC : public Array<DataT, 2>
   {
   public:
-    SummedAreaTableC()
-    {}
-    //: Default constructor.
+    //! Default constructor.
+    SummedAreaTableC() = default;
 
+    //! Build table form an array of values.
     template <class InT>
     SummedAreaTableC(const Array<InT, 2> &in)
     {
@@ -141,4 +141,3 @@ namespace Ravl2
 
 }// namespace Ravl2
 
-#endif

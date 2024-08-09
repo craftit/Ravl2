@@ -11,17 +11,18 @@
 #include "Ravl2/Array2dSqr3Iter.hh"
 #include "Ravl2/Traits.hh"
 
-namespace Ravl2 {
+namespace Ravl2
+{
 
-  //: Subsamples the image with filtering by a factor of 2
-  // Uses a separable 3&times;3 filter with coeffs of &frac14;, &frac12;, &frac34;; sample points correspond to the middle of each sample.
+  //! Subsamples the image with filtering by a factor of 2
+  //! Uses a separable 3&times;3 filter with coeffs of &frac14;, &frac12;, &frac34;; sample points correspond to the middle of each sample.
   template<typename PixelT>
   Array<PixelT,2> FilteredSubSample2(const Array<PixelT,2> & img, Array<PixelT,2> out=Array<PixelT,2>()) {
     typedef typename RavlN::NumericalTraitsC<PixelT>::AccumT AccumT;
     Index<2> origin(img.range().min()[0] / 2,img.range().min()[1] / 2);
     Index<2> size(((img.range().range(0).size()-1) / 2)-1,
 		  ((img.range().range(1).size()-1) / 2)-1);
-    //cerr << "Origin=" << origin << " Size=" << size << "\n";
+
     if (size != out.range().End() - out.range().min()) {
       Index<2> end = origin + size;
       IndexRange<2> newRange(origin,end);
@@ -46,8 +47,8 @@ namespace Ravl2 {
   }
 
 
-  //: Subsamples the image by the given factor
-  // Pixel at top left-hand corner is always sampled first. <b>No</b> filtering is performed.
+  //! Sub-samples the image by the given integer factor
+  //! Pixel at top left-hand corner is always sampled first. <b>No</b> filtering is performed.
   template<class PixelT>
   Array<PixelT,2> SubSample(const  Array<PixelT,2> & img,  const unsigned factor =2) {    
     IndexRange<2> oldRect  (img.range() ) ; 
@@ -65,27 +66,28 @@ namespace Ravl2 {
     return subSampled ; 
   }
 
-  //: Up-Samples an image by the given factor.
+  //! Up-Samples an image by the given integer factor.
   template <class PixelT>
-  ImageC<PixelT> UpSample ( const Array<PixelT,2> & img, const unsigned factor=2 ) {
+  ImageC<PixelT> UpSample ( const Array<PixelT,2> & img, const unsigned factor=2 )
+  {
     IndexRange<2> oldRect (img.range() ) ; 
     IndexRange<2> newRect ( oldRect * factor ) ; 
     Array<PixelT,2> upSampled ( newRect ) ;  
     
-    // iterate thougth rows of origial image 
+    // iterate through rows of original image
     int oldRow , newRow ; 
     unsigned counter ; 
     for ( oldRow = oldRect.min(0) , newRow = newRect.min(0) ; oldRow <= oldRect.max(0) ; ++ oldRow ) 
       {
-	// iterate through rows of upsampled image 
+	// iterate through rows of up-sampled image
 	for ( unsigned rowCounter = 1 ; (newRow <= newRect.max(0) ) && ( rowCounter <= factor) ; ++ newRow , ++ rowCounter )
 	  {
-	    BufferAccessIterC<PixelT> newCol ( upSampled [newRow] ) ; 
-	    BufferAccessIterC<PixelT>  oldCol ( img[oldRow] ) ; 
+	    auto newCol = begin(upSampled[newRow]) ;
+	    auto oldCol = begin(img[oldRow] ) ;
 	    // now iterate the cols and do the copy 
-	    for (  ; oldCol.valid() ; oldCol++ ) // each pixel in the old row  
+	    for (  ; oldCol.valid() ; ++oldCol ) // each pixel in the old row
 	      // iterate through cols of the new image 
-	      for ( counter = 1 ; newCol && counter <= factor ; ++ counter,  newCol++  ) 
+	      for ( counter = 1 ; newCol && counter <= factor ; ++ counter,  ++newCol  )
 		newCol.Data() = oldCol.Data() ; 
 	  }
       }
