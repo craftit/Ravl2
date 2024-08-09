@@ -9,131 +9,13 @@
 #pragma once
 
 #include <vector>
+#include "Ravl2/LoopIter.hh"
 #include "Ravl2/Geometry/Geometry.hh"
 #include "Ravl2/Geometry/PointSet.hh"
 #include "Ravl2/Geometry/LinePP2d.hh"
 
 namespace Ravl2
 {
-
-  //! Iterator that holds a position and allows for circular iteration, from the end, go to the beginning
-
-  template <class Container>
-  class CircularIter
-  {
-  public:
-    //! Constructor
-    explicit CircularIter(Container &c)
-        : container(c),
-          iter(c.begin())
-    {
-    }
-
-    //! Constructor
-    CircularIter(Container &c, typename Container::iterator it)
-        : container(c),
-          iter(it)
-    {
-    }
-
-    //! Get a iterator at the last element
-    //! The container must not be empty
-    static CircularIter Last(Container &c)
-    {
-      auto iter = c.end();
-      assert(c.empty() != c.end());
-      iter--;
-      return CircularIter(c, iter);
-    }
-
-    //! Get a iterator at the first element
-    static CircularIter First(Container &c)
-    {
-      return CircularIter(c, c.begin());
-    }
-
-    void GotoLast()
-    {
-      iter = container.end();
-      --iter;
-    }
-
-    void GotoFirst()
-    {
-      iter = container.begin();
-    }
-
-    //! Compare two iterators
-    bool operator==(const CircularIter &other) const
-    {
-      assert(&container == &other.container);
-      return iter == other.iter;
-    }
-
-    //! Compare two iterators
-    bool operator==(const typename Container::iterator &other) const
-    {
-      return iter == other;
-    }
-
-    //! Compare two iterators
-    bool operator!=(const CircularIter &other) const
-    {
-      assert(&container == &other.container);
-      return iter != other.iter;
-    }
-
-    //! Access the current element
-    auto &Data()
-    {
-      return *iter;
-    }
-
-    //! Circular get the element after the current one
-    auto &NextCrcData()
-    {
-      auto next = iter;
-      ++next;
-      if(next == container.end())
-        next = container.begin();
-      return *next;
-    }
-
-    //! Get the data after the current one
-    auto &NextData()
-    {
-      auto next = iter;
-      ++next;
-      assert(next != container.end());
-      return *next;
-    }
-
-    auto &operator++()
-    {
-      ++iter;
-      return *this;
-    }
-
-  protected:
-    Container &container;
-    typename Container::iterator iter;
-  };
-
-  //! Helper function to create a circular iterator
-  //! This creates an iterator that points to the last valid element
-  template <class Container>
-  CircularIter<Container> beginCircularLast(Container &c)
-  {
-    return CircularIter<Container>::Last(c);
-  }
-
-  //! Helper function to create a circular iterator
-  template <class Container>
-  CircularIter<Container> beginCircularFirst(Container &c)
-  {
-    return CircularIter<Container>::First(c);
-  }
-
   template <class RealT>
   class Moments2;
 
@@ -178,13 +60,13 @@ namespace Ravl2
     // are ignored.
     // Ref.: -  O'Rourke,J.: Computational geometry in C;
     //          Cambridge University Press, 1994, pp. 35-36
-    [[nodiscard]] bool IsDiagonal(const CircularIter<PointArrayT> &a, const CircularIter<PointArrayT> &b, bool allowExternal = false) const;
+    [[nodiscard]] bool IsDiagonal(const LoopIter<PointArrayT> &a, const LoopIter<PointArrayT> &b, bool allowExternal = false) const;
 
     //! Returns true iff the diagonal (a,b) is strictly internal
     // to this polygon in the neighbourhood of the 'a' endpoint.
     // Ref.: -  O'Rourke,J.: Computational geometry in C;
     //          Cambridge University Press, 1994, pp. 37-38
-    [[nodiscard]] bool IsInCone(const CircularIter<PointArrayT> &a, const CircularIter<PointArrayT> &b) const;
+    [[nodiscard]] bool IsInCone(const LoopIter<PointArrayT> &a, const LoopIter<PointArrayT> &b) const;
 
     //! Clips this polygon by another convex polygon
     //!param: oth - a convex clipping polygon

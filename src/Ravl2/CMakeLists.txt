@@ -48,6 +48,8 @@ add_library(Ravl2Core
     Sentinel.cc Sentinel.hh
     Types.cc Types.hh
     Resource.cc Resource.hh
+        LoopIter.cc
+        LoopIter.hh
 )
 
 add_library(ravl2::Ravl2Core ALIAS Ravl2Core)

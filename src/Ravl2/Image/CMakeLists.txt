@@ -28,6 +28,8 @@ add_library (Ravl2Image
         DrawText.cc DrawText.hh
         WarpAffine.hh WarpAffine.cc
         WarpProjective.hh
+        Warp.cc
+        Warp.hh
         #        MatchNormalisedCorrelation.cc MatchNormalisedCorrelation.hh
 )
 

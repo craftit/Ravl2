@@ -25,9 +25,9 @@ namespace Ravl2
   {
     RealT sum = 0.0;
     if(!this->empty()) {
-      auto pLast = CircularIter<PointArrayT>::Last(*this);
+      auto pLast = LoopIter<PointArrayT>::Last(*this);
 
-      for(auto ptr = CircularIter<PointArrayT>::First(*this); ptr != pLast; ++ptr)
+      for(auto ptr = LoopIter<PointArrayT>::First(*this); ptr != pLast; ++ptr)
         sum += ptr.Data().X() * ptr.NextData().Y() - ptr.NextData().X() * ptr.Data().Y();
       // close the polygon
       sum += pLast.Data().X() * pLast.NextCrcData().Y() - pLast.NextCrcData().X() * pLast.Data().Y();
@@ -41,9 +41,9 @@ namespace Ravl2
     RealT x = 0.0;
     RealT y = 0.0;
     if(!this->empty()) {
-      auto pLast = CircularIter<PointArrayT>::Last(*this);
+      auto pLast = LoopIter<PointArrayT>::Last(*this);
 
-      for(auto ptr = CircularIter<PointArrayT>::First(*this); ptr != pLast; ptr++) {
+      for(auto ptr = LoopIter<PointArrayT>::First(*this); ptr != pLast; ptr++) {
         RealT temp = ptr.Data().X() * ptr.NextData().Y() - ptr.NextData().X() * ptr.Data().Y();
         x += (ptr.Data().X() + ptr.NextData().X()) * temp;
         y += (ptr.Data().Y() + ptr.NextData().Y()) * temp;
@@ -57,7 +57,6 @@ namespace Ravl2
     return Point<RealT, 2>(x * scale, y * scale);
   }
 
-#if 0
 
   // see http://www9.in.tum.de/forschung/fgbv/tech-reports/1996/FGBV-96-04-Steger.pdf for details
   template<typename RealT>
@@ -68,47 +67,36 @@ namespace Ravl2
     RealT m20 = 0.0;
     RealT m11 = 0.0;
     RealT m02 = 0.0;
-    if (!empty()) {
-      DLIterC<Point<RealT,2>> pLast(*this);
-      pLast.Last();
+    if (!this->empty()) {
+      const auto pLast = this->last();
 
-      for (DLIterC<Point<RealT,2>> ptr(*this); ptr != pLast; ptr++) {
-        Point<RealT,2> p1 = ptr.Data();
-        Point<RealT,2> p2 = ptr.NextData();
-        RealT p1_10 = p1.X(), p1_01 = p1.Y();
-        RealT p2_10 = p2.X(), p2_01 = p2.Y();
-        m00 += p1_10 * p2_01 - p2_10 * p1_01;
-        RealT temp = p1_10 * p2_01 - p2_10 * p1_01;
-        m10 += (p1_10 + p2_10) * temp;
-        m01 += (p1_01 + p2_01) * temp;
-        m20 += (Sqr(p1_10) + p1_10*p2_10 +sqr(p2_10)) * temp;
-        m02 += (Sqr(p1_01) + p1_01*p2_01 +sqr(p2_01)) * temp;
-        m11 += (2.0*p1_10*p1_01 + p1_10*p2_01 + p2_10*p1_01 + 2.0*p2_10*p2_01) * temp;
+      for(auto it : *this) {
+	Point<RealT, 2> p1 = pLast;
+	Point<RealT, 2> p2 = it;
+	RealT p1_10 = p1.X(), p1_01 = p1.Y();
+	RealT p2_10 = p2.X(), p2_01 = p2.Y();
+	m00 += p1_10 * p2_01 - p2_10 * p1_01;
+	RealT temp = p1_10 * p2_01 - p2_10 * p1_01;
+	m10 += (p1_10 + p2_10) * temp;
+	m01 += (p1_01 + p2_01) * temp;
+	m20 += (Sqr(p1_10) + p1_10 * p2_10 + sqr(p2_10)) * temp;
+	m02 += (Sqr(p1_01) + p1_01 * p2_01 + sqr(p2_01)) * temp;
+	m11 += (2.0 * p1_10 * p1_01 + p1_10 * p2_01 + p2_10 * p1_01 + 2.0 * p2_10 * p2_01) * temp;
       }
-      // close the polygon
-      Point<RealT,2> p1 = pLast.Data();
-      Point<RealT,2> p2 = pLast.NextCrcData();
-      RealT p1_10 = p1.X(), p1_01 = p1.Y();
-      RealT p2_10 = p2.X(), p2_01 = p2.Y();
-      m00 += p1_10 * p2_01 - p2_10 * p1_01;
-      RealT temp = p1_10 * p2_01 - p2_10 * p1_01;
-      m10 += (p1_10 + p2_10) * temp;
-      m01 += (p1_01 + p2_01) * temp;
-      m20 += (Sqr(p1_10) + p1_10*p2_10 +sqr(p2_10)) * temp;
-      m02 += (Sqr(p1_01) + p1_01*p2_01 +sqr(p2_01)) * temp;
-      m11 += (2.0*p1_10*p1_01 + p1_10*p2_01 + p2_10*p1_01 + 2.0*p2_10*p2_01) * temp;
+
+      m00 *= 0.5;
+      RealT oneOver6 = 1.0 / 6.0;
+      m10 *= oneOver6;
+      m01 *= oneOver6;
+      RealT oneOver12 = 1.0 / 12.0;
+      m20 *= oneOver12;
+      m02 *= oneOver12;
+      RealT oneOver24 = 1.0 / 24.0;
+      m11 *= oneOver24;
     }
-    m00 *= 0.5;
-    RealT oneOver6 = 1.0 / 6.0;
-    m10 *= oneOver6;
-    m01 *= oneOver6;
-    RealT oneOver12 = 1.0 / 12.0;
-    m20 *= oneOver12;
-    m02 *= oneOver12;
-    RealT oneOver24 = 1.0 / 24.0;
-    m11 *= oneOver24;
     return Moments2d2C(m00, m10, m01, m20, m11, m02);
   }
+#if 0
 
   template<typename RealT>
   bool Polygon2dC<RealT>::IsDiagonal(const DLIterC<Point<RealT,2>> & a, const DLIterC<Point<RealT,2>> & b, bool allowExternal) const {

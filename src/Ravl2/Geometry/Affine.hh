@@ -19,6 +19,7 @@ namespace Ravl2
   public:
     using value_type = DataT;
     constexpr static unsigned dimension = N;
+    using PointT = Point<DataT, N>;
 
     //! Construct an identity transform.
     inline Affine() = default;
@@ -69,9 +70,9 @@ namespace Ravl2
 
     //! Transform Vector,  scale, Rotate, translate.
     // Take a vector and put it though the transformation.
-    auto operator()(const Vector<DataT, N> &pnt) const
+    auto operator()(const PointT &pnt) const
     {
-      return Vector<DataT, N>(xt::linalg::dot(mSR, pnt) + mT);
+      return PointT(xt::linalg::dot(mSR, pnt) + mT);
     }
 
     //! Compose this transform with 'In'
