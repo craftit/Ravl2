@@ -4,26 +4,20 @@
 // General Public License (LGPL). See the lgpl.licence file for details or
 // see http://www.gnu.org/copyleft/lesser.html
 // file-header-ends-here
-//! rcsid="$Id$"
-//! lib=RavlMath
-//! file="Ravl/Math/Geometry/Euclidean/2D/testLine2d.cc"
 //! docentry="Ravl.API.Math.Geometry.2D"
 //! author="Charles Galambos"
-//! userlevel=Develop
 
-#include "Ravl/Line2dIter.hh"
-#include "Ravl/StdMath.hh"
-#include "Ravl/Stream.hh"
-#include "Ravl/Moments2d2.hh"
-#include "Ravl/Curve2dLineSegment.hh"
-#include "Ravl/StdConst.hh"
-#include "Ravl/LinePP2d.hh"
-#include "Ravl/LineABC2d.hh"
-#include "Ravl/RealRange2d.hh"
-#include "Ravl/Array1d.hh"
-#include "Ravl/Random.hh"
+#include <numbers>
+#include <catch2/catch_test_macros.hpp>
+#include <cereal/archives/json.hpp>
+#include <spdlog/spdlog.h>
 
-using namespace RavlN;
+#include "Ravl2/Geometry/Line2dIter.hh"
+#include "Ravl2/Math.hh"
+#include "Ravl2/Geometry/LinePP.hh"
+#include "Ravl2/Geometry/LineABC2d.hh"
+#include "Ravl2/Geometry/Range.hh"
+
 
 #define DODEBUG 0
 #if DODEBUG
@@ -32,194 +26,171 @@ using namespace RavlN;
 #define ONDEBUG(x)
 #endif
 
-int testMoments();
-int testLines();
-int testLine2d();
-int testClip2d();
-int testLineFitLSQ();
+TEST_CASE("Line2dIter")
+{
+  using namespace Ravl2;
+  using RealT = float;
+  Index<2> start(0, 0);
+  Index<2> end(10, 5);
+  auto rng = IndexRange<2>(start,start).expand(11);
 
-int main() {
-  int ln;
-  if((ln = testLines()) != 0) {
-    cerr << "Test failed line " << ln << "\n";
-    return 1;
-  }
-  if((ln = testLine2d()) != 0) {
-    cerr << "Test failed line " << ln << "\n";
-    return 1;
-  }
-  if((ln = testClip2d()) != 0) {
-    cerr << "Test failed line " << ln << "\n";
-    return 1;
-  }
-  if((ln = testLineFitLSQ()) != 0) {
-    cerr << "Test failed line " << ln << "\n";
-    return 1;
-  }
-  cerr << "Test passed ok. \n";
-  return 0;
-}
-
-int testLines() {  
-  cout << "Checking basic lines. \n";
-  Index2dC start(0,0);
-  Index2dC end(10,5);
   int c = 0;
-  ONDEBUG(cerr << "From " << start << " to " << end << "\n");
-  for(Line2dIterC it(start,end);it && c < 20;it++,c++) {
-    ONDEBUG(cerr << "Line " << it.Data() << "\n");
+  for (Line2dIterC it(start, end); it.valid() && c < 20; it++, c++) {
+    CHECK(rng.contains(it.Data()));
   }
-  if(c > 19) return __LINE__;  
-  for(RealT x = 0;x < RavlConstN::pi * 2; x += 0.1) {
-    end = Index2dC(Round(Sin(x) * 10.0),Round(Cos(x) * 10.0));
+  CHECK (c <= 19);
+  RealT x = 0;
+  RealT step = 0.1f;
+  int countTo = int_round((std::numbers::pi_v<RealT> * 2)/step);
+  for (int i = 0; i < countTo; ++i) {
+    end = Index<2>(int_round(std::sin(x) * 10.0f), int_round(std::cos(x) * 10.0f));
     c = 0;
-    ONDEBUG(cerr << "From " << start << " to " << end << "\n");
-    for(Line2dIterC it(start,end);it && c < 20;it++,c++) {
-      ONDEBUG(cerr << "Line " << it.Data() << "\n");
+    for (Line2dIterC it(start, end); it.valid() && c < 20; it++, c++) {
+      CHECK(rng.contains(it.Data()));
     }
-    if(c > 11) return __LINE__;
+    CHECK (c <= 11);
+    x += step;
   }
 
-  LinePP2dC line(Point2dC(0.3,0.7), Point2dC(10.3,15.7));
+  rng = IndexRange<2>(start,start).expand(20);
+
+  LinePP2dC<RealT> line(toPoint<RealT>(0.3, 0.7), toPoint<RealT>(10.3, 15.7));
   c = 0;
-  for(Line2dIterC it(line);it && c < 20;it++,c++) {
-    ONDEBUG(cerr << "Line " << it.Data() << "\n");
-    cout  << "Line " << it.Data() << "\n";
+  for (Line2dIterC it(line);it.valid() && c < 20; it++, c++) {
+    CHECK(rng.contains(it.Data()));
   }
-  if(c > 16) return __LINE__;  
-
-  return 0;
+  CHECK (c <= 16);
 }
 
-int testLine2d() {
-  cout << "Checking misc line methods. \n";
-  Point2dC org(321,123);
+
+TEST_CASE("LinePP")
+{
+  using namespace Ravl2;
+  using RealT = float;
+
+#if 0
+  Point<RealT,2> org = toPoint<RealT>(321,123);
   for(int i = 0;i < 359;i++) {
-    RealT angle = ((RealT) i/180.0) * RavlConstN::pi;
-    Vector2dC vec = Angle2Vector2d(angle) * 4.3;
+    RealT angle = ((RealT) i/180.0) * std::numbers::pi_v<RealT>;
+    Vector<RealT,2> vec = Angle2Vector2d(angle) * 4.3;
     //cerr << "Vec=" << vec << "\n";
-    Point2dC end(org + vec);
+    Point<RealT,2> end(org + vec);
     Curve2dLineSegmentC line1(org,end);
     //cerr << "End=" << line1.Closest(line1.EndPnt()) - line1.Start()  << "\n";
-    if(line1.Closest(line1.EndPnt()) - line1.Start() <= 0) return __LINE__;
+    CHECK_FALSE(line1.Closest(line1.EndPnt()) - line1.Start() <= 0) return __LINE__;
     
     LinePP2dC linepp(org,end);
     //cerr << "Angle=" << linepp.Angle() << " Angle2=" << angle << "\n";
-    if(i < 90) 
-      if(Abs(linepp.Angle() - angle) > 0.001) return __LINE__;
+    CHECK_FALSE(i < 90)
+    CHECK_FALSE(std::abs(linepp.Angle() - angle) > 0.001) return __LINE__;
   }
-  
-  LinePP2dC line1(Point2dC(0,0),Point2dC(1,1));
-  if(!line1.IsPointToRight(Point2dC(1,0))) return __LINE__;
-  if(line1.IsPointToRight(Point2dC(0,1))) return __LINE__;
-  
-  LinePP2dC line2(Point2dC(0,1),Point2dC(1,0));
-  if(!line2.IsPointToRight(Point2dC(0,0))) return __LINE__;
-  if(line2.IsPointToRight(Point2dC(1,1))) return __LINE__;
-  
-  RealT cres;
-  if(!line1.IntersectRow(0.5,cres)) return __LINE__;
-  if(Abs(cres - 0.5) > 0.000001) return __LINE__;
-  
-  if(!line2.IntersectRow(0.5,cres)) return __LINE__;
-  if(Abs(cres - 0.5) > 0.000001) return __LINE__;
-  
-  if(!line2.IntersectRow(0.2,cres)) return __LINE__;
-  if(Abs(cres - 0.8) > 0.000001) return __LINE__;
-  
-  RealT val = line2.ParIntersection(line1);
-  cerr << "Val=" << val << "\n";
-  if(Abs(val - 0.5) > 0.0001) return __LINE__;
+#endif
+  SECTION("Orientation and intersection")
+  {
+    LinePP2dC line1(toPoint<RealT>(0, 0), toPoint<RealT>(1, 1));
+    CHECK(line1.IsPointToRight(toPoint<RealT>(1, 0)));
+    CHECK_FALSE(line1.IsPointToRight(toPoint<RealT>(0, 1)));
 
-  // check that exception gets thrown for zero-length line
-  LinePP2dC line3(Point2dC(0,0),Point2dC(0,0));
-  try {
-    RealT d = line3.DistanceWithin(Point2dC(1,1));
-    cerr << "Failed to throw exception on zero length line\n";
-    return __LINE__;
+    LinePP2dC line2(toPoint<RealT>(0, 1), toPoint<RealT>(1, 0));
+    CHECK(line2.IsPointToRight(toPoint<RealT>(0, 0)));
+    CHECK_FALSE(line2.IsPointToRight(toPoint<RealT>(1, 1)));
+
+    RealT cres;
+    CHECK(line1.IntersectRow(0.5f, cres));
+    CHECK_FALSE(std::abs(cres - 0.5f) > 0.000001f);
+
+    CHECK(line2.IntersectRow(0.5f, cres));
+    CHECK_FALSE(std::abs(cres - 0.5f) > 0.000001f);
+
+    CHECK(line2.IntersectRow(0.2f, cres));
+    CHECK_FALSE(std::abs(cres - 0.8f) > 0.000001f);
+
+    RealT val = line2.ParIntersection(line1);
+    CHECK_FALSE(std::abs(val - 0.5f) > 0.0001f);
+
+    // check that exception gets thrown for zero-length line
+    LinePP2dC line3(toPoint<RealT>(0, 0), toPoint<RealT>(0, 0));
+    RealT d = 0;
+    CHECK_THROWS(d = line3.DistanceWithin(toPoint<RealT>(1, 1)));
+    CHECK(d == 0);
   }
-  catch (...) {
+  SECTION("Clipping")
+  {
+    Range<float,2> rng({{0,15},{10,25}});
+    Point<RealT,2> pnt0 = toPoint<RealT>(0,0);
+    Point<RealT,2> pnt1 = toPoint<RealT>(5,15);
+    Point<RealT,2> pnt2 = toPoint<RealT>(10,20);
+    Point<RealT,2> pnt3 = toPoint<RealT>(35,30);
+    Point<RealT,2> pnt4 = toPoint<RealT>(40,45);
+    Point<RealT,2> pnt5 = toPoint<RealT>(5,30);
+    Point<RealT,2> pnt6 = toPoint<RealT>(7.5,25);
+
+    // This line shouldn't be clipped.
+    LinePP2dC l1(pnt1,pnt2);
+    CHECK(l1.clipBy(rng));
+    CHECK_FALSE(sumOfSqr(pnt1 - l1.P1())() > 0.00001f);
+    CHECK_FALSE(sumOfSqr(pnt2 - l1.P2())() > 0.00001f);
+
+    // Should clip point 0.
+    LinePP2dC l2(pnt0,pnt2);
+    CHECK(l2.clipBy(rng));
+    CHECK_FALSE(sumOfSqr(pnt0 - l2.P1())() < 0.00001f);
+    CHECK_FALSE(sumOfSqr(pnt2 - l2.P2())() > 0.00001f);
+    CHECK(rng.contains(l2.P1()));
+
+    // Should clip point 1.
+    LinePP2dC l3(pnt1,pnt3);
+    CHECK(l3.clipBy(rng));
+    CHECK_FALSE(sumOfSqr(pnt1 - l3.P1())() > 0.00001f);
+    CHECK_FALSE(sumOfSqr(pnt3 - l3.P2())() < 0.00001f);
+    CHECK(rng.contains(l3.P2()));
+
+    // Line entirely outside region.
+    LinePP2dC l4(pnt3,pnt4);
+    CHECK_FALSE(l4.clipBy(rng));
+
+    Range<float,2> rng2({{0.51f,239.49f},{0.51f,239.49f}});
+    LinePP2dC l5(toPoint<RealT>(1.5,0.5),toPoint<RealT>(1.5,720.5));
+    CHECK(l5.clipBy(rng2));
+    CHECK(rng2.contains(l5.P1()));
+    CHECK(rng2.contains(l5.P2()));
+
+    // Test for bug now corrected - should clip point 2
+    LinePP2dC l6(pnt2,pnt5);
+    CHECK(l6.clipBy(rng));
+    CHECK_FALSE((pnt6 - l6.P2())() > 0.00001f);
   }
-  return 0;
+
 }
 
-int testClip2d() {
-  cout << "Checking clipping. \n";
-  RealRange2dC rng(0,15,10,25);
-  Point2dC pnt0(0,0);
-  Point2dC pnt1(5,15);
-  Point2dC pnt2(10,20);
-  Point2dC pnt3(35,30);
-  Point2dC pnt4(40,45);
-  Point2dC pnt5(5,30);
-  Point2dC pnt6(7.5,25);
-
-  // This line shouldn't be clipped.
-  LinePP2dC l1(pnt1,pnt2);
-  if(!l1.ClipBy(rng)) return __LINE__;
-  if((pnt1 - l1.P1()).SumOfSqr() > 0.00001) return __LINE__;
-  if((pnt2 - l1.P2()).SumOfSqr() > 0.00001) return __LINE__;
-
-  // Should clip point 0.
-  LinePP2dC l2(pnt0,pnt2);
-  if(!l2.ClipBy(rng)) return __LINE__;
-  if((pnt0 - l2.P1()).SumOfSqr() < 0.00001) return __LINE__;
-  if((pnt2 - l2.P2()).SumOfSqr() > 0.00001) return __LINE__;
-  if(!rng.Contains(l2.P1())) return __LINE__;
-
-  // Should clip point 1.
-  LinePP2dC l3(pnt1,pnt3);
-  if(!l3.ClipBy(rng)) return __LINE__;
-  if((pnt1 - l3.P1()).SumOfSqr() > 0.00001) return __LINE__;
-  if((pnt3 - l3.P2()).SumOfSqr() < 0.00001) return __LINE__;
-  if(!rng.Contains(l3.P2())) return __LINE__;
-  
-  // Line entirely outside region.
-  LinePP2dC l4(pnt3,pnt4);
-  if(l4.ClipBy(rng)) return __LINE__;
-
-  RealRange2dC rng2(0.51,239.49,0.51,239.49);
-  LinePP2dC l5(Point2dC(1.5,0.5),Point2dC(1.5,720.5));
-  //cerr << " CP1=" << l5.P1() << " CP2=" << l5.P2() << "\n";
-  if(!l5.ClipBy(rng2)) return __LINE__;
-  //cerr << " CP1=" << l5.P1() << " CP2=" << l5.P2() << "\n";
-  if(!rng2.Contains(l5.P1())) return __LINE__;
-  if(!rng2.Contains(l5.P2())) return __LINE__;
-
-  // Test for bug now corrected - should clip point 2
-  LinePP2dC l6(pnt2,pnt5);
-  if(!l6.ClipBy(rng)) return __LINE__;
-  //cerr << pnt6 << " " << l6.P2() << endl;
-  if((pnt6 - l6.P2()).SumOfSqr() > 0.00001) return __LINE__;
-
-  return 0;
-}
+#if 0
 
 int testLineFitLSQ() {
   
-  Array1dC<Point2dC> points(10);
-  UIntT i;
-  RealT res,twoPi = RavlConstN::pi * 2;
+  Array<Point<RealT,2>,1> points(10);
+  unsigned i;
+  RealT res,twoPi = std::numbers::pi_v<RealT> * 2;
   for(RealT a = 0;a < twoPi;a += (twoPi/100)) {
     RealT offx = Random1() * 100 - 50;
     RealT offy = Random1() * 100 - 50;
-    RealT dx = Cos(a) * 50;
-    RealT dy = Sin(a) * 50;
+    RealT dx = std::cos(a) * 50;
+    RealT dy = std::sin(a) * 50;
     //cerr << "Dx=" << dx << " Dy=" << dy << "\n";
-    for(i = 0;i < points.Size();i++)
-      points[i] = Point2dC(i * dx + offx + RandomGauss(), i * dy + offy + RandomGauss());
+    for(i = 0;i < points.size();i++)
+      points[i] = toPoint<RealT>(i * dx + offx + RandomGauss(), i * dy + offy + RandomGauss());
     LineABC2dC line;
     line.FitLSQ(points,res);
     //cerr << "Line=" << line << " Res=" << res <<"\n";
-    for(i = 0;i < points.Size();i++) {
+    for(i = 0;i < points.size();i++) {
       RealT dist = line.Distance(points[i]);
-      Point2dC at = line.Projection(points[i]);
+      Point<RealT,2> at = line.Projection(points[i]);
       RealT sep = at.EuclidDistance(points[i]);
-      if(Abs(sep - dist) > 0.0001) return __LINE__;
+      CHECK_FALSE(std::abs(sep - dist) > 0.0001);
       //cerr << "Dist=" << dist << "\n";
-      if(dist > 5) return __LINE__;
+      CHECK_FALSE(dist > 5);
     }
   }
 
   return 0;
 }
+#endif

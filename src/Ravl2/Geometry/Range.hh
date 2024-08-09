@@ -354,9 +354,9 @@ namespace Ravl2
     //: Default constructor.
     constexpr Range() = default;
 
-    //! Construct from an IndexRange<N>.
-    // Note that the upper limits of the Range object are incremented by 1
-    // to make the range consistent.
+    //! @brief Construct from an IndexRange<N>.
+    //! Note that the upper limits of the Range object are incremented by 1
+    //! to make the range consistent.
     explicit constexpr Range(const IndexRange<N> &rng)
     {
       for(unsigned i = 0; i < N; ++i) {
@@ -635,12 +635,39 @@ namespace Ravl2
       return mRanges[ind];
     }
 
+    //! Access item.
     constexpr const Range<RealT, 1> &operator[](unsigned ind) const
     {
       return mRanges[ind];
     }
-    //: Access item.
 
+    //! Minimum value of the range.
+    [[nodiscard]] constexpr Vector<RealT, N> min() const
+    {
+      Vector<RealT, N> ret;
+      for(unsigned i = 0; i < N; i++) {
+        ret[i] = mRanges[i].min();
+      }
+      return ret;
+    }
+
+    //! Maximum value of the range.
+    [[nodiscard]] constexpr Vector<RealT, N> max() const
+    {
+      Vector<RealT, N> ret;
+      for(unsigned i = 0; i < N; i++) {
+        ret[i] = mRanges[i].max();
+      }
+      return ret;
+    }
+
+    //! Minimum value of the range in the given dimension.
+    [[nodiscard]] constexpr RealT min(unsigned n) const
+    { return mRanges[n].min(); }
+
+    //! Maximum value of the range in the given dimension.
+    [[nodiscard]] constexpr RealT max(unsigned n) const
+    { return mRanges[n].max(); }
   private:
     std::array<Range<RealT, 1>, N> mRanges;
   };

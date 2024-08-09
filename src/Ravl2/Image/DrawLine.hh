@@ -27,6 +27,7 @@ namespace Ravl2
     LinePP2dC<CoordTypeT> line = aLine;
     if(!line.clipBy(toRange<CoordTypeT>(Dat.range())))
       return;
+
     for(Line2dIterC it(toIndex<2>(line.P1()), toIndex<2>(line.P2())); it; ++it)
       Dat[*it] = Value;
   }
@@ -48,6 +49,7 @@ namespace Ravl2
       }
       return;
     }
+    SPDLOG_INFO("DrawLine: Line not completely inside image");
     DrawLine(Dat, Value, LinePP2dC<float>(toPoint<float>(From), toPoint<float>(To)));
   }
 

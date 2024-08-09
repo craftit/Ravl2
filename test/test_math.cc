@@ -27,7 +27,7 @@ TEST_CASE("MeanVariance", "[MeanVariance]")
   mv1 -= mv2;
   CHECK(mv1.count() == 1);
   // The mean and variance should be the same.
-  CHECK(isNearZero(mv1.mean() - mvo.mean()));
+  CHECK(isNearZero(mv1.mean() - mvo.mean(),1e-6));
   CHECK(isNearZero(mv1.variance() - mvo.variance()));
   //cerr << mv1 << "\n";
 
@@ -90,12 +90,12 @@ TEST_CASE("Sums1d2C", "[Sums1d2C]")
           );
 #endif
 
-      CHECK(isNearZero(sum.mean()-added.mean()));
-      CHECK(isNearZero(sum.variance(false)-added.variance()));
-      CHECK(isNearZero(sum.mean()-mvinc.mean()));
-      CHECK(isNearZero(sum.variance(false)-mvinc.variance()));
-      CHECK(isNearZero(sum.mean()-comp.mean()));
-      CHECK(isNearZero(sum.variance(false)-comp.variance()));
+      CHECK(isNearZero(sum.mean()-added.mean(),1e-6));
+      CHECK(isNearZero(sum.variance(false)-added.variance(),1e-6));
+      CHECK(isNearZero(sum.mean()-mvinc.mean(),1e-6));
+      CHECK(isNearZero(sum.variance(false)-mvinc.variance(),1e-6));
+      CHECK(isNearZero(sum.mean()-comp.mean(),1e-6));
+      CHECK(isNearZero(sum.variance(false)-comp.variance(),1e-6));
 
     }
   }

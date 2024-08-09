@@ -124,10 +124,14 @@ s/\.Row()/[0]/g
 s/\.Col()/[1]/g
 s/\.Number()/\.count()/g
 s/MeanVarianceC/MeanVariance/g
+s/\.X()/[0]/g
+s/\.Y()/[1]/g
+s/[[:blank:]]Size()/ size()/g
+s/\.TopLeft()/.min()/g
+s/\.BottomRight()/.max()/g
 
 # When we see pxl.UpN() replace with up(pxl)
 
-# IsEmpty() -> empty()
 s/IsEmpty()/empty()/g
 s/\.IsElm()/\.valid()/g
 s/\.Area()/\.area()/g
@@ -148,8 +152,8 @@ s/Point2dC/Point<RealT,2>/g
 s/Point3dC/Point<RealT,3>/g
 s/Vector2dC/Vector<RealT,2>/g
 s/Vector3dC/Vector<RealT,3>/g
-s/RealRange1dC/Range<1,float>/g
-s/RealRange2dC/Range<2,float>/g
+s/RealRange1dC/Range<float,1>/g
+s/RealRange2dC/Range<float,2>/g
 s/IndexRange2dSetC/IndexRangeSet<2>/g
 s/Affine2dC/Affine<RealT,2>/g
 s/Tuple2C</std::tuple</g

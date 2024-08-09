@@ -4,8 +4,25 @@
 
 #pragma once
 
+#include <cassert>
+
 namespace Ravl2
 {
+
+  //! @brief Get the next element in a container, if the iterator is at the end, return the first element
+  //! The iterator must be at a valid position in the container, and the container must contain at least one element
+  //! @param container the container
+  //! @param it the iterator
+  //! @return the next element
+  template<typename ContainerT, typename IteratorT, typename DataT = typename ContainerT::value_type>
+  const DataT &nextDataCrc(const ContainerT &container, const IteratorT &it)
+  {
+    assert(!container.empty());
+    if((it + 1) == container.end())
+      return container.front();
+    return *(it + 1);
+  }
+
   //! @brief Iterator that holds a position and allows for circular iteration, from the end, go to the beginning
   //! This is particularly useful for porting code that originally used a circular linked list.
 

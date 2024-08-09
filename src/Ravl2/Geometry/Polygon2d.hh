@@ -30,7 +30,10 @@ namespace Ravl2
   class Polygon2dC : public PointSet<RealT, 2>
   {
   public:
+    using PointT = Point<RealT, 2>;
     using PointArrayT = typename PointSet<RealT, 2>::PointArrayT;
+    using interator = typename PointSet<RealT, 2>::iterator;
+    using value_type = typename PointSet<RealT, 2>::value_type;
 
     //! Empty list of points.
     Polygon2dC() = default;
@@ -49,49 +52,37 @@ namespace Ravl2
     // The corners of the range are inserted into the polygon in clockwise order
     explicit Polygon2dC(const Range<RealT, 2> &range);
 
-    //!return: the signed area of this polygon
+    //! @return: the signed area of this polygon
     [[nodiscard]] RealT area() const;
 
-    //!return: the moments of the polygon
-    [[nodiscard]] Moments2<RealT> Moments() const;
+    //! @brief Test if the polygon is convex
+    //! @return: true if the polygon is convex
+    [[nodiscard]] bool isConvex() const;
 
-    //! Returns true if (a, b) is a proper internal or external (if allowExternal is true)
-    // diagonal of this polygon. The edges incident to 'a' and 'b'
-    // are ignored.
-    // Ref.: -  O'Rourke,J.: Computational geometry in C;
-    //          Cambridge University Press, 1994, pp. 35-36
-    [[nodiscard]] bool IsDiagonal(const LoopIter<PointArrayT> &a, const LoopIter<PointArrayT> &b, bool allowExternal = false) const;
-
-    //! Returns true iff the diagonal (a,b) is strictly internal
-    // to this polygon in the neighbourhood of the 'a' endpoint.
-    // Ref.: -  O'Rourke,J.: Computational geometry in C;
-    //          Cambridge University Press, 1994, pp. 37-38
-    [[nodiscard]] bool IsInCone(const LoopIter<PointArrayT> &a, const LoopIter<PointArrayT> &b) const;
-
-    //! Clips this polygon by another convex polygon
-    //!param: oth - a convex clipping polygon
-    //!return: the intersection of the two polygons
-    // Note that this only works if the other polygon is convex.
-    // Ref.: -  Foley. van Dam. Feiner. Hughes: Computer Graphics Principles and Practice
-    //          Addison Wesley Publishing Company, 1996, pp. 123-129
+    //! @brief Clips this polygon by a convex polygon
+    //! @param: oth - a convex clipping polygon
+    //! @return: the intersection of the two polygons
+    //! Note that this only works if the other polygon is convex.
+    //! Ref.: -  Foley. van Dam. Feiner. Hughes: Computer Graphics Principles and Practice
+    //!         Addison Wesley Publishing Company, 1996, pp. 123-129
     [[nodiscard]] Polygon2dC<RealT> ClipByConvex(const Polygon2dC<RealT> &oth) const;
 
-    //! Clips this polygon by the line
-    //!param: line - a line
-    //!return: the clipped polygon so that only the part on the right side of the
-    //!return: line remains.
+    //! @brief Clips this polygon by the line
+    //! @param: line - a line
+    //! @return: the clipped polygon so that only the part on the right side of the
+    //! @return: line remains.
     [[nodiscard]] Polygon2dC<RealT> ClipByLine(const LinePP2dC<RealT> &line) const;
 
-    //! Clips this polygon by the specified axis line through the given point
-    //!param: threshold - the threshold for the specified axis
-    //!param: axis - we will clip by point[axis]
-    //!param: isGreater - determines which side of the axis is accepted
-    //!return: the remains of the polygon after clipping
+    //! @brief Clips this polygon by the specified axis line through the given point
+    //! @param: threshold - the threshold for the specified axis
+    //! @param: axis - we will clip by point[axis]
+    //! @param: isGreater - determines which side of the axis is accepted
+    //! @return: the remains of the polygon after clipping, maybe empty
     [[nodiscard]] Polygon2dC<RealT> ClipByAxis(RealT threshold, unsigned axis, bool isGreater) const;
 
-    //! Clip polygon so it lies entirely within 'range'
-    // If adjacent points on the polygon map to the same place,
-    // one of the points will be removed.
+    //! @brief Clip polygon so it lies entirely within 'range'
+    //! If adjacent points on the polygon map to the same place,
+    //! one of the points will be removed.
     [[nodiscard]] Polygon2dC<RealT> ClipByRange(const Range<RealT, 2> &range) const;
 
     //! Returns true iff the point 'p' is an internal point of this polygon.
@@ -114,22 +105,45 @@ namespace Ravl2
     //! Returns true if the polygon is self intersecting, ie do any sides cross
     [[nodiscard]] bool IsSelfIntersecting() const;
 
-    //! Measure the fraction of the polygons overlapping as a fraction of the area of 'poly'
-    //!return: 0= Not overlapping 1=This polygon is completely covered by 'poly'.
+    //! @brief Measure the fraction of the polygons overlapping as a fraction of the area of 'poly'
+    //! This requires that the polygons are convex.
+    //! @return: 0= Not overlapping 1=This polygon is completely covered by 'poly'.
     [[nodiscard]] RealT Overlap(const Polygon2dC<RealT> &poly) const;
 
-    //! Measure the fraction of the polygons overlapping as a fraction of the larger of the two polygons.
-    //!return: 0= Not overlapping 1=If the two polygons are identical.
+    //! @brief Measure the fraction of the polygons overlapping as a fraction of the larger of the two polygons.
+    //! This requires that the polygons are convex.
+    //! @return: 0= Not overlapping 1=If the two polygons are identical.
     [[nodiscard]] RealT CommonOverlap(const Polygon2dC<RealT> &poly) const;
 
-    //! Generate an approximation to the given polygon within the given Euclidean distance limit.
-    // The approximation is computed by finding the furthest point from the start, and then
-    // the furthest point from that point. The two line segments are then approximated by searching for the
-    // furthest point from the line defined by the two end points and if it is further than the distance limit
-    // adding it to the approximation. The procedure is then repeated for each of the segments either side
-    // of furthest point.
+    //! @brief Generate an approximation to the given polygon within the given Euclidean distance limit.
+    //! The approximation is computed by finding the furthest point from the start, and then
+    //! the furthest point from that point. The two line segments are then approximated by searching for the
+    //! furthest point from the line defined by the two end points and if it is further than the distance limit
+    //! adding it to the approximation. The procedure is then repeated for each of the segments either side
+    //! of furthest point.
     [[nodiscard]] Polygon2dC<RealT> Approx(RealT distLimit) const;
+
+    //! @brief Make a reversed copy of the polygon
+    [[nodiscard]] Polygon2dC<RealT> reverse() const
+    {
+      Polygon2dC<RealT> ret;
+      ret.reserve(this->size());
+      for(auto it = this->rbegin(); it != this->rend(); ++it)
+        ret.push_back(*it);
+      return ret;
+    }
   };
+
+
+  //! Let the compiler know that we will use these classes with the following types
+  extern template class Polygon2dC<float>;
+  extern template class Polygon2dC<double>;
+
+
+  //! @brief Compute the moments of a polygon
+  //! see http://www9.in.tum.de/forschung/fgbv/tech-reports/1996/FGBV-96-04-Steger.pdf for details
+  template <typename RealT>
+  [[nodiscard]] Moments2<RealT> moments(const Polygon2dC<RealT> &poly);
 
   //! Generate a convex hull from a set of points.
   template <typename RealT>
@@ -141,3 +155,11 @@ namespace Ravl2
   [[nodiscard]] Polygon2dC<RealT> ConvexHull(std::vector<Point<RealT, 2>> &&points);
 
 }// namespace Ravl2
+
+#if FMT_VERSION >= 90000
+template <>
+struct fmt::formatter<Ravl2::Polygon2dC<float>> : fmt::ostream_formatter {
+};
+#endif
+
+

@@ -24,8 +24,9 @@ namespace Ravl2
   void DrawFilledPolygon(ArrayT &dat, const DataT &value, const Polygon2dC<CoordT> &poly)
   {
     // Draw one-colour polygon
-    for(Polygon2dIterC<CoordT> it(dat, poly); it; ++it)
-      *it = value;
+    for(Polygon2dIterC<CoordT> it(poly); it.valid(); ++it) {
+      fill(clip(dat[it.row()],it.rowIndexRange()), value);
+    }
   }
 
   //! @brief Draw a poly line into the image.

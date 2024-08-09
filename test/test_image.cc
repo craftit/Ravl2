@@ -328,8 +328,6 @@ TEST_CASE("DiscreteCosineTransform (forwardDCT)")
       CHECK(std::abs(it.template data<0>() - it.template data<1>()) < 0.001f);
     }
 
-    for (int i = 0; i < 50000; i++)
-      cimg = chandct.forwardDCT(img);
   }
 
   SECTION("VecRadDCT.")

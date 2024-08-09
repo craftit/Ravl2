@@ -4,6 +4,8 @@
 #include <spdlog/spdlog.h>
 #include <cereal/archives/json.hpp>
 
+#include "Ravl2/Array.hh"
+#include "Ravl2/Image/DrawPolygon.hh"
 #include "Ravl2/Geometry/Polygon2d.hh"
 #include "Ravl2/Geometry/Polygon2dIter.hh"
 
@@ -50,7 +52,7 @@ TEST_CASE("Polygon2dIter")
     polygon.push_back(Point<float, 2>({10, 0}));
     unsigned int i = 0;
     for(Polygon2dIterC<float> it(polygon); it; ++it, ++i) {
-//SPDLOG_INFO("{} {}", it.Row(), it.RowIndexRange());
+//SPDLOG_INFO("{} {}", it[0], it.RowIndexRange());
       EXPECT_TRUE(range[0].contains(it.row()));
       EXPECT_TRUE(range[1].contains(it.rowIndexRange()));
       CHECK(i < expectedResult.size());
@@ -84,432 +86,153 @@ TEST_CASE("Polygon2dIter")
   }
 }
 
-#if 0
-TEST_CASE("Scan polygon")
+TEST_CASE("Convex Polygon Overlap")
 {
-  UIntT count = 0;
-#if DODISPLAY
-  ByteT drawVal = 255;
-  ImageC<ByteT> img(105,105);
-  img.Fill(0);
-#endif
-  Polygon2dC poly;
-#if 1
-  poly.InsLast(Point2dC(5, 10));
-  poly.InsLast(Point2dC(40, 50));
-  poly.InsLast(Point2dC(100, 20));
 
-  for(ScanPolygon2dC it(poly); it; it++) {
-#if DODISPLAY
-    DrawLine(img,drawVal,Index2dC(it.Row(),it.Data().Min()),Index2dC(it.Row(),it.Data().Max()));
-#endif
-    //cerr << " " << it.Row() << " " << it.Data() << "\n";
-    if(it.Data().Size() > 0.001 &&
-      !poly.Contains(Point2dC(it.Row(), it.Data().Center())))
-      return __LINE__;
-    count++;
-  }
-#if DODISPLAY
-  Save("@X:1",img);
-  cerr << " ---------- Test 2 --------------------------- \n";
-#endif
-  //cerr << "Entries=" << count <<"\n";
-
-  count = 0;
-#if DODISPLAY
-  img = ImageC<ByteT>(105,105);
-  img.Fill(0);
-#endif
-  poly.Empty();
-  poly.InsLast(Point2dC(10, 10));
-  poly.InsLast(Point2dC(30, 20));
-  poly.InsLast(Point2dC(20, 40));
-  poly.InsLast(Point2dC(40, 20));
-  for(ScanPolygon2dC it(poly, 1); it; it++) {
-#if DODISPLAY
-    DrawLine(img,drawVal,Index2dC(it.Row(),it.Data().Min()),Index2dC(it.Row(),it.Data().Max()));
-#endif
-    //cerr << " " << it.Row() << " " << it.Data() << "\n";
-    if(it.Data().Size() > 0.001 &&
-      !poly.Contains(Point2dC(it.Row(), it.Data().Center())))
-      return __LINE__;
-    count++;
-  }
-#if DODISPLAY
-  Save("@X:2",img);
-  cerr << " ---------- Test 3 --------------------------- \n";
-  img = ImageC<ByteT>(105,105);
-  img.Fill(0);
-#endif
-  poly.Empty();
-  poly.InsLast(Point2dC(10, 30));
-  poly.InsLast(Point2dC(40, 40));
-  poly.InsLast(Point2dC(20, 30));
-  poly.InsLast(Point2dC(30, 10));
-  for(ScanPolygon2dC it(poly, 1); it; it++) {
-#if DODISPLAY
-    DrawLine(img,drawVal,Index2dC(it.Row(),it.Data().Min()),Index2dC(it.Row(),it.Data().Max()));
-#endif
-    //cerr << " " << it.Row() << " " << it.Data() << "\n";
-    if(it.Data().Size() > 0.001 &&
-      !poly.Contains(Point2dC(it.Row(), it.Data().Center())))
-      return __LINE__;
-    count++;
-  }
-#if DODISPLAY
-  Save("@X:3",img);
-  cerr << " ---------- Test 4 --------------------------- \n";
-  img = ImageC<ByteT>(105,105);
-  img.Fill(0);
-#endif
-  poly.Empty();
-  poly.InsLast(Point2dC(10, 10));
-  poly.InsLast(Point2dC(10, 90));
-  poly.InsLast(Point2dC(90, 90));
-  poly.InsLast(Point2dC(90, 10));
-  for(ScanPolygon2dC it(poly, 1); it; it++) {
-#if DODISPLAY
-    DrawLine(img,drawVal,Index2dC(it.Row(),it.Data().Min()),Index2dC(it.Row(),it.Data().Max()));
-#endif
-    //cerr << " " << it.Row() << " " << it.Data() << "\n";
-    if(it.Data().Size() > 0.001 &&
-      !poly.Contains(Point2dC(it.Row(), it.Data().Center())))
-      return __LINE__;
-    count++;
-  }
-#if DODISPLAY
-  Save("@X:4",img);
-#endif
-
-#if DODISPLAY
-  cerr << " ---------- Test 5 --------------------------- \n";
-  img = ImageC<ByteT>(105,105);
-  img.Fill(0);
-#endif
-  poly.Empty();
-  poly.InsLast(Point2dC(10, 10));
-  poly.InsLast(Point2dC(10, 20));
-  poly.InsLast(Point2dC(20, 20));
-  poly.InsLast(Point2dC(20, 30));
-  poly.InsLast(Point2dC(30, 30));
-  poly.InsLast(Point2dC(30, 10));
-  for(ScanPolygon2dC it(poly, 1); it; it++) {
-#if DODISPLAY
-    DrawLine(img,drawVal,Index2dC(it.Row(),it.Data().Min()),Index2dC(it.Row(),it.Data().Max()));
-#endif
-    //cerr << " " << it.Row() << " " << it.Data() << "\n";
-#if 0
-    if(it.Data().Size() > 0.001 &&
-       !poly.Contains(Point2dC(it.Row(),it.Data().Center())))
-      return __LINE__;
-#endif
-    count++;
-  }
-#if DODISPLAY
-  Save("@X:5",img);
-#endif
-
-#if DODISPLAY
-  cerr << " ---------- Test 6 --------------------------- \n";
-  img = ImageC<ByteT>(105,105);
-  img.Fill(0);
-#endif
-  poly.Empty();
-  poly.InsLast(Point2dC(10, 10));
-  poly.InsLast(Point2dC(10, 20));
-  poly.InsLast(Point2dC(20, 20));
-  poly.InsLast(Point2dC(20, 30));
-  poly.InsLast(Point2dC(10, 30));
-  poly.InsLast(Point2dC(10, 40));
-  poly.InsLast(Point2dC(40, 40));
-  poly.InsLast(Point2dC(40, 30));
-  poly.InsLast(Point2dC(30, 30));
-  poly.InsLast(Point2dC(30, 20));
-  poly.InsLast(Point2dC(40, 20));
-  poly.InsLast(Point2dC(40, 10));
-  for(ScanPolygon2dC it(poly, 1); it; it++) {
-#if DODISPLAY
-    DrawLine(img,drawVal,Index2dC(it.Row(),it.Data().Min()),Index2dC(it.Row(),it.Data().Max()));
-#endif
-    //cerr << " " << it.Row() << " " << it.Data() << "\n";
-    if(it.Data().Size() > 0.001 &&
-      !poly.Contains(Point2dC(it.Row(), it.Data().Center())))
-      return __LINE__;
-    count++;
-  }
-#if DODISPLAY
-  Save("@X:6",img);
-#endif
-
-#if DODISPLAY
-  cerr << " ---------- Test 7 --------------------------- \n";
-  img = ImageC<ByteT>(105,105);
-  img.Fill(0);
-#endif
-  poly.Empty();
-  poly.InsLast(Point2dC(10, 20));
-  poly.InsLast(Point2dC(10, 30));
-  poly.InsLast(Point2dC(20, 30));
-  poly.InsLast(Point2dC(20, 40));
-  poly.InsLast(Point2dC(30, 40));
-  poly.InsLast(Point2dC(30, 30));
-  poly.InsLast(Point2dC(40, 30));
-  poly.InsLast(Point2dC(40, 20));
-  poly.InsLast(Point2dC(30, 20));
-  poly.InsLast(Point2dC(30, 10));
-  poly.InsLast(Point2dC(20, 10));
-  poly.InsLast(Point2dC(20, 20));
-  for(ScanPolygon2dC it(poly, 1); it; it++) {
-#if DODISPLAY
-    DrawLine(img,drawVal,Index2dC(it.Row(),it.Data().Min()),Index2dC(it.Row(),it.Data().Max()));
-#endif
-    //cerr << " " << it.Row() << " " << it.Data() << "\n";
-    if(it.Data().Size() > 0.001 &&
-      !poly.Contains(Point2dC(it.Row(), it.Data().Center()))) {
-      //Save("@X:7",img);
-      return __LINE__;
-    }
-    count++;
-  }
-#if DODISPLAY
-  Save("@X:7",img);
-#endif
-
-#if DODISPLAY
-  cerr << " ---------- Test 8 --------------------------- \n";
-  img = ImageC<ByteT>(105,105);
-  img.Fill(0);
-#endif
-  poly.Empty();
-  poly.InsLast(Point2dC(10, 10));
-  poly.InsLast(Point2dC(10, 40));
-  poly.InsLast(Point2dC(20, 40));
-  poly.InsLast(Point2dC(20, 30));
-  //poly.InsLast(Point2dC(30,30));
-  poly.InsLast(Point2dC(30, 30));
-  poly.InsLast(Point2dC(30, 40));
-  poly.InsLast(Point2dC(40, 40));
-  poly.InsLast(Point2dC(40, 10));
-  poly.InsLast(Point2dC(30, 10));
-  poly.InsLast(Point2dC(30, 20));
-  poly.InsLast(Point2dC(20, 20));
-  poly.InsLast(Point2dC(20, 10));
-  for(ScanPolygon2dC it(poly, 1); it; it++) {
-#if DODISPLAY
-    DrawLine(img,drawVal,Index2dC(it.Row(),it.Data().Min()),Index2dC(it.Row(),it.Data().Max()));
-#endif
-    if(it.Data().Size() > 0.001 &&
-      !poly.Contains(Point2dC(it.Row(), it.Data().Center()))) {
-      std::cerr << " Row:" << it.Row() << " Span:" << it.Data() << "\n";
-      //  Save("@X:8",img);
-      return __LINE__;
-    }
-    count++;
-  }
-#if DODISPLAY
-  Save("@X:8",img);
-#endif
-
-#if DODISPLAY
-  cerr << " ---------- Test 9 --------------------------- \n";
-  img = ImageC<ByteT>(105,105);
-  img.Fill(0);
-#endif
-  poly.Empty();
-  poly.InsLast(Point2dC(10, 10));
-  poly.InsLast(Point2dC(30, 20));
-  poly.InsLast(Point2dC(10, 30));
-  poly.InsLast(Point2dC(30, 40));
-  poly.InsLast(Point2dC(10, 50));
-  poly.InsLast(Point2dC(40, 40));
-  poly.InsLast(Point2dC(20, 30));
-  poly.InsLast(Point2dC(40, 20));
-  for(ScanPolygon2dC it(poly, 1); it; it++) {
-#if DODISPLAY
-    DrawLine(img,drawVal,Index2dC(it.Row(),it.Data().Min()),Index2dC(it.Row(),it.Data().Max()));
-#endif
-    //cerr << " " << it.Row() << " " << it.Data() << "\n";
-    if(it.Data().Size() > 0.001 &&
-      !poly.Contains(Point2dC(it.Row(), it.Data().Center())))
-      return __LINE__;
-    count++;
-  }
-#if DODISPLAY
-  Save("@X:9",img);
-#endif
-
-#if DODISPLAY
-  cerr << " ---------- Test 10 --------------------------- \n";
-  img = ImageC<ByteT>(105,105);
-  img.Fill(0);
-#endif
-  poly.Empty();
-
-  poly.InsLast(Point2dC(20, 40));
-  poly.InsLast(Point2dC(30, 20));
-  poly.InsLast(Point2dC(40, 40));
-  poly.InsLast(Point2dC(50, 10));
-  poly.InsLast(Point2dC(40, 30));
-  poly.InsLast(Point2dC(30, 10));
-  poly.InsLast(Point2dC(20, 30));
-  poly.InsLast(Point2dC(10, 10));
-
-  for(ScanPolygon2dC it(poly, 1); it; it++) {
-#if DODISPLAY
-    DrawLine(img,drawVal,Index2dC(it.Row(),it.Data().Min()),Index2dC(it.Row(),it.Data().Max()));
-#endif
-    //cerr << " " << it.Row() << " " << it.Data() << "\n";
-    if(it.Data().Size() > 0.001 &&
-      !poly.Contains(Point2dC(it.Row(), it.Data().Center())))
-      return __LINE__;
-    count++;
-  }
-#if DODISPLAY
-  Save("@X:10",img);
-#endif
-#if DODISPLAY
-  cerr << " ---------- Test 11 --------------------------- \n";
-  img = ImageC<ByteT>(105,105);
-  img.Fill(0);
-#endif
-  poly.Empty();
-  poly.InsLast(Point2dC(10, 10));
-  poly.InsLast(Point2dC(10, 60));
-  poly.InsLast(Point2dC(50, 60));
-  poly.InsLast(Point2dC(50, 40));
-  poly.InsLast(Point2dC(40, 40));
-  poly.InsLast(Point2dC(40, 50));
-  poly.InsLast(Point2dC(30, 50));
-  poly.InsLast(Point2dC(30, 40));
-  poly.InsLast(Point2dC(20, 40));
-  poly.InsLast(Point2dC(20, 30));
-  poly.InsLast(Point2dC(30, 30));
-  poly.InsLast(Point2dC(30, 20));
-  poly.InsLast(Point2dC(40, 20));
-  poly.InsLast(Point2dC(40, 30));
-  poly.InsLast(Point2dC(50, 30));
-  poly.InsLast(Point2dC(50, 10));
-
-  for(ScanPolygon2dC it(poly, 1); it; it++) {
-#if DODISPLAY
-    DrawLine(img,drawVal,Index2dC(it.Row(),it.Data().Min()),Index2dC(it.Row(),it.Data().Max()));
-#endif
-    //cerr << " " << it.Row() << " " << it.Data() << "\n";
-    if(it.Data().Size() > 0.001 &&
-      !poly.Contains(Point2dC(it.Row(), it.Data().Center())))
-      return __LINE__;
-    count++;
-  }
-#if DODISPLAY
-  Save("@X:11",img);
-#endif
-#endif
-#if DODISPLAY
-  cerr << " ---------- Test 12 --------------------------- \n";
-  img = ImageC<ByteT>(105,105);
-  img.Fill(0);
-#endif
-  poly.Empty();
-  int stop = 1000;
-
-  poly.InsLast(Point2dC(10, 50));
-  poly.InsLast(Point2dC(30, 50));
-  poly.InsLast(Point2dC(30, 40));
-  poly.InsLast(Point2dC(20, 40));
-  poly.InsLast(Point2dC(20, 30));
-  poly.InsLast(Point2dC(30, 30));
-  poly.InsLast(Point2dC(30, 20));
-  poly.InsLast(Point2dC(40, 20));
-  poly.InsLast(Point2dC(40, 30));
-  poly.InsLast(Point2dC(50, 30));
-  poly.InsLast(Point2dC(50, 40));
-  poly.InsLast(Point2dC(40, 40));
-  poly.InsLast(Point2dC(40, 50));
-  poly.InsLast(Point2dC(60, 50));
-  poly.InsLast(Point2dC(60, 10));
-  poly.InsLast(Point2dC(10, 10));
-
-  for(ScanPolygon2dC it(poly, 1); it && (stop-- > 0); it++) {
-#if DODISPLAY
-    DrawLine(img,drawVal,Index2dC(it.Row(),it.Data().Min()),Index2dC(it.Row(),it.Data().Max()));
-#endif
-    //cerr << " " << it.Row() << " " << it.Data() << "\n";
-#if 1
-    if(it.Data().Size() > 0.001 &&
-      !poly.Contains(Point2dC(it.Row(), it.Data().Center()))) {
-#if DODISPLAY
-      Save("@X:12",img);
-#endif
-      return __LINE__;
-    }
-#endif
-    count++;
-  }
-#if DODISPLAY
-  Save("@X:12",img);
-#endif
-  if(stop <= 0) return __LINE__;
-  return 0;
 }
 
-int
-testOverlap()
+TEST_CASE("Polygon2d")
 {
-  cerr << "testOverlap, Called. \n";
-  Polygon2dC poly;
-  poly.InsLast(Point2dC(0, 0));
-  poly.InsLast(Point2dC(0, 10));
-  poly.InsLast(Point2dC(10, 10));
-  poly.InsLast(Point2dC(10, 0));
+  using namespace Ravl2;
+  SECTION("Self intersection")
+  {
+    {
+      Polygon2dC<float> poly;
+      poly.push_back(toPoint<float>(-10, 0));
+      poly.push_back(toPoint<float>(0, 20));
+      poly.push_back(toPoint<float>(10, 10));
+      poly.push_back(toPoint<float>(10, 0));
 
-  RealT score = poly.Overlap(poly);
-  if(Abs(score - 1.0) > 0.000001) return __LINE__;
+      CHECK(!poly.IsSelfIntersecting());
+      CHECK(poly.isConvex());
+    }
 
-  poly.Reverse();
+    {
+      Polygon2dC<float> poly;
+      poly.push_back(toPoint<float>(0, 0));
+      poly.push_back(toPoint<float>(10, 10));
+      poly.push_back(toPoint<float>(10, 0));
+      poly.push_back(toPoint<float>(0, 10));
+      CHECK(poly.IsSelfIntersecting() == true);
+      CHECK(!poly.isConvex());
+    }
+  }
 
-  score = poly.Overlap(poly);
-  if(Abs(score - 1.0) > 0.000001) return __LINE__;
+  SECTION("Polygon2d Overlap")
+  {
+    Polygon2dC<float> poly;
+    poly.push_back(toPoint<float>(0, 0));
+    poly.push_back(toPoint<float>(0, 10));
+    poly.push_back(toPoint<float>(10, 10));
+    poly.push_back(toPoint<float>(10, 0));
 
-  Polygon2dC poly2 = poly.Copy();
-  poly2 += Point2dC(100, 100);
+    CHECK(poly.isConvex());
 
-  score = poly.Overlap(poly2);
-  if(Abs(score) > 0.000001) return __LINE__;
+    auto score = poly.Overlap(poly);
+    CHECK(std::abs(score - 1.0f) < 0.000001f);
 
-  score = poly2.Overlap(poly);
-  if(Abs(score) > 0.000001) return __LINE__;
+    poly = poly.reverse();
 
-  return 0;
+    score = poly.Overlap(poly);
+    CHECK(std::abs(score - 1.0f) < 0.000001f);
+
+    Polygon2dC poly2 = poly;
+    poly2 += toPoint<float>(100, 100);
+
+    score = poly.Overlap(poly2);
+    CHECK(std::abs(score) < 0.000001f);
+
+    score = poly2.Overlap(poly);
+    CHECK(std::abs(score) < 0.000001f);
+  }
 }
+
 
 TEST_CASE("Clip Polygon")
 {
-  Polygon2dC poly;
-  poly.InsLast(Point2dC(-10, 0));
-  poly.InsLast(Point2dC(0, 20));
-  poly.InsLast(Point2dC(10, 10));
-  poly.InsLast(Point2dC(10, 0));
+  using namespace Ravl2;
+  Polygon2dC<float> poly;
+  poly.push_back(toPoint<float>(-10, 0));
+  poly.push_back(toPoint<float>(0, 20));
+  poly.push_back(toPoint<float>(10, 10));
+  poly.push_back(toPoint<float>(10, 0));
 
-  RealRange2dC range1(10, 10);
-  RealRange2dC range2(10, 15);
-  Polygon2dC clippedConvex = poly.ClipByConvex(Polygon2dC(range1));
-  Polygon2dC clippedRange = poly.ClipByRange(range1);
+  SPDLOG_INFO("Test poly: {}", poly);
 
-  RealT score = Abs(clippedConvex.Area());
-  if(Abs(score - 100) > 1e-6) return __LINE__;
+  SECTION("Clip Axis")
+  {
+    Polygon2dC resultPoly = poly.ClipByAxis(0, 1, true);
+    SPDLOG_INFO("clipByAxis all: {}", resultPoly);
+    CHECK(resultPoly.size() == poly.size());
+    CHECK(isNearZero(resultPoly.area() - poly.area()));
 
-  score = Abs(clippedRange.Area());
-  if(Abs(score - 100) > 1e-6) return __LINE__;
+    resultPoly = poly.ClipByAxis(0, 1, false);
+    SPDLOG_INFO("none: {}", resultPoly);
+    CHECK(resultPoly.empty());
+  }
+#if 0
+  SECTION("Clip Polygon")
+  {
+    Range<float, 2> range1({{0, 10},
+                            {0, 10}});
 
-  score = clippedConvex.Overlap(clippedRange);
-  if(Abs(score - 1) > 1e-6) return __LINE__;
+    Range<float, 2> range2({{0, 10},
+                            {0, 15}});
 
-  clippedConvex = poly.ClipByConvex(Polygon2dC(range2));
-  clippedRange = poly.ClipByRange(range2);
+    Polygon2dC clippedConvex = poly.ClipByConvex(Polygon2dC(range1));
+    Polygon2dC clippedRange = poly.ClipByRange(range1);
 
-  score = clippedConvex.Overlap(clippedRange);
-  if(Abs(score - 1) > 1e-6) return __LINE__;
 
+    {
+      Array<int, 2> img({{-15, 15},
+                         {-5,  25}}, 0);
+      DrawFilledPolygon(img, 1, poly);
+      SPDLOG_INFO("Poly: {}", img);
+    }
+
+    {
+      Array<int, 2> img({{-15, 15},
+                         {-5,  25}}, 0);
+      Polygon2dC rect(range1);
+      DrawFilledPolygon(img, 1, rect);
+      SPDLOG_INFO("Rect: {}", img);
+    }
+
+    {
+      Array<int, 2> img({{-15, 15},
+                         {-5,  25}}, 0);
+      DrawFilledPolygon(img, 1, clippedConvex);
+      SPDLOG_INFO("clippedConvex: {}", img);
+    }
+    {
+      SPDLOG_INFO("clippedRange: {}", clippedRange);
+
+      Array<int, 2> img({{-15, 15},
+                         {-5,  25}}, 0);
+      DrawFilledPolygon(img, 1, clippedRange);
+      SPDLOG_INFO("clippedRange: {}", img);
+    }
+
+
+    auto score = std::abs(clippedConvex.area());
+    SPDLOG_INFO("clippedConvex area: {}   Signed:{} ", score, clippedConvex.area());
+    CHECK(std::abs(score - 100) < 1e-6f);
+
+    score = std::abs(clippedRange.area());
+    SPDLOG_INFO("clippedRange: {}   Signed:{} ", score, clippedRange.area());
+    CHECK(std::abs(score - 100) < 1e-6f);
+
+    score = clippedConvex.Overlap(clippedRange);
+    SPDLOG_INFO("clippedRange Overlap: {}  ", score);
+    CHECK(std::abs(score - 1) < 1e-6f);
+
+    clippedConvex = poly.ClipByConvex(Polygon2dC(range2));
+    clippedRange = poly.ClipByRange(range2);
+
+    score = clippedConvex.Overlap(clippedRange);
+    SPDLOG_INFO("clippedRange Overlap: {}", score);
+    CHECK(std::abs(score - 1) < 1e-6f);
+  }
+#endif
 }
 
-#endif

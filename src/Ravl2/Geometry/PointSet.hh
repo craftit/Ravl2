@@ -23,6 +23,9 @@ namespace Ravl2
   {
   public:
     using PointArrayT = std::vector<Point<RealT, N>>;
+    using iterator = typename PointArrayT::iterator;
+    using const_iterator = typename PointArrayT::const_iterator;
+    using value_type = typename PointArrayT::value_type;
 
     //! Empty list of points.
     PointSet() = default;
@@ -151,7 +154,7 @@ namespace Ravl2
     return oWeights;
   }
 
-  //: Compute the bounding rectangle for the point set.
+  //! Compute the bounding rectangle for the point set.
 
   template <typename RealT, unsigned N>
   Range<RealT, N> PointSet<RealT, N>::BoundingRectangle() const
@@ -167,7 +170,7 @@ namespace Ravl2
     return ret;
   }
 
-  //: Translate point set by vector.
+  //! Translate point set by vector.
 
   template <typename RealT, unsigned N>
   const PointSet<RealT, N> &PointSet<RealT, N>::operator+=(const Vector<RealT, N> &offset)
@@ -177,7 +180,7 @@ namespace Ravl2
     return *this;
   }
 
-  //: Translate point set by subracting a vector.
+  //! Translate point set by subracting a vector.
 
   template <typename RealT, unsigned N>
   const PointSet<RealT, N> &PointSet<RealT, N>::operator-=(const Vector<RealT, N> &offset)
@@ -187,7 +190,7 @@ namespace Ravl2
     return *this;
   }
 
-  //: Scale the point set by multiplying the points by 'scale'.
+  //! Scale the point set by multiplying the points by 'scale'.
 
   template <typename RealT, unsigned N>
   const PointSet<RealT, N> &PointSet<RealT, N>::operator*=(RealT scale)
@@ -197,6 +200,31 @@ namespace Ravl2
     return *this;
   }
 
+  template <typename RealT, unsigned N>
+  std::ostream &operator<<(std::ostream &s, const PointSet<RealT, N> &dat)
+  {
+    s << dat.size() << std::endl;
+    for(auto it: dat) {
+      s << ' ' << it;
+    }
+    return s;
+  }
+
   extern template class PointSet<float, 2>;
 
 }// namespace Ravl2
+
+#if FMT_VERSION >= 90000
+template <>
+struct fmt::formatter<Ravl2::PointSet<float,2>> : fmt::ostream_formatter {
+};
+template <>
+struct fmt::formatter<Ravl2::PointSet<double,2>> : fmt::ostream_formatter {
+};
+template <>
+struct fmt::formatter<Ravl2::PointSet<float,3>> : fmt::ostream_formatter {
+};
+template <>
+struct fmt::formatter<Ravl2::PointSet<double,3>> : fmt::ostream_formatter {
+};
+#endif
