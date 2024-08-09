@@ -166,11 +166,14 @@ TEST_CASE("Clip Polygon")
     CHECK(resultPoly.size() == poly.size());
     CHECK(isNearZero(resultPoly.area() - poly.area()));
 
-    resultPoly = poly.ClipByAxis(0, 1, false);
+    resultPoly = poly.ClipByAxis(-0.1f, 1, false);
     SPDLOG_INFO("none: {}", resultPoly);
     CHECK(resultPoly.empty());
+
+    resultPoly = poly.ClipByAxis(2, 1, false);
+    SPDLOG_INFO("At 1: {}", resultPoly);
   }
-#if 0
+#if 1
   SECTION("Clip Polygon")
   {
     Range<float, 2> range1({{0, 10},
@@ -226,8 +229,11 @@ TEST_CASE("Clip Polygon")
     SPDLOG_INFO("clippedRange Overlap: {}  ", score);
     CHECK(std::abs(score - 1) < 1e-6f);
 
+    // Clipping by two different routes should give the same result..
     clippedConvex = poly.ClipByConvex(Polygon2dC(range2));
     clippedRange = poly.ClipByRange(range2);
+
+
 
     score = clippedConvex.Overlap(clippedRange);
     SPDLOG_INFO("clippedRange Overlap: {}", score);

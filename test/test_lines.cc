@@ -106,13 +106,19 @@ TEST_CASE("LinePP")
     CHECK_FALSE(std::abs(cres - 0.8f) > 0.000001f);
 
     RealT val = line2.ParIntersection(line1);
-    CHECK_FALSE(std::abs(val - 0.5f) > 0.0001f);
+    CHECK(std::abs(val - 0.5f) < 0.0001f);
+
+    auto pnt = line2.innerIntersection(line1);
+    CHECK(pnt.has_value());
+    CHECK(squaredEuclidDistance(pnt.value(),toPoint<RealT>(0.5, 0.5)) < 0.0001f);
 
     // check that exception gets thrown for zero-length line
     LinePP2dC line3(toPoint<RealT>(0, 0), toPoint<RealT>(0, 0));
     RealT d = 0;
     CHECK_THROWS(d = line3.DistanceWithin(toPoint<RealT>(1, 1)));
     CHECK(d == 0);
+
+
   }
   SECTION("Clipping")
   {

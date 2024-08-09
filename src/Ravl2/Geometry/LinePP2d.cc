@@ -151,10 +151,7 @@ namespace Ravl2
     RealT p = ParIntersection(l);
     if(p < RealT(0) || p > RealT(1))
       return std::nullopt;
-    auto dir = this->direction();
-    RealT mag = RealT(xt::norm_l2(dir)());
-    assert(!isNearZero(mag));
-    return this->P1() + dir * (p / mag);
+    return this->P1() + this->direction() * p;
   }
 
 

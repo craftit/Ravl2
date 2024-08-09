@@ -84,6 +84,8 @@ namespace Ravl2
     //! point of this line, if the parameter is 1, the intersection is the
     //! end point. If the parameter is between 0 and 1 the intersection is
     //! inside of this line segment.
+    //! @param l - another line
+    //! @return the parameter of the intersection point on this line.
     [[nodiscard]] RealT ParIntersection(const LinePP2dC &l) const;
 
     //! @brief Returns true if the intersection of this line segment and the line 'l' is either inside of this line segment or one of the end points.

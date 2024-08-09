@@ -212,18 +212,17 @@ namespace Ravl2
         if (line.IsPointToRightOn(st)) {
           ret.push_back(pt);
         } else {
-          Point<RealT,2> intersection;
-          if (line.Intersection(LinePP2dC(st,pt), intersection)) {
-            ret.push_back(intersection);
-          }
-          ret.push_back(pt);
+	  auto intersection = LinePP2dC(st, pt).innerIntersection(line);
+	  if(intersection.has_value()) {
+	    ret.push_back(intersection.value());
+	  }
         }
       } else {
         if (line.IsPointToRightOn(st)) {
-          Point<RealT,2> intersection;
-          if (line.Intersection(LinePP2dC(st,pt), intersection)) {
-            ret.push_back(intersection);
-          }
+	  auto intersection = LinePP2dC(st, pt).innerIntersection(line);
+	  if (intersection.has_value()) {
+	    ret.push_back(intersection.value());
+	  }
         }
       }
       st = pt;
@@ -243,7 +242,7 @@ namespace Ravl2
     PointT st = this->back();
 
     auto axisLine = LinePP2dC<RealT>::fromStartAndDirection(toPoint<RealT>(threshold, threshold), toVector<RealT>(axis == 1 ? 1 : 0, axis == 0 ? 1 : 0));
-    SPDLOG_INFO("Axis line: {}", axisLine);
+    //SPDLOG_INFO("Axis line: {}", axisLine);
 
     for (auto pt : (*this)) {
       if (isGreater ? ((pt)[axis] >= threshold): ((pt)[axis] <= threshold)) {
