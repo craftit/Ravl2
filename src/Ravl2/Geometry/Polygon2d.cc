@@ -13,13 +13,22 @@ namespace Ravl2
 {
 
   template <typename RealT>
-  Polygon2dC<RealT>::Polygon2dC(const Range<RealT, 2> &range)
+  Polygon2dC<RealT>::Polygon2dC(const Range<RealT, 2> &range, BoundaryOrientationT orientation)
   {
     this->reserve(4);
-    this->push_back(range.min());
-    this->push_back(toPoint<RealT>(range[0].min(),range[1].max()));
-    this->push_back(range.max());
-    this->push_back(toPoint<RealT>(range[0].max(),range[1].min()));
+    if(orientation == BoundaryOrientationT::INSIDE_LEFT) {
+      // Clockwise
+      this->push_back(range.min());
+      this->push_back(toPoint<RealT>(range[0].max(),range[1].min()));
+      this->push_back(range.max());
+      this->push_back(toPoint<RealT>(range[0].min(),range[1].max()));
+    } else {
+      // Counter clockwise
+      this->push_back(range.min());
+      this->push_back(toPoint<RealT>(range[0].min(), range[1].max()));
+      this->push_back(range.max());
+      this->push_back(toPoint<RealT>(range[0].max(), range[1].min()));
+    }
   }
 
   template <typename RealT>
@@ -37,7 +46,7 @@ namespace Ravl2
   }
 
   template <typename RealT>
-  [[nodiscard]] bool Polygon2dC<RealT>::isConvex() const
+  [[nodiscard]] bool Polygon2dC<RealT>::isConvex(BoundaryOrientationT orientation) const
   {
     if(this->size() < 3)
       return false;
@@ -47,7 +56,7 @@ namespace Ravl2
       // Look out for degenerate polygons
       assert(squaredEuclidDistance(pLast, pNext) > std::numeric_limits<RealT>::epsilon());
       assert(squaredEuclidDistance(pLast, *ptr) > std::numeric_limits<RealT>::epsilon());
-      if (LinePP2dC<RealT>(pLast, pNext).IsPointToRight(*ptr))
+      if (LinePP2dC<RealT>(pLast, pNext).IsPointInsideOn(*ptr,orientation))
         return false;
       pLast = *ptr;
     }
@@ -140,8 +149,8 @@ namespace Ravl2
     LinePP2dC testLine(p, secondPoint);
 
     // Just something useful for later, check whether the last point lies
-    // to the left or right of my testline
-    bool leftof = testLine.IsPointToRight(this->back());
+    // to the left or left of my testline
+    bool leftof = testLine.IsPointToLeftOn(this->back());
 
     // For each edge (k,k+1) of this polygon count the intersection
     // with the polygon segments.
@@ -166,10 +175,10 @@ namespace Ravl2
 
           // Examine the case where testline meets polygon at vertex "cusp"
           // iff testline passes through a vertex and yet not into polygon
-          // at that vertex _and_ the vertex lies to the right of my test point
+          // at that vertex _and_ the vertex lies to the left of my test point
           // then we count that vertex twice
         } else if (intersect == 0 && p[0] <= l2.P1()[0]
-               && leftof == testLine.IsPointToRight(l2.P2())) {
+               && leftof == testLine.IsPointToLeftOn(l2.P2())) {
         count++;
       }
 
@@ -177,55 +186,75 @@ namespace Ravl2
       // the endpoint vertex
       //Vector<RealT,2> u2P = toVector<RealT>(testLine.P1()[1] - testLine.P2()[1],testLine.P2()[0] - testLine.P1()[0]);
       if (!std::isnan(intersect) && (intersect ==1))
-        leftof = testLine.IsPointToRight(l2.P1());
+        leftof = testLine.IsPointToLeft(l2.P1());
     }
 
     return (count%2) == 1;
   }
 
   template<typename RealT>
-  Polygon2dC<RealT> Polygon2dC<RealT>::ClipByConvex(const Polygon2dC &oth) const {
+  Polygon2dC<RealT> Polygon2dC<RealT>::ClipByConvex(const Polygon2dC &oth,BoundaryOrientationT othOrientation) const
+  {
     if (oth.size() < 3)
       return Polygon2dC();
-    Polygon2dC ret = *this;
+    Polygon2dC ret = *this; // FixMe:- This makes a poinless copy of the polygon.
     auto pLast = oth.back();
     for (auto ptr : oth) {
-      ret = ret.ClipByLine(LinePP2dC<RealT>(pLast, ptr));
+      ret = ret.ClipByLine(LinePP2dC<RealT>(pLast, ptr),othOrientation);
       pLast = ptr;
     }
-
-
     return ret;
   }
 
+  //! Add a point checking it isn't a duplicate of the last one.
   template<typename RealT>
-  Polygon2dC<RealT> Polygon2dC<RealT>::ClipByLine(const LinePP2dC<RealT> &line) const
+  void Polygon2dC<RealT>::addBack(const Point<RealT, 2> &pnt)
+  {
+    if(this->empty() || squaredEuclidDistance(pnt, this->back()) > std::numeric_limits<RealT>::epsilon())
+      this->push_back(pnt);
+  }
+
+
+  template<typename RealT>
+  Polygon2dC<RealT> Polygon2dC<RealT>::ClipByLine(const LinePP2dC<RealT> &line, BoundaryOrientationT lineOrientation) const
   {
     Polygon2dC ret;
-    if (this->empty()) // Empty polygon to start with ?
+    if (this->size() < 3) // Empty polygon to start with ?
       return ret;
+    ret.reserve(this->size()+1); // Worst case we cut off a spike and add a point.
     //! Check we're not being given a degenerate line.
     assert(euclidDistance(line.P1(),line.P2()) > std::numeric_limits<RealT>::epsilon());
     Point<RealT,2> st = this->back();
     for (auto pt : *this) {
-      if (line.IsPointToRightOn(pt)) {
-        if (line.IsPointToRightOn(st)) {
+      if (line.IsPointInsideOn(pt,lineOrientation)) {
+        if (line.IsPointInsideOn(st,lineOrientation)) {
           ret.push_back(pt);
         } else {
 	  auto intersection = LinePP2dC(st, pt).innerIntersection(line);
 	  if(intersection.has_value()) {
-	    ret.push_back(intersection.value());
+            ret.addBack(intersection.value());
 	  }
+          ret.addBack(pt);
         }
       } else {
-        if (line.IsPointToRightOn(st)) {
+        if (line.IsPointInsideOn(st,lineOrientation)) {
 	  auto intersection = LinePP2dC(st, pt).innerIntersection(line);
 	  if (intersection.has_value()) {
-	    ret.push_back(intersection.value());
+	    ret.addBack(intersection.value());
 	  }
         }
       }
       st = pt;
+    }
+    // Avoid generating degenerate polygons.
+    if(!ret.empty()) {
+      // Check first and last are different.
+      if(squaredEuclidDistance(ret.front(),ret.back()) < std::numeric_limits<RealT>::epsilon()) {
+        ret.pop_back();
+      }
+    }
+    if(ret.size() < 3) {
+      ret.clear();
     }
     return ret;
   }
@@ -239,10 +268,10 @@ namespace Ravl2
     // Empty polygon to start with ?
     if (this->empty())
       return ret;
+    ret.reserve(this->size()+1); // Worst case we cut off a spike and add a point.
     PointT st = this->back();
 
     auto axisLine = LinePP2dC<RealT>::fromStartAndDirection(toPoint<RealT>(threshold, threshold), toVector<RealT>(axis == 1 ? 1 : 0, axis == 0 ? 1 : 0));
-    //SPDLOG_INFO("Axis line: {}", axisLine);
 
     for (auto pt : (*this)) {
       if (isGreater ? ((pt)[axis] >= threshold): ((pt)[axis] <= threshold)) {
@@ -251,18 +280,29 @@ namespace Ravl2
         } else {
           auto intersection = LinePP2dC(st, pt).innerIntersection(axisLine);
           if(intersection.has_value()) {
-            ret.push_back(intersection.value());
+            ret.addBack(intersection.value());
           }
+          ret.addBack(pt);
         }
       } else {
         if (isGreater ? ((st)[axis] >= threshold): ((st)[axis] <= threshold)) {
           auto intersection = LinePP2dC(st, pt).innerIntersection(axisLine);
           if (intersection.has_value()) {
-            ret.push_back(intersection.value());
+            ret.addBack(intersection.value());
           }
         }
       }
       st = pt;
+    }
+    if(!ret.empty()) {
+      // Check first and last are different.
+      if(squaredEuclidDistance(ret.front(),ret.back()) < std::numeric_limits<RealT>::epsilon()) {
+        ret.pop_back();
+      }
+    }
+    // Avoid generating degenerate polygons.
+    if(ret.size() < 3) {
+      ret.clear();
     }
     return ret;
   }
@@ -271,8 +311,7 @@ namespace Ravl2
   template<typename RealT>
   Polygon2dC<RealT> Polygon2dC<RealT>::ClipByRange(const Range<RealT,2> &rng) const
   {
-    Polygon2dC ret = *this;
-    ret = ret.ClipByAxis(rng.min(0), 0, 1);
+    Polygon2dC ret = this->ClipByAxis(rng.min(0), 0, 1);
     ret = ret.ClipByAxis(rng.max(1), 1, 0);
     ret = ret.ClipByAxis(rng.max(0), 0, 0);
     ret = ret.ClipByAxis(rng.min(1), 1, 1);
@@ -338,20 +377,9 @@ namespace Ravl2
     if(this->empty() || poly.empty())
       return 0;
     RealT thisArea = area();
-    RealT polyArea = poly.area();
-    if(thisArea > 0 && polyArea > 0) {
-      Polygon2dC localPoly = poly.reverse();
-      Polygon2dC localThis = reverse();
-
-      Polygon2dC overlap = localThis.ClipByConvex(localPoly);
-      return std::abs(overlap.area()) / std::abs(thisArea);
-    }
-
-    Polygon2dC localThis = *this;
-    Polygon2dC overlap = localThis.ClipByConvex(poly);
-    return std::abs(overlap.area()) / std::abs(thisArea);
+    Polygon2dC overlap = ClipByConvex(poly);
+    return overlap.area() / thisArea;
   }
-
 
   template<typename RealT>
   RealT Polygon2dC<RealT>::CommonOverlap(const Polygon2dC &poly) const
@@ -360,17 +388,8 @@ namespace Ravl2
       return 0;
     RealT polyArea = poly.area();
     RealT thisArea = area();
-    if(thisArea > 0 && polyArea > 0)  {
-      Polygon2dC localPoly = poly.reverse();
-      Polygon2dC localThis = this->reverse();
-
-      Polygon2dC overlap = localThis.ClipByConvex(localPoly);
-      return std::abs(overlap.area()) / std::max(std::abs(thisArea),std::abs(polyArea));
-    }
-
-    Polygon2dC localThis = *this;
-    Polygon2dC overlap = localThis.ClipByConvex(poly);
-    return std::abs(overlap.area()) / std::max(std::abs(thisArea),std::abs(polyArea));
+    Polygon2dC overlap = ClipByConvex(poly);
+    return overlap.area() / std::max(thisArea,polyArea);
   }
 
   //! Let the compiler know that we will use these classes with the following types

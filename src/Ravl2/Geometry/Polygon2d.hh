@@ -16,6 +16,7 @@
 
 namespace Ravl2
 {
+
   template <class RealT>
   class Moments2;
 
@@ -49,15 +50,18 @@ namespace Ravl2
     {}
 
     //! Constructor creates a rectangular polygon of the range
-    // The corners of the range are inserted into the polygon in clockwise order
-    explicit Polygon2dC(const Range<RealT, 2> &range);
+    //! @param: range - the range defining the rectangle for the polygon
+    //! @param: orientation - the orientation of the boundary
+    //! If BoundaryOrientationT::INSIDE_LEFT makes a counter clockwise polygon, with a positive area.
+    explicit Polygon2dC(const Range<RealT, 2> &range, BoundaryOrientationT orientation = BoundaryOrientationT::INSIDE_LEFT);
 
     //! @return: the signed area of this polygon
+    //! @param: type - the orientation of the boundary inverts sign.
     [[nodiscard]] RealT area() const;
 
     //! @brief Test if the polygon is convex
     //! @return: true if the polygon is convex
-    [[nodiscard]] bool isConvex() const;
+    [[nodiscard]] bool isConvex(BoundaryOrientationT orientation = BoundaryOrientationT::INSIDE_LEFT) const;
 
     //! @brief Clips this polygon by a convex polygon
     //! @param: oth - a convex clipping polygon
@@ -65,13 +69,12 @@ namespace Ravl2
     //! Note that this only works if the other polygon is convex.
     //! Ref.: -  Foley. van Dam. Feiner. Hughes: Computer Graphics Principles and Practice
     //!         Addison Wesley Publishing Company, 1996, pp. 123-129
-    [[nodiscard]] Polygon2dC<RealT> ClipByConvex(const Polygon2dC<RealT> &oth) const;
+    [[nodiscard]] Polygon2dC<RealT> ClipByConvex(const Polygon2dC<RealT> &oth,BoundaryOrientationT othOrientation = BoundaryOrientationT::INSIDE_LEFT) const;
 
     //! @brief Clips this polygon by the line
     //! @param: line - a line
     //! @return: the clipped polygon so that only the part on the right side of the
-    //! @return: line remains.
-    [[nodiscard]] Polygon2dC<RealT> ClipByLine(const LinePP2dC<RealT> &line) const;
+    [[nodiscard]] Polygon2dC<RealT> ClipByLine(const LinePP2dC<RealT> &line, BoundaryOrientationT lineOrientation = BoundaryOrientationT::INSIDE_LEFT) const;
 
     //! @brief Clips this polygon by the specified axis line through the given point
     //! @param: threshold - the threshold for the specified axis
@@ -132,6 +135,10 @@ namespace Ravl2
         ret.push_back(*it);
       return ret;
     }
+
+    //! Add a point checking it isn't a duplicate of the last one.
+    void addBack(const Point<RealT, 2> &pnt);
+
   };
 
 
@@ -153,6 +160,24 @@ namespace Ravl2
   //! The list 'points' is destroyed.
   template <typename RealT>
   [[nodiscard]] Polygon2dC<RealT> ConvexHull(std::vector<Point<RealT, 2>> &&points);
+
+  //! Convert a range to a polygon.
+  //! @param: range - the range defining the rectangle for the polygon
+  //! @param: orientation - the orientation of the boundary
+  //! If BoundaryOrientationT::INSIDE_LEFT makes a counter clockwise polygon, with a positive area.
+  template <typename RealT>
+  [[nodiscard]] inline Polygon2dC<RealT> toPolygon(const Range<RealT,2> &range, BoundaryOrientationT orientation = BoundaryOrientationT::INSIDE_LEFT)
+  { return Polygon2dC<RealT>(range,orientation); }
+
+  //! Convert an IndexRange to a polygon
+  //! @param: range - the range defining the rectangle for the polygon
+  //! @param: orientation - the orientation of the boundary
+  //! If BoundaryOrientationT::INSIDE_LEFT makes a counter clockwise polygon, with a positive area.
+  template<typename RealT>
+  [[nodiscard]] inline Polygon2dC<RealT> toPolygon(const IndexRange<2> &range, BoundaryOrientationT orientation = BoundaryOrientationT::INSIDE_LEFT)
+  {
+    return Polygon2dC<RealT>(toRange<RealT>(range),orientation);
+  }
 
 }// namespace Ravl2
 

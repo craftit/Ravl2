@@ -20,18 +20,6 @@ namespace Ravl2
 {
   class Polygon2dC;
 
-  //! Is the inside of the boundary on the left or right side of the boundary?n
-  enum class BoundaryOrientationT
-  {
-    INSIDE_LEFT,
-    INSIDE_RIGHT
-  };
-
-  inline BoundaryOrientationT reverse(BoundaryOrientationT orient)
-  {
-    return (orient == BoundaryOrientationT::INSIDE_LEFT) ? BoundaryOrientationT::INSIDE_RIGHT : BoundaryOrientationT::INSIDE_LEFT;
-  }
-
   //! @brief Crack code boundary
 
   //! The class Boundary represents the 4-connected oriented boundary of an

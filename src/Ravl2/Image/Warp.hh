@@ -43,7 +43,7 @@ namespace Ravl2
   void warp(TargetArrayT &target, const SourceArrayT &source, const TransformT &transform,
 	    OperationT &&operation = OperationT(),SamplerT &&sampler = interpolateBilinear<SourceArrayT,typename TransformT::PointT>)
   {
-    //
+    // Test if the projected polygon is empty
 
     // Iterate over the target image
     for (auto it = target.begin(); it.valid();)

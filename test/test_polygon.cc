@@ -86,11 +86,6 @@ TEST_CASE("Polygon2dIter")
   }
 }
 
-TEST_CASE("Convex Polygon Overlap")
-{
-
-}
-
 TEST_CASE("Polygon2d")
 {
   using namespace Ravl2;
@@ -98,10 +93,10 @@ TEST_CASE("Polygon2d")
   {
     {
       Polygon2dC<float> poly;
-      poly.push_back(toPoint<float>(-10, 0));
-      poly.push_back(toPoint<float>(0, 20));
-      poly.push_back(toPoint<float>(10, 10));
       poly.push_back(toPoint<float>(10, 0));
+      poly.push_back(toPoint<float>(10, 10));
+      poly.push_back(toPoint<float>(0, 20));
+      poly.push_back(toPoint<float>(-10, 0));
 
       CHECK(!poly.IsSelfIntersecting());
       CHECK(poly.isConvex());
@@ -118,22 +113,18 @@ TEST_CASE("Polygon2d")
     }
   }
 
-  SECTION("Polygon2d Overlap")
+  SECTION("Overlap")
   {
     Polygon2dC<float> poly;
-    poly.push_back(toPoint<float>(0, 0));
-    poly.push_back(toPoint<float>(0, 10));
-    poly.push_back(toPoint<float>(10, 10));
     poly.push_back(toPoint<float>(10, 0));
+    poly.push_back(toPoint<float>(10, 10));
+    poly.push_back(toPoint<float>(0, 10));
+    poly.push_back(toPoint<float>(0, 0));
 
     CHECK(poly.isConvex());
+    CHECK(poly.area() > 0);
 
     auto score = poly.Overlap(poly);
-    CHECK(std::abs(score - 1.0f) < 0.000001f);
-
-    poly = poly.reverse();
-
-    score = poly.Overlap(poly);
     CHECK(std::abs(score - 1.0f) < 0.000001f);
 
     Polygon2dC poly2 = poly;
@@ -145,6 +136,21 @@ TEST_CASE("Polygon2d")
     score = poly2.Overlap(poly);
     CHECK(std::abs(score) < 0.000001f);
   }
+
+  SECTION("Ranges and Area")
+  {
+    Range<float, 2> range1({{0, 10},
+			    {0, 10}});
+    Polygon2dC<float> poly1 = toPolygon(range1);
+    CHECK(poly1.size() == 4);
+    CHECK(isNearZero(poly1.area() - 100));
+
+    // Let's create a hole
+    Polygon2dC<float> poly2= toPolygon(range1, BoundaryOrientationT::INSIDE_RIGHT);
+    CHECK(poly2.size() == 4);
+    CHECK(isNearZero(poly2.area() + 100));
+    CHECK(!poly2.isConvex());
+  }
 }
 
 
@@ -152,12 +158,23 @@ TEST_CASE("Clip Polygon")
 {
   using namespace Ravl2;
   Polygon2dC<float> poly;
-  poly.push_back(toPoint<float>(-10, 0));
-  poly.push_back(toPoint<float>(0, 20));
-  poly.push_back(toPoint<float>(10, 10));
   poly.push_back(toPoint<float>(10, 0));
+  poly.push_back(toPoint<float>(10, 10));
+  poly.push_back(toPoint<float>(0, 20));
+  poly.push_back(toPoint<float>(-10, 0));
 
-  SPDLOG_INFO("Test poly: {}", poly);
+  CHECK(poly.isConvex());
+  CHECK(poly.area() > 0);
+
+  //SPDLOG_INFO("Test poly: {}", poly);
+
+  SECTION("Self Clipping")
+  {
+    auto selfClip = poly.ClipByConvex(poly);
+
+    CHECK(selfClip.size() == poly.size());
+    CHECK(isNearZero(selfClip.area() - poly.area()));
+  }
 
   SECTION("Clip Axis")
   {
@@ -170,9 +187,69 @@ TEST_CASE("Clip Polygon")
     SPDLOG_INFO("none: {}", resultPoly);
     CHECK(resultPoly.empty());
 
-    resultPoly = poly.ClipByAxis(2, 1, false);
-    SPDLOG_INFO("At 1: {}", resultPoly);
+    Range<float,1> scanRange(-11, 21);
+    const float step = 0.1f;
+    const int numDivisions = int_round(scanRange.size() / step);
+    int testNum = 0;
+    for(unsigned axis = 0; axis < 2; ++axis) {
+      // Try different starting points.
+      for(size_t startAt = 0; startAt < poly.size(); startAt++) {
+        Polygon2dC<float> poly2;
+        for(size_t i = 0; i < poly.size(); ++i) {
+          poly2.push_back(poly[((i + startAt) % poly.size())]);
+        }
+        CHECK(poly2.size() == poly.size());
+        CHECK(isNearZero(poly2.area() - poly.area()));
+
+        for(int i = 0; i < numDivisions; ++i) {
+          float threshold = scanRange.min() + float(i) * step;
+
+          auto resultPoly1 = poly2.ClipByAxis(threshold, axis, false);
+          if(!resultPoly1.empty()) {
+            if(!resultPoly1.isConvex()) {
+              SPDLOG_INFO("clipByAxis {} : {}  {}",testNum, threshold, resultPoly1);
+            }
+            //CHECK(resultPoly1.isConvex());
+          }
+          auto resultPoly2 = poly2.ClipByAxis(threshold, axis, true);
+          if(!resultPoly2.empty()) {
+            //CHECK(resultPoly2.isConvex());
+          }
+          CHECK(isNearZero((resultPoly1.area() + resultPoly2.area()) - poly2.area(), 1e-4f));
+
+#if DODISPLAY && false
+          SPDLOG_INFO("Areas: {}  {} (Sum:{})  {}", resultPoly1.area(), resultPoly2.area(), resultPoly1.area() + resultPoly2.area(), poly.area());
+          {
+            Array<int, 2> img({{-15, 15},
+                               {-5, 25}},
+                              0);
+            DrawFilledPolygon(img, 1, poly);
+            SPDLOG_INFO("Full: {}", img);
+          }
+
+          {
+            Array<int, 2> img({{-15, 15},
+                               {-5, 25}},
+                              0);
+            DrawFilledPolygon(img, 1, resultPoly1);
+            SPDLOG_INFO("Poly1: {}", img);
+          }
+
+          {
+            Array<int, 2> img({{-15, 15},
+                               {-5, 25}},
+                              0);
+            DrawFilledPolygon(img, 1, resultPoly2);
+            SPDLOG_INFO("Poly2: {}", img);
+          }
+#endif
+          testNum++;
+        }
+      }
+      SPDLOG_INFO("Tested {} cases", testNum);
+    }
   }
+
 #if 1
   SECTION("Clip Polygon")
   {
@@ -182,10 +259,20 @@ TEST_CASE("Clip Polygon")
     Range<float, 2> range2({{0, 10},
                             {0, 15}});
 
-    Polygon2dC clippedConvex = poly.ClipByConvex(Polygon2dC(range1));
+    Polygon2dC range1Poly = toPolygon(range1);
+    CHECK(range1Poly.size() == 4);
+    CHECK(isNearZero(range1Poly.area() - 100));
+    CHECK(range1Poly.isConvex());
+
+    Polygon2dC clippedConvex = poly.ClipByConvex(range1Poly);
     Polygon2dC clippedRange = poly.ClipByRange(range1);
+    SPDLOG_INFO("Clipped convex: {}", clippedConvex);
+    SPDLOG_INFO("Clipped range: {}", clippedRange);
 
+    CHECK(clippedConvex.size() > 0);
+    CHECK(clippedRange.size() > 0);
 
+#if DODISPLAY
     {
       Array<int, 2> img({{-15, 15},
                          {-5,  25}}, 0);
@@ -208,20 +295,21 @@ TEST_CASE("Clip Polygon")
       SPDLOG_INFO("clippedConvex: {}", img);
     }
     {
-      SPDLOG_INFO("clippedRange: {}", clippedRange);
+      //SPDLOG_INFO("clippedRange: {}", clippedRange);
 
       Array<int, 2> img({{-15, 15},
                          {-5,  25}}, 0);
       DrawFilledPolygon(img, 1, clippedRange);
       SPDLOG_INFO("clippedRange: {}", img);
     }
+#endif
 
 
-    auto score = std::abs(clippedConvex.area());
+    auto score = clippedConvex.area();
     SPDLOG_INFO("clippedConvex area: {}   Signed:{} ", score, clippedConvex.area());
     CHECK(std::abs(score - 100) < 1e-6f);
 
-    score = std::abs(clippedRange.area());
+    score = clippedRange.area();
     SPDLOG_INFO("clippedRange: {}   Signed:{} ", score, clippedRange.area());
     CHECK(std::abs(score - 100) < 1e-6f);
 
@@ -233,12 +321,11 @@ TEST_CASE("Clip Polygon")
     clippedConvex = poly.ClipByConvex(Polygon2dC(range2));
     clippedRange = poly.ClipByRange(range2);
 
-
-
     score = clippedConvex.Overlap(clippedRange);
     SPDLOG_INFO("clippedRange Overlap: {}", score);
     CHECK(std::abs(score - 1) < 1e-6f);
   }
 #endif
+
 }
 

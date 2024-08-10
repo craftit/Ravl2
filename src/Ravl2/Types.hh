@@ -52,6 +52,20 @@ namespace Ravl2
     Always
   };
 
+  //! Is the inside of a boundary on the left or right side of the boundary?
+  //! This is used for pixel boundaries and polygons.
+  enum class BoundaryOrientationT
+  {
+    INSIDE_LEFT,
+    INSIDE_RIGHT
+  };
+
+  inline BoundaryOrientationT reverse(BoundaryOrientationT orient)
+  {
+    return (orient == BoundaryOrientationT::INSIDE_LEFT) ? BoundaryOrientationT::INSIDE_RIGHT : BoundaryOrientationT::INSIDE_LEFT;
+  }
+
+
   template <typename DataT>
   using VectorT = xt::xtensor<DataT, 1>;
 

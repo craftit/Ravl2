@@ -64,10 +64,35 @@ namespace Ravl2
       return triangleArea2(Pt, this->P1(), this->P2()) < 0;
     }
 
-    //! @briefChecks if this point is to the right of, or exactly on the line
+    //! @brief Checks if this point is to the right of, or exactly on the line
     [[nodiscard]] bool IsPointToRightOn(const Point<RealT, 2> &Pt) const
     {
       return triangleArea2(Pt, this->P1(), this->P2()) <= 0;
+    }
+
+    //! @brief Checks if this point is to the left of the line
+    [[nodiscard]] bool IsPointToLeft(const Point<RealT, 2> &Pt) const
+    {
+      return triangleArea2(Pt, this->P1(), this->P2()) > 0;
+    }
+
+    //! @brief Checks if this point is to the left of, or exactly on the line
+    [[nodiscard]] bool IsPointToLeftOn(const Point<RealT, 2> &Pt) const
+    {
+      return triangleArea2(Pt, this->P1(), this->P2()) >= 0;
+    }
+
+    //! @brief Test if the point is on the 'inside' or on the line.
+    //! @param Pt - the point to test
+    //! @param orientation - the orientation of the boundary, is inside left or right
+    //! @return true if the point is inside or on the line
+    [[nodiscard]] bool IsPointInsideOn(const Point<RealT, 2> &Pt, BoundaryOrientationT orientation) const
+    {
+      auto area = triangleArea2(Pt, this->P1(), this->P2());
+      if(orientation == BoundaryOrientationT::INSIDE_RIGHT) {
+	return area <= 0;
+      }
+      return area >= 0;
     }
 
     //! @brief Checks if this point is exactly on the line within a tolerance
