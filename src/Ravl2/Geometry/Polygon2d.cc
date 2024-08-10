@@ -231,6 +231,7 @@ namespace Ravl2
           ret.push_back(pt);
         } else {
 	  auto intersection = LinePP2dC(st, pt).innerIntersection(line);
+          // This really should be true, but we'll check it anyway.
 	  if(intersection.has_value()) {
             ret.addBack(intersection.value());
 	  }
@@ -239,6 +240,7 @@ namespace Ravl2
       } else {
         if (line.IsPointInsideOn(st,lineOrientation)) {
 	  auto intersection = LinePP2dC(st, pt).innerIntersection(line);
+          // This really should be true, but we'll check it anyway.
 	  if (intersection.has_value()) {
 	    ret.addBack(intersection.value());
 	  }
@@ -279,6 +281,7 @@ namespace Ravl2
           ret.push_back(pt);
         } else {
           auto intersection = LinePP2dC(st, pt).innerIntersection(axisLine);
+          // This really should be true, but we'll check it anyway.
           if(intersection.has_value()) {
             ret.addBack(intersection.value());
           }
@@ -287,6 +290,7 @@ namespace Ravl2
       } else {
         if (isGreater ? ((st)[axis] >= threshold): ((st)[axis] <= threshold)) {
           auto intersection = LinePP2dC(st, pt).innerIntersection(axisLine);
+          // This really should be true, but we'll check it anyway.
           if (intersection.has_value()) {
             ret.addBack(intersection.value());
           }

@@ -204,18 +204,32 @@ TEST_CASE("Clip Polygon")
         for(int i = 0; i < numDivisions; ++i) {
           float threshold = scanRange.min() + float(i) * step;
 
-          auto resultPoly1 = poly2.ClipByAxis(threshold, axis, false);
-          if(!resultPoly1.empty()) {
-            if(!resultPoly1.isConvex()) {
-              SPDLOG_INFO("clipByAxis {} : {}  {}",testNum, threshold, resultPoly1);
+          // Check axis version
+          {
+            auto resultPoly1 = poly2.ClipByAxis(threshold, axis, false);
+            if(!resultPoly1.empty()) {
+              CHECK(resultPoly1.isConvex());
             }
-            //CHECK(resultPoly1.isConvex());
+            auto resultPoly2 = poly2.ClipByAxis(threshold, axis, true);
+            if(!resultPoly2.empty()) {
+              CHECK(resultPoly2.isConvex());
+            }
+            CHECK(isNearZero((resultPoly1.area() + resultPoly2.area()) - poly2.area(), 1e-4f));
           }
-          auto resultPoly2 = poly2.ClipByAxis(threshold, axis, true);
-          if(!resultPoly2.empty()) {
-            //CHECK(resultPoly2.isConvex());
+
+          // Check line.
+          {
+            auto axisLine = LinePP2dC<float>::fromStartAndDirection(toPoint<float>(threshold, threshold), toVector<float>(axis == 1 ? 1 : 0, axis == 0 ? 1 : 0));
+            auto resultPoly1 = poly2.ClipByLine(axisLine, BoundaryOrientationT::INSIDE_RIGHT);
+            if(!resultPoly1.empty()) {
+              CHECK(resultPoly1.isConvex());
+            }
+            auto resultPoly2 = poly2.ClipByLine(axisLine, BoundaryOrientationT::INSIDE_LEFT);
+            if(!resultPoly2.empty()) {
+              CHECK(resultPoly2.isConvex());
+            }
+            CHECK(isNearZero((resultPoly1.area() + resultPoly2.area()) - poly2.area(), 1e-4f));
           }
-          CHECK(isNearZero((resultPoly1.area() + resultPoly2.area()) - poly2.area(), 1e-4f));
 
 #if DODISPLAY && false
           SPDLOG_INFO("Areas: {}  {} (Sum:{})  {}", resultPoly1.area(), resultPoly2.area(), resultPoly1.area() + resultPoly2.area(), poly.area());
@@ -246,8 +260,8 @@ TEST_CASE("Clip Polygon")
           testNum++;
         }
       }
-      SPDLOG_INFO("Tested {} cases", testNum);
     }
+    SPDLOG_INFO("Tested {} cases", testNum);
   }
 
 #if 1
@@ -266,8 +280,6 @@ TEST_CASE("Clip Polygon")
 
     Polygon2dC clippedConvex = poly.ClipByConvex(range1Poly);
     Polygon2dC clippedRange = poly.ClipByRange(range1);
-    SPDLOG_INFO("Clipped convex: {}", clippedConvex);
-    SPDLOG_INFO("Clipped range: {}", clippedRange);
 
     CHECK(clippedConvex.size() > 0);
     CHECK(clippedRange.size() > 0);
@@ -306,15 +318,15 @@ TEST_CASE("Clip Polygon")
 
 
     auto score = clippedConvex.area();
-    SPDLOG_INFO("clippedConvex area: {}   Signed:{} ", score, clippedConvex.area());
     CHECK(std::abs(score - 100) < 1e-6f);
 
     score = clippedRange.area();
-    SPDLOG_INFO("clippedRange: {}   Signed:{} ", score, clippedRange.area());
     CHECK(std::abs(score - 100) < 1e-6f);
 
     score = clippedConvex.Overlap(clippedRange);
-    SPDLOG_INFO("clippedRange Overlap: {}  ", score);
+    CHECK(std::abs(score - 1) < 1e-6f);
+
+    score = clippedConvex.CommonOverlap(clippedRange);
     CHECK(std::abs(score - 1) < 1e-6f);
 
     // Clipping by two different routes should give the same result..
@@ -322,7 +334,6 @@ TEST_CASE("Clip Polygon")
     clippedRange = poly.ClipByRange(range2);
 
     score = clippedConvex.Overlap(clippedRange);
-    SPDLOG_INFO("clippedRange Overlap: {}", score);
     CHECK(std::abs(score - 1) < 1e-6f);
   }
 #endif
