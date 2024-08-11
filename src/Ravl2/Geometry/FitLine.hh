@@ -22,19 +22,21 @@ namespace Ravl2
     Moments2<RealT> sums;
     for(const Point<RealT,2> &p : points)
       sums += p;
-    RealT sxy = sums.M11()  - sums.M00() * sums.CentroidX() * sums.CentroidY();
-    RealT sxx = sums.M20() - sums.M00() * sqr(sums.CentroidX());
-    RealT syy = sums.M02() - sums.M00() * sqr(sums.CentroidY());
+    //SPDLOG_INFO("LineABC2dC<RealT> Moments {} from {} points ",sums,points.size());
+    RealT sxy = sums.M11()  - sums.M00() * sums.template centroid<0>() * sums.template centroid<1>();
+    RealT sxx = sums.M20() - sums.M00() * sqr(sums.template centroid<0>());
+    RealT syy = sums.M02() - sums.M00() * sqr(sums.template centroid<1>());
     RealT prod = (sxx * syy);
-    if(sums.VarX() > sums.VarY()) {
+    if(sums.varX() > sums.varY()) {
       RealT b = sxy/sxx;
       RealT a = (sums.M01() - b * sums.M10())/sums.M00();
-      line = LineABC2dC(-b, 1.0,-a);
+      line = LineABC2dC<RealT>(-b, 1,-a);
     } else {
       RealT b = sxy/syy;
       RealT a = (sums.M10() - b * sums.M01())/sums.M00();
-      line = LineABC2dC(1.0,-b,-a);
+      line = LineABC2dC<RealT>(1,-b,-a);
     }
+    //SPDLOG_INFO("LineABC2dC<RealT> = {} Prod:{}",line,prod);
     if(isNearZero(prod))
       return 0;
     return std::sqrt(sqr(sxy) / prod);

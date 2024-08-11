@@ -131,7 +131,7 @@ namespace Ravl2
     auto previous = *(this->end() - 1);
     auto next = this->begin() + 1;
     for(auto it : (*this)) {
-      RealT sqDist = sumOfSqr(point - it)();
+      RealT sqDist = sumOfSqr(point - it);
       if(sqDist != 0) {
         RealT fWeight = (pCot(point, it, previous) + pCot(point, it, *next)) / sqDist;
         *res = fWeight;

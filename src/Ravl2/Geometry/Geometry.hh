@@ -25,6 +25,7 @@
 #ifdef __clang__
 #pragma GCC diagnostic ignored "-Wimplicit-float-conversion"
 #endif
+#include <xtensor/xmath.hpp>
 #include <xtensor-blas/xlinalg.hpp>
 #pragma GCC diagnostic pop
 
@@ -64,12 +65,6 @@ namespace Ravl2
     return std::span(view.begin(), view.size());
   }
 
-  //! Compute the l2 norm of a vector
-  template <typename RealT, unsigned N>
-  [[nodiscard]] RealT norm_l2(const Vector<RealT, N> &v)
-  {
-    return RealT(xt::linalg::norm(v, 2)());
-  }
 
   //! Compute the angle between two vectors
   template <typename RealT, unsigned long N>
@@ -77,6 +72,18 @@ namespace Ravl2
   {
     return RealT(std::acos((xt::linalg::dot(a, b) / (norm_l2(a) * norm_l2(b)))()));
   }
+
+  //! Compute the l2 norm of a vector
+  template <typename RealT, size_t N>
+  [[nodiscard]] RealT norm_l2(const Vector<RealT, N> &v)
+  {
+    RealT sum = 0;
+    for(unsigned i = 0; i < N; i++) {
+      sum += sqr(v(i));
+    }
+    return std::sqrt(sum);
+  }
+
 
   template <typename RealT, unsigned long N>
   constexpr RealT squaredEuclidDistance(const Point<RealT, N> &a, const Point<RealT, N> &b)
@@ -114,10 +121,10 @@ namespace Ravl2
     return std::sqrt(RealT(sum));
   }
 
-  template <typename DataTypeT>
-  constexpr auto sumOfSqr(const DataTypeT &a)
+  template <typename DataTypeT,typename RealT = DataTypeT::value_type>
+  constexpr RealT sumOfSqr(const DataTypeT &a)
   {
-    return xt::sum(a * a);
+    return xt::sum(a * a)();
   }
 
   template <typename A, typename B>

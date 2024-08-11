@@ -152,15 +152,15 @@ namespace Ravl2
       return m00;
     }
 
-    //1 Returns the x co-ordinate of the centroid.
-    // The M00 moment must not be 0.
+    //! Returns the x co-ordinate of the centroid.
+    //! The M00 moment must not be 0.
     inline RealT centroidX() const
     {
       return M10() / M00();
     }
 
     //! Returns the y co-ordinate of the centroid.
-    // The M00 moment must not be 0.
+    //! The M00 moment must not be 0.
     inline RealT centroidY() const
     {
       return M01() / M00();
@@ -195,12 +195,25 @@ namespace Ravl2
     inline RealT interceptX() const;
 
     //! Return the covariance matrix.
-    Matrix<RealT, 2, 2> covariance() const;
+    [[nodiscard]] Matrix<RealT, 2, 2> covariance() const;
 
     //! Calculate the centroid.
-    Point<RealT, 2> centroid() const
+    [[nodiscard]] Point<RealT, 2> centroid() const
     {
       return Point<RealT, 2>({centroidX(), centroidY()});
+    }
+
+    //! Calculate the centroid.
+    template<unsigned Axis>
+    [[nodiscard]] RealT centroid() const
+    {
+      if constexpr(Axis == 0) {
+        return M10() / M00();
+      } else  if constexpr(Axis == 1) {
+        return M01() / M00();
+      } else {
+        static_assert(Axis < 2,"Axis must be 0 or 1 ");
+      }
     }
 
     //! Add to sets of moments together.
@@ -405,3 +418,10 @@ namespace Ravl2
   extern template class Moments2<double>;
 
 }// namespace Ravl2
+
+#if FMT_VERSION >= 90000
+template <typename RealT>
+struct fmt::formatter<Ravl2::Moments2<RealT> > : fmt::ostream_formatter {
+};
+#endif
+

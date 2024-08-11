@@ -8,6 +8,7 @@
 //! author="Charles Galambos"
 
 #include <numbers>
+#include <random>
 #include <catch2/catch_test_macros.hpp>
 #include <cereal/archives/json.hpp>
 #include <spdlog/spdlog.h>
@@ -17,6 +18,7 @@
 #include "Ravl2/Geometry/LinePP.hh"
 #include "Ravl2/Geometry/LineABC2d.hh"
 #include "Ravl2/Geometry/Range.hh"
+#include "Ravl2/Geometry/FitLine.hh"
 
 
 #define DODEBUG 0
@@ -134,21 +136,21 @@ TEST_CASE("LinePP")
     // This line shouldn't be clipped.
     LinePP2dC l1(pnt1,pnt2);
     CHECK(l1.clipBy(rng));
-    CHECK_FALSE(sumOfSqr(pnt1 - l1.P1())() > 0.00001f);
-    CHECK_FALSE(sumOfSqr(pnt2 - l1.P2())() > 0.00001f);
+    CHECK_FALSE(sumOfSqr(pnt1 - l1.P1()) > 0.00001f);
+    CHECK_FALSE(sumOfSqr(pnt2 - l1.P2()) > 0.00001f);
 
     // Should clip point 0.
     LinePP2dC l2(pnt0,pnt2);
     CHECK(l2.clipBy(rng));
-    CHECK_FALSE(sumOfSqr(pnt0 - l2.P1())() < 0.00001f);
-    CHECK_FALSE(sumOfSqr(pnt2 - l2.P2())() > 0.00001f);
+    CHECK_FALSE(sumOfSqr(pnt0 - l2.P1()) < 0.00001f);
+    CHECK_FALSE(sumOfSqr(pnt2 - l2.P2()) > 0.00001f);
     CHECK(rng.contains(l2.P1()));
 
     // Should clip point 1.
     LinePP2dC l3(pnt1,pnt3);
     CHECK(l3.clipBy(rng));
-    CHECK_FALSE(sumOfSqr(pnt1 - l3.P1())() > 0.00001f);
-    CHECK_FALSE(sumOfSqr(pnt3 - l3.P2())() < 0.00001f);
+    CHECK_FALSE(sumOfSqr(pnt1 - l3.P1()) > 0.00001f);
+    CHECK_FALSE(sumOfSqr(pnt3 - l3.P2()) < 0.00001f);
     CHECK(rng.contains(l3.P2()));
 
     // Line entirely outside region.
@@ -175,30 +177,40 @@ TEST_CASE("Fit LineABC")
   using namespace Ravl2;
   using RealT = float;
   std::vector<Point<RealT,2>> points;
-  unsigned i;
-  RealT res,twoPi = std::numbers::pi_v<RealT> * 2;
-  for(RealT a = 0;a < twoPi;a += (twoPi/100)) {
-    RealT offx = Random1() * 100 - 50;
-    RealT offy = Random1() * 100 - 50;
+  points.reserve(10);
+  RealT twoPi = std::numbers::pi_v<RealT> * 2;
+
+  //std::random_device dev;
+  std::mt19937 rng(static_cast<unsigned long>(random()));
+  std::uniform_real_distribution<RealT> random50(-50.0, 50.0);
+  std::normal_distribution<RealT> randomGauss(0.0, 1.0);
+
+  RealT a = 0;
+  RealT step = (twoPi/100);
+  const auto iterCount = size_t(int_round(twoPi/step));
+  for(size_t j = 0;j < iterCount;++j) {
+    points.clear();
+    RealT offx = random50(rng);
+    RealT offy = random50(rng);
     RealT dx = std::cos(a) * 50;
     RealT dy = std::sin(a) * 50;
     //cerr << "Dx=" << dx << " Dy=" << dy << "\n";
-    for(i = 0;i < points.size();i++)
-      points[i] = toPoint<RealT>(i * dx + offx + RandomGauss(), i * dy + offy + RandomGauss());
+    for(unsigned i = 0;i <10;++i)
+      points.push_back(toPoint<RealT>(RealT(i) * dx + offx + randomGauss(rng), RealT(i) * dy + offy + randomGauss(rng)));
 
     LineABC2dC<RealT> line;
     auto res = fitLSQ(line, points);
-    line.FitLSQ(points,res);
+    CHECK(res >= 0);
+    CHECK(res < 5);
     //cerr << "Line=" << line << " Res=" << res <<"\n";
-    for(i = 0;i < points.size();i++) {
+    for(unsigned i = 0;i < points.size();++i) {
       RealT dist = line.Distance(points[i]);
       Point<RealT,2> at = line.Projection(points[i]);
-      RealT sep = at.EuclidDistance(points[i]);
-      CHECK_FALSE(std::abs(sep - dist) > 0.0001);
+      RealT sep = euclidDistance(at, points[i]);
+      CHECK(std::abs(sep - dist) < 0.0001f);
       //cerr << "Dist=" << dist << "\n";
-      CHECK_FALSE(dist > 5);
+      CHECK(dist < 5);
     }
+    a += step;
   }
-
-  return 0;
 }
