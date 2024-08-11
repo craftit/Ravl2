@@ -158,7 +158,7 @@ s/IndexRange2dSetC/IndexRangeSet<2>/g
 s/Affine2dC/Affine<RealT,2>/g
 s/Tuple2C</std::tuple</g
 s/Tuple3C</std::tuple</g
-
+s/ComplexC/std::complex<RealT>/g
 # Replace Abs() with std::abs()
 s/Abs(/std::abs(/g
 s/ Sqrt(/ std::sqrt(/g

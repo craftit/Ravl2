@@ -20,6 +20,7 @@ namespace Ravl2
   RealT fitLSQ(LineABC2dC<RealT> &line,const ContainerT &points)
   {
     Moments2<RealT> sums;
+    // Ideally we should normalize the points to the centroid and then fit the line
     for(const Point<RealT,2> &p : points)
       sums += p;
     //SPDLOG_INFO("LineABC2dC<RealT> Moments {} from {} points ",sums,points.size());
