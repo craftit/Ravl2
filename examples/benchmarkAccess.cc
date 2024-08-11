@@ -171,7 +171,7 @@ Ravl2::Array<float,2> ConvolveKernelScanZip(const Ravl2::Array<float,2> &matrix,
   Ravl2::Array<float,2> result(scan.scanArea());
   //auto kernelEnd = kernel.end();
   auto scanIter = scan.scanArea().begin();
-  for(;!scan.done();++scan,++scanIter) {
+  for(;scan.valid();++scan,++scanIter) {
     float sum = 0;
     auto window = scan.window();
     for(auto it = Ravl2::begin(kernel,window);it.valid();++it) {
@@ -213,7 +213,7 @@ Ravl2::Array<float,2> ConvolveKernelScanIndex(const Ravl2::Array<float,2> &matri
   Ravl2::Array<float,2> result(scan.scanArea());
   //auto kernelEnd = kernel.end();
   auto scanIter = scan.scanArea().begin();
-  for(;!scan.done();++scan,++scanIter) {
+  for(;scan.valid();++scan,++scanIter) {
     float sum = 0;
     auto window = scan.window();
     for(auto kr : kernel.range()[0]) {

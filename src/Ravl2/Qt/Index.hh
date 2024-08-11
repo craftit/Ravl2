@@ -8,7 +8,7 @@
 #include <QtCore/QRect>
 #include <QtCore/QPoint>
 
-#include "Ravl2/Index.hh"
+#include "Ravl2/IndexRange.hh"
 
 namespace Ravl2
 {
