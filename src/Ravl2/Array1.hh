@@ -651,6 +651,21 @@ namespace Ravl2
     archive(cereal::make_nvp("data", blk));
   }
 
+  template <typename ArrayT, typename DataT = typename ArrayT::value_type, unsigned N = ArrayT::dimensions>
+  requires WindowedArray<ArrayT, DataT, N>
+  std::ostream &operator<<(std::ostream &os, const ArrayT &array)
+  {
+    os << "Array " << array.range() << "\n  ";
+    for(auto at = array.begin(); at.valid();) {
+      do {
+        os << *at << " ";
+      } while(at.next());
+      os << "\n  ";
+    }
+    os << "\n";
+    return os;
+  }
+
   //! Some common instantiations
 
   extern template class Array<uint8_t, 1>;
@@ -662,3 +677,10 @@ namespace Ravl2
   extern template class ArrayIter<float, 1>;
 
 }// namespace Ravl2
+
+namespace fmt
+{
+  template <typename DataT, unsigned N>
+  struct formatter<Ravl2::Array<DataT, N>> : ostream_formatter {
+  };
+}// namespace fmt
