@@ -181,7 +181,7 @@ TEST_CASE("Fit LineABC")
   RealT twoPi = std::numbers::pi_v<RealT> * 2;
 
   //std::random_device dev;
-  std::mt19937 rng(static_cast<unsigned long>(random()));
+  std::mt19937 rng(static_cast<std::mt19937::result_type>(random()));
   std::uniform_real_distribution<RealT> random50(-50.0, 50.0);
   std::normal_distribution<RealT> randomGauss(0.0, 1.0);
 

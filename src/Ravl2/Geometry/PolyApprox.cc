@@ -5,17 +5,17 @@
 // see http://www.gnu.org/copyleft/lesser.html
 // file-header-ends-here
 
-#include "Ravl2/Polygon2d.hh"
-#include "Ravl2/PolyLine2d.hh"
-#include "Ravl2/LineABC2d.hh"
+#include "Ravl2/Geometry/Polygon2d.hh"
+#include "Ravl2/Geometry/LineABC2d.hh"
 
 namespace Ravl2 {
   
-  static std::vector<Point<RealT,2>>  SortSegment(DLIterC<Point<RealT,2>> &p1,DLIterC<Point<RealT,2>> &p2,RealT maxDist) {
+  template <class RealT>
+  static std::vector<Point<RealT,2>>  SortSegment(auto &p1,auto &p2,RealT maxDist) {
     std::vector<Point<RealT,2>> ret;
-    DLIterC<Point<RealT,2>> at = p1;
-    LineABC2dC line(*p1,*p2);
-    DLIterC<Point<RealT,2>> fp;
+    auto at = p1;
+    LineABC2dC<RealT> line(*p1,*p2);
+    decltype(p1) fp;
     RealT largestDist = maxDist;
     for(; at != p2;at.NextCrc()) {
       RealT d = line.Distance(*at);
@@ -38,25 +38,27 @@ namespace Ravl2 {
   
   //: Generate an approximation to the given polyline within the given distance limit.
   
-  PolyLine2dC PolyLine2dC::Approx(RealT distLimit) const {
-    DLIterC<Point<RealT,2>> first = *this;
-    if(!first) return PolyLine2dC();
-    DLIterC<Point<RealT,2>> last = *this; last.Last();
-    PolyLine2dC ret = SortSegment(first,last,distLimit);
-    ret.InsFirst(*first);
-    ret.push_back(*last);
-    return ret;
-  }
+//  template <class RealT>
+//  PolyLine2dC PolyLine2dC::Approx(RealT distLimit) const {
+//    DLIterC<Point<RealT,2>> first = *this;
+//    if(!first) return PolyLine2dC();
+//    DLIterC<Point<RealT,2>> last = *this; last.Last();
+//    PolyLine2dC ret = SortSegment(first,last,distLimit);
+//    ret.InsFirst(*first);
+//    ret.push_back(*last);
+//    return ret;
+//  }
   
-  Polygon2dC Polygon2dC::Approx(RealT maxDist) const {
-    Polygon2dC ret;
-    DLIterC<Point<RealT,2>> it(*this);
+  template <class RealT>
+  Polygon2dC<RealT> Polygon2dC<RealT>::Approx(RealT maxDist) const {
+    Polygon2dC<RealT> ret;
+    auto it = this->begin();
     if(!it) return ret;
     
     // Find furthest point from start.
     
     RealT maxPointDist = 0;
-    DLIterC<Point<RealT,2>> maxAt = it;
+    auto maxAt = it;
     Point<RealT,2> at = *it;
     for(;it;it++) {
       RealT x = at.SqrEuclidDistance(*it);
@@ -69,7 +71,7 @@ namespace Ravl2 {
     // Find furthest point from other furthest point.
     it.First();
     maxPointDist = 0;
-    DLIterC<Point<RealT,2>> max2At = it;
+    auto max2At = it;
     at = *maxAt;
     for(;it;it++) {
       RealT x = at.SqrEuclidDistance(*it);

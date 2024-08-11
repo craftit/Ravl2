@@ -19,10 +19,12 @@ add_library (Ravl2Geometry
         Line2dIter.hh Line2dIter.cc
         Polygon2d.cc Polygon2d.hh
         Polygon2dIter.cc Polygon2dIter.hh
+        PolyLine.hh PolyLine.cc
         Range.hh Range.cc
         Projection.cc Projection.hh
         Transform.cc Transform.hh
         FitLine.cc FitLine.hh
+        PolyApprox.hh
 )
 
 add_library(ravl2::Ravl2Geometry ALIAS Ravl2Geometry)
