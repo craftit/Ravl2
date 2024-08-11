@@ -255,7 +255,7 @@ namespace Ravl2
   class SegmentExtremaC : public SegmentExtremaBaseC
   {
   public:
-    SegmentExtremaC(uint32_t minRegionSize, int theMinMargin = 10, int nLimitMaxPixelValue = 255)
+    SegmentExtremaC(uint32_t minRegionSize = 12, int theMinMargin = 10, int nLimitMaxPixelValue = 255)
         : SegmentExtremaBaseC(minRegionSize, theMinMargin, nLimitMaxPixelValue)
     {
       assert(minRegionSize > 0);
@@ -267,10 +267,11 @@ namespace Ravl2
 
     std::vector<Boundary> apply(const Array<PixelT, 2> &img)
     {
-      if(typeid(PixelT) == typeid(uint8_t))// Should decided at compile time.
+      if(typeid(PixelT) == typeid(uint8_t)) {// Should decided at compile time.
         SortPixelsByte(img);
-      else
+      } else {
         SortPixels(img);
+      }
       GenerateRegions();
       Thresholds();
       return GrowRegionBoundary(img);
