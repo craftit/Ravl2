@@ -54,6 +54,7 @@ add_library(Ravl2Core
         IndexRange1.hh
         IndexRange.cc
         IndexRange.hh
+        Concepts.hh
 )
 
 add_library(ravl2::Ravl2Core ALIAS Ravl2Core)

@@ -25,6 +25,9 @@ namespace Ravl2
   class IndexRangeSet : public std::vector<IndexRange<N>>
   {
   public:
+    using value_type = Index<N>;
+    constexpr static unsigned dimensions = N;
+
     constexpr IndexRangeSet() = default;
 
     //! Constructor from a single range.

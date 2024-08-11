@@ -8,6 +8,7 @@
 #pragma once
 
 #include <array>
+#include <span>
 #include <cereal/cereal.hpp>
 #include <spdlog/spdlog.h>
 #include "Ravl2/Sentinel.hh"
@@ -312,12 +313,6 @@ namespace Ravl2
       return mIndex[0] <= m_access.range(0).max();
     }
 
-    //! Test if the iterator is finished.
-    [[nodiscard]] constexpr bool done() const noexcept
-    {
-      return mIndex[0] > m_access.range(0).max();
-    }
-
     //! Compare iterators
     [[nodiscard]] constexpr bool operator==(const ArrayIter<DataT, N> &other) const
     {
@@ -366,6 +361,11 @@ namespace Ravl2
       return diff;
     }
 
+    //! Access the remains of the row
+    [[nodiscard]] constexpr std::span<DataT> row() const noexcept
+    {
+      return std::span<DataT>(mPtr, size_t(mEnd - mPtr));
+    }
   protected:
     DataT *mPtr {};
     const DataT *mEnd {};

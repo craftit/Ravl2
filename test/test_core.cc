@@ -411,8 +411,7 @@ TEST_CASE("ArrayIter2", "[ArrayIter<N>]")
       ++iter;
     }
     CHECK_EQ(iter, end);
-    CHECK_FALSE(iter.valid());
-    CHECK(iter.done());
+    CHECK(!iter.valid());
   }
 
   {
@@ -472,11 +471,9 @@ TEST_CASE("ArrayIter2Offset", "[ArrayIter<N>]")
     CHECK_EQ(*it,i);
     ASSERT_NE(it,end);
     CHECK(it.valid());
-    CHECK_FALSE(it.done());
     ++it;
   }
-  CHECK_FALSE(it.valid());
-  CHECK(it.done());
+  CHECK(!it.valid());
   CHECK_EQ(it,end);
 }
 
@@ -538,13 +535,11 @@ TEST_CASE("ArrayIter2View", "[ArrayIter<N>]")
   for(int i = 0;i < area;++i)
   {
     CHECK(it.valid());
-    CHECK_FALSE(it.done());
     ASSERT_NE(it,end);
     //SPDLOG_INFO("Data: {} {} @ {} ", i, *it, (void *) &(*it));
     ++it;
   }
   CHECK_FALSE(it.valid());
-  CHECK(it.done());
   CHECK_EQ(it,end);
 
   int sum = 0;
@@ -581,7 +576,7 @@ TEST_CASE("ShiftView", "Array<N>")
 
     int sum1 = 0;
     int sum2 = 0;
-    for(auto it = Ravl2::ArrayIterZipN<2, int, int>(kernel, view); !it.done(); ++it)
+    for(auto it = Ravl2::ArrayIterZipN<2, int, int>(kernel, view); it.valid(); ++it)
     {
       //SPDLOG_INFO("Data1: {} Data2: {}", it.data1(), it.data2());
       sum1 += it.data<0>();
@@ -611,7 +606,6 @@ TEST_CASE("ZipN", "[ZipIterN]")
   }
   auto it = begin(a, b);
   int count = 0;
-  CHECK_FALSE(it.done());
   CHECK(it.valid());
   CHECK(it.index<0>() == Index<2>({0, 0}));
 
@@ -619,7 +613,7 @@ TEST_CASE("ZipN", "[ZipIterN]")
   {
     //SPDLOG_INFO("Data: {} {}  @ {} ", it.data<0>(), it.data<1>(),it.index<0>());
     CHECK(a.range().contains(it.index<0>()));
-    CHECK_FALSE(it.done());
+    CHECK(it.valid());
     CHECK_EQ(it.data<0>(), int(it.data<1>()));
     CHECK(count < 16);
     count++;
@@ -698,7 +692,7 @@ TEST_CASE("ScanWindow2", "[ScanWindow]")
   count += win.range().area();
   ++scan;
 
-  while (!scan.done()) {
+  while (scan.valid()) {
     auto window = scan.window();
     for (auto a: window.range()) {
       //std::cout << " " << window[a] << "\n";

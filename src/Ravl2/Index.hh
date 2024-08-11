@@ -28,6 +28,9 @@ namespace Ravl2
   class Index
   {
   public:
+    using value_type = int;
+    constexpr static unsigned dimensions = N;
+
     //! array of indexs
     constexpr Index(std::initializer_list<int> val)
     {

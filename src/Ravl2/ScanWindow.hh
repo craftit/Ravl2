@@ -17,6 +17,9 @@ namespace Ravl2
   class ScanWindow<DataT, 1>
   {
   public:
+    using value_type = ArrayAccess<DataT,1>;
+    constexpr static unsigned dimensions = 1;
+
     constexpr ScanWindow(const ArrayAccess<DataT, 1> &img, const IndexRange<1> &window)
         : mArea(img.range() - window),
           mWindowRange(window),
@@ -42,15 +45,23 @@ namespace Ravl2
     }
 
     //! Move to the next window position.
-    constexpr void operator++()
+    constexpr ScanWindow &operator++()
     {
       ++mAt;
+      return *this;
     }
 
     //! Test if we're at the end of the window.
-    [[nodiscard]] constexpr bool done() const
+    [[nodiscard]] constexpr bool valid() const
     {
-      return mAt == mEnd;
+      return mAt < mEnd;
+    }
+
+    //! Next element, return true if we're on the same row.
+    [[nodiscard]] constexpr bool next()
+    {
+      ++mAt;
+      return mAt < mEnd;
     }
 
     //! Get the current window
@@ -59,10 +70,16 @@ namespace Ravl2
       return ArrayAccess<DataT, 1>(&mWindowRange, &(*mAt));
     }
 
-    //! Get current index of the window position 0,0 in the image
-    [[nodiscard]] constexpr Index<1> indexIn(const Ravl2::ArrayView<DataT, 1> &img) const
+    //! Access window
+    [[nodiscard]] constexpr ArrayAccess<DataT, 1> operator*() const
     {
-      return img.indexOf(&*mAt);
+      return window();
+    }
+
+    //! Get current index of the window position 0,0 in the image
+    [[nodiscard]] inline constexpr Index<1> index() const
+    {
+      return Index<1>(int((mEnd - mAt) - mArea.max()));
     }
 
   protected:
@@ -78,6 +95,9 @@ namespace Ravl2
   class ScanWindow
   {
   public:
+    using value_type = ArrayAccess<DataT,N>;
+    constexpr static unsigned dimensions = N;
+
     constexpr ScanWindow(const Ravl2::ArrayAccess<DataT, N> &img, const IndexRange<N> &window)
         : mWindowRange(window),
           mArea(img.range() - window),
@@ -101,37 +121,38 @@ namespace Ravl2
     }
 
     //! Move to the next window position.
-    constexpr void operator++()
+    inline constexpr ScanWindow &operator++()
     {
       ++mAt;
+      return *this;
     }
 
     //! Next element, return true if we're on the same row.
-    constexpr bool next()
+    inline constexpr bool next()
     {
       return mAt.next();
     }
 
-    //! Test if we're at the end of the window.
-    [[nodiscard]] constexpr bool done() const
-    {
-      return mAt.done();
-    }
-
     //! Test if we're at a valid element.
-    [[nodiscard]] constexpr bool valid() const
+    [[nodiscard]] inline constexpr bool valid() const
     {
       return mAt.valid();
     }
 
     //! Get the current window
-    [[nodiscard]] constexpr ArrayAccess<DataT, N> window() const
+    [[nodiscard]] inline constexpr ArrayAccess<DataT, N> window() const
     {
       return ArrayAccess<DataT, N>(mWindowRange, &(*mAt), mAt.strides());
     }
 
+    //! Access window
+    [[nodiscard]] inline constexpr ArrayAccess<DataT, N> operator*() const
+    {
+      return window();
+    }
+
     //! Index of the window in the image.
-    [[nodiscard]] constexpr Index<N> index() const
+    [[nodiscard]] inline constexpr Index<N> index() const
     {
       return mAt.index();
     }

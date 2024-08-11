@@ -20,6 +20,9 @@ namespace Ravl2
   class IndexRange<1>
   {
   public:
+    using value_type = int;
+    constexpr static unsigned dimensions = 1;
+
     //! Default constructor
     constexpr IndexRange() = default;
 
@@ -368,6 +371,7 @@ namespace Ravl2
   {
   public:
     using value_type = int;
+    constexpr static unsigned dimensions = 1;
     using difference_type = int;
 
     constexpr IndexRangeIterator() = default;

@@ -16,6 +16,9 @@ namespace Ravl2
   class IndexRange
   {
   public:
+    using value_type = Index<N>;
+    constexpr static unsigned dimensions = N;
+
     //! Default constructor
     constexpr IndexRange() noexcept = default;
 
@@ -465,6 +468,7 @@ namespace Ravl2
   {
   public:
     using value_type = Index<N>;
+    constexpr static unsigned dimensions = N;
     using difference_type = int;
 
     //! Default constructor, creates an invalid iterator.
@@ -495,6 +499,38 @@ namespace Ravl2
       return m_at;
     }
 
+    //! Access current index.
+    [[nodiscard]] constexpr const Index<N> &index() const
+    {
+      return m_at;
+    }
+
+    //! @brief Goto next row of the range.
+    //! Return true if we're still in the range.
+    constexpr bool nextRow()
+    {
+      m_at[N-1] = m_range->min()[N-1];
+      for(unsigned i = N - 2; i > 0; --i) {
+        ++m_at[i];
+        if(m_at[i] <= m_range->max()[i])
+          return true;
+        m_at[i] = m_range->min()[i];
+      }
+      ++m_at[0];
+      return m_at[0] <= m_range->max()[0];
+    }
+
+    //! Goto next element, returns true if we're on the same row, false if we've changed rows.
+    [[nodiscard]]
+    constexpr inline bool next()
+    {
+      ++m_at[N-1];
+      if(m_at[N-1] <= m_range->max()[N-1])
+        return true;
+      nextRow();
+      return false;
+    }
+
     //! Increment position.
     constexpr IndexRangeIterator<N> &operator++()
     {
@@ -514,13 +550,6 @@ namespace Ravl2
       IndexRangeIterator<N> ret = *this;
       operator++();
       return ret;
-    }
-
-    //! Are we at the end of the range?
-    //! In the case of this iterator we have all we need to know internally.
-    [[nodiscard]] constexpr bool done() const
-    {
-      return m_at[0] > m_range->max()[0];
     }
 
     //! Are we at the end of the range?

@@ -7,12 +7,12 @@
 #include <array>
 #include <cereal/cereal.hpp>
 #include <spdlog/spdlog.h>
+#include "Ravl2/Concepts.hh"
 #include "Ravl2/Sentinel.hh"
 #include "Ravl2/IndexRange1.hh"
 
 namespace Ravl2
 {
-
   //! Global stride for 1 dimensional arrays. Always has a value of 1.
   extern const int gStride1;
 
@@ -27,17 +27,6 @@ namespace Ravl2
 
   template <typename DataT, unsigned N>
   class ArrayIter;
-
-  //! Declaration of the concept “WindowedArray”, which is satisfied by any type “ArrayT”
-
-  template <typename ArrayT, typename DataT = typename ArrayT::value_type, unsigned N = ArrayT::dimension>
-  concept WindowedArray = requires(ArrayT a, Index<N> ind, IndexRange<N> rng) {
-    { ArrayT::dimensions } -> std::convertible_to<unsigned>;
-    { a[ind] } -> std::convertible_to<DataT>;
-    { a.range() } -> std::convertible_to<IndexRange<N>>;
-    { a.origin_address() } -> std::convertible_to<DataT *>;
-    { a.strides() } -> std::convertible_to<const int *>;
-  };
 
   //! Iterator for 1 dimensional array.
 

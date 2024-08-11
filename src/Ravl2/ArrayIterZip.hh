@@ -13,6 +13,9 @@ namespace Ravl2
   class SlaveIter
   {
   public:
+    using value_type = ElementT;
+    constexpr static unsigned dimensions = N;
+
     constexpr SlaveIter() = default;
 
     constexpr SlaveIter(const IndexRange<1> *rng, ElementT *data, const int *strides) noexcept
@@ -107,13 +110,6 @@ namespace Ravl2
       return mIndex[0] <= mAccess.range(0).max();
     }
 
-    //! Test if the iterator is done.
-    [[nodiscard]]
-    constexpr bool done() const noexcept
-    {
-      return mIndex[0] > mAccess.range(0).max();
-    }
-
   private:
     ElementT *mPtr = nullptr;
     ElementT *mPtrStart = nullptr;
@@ -180,12 +176,6 @@ namespace Ravl2
       return std::get<0>(mIters).valid();
     }
 
-    //! Test if the iterator is valid.
-    [[nodiscard]] constexpr bool done() const noexcept
-    {
-      return std::get<0>(mIters).done();
-    }
-
     //! Get data for an element
     template <unsigned Ind>
     [[nodiscard]] constexpr auto &data()
@@ -205,6 +195,12 @@ namespace Ravl2
     [[nodiscard]] constexpr auto index() const
     {
       return std::get<Ind>(mIters).index();
+    }
+
+    //! Get the index the first array iterator is at
+    [[nodiscard]] constexpr auto index() const
+    {
+      return std::get<0>(mIters).index();
     }
 
     //! Get the index in the array the iterator is at
@@ -231,7 +227,7 @@ namespace Ravl2
     typename std::tuple_element<0, std::tuple<DataT...>>::type *mEnd = nullptr;
   };
 
-  //! Make zip N contructor
+  //! Make zip N constructor
   template <typename... ArrayT, unsigned N = std::tuple_element<0, std::tuple<ArrayT...>>::type::dimensions>
     requires(WindowedArray<ArrayT, typename ArrayT::value_type, N> && ...)
   constexpr auto begin(const ArrayT &...arrays) noexcept -> ArrayIterZipN<N, typename ArrayT::value_type...>
