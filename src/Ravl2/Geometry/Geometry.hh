@@ -68,7 +68,7 @@ namespace Ravl2
   template <typename RealT, unsigned N>
   [[nodiscard]] RealT norm_l2(const Vector<RealT, N> &v)
   {
-    return xt::linalg::norm(v, 2);
+    return RealT(xt::linalg::norm(v, 2)());
   }
 
   //! Compute the angle between two vectors

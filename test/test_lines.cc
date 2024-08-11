@@ -169,11 +169,12 @@ TEST_CASE("LinePP")
 
 }
 
-#if 0
 
-int testLineFitLSQ() {
-  
-  Array<Point<RealT,2>,1> points(10);
+TEST_CASE("Fit LineABC")
+{
+  using namespace Ravl2;
+  using RealT = float;
+  std::vector<Point<RealT,2>> points;
   unsigned i;
   RealT res,twoPi = std::numbers::pi_v<RealT> * 2;
   for(RealT a = 0;a < twoPi;a += (twoPi/100)) {
@@ -184,7 +185,9 @@ int testLineFitLSQ() {
     //cerr << "Dx=" << dx << " Dy=" << dy << "\n";
     for(i = 0;i < points.size();i++)
       points[i] = toPoint<RealT>(i * dx + offx + RandomGauss(), i * dy + offy + RandomGauss());
-    LineABC2dC line;
+
+    LineABC2dC<RealT> line;
+    auto res = fitLSQ(line, points);
     line.FitLSQ(points,res);
     //cerr << "Line=" << line << " Res=" << res <<"\n";
     for(i = 0;i < points.size();i++) {
@@ -199,4 +202,3 @@ int testLineFitLSQ() {
 
   return 0;
 }
-#endif

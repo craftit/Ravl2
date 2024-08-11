@@ -11,7 +11,7 @@
 
 namespace Ravl2
 {
-  //! Line in 2D space - equation Ax+By+C = 0
+  //! @brief Line in 2D space - equation Ax+By+C = 0
   //! The class LineABC2dC represents a line embedded in the 2D plane.
   //! The line is represented by the equation aa*x+bb*y+cc = 0.
 
@@ -20,9 +20,7 @@ namespace Ravl2
   {
   public:
     //! Creates a degenerate line (0,0,0).
-    inline constexpr LineABC2dC()
-        : normal({0.0, 0.0}), d(0.0)
-    {}
+    inline constexpr LineABC2dC() = default;
 
     //! Creates the line determined by the equation a*x+b*y+c = 0.
     inline constexpr LineABC2dC(RealT a, RealT b, RealT c)
@@ -36,7 +34,7 @@ namespace Ravl2
 
     //! Creates the line passing through two points 'end' and 'start'.
     inline constexpr LineABC2dC(const Point<RealT, 2> &start, const Point<RealT, 2> &end)
-        : normal(perpendicular(Vector<RealT, 2>(end - start))), d(-dot(normal, start)())
+        : normal(perpendicular(Vector<RealT, 2>(end - start))), d(-dot(this->normal, start)())
     {}
 
     //! Creates the line passing through two points 'end' and 'start'.
@@ -58,46 +56,41 @@ namespace Ravl2
       return LineABC2dC<RealT>(normal, -dot(normal, pt));
     }
 
-    //! Fit points to a line.
-    // 'residual' is from the least squares fit and can be used to assess
-    // the quality of the fit.  Returns false if fit failed.
-    bool FitLSQ(const std::vector<Point<RealT, 2>> &points, RealT &residual);
-
     //! Returns the normal of the line.
-    inline constexpr Vector<RealT, 2> Normal() const
+    [[nodiscard]] inline constexpr Vector<RealT, 2> Normal() const
     {
-      return normal;
+      return this->normal;
     }
 
     //! Returns the normal of the line normalized to have unit size.
-    inline constexpr Vector<RealT, 2> UnitNormal() const
+    [[nodiscard]]  inline constexpr Vector<RealT, 2> UnitNormal() const
     {
-      return normal / xt::norm_l2(normal);
+      return this->normal / norm_l2(this->normal);
     }
 
     //! Returns the distance of the line from the origin of the coordinate
     //! system.
     inline constexpr RealT Rho() const
     {
-      return d / RealT(xt::norm_l2(normal)());
+      return this->d / norm_l2(this->normal);
     }
 
     //! Returns parameter a.
     inline constexpr RealT A() const
     {
-      return normal[0];
+      return this->normal[0];
     }
 
     //! Returns parameter b.
     inline constexpr RealT B() const
     {
-      return normal[1];
+      return this->normal[1];
     }
 
     //! Returns parameter c.
     inline constexpr RealT C() const
     {
-      return d;
+      return this->d;
     }
 
     //! Returns the value of x coordinate if the y coordinate is known.
@@ -115,38 +108,67 @@ namespace Ravl2
     }
 
     //! Returns the value of the function A()*p[0]+B()*p[1]+C() often
-    //: used in geometrical computations.
+    //! used in geometrical computations.
     inline constexpr RealT Residuum(const Point<RealT, 2> &p) const
     {
-      return (normal[0] * p[0] + normal[1] * p[1]) + d;
+      return (this->normal[0] * p[0] + this->normal[1] * p[1]) + this->d;
     }
 
     //! Normalizes the equation so that the normal vector is unit.
-    inline constexpr LineABC2dC &MakeUnitNormal();
+    inline constexpr LineABC2dC &MakeUnitNormal()
+    {
+      RealT size = norm_l2(this->normal);
+      this->normal /= size;
+      this->d /= size;
+      return *this;
+    }
 
     //! Returns true if the lines are parallel.
-    inline constexpr bool AreParallel(const LineABC2dC &line) const;
+    [[nodiscard]] inline constexpr bool AreParallel(const LineABC2dC &line) const {
+      RealT crossSize = cross(Normal(), line.Normal());
+      return IsAlmostZero(crossSize);
+    }
 
     //! Find the intersection of two lines.
-    // If the intersection doesn't exist, the function returns false.
-    // The intersection is assigned to 'here'.
-    inline constexpr bool Intersection(const LineABC2dC &line, Point<RealT, 2> &here) const;
+    //! If the intersection doesn't exist, the function returns false.
+    //! The intersection is assigned to 'here'.
+    inline constexpr bool Intersection(const LineABC2dC &line, Point<RealT, 2> &here) const
+    {
+      RealT crossSize = cross(Normal(),line.Normal());
+      if(IsAlmostZero(crossSize))
+        return false;
+      here = Point<RealT, 2>((line.C() * B() - line.B() * C()) / crossSize,
+                             (line.A() * C() - line.C() * A()) / crossSize);
+      return true;
+    }
 
     //! Returns the intersection of both lines.
-    // If the intersection
-    // doesn't exist, the function returns Point<RealT,2>(0,0).
-    inline constexpr Point<RealT, 2> Intersection(const LineABC2dC &line) const;
+    //! If the intersection
+    //! doesn't exist, the function returns Point<RealT,2>(0,0).
+    inline constexpr Point<RealT, 2> Intersection(const LineABC2dC &line) const
+    {
+      RealT crossSize = cross(Normal(), line.Normal());
+      if(IsAlmostZero(crossSize))
+        return Point<RealT, 2>(0.0, 0.0);
+      return Point<RealT, 2>((line.C() * B() - line.B() * C()) / crossSize,
+                             (line.A() * C() - line.C() * A()) / crossSize);
+    }
 
-    //! Returns the squared Euclidian distance of the 'point' from the line.
-    inline constexpr RealT SqrEuclidDistance(const Point<RealT, 2> &point) const;
+    //! Returns the squared Euclidean distance of the 'point' from the line.
+    inline constexpr RealT SqrEuclidDistance(const Point<RealT, 2> &point) const
+    {
+      RealT t = Residuum(point);
+      return t * t / normal.SumOfSqr();
+    }
+
 
     //! Returns the signed distance of the 'point' from the line.
-    // The return value is greater than 0 if the point is on the left
-    // side of the line. The left side of the line is determined
-    // by the direction of the normal.
-    inline constexpr RealT SignedDistance(const Point<RealT, 2> &point) const
+    //! The return value is greater than 0 if the point is on the left
+    //! side of the line. The left side of the line is determined
+    //! by the direction of the normal.
+    [[nodiscard]] inline constexpr RealT SignedDistance(const Point<RealT, 2> &point) const
     {
-      return Residuum(point) / normal.Magnitude();
+      return Residuum(point) / norm_l2(normal);
     }
 
     //! Returns the distance of the 'point' from the line.
@@ -171,7 +193,7 @@ namespace Ravl2
     }
 
   private:
-    Vector<RealT, 2> normal;
+    Vector<RealT, 2> normal {};
     // The normal of the line.
 
     RealT d = 0.0;
@@ -180,54 +202,19 @@ namespace Ravl2
   };
 
   template <typename RealT>
-  std::ostream &operator<<(std::ostream &outS, const LineABC2dC<RealT> &line);
-
-  template <typename RealT>
-  std::istream &operator>>(std::istream &inS, LineABC2dC<RealT> &line);
-
-  template <typename RealT>
-  inline constexpr LineABC2dC<RealT> &LineABC2dC<RealT>::MakeUnitNormal()
-  {
-    RealT size = xt::norm_l2(normal)();
-    normal /= size;
-    d /= size;
-    return *this;
+  std::ostream &operator<<(std::ostream &outS, const LineABC2dC<RealT> &line) {
+    outS << line.A() << ' ' << line.B() << ' ' << line.C();
+    return(outS);
   }
 
   template <typename RealT>
-  inline constexpr bool LineABC2dC<RealT>::AreParallel(const LineABC2dC<RealT> &line) const
-  {
-    RealT crossSize = cross(Normal(), line.Normal());
-    return IsAlmostZero(crossSize);
+  std::istream &operator>>(std::istream &inS, LineABC2dC<RealT> &line)  {
+    RealT a, b, c;
+    inS >> a >> b >> c;
+    line = LineABC2dC<RealT>(a, b, c);
+    return (inS);
   }
 
-  template <typename RealT>
-  inline constexpr Point<RealT, 2> LineABC2dC<RealT>::Intersection(const LineABC2dC<RealT> &line) const
-  {
-    RealT crossSize = cross(Normal(), line.Normal());
-    if(IsAlmostZero(crossSize))
-      return Point<RealT, 2>(0.0, 0.0);
-    return Point<RealT, 2>((line.C() * B() - line.B() * C()) / crossSize,
-                           (line.A() * C() - line.C() * A()) / crossSize);
-  }
-
-  template <typename RealT>
-  inline constexpr bool LineABC2dC<RealT>::Intersection(const LineABC2dC<RealT> &line, Point<RealT, 2> &here) const
-  {
-    RealT crossSize = Normal().Cross(line.Normal());
-    if(IsAlmostZero(crossSize))
-      return false;
-    here = Point<RealT, 2>((line.C() * B() - line.B() * C()) / crossSize,
-                           (line.A() * C() - line.C() * A()) / crossSize);
-    return true;
-  }
-
-  template <typename RealT>
-  inline constexpr RealT LineABC2dC<RealT>::SqrEuclidDistance(const Point<RealT, 2> &point) const
-  {
-    RealT t = Residuum(point);
-    return t * t / normal.SumOfSqr();
-  }
 
   // Let everyone know there's an implementation already generated for common cases
   extern template class LineABC2dC<float>;

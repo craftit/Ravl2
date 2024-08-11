@@ -15,14 +15,14 @@ add_library (Ravl2Geometry
         Circle.cc Circle.hh
         LinePP.hh LinePP.cc
         LinePP2d.hh LinePP2d.cc
-#        LineABC2d.cc LineABC2d.hh
+        LineABC2d.cc LineABC2d.hh
         Line2dIter.hh Line2dIter.cc
         Polygon2d.cc Polygon2d.hh
         Polygon2dIter.cc Polygon2dIter.hh
         Range.hh Range.cc
         Projection.cc Projection.hh
-        Transform.cc
-        Transform.hh
+        Transform.cc Transform.hh
+        FitLine.cc FitLine.hh
 )
 
 add_library(ravl2::Ravl2Geometry ALIAS Ravl2Geometry)

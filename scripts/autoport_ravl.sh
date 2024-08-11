@@ -169,6 +169,8 @@ s/ Cos(/ std::cos(/g
 s/ Sin(/ std::sin(/g
 s/ Pow(/ std::pow(/g
 
+s/IsAlmostZero(/isNearZero(/g
+
 # Deal with images
 s/ImageC<\([^>]*\)>/Array<\1,2>/g
 
