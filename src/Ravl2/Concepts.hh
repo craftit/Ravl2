@@ -18,12 +18,19 @@ namespace Ravl2
   class ArrayAccess;
 
   //! SimpleArray concept,  0 based array with a size() method
+  //! Where
+  //!   a[ind] - returns a value of type DataT
+  //!   a.size() - returns the size of the array
+  //!   a.begin() - returns an iterator to the beginning of the array
+  //!   a.end() - returns an iterator to the end of the array or a sentinel
 
   template <typename ArrayT, typename DataT = typename ArrayT::value_type>
   concept SimpleArray = requires(ArrayT a, int ind)
   {
     { a[ind] } -> std::convertible_to<DataT>;
     { a.size() } -> std::convertible_to<unsigned>;
+    { a.begin() } ;
+    { a.end() } ;
   };
 
   //! Declaration of the concept “WindowedArray”, which is satisfied by any type “ArrayT”
@@ -53,7 +60,7 @@ namespace Ravl2
   //!   ++iter - incrementing the iterator returns a reference to the iterator
   //!   iter.valid() - returns a boolean indicating if the iterator is valid
   //!   iter.next() - returns a boolean, true if we're on the same row. False otherwise
-  //!   iter.index() - returns the current index of the current element, maybe computed from the iterator
+  //!   iter.index() - returns the index of the current element, maybe computed from the iterator
 
   template <typename IterT, typename DataT = typename IterT::value_type, unsigned N = IterT::dimensions>
   concept WindowedIterator = requires(IterT iter)
@@ -70,7 +77,7 @@ namespace Ravl2
   //!   iter.valid() - returns a boolean indicating if the iterator is valid
   //!   iter.row() - returns the the remaining elements in the current row, the first element is at 'index()'.
   //!   iter.nextRow() - Goto the next row.
-  //!   iter.index() - returns the current index of the current element, maybe computed from the iterator
+  //!   iter.index() - returns the index of the current element, maybe computed from the iterator
 
   template <typename IterT, typename DataT = typename IterT::value_type, unsigned N = IterT::dimensions>
   concept WindowedRowIterator = requires(IterT iter)
