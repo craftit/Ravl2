@@ -19,21 +19,21 @@ namespace Ravl2
   //! @brief A 2d curve consisting of straight line segments.
   
   template <typename RealT, unsigned N>
-  class PolyLine2dC
+  class PolyLine
     : public PointSet<RealT,N>
   {
   public:
     //! Empty list of points.
-    PolyLine2dC() = default;
+    PolyLine() = default;
 
     //! Construct from list of points
-    PolyLine2dC(const std::vector<Point<RealT,2>>& points)
+    PolyLine(const std::vector<Point<RealT,N>>& points)
       : PointSet<RealT,2>(points)
     {}
 
     //! @brief Returns true if the polygon is self intersecting.
     //! If any line segments cross each other then the polygon is self intersecting.
-    bool IsSelfIntersecting() const {
+    [[nodiscard]] bool IsSelfIntersecting() const {
       auto ft = this->begin();
       const auto theEnd = this->end();
       if(!ft) return false;

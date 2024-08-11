@@ -5,7 +5,7 @@
 // see http://www.gnu.org/copyleft/lesser.html
 // file-header-ends-here
 
-#include "Ravl2/PolyLine2d.hh"
+#include "Ravl2/Geometry/PolyLine.hh"
 
 namespace Ravl2 {
 

@@ -27,28 +27,41 @@ namespace Ravl2
   template <class RealT, class IntT = int>
   inline constexpr IntT int_floor(RealT x)
   {
-#if 0
-      auto y = static_cast<IntT>(x);
-      if (x >= 0) return y;
-      return ((static_cast<RealT>(y) != x) ? --y : y);
-#else
     return static_cast<IntT>(std::floor(x));
-#endif
   }
 
-  template <class RealT>
-  inline constexpr bool isNearZero(RealT x, RealT tol = std::numeric_limits<RealT>::epsilon())
-  {
-    return std::abs(x) < tol;
-  }
-
+  //! Returns the smallest integral  value  greater  than  or equal  to  'x'.
   template <class RealT, class IntT = int>
   IntT constexpr int_ceil(RealT x)
   {
     return static_cast<IntT>(std::ceil(x));
   }
 
-  //! Returns the square of 'x'.
+  //! @brief Is integer power of 2 ?
+  //! @return true if 'i' is a power of 2.
+
+  template<typename IntT>
+  requires std::is_integral<IntT>::value
+  [[nodiscard]] inline constexpr bool isPow2(IntT i) {
+    IntT j = 1;
+    while(j < i)
+      j *= 2;
+    return i==j;
+  }
+
+  //! @brief Is x near zero ?
+  //! By default this will check if the x is within the machine epsilon.
+  //! The smallest number that can be added to 1.0 to get a result different from 1.0.
+  //! @param x value to check
+  //! @param tol tolerance, default is machine epsilon.
+  //! @return true if 'x' is near zero.
+  template <class RealT>
+  inline constexpr bool isNearZero(RealT x, RealT tol = std::numeric_limits<RealT>::epsilon())
+  {
+    return std::abs(x) < tol;
+  }
+
+  //! @brief Returns the square of 'x'.
   template <typename DataT>
   inline constexpr DataT sqr(const DataT &x)
   {
