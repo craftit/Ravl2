@@ -28,13 +28,13 @@ TEST_CASE("Pixels")
     CHECK(pixel.template get<ImageChannel::Green>() == 2);
     CHECK(pixel.template get<ImageChannel::Blue>() == 3);
     CHECK(get<ImageChannel::Red,uint8_t>(pixel) == 1);
-    SPDLOG_INFO("Red: {} -> float {} ", get<ImageChannel::Red,uint8_t>(pixel), get<ImageChannel::Red,float>(pixel));
+    //SPDLOG_INFO("Red: {} -> float {} ", get<ImageChannel::Red,uint8_t>(pixel), get<ImageChannel::Red,float>(pixel));
     CHECK(isNearZero(get<ImageChannel::Red,float>(pixel) - 1.0f/255.0f));
     CHECK(isNearZero(get<ImageChannel::Green,float>(pixel) - 2.0f/255.0f));
     CHECK(isNearZero(get<ImageChannel::Blue,float>(pixel) - 3.0f/255.0f));
-    SPDLOG_INFO("Intensity {}", get<ImageChannel::Intensity,float>(pixel));
-    SPDLOG_INFO("V {}", get<ImageChannel::ChrominanceV,float>(pixel));
-    SPDLOG_INFO("U {}", get<ImageChannel::ChrominanceU,float>(pixel));
+//    SPDLOG_INFO("Intensity {}", get<ImageChannel::Intensity,float>(pixel));
+//    SPDLOG_INFO("V {}", get<ImageChannel::ChrominanceV,float>(pixel));
+//    SPDLOG_INFO("U {}", get<ImageChannel::ChrominanceU,float>(pixel));
   }
   SECTION("PixelRGB32F")
   {
@@ -43,21 +43,21 @@ TEST_CASE("Pixels")
     CHECK(isNearZero(pixel.template get<ImageChannel::Green>() - 1.0f));
     CHECK(isNearZero(pixel.template get<ImageChannel::Blue>() - 0.0f));
 
-    PixelYUV32F yuv;
-    assign(yuv, pixel);
-    SPDLOG_INFO(" RGB {} -> YUV {}  ", pixel, yuv);
-
-    pixel = PixelRGB32F(0.0, 1.0, 1.0);
-    assign(yuv, pixel);
-    SPDLOG_INFO(" RGB {} -> YUV {}  ", pixel, yuv);
-
-    pixel = PixelRGB32F(0.0, 1.0, 0.0);
-    assign(yuv, pixel);
-    SPDLOG_INFO(" RGB {} -> YUV {}  ", pixel, yuv);
-
-    pixel = PixelRGB32F(0.0, 0.0, 1.0);
-    assign(yuv, pixel);
-    SPDLOG_INFO(" RGB {} -> YUV {}  ", pixel, yuv);
+//    PixelYUV32F yuv;
+//    assign(yuv, pixel);
+//    SPDLOG_INFO(" RGB {} -> YUV {}  ", pixel, yuv);
+//
+//    pixel = PixelRGB32F(0.0, 1.0, 1.0);
+//    assign(yuv, pixel);
+//    SPDLOG_INFO(" RGB {} -> YUV {}  ", pixel, yuv);
+//
+//    pixel = PixelRGB32F(0.0, 1.0, 0.0);
+//    assign(yuv, pixel);
+//    SPDLOG_INFO(" RGB {} -> YUV {}  ", pixel, yuv);
+//
+//    pixel = PixelRGB32F(0.0, 0.0, 1.0);
+//    assign(yuv, pixel);
+//    SPDLOG_INFO(" RGB {} -> YUV {}  ", pixel, yuv);
 
   }
 

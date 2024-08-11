@@ -84,28 +84,6 @@ namespace Ravl2
     PixelT value {};
   };
 
-  template <class PixelT>
-  class FloodRegionGreaterThanThresholdC
-  {
-  public:
-    //! Default constructor.
-    FloodRegionGreaterThanThresholdC() = default;
-
-    //! Construct from pixel value.
-    explicit FloodRegionGreaterThanThresholdC(const PixelT &pix)
-        : value(pix)
-    {}
-
-    //! Should pixel be included in the region ?
-    bool operator()(const PixelT &pix) const
-    {
-      return pix >= value;
-    }
-
-  protected:
-    PixelT value {};
-  };
-
   //! Flood based region growing.
   //! Grow a region from 'seed' including all connected pixel less than or equal to threshold, generate a boundary as the result.
 
