@@ -4,10 +4,10 @@
 // General Public License (LGPL). See the lgpl.licence file for details or
 // see http://www.gnu.org/copyleft/lesser.html
 // file-header-ends-here
-#ifndef RAVLIMAGE_SUMMEDAREATABLE2_HEADER
-#define RAVLIMAGE_SUMMEDAREATABLE2_HEADER 1
 //! author="Charles Galambos"
 //! date="28/11/2002"
+
+#pragma once
 
 #include "Ravl2/Array.hh"
 #include "Ravl2/Array2dSqr2Iter2.hh"
@@ -17,7 +17,7 @@
 namespace Ravl2
 {
 
-  //: Summed area and sum of squares table.
+  //! Summed area and sum of squares table.
   // This class allows the summing of any area in an image in constant time.
   // The class builds the table with a single pass over the input image. Once
   // this is done the sum of any area can be computed by looking up the corners
@@ -123,29 +123,29 @@ namespace Ravl2
     }
     //: Calculate variance of the image in 'range'.
 
-    IntT MeanVariance(IndexRange<2> range, RealT &mean, RealT &var) const
+    int MeanVariance(IndexRange<2> range, RealT &mean, RealT &var) const
     {
       Vector<DataT, 2> sum = Sum(range);
-      IntT area = range.area();
+      int area = range.area();
       mean = (RealT)sum[0] / area;
       var = ((RealT)sum[1] - sqr((RealT)sum[0]) / area) / (area - 1);
       return area;
     }
     //: Calculate mean, variance and area of the image in 'range'.
 
-    Vector<DataT, 2> VerticalDifference2(IndexRange<2> range, IntT mid) const
+    Vector<DataT, 2> VerticalDifference2(IndexRange<2> range, int mid) const
     {
-      // Could speed this up by seperating out row accesses ?
+      // Could speed this up by separating out row accesses ?
       return (*this)[range.TopLeft()]
         + ((*this)[mid][range.max(1)] - (*this)[mid][range.min(1)]) * 2
         - (*this)[range.BottomLeft()]
         - (*this)[range.TopRight()]
         + (*this)[range.End()];
     }
-    //: Calculate the diffrence between two halfs of the rectangle split vertically.
+    //: Calculate the difference between two halfs of the rectangle split vertically.
     // This mid point is an absolute row location and should be within the rectangle.
 
-    Vector<DataT, 2> HorizontalDifference2(IndexRange<2> range, IntT mid) const
+    Vector<DataT, 2> HorizontalDifference2(IndexRange<2> range, int mid) const
     {
       // Could speed this up by seperating out row accesses ?
       return (*this)[range.TopLeft()]
@@ -159,8 +159,8 @@ namespace Ravl2
 
     Vector<DataT, 2> VerticalDifference3(const IndexRange<2> &range, const IndexRange<1> &rng) const
     {
-      RavlAssert(range.Range2().contains(rng));
-      IndexRange<2> rng2(range.Range1(), rng);
+      RavlAssert(range.range(1).contains(rng));
+      IndexRange<2> rng2(range.range(0), rng);
       return Sum(range) - Sum(rng2);
     }
     //: Calculate the diffrence between two halfs of the rectangle split vertially.
@@ -168,8 +168,8 @@ namespace Ravl2
 
     Vector<DataT, 2> HorizontalDifference3(const IndexRange<2> &range, const IndexRange<1> &rng) const
     {
-      RavlAssert(range.Range1().contains(rng));
-      IndexRange<2> rng2(rng, range.Range2());
+      RavlAssert(range.range(0).contains(rng));
+      IndexRange<2> rng2(rng, range.range(1));
       return Sum(range) - Sum(rng2);
     }
     //: Calculate the diffrence between two rectangles one lying inside the other in the horizontal dimention.
@@ -211,26 +211,5 @@ namespace Ravl2
   }
   //: Read from text stream.
 
-  template <class DataT>
-  BinOStreamC &operator<<(BinOStreamC &strm, const SummedAreaTable2C<DataT> &data)
-  {
-    strm << static_cast<const Array<Vector<DataT, 2, 2>> &>(data);
-    return strm;
-  }
-  //: Write to binary stream.
-
-  template <class DataT>
-  BinIStreamC &operator>>(BinIStreamC &strm, SummedAreaTable2C<DataT> &data)
-  {
-    strm >> static_cast<Array<Vector<DataT, 2, 2>> &>(data);
-    IndexRange<2> clipRange = data.range();
-    clipRange.min(1)++;
-    clipRange.min(0)++;
-    data.SetClipRange(clipRange);
-    return strm;
-  }
-  //: Read from binary stream.
-
 }// namespace Ravl2
 
-#endif

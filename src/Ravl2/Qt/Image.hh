@@ -16,31 +16,31 @@ namespace Ravl2
 
   //! Convert a Ravl2 pixel type to a QImage format
 
-  template<class DataT, CopyModeT copyMode = CopyModeT::Auto>
+  template <class DataT, CopyModeT copyMode = CopyModeT::Auto>
   constexpr QImage::Format toQImageFormat()
   {
-    if constexpr (std::is_same_v<DataT, uint8_t> || std::is_same_v<DataT, PixelY8>) {
+    if constexpr(std::is_same_v<DataT, uint8_t> || std::is_same_v<DataT, PixelY8>) {
       return QImage::Format_Grayscale8;
     }
-    if constexpr (std::is_same_v<DataT, uint16_t> || std::is_same_v<DataT, PixelY16>) {
+    if constexpr(std::is_same_v<DataT, uint16_t> || std::is_same_v<DataT, PixelY16>) {
       return QImage::Format_Grayscale16;
     }
-    if constexpr (std::is_same_v<DataT, PixelRGB8>) {
+    if constexpr(std::is_same_v<DataT, PixelRGB8>) {
       return QImage::Format_RGB888;
     }
-    if constexpr (std::is_same_v<DataT, PixelRGB16>) {
+    if constexpr(std::is_same_v<DataT, PixelRGB16>) {
       static_assert(copyMode == CopyModeT::Never, "PixelRGB16 is not supported");
       return QImage::Format_Invalid;
     }
-    if constexpr (std::is_same_v<DataT, PixelRGBA8>) {
+    if constexpr(std::is_same_v<DataT, PixelRGBA8>) {
       return QImage::Format_RGBA8888;
     }
-    if constexpr (std::is_same_v<DataT, PixelRGBA16>) {
+    if constexpr(std::is_same_v<DataT, PixelRGBA16>) {
       return QImage::Format_RGBA64;
     }
 #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
     // Only available in Qt 6
-    if constexpr (std::is_same_v<DataT, PixelRGBA<float>>) {
+    if constexpr(std::is_same_v<DataT, PixelRGBA32F>) {
       return QImage::Format_RGBA32FPx4;
     }
 #endif
@@ -50,18 +50,18 @@ namespace Ravl2
 
   //! Convert a QImage to an ArrayView
 
-  template<class DataT>
+  template <class DataT>
   ArrayView<DataT, 2> toArrayView(const QImage &image)
   {
     assert(image.depth() == sizeof(DataT) * 8);
     assert(image.width() > 0);
     assert(image.height() > 0);
     // Const expr check if DataT is uin8_t
-    if constexpr (std::is_same_v<DataT, uint8_t>, "DataT must be uint8_t") {
+    if constexpr(std::is_same_v<DataT, uint8_t>, "DataT must be uint8_t") {
       if(image.format() != QImage::Format_Grayscale8)
         throw std::runtime_error("Invalid image format, must be Format_Grayscale8");
     }
-    if constexpr (std::is_same_v<DataT, uint16_t>, "DataT must be uint8_t") {
+    if constexpr(std::is_same_v<DataT, uint16_t>, "DataT must be uint8_t") {
       if(image.format() != QImage::Format_Grayscale16)
         throw std::runtime_error("Invalid image format, must be Format_Grayscale16");
     }
@@ -74,7 +74,7 @@ namespace Ravl2
   }
 
   //! Convert a QImage to an ArrayView
-  template<class DataT, CopyModeT copyMode = CopyModeT::Auto>
+  template <class DataT, CopyModeT copyMode = CopyModeT::Auto>
   Array<DataT, 2> toArray(const QImage &image)
   {
     assert(image.format() == QImage::Format_Grayscale8);
@@ -83,15 +83,15 @@ namespace Ravl2
     assert(image.height() > 0);
 
     if(image.format() != toQImageFormat<DataT>()) {
-      if constexpr (copyMode == CopyModeT::Never) {
-	throw std::runtime_error("Incompatible image format");
+      if constexpr(copyMode == CopyModeT::Never) {
+        throw std::runtime_error("Incompatible image format");
       }
       // We need to convert the image to the correct format
       QImage converted = image.convertToFormat(toQImageFormat<DataT>());
       return toArray<DataT, CopyModeT::Never>(converted);
     }
     // If we're always copying and we have the right type, just clone the data.
-    if constexpr (copyMode == CopyModeT::Always) {
+    if constexpr(copyMode == CopyModeT::Always) {
       return clone(toArrayView<DataT>(image));
     }
 
@@ -103,13 +103,12 @@ namespace Ravl2
     // We need to const cast the data pointer as QImage::bits() returns a const uchar *
     // Maybe we should restrict this to only allow use with 'const DataT' ?
     auto dataPtr = const_cast<DataT *>(reinterpret_cast<const DataT *>(image.bits()));
-    return Array<DataT, 2>(dataPtr,rng,{int(ssize_t(bytesPerLine) / ssize_t(sizeof(DataT))),1},std::shared_ptr<DataT[]>(dataPtr, [img = image]([[maybe_unused]] DataT *delPtr) {}));
+    return Array<DataT, 2>(dataPtr, rng, {int(ssize_t(bytesPerLine) / ssize_t(sizeof(DataT))), 1}, std::shared_ptr<DataT[]>(dataPtr, [img = image]([[maybe_unused]] DataT *delPtr) {}));
   }
-
 
   //! Convert an ArrayView to a QImage, this does not try and create a reference to the data
   template <typename ArrayT, CopyModeT copyMode = CopyModeT::Auto, typename DataT = typename ArrayT::value_type, unsigned N = ArrayT::dimensions>
-     requires WindowedArray<ArrayT, DataT, N>
+    requires WindowedArray<ArrayT, DataT, N>
   QImage toQImage(const ArrayT &array)
   {
     assert(array.size() > 0);
@@ -119,13 +118,13 @@ namespace Ravl2
     //QImage::QImage(uchar *data, int width, int height, qsizetype bytesPerLine, QImage::Format format, QImageCleanupFunction cleanupFunction = nullptr, void *cleanupInfo = nullptr)
     qsizetype bytesPerLine = array.range(0).size() * sizeof(DataT);
     return QImage(addressOfMin(array),
-		  array.range(0).size(), array.range(1).size(),
-		  bytesPerLine,
-		  toQImageFormat<DataT,copyMode>());
+                  array.range(0).size(), array.range(1).size(),
+                  bytesPerLine,
+                  toQImageFormat<DataT, copyMode>());
   }
 
   //! Convert an Array to a QImage
-  template<class DataT, CopyModeT copyMode = CopyModeT::Auto>
+  template <class DataT, CopyModeT copyMode = CopyModeT::Auto>
   QImage toQImage(const Array<DataT, 2> &array)
   {
     assert(array.stride(0) > 0);
@@ -140,7 +139,7 @@ namespace Ravl2
     if((bytesPerLine % 4) != 0) {
       // QImage requires the bytes per line to be a multiple of 4
       if(copyMode == CopyModeT::Never) {
-	throw std::runtime_error("Bytes per line must be a multiple of 4");
+        throw std::runtime_error("Bytes per line must be a multiple of 4");
       }
       IndexRange<2> newRng = array.range();
       auto targetBytePerLine = (bytesPerLine + 3) & ~3;
@@ -148,15 +147,15 @@ namespace Ravl2
       assert(newRng[0].size() * ssize_t(sizeof(DataT)) % 4 == 0);
       // Adjust the range to match the new bytes per line
       Array<DataT, 2> newArray(newRng);
-      copy(array, clip(newArray,array.range()));
+      copy(array, clip(newArray, array.range()));
       // Check we've achieved the correct bytes per line
       assert((newArray.stride(0) * ssize_t(sizeof(DataT))) % 4 == 0);
       return toQImage<DataT, CopyModeT::Never>(newArray);
     }
     return QImage(reinterpret_cast<uint8_t *>(addressOfMin(array)),
-		  array.range(0).size(), array.range(1).size(),
+                  array.range(0).size(), array.range(1).size(),
                   bytesPerLine,
-		  toQImageFormat<DataT, copyMode>());
+                  toQImageFormat<DataT, copyMode>());
   }
 
   //! Declare some common instantiations
@@ -171,4 +170,4 @@ namespace Ravl2
   extern template Array<PixelRGB8, 2> toArray<PixelRGB8>(const QImage &image);
   extern template Array<PixelRGBA8, 2> toArray<PixelRGBA8>(const QImage &image);
 
-}
+}// namespace Ravl2

@@ -20,6 +20,9 @@ add_library (Ravl2Geometry
         Polygon2d.cc Polygon2d.hh
         Polygon2dIter.cc Polygon2dIter.hh
         Range.hh Range.cc
+        Projection.cc Projection.hh
+        Transform.cc
+        Transform.hh
 )
 
 add_library(ravl2::Ravl2Geometry ALIAS Ravl2Geometry)

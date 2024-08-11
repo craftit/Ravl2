@@ -48,7 +48,7 @@ namespace Ravl2
     //! Creates the line passing through 'pt' with the normal 'norm'.
     static constexpr LineABC2dC<RealT> fromNormal(const Vector<RealT, 2> &norm, const Point<RealT, 2> &pt)
     {
-      return LineABC2dC<RealT>(norm, -dot(norm,pt)());
+      return LineABC2dC<RealT>(norm, -dot(norm, pt)());
     }
 
     //! Creates the line passing through 'pt' with the direction 'vec'
@@ -165,7 +165,7 @@ namespace Ravl2
 
     //! Serialization support
     template <class Archive>
-    constexpr void serialize( Archive & ar )
+    constexpr void serialize(Archive &ar)
     {
       ar(normal[0], normal[1], d);
     }
@@ -204,7 +204,7 @@ namespace Ravl2
   template <typename RealT>
   inline constexpr Point<RealT, 2> LineABC2dC<RealT>::Intersection(const LineABC2dC<RealT> &line) const
   {
-    RealT crossSize = cross(Normal(),line.Normal());
+    RealT crossSize = cross(Normal(), line.Normal());
     if(IsAlmostZero(crossSize))
       return Point<RealT, 2>(0.0, 0.0);
     return Point<RealT, 2>((line.C() * B() - line.B() * C()) / crossSize,

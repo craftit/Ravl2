@@ -10,9 +10,9 @@
 namespace Ravl2
 {
 
-  std::ostream &operator<<(std::ostream &out, const CornerC &corn)
+  std::ostream &operator<<(std::ostream &out, const Corner &corn)
   {
-    out << corn.location() << ' ' << corn.gradient() << ' ' << corn.Level();
+    out << corn.location() << ' ' << corn.gradient() << ' ' << corn.level();
     return out;
   }
 

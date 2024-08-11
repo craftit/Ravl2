@@ -4,10 +4,10 @@
 // General Public License (LGPL). See the lgpl.licence file for details or
 // see http://www.gnu.org/copyleft/lesser.html
 // file-header-ends-here
-#ifndef RAVLIMAGE_SUMMEDAREATABLE_HEADER
-#define RAVLIMAGE_SUMMEDAREATABLE_HEADER 1
 //! author="Charles Galambos"
 //! date="3/4/2002"
+
+#pragma once
 
 #include "Ravl2/Array.hh"
 #include "Ravl2/Array2dSqr2Iter2.hh"
@@ -26,10 +26,10 @@ namespace Ravl2
   class SummedAreaTableC : public Array<DataT, 2>
   {
   public:
-    SummedAreaTableC()
-    {}
-    //: Default constructor.
+    //! Default constructor.
+    SummedAreaTableC() = default;
 
+    //! Build table form an array of values.
     template <class InT>
     SummedAreaTableC(const Array<InT, 2> &in)
     {
@@ -113,8 +113,8 @@ namespace Ravl2
 
     DataT VerticalDifference3(const IndexRange<2> &range, const IndexRange<1> &rng) const
     {
-      RavlAssert(range.Range2().contains(rng));
-      IndexRange<2> rng2(range.Range1(), rng);
+      RavlAssert(range.range(1).contains(rng));
+      IndexRange<2> rng2(range.range(0), rng);
       return Sum(range) - Sum(rng2);
     }
     //: Calculate the diffrence between two halfs of the rectangle split vertially.
@@ -122,8 +122,8 @@ namespace Ravl2
 
     DataT HorizontalDifference3(const IndexRange<2> &range, const IndexRange<1> &rng) const
     {
-      RavlAssert(range.Range1().contains(rng));
-      IndexRange<2> rng2(rng, range.Range2());
+      RavlAssert(range.range(0).contains(rng));
+      IndexRange<2> rng2(rng, range.range(1));
       return Sum(range) - Sum(rng2);
     }
     //: Calculate the diffrence between two rectangles one lying inside the other in the horizontal dimention.
@@ -141,4 +141,3 @@ namespace Ravl2
 
 }// namespace Ravl2
 
-#endif

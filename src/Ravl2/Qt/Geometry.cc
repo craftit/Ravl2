@@ -10,4 +10,4 @@ namespace Ravl2
   template auto toQPolygon<float>(const Polygon2dC<float> &polygon);
   template auto toQPolygon<double>(const Polygon2dC<double> &polygon);
 
-}
+}// namespace Ravl2

@@ -75,7 +75,7 @@ namespace Ravl2
 
     Index<2> Index()
     {
-      return Index<2>(m_polygonIter[0], m_arrayIter.Index());
+      return Index<2>(m_polygonIter[0], m_arrayIter.index());
     }
     //: Access to the current index in the array
 
@@ -100,8 +100,8 @@ namespace Ravl2
   template <class DataT>
   Array2dPolygon2dIterC<DataT>::Array2dPolygon2dIterC(const Array<DataT, 2> &array, const Polygon2dC &polygon)
       : m_array(array),
-        m_rowRange(array.Range1()),
-        m_colRange(array.Range2())
+        m_rowRange(array.range(0)),
+        m_colRange(array.range(1))
   {
     m_polygonIter = Polygon2dIterC(polygon);
     First();

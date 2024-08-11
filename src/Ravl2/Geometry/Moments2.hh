@@ -22,224 +22,223 @@ namespace Ravl2
   class Moments2
   {
   public:
-    inline Moments2() = default;
-    //: Default constructor
+    //! Default constructor
     // Creates the moment object with all moments set to be zero.
+    Moments2() = default;
 
-    inline Moments2(RealT nm00, RealT nm10, RealT nm01, RealT nm20, RealT nm11, RealT nm02)
+    //! Constructor from a set of values.
+    Moments2(RealT nm00, RealT nm10, RealT nm01, RealT nm20, RealT nm11, RealT nm02)
         : m00(nm00), m10(nm10), m01(nm01), m20(nm20), m11(nm11), m02(nm02)
     {}
-    //: Constructor from a set of values.
 
+    //! reset all counters to zero.
     void reset()
     {
       m00 = m10 = m01 = m20 = m11 = m02 = 0.0;
     }
-    //: reset all counters to zero.
 
+    //! Adds a pixel to the object and updates sums.
     inline void addPixel(const Index<2> &pxl);
-    //: Adds a pixel to the object and updates sums.
 
+    //! Adds a position with a weight to the object and updates sums.
     inline void addPixel(const Point<RealT, 2> &pxl);
-    //: Adds a position with a weight to the object and updates sums.
 
+    //! Adds a position with a weight to the object and updates sums.
     inline void addPixel(const Point<RealT, 2> &pxl, RealT weight);
-    //: Adds a position with a weight to the object and updates sums.
 
+    //! Add pixel to set.
     const Moments2 &operator+=(const Index<2> &pxl)
     {
       addPixel(pxl);
       return *this;
     }
-    //: Add pixel to set.
 
+    //! Add pixel to set.
     const Moments2 &operator+=(const Point<RealT, 2> &point)
     {
       addPixel(point);
       return *this;
     }
-    //: Add pixel to set.
 
-    Vector<RealT, 2> principalAxisSize() const;
-    //: Calculate the size of the principle axis.
+    //! Calculate the size of the principle axis.
     // It returns the new values for M02 and M20,
     // the largest is the first element of the vector.
+    Vector<RealT, 2> principalAxisSize() const;
 
+    //! Returns the ratio of the difference and the sum of moments m02 and m20.
+    //! The value 0 means that objects is a symmetrical object,
+    //! the value 1 corresponds to a one-dimensional object.
     static RealT elongatedness(const Vector<RealT, 2> &principalAxisSize)
     {
       RealT sumM = principalAxisSize[0] + principalAxisSize[1];
       return (sumM != 0) ? std::abs((principalAxisSize[0] - principalAxisSize[1]) / sumM) : 0;
     }
-    //: Returns the ratio of the difference and the sum of moments m02 and m20.
-    // The value 0 means that objects is a symmetrical object,
-    // the value 1 corresponds to a one-dimensional object.
 
+    //! Access 00 component.
     inline RealT M00() const
     {
       return m00;
     }
-    //: Access 00 component.
 
+    //! Access 10 component.
     inline RealT M10() const
     {
       return m10;
     }
-    //: Access 10 component.
 
+    //! Access 01 component.
     inline RealT M01() const
     {
       return m01;
     }
-    //: Access 01 component.
 
+    //! Access 20 component.
     inline RealT M20() const
     {
       return m20;
     }
-    //: Access 20 component.
 
+    //! Access 11 component.
     inline RealT M11() const
     {
       return m11;
     }
-    //: Access 11 component.
 
+    //! Access 02 component.
     inline RealT M02() const
     {
       return m02;
     }
-    //: Access 02 component.
 
+    //! Access 00 component.
     inline RealT &M00()
     {
       return m00;
     }
-    //: Access 00 component.
 
+    //! Access 10 component.
     inline RealT &M10()
     {
       return m10;
     }
-    //: Access 10 component.
 
+    //! Access 01 component.
     inline RealT &M01()
     {
       return m01;
     }
-    //: Access 01 component.
 
+    //! Access 20 component.
     inline RealT &M20()
     {
       return m20;
     }
-    //: Access 20 component.
 
+    //! Access 11 component.
     inline RealT &M11()
     {
       return m11;
     }
-    //: Access 11 component.
 
+    //! Access 02 component.
     inline RealT &M02()
     {
       return m02;
     }
-    //: Access 02 component.
 
+    //! Returns the moment m00, ie the area of the 2 dimensional object.
     inline RealT area() const
     {
       return m00;
     }
-    //: Returns the moment m00, ie the area of the 2 dimensional object.
 
+    //1 Returns the x co-ordinate of the centroid.
+    // The M00 moment must not be 0.
     inline RealT centroidX() const
     {
       return M10() / M00();
     }
-    //: Returns the x co-ordinate of the centroid.
-    // The M00 moment must not be 0.
 
+    //! Returns the y co-ordinate of the centroid.
+    // The M00 moment must not be 0.
     inline RealT centroidY() const
     {
       return M01() / M00();
     }
-    //: Returns the y co-ordinate of the centroid.
-    // The M00 moment must not be 0.
 
+    //! Returns the variance of the x.
     inline RealT varX() const
     {
       return m20 / m00 - sqr(centroidX());
     }
-    //: Returns the variance of the x.
 
+    //! Returns the variance of the y.
     inline RealT varY() const
     {
       return m02 / m00 - sqr(centroidY());
     }
-    //: Returns the variance of the y.
 
-    inline RealT slopeY() const;
-    //: Returns the slope dY/dX. The used criterion is Sum(Y-y)^2 -> min.
+    //! Returns the slope dY/dX. The used criterion is Sum(Y-y)^2 -> min.
     // It means dY/dX = k, where y = k*x+q.
+    inline RealT slopeY() const;
 
-    inline RealT slopeX() const;
-    //: Returns the slope dX/dY. The used criterion is Sum(X-x)^2 -> min.
+    //! Returns the slope dX/dY. The used criterion is Sum(X-x)^2 -> min.
     // It means dX/dY = k, where x = k*y+q.
+    inline RealT slopeX() const;
 
-    inline RealT interceptY() const;
-    //: Returns the estimate of q, if y = k*x+q.
+    //! Returns the estimate of q, if y = k*x+q.
     // The used criterion is Sum(Y-y)^2 -> min.
+    inline RealT interceptY() const;
 
-    inline RealT interceptX() const;
-    //: Returns the estimate of q, if y = k*y+q.
+    //! Returns the estimate of q, if y = k*y+q.
     // The used criterion is Sum(X-x)^2 -> min.
+    inline RealT interceptX() const;
 
+    //! Return the covariance matrix.
     Matrix<RealT, 2, 2> covariance() const;
-    //: Return the covariance matrix.
 
+    //! Calculate the centroid.
     Point<RealT, 2> centroid() const
     {
       return Point<RealT, 2>({centroidX(), centroidY()});
     }
-    //: Calculate the centroid.
 
+    //! Add to sets of moments together.
     Moments2 operator+(const Moments2 &m) const
     {
       return Moments2(m00 + m.M00(), m10 + m.M10(), m01 + m.M01(), m20 + m.M20(), m11 + m.M11(), m02 + m.M02());
     }
-    //: Add to sets of moments together.
 
+    //! Subtract one set of moments from another.
     Moments2 operator-(const Moments2 &m) const
     {
       return Moments2(m00 - m.M00(), m10 - m.M10(), m01 - m.M01(), m20 - m.M20(), m11 - m.M11(), m02 - m.M02());
     }
-    //: Subtract one set of moments from another.
 
+    //! Add to sets of moments to this one.
     const Moments2 &operator+=(const Moments2 &m);
-    //: Add to sets of moments to this one.
 
+    //! Subtract a set of moments to this one.
     const Moments2 &operator-=(const Moments2 &m);
-    //: Subtract a set of moments to this one.
 
+    //! Swap X and Y co-ordinates.
     void swapXY()
     {
       std::swap(m10, m01);
       std::swap(m20, m02);
     }
-    //: Swap X and Y co-ordinates.
 
     //! Serialization support
     template <class Archive>
-    void serialize( Archive & ar )
+    void serialize(Archive &ar)
     {
-      ar( cereal::make_nvp("m00", m00),
-          cereal::make_nvp("m10", m10),
-          cereal::make_nvp("m01", m01),
-          cereal::make_nvp("m20", m20),
-          cereal::make_nvp("m11", m11),
-          cereal::make_nvp("m02", m02));
+      ar(cereal::make_nvp("m00", m00),
+         cereal::make_nvp("m10", m10),
+         cereal::make_nvp("m01", m01),
+         cereal::make_nvp("m20", m20),
+         cereal::make_nvp("m11", m11),
+         cereal::make_nvp("m02", m02));
     }
-
 
   private:
     RealT m00 = 0;
@@ -401,5 +400,8 @@ namespace Ravl2
       throw std::underflow_error("Moments2::interceptX(), Determinant near zero. ");
     return (m02 * m10 - m01 * m11) / det;
   }
+
+  extern template class Moments2<float>;
+  extern template class Moments2<double>;
 
 }// namespace Ravl2

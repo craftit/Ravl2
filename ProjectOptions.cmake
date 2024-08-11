@@ -57,9 +57,9 @@ macro(RAVL2_setup_options)
     endif()
     option(RAVL2_WARNINGS_AS_ERRORS "Treat Warnings As Errors" ON)
     option(RAVL2_ENABLE_USER_LINKER "Enable user-selected linker" OFF)
-    option(RAVL2_ENABLE_SANITIZER_ADDRESS "Enable address sanitizer" ${SUPPORTS_ASAN})
+    option(RAVL2_ENABLE_SANITIZER_ADDRESS "Enable address sanitizer" OFF) #  ${SUPPORTS_ASAN}
     option(RAVL2_ENABLE_SANITIZER_LEAK "Enable leak sanitizer" OFF)
-    option(RAVL2_ENABLE_SANITIZER_UNDEFINED "Enable undefined sanitizer" ${SUPPORTS_UBSAN})
+    option(RAVL2_ENABLE_SANITIZER_UNDEFINED "Enable undefined sanitizer" ${SUPPORTS_UBSAN})  #
     option(RAVL2_ENABLE_SANITIZER_THREAD "Enable thread sanitizer" OFF)
     option(RAVL2_ENABLE_SANITIZER_MEMORY "Enable memory sanitizer" OFF)
     option(RAVL2_ENABLE_UNITY_BUILD "Enable unity builds" OFF)

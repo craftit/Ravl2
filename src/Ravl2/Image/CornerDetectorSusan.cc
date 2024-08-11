@@ -31,12 +31,12 @@ namespace Ravl2
   CornerDetectorSusan::CornerDetectorSusan(int nTheshold)
       : threshold(nTheshold)
   {
-    SetupLUT(6);
+    setupLUT(6);
   }
 
   //: Setup LUT.
 
-  void CornerDetectorSusan::SetupLUT(int form)
+  void CornerDetectorSusan::setupLUT(int form)
   {
     int k;
     float temp;
@@ -54,18 +54,18 @@ namespace Ravl2
     }
   }
 
-  std::vector<CornerC> CornerDetectorSusan::apply(const Array<ByteT, 2> &img) const
+  std::vector<Corner> CornerDetectorSusan::apply(const Array<ByteT, 2> &img) const
   {
     ONDEBUG(SPDLOG_INFO("CornerDetectorSusan::apply(), Called. "));
     Array<int, 2> cornerImage(img.range());
-    auto lst = Corners(img, cornerImage);
-    Peaks(lst, cornerImage);
+    auto lst = corners(img, cornerImage);
+    peaks(lst, cornerImage);
     return lst;
   }
 
-  std::vector<CornerC> CornerDetectorSusan::Corners(const Array<uint8_t, 2> &img, Array<int, 2> &cornerMap) const
+  std::vector<Corner> CornerDetectorSusan::corners(const Array<ByteT, 2> &img, Array<int, 2> &cornerMap) const
   {
-    std::vector<CornerC> cornerList;
+    std::vector<Corner> cornerList;
     if(img.empty())
       return cornerList;
     cornerList.reserve(size_t(img.range().area() / 100));
@@ -75,7 +75,7 @@ namespace Ravl2
     ONDEBUG(size_t CCount = 0);
 
     IndexRange<2> window = img.range().shrink(8);
-    ONDEBUG(SPDLOG_INFO("CornerDetectorSusan::Corners(), Window range: {}.", window));
+    ONDEBUG(SPDLOG_INFO("CornerDetectorSusan::corners(), Window range: {}.", window));
     const int colMin = window.range(1u).min();
     const int colMax = window.range(1u).max();
     const int rowMin = window.range(0u).min();
@@ -305,23 +305,23 @@ namespace Ravl2
                                 img[i][j]);
         ONDEBUG(CCount++);
       }
-    ONDEBUG(SPDLOG_INFO("CornerDetectorSusan::Corners(), Found {} corners ({}).", cornerList.size(), CCount));
+    ONDEBUG(SPDLOG_INFO("CornerDetectorSusan::corners(), Found {} corners ({}).", cornerList.size(), CCount));
     ONDEBUG(assert(CCount == cornerList.size()));
     return cornerList;
   }
 
   //: Remove non-maximal peaks.
 
-  void CornerDetectorSusan::Peaks(std::vector<CornerC> &list, const Array<int, 2> &cornerMap)
+  void CornerDetectorSusan::peaks(std::vector<Corner> &list, const Array<int, 2> &cornerMap)
   {
     auto end = list.end();
     for(auto it = list.begin(); it != end;) {
-      ONDEBUG(SPDLOG_INFO("CornerDetectorSusan::Peaks: Processing corner at {}.", it->location()));
+      ONDEBUG(SPDLOG_INFO("CornerDetectorSusan::peaks: Processing corner at {}.", it->location()));
       auto pos = toIndex<2, float>(it->location());
-      RavlAssertMsg(cornerMap.range().shrink(3).contains(pos), "CornerDetectorSusan::Peaks: Position {}  out of range {}  .", pos, cornerMap.range().shrink(3));
+      RavlAssertMsg(cornerMap.range().shrink(3).contains(pos), "CornerDetectorSusan::peaks: Position {}  out of range {}  .", pos, cornerMap.range().shrink(3));
       if(!PeakDetect7(cornerMap, pos)) {
         // Take element from end of list and move it here.
-        ONDEBUG(SPDLOG_INFO("CornerDetectorSusan::Peaks: Removing corner at {}.", it->location()));
+        ONDEBUG(SPDLOG_INFO("CornerDetectorSusan::peaks: Removing corner at {}.", it->location()));
         *it = list.back();
         end = list.erase(--end);
       } else {

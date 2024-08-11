@@ -10,10 +10,6 @@ else
     SRC_DIR=$DIR/../src
 fi
 
-# Find all the header and source files in the src directory
-files=$(find $SRC_DIR -type f -name "*.hh" -o -name "*.cc")
-#echo "$files"
-
 # Create a temporary file for the sed script
 sed_script_file=$(mktemp)
 
@@ -41,7 +37,6 @@ s/include "Ravl\/SysLog\.hh"/include <spdlog\/spdlog.h>/g
 /\/\/! rcsid=/d
 /\/\/! lib=/d
 /\/\/! file=/d
-/\/\/! docentry=/d
 /\/\/! userlevel=/d
 
 # Update some container types
@@ -74,9 +69,15 @@ s/\.Erode()/\.shrink(1)/g
 s/\.Dilate()/\.expand(1)/g
 s/Contains(/contains(/g
 s/\.Next()/\.next()/g
-s/.Data1()/.data<0>()/g
-s/.Data2()/.data<1>()/g
-s/.Data3()/.data<2>()/g
+s/\.Data1()/\.data<0>()/g
+s/\.Data2()/\.data<1>()/g
+s/\.Data3()/\.data<2>()/g
+
+s/\.Range1()/\.range(0)/g
+s/\.Range2()/\.range(1)/g
+s/\.Max()/\.max()/g
+s/\.Min()/\.min()/g
+s/\.Frame()/\.range()/g
 
 s/\.V()//g
 s/Index2dC/Index<2>/g
@@ -105,17 +106,9 @@ s/img\.BRow()/img\.range().max(0)/g
 s/img\.LCol()/img\.range().min(1)/g
 s/img\.RCol()/img\.range().max(1)/g
 
-# ImageC has .Range1() and .Range2() methods, replace with .range(0) and .range(1)
-s/image\.Range1()/image\.range(0)/g
-s/image\.Range2()/image\.range(1)/g
-s/img\.Range1()/img\.range(0)/g
-s/img\.Range2()/img\.range(1)/g
-
-# .Rows() and .Cols() -> .size(0) and .size(1)
-s/image\.Rows()/image\.range()\.size(0)/g
-s/image\.Cols()/image\.range()\.size(1)/g
-s/img\.Rows()/img\.range()\.size(0)/g
-s/img\.Cols()/img\.range()\.size(1)/g
+# .Rows() and .Cols()
+s/\.Rows()/\.range(0)\.size()/g
+s/\.Cols()/\.range(1)\.size()/g
 
 # Replace Frame().TRow() with .range().range(0).min()
 s/\.TRow()/\.min(0)/g
@@ -131,10 +124,14 @@ s/\.Row()/[0]/g
 s/\.Col()/[1]/g
 s/\.Number()/\.count()/g
 s/MeanVarianceC/MeanVariance/g
+s/\.X()/[0]/g
+s/\.Y()/[1]/g
+s/[[:blank:]]Size()/ size()/g
+s/\.TopLeft()/.min()/g
+s/\.BottomRight()/.max()/g
 
 # When we see pxl.UpN() replace with up(pxl)
 
-# IsEmpty() -> empty()
 s/IsEmpty()/empty()/g
 s/\.IsElm()/\.valid()/g
 s/\.Area()/\.area()/g
@@ -146,6 +143,7 @@ s/\.InsLast(/\.push_back(/g
 s/\.Add(/\.add(/g
 s/:Add(/:add(/g
 s/ Add(/ add(/g
+s/\.Index()/\.index()/g
 
 # Update math
 s/Matrix2dC/Matrix<RealT,2,2>/g
@@ -154,8 +152,8 @@ s/Point2dC/Point<RealT,2>/g
 s/Point3dC/Point<RealT,3>/g
 s/Vector2dC/Vector<RealT,2>/g
 s/Vector3dC/Vector<RealT,3>/g
-s/RealRange1dC/Range<1,float>/g
-s/RealRange2dC/Range<2,float>/g
+s/RealRange1dC/Range<float,1>/g
+s/RealRange2dC/Range<float,2>/g
 s/IndexRange2dSetC/IndexRangeSet<2>/g
 s/Affine2dC/Affine<RealT,2>/g
 s/Tuple2C</std::tuple</g
@@ -163,12 +161,13 @@ s/Tuple3C</std::tuple</g
 
 # Replace Abs() with std::abs()
 s/Abs(/std::abs(/g
-s/Sqrt(/std::sqrt(/g
-s/Exp(/std::exp(/g
-s/ Sqr(/sqr(/g
-
-# Pow() -> std::pow()
-s/Pow(/std::pow(/g
+s/ Sqrt(/ std::sqrt(/g
+s/ Exp(/ std::exp(/g
+s/ Sqr(/ sqr(/g
+s/ Log(/ std::log(/g
+s/ Cos(/ std::cos(/g
+s/ Sin(/ std::sin(/g
+s/ Pow(/ std::pow(/g
 
 # Deal with images
 s/ImageC<\([^>]*\)>/Array<\1,2>/g
@@ -217,12 +216,32 @@ s/RavlError/SPDLOG_ERROR/g
 # Other types, do them last to avoid conflicts
 s/UIntT/unsigned/g
 s/SizeT/size_t/g
+
+# Classes
+s/StringC/std::string/g
+s/ByteT/uint8_t/g
+s/UByteT/uint8_t/g
+s/FontC/BitmapFont/g
+
+
 EOF
 
-echo "Applying sed script $sed_script_file to files in $SRC_DIR"
-
-# Apply the sed script to the files
-echo "$files" | xargs sed -i -f "$sed_script_file"
+# For each argument passed to the script
+for arg in "$@" ; do
+  # Is the target a text file?
+  if [ -f $arg ]; then
+    # Format the file
+    echo "Porting $arg"
+    sed -i -f "$sed_script_file" $arg
+  else
+    # Format all source files in the directory
+    # Find all the header and source files in the src directory
+    #files=$(find $SRC_DIR -type f -name "*.hh" -o -name "*.cc")
+    #echo "$files"
+    echo "Porting directory $arg"
+    find $SRC_DIR -type f \( -name "*.hh" -o -name "*.cc" \) -print0 | xargs -0 sed -i -f "$sed_script_file"
+  fi
+done
 
 # Clean up the temporary file
-#rm "$sed_script_file"
+rm "$sed_script_file"

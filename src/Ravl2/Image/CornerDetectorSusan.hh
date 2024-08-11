@@ -19,25 +19,25 @@ namespace Ravl2
   class CornerDetectorSusan
   {
   public:
-    using RealT = CornerC::RealT;
+    using RealT = Corner::RealT;
     using ByteT = uint8_t;
 
     //! Constructor.
     //! threshold = Minimum level of cornerness to accept. <br>
     explicit CornerDetectorSusan(int threshold = 20);
 
-    [[nodiscard]] std::vector<CornerC> apply(const Array<ByteT, 2> &img) const;
+    [[nodiscard]] std::vector<Corner> apply(const Array<ByteT, 2> &img) const;
     //: Get a list of corners from 'img'
 
   protected:
-    //! Setup LUT.
-    void SetupLUT(int form);
+    //! setup LUT.
+    void setupLUT(int form);
 
     //! Generate a corner map and a list of non zero components.
-    [[nodiscard]] std::vector<CornerC> Corners(const Array<ByteT, 2> &img, Array<int, 2> &cornerMap) const;
+    [[nodiscard]] std::vector<Corner> corners(const Array<ByteT, 2> &img, Array<int, 2> &cornerMap) const;
 
     //! Remove non-maximal peaks.
-    static void Peaks(std::vector<CornerC> &list, const Array<int, 2> &cornerMap);
+    static void peaks(std::vector<Corner> &list, const Array<int, 2> &cornerMap);
 
   private:
     std::array<uint8_t, 516> Lut;// Brightness LUT.

@@ -37,7 +37,7 @@ namespace Ravl2
   }
 
   template <class RealT>
-  inline constexpr bool isNearZero(RealT x, RealT tol = RealT(1e-6))
+  inline constexpr bool isNearZero(RealT x, RealT tol = std::numeric_limits<RealT>::epsilon())
   {
     return std::abs(x) < tol;
   }
@@ -50,6 +50,9 @@ namespace Ravl2
 
   //! Returns the square of 'x'.
   template <typename DataT>
-  inline constexpr DataT sqr(const DataT &x) { return x * x; }
+  inline constexpr DataT sqr(const DataT &x)
+  {
+    return x * x;
+  }
 
 }// namespace Ravl2

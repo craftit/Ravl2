@@ -254,8 +254,12 @@ namespace RavlImageN
     pxl_selector_edge.Initialise();
     pxl_selector.Include(pxl);
     SideEffectsSeed(pxl);
-    while(!pxl_selector.IsEmpty()) { GrowPxl(); }
-    while(!pxl_selector_edge.IsEmpty()) { Steal(); }
+    while(!pxl_selector.IsEmpty()) {
+      GrowPxl();
+    }
+    while(!pxl_selector_edge.IsEmpty()) {
+      Steal();
+    }
   }
 
   template <class PixelSelectorT, class ClassifyT, class PixelT, class StatT>

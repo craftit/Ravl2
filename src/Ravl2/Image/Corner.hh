@@ -16,98 +16,96 @@ namespace Ravl2
 
   //: Corner descriptor.
 
-  class CornerC
+  class Corner
   {
   public:
     using RealT = float;
 
-    CornerC()
-    {}
-    //: Default constructor.
-    // Contents of class are undefined.
+    //! @brief Default constructor.
+    //! Contents of class are undefined.
+    Corner() = default;
 
-    CornerC(const Point<float, 2> &location, RealT ndV, RealT ndH, uint8_t nlevel)
-        : loc(location),
-          grad({ndV, ndH}),
-          level(nlevel)
+    //! Constructor.
+    Corner(const Point<float, 2> &location, RealT ndV, RealT ndH, uint8_t nlevel)
+        : mLocation(location),
+	  mGrad({ndV, ndH}),
+	  mLevel(nlevel)
     {}
-    //: Constructor.
 
-    CornerC(const Point<float, 2> &location, const Vector<float, 2> &ngrad, uint8_t nlevel)
-        : loc(location),
-          grad(ngrad),
-          level(nlevel)
+    //! Constructor.
+    Corner(const Point<float, 2> &location, const Vector<float, 2> &ngrad, uint8_t nlevel)
+        : mLocation(location),
+	  mGrad(ngrad),
+	  mLevel(nlevel)
     {}
-    //: Constructor.
 
+    //! Get location of corner.
     Point<float, 2> &location()
     {
-      return loc;
+      return mLocation;
     }
-    //: Get location of corner.
 
+    //! Get location of corner.
     const Point<float, 2> &location() const
     {
-      return loc;
+      return mLocation;
     }
-    //: Get location of corner.
 
+    //! Get gradient.
     Vector<float, 2> &gradient()
     {
-      return grad;
+      return mGrad;
     }
-    // Get gradient.
 
+    //! Get gradient.
     const Vector<float, 2> &gradient() const
     {
-      return grad;
+      return mGrad;
     }
-    // Get gradient.
 
-    RealT &DVert() { return grad[0]; }
-    // Vertical component of gradient.
+    //! Vertical component of gradient.
+    RealT &dVert() { return mGrad[0]; }
 
-    RealT &DHor() { return grad[1]; }
-    // Horizontal component of gradient.
+    //! Horizontal component of gradient.
+    RealT &dHor() { return mGrad[1]; }
 
-    uint8_t &Level() { return level; }
-    // Grey level of pixel.
+    //! Grey level of pixel.
+    uint8_t &level() { return mLevel; }
 
-    const uint8_t &Level() const
+    //! Grey level of pixel.
+    const uint8_t &level() const
     {
-      return level;
+      return mLevel;
     }
-    // Grey level of pixel.
 
-    auto Distance(const Point<float, 2> &oth) const
+    //! City block distance from another pixel.
+    auto distance(const Point<float, 2> &oth) const
     {
-      return xt::sum(xt::abs(loc - oth));
-      //return cityBlockDistance(loc,loc);
+      float d = xt::sum(xt::abs(mLocation - oth))();
+      return d;
     }
-    //: City block distance from another pixel.
 
-    inline RealT Distance(const CornerC &Oth) const;
-    // A somewhat arbitrary distance measure between two corners.
-    // Suggestions for a better measure are welcome.
+    //! A somewhat arbitrary distance measure between two corners.
+    inline RealT distance(const Corner &Oth) const;
 
   private:
-    Point<float, 2> loc;  // Location of corner.
-    Vector<float, 2> grad;// gradient of point.
-    uint8_t level;        // Intensity of point.
+    Point<float, 2> mLocation;  //!< Location of corner.
+    Vector<float, 2> mGrad;//!< gradient of point.
+    uint8_t mLevel;        //!< Intensity of point.
   };
 
-  std::ostream &operator<<(std::ostream &out, const CornerC &corn);
+  std::ostream &operator<<(std::ostream &out, const Corner &corn);
   //: Write corner to a stream.
 
-  std::istream &operator>>(std::istream &in, CornerC &corn);
+  std::istream &operator>>(std::istream &in, Corner &corn);
   //: Read corner from a stream.
 
   //////////////////////////////////////
   // A somewhat arbitrary distance measure between two corners.
 
-  inline float CornerC::Distance(const CornerC &oth) const
+  inline float Corner::distance(const Corner &Oth) const
   {
-    return xt::sum(xt::abs(loc - oth.loc))() + xt::sum(xt::abs(grad - oth.grad))() + std::abs(RealT(level) - RealT(oth.level));
+    return xt::sum(xt::abs(mLocation - Oth.mLocation))() + xt::sum(xt::abs(mGrad - Oth.mGrad))() + std::abs(RealT(mLevel) - RealT(Oth.mLevel));
   }
 
 }// namespace Ravl2

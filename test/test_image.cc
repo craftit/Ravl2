@@ -3,11 +3,14 @@
 #include <spdlog/spdlog.h>
 
 #include "Ravl2/Image/BilinearInterpolation.hh"
-#include "Ravl2/Image/WarpScale2d.hh"
+#include "Ravl2/Image/WarpScale.hh"
 #include "Ravl2/Image/PeakDetector.hh"
 #include "Ravl2/Image/Array2Sqr2Iter.hh"
 #include "Ravl2/Image/Array2Sqr2Iter2.hh"
 #include "Ravl2/Image/Matching.hh"
+#include "Ravl2/Image/ImageExtend.hh"
+#include "Ravl2/Image/ZigZagIter.hh"
+#include "Ravl2/Image/DCT2d.hh"
 
 #define CHECK_EQ(a,b) CHECK((a) == (b))
 #define CHECK_NE(a,b) CHECK_FALSE((a) == (b))
@@ -207,6 +210,143 @@ TEST_CASE("matchSumAbsDifference")
     auto sum = matchSumAbsDifference<ByteT,int>(img1,img2);
     SPDLOG_INFO("Sum {} = {}",imgSize, sum);
     CHECK(sum == int(imgSize * imgSize));
+  }
+}
+
+TEST_CASE("imageExtend")
+{
+  using namespace Ravl2;
+  Array<int,2> img({3,3});
+  int val = 0;
+  for(auto &it : img)
+    it = val++;
+
+  {
+    Array<int, 2> result;
+    extendImageFill(result,img,2,-1);
+    CHECK(result[result.range().min()] == -1);
+    CHECK(result[result.range().max()] == -1);
+  }
+
+  {
+    Array<int, 2> result;
+    extendImageCopy(result, img, 2);
+    CHECK(result.range() == img.range().expand(2));
+    CHECK(result[result.range().min()] == img[img.range().min()]);
+    CHECK(result[result.range().max()] == img[img.range().max()]);
+  }
+
+  {
+    Array<int, 2> result;
+    extendImageMirror(result,img,2);
+    // Since we have a 3x3 image, the result should be 7x7, with outer corners mirroring the internal opposite corner.
+    CHECK(result[result.range().min()] == img[img.range().max()]);
+    CHECK(result[result.range().max()] == img[img.range().min()]);
+  }
+
+}
+
+
+TEST_CASE("ZigZagIter")
+{
+  using namespace Ravl2;
+  SECTION("ZigZagIter on 3x3")
+  {
+    Array<int, 2> img({3, 3}, 0);
+    int val = 1;
+    for (ZigZagIterC it(img.range()); it.valid(); ++it) {
+      CHECK(img.range().contains(*it));
+      CHECK(img[*it] == 0);
+      img[*it] = val++;
+    }
+    CHECK(img.range().elements() == size_t(val - 1));
+    //SPDLOG_INFO("ZigZagIter:{}", img);
+    CHECK(img[0][0] == 1);
+    CHECK(img[0][1] == 2);
+    CHECK(img[1][0] == 3);
+    CHECK(img[2][0] == 4);
+    CHECK(img[1][1] == 5);
+    CHECK(img[0][2] == 6);
+    CHECK(img[1][2] == 7);
+    CHECK(img[2][1] == 8);
+    CHECK(img[2][2] == 9);
+  }
+
+  SECTION("ZigZagIter on a range of sizes")
+  {
+    for (size_t imgSize = 1; imgSize < 19; imgSize++) {
+      Array<int, 2> img({imgSize, imgSize}, 0);
+      int val = 1;
+      for (ZigZagIterC it(img.range()); it.valid(); ++it) {
+        CHECK(img.range().contains(*it));
+        CHECK(img[*it] == 0);
+        img[*it] = val++;
+      }
+      CHECK(img.range().elements() == size_t(val - 1));
+      //SPDLOG_INFO("ZigZagIter:{}", img);
+    }
+  }
+
+}
+
+
+TEST_CASE("DiscreteCosineTransform (forwardDCT)")
+{
+  using namespace Ravl2;
+  using RealT = float;
+  Array<RealT,2> img({16,16});
+
+  // Generate random image.
+  auto Random1 = []() -> RealT { return RealT(rand() % 256) / 256; };
+  for(auto &it : img)
+    it = Random1();
+
+  img[3][3] = 1;
+  img[4][3] = 1;
+  img[4][4] = 1;
+  img[3][4] = 1;
+  Array<RealT,2> res;
+  forwardDCT(res, img);
+  //SPDLOG_INFO("Res:{}", res);
+
+  SECTION("Check reference inverse forwardDCT.")
+  {
+    Array<RealT, 2> rimg;
+    inverseDCT(rimg, res);
+
+    for (auto it = begin(rimg, img); it.valid(); ++it) {
+      CHECK(std::abs(it.template data<0>() - it.template data<1>()) < 0.001f);
+    }
+  }
+
+  SECTION("ChanDCT.")
+  {
+    ChanDCT chandct(unsigned(img.range(0).size()));
+    Array<RealT, 2> cimg = chandct.forwardDCT(img);
+    //SPDLOG_INFO("ChanRes:{}", cimg);
+    for (auto it = begin(cimg, res); it.valid(); ++it) {
+      CHECK(std::abs(it.template data<0>() - it.template data<1>()) < 0.001f);
+    }
+
+  }
+
+  SECTION("VecRadDCT.")
+  {
+    // This only computes the first 6 coefficients.
+    unsigned nPts = 6;
+    VecRadDCT vrdct(unsigned(img.range(0).size()), nPts);
+    Array<RealT, 2> cimg2;
+    for (int i = 0; i < 50000; i++)
+      cimg2 = vrdct.forwardDCT(img);
+
+    //SPDLOG_INFO("VecRadRes:{}", cimg2);
+    unsigned count = 0;
+    for (auto it = begin(cimg2, res); it.valid(); ++it) {
+      CHECK(std::abs(it.template data<0>() - it.template data<1>()) < 0.001f);
+      count++;
+      if(count > nPts)
+        break;
+    }
   }
 }
 

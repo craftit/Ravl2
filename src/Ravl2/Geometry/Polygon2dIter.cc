@@ -21,9 +21,10 @@ namespace Ravl2
       return;
     }
     /* build IEL */
-    auto end = m_polygon.end();
-    for(auto it = beginCircularFirst(m_polygon); it != end; ++it) {
-      m_iel.add(EdgeC(it.Data(), it.NextCrcData()));
+    auto last = m_polygon.back();
+    for(auto it : m_polygon) {
+      m_iel.add(EdgeC(last, it));
+      last = it;
     }
 
     m_row = m_iel.MinRow() - 1;

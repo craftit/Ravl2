@@ -2,21 +2,35 @@
 include(GenerateExportHeader)
 
 add_library (Ravl2Image
-        EdgeSobel.hh # EdgeSobel.cc
+        EdgeSobel.hh EdgeSobel.cc
         BilinearInterpolation.cc BilinearInterpolation.hh
-        ImagePyramid.hh
+        ImagePyramidC.hh
         Array2Sqr2Iter.hh
         Array2Sqr2Iter2.hh
         DrawFrame.hh
-        DrawCircle.hh
+        DrawCircle.hh DrawCircle.cc
         DrawLine.hh
         DrawCross.hh
+        DrawMask.hh DrawMask.cc
+        DrawPolygon.hh DrawPolygon.cc
         Array2dPolygon2dIter.hh
         Corner.cc Corner.hh
         CornerDetectorSusan.cc CornerDetectorSusan.hh
         PeakDetector.cc PeakDetector.hh
         Matching.cc Matching.hh
-#        MatchNormalisedCorrelation.cc MatchNormalisedCorrelation.hh
+        ImagePyramidC.cc ImagePyramidC.hh
+        ImagePyramid.cc ImagePyramid.hh
+        WarpScale.cc WarpScale.hh
+        ImageExtend.cc ImageExtend.hh
+        ZigZagIter.cc ZigZagIter.hh
+        DCT2d.cc DCT2d.hh
+        BitmapFont.cc BitmapFont.hh
+        DrawText.cc DrawText.hh
+        WarpAffine.hh WarpAffine.cc
+        WarpProjective.hh
+        Warp.cc
+        Warp.hh
+        #        MatchNormalisedCorrelation.cc MatchNormalisedCorrelation.hh
 )
 
 add_library(ravl2::Ravl2Image ALIAS Ravl2Image)

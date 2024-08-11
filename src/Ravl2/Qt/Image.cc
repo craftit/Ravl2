@@ -18,4 +18,4 @@ namespace Ravl2
   template Array<PixelRGB8, 2> toArray<PixelRGB8>(const QImage &image);
   template Array<PixelRGBA8, 2> toArray<PixelRGBA8>(const QImage &image);
 
-}
+}// namespace Ravl2

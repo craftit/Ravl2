@@ -21,10 +21,10 @@ namespace Ravl2
   // <i>gradient is changing</i> in a vertical (horizontal) direction.
 
   //! Apply Sobel operator to 'img', put result in 'out'
-  // Output gradient vector is in the order: vertical, horizontal gradients
+  //! Output gradient vector is in the order: vertical, horizontal gradients
 
   template <class DataInT, class DataOutT>
-  void edge_sobel(const Array<DataInT, 2> &img, Array<DataOutT, 3> &out)
+  void edgeSobel(const Array<DataInT, 2> &img, Array<DataOutT, 3> &out)
   {
     IndexRange<3> outRange(img.range().shrink(1), 2);
     if(outRange != out.range())
@@ -39,7 +39,7 @@ namespace Ravl2
 
   //! Apply Sobel operator to 'img', put vertical and horizontal gradients in "Vert" and "Horz" respectively
   template <class DataInT, class DataOutT>
-  void edge_sobel(const Array<DataInT, 2> &img, Array<DataOutT, 2> &outRow, Array<DataOutT, 2> &outCol)
+  void edgeSobel(const Array<DataInT, 2> &img, Array<DataOutT, 2> &outRow, Array<DataOutT, 2> &outCol)
   {
     IndexRange<2> outRange = img.range().shrink(1);
     if(outRange != outRow.range())

@@ -16,62 +16,69 @@
 namespace Ravl2
 {
 
-  //: Iterate through integer grid points along a 2d line.
-  // Uses a version of the midpoint algorithm to iterate all
-  // 8-connected grid points on a line between two positions.
+  //! @brief Iterate through integer grid points along a 2d line.
+  //! Uses a version of the midpoint algorithm to iterate all
+  //! 8-connected grid points on a line between two positions.
 
   class Line2dIterC
   {
   public:
+    //: Construct from two points.
     Line2dIterC(const Index<2> &start, const Index<2> &end);
-    //: Constructor.
 
+    //! Construct from a line.
     template <class RealT>
     explicit Line2dIterC(const LinePP2dC<RealT> &line)
-        : Line2dIterC(toIndex(line.P1()), toIndex(line.P2())) {}
-    //: Constructor.
+        : Line2dIterC(toIndex(line.P1()), toIndex(line.P2()))
+    {}
 
+    //! Start line again.
     void First(const Index<2> &start, const Index<2> &end);
-    //: Start line again.
 
-    bool IsElm() const
+    //! Still in line.
+    [[nodiscard]] bool IsElm() const
     {
       return isElm;
     }
-    //: Still in line.
 
+    //! At a pixel in line ?
     operator bool() const
     {
       return isElm;
     }
-    //: At a pixel in line ?
 
+    //! At a pixel in line ?
+    [[nodiscard]] bool valid() const
+    {
+      return isElm;
+    }
+
+    //! Goto next point on line.
     bool Next();
-    //: Goto next point on line.
 
+    //! Goto next point on line.
     void operator++(int)
     {
       Next();
     }
-    //: Goto next point on line.
 
+    //! Goto next point on line.
     void operator++()
     {
       Next();
     }
-    //: Goto next point on line.
 
+    //! Access position.
     Index<2> Data() const
     {
       return Index<2>(x, y);
     }
-    //: Access position.
 
+    //! Access position.
     Index<2> operator*() const
     {
       return Index<2>(x, y);
     }
-    //: Access position.
 
   protected:
     int dx, dy;

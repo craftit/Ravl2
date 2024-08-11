@@ -64,21 +64,21 @@ namespace Ravl2
     }
     return ArrayView<DataT, N>(reinterpret_cast<DataT *>(m.data), indexRange, strides);
   }
-  
+
   // Instantiate the template functions for the types we need often
   extern template cv::Mat toCvMat(const Array<uint8_t, 2> &m);
   extern template cv::Mat toCvMat(const Array<float, 2> &m);
   extern template cv::Mat toCvMat(const Array<double, 2> &m);
   extern template cv::Mat toCvMat(const Array<uint8_t, 3> &m);
-  
+
   extern template Array<uint8_t, 2> toArray<uint8_t, 2>(const cv::Mat &m);
   extern template Array<float, 2> toArray<float, 2>(const cv::Mat &m);
   extern template Array<double, 2> toArray<double, 2>(const cv::Mat &m);
   extern template Array<uint8_t, 3> toArray<uint8_t, 3>(const cv::Mat &m);
-  
+
   extern template ArrayView<uint8_t, 2> toArrayView<uint8_t, 2>(const cv::Mat &m);
   extern template ArrayView<float, 2> toArrayView<float, 2>(const cv::Mat &m);
   extern template ArrayView<double, 2> toArrayView<double, 2>(const cv::Mat &m);
   extern template ArrayView<uint8_t, 3> toArrayView<uint8_t, 3>(const cv::Mat &m);
-  
+
 }// namespace Ravl2

@@ -89,7 +89,7 @@ int main(int argc,char **argv)
 //    }
     
     // Find the corners.
-    std::vector<Ravl2::CornerC> corners;
+    std::vector<Ravl2::Corner> corners;
     if(verbose) {
       SPDLOG_INFO("Extracting corners");
     }

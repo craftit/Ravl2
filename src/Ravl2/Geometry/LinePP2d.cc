@@ -7,47 +7,65 @@
 
 #include "Ravl2/Geometry/LinePP2d.hh"
 
-#define CTOP 0x1
-#define CBOTTOM 0x2
-#define CRIGHT 0x4
-#define CLEFT 0x8
 
 namespace Ravl2
 {
-
-  template <typename RealT>
-  static inline int ContainsCode(const Point<RealT, 2> &pnt, const Range<RealT, 2> &rng)
+  namespace
   {
-    int ret = 0;
-    if(pnt[0] > rng.range(0).max())
-      ret |= CBOTTOM;
-    else if(pnt[0] < rng.range(0).min())
-      ret |= CTOP;
-    if(pnt[1] > rng.range(1).max())
-      ret |= CRIGHT;
-    else if(pnt[1] < rng.range(1).min())
-      ret |= CLEFT;
-    return ret;
+
+    enum class ContainCodeT : unsigned {
+      TOP = 0x1,
+      BOTTOM = 0x2,
+      RIGHT = 0x4,
+      LEFT = 0x8
+    };
+
+    //! Or operator for ContainCodeT
+    inline unsigned operator | (unsigned a, ContainCodeT b)
+    {
+      return a | static_cast<unsigned>(b);
+    }
+
+    //! Or operator for ContainCodeT
+    inline unsigned operator & (unsigned a, ContainCodeT b)
+    {
+      return (a) & static_cast<unsigned>(b);
+    }
+
+    //! In place or operator for ContainCodeT
+    inline unsigned &operator |= (unsigned &a, ContainCodeT b)
+    {
+      a = a | b;
+      return a;
+    }
+
+    template<typename RealT>
+    [[nodiscard]] inline unsigned containsCode(const Point<RealT, 2> &pnt, const Range<RealT, 2> &rng)
+    {
+      unsigned ret = 0;
+      if (pnt[0] > rng.range(0).max())
+        ret |= ContainCodeT::BOTTOM;
+      else if (pnt[0] < rng.range(0).min())
+        ret |=ContainCodeT::TOP;
+      if (pnt[1] > rng.range(1).max())
+        ret |= ContainCodeT::RIGHT;
+      else if (pnt[1] < rng.range(1).min())
+        ret |= ContainCodeT::LEFT;
+      return ret;
+    }
   }
 
-  //: Clip line by given rectangle.
-  // Returns false if no part of the line is in the rectangle.
-  // Uses the Cohen and Sutherland line clipping algorithm.
+  //! @brief Clip line by given rectangle.
+  //! @return false if no part of the line is in the rectangle.
+  //! Uses the Cohen and Sutherland line clipping algorithm.
 
   template <typename RealT>
   bool LinePP2dC<RealT>::clipBy(const Range<RealT, 2> &rng)
   {
+    auto &line = *this;
     bool accept = false;
-    int oc0 = ContainsCode(this->P1(), rng);
-    int oc1 = ContainsCode(this->P2(), rng);
-#if 0
-    const RealT vscale = rng.Rows();
-    const RealT hscale = rng.Cols();
-    RealT diff = ;
-    //if(IsSmall(diff,hscale)) // Avoid division by zero. 
-    //  np[0] = 0;
-    //else
-#endif
+    auto oc0 = containsCode(line.P1(), rng);
+    auto oc1 = containsCode(line.P2(), rng);
 
     do {
       if(!(oc0 | oc1)) {
@@ -57,35 +75,36 @@ namespace Ravl2
       if(oc0 & oc1)
         break;
       Point<RealT, 2> np;
-      int oc = oc0 ? oc0 : oc1;
-      if(oc & CTOP) {
+      auto oc = (oc0 != 0) ? oc0 : oc1;
+      if(oc & ContainCodeT::TOP) {
         np[0] = rng.range(0).min();
-        np[1] = this->P1()[1] + (this->P2()[1] - this->P1()[1]) * (rng.range(0).min() - this->P1()[0]) / (this->P2()[0] - this->P1()[0]);
-      } else if(oc & CBOTTOM) {
+        np[1] = line.P1()[1] + (line.P2()[1] - line.P1()[1]) * (rng.range(0).min() - line.P1()[0]) / (line.P2()[0] - line.P1()[0]);
+      } else if(oc & ContainCodeT::BOTTOM) {
         np[0] = rng.range(0).max();
-        np[1] = this->P1()[1] + (this->P2()[1] - this->P1()[1]) * (rng.range(0).max() - this->P1()[0]) / (this->P2()[0] - this->P1()[0]);
-      } else if(oc & CRIGHT) {
-        np[0] = this->P1()[0] + (this->P2()[0] - this->P1()[0]) * (rng.range(1).max() - this->P1()[1]) / (this->P2()[1] - this->P1()[1]);
+        np[1] = line.P1()[1] + (line.P2()[1] - line.P1()[1]) * (rng.range(0).max() - line.P1()[0]) / (line.P2()[0] - line.P1()[0]);
+      } else if(oc & ContainCodeT::RIGHT) {
+        np[0] = line.P1()[0] + (line.P2()[0] - line.P1()[0]) * (rng.range(1).max() - line.P1()[1]) / (line.P2()[1] - line.P1()[1]);
         np[1] = rng.range(1).max();
       } else {// CLEFT
-        np[0] = this->P1()[0] + (this->P2()[0] - this->P1()[0]) * (rng.range(1).min() - this->P1()[1]) / (this->P2()[1] - this->P1()[1]);
+        np[0] = line.P1()[0] + (line.P2()[0] - line.P1()[0]) * (rng.range(1).min() - line.P1()[1]) / (line.P2()[1] - line.P1()[1]);
         np[1] = rng.range(1).min();
       }
       if(oc == oc0) {
-        this->P1() = np;
-        oc0 = ContainsCode(this->P1(), rng);
+        line.P1() = np;
+        oc0 = containsCode(line.P1(), rng);
       } else {
-        this->P2() = np;
-        oc1 = ContainsCode(this->P2(), rng);
+        line.P2() = np;
+        oc1 = containsCode(line.P2(), rng);
       }
-    } while(1);
+    } while(true);
     return accept;
   }
 
+
   template <typename RealT>
-  bool LinePP2dC<RealT>::IsPointIn(const Point<RealT, 2> &pnt) const
+  bool LinePP2dC<RealT>::IsPointIn(const Point<RealT, 2> &pnt, RealT tolerance) const
   {
-    if(!IsPointOn(pnt))
+    if(!IsPointOn(pnt, tolerance))
       return false;
 
     // If ab not vertical, check betweenness on x; else on y.
@@ -126,7 +145,15 @@ namespace Ravl2
     return true;
   }
 
-  //: Find the column position which itersects the given row.
+  template <typename RealT>
+  [[nodiscard]] std::optional<Point<RealT, 2> > LinePP2dC<RealT>::innerIntersection(const LinePP2dC &l) const
+  {
+    RealT p = ParIntersection(l);
+    if(p < RealT(0) || p > RealT(1))
+      return std::nullopt;
+    return this->P1() + this->direction() * p;
+  }
+
 
   template <typename RealT>
   bool LinePP2dC<RealT>::IntersectRow(RealT row, RealT &col) const

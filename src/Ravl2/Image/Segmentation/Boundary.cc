@@ -352,10 +352,7 @@ namespace Ravl2
     return endpoints;
   }
 
-  //: Convert a boundry to a polygon.
-  // Note straigh edges are compressed into a single segment.
-
-  Polygon2dC BoundaryC::Polygon2d(bool bHalfPixelOffset) const {
+  Polygon2dC Boundary::Polygon2d(bool bHalfPixelOffset) const {
     Polygon2dC polygon;
     DLIterC<CrackC> et(*this);
     if(!et) return polygon;

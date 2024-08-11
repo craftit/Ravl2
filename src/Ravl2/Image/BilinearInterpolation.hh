@@ -16,6 +16,16 @@
 
 namespace Ravl2
 {
+  //! @brief Pixel coordinate system
+  //! There are two types of pixel coordinates one uses the center of the pixel as the
+  //! coordinate and the other uses the top left corner of the pixel as the coordinate. These
+  //! have a 0.5 pixel offset.  The enum tells us which one to use.
+  enum class PixelCoordinateSystemT
+  {
+    Center,
+    TopLeft
+  };
+
   //! @brief Bilinear interpolation
   //! This function performs bi-linear interpolation on a 2D image, it does not perform any bounds checking.
   //! It also assumes the image is continuous in memory, with the first index being the row and the second index being the column.
@@ -23,8 +33,8 @@ namespace Ravl2
   //! \param pnt - The point in the i/p image coord system for which the interpolated value is required.
   //! \return The interpolated value.
 
-  template <typename ArrayT, typename Point2T, typename PixelT = typename ArrayT::value_type, unsigned N = ArrayT::dimensions>
-    requires WindowedArray<ArrayT, PixelT, N>
+  template <typename ArrayT, typename Point2T>
+    requires WindowedArray<ArrayT, typename ArrayT::value_type, ArrayT::dimensions>
   [[nodiscard]] constexpr auto interpolateBilinear(const ArrayT &img, Point2T pnt)
   {
     const auto px = pnt[0];

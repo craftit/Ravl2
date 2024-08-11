@@ -5,7 +5,7 @@
 // see http://www.gnu.org/copyleft/lesser.html
 // file-header-ends-here
 
-#pragma  once
+#pragma once
 
 #include <array>
 #include "Ravl2/Geometry/Geometry.hh"
@@ -28,7 +28,6 @@ namespace Ravl2
       point[0] = start;
       point[1] = end;
     }
-    //: Construct from two points.
 
     //! Create line from start and end points
     static constexpr LinePP<RealT, N> fromPoints(const Point<RealT, N> &start, const Point<RealT, N> &end)
@@ -73,28 +72,28 @@ namespace Ravl2
     }
 
     //! Returns the start point of the line segment.
-    // It is equivalent to the function FirstPoint().
+    //! It is equivalent to the function FirstPoint().
     constexpr const Point<RealT, N> &P1() const
     {
       return point[0];
     }
 
     //! Returns the start point of the line segment.
-    // It is equivalent to the function SecondPoint().
+    //! It is equivalent to the function SecondPoint().
     constexpr const Point<RealT, N> &P2() const
     {
       return point[1];
     }
 
     //! Returns the start point of the line segment.
-    // It is equivalent to the function FirstPoint().
+    //! It is equivalent to the function FirstPoint().
     constexpr Point<RealT, N> &P1()
     {
       return point[0];
     }
 
     //! Returns the start point of the line segment.
-    // It is equivalent to the function SecondPoint().
+    //! It is equivalent to the function SecondPoint().
     constexpr Point<RealT, N> &P2()
     {
       return point[1];
@@ -189,7 +188,7 @@ namespace Ravl2
     }
 
     //! Returns the parameter of the closest point on the line to 'pnt'.
-    // Where 0 is at the start point and 1 is at the end.
+    //! Where 0 is at the start point and 1 is at the end.
     constexpr RealT ParClosest(const Point<RealT, N> &pnt) const
     {
       auto v = direction();
@@ -200,18 +199,26 @@ namespace Ravl2
 
     //! Serialization support
     template <class Archive>
-    constexpr void serialize( Archive & archive )
+    constexpr void serialize(Archive &archive)
     {
       cereal::size_type size = 2;
       archive(cereal::make_size_tag(size));
       if(size != 2) {
-	throw std::runtime_error("Size mismatch");
+        throw std::runtime_error("Size mismatch");
       }
       ar(point[0], point[1]);
     }
+
   protected:
     std::array<Point<RealT, N>, 2> point;
   };
+
+  //! Construct a line from two points
+  template <typename RealT, unsigned int N>
+  [[nodiscard]] constexpr inline LinePP<RealT, N> makeLine(const Point<RealT, N> &start, const Point<RealT, N> &end)
+  {
+    return LinePP<RealT, N>(start, end);
+  }
 
   template <typename RealT, unsigned int N>
   inline std::ostream &operator<<(std::ostream &s, const LinePP<RealT, N> &dat)
@@ -232,3 +239,12 @@ namespace Ravl2
   extern template class LinePP<float, 3>;
 
 }// namespace Ravl2
+
+#if FMT_VERSION >= 90000
+template <>
+struct fmt::formatter<Ravl2::LinePP<float, 2>> : fmt::ostream_formatter {
+};
+template <>
+struct fmt::formatter<Ravl2::LinePP<float, 3>> : fmt::ostream_formatter {
+};
+#endif

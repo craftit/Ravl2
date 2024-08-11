@@ -32,13 +32,22 @@
 
 namespace Ravl2
 {
-  //! Get a perpendicular vector in 2d.
+  //! Define the concept of a point transform
+  //! It is any class/function that takes a point and returns a point
+  template <typename TransformT, typename RealT = typename TransformT::value_type, unsigned N = TransformT::dimension>
+  concept PointTransform = requires(TransformT a, Point<RealT, N> pnt) {
+    { a(pnt) } -> std::convertible_to<Point<RealT, N>>;
+  };
+
+
+  //! Get a perpendicular vector in 2d space
   template <typename DataT>
   inline constexpr Vector<DataT, 2> perpendicular(const Vector<DataT, 2> &v)
   {
     return {-v(1), v(0)};
   }
 
+  //! Convert to a span
   template <typename T>
   constexpr auto span(T t)
   {
@@ -54,12 +63,6 @@ namespace Ravl2
     assert(view.is_contiguous());
     return std::span(view.begin(), view.size());
   }
-
-  // Define the concept of a point transform
-  template <typename TransformT, typename RealT = typename TransformT::value_type, unsigned N = TransformT::dimension>
-  concept PointTransform = requires(TransformT a, Point<RealT, N> pnt) {
-    { a(pnt) } -> std::convertible_to<Point<RealT, N>>;
-  };
 
   //! Compute the l2 norm of a vector
   template <typename RealT, unsigned N>
@@ -97,7 +100,9 @@ namespace Ravl2
 
   template <typename Pnt1T, typename Pnt2T>
   constexpr auto euclidDistance(Pnt1T a, Pnt2T b)
-  { return xt::linalg::norm(a-b,2); }
+  {
+    return xt::linalg::norm(a - b, 2);
+  }
 
   template <typename RealT = float, unsigned N>
   constexpr auto euclidDistance(const Index<N> &a, const Index<N> &b)
@@ -137,9 +142,11 @@ namespace Ravl2
   //! of the coordinate system. In fact the points 'aa' and 'bb'
   //! represents two vectors and the computed area is equal to
   //! the size of the cross product of these two vectors.
-  // Point<RealT,2> aa(second - *this);   // O'Rourke 1.2
-  // Point<RealT,2> bb(third  - *this);
-  // return aa[0]*bb[1] - aa[1]*bb[0];
+  //!
+  //! It implements the following:
+  //!   Point<RealT,2> aa(second - *this);   // O'Rourke 1.2
+  //!   Point<RealT,2> bb(third  - *this);
+  //!   return aa[0]*bb[1] - aa[1]*bb[0];
   template <typename RealT>
   constexpr RealT triangleArea2(const Point<RealT, 2> &first, const Point<RealT, 2> &second, const Point<RealT, 2> &third)
   {
@@ -147,7 +154,9 @@ namespace Ravl2
   }
 
   using xt::linalg::dot;
+  using xt::linalg::cross;
 
+  //! Cross product of two 2d vectors
   template <typename RealT>
   RealT cross(const Point<RealT, 2> &a, const Point<RealT, 2> &b)
   {
@@ -155,7 +164,7 @@ namespace Ravl2
   }
 
   //! Convert a point to the closest integer index
-  template <unsigned N, typename RealT>
+  template <size_t N, typename RealT>
     requires std::is_floating_point<RealT>::value
   constexpr inline Index<N> toIndex(const Point<RealT, N> &pnt)
   {
@@ -166,13 +175,14 @@ namespace Ravl2
     return ret;
   }
 
-  template <unsigned N, typename RealT>
-    requires std::is_integral<RealT>::value
-  constexpr inline Index<N> toIndex(const Point<RealT, N> &pnt)
+  //! Get the closest integer index from an integer point
+  template <size_t N, typename NumberT>
+    requires std::is_integral<NumberT>::value
+  constexpr inline Index<N> toIndex(const Point<NumberT, N> &pnt)
   {
     Index<N> ret;
     for(unsigned i = 0; i < N; i++) {
-      ret[i] = pnt[i];
+      ret[i] = NumberT(pnt[i]);
     }
     return ret;
   }
@@ -203,5 +213,3 @@ namespace Ravl2
   }
 
 }// namespace Ravl2
-
-

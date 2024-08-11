@@ -39,10 +39,10 @@ namespace Ravl2
     //! Fit circle to a set of points.
     inline constexpr explicit Circle2dC(const std::vector<Point<RealT, 2>> &points)
     {
-      (void) points;
+      (void)points;
       //RealT tmp;
       //FitLSQ(points, tmp);
-      RavlAssertMsg(false,"not implemented");
+      RavlAssertMsg(false, "not implemented");
     }
 
     //! Fit a circle from 3 points on its circumference
@@ -108,28 +108,29 @@ namespace Ravl2
     //! Angle between origin and point p.
     inline constexpr RealT Angle(const Point<RealT, 2> &p) const
     {
-      return angle(p,centre);
+      return angle(p, centre);
     }
 
     //! Get point on circle at given angle.
     inline constexpr Point<RealT, 2> Value(RealT angle) const
     {
       return toPoint<RealT>(centre[0] + radius * std::cos(angle),
-                             centre[1] + radius * std::sin(angle));
+                            centre[1] + radius * std::sin(angle));
     }
 
     //! Distance to closest point on perimeter.
     inline constexpr RealT Distance(const Point<RealT, 2> &p) const
     {
-      return std::abs(euclidDistance(centre,p) - radius);
+      return std::abs(euclidDistance(centre, p) - radius);
     }
 
     //! Serialization support
     template <class Archive>
-    constexpr void serialize( Archive & ar )
+    constexpr void serialize(Archive &ar)
     {
-      ar( cereal::make_nvp("pnt", centre), cereal::make_nvp("r", radius) );
+      ar(cereal::make_nvp("pnt", centre), cereal::make_nvp("r", radius));
     }
+
   private:
     Point<RealT, 2> centre {};
     RealT radius = 0;

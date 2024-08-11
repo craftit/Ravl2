@@ -11,7 +11,6 @@
 
 namespace Ravl2
 {
-
   //! General affine transformation.
 
   template <typename DataT, unsigned N>
@@ -20,66 +19,63 @@ namespace Ravl2
   public:
     using value_type = DataT;
     constexpr static unsigned dimension = N;
+    using PointT = Point<DataT, N>;
 
-    //! Construct no-change transform.
-    inline Affine()
-    {
-      mT = xt::zeros<DataT>({N});
-      mSR = xt::eye<DataT>(N);
-    }
+    //! Construct an identity transform.
+    inline Affine() = default;
 
     //! Copy constructor.
     inline Affine(const Affine &Oth) = default;
 
+    //! Construct from Scale/Rotate matrix and a translation vector.
     inline Affine(const Matrix<DataT, N, N> &SR, const Vector<DataT, N> &T);
-    //: Construct from Scale/Rotate matrix and a translation vector.
 
-    inline Vector<DataT, N> &Translation() { return mT; }
-    //: Access the translation component of the transformation.
+    //! Access the translation component of the transformation.
+    [[nodiscard]] inline Vector<DataT, N> &Translation() { return mT; }
 
-    inline const Vector<DataT, N> &Translation() const { return mT; }
-    //: Constant access to the translation component of the transformation.
+    //! Constant access to the translation component of the transformation.
+    [[nodiscard]] inline const Vector<DataT, N> &Translation() const { return mT; }
 
+    //! In place Scaling along the X & Y axis by value given in the vector.
+    //! If all values 1, then no effect.
     inline void scale(const Vector<DataT, N> &xy);
-    //: In place Scaling along the X & Y axis by value given in the vector.
-    // If all values 1, then no effect.
 
+    //! Add a translation in direction T.
     inline void translate(const Vector<DataT, N> &T);
-    //: Add a translation in direction T.
 
+    //! Transform Vector,  Scale, Rotate, Translate.
+    //! Take a vector and put it though the transformation.
     inline Vector<DataT, N> operator*(const Vector<DataT, N> &in) const;
-    //: Transform Vector,  Scale, Rotate, Translate.
-    // Take a vector and put it though the transformation.
 
+    //! Compose this transform with 'In'
     inline Affine<DataT, N> operator*(const Affine &in) const;
-    //: Compose this transform with 'In'
 
+    //! 'In' / 'Out' = this;
     inline Affine<DataT, N> operator/(const Affine &in) const;
-    //: 'In' / 'Out' = this;
 
-    Affine<DataT, N> inverse() const;
-    //: Generate an inverse transformation.
+    //! Generate an inverse transformation.
+    [[nodiscard]] Affine<DataT, N> inverse() const;
 
-    Matrix<DataT, N, N> &SRMatrix() { return mSR; }
-    //: Get Scale/Rotate matrix.
+    //! Get Scale/Rotate matrix.
+    [[nodiscard]] Matrix<DataT, N, N> &SRMatrix() { return mSR; }
 
-    const Matrix<DataT, N, N> &SRMatrix() const { return mSR; }
-    //: Get Scale/Rotate matrix.
+    //! Get Scale/Rotate matrix.
+    [[nodiscard]] const Matrix<DataT, N, N> &SRMatrix() const { return mSR; }
 
+    //! Assignment.
     inline Affine<DataT, N> &operator=(const Affine &oth);
-    //: Assignment.
 
     //! Check all components of transform are real.
     [[nodiscard]] bool isReal() const;
 
     //! Transform Vector,  scale, Rotate, translate.
     // Take a vector and put it though the transformation.
-    auto operator()(const Vector<DataT, N> &pnt) const
+    auto operator()(const PointT &pnt) const
     {
-      return Vector<DataT, N>(xt::linalg::dot(mSR, pnt) + mT);
+      return PointT(xt::linalg::dot(mSR, pnt) + mT);
     }
 
-    //: Compose this transform with 'In'
+    //! Compose this transform with 'In'
     inline auto operator()(const Affine &in) const
     {
       return Affine(xt::linalg::dot(mSR, in.SRMatrix()), xt::linalg::dot(mSR, in.Translation()) + mT);
@@ -87,14 +83,14 @@ namespace Ravl2
 
     //! Serialization support
     template <class Archive>
-    void serialize( Archive & ar )
+    void serialize(Archive &ar)
     {
-      ar( cereal::make_nvp("SR", mSR), cereal::make_nvp("T", mT) );
+      ar(cereal::make_nvp("SR", mSR), cereal::make_nvp("T", mT));
     }
 
   protected:
-    Matrix<DataT, N, N> mSR;// Scale/rotate.
-    Vector<DataT, N> mT;    // Translate.
+    Matrix<DataT, N, N> mSR = xt::eye<DataT>(N);  //!< Scale/rotate.
+    Vector<DataT, N> mT = xt::zeros<DataT>({N});  //!< Translate.
   };
 
   /////////////////////////////////////////////////

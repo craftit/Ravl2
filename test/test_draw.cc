@@ -5,6 +5,8 @@
 #include "Ravl2/Image/DrawCircle.hh"
 #include "Ravl2/Image/DrawLine.hh"
 #include "Ravl2/Image/DrawFrame.hh"
+#include "Ravl2/Image/DrawText.hh"
+
 
 #define CHECK_EQ(a,b) CHECK((a) == (b))
 #define CHECK_NE(a,b) CHECK_FALSE((a) == (b))
@@ -57,4 +59,35 @@ TEST_CASE("Draw", "[DrawLine]")
   //DrawEllipse(img,(uint8_t) 255,ellipse);
 
 #endif
+}
+
+// Test fonts
+
+
+TEST_CASE("BitmapFont")
+{
+  using namespace Ravl2;
+  auto fnt = DefaultFont();
+  CHECK(fnt.IsValid());
+  auto aGlyph = fnt['a'];
+  CHECK(!aGlyph.empty());
+  //SPDLOG_INFO("Glyph:{}", aGlyph);
+
+  Array<uint8_t,2> img({100,100},' ');
+  DrawText(img,fnt,uint8_t ('1'),Index<2>(50,10),"Hello");
+
+  int count = 0;
+  for(auto x : img) {
+    if(x == '1') {
+      count++;
+    }
+  }
+  CHECK(count == 148);
+  //SPDLOG_INFO("Count:{}", count);
+  //SPDLOG_INFO("Img:{}", img);
+}
+
+TEST_CASE("DrawMask")
+{
+
 }

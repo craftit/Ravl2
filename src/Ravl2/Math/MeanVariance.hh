@@ -95,11 +95,11 @@ namespace Ravl2
 
     //! Serialization support
     template <class Archive>
-    constexpr void serialize( Archive & ar )
+    constexpr void serialize(Archive &ar)
     {
-      ar( cereal::make_nvp("n", mN),
-          cereal::make_nvp("mean", mMean),
-          cereal::make_nvp("variance", mVar));
+      ar(cereal::make_nvp("n", mN),
+         cereal::make_nvp("mean", mMean),
+         cereal::make_nvp("variance", mVar));
     }
 
   private:

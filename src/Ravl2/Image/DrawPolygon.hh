@@ -15,17 +15,25 @@
 namespace Ravl2
 {
 
-  //! Draw a polygon into the image
+  //! @brief Draw a filled polygon into the image
+  //! @param dat The image to draw into
+  //! @param value The value to draw
+  //! @param poly The polygon to draw
   template <typename ArrayT, typename CoordT = float, typename DataT = typename ArrayT::value_type>
     requires WindowedArray<ArrayT, DataT, 2>
   void DrawFilledPolygon(ArrayT &dat, const DataT &value, const Polygon2dC<CoordT> &poly)
   {
     // Draw one-colour polygon
-    for(Polygon2dIterC<CoordT> it(dat, poly); it; ++it)
-      *it = value;
+    for(Polygon2dIterC<CoordT> it(poly); it.valid(); ++it) {
+      fill(clip(dat[it.row()],it.rowIndexRange()), value);
+    }
   }
 
-  //: Draw a poly line into the image.
+  //! @brief Draw a poly line into the image.
+  //! @param dat The image to draw into
+  //! @param value The value to draw
+  //! @param poly The polygon to draw
+
   template <typename ArrayT, typename CoordT = float, typename DataT = typename ArrayT::value_type>
     requires WindowedArray<ArrayT, DataT, 2>
   void DrawPolygon(ArrayT &dat, const DataT &value, const Polygon2dC<CoordT> &poly)
@@ -39,8 +47,12 @@ namespace Ravl2
     }
   }
 
-  //: Draw a shaded polygon into the image
-  // This function requires that DataT has a working operator*(double) function
+  //! @brief Draw a filled, shaded polygon into the image
+  //! This function requires that DataT has a working operator*(double) and += function
+  //! @param dat The image to draw into
+  //! @param values The pixel values to interpolate between, one per vertex of the polygon
+  //! @param poly The polygon to draw
+
   template <typename ArrayT, typename CoordT = float, typename DataT = typename ArrayT::value_type>
     requires WindowedArray<ArrayT, DataT, 2>
   void DrawShadedPolygon(ArrayT &dat, const std::vector<DataT> &values, const Polygon2dC<CoordT> &poly)
@@ -52,7 +64,7 @@ namespace Ravl2
     auto valuesEnd = values.end();
     // Draw shaded polygon
     for(Polygon2dIterC<CoordT> it(dat, poly); it; it++) {
-      auto pnt = toPoint<float>(it.Index());
+      auto pnt = toPoint<float>(it.index());
       // Calculate barycentric coords
       auto coord = poly.BarycentricCoordinate(pnt);
       // Calculate interpolated value
@@ -69,8 +81,12 @@ namespace Ravl2
     }
   }
 
-  //: Draw a shaded polygon into the image
-  // This function requires that DataT has a working operator*(double) function
+  //! @brief Draw a shaded line polygon into the image
+  //! This function requires that DataT has a working operator*(double) function
+  //! @param dat The image to draw into
+  //! @param values The pixel values to interpolate between, one per vertex of the polygon
+  //! @param poly The polygon to draw
+
   template <typename ArrayT, typename CoordT = float, typename DataT = typename ArrayT::value_type>
     requires WindowedArray<ArrayT, DataT, 2>
   void DrawPolygon(ArrayT &dat, const std::vector<DataT> &values, const Polygon2dC<CoordT> &poly)

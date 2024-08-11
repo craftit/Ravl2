@@ -81,18 +81,15 @@ TEST_CASE("IndexRange", "[IndexRange]")
     CHECK_EQ(range2B.area(),4);
     auto iter = range2B.begin();
     CHECK(iter.valid());
-    CHECK(!iter.done());
     Ravl2::Sentinel sent;
 
     for(int i = 0;i < 4;++i) {
       CHECK(iter.valid());
-      CHECK(!iter.done());
       CHECK(sent != iter);
       CHECK(!(sent == iter));
       ++iter;
     }
     CHECK(!iter.valid());
-    CHECK(iter.done());
     CHECK(sent == iter);
     CHECK(!(sent != iter));
   }
