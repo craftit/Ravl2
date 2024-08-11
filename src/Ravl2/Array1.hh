@@ -195,6 +195,7 @@ namespace Ravl2
   public:
     using value_type = DataT;
     constexpr static unsigned dimensions = 1;
+    constexpr ArrayAccess() = default;
 
     constexpr ArrayAccess(const IndexRange<1> *rng, DataT *data, [[maybe_unused]] const int *strides)
         : m_ranges(rng),
@@ -327,8 +328,8 @@ namespace Ravl2
 #endif
 
   protected:
-    const IndexRange<1> *m_ranges;
-    DataT *m_data;
+    const IndexRange<1> *m_ranges = nullptr;
+    DataT *m_data = nullptr;
   };
 
   template <typename DataT>
