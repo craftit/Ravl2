@@ -11,8 +11,7 @@
 #include <cereal/cereal.hpp>
 #include <spdlog/spdlog.h>
 #include "Ravl2/Sentinel.hh"
-#include "Ravl2/Index.hh"
-
+#include "Ravl2/IndexRange.hh"
 #include "Ravl2/Array1.hh"
 
 namespace Ravl2

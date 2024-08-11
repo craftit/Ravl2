@@ -8,7 +8,7 @@
 #include <cereal/cereal.hpp>
 #include <spdlog/spdlog.h>
 #include "Ravl2/Sentinel.hh"
-#include "Ravl2/Index.hh"
+#include "Ravl2/IndexRange1.hh"
 
 namespace Ravl2
 {

@@ -10,7 +10,7 @@
 
 #include <array>
 #include "Ravl2/Geometry/Geometry.hh"
-#include "Ravl2/Index.hh"
+#include "Ravl2/IndexRange.hh"
 
 namespace Ravl2
 {
@@ -101,51 +101,56 @@ namespace Ravl2
     }
     //: Returns the index which is in the 'p' % of the whole range.
 
-    //:-------------------
-    //: Logical operations.
 
+    //! Returns true if the minimum limit is bigger than the maximum limit.
     [[nodiscard]] inline constexpr bool empty() const
     {
       return min() > max();
     }
-    //: Returns true if the minimum limit is bigger than the maximum limit.
 
+    //! @brief Create the range which creates the largest negative area.
+    //! This is useful if you want guarantee the first point involved in
+    //! the rectangle is always covered
+    static constexpr auto mostEmpty()
+    {
+      return Range<RealT,1>(std::numeric_limits<RealT>::max(), std::numeric_limits<RealT>::min());
+    }
+
+    //! Returns true if the minimum limit is smaller than or equal to the maximum value
     [[nodiscard]] inline constexpr bool IsValid() const
     {
       return min() <= max();
     }
-    //: Returns true if the minimum limit is smaller than or equal to the maximum value
 
+    //! Returns true if this range contains the index 'i'.
     [[nodiscard]] inline constexpr bool contains(RealT i) const
     {
       return (min() <= i) && (i <= max());
     }
-    //: Returns true if this range contains the index 'i'.
 
+    //! Returns true if this range contains the subrange 'range'.
     [[nodiscard]] inline constexpr bool contains(const Range<RealT, 1> &range) const
     {
       return contains(range.min()) && contains(range.max());
     }
-    //: Returns true if this range contains the subrange 'range'.
 
+    //! Returns true if both index ranges have the same limits.
     [[nodiscard]] inline constexpr bool operator==(const Range &range) const
     {
       return (min() == range.min()) && (max() == range.max());
     }
-    //: Returns true if both index ranges have the same limits.
 
+    //! Returns true if both the ranges have different limits.
     [[nodiscard]] inline constexpr bool operator!=(const Range &range) const
     {
       return (min() != range.min()) || (max() != range.max());
     }
-    //: Returns true if both the ranges have different limits.
 
+    //! Returns true if this range is inside of the 'range'.
     [[nodiscard]] bool In(const Range &range) const;
-    //: Returns true if this range is inside of the 'range'.
 
+    //! @brief Returns true if this range contains at least one common index with the range 'r'.
     [[nodiscard]] inline bool overlaps(const Range<RealT, 1> &r) const;
-    //: Returns true if this range contains at least one common index with
-    //: the range 'r'.
 
     //:-------------------
     //: Special operations.
@@ -344,8 +349,7 @@ namespace Ravl2
     return *this;
   }
 
-  //-----------------------------------------------------------------------------
-  //: An index range of a 2D array
+  //! @brief An index range of a 2D array
 
   template <typename RealT, unsigned N>
   class Range
@@ -450,8 +454,30 @@ namespace Ravl2
       return ret;
     }
 
-    //! Returns a new rectangle which has layer of the width of 'n'
-    //! removed.
+    //! @brief Test if the range is empty.
+    [[nodiscard]] inline bool empty() const
+    {
+      for(unsigned i = 0; i < N; ++i) {
+        if(mRanges[i].empty()) {
+          return true;
+        }
+      }
+      return false;
+    }
+
+    //! @brief Create the range which creates the largest negative area.
+    //! This is useful if you want guarantee the first point involved in
+    //! the rectangle is always covered
+    static constexpr auto mostEmpty()
+    {
+      Range ret;
+      for(unsigned i = 0; i < N; ++i) {
+        ret[i] = Range<RealT, 1>::mostEmpty();
+      }
+      return ret;
+    }
+
+    //! @brief Returns a new rectangle which is n smaller on all sides.
     [[nodiscard]] inline constexpr Range shrink(RealT n) const
     {
       Range ret;
@@ -461,6 +487,8 @@ namespace Ravl2
       return ret;
     }
 
+    //! @brief Clip this range by 'r'.
+    //! This index range is clipped to contain at most the index range 'r'.
     inline constexpr Range &clipBy(const Range &r)
     {
       for(unsigned i = 0; i < N; ++i) {
@@ -468,8 +496,8 @@ namespace Ravl2
       }
       return *this;
     }
-    //: This index range is clipped to contain at most the index range 'r'.
 
+    //! The value 'r' is clipped to be within this range.
     inline constexpr Vector<RealT, N> Clip(const Vector<RealT, N> &r)
     {
       Vector<RealT, N> result;
@@ -478,8 +506,8 @@ namespace Ravl2
       }
       return result;
     }
-    //: The value 'r' is clipped to be within this range.
 
+    //! Returns true if this range contains the subrange 'oth'.
     [[nodiscard]] constexpr bool contains(const Range<RealT, N> &oth) const
     {
       for(unsigned i = 0; i < N; ++i) {
@@ -490,8 +518,7 @@ namespace Ravl2
       return true;
     }
 
-    //: Returns true if this range contains the subrange 'oth'.
-
+    //! Returns true if this range contains the point 'oth'.
     [[nodiscard]] constexpr bool contains(const Vector<RealT, N> &oth) const
     {
       for(unsigned i = 0; i < N; ++i) {
@@ -501,14 +528,14 @@ namespace Ravl2
       }
       return true;
     }
-    //: Returns true if this range contains the subrange 'oth'.
 
+    //! Shifts the rectangle to the new position.
     inline constexpr const Range &operator+=(const Vector<RealT, N> &offset);
-    //: Shifts the rectangle to the new position.
 
+    //! Shifts the rectangle to the new position.
     inline constexpr const Range &operator-=(const Vector<RealT, N> &offset);
-    //: Shifts the rectangle to the new position.
 
+    //! Shifts the rectangle to the new position.
     inline constexpr Range<RealT, N> operator+(const Vector<RealT, N> &offset) const
     {
       Range<RealT, N> ret;
@@ -517,8 +544,8 @@ namespace Ravl2
       }
       return ret;
     }
-    //: Shifts the rectangle to the new position.
 
+    //! Shifts the rectangle to the new position.
     inline constexpr Range<RealT, N> operator-(const Vector<RealT, N> &offset) const
     {
       Range<RealT, N> ret;
@@ -527,19 +554,18 @@ namespace Ravl2
       }
       return ret;
     }
-    //: Shifts the rectangle to the new position.
 
+    //! Access range in given dimension.
     [[nodiscard]] inline constexpr const Range<RealT, 1> &range(unsigned d) const
     {
       return mRanges[d];
     }
-    //: Access row range.
 
+    //! Access range in given dimension.
     [[nodiscard]] inline constexpr Range<RealT, 1> &range(unsigned d)
     {
       return mRanges[d];
     }
-    //: Access row range.
 
     //! Ensures this rectangle contains given index.
     //! This method checks and changes, if necessary, the 2-dimensional range

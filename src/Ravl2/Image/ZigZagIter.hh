@@ -8,13 +8,13 @@
 
 #pragma once
 
-#include "Ravl2/Index.hh"
+#include "Ravl2/IndexRange.hh"
 
 namespace Ravl2
 {
 
   //! @brief Iterate a rectangle in a Zig Zag pattern from the top left corner.
-  //! Usefull when dealing with forwardDCT coefficients.
+  //! Useful when dealing with forwardDCT coefficients.
 
   class ZigZagIterC
   {
@@ -24,16 +24,16 @@ namespace Ravl2
 
     //! Constructor
     //! Rectangle must be square.
-    ZigZagIterC(const IndexRange<2> &nrect);
+    explicit ZigZagIterC(const IndexRange<2> &nrect);
 
     //! Access image frame.
-    IndexRange<2> &Frame()
+    [[nodiscard]] IndexRange<2> &Frame()
     {
       return rect;
     }
 
     //! Access image frame.
-    const IndexRange<2> &Frame() const
+    [[nodiscard]] const IndexRange<2> &Frame() const
     {
       return rect;
     }
@@ -42,7 +42,7 @@ namespace Ravl2
     bool First();
 
     //! Test if we're at a valid element.
-    bool IsElm() const
+    [[nodiscard]] bool IsElm() const
     {
       return ok;
     }

@@ -50,6 +50,10 @@ add_library(Ravl2Core
     Resource.cc Resource.hh
         LoopIter.cc
         LoopIter.hh
+        IndexRange1.cc
+        IndexRange1.hh
+        IndexRange.cc
+        IndexRange.hh
 )
 
 add_library(ravl2::Ravl2Core ALIAS Ravl2Core)
