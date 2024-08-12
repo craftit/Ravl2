@@ -63,14 +63,35 @@ namespace RavlN
     //:-------------------------
     // Geometrical computations.
 
-    RealT Distance(const LinePP3dC &line);
     //: Returns the shortest distance between this line
     //: and the segment 'line'.
+    RealT Distance(const LinePP3dC &line) {
+      // more information in Rektorys:
+      // Prehled uzite matematiky, SNTL, Praha 1988, p. 205
 
-    RealT Distance(const Point3dC &p) const;
+      Vector3dC axb(Vector().Cross(line.Vector()));
+      RealT modul = axb.Magnitude();
+      if (modul == 0)  // the straight lines are parallel
+        return RavlN::Distance(FirstPoint(),line);
+      // the straight lines are not parallel
+      return RavlN::Abs(Vector3dC(line.FirstPoint() - FirstPoint()).Dot(axb))/modul;
+    }
+
+    RealT Distance(const Point3dC &p) const
+    {
+      Vector3dC lineVector(Vector());
+      return  lineVector.Cross(Vector3dC(FirstPoint() - p)).Magnitude() / lineVector.Magnitude();
+    }
     //: Returns the distance between the point 'p' and this line.
 
-    LinePP3dC ShortestLine(const LinePP3dC &line);
+    LinePP3dC ShortestLine(const LinePP3dC &line)
+    {
+      Vector3dC axb(Vector().Cross(line.Vector()));
+      RealT  axbNorm = axb.Dot(axb);
+      Vector3dC pmr(FirstPoint() - line.FirstPoint());
+      return LinePP3dC(Point3dC(FirstPoint() + Vector() * ((axb.Dot(line.Vector().Cross(pmr))) / axbNorm)),
+                       Point3dC(line.FirstPoint() + line.Vector() * ((axb.Dot(Vector().Cross(pmr))) / axbNorm)));
+    }
     //: Returns the shortest line connecting this to 'line'.
     // The returned line has the first point on this
     // line and the second point on the 'line'.

@@ -23,7 +23,7 @@ namespace Ravl2
       this->push_back(range.max());
       this->push_back(toPoint<RealT>(range[0].min(),range[1].max()));
     } else {
-      // Counter clockwise
+      // Counterclockwise
       this->push_back(range.min());
       this->push_back(toPoint<RealT>(range[0].min(), range[1].max()));
       this->push_back(range.max());
