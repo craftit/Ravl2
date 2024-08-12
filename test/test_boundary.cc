@@ -30,7 +30,7 @@
 #define ASSERT_FLOAT_EQ(a,b) REQUIRE(Ravl2::isNearZero((a) -(b)))
 
 
-TEST_CASE("Follow some codes", "[CrackCodeC]")
+TEST_CASE("CrackCode following")
 {
   using namespace Ravl2;
 
@@ -65,7 +65,7 @@ TEST_CASE("Follow some codes", "[CrackCodeC]")
   }
 }
 
-TEST_CASE("Check relative directions", "[CrackCodeC]")
+TEST_CASE("CrackCode relative directions")
 {
   using namespace Ravl2;
 
@@ -104,7 +104,7 @@ TEST_CASE("Check relative directions", "[CrackCodeC]")
 }
 
 
-TEST_CASE("Check things are working properly", "[Boundary]")
+TEST_CASE("CrackCode properties")
 {
   using namespace Ravl2;
 
@@ -177,15 +177,13 @@ TEST_CASE("Check things are working properly", "[Boundary]")
   }
 }
 
-#if 0
 
-TEST(Image, OrderEdges)
+TEST_CASE("Boundary order edges")
 {
   using namespace Ravl2;
 
-  Array<int,2> emask({5,5});
+  Array<int,2> emask({5,5}, 0);
   
-  emask.fill(0);
   emask[1][1] = 1;
   emask[1][2] = 1;
   emask[1][3] = 1;
@@ -194,19 +192,19 @@ TEST(Image, OrderEdges)
   emask[2][3] = 1;
   emask[3][2] = 1;
   
-  BoundaryC bnds(emask,true);
-  auto lst = bnds.OrderEdges();
+  Boundary bnds = Boundary::traceBoundary(emask,1);
+  auto lst = bnds.orderEdges();
   
   // std::cerr <<"Lst.size()=" << lst.size() << "\n";
   // std::cerr <<"Lst.First().size()=" << lst.First() << "\n";
   // std::cerr <<"Lst.Last() =" << lst.Last() << "\n";
   
-  if(lst.size() != 2) return __LINE__;
-  if((lst.First().size() + lst.Last().size()) != 16) return __LINE__;
+  CHECK(lst.size() == 2);
+  CHECK((lst.front().size() + lst.back().size()) == 16);
   
-  // Check its not a fluke, try a different orientation.
+  // Check it's not a fluke, try a different orientation.
   
-  emask.fill(0);
+  fill(emask, 0);
   emask[1][2] = 1;
   emask[1][3] = 1;
   emask[2][1] = 1;
@@ -215,32 +213,34 @@ TEST(Image, OrderEdges)
   emask[3][2] = 1;
   emask[3][3] = 1;
   
-  BoundaryC bnds2(emask,true);
-  lst = bnds2.OrderEdges();
-  if(lst.size() != 2) return __LINE__;
-  if((lst.First().size() + lst.Last().size()) != 16) return __LINE__;
-  
-  BoundaryC bnds3;
-  bnds3.push_back(CrackC(BVertexC(2,2),1));
-  bnds3.push_back(CrackC(BVertexC(2,3),0));
-  bnds3.push_back(CrackC(BVertexC(3,3),3));
-  lst = bnds3.OrderEdges();
-  if(lst.size() != 1) return __LINE__;
-  if(lst.First().size() != 3) return __LINE__;
-  // std::cerr <<"Lst.size()=" << lst.size() << "\n";
-  // std::cerr <<"Lst.First().size()=" << lst.First() << "\n";
+  Boundary bnds2 = Boundary::traceBoundary(emask,1);
+  lst = bnds2.orderEdges();
+  CHECK(lst.size() == 2);
+  CHECK((lst.front().size() + lst.back().size()) == 16);
 
-  BoundaryC bnds4;
-  bnds4.push_back(CrackC(BVertexC(2,2),1));
-  //bnds4.push_back(CrackC(BVertexC(2,3),0));
-  bnds4.push_back(CrackC(BVertexC(3,3),3));
-  bnds4.push_back(CrackC(BVertexC(3,2),2));
-  lst = bnds4.OrderEdges();  
-  if(lst.size() != 1) return __LINE__;
-  if(lst.First().size() != 3) return __LINE__;
-  //std::cerr <<"Lst.size()=" << lst.size() << "\n";
-  //std::cerr <<"Lst.First().size()=" << lst.First() << "\n";
-  
-  return 0;
+  {
+    std::vector<CrackC> bnds3;
+    bnds3.push_back(CrackC(BoundaryVertex(2, 2), CrackCodeT::CR_RIGHT));
+    bnds3.push_back(CrackC(BoundaryVertex(2, 3), CrackCodeT::CR_DOWN));
+    bnds3.push_back(CrackC(BoundaryVertex(3, 3), CrackCodeT::CR_LEFT));
+    lst = Boundary(bnds).orderEdges();
+    REQUIRE(lst.size() == 1);
+    CHECK(lst.front().size() == 3);
+    // std::cerr <<"Lst.size()=" << lst.size() << "\n";
+    // std::cerr <<"Lst.First().size()=" << lst.First() << "\n";
+  }
+
+  {
+    std::vector<CrackC> bnds4;
+    bnds4.push_back(CrackC(BoundaryVertex(2, 2), CrackCodeT::CR_RIGHT));
+    //bnds4.push_back(CrackC(BoundaryVertex(2,3),0));
+    bnds4.push_back(CrackC(BoundaryVertex(3, 3), CrackCodeT::CR_LEFT));
+    bnds4.push_back(CrackC(BoundaryVertex(3, 2), CrackCodeT::CR_UP));
+    lst = Boundary(bnds4).orderEdges();
+    REQUIRE(lst.size() == 1);
+    CHECK(lst.front().size() == 3);
+    //std::cerr <<"Lst.size()=" << lst.size() << "\n";
+    //std::cerr <<"Lst.First().size()=" << lst.First() << "\n";
+  }
+
 }
-#endif
