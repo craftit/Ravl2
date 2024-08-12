@@ -111,8 +111,8 @@ namespace Ravl2
             *p = **f;
             while(f > fb) {
               f -= ms;
-              auto sc = (*f)->real() + p->real() * w.real() - p->imag() * w.imag();
-              *p = std::complex<RealT>(sc, (*f)->imag() + p->imag() * w.real() + p->real() * w.imag());
+              *p = std::complex<RealT>((*f)->real() + p->real() * w.real() - p->imag() * w.imag(),
+                                       (*f)->imag() + p->imag() * w.real() + p->real() * w.imag());
             }
             w = std::complex<RealT>(w.real() * b.real() - w.imag() * b.imag(),
                                     w.imag() * b.real() + w.real() * b.imag());
@@ -192,9 +192,83 @@ namespace Ravl2
     }
   }
 
+  //! @brief Compute the Fast Fourier Transform of a real signal.
+  //! @param result The output of the FFT.
+  //! @param data The input signal.
+  template<typename RealT>
+  void computeFFT(std::span<std::complex<RealT> > result,std::span<const RealT> data)
+  {
+    (void) result;
+        (void) data;
+  }
+
+  //! @brief Compute inverse Fast Fourier Transform of a real signal.
+  //! @param result The output of the FFT.
+  //! @param data The input signal.
+  template<typename RealT>
+  void computeInverseFFT(std::span<std::complex<RealT> > result,std::span<const RealT> data);
+
+  //! @brief Compute the Fast Fourier Transform of a complex signal.
+  //! @param result The output of the FFT.
+  //! @param data The input signal.
+  template<typename RealT>
+  void computeFFT(std::span<std::complex<RealT> > result,std::span<const std::complex<RealT>> data);
+
+  //! @brief Compute the inverse Fast Fourier Transform of a complex signal.
+  //! @param result The output of the FFT.
+  //! @param data The input signal.
+  template<typename RealT>
+  void computeInverseFFT(std::span<std::complex<RealT> > result,std::span<const std::complex<RealT>> data);
+
 
 #if 0
   //: Constructor.
+
+  //! @brief Fast Fourier Transform (FFT) for 1D signals.
+  //! Uses the CCMath implementation
+
+  template <typename RealT>
+  class FFT1dBodyC
+  {
+  public:
+    FFT1dBodyC(int n,bool iinv,bool zeroPad = false);
+    //: Constructor.
+
+    ~FFT1dBodyC();
+    //: Destructor
+
+    bool Init(int n,bool iinv);
+    //: Create a plan with the given setup.
+
+    Array<std::complex<RealT>,1> Apply(const Array<std::complex<RealT>,1> &dat);
+    //: Apply transform to array.
+    // Note, only the first 'n' byte of dat are processed.
+    // if the array is shorter than the given length, an
+    // exception 'ErrorOutOfRangeC' will be thrown.
+
+    Array<std::complex<RealT>,1> Apply(const Array<RealT,1> &dat);
+    //: Apply transform to real array
+    // Note, only the first 'n' byte of dat are processed.
+    // if the array is shorter than the given length, an
+    // exception 'ErrorOutOfRangeC' will be thrown.
+
+    int N() const
+    { return n; }
+    //: The size of the transform.
+
+    bool IsZeroPad() const
+    { return zeroPad; }
+    //: Test if we're doing zero padding.
+
+  protected:
+    int n;  // Size of the transform.
+    bool inv; // Is the transform backward ??
+    bool pwr2; // Is length a power of two ?
+    bool zeroPad; // Zero pad input to 'n' bytes ?
+    int primeFactors[32];
+    int nf; // Number of factors. Sufficient for all 32-bit lengths.
+  };
+
 
   template <typename RealT>
   FFT1dBodyC<RealT>::FFT1dBodyC(int nn, bool iinv, bool nZeroPad)
