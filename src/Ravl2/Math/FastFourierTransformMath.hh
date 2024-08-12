@@ -6,7 +6,8 @@
 *  public license (LGPL). ( See the lgpl.license file for details.)
 * ------------------------------------------------------------------------
 */
-// Modified by Charles Galambos for use in RAVL.
+// Modified by Charles Galambos for use in Ravl2.
+// See https://github.com/adis300/ccmath for the original code.
 
 #pragma once
 
@@ -361,8 +362,8 @@ namespace Ravl2
     std::array<int, 32> primeFactors {};
     size_t nf = pfac(n, primeFactors.data(), 'o');
     if(nf != n) {
-      SPDLOG_WARN("FFT1dBodyC::Init(), Failed to find prime factors. ");
-      throw std::runtime_error("FFT1dBodyC::Init(), Failed to find prime factors. ");
+      SPDLOG_WARN("Failed to find prime factors. ");
+      throw std::runtime_error("Failed to find prime factors. ");
     }
 
     std::vector<std::complex<RealT>> tmpArr(n);
@@ -391,8 +392,8 @@ namespace Ravl2
     std::array<int, 32> primeFactors {};
     size_t nf = pfac(n, primeFactors.data(), 'o');
     if(nf != n) {
-      SPDLOG_WARN("FFT1dBodyC::Init(), Failed to find prime factors. ");
-      throw std::runtime_error("FFT1dBodyC::Init(), Failed to find prime factors. ");
+      SPDLOG_WARN("ailed to find prime factors. ");
+      throw std::runtime_error("Failed to find prime factors. ");
     }
 
     std::vector<std::complex<RealT>> tmpArr(n);
