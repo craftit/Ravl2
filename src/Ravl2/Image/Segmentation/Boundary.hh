@@ -9,8 +9,10 @@
 
 #pragma once
 
+#include <iostream>
 #include <array>
 #include <unordered_map>
+#include "Ravl2/IndexRange.hh"
 #include "Ravl2/Array.hh"
 #include "Ravl2/Image/Segmentation/Crack.hh"
 #include "Ravl2/Image/Array2Sqr2Iter.hh"
@@ -18,6 +20,7 @@
 
 namespace Ravl2
 {
+  template <typename RealT>
   class Polygon2dC;
 
   //! @brief Crack code boundary
@@ -63,7 +66,7 @@ namespace Ravl2
 
     template <typename ArrayT, typename DataT = typename ArrayT::value_type>
       requires WindowedArray<ArrayT, DataT, 2>
-    static Boundary traceBoundary(const ArrayT &emask, DataT inLabel);
+    [[nodiscard]] static Boundary traceBoundary(const ArrayT &emask, DataT inLabel);
 
     //BoundaryC(const std::vector<DLIterC<CrackC> > & edgeList, bool orient = true);
     //: Creates the boundary from the list of pointers to the elementary edges.
@@ -72,17 +75,17 @@ namespace Ravl2
     //! @brief Get the area of the region which is determined by the 'boundary'.
     //! Note: The area of the region can be negative, if it is a 'hole' in
     //! a plane. This can be inverted with the BReverse() method.
-    int area() const;
+    [[nodiscard]] int area() const;
 
     //! @brief Generate a list of boundaries.
     //! Each item in the list corresponds to a single complete boundary contour.<br>
     //! The edges in each boundary are ordered along the boundary.<br>
     //! The direction of the boundaries is determined by the constructor.<br>
     //! Boundaries that terminate at the edge of the array/image are left open.
-    std::vector<Boundary> orderEdges() const;
+    [[nodiscard]] std::vector<Boundary> orderEdges() const;
 
     //!deprecated: Order boundary from edge. <br> order the edgels of this boundary such that it can be traced continuously along the direction of the first edge. The orientation of the boundary is set according to 'orient'. If the boundary is open, 'firstCrack' and 'orient' are ignored.<br>  Note: There is a bug in this code which can cause an infinite loop for some edge patterns. In particular where the two edges go through the same vertex.
-    std::vector<Boundary> order(const CrackC &firstCrack, bool orient = true);
+    [[nodiscard]] std::vector<Boundary> order(const CrackC &firstCrack);
 
     //! @brief Return the orientation of the boundary.
     //! @return true: object is on the left side of edges relative to their direction;<br> false: on the right.
@@ -110,18 +113,19 @@ namespace Ravl2
     //                    simple polyline. Information Processing Letters,
     //                    25(1):11-12, 1987.
     // Ref.: M Sonka, V Hlavac: Image Processing.
-    std::vector<std::vector<CrackC>> ConvexHull() const;
+    [[nodiscard]] std::vector<std::vector<CrackC>> ConvexHull() const;
 
     //! Get the bounding box around all pixels on the inside edge of the boundary.
-    IndexRange<2> boundingBox() const;
+    [[nodiscard]] IndexRange<2> boundingBox() const;
 
     //! @brief Convert a boundary to a polygon.
     //! @param: bHalfPixelOffset - should (-0.5,-0.5) be added to the polygon points?
     //! This assumes 'bnd' is a single ordered boundary (See BoundryC::OrderEdges();).
     //! Straight edges are compressed into a single segment.
-    Polygon2dC polygon(bool bHalfPixelOffset = false) const;
+    template <typename RealT>
+    [[nodiscard]] Polygon2dC<RealT> polygon(bool bHalfPixelOffset = false) const;
 
-    //! Get number of endges in the boundry
+    //! Get number of edges in the boundary
     [[nodiscard]] auto size() const
     {
       return mEdges.size();
@@ -148,31 +152,31 @@ namespace Ravl2
     //! Returns the hash table for the boundary; all end points which are only
     //! connected to one other point will have at least one invalid
     //! neighbour (-1, -1).
-    std::unordered_map<BoundaryVertex, std::array<BoundaryVertex, 2>> CreateHashtable() const;
+    [[nodiscard]] std::unordered_map<BoundaryVertex, std::array<BoundaryVertex, 2>> CreateHashtable() const;
 
     //! Returns a continuous boundary; if the boundary is open, 'orient' will be
     //! ignored and 'firstCrack' must be one of the end points of the boundary.
-    Boundary OrderContinuous(const std::unordered_map<BoundaryVertex, std::array<BoundaryVertex, 2>> &hashtable, const CrackC &firstCrack, bool orient) const;
+    [[nodiscard]] static Boundary OrderContinuous(const std::unordered_map<BoundaryVertex, std::array<BoundaryVertex, 2>> &hashtable, const CrackC &firstCrack) ;
 
     //! Returns the endpoints of the boundary, i.e. if the boundary is closed,
     //! the list will be empty.
-    std::vector<BoundaryVertex> FindEndpoints(const std::unordered_map<BoundaryVertex, std::array<BoundaryVertex, 2>> &hashtable) const;
+    [[nodiscard]] std::vector<BoundaryVertex> findEndpoints(const std::unordered_map<BoundaryVertex, std::array<BoundaryVertex, 2>> &hashtable) const;
   };
 
   //! Write out the boundary to a stream.
   std::ostream &operator<<(std::ostream &os, const Boundary &bnd);
 
   //! Creates a boundary which connects both boundary vertexes.
-  Boundary Line2Boundary(const BoundaryVertex &startVertex, const BoundaryVertex &endVertex);
+  [[maybe_unused]] Boundary line2Boundary(const BoundaryVertex &startVertex, const BoundaryVertex &endVertex);
 
-  //! Creates a boundary around the rectangle.
+  //! @brief Creates a boundary around the rectangle.
   Boundary toBoundary(IndexRange<2> rect, BoundaryOrientationT type = BoundaryOrientationT::INSIDE_LEFT);
+
 
   template <typename ArrayT, typename DataT>
     requires WindowedArray<ArrayT, DataT, 2>
   Boundary Boundary::traceBoundary(const ArrayT &emask, DataT inLabel)
   {
-    Boundary ret;
     if(emask.range(0).size() < 3 || emask.range(1).size() < 3) {
       SPDLOG_ERROR("RegionMaskBodyC::Boundary(), Mask too small to compute boundary. ");
       return {};

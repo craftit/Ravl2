@@ -210,9 +210,26 @@ namespace Ravl2
   extern template class Index<3>;
 }// namespace Ravl2
 
+
+// Custom specialization of std::hash injected in namespace std.
+template<unsigned N>
+requires (N > 0)
+struct std::hash<Ravl2::Index<N> >
+{
+  std::size_t operator()(const Ravl2::Index<N>& s) const noexcept
+  {
+    std::size_t ret = std::size_t(s[0]);
+    for(unsigned i = 1; i < N; i++) {
+      ret ^= std::size_t(s[i]) << i;
+    }
+    return ret;
+  }
+};
+
 namespace fmt
 {
   template <unsigned N>
   struct formatter<Ravl2::Index<N>> : ostream_formatter {
   };
 }// namespace fmt
+

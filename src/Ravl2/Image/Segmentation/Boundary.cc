@@ -7,8 +7,12 @@
 //! author="Radek Marik"
 //! date="26.04.1994"
 
+
+#include <algorithm>
+#include <spdlog/spdlog.h>
 #include "Ravl2/Image/Segmentation/Boundary.hh"
 #include "Ravl2/Assert.hh"
+#include "Ravl2/Geometry/Polygon2d.hh"
 
 #define DODEBUG 0
 #if DODEBUG
@@ -55,8 +59,6 @@ namespace Ravl2
   int Boundary::area() const
   {
     int area = 0;// region area
-
-#if 1
     for(auto edge : mEdges) {
       // 5 or 2
       switch(edge.crackCode()) {
@@ -67,24 +69,6 @@ namespace Ravl2
         case CrackCodeT::CR_NODIR: break;
       }
     }
-#else
-    int col = 0;// relative column of the boundary pixel
-    // This only works for ordered edges.
-    for(auto edge : mEdges) {
-      switch(edge.crackCode()) {
-        case CrackCodeT::CR_DOWN: area -= col; break;
-        case CrackCodeT::CR_RIGHT: col++; break;
-        case CrackCodeT::CR_UP: area += col; break;
-        case CrackCodeT::CR_LEFT: col--; break;
-        case CrackCodeT::CR_NODIR:
-        default:
-          RavlAssertMsg(0, "BoundaryC::area(), Illegal direction code. ");
-          break;
-      };
-      ONDEBUG(std::cerr << "BoundaryC::area() Area=" << area << " col=" << col << "\n");
-      SPDLOG_INFO("BoundaryC::area() Code {}  Area={} col={}", edge.crackCode(), area, col);
-    }
-#endif
     if(orientation == BoundaryOrientationT::INSIDE_RIGHT)
       return -area;
     return area;
@@ -115,13 +99,13 @@ namespace Ravl2
       return bb;
     bb = IndexRange<2>::mostEmpty();
     if(orientation == BoundaryOrientationT::INSIDE_LEFT) {
-      ONDEBUG(std::cerr << "BoundaryC::boundingBox(), Object is on left. \n");
+      ONDEBUG(std::cerr << "Boundary::boundingBox(), Object is on left. \n");
       for(auto edge : mEdges) {
         Index<2> vx = edge.leftPixel();
         bb.involve(vx);
       }
     } else {
-      ONDEBUG(std::cerr << "BoundaryC::boundingBox(), Object is on right. \n");
+      ONDEBUG(std::cerr << "Boundary::boundingBox(), Object is on right. \n");
       for(auto edge : mEdges) {
         Index<2> vx = edge.rightPixel();
         bb.involve(vx);
@@ -130,50 +114,31 @@ namespace Ravl2
     return bb;
   }
 
-#if 0
-  //: Create a boundary from the edges between 'inLabel' pixels an other values
 
-  template<typename PixelT>
-  BoundaryC::BoundaryC(const Array<PixelT,2> &emask,PixelT inLabel)
-    : orientation(false)
+  std::vector<Boundary> Boundary::order(const CrackC & firstEdge)
   {
-    if(emask.range().Rows() < 3 || emask.range().Cols() < 3) {
-      std::cerr << "RegionMaskBodyC::Boundary(), Mask too small to compute boundary. \n";
-      return;
-    }
-    for(Array2dSqr3IterC<PixelT> it(emask);it;it++) {
-      if(it.DataMM() != inLabel)
-	continue;
-      if(it.DataMR() != inLabel)
-	InsLast(CrackC(it.Index(),CrackCodeT::CR_UP));
-      if(it.DataML() != inLabel)
-	InsLast(CrackC(it.Index(),CrackCodeT::CR_DOWN));
-      if(it.DataTM() != inLabel)
-	InsLast(CrackC(it.Index(),CrackCodeT::CR_LEFT));
-      if(it.DataBM() != inLabel)
-	InsLast(CrackC(it.Index(),CrackCodeT::CR_RIGHT));
-    }
-  }
+    std::vector<Boundary> bnds;
 
-  std::vector<BoundaryC> BoundaryC::Order(const CrackC & firstEdge, bool orient) {
-    std::vector<BoundaryC> bnds;
+    auto hashtable = CreateHashtable();
 
-    RCHashC<BVertexC, std::array<BVertexC,2> > hashtable = CreateHashtable();
-
-    std::vector<BVertexC> endpoints = FindEndpoints(hashtable);
+    std::vector<BoundaryVertex> endpoints = findEndpoints(hashtable);
     if (endpoints.empty()){
-      BoundaryC bnd = OrderContinuous(hashtable, firstEdge, orient);
-      bnds.push_back(bnd);
+      bnds.push_back(OrderContinuous(hashtable, firstEdge));
     }
     else {
-      DLIterC<BVertexC> ep_it(endpoints);
-      for (ep_it.First(); ep_it.valid(); ep_it.next()){
-	BoundaryC bnd = OrderContinuous(hashtable, CrackC(ep_it.Data(), CrackCodeC(CrackCodeT::CR_NODIR)) , orient);
-	DLIterC<BVertexC> ep2_it(endpoints);
-	for (ep2_it.First(); ep2_it.valid(); ep2_it.next()){
-	  if (ep2_it.Data()==bnd.Last().End()) ep2_it.Del();
-	}
-	bnds.push_back(bnd);
+      while(!endpoints.empty()) {
+        BoundaryVertex const ep_it = endpoints.back();
+
+        Boundary bnd = OrderContinuous(hashtable, CrackC(ep_it, CrackCode(CrackCodeT::CR_NODIR)));
+
+        // Go through and make sure the other end is deleted from the list.
+        auto at = std::find(endpoints.begin(), endpoints.end(), bnd.edges().back().vertexEnd());
+        if(at != endpoints.end()) {
+          *at = endpoints.back();
+          endpoints.pop_back();
+        };
+
+        bnds.push_back(std::move(bnd));
       }
     }
 
@@ -181,206 +146,238 @@ namespace Ravl2
   }
 
 
-  //: Generate a set of ordered boundries.
+  std::unordered_map<BoundaryVertex, std::array<BoundaryVertex, 2>>  Boundary::CreateHashtable() const
+  {
+    std::unordered_map<BoundaryVertex, std::array<BoundaryVertex, 2>> hashtable;
 
-  std::vector<BoundaryC> BoundaryC::OrderEdges() const {
-    ONDEBUG(std::cerr << "std::vector<BoundaryC> BoundaryC::OrderEdges() const \n");
-    std::vector<BoundaryC> ret;
+    for(const auto &edge : mEdges)
+    {
+      BoundaryVertex const bvertex1(edge.vertexBegin());
+      BoundaryVertex const bvertex2(edge.vertexEnd());
+      BoundaryVertex const invalid_vertex(-1, -1);
 
-    HashC<CrackC,CrackC> edges;
-    HashC<BVertexC,std::vector<CrackC> > leavers;
-
-    // Make table of all possible paths.
-
-    for(DLIterC<CrackC> it(*this);it;it++) {
-      ONDEBUG(std::cerr << "Begin=" << it->Begin() << "\n");
-      leavers[it->Begin()].push_back(*it);
-    }
-
-    ONDEBUG(std::cerr << "leavers.size()=" << leavers.size() << ". \n");
-
-    // Make table of prefered paths.
-    CrackC invalid(BVertexC(0,0),CrackCodeT::CR_NODIR);
-    for(DLIterC<CrackC> it(*this);it;it++) {
-      ONDEBUG(std::cerr << "End=" << it->End() << "\n");
-      std::vector<CrackC> &lst = leavers[it->End()];
-      Uint size = lst.size();
-      switch(size) {
-      case 0: // Nothing leaving...
-	edges[*it] = invalid;
-	break;
-      case 1:
-	edges[*it] = lst.First();
-	break;
-      case 2:
-	{
-	// Need to choose the edge to follow
-	  RelativeCrackCodeT rc1 = it->Relative(lst.First());
-	  RelativeCrackCodeT rc2 = it->Relative(lst.Last());
-	  if(rc1 > rc2)
-	    edges[*it] = lst.First();
-	  else
-	    edges[*it] = lst.Last();
-	} break;
-      default:
-	RavlAssertMsg(0,"BoundaryC::OrderEdges(), Unexpected edge topology. ");
-	break;
-      }
-    }
-    leavers.Empty(); // Done with these.
-
-    // Seperate boundries or boundry segements.
-    ONDEBUG(std::cerr << "edges.size()=" << edges.size() << ". \n");
-
-    CrackC at,nxt;
-    HashC<CrackC,BoundaryC> startMap;
-    while(!edges.empty()) {
-      HashIterC<CrackC,CrackC> it(edges); // Use iterator to pick an edge.
-      BoundaryC bnds;
-      at=it.Key();
-      CrackC first = at;
-      for(;;) {
-	if(!edges.Lookup(at,nxt))
-	  break;
-	bnds.push_back(at);
-	edges.Del(at);
-	at = nxt;
-      }
-      if(at == first) { // If its a loop we're done.
-	ONDEBUG(std::cerr << "Found closed boundary. \n");
-	ret.push_back(bnds);
+      auto at = hashtable.find(bvertex1);
+      if(at == hashtable.end()) {
+        hashtable.emplace(bvertex1, std::array<BoundaryVertex, 2> {bvertex2, invalid_vertex});
       } else {
-	ONDEBUG(std::cerr << "Found open boundary. \n");
-	// Tie boundry segements together.
-	// 'at' is the last edge from the segment.
-	// 'first' is the first edge from the segment.
-	BoundaryC nbnds;
-	if(startMap.Lookup(at,nbnds)) {
-	  ONDEBUG(std::cerr << "Joinging boundary. \n");
-	  //nbnds.DelFirst();
-	  bnds.MoveLast(nbnds);
-	  startMap.Del(at);
-	  first = bnds.First();
-	}
-	startMap[first] = bnds;
-      }
-    }
-
-    // Clean up any remaining boundry segments.
-    ONDEBUG(std::cerr << "StartMap.size()=" << startMap.size() << "\n");
-    for(HashIterC<CrackC,BoundaryC> smit(startMap);smit;smit++)
-      ret.push_back(smit.Data());
-    return ret;
-  }
-
-  RCHashC<BVertexC, std::array<BVertexC,2> > BoundaryC::CreateHashtable() const {
-    RCHashC<BVertexC, std::array<BVertexC,2> > hashtable;
-    for(DLIterC<CrackC> edge(*this);edge;edge++) {
-      BVertexC bvertex1(edge->Begin());
-      BVertexC bvertex2(edge->End());
-      BVertexC invalid_vertex(-1, -1);
-
-      if (!hashtable.IsElm(bvertex1)){
-	hashtable.Insert(bvertex1, std::array<BVertexC,2>(bvertex2, invalid_vertex));
-      }
-      else {
-	BVertexC neighbouring_vertex = hashtable[bvertex1].A();
-	hashtable.Insert(bvertex1, std::array<BVertexC,2>(neighbouring_vertex, bvertex2));
+        hashtable.emplace(bvertex1, std::array<BoundaryVertex,2>{at->second[0], bvertex2});
       }
 
-      if (!hashtable.IsElm(bvertex2)){
-	hashtable.Insert(bvertex2, std::array<BVertexC,2>(bvertex1, invalid_vertex));
-      }
-      else {
-	BVertexC neighbouring_vertex = hashtable[bvertex2].A();
-	hashtable.Insert(bvertex2, std::array<BVertexC,2>(neighbouring_vertex, bvertex1));
+      at = hashtable.find(bvertex2);
+      if(at == hashtable.end()) {
+        hashtable.emplace(bvertex2, std::array<BoundaryVertex, 2> {bvertex1, invalid_vertex});
+      } else {
+        hashtable.emplace(bvertex2, std::array<BoundaryVertex,2>{at->second[0], bvertex1});
       }
     }
 
     return hashtable;
   }
 
-  BoundaryC BoundaryC::OrderContinuous(const RCHashC<BVertexC,std::array<BVertexC,2> > & hashtable,
-				       const CrackC & firstEdge,
-				       bool orient
-				       ) const
+  std::vector<BoundaryVertex> Boundary::findEndpoints(const std::unordered_map<BoundaryVertex, std::array<BoundaryVertex,2> > & hashtable) const
   {
-    BoundaryC bnd(orient);
-    BVertexC present_vertex = firstEdge.Begin();
-    BVertexC next_vertex(-1, -1);
-    BVertexC previous_vertex(-1, -1);
-    BVertexC invalid_vertex(-1, -1);
-
-    BVertexC neighbour1 = hashtable[present_vertex].A();
-    BVertexC neighbour2 = hashtable[present_vertex].B();
-    if (firstEdge.End()==neighbour1) next_vertex = neighbour1;
-    else if (firstEdge.End()==neighbour2) next_vertex = neighbour2;
-    else if (neighbour1==invalid_vertex) next_vertex = neighbour2;
-    else if (neighbour2==invalid_vertex) next_vertex = neighbour1;
-    bnd.push_back(CrackC(present_vertex, next_vertex));
-
-    for(;;){
-      present_vertex = bnd.Last().End();
-      previous_vertex = bnd.Last().Begin();
-      neighbour1 = hashtable[present_vertex].A();
-      neighbour2 = hashtable[present_vertex].B();
-
-      if (previous_vertex == neighbour1)
-	next_vertex = neighbour2;
-      else next_vertex = neighbour1;
-
-      if (next_vertex!=invalid_vertex)
-	bnd.push_back(CrackC(present_vertex, next_vertex));
-
-      if (next_vertex==bnd.First().Begin() || next_vertex==invalid_vertex) break;
-      // boundary has been traced
-    }
-
-    return bnd;
-  }
-
-  std::vector<BVertexC> BoundaryC::FindEndpoints(const RCHashC<BVertexC, std::array<BVertexC,2> > & hashtable) const {
-    BVertexC invalid_vertex(-1, -1);
-    HashIterC<BVertexC, std::array<BVertexC,2> > hash_iter(hashtable);
-    std::vector<BVertexC> endpoints;
-    for(hash_iter.First(); hash_iter.valid(); hash_iter.next()){
-      BVertexC neighbour1 = hash_iter.Data().A();
-      BVertexC neighbour2 = hash_iter.Data().B();
+    BoundaryVertex const invalid_vertex(-1, -1);
+    std::vector<BoundaryVertex> endpoints;
+    for(auto it : hashtable) {
+      BoundaryVertex const neighbour1 = it.second[0];
+      BoundaryVertex const neighbour2 = it.second[1];
       if (neighbour1==invalid_vertex || neighbour2==invalid_vertex)
-	endpoints.push_back(hash_iter.Key());
+        endpoints.push_back(it.first);
     }
     return endpoints;
   }
 
-  Polygon2dC Boundary::Polygon2d(bool bHalfPixelOffset) const {
-    Polygon2dC polygon;
-    DLIterC<CrackC> et(*this);
-    if(!et) return polygon;
-    polygon.push_back(Point<RealT,2>(*et));
-    CrackCodeT lastCode = et->Code();
+  template <typename RealT>
+  Polygon2dC<RealT> Boundary::polygon(bool bHalfPixelOffset) const
+  {
+    Polygon2dC<RealT> polygon;
+    
+    auto et = mEdges.begin();
+    auto endAt = mEdges.end();
+    if(et == endAt) {
+      return polygon;
+    }
+    polygon.push_back(toPoint<RealT>(*et));
+    auto lastCode = et->code();
     if (bHalfPixelOffset) {
-      Point<RealT,2> halfPixelOffset(-0.5,-0.5);
-      for (et++; et; et++) {
-        if (et->Code() == lastCode)
+      auto halfPixelOffset = toPoint<RealT>(-0.5f,-0.5f);
+      polygon.back() += halfPixelOffset;
+      for (++et; et != endAt; ++et) {
+        if (et->code() == lastCode)
           continue;
-        lastCode = et->Code();
-        polygon.push_back(Point<RealT,2>(*et) + halfPixelOffset);
+        lastCode = et->code();
+        polygon.push_back(toPoint<RealT>(*et) + halfPixelOffset);
       }
     }
     else {
-      for (et++; et; et++) {
-        if (et->Code() == lastCode)
+      for (++et; et != endAt; ++et) {
+        if (et->code() == lastCode)
           continue;
-        lastCode = et->Code();
-        polygon.push_back(Point<RealT,2>(*et));
+        lastCode = et->code();
+        polygon.push_back(toPoint<RealT>(*et));
       }
     }
     return polygon;
   }
 
-#endif
 
-  Boundary Line2Boundary(const BoundaryVertex &startVertex, const BoundaryVertex &endVertex)
+   Boundary Boundary::OrderContinuous(const std::unordered_map<BoundaryVertex,std::array<BoundaryVertex,2> > & hashtable,
+                                     const CrackC & firstEdge
+  )
+  {
+    std::vector<CrackC> bnd;
+    BoundaryVertex present_vertex = firstEdge.vertexBegin();
+    BoundaryVertex next_vertex(-1, -1);
+    BoundaryVertex previous_vertex(-1, -1);
+    BoundaryVertex const invalid_vertex(-1, -1);
+
+    auto it = hashtable.find(present_vertex);
+    if(it == hashtable.end()) {
+      SPDLOG_ERROR("Boundary::OrderContinuous(), No entry in hashtable for vertex. ");
+      RavlAssertMsg(0, "Boundary::OrderContinuous(), No entry in hashtable for vertex. ");
+      return {};
+    }
+    BoundaryVertex neighbour1 = it->second[0];
+    BoundaryVertex neighbour2 = it->second[1];
+
+    if (firstEdge.vertexEnd()==neighbour1) next_vertex = neighbour1;
+    else if (firstEdge.vertexEnd()==neighbour2) next_vertex = neighbour2;
+    else if (neighbour1==invalid_vertex) next_vertex = neighbour2;
+    else if (neighbour2==invalid_vertex) next_vertex = neighbour1;
+
+    bnd.emplace_back(present_vertex, next_vertex);
+
+    for(;;){
+      present_vertex = bnd.back().vertexEnd();
+      previous_vertex = bnd.back().vertexBegin();
+      it = hashtable.find(present_vertex);
+      if(it == hashtable.end()) {
+        SPDLOG_ERROR("Boundary::OrderContinuous(), No entry in hashtable for vertex. ");
+        RavlAssertMsg(0, "Boundary::OrderContinuous(), No entry in hashtable for vertex. ");
+        return {};
+      }
+      neighbour1 = it->second[0];
+      neighbour2 = it->second[1];
+
+      if (previous_vertex == neighbour1) {
+        next_vertex = neighbour2;
+      } else {
+        next_vertex = neighbour1;
+      }
+
+      if (next_vertex!=invalid_vertex) {
+        bnd.emplace_back(present_vertex, next_vertex);
+      }
+
+      if (next_vertex==bnd.front().vertexBegin() || next_vertex==invalid_vertex) {
+        break;
+      }
+      // boundary has been traced
+    }
+
+    return  Boundary(std::move(bnd));
+  }
+
+
+  //: Generate a set of ordered boundaries.
+
+  std::vector<Boundary> Boundary::orderEdges() const
+  {
+    ONDEBUG(std::cerr << "std::vector<Boundary> Boundary::OrderEdges() const \n");
+    std::vector<Boundary> ret;
+
+    std::unordered_map<CrackC,CrackC> edges;
+    std::unordered_map<BoundaryVertex,std::vector<CrackC> > leavers;
+
+    // Make table of all possible paths.
+    for(auto it : mEdges) {
+      ONDEBUG(std::cerr << "End=" << it.vertexEnd() << "\n");
+      leavers[it.vertexEnd()].push_back(it);
+    }
+
+    ONDEBUG(std::cerr << "leavers.size()=" << leavers.size() << ". \n");
+
+    // Make table of prefered paths.
+    CrackC invalid(BoundaryVertex(0,0),CrackCodeT::CR_NODIR);
+
+    for(auto it: mEdges) {
+      ONDEBUG(std::cerr << "End=" << it->vertexEnd() << "\n");
+      std::vector<CrackC> &lst = leavers[it.vertexEnd()];
+      size_t size = lst.size();
+      switch(size) {
+        case 0: // Nothing leaving...
+          edges[it] = invalid;
+          break;
+        case 1:
+          edges[it] = lst.front();
+          break;
+        case 2:
+        {
+          // Need to choose the edge to follow
+          RelativeCrackCodeT rc1 = it.code().relative(lst.front().code());
+          RelativeCrackCodeT rc2 = it.code().relative(lst.back().code());
+          if(rc1 > rc2) {
+            edges[it] = lst.front();
+          } else {
+            edges[it] = lst.back();
+          }
+        } break;
+        default:
+          RavlAssertMsg(0,"Boundary::OrderEdges(), Unexpected edge topology. ");
+          break;
+      }
+    }
+    leavers.clear(); // Done with these.
+
+    // Seperate boundaries or boundary segments.
+    ONDEBUG(std::cerr << "edges.size()=" << edges.size() << ". \n");
+
+    CrackC at;
+    CrackC nxt;
+    std::unordered_map<CrackC,Boundary> startMap;
+    while(!edges.empty()) {
+      auto it = edges.begin(); // Use iterator to pick an edge.
+      std::vector<CrackC> bnds;
+      at=it->first;
+      CrackC first = at;
+      for(;;) {
+        auto atIsAt = edges.find(at);
+        if(atIsAt == edges.end()) {
+          break;
+        }
+        bnds.push_back(at);
+        edges.erase(atIsAt);
+        at = nxt;
+      }
+      if(at == first) { // If its a loop we're done.
+        ONDEBUG(std::cerr << "Found closed boundary. \n");
+        ret.push_back(Boundary(std::move(bnds)));
+      } else {
+        ONDEBUG(std::cerr << "Found open boundary. \n");
+        // Tie boundary segments together.
+        // 'at' is the last edge from the segment.
+        // 'first' is the first edge from the segment.
+        auto atIsAt = startMap.find(at);
+        if(atIsAt != startMap.end()) {
+          ONDEBUG(std::cerr << "Joining boundary. \n");
+          //nbnds.DelFirst();
+          const auto &edgeList = atIsAt->second.edges();
+          bnds.insert(bnds.end(),edgeList.begin(),edgeList.end());
+          first = bnds.front();
+          startMap.erase(atIsAt);
+        }
+        startMap[first] = Boundary(std::move(bnds));
+      }
+    }
+
+    // Clean up any remaining boundary segments.
+    ONDEBUG(std::cerr << "StartMap.size()=" << startMap.size() << "\n");
+    for(auto &smit : startMap)
+      ret.push_back(smit.second);
+    return ret;
+  }
+
+  [[maybe_unused]] Boundary line2Boundary(const BoundaryVertex &startVertex, const BoundaryVertex &endVertex)
   {
     std::vector<CrackC> boundary;
     BoundaryVertex vertex(startVertex);
@@ -502,7 +499,7 @@ namespace Ravl2
   //! Write out the boundary to a stream.
   std::ostream &operator<<(std::ostream &os, const Boundary &bnd)
   {
-    os << "BoundaryC: ";
+    os << "Boundary: ";
     for(auto edge : bnd.edges()) {
       os << edge << ",";
     }
