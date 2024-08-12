@@ -32,24 +32,24 @@ namespace Ravl2
   template <typename RealT>
   void fft2(std::complex<RealT> *ft, int m, int inv)
   {
-    int n, i, j, k, mm, mp;
+    int i, j, k, mm, mp;
     const RealT tpi = std::numbers::pi_v<RealT> * 2; // 2 * pi
-    std::complex<RealT> *p, *q, *pf;
-    n = 1;
-    n <<= m;
-    pf = ft + n - 1;
+    std::complex<RealT> *p, *q;
+    int n = 1 << m;
+    std::complex<RealT> *pf = ft + n - 1;
     for(j = 0, p = ft; p < pf; ++p) {
       q = ft + j;
       if(p < q) {
         RealT t = p->real();
         p->real(q->real());
         q->real(t);
-        
+
         t = p->imag();
         p->imag(q->imag());
         q->imag(t);
       }
-      for(mm = n / 2; mm <= j; mm /= 2) j -= mm;
+      for(mm = n / 2; mm <= j; mm /= 2)
+        j -= mm;
       j += mm;
     }
     if(inv == 'd') {
