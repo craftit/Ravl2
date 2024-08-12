@@ -99,13 +99,13 @@ namespace Ravl2
       return bb;
     bb = IndexRange<2>::mostEmpty();
     if(orientation == BoundaryOrientationT::INSIDE_LEFT) {
-      ONDEBUG(std::cerr << "Boundary::boundingBox(), Object is on left. \n");
+      ONDEBUG(SPDLOG_INFO("Boundary::boundingBox(), Object is on left. "));
       for(auto edge : mEdges) {
         Index<2> vx = edge.leftPixel();
         bb.involve(vx);
       }
     } else {
-      ONDEBUG(std::cerr << "Boundary::boundingBox(), Object is on right. \n");
+      ONDEBUG(SPDLOG_INFO("Boundary::boundingBox(), Object is on right. "));
       for(auto edge : mEdges) {
         Index<2> vx = edge.rightPixel();
         bb.involve(vx);
@@ -283,28 +283,28 @@ namespace Ravl2
 
   std::vector<Boundary> Boundary::orderEdges() const
   {
-    ONDEBUG(std::cerr << "std::vector<Boundary> Boundary::OrderEdges() const \n");
+    ONDEBUG(SPDLOG_INFO("std::vector<Boundary> Boundary::OrderEdges() const"));
     std::vector<Boundary> ret;
 
-    std::unordered_map<CrackC,CrackC> edges;
     std::unordered_map<BoundaryVertex,std::vector<CrackC> > leavers;
 
     // Make table of all possible paths.
     for(auto it : mEdges) {
-      ONDEBUG(std::cerr << "End=" << it.vertexEnd() << "\n");
-      leavers[it.vertexEnd()].push_back(it);
+      ONDEBUG(SPDLOG_INFO("Begin={} End={}", it.vertexBegin(), it.vertexEnd()));
+      leavers[it.vertexBegin()].push_back(it);
     }
 
-    ONDEBUG(std::cerr << "leavers.size()=" << leavers.size() << ". \n");
+    ONDEBUG(SPDLOG_INFO("leavers.size()={}", leavers.size()));
 
-    // Make table of prefered paths.
+    // Make table of preferred paths.
     CrackC invalid(BoundaryVertex(0,0),CrackCodeT::CR_NODIR);
 
+    std::unordered_map<CrackC,CrackC> edges;
     for(auto it: mEdges) {
-      ONDEBUG(std::cerr << "End=" << it->vertexEnd() << "\n");
       std::vector<CrackC> &lst = leavers[it.vertexEnd()];
-      size_t size = lst.size();
-      switch(size) {
+      size_t lstSize = lst.size();
+      ONDEBUG(SPDLOG_INFO("End={} Size:{}", it.vertexEnd(),lstSize));
+      switch(lstSize) {
         case 0: // Nothing leaving...
           edges[it] = invalid;
           break;
@@ -323,22 +323,20 @@ namespace Ravl2
           }
         } break;
         default:
-          RavlAssertMsg(0,"Boundary::OrderEdges(), Unexpected edge topology. ");
+          RavlAssertMsg(0,"Boundary::orderEdges(), Unexpected edge topology. ");
           break;
       }
     }
     leavers.clear(); // Done with these.
 
-    // Seperate boundaries or boundary segments.
-    ONDEBUG(std::cerr << "edges.size()=" << edges.size() << ". \n");
+    // Separate boundaries or boundary segments.
+    ONDEBUG(SPDLOG_INFO("edges.size()={}", edges.size()));
 
-    CrackC at;
-    CrackC nxt;
     std::unordered_map<CrackC,Boundary> startMap;
     while(!edges.empty()) {
       auto it = edges.begin(); // Use iterator to pick an edge.
       std::vector<CrackC> bnds;
-      at=it->first;
+      CrackC at = it->first;
       CrackC first = at;
       for(;;) {
         auto atIsAt = edges.find(at);
@@ -346,20 +344,20 @@ namespace Ravl2
           break;
         }
         bnds.push_back(at);
+        at = atIsAt->second;
         edges.erase(atIsAt);
-        at = nxt;
       }
       if(at == first) { // If its a loop we're done.
-        ONDEBUG(std::cerr << "Found closed boundary. \n");
+        ONDEBUG(SPDLOG_INFO("Found closed boundary with {} edges ", bnds.size()));
         ret.push_back(Boundary(std::move(bnds)));
       } else {
-        ONDEBUG(std::cerr << "Found open boundary. \n");
+        ONDEBUG(SPDLOG_INFO("Found open boundary. "));
         // Tie boundary segments together.
         // 'at' is the last edge from the segment.
         // 'first' is the first edge from the segment.
         auto atIsAt = startMap.find(at);
         if(atIsAt != startMap.end()) {
-          ONDEBUG(std::cerr << "Joining boundary. \n");
+          ONDEBUG(SPDLOG_INFO("Joining boundary. "));
           //nbnds.DelFirst();
           const auto &edgeList = atIsAt->second.edges();
           bnds.insert(bnds.end(),edgeList.begin(),edgeList.end());
@@ -371,7 +369,7 @@ namespace Ravl2
     }
 
     // Clean up any remaining boundary segments.
-    ONDEBUG(std::cerr << "StartMap.size()=" << startMap.size() << "\n");
+    ONDEBUG(SPDLOG_INFO("StartMap.size()={}", startMap.size()));
     for(auto &smit : startMap)
       ret.push_back(smit.second);
     return ret;

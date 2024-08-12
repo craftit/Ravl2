@@ -182,52 +182,78 @@ TEST_CASE("Boundary order edges")
 {
   using namespace Ravl2;
 
-  Array<int,2> emask({5,5}, 0);
-  
-  emask[1][1] = 1;
-  emask[1][2] = 1;
-  emask[1][3] = 1;
-  emask[2][1] = 1;
-  emask[3][1] = 1;
-  emask[2][3] = 1;
-  emask[3][2] = 1;
-  
-  Boundary bnds = Boundary::traceBoundary(emask,1);
-  auto lst = bnds.orderEdges();
-  
-  // std::cerr <<"Lst.size()=" << lst.size() << "\n";
-  // std::cerr <<"Lst.First().size()=" << lst.First() << "\n";
-  // std::cerr <<"Lst.Last() =" << lst.Last() << "\n";
-  
-  CHECK(lst.size() == 2);
-  CHECK((lst.front().size() + lst.back().size()) == 16);
-  
-  // Check it's not a fluke, try a different orientation.
-  
-  fill(emask, 0);
-  emask[1][2] = 1;
-  emask[1][3] = 1;
-  emask[2][1] = 1;
-  emask[3][1] = 1;
-  emask[2][3] = 1;
-  emask[3][2] = 1;
-  emask[3][3] = 1;
-  
-  Boundary bnds2 = Boundary::traceBoundary(emask,1);
-  lst = bnds2.orderEdges();
-  CHECK(lst.size() == 2);
-  CHECK((lst.front().size() + lst.back().size()) == 16);
+  {
+    Array<int, 2> emask({5, 5}, 0);
+
+    emask[1][1] = 1;
+    emask[1][2] = 1;
+    emask[1][3] = 1;
+    emask[2][2] = 1;
+    emask[2][1] = 1;
+    emask[3][1] = 1;
+    emask[2][3] = 1;
+    emask[3][2] = 1;
+
+    //SPDLOG_INFO("Mask: {}", emask);
+
+    Boundary bnds = Boundary::traceBoundary(emask, 1);
+    CHECK(bnds.area() == 8);
+    CHECK(bnds.edges().size() == 12);
+    auto lst = bnds.orderEdges();
+
+    CHECK(lst.size() == 1);
+    CHECK(lst.front().size() == 12);
+  }
+#if 1
+  {
+    Array<int, 2> emask({5, 5}, 0);
+
+    emask[1][1] = 1;
+    emask[1][2] = 1;
+    emask[1][3] = 1;
+    emask[2][1] = 1;
+    emask[3][1] = 1;
+    emask[2][3] = 1;
+    emask[3][2] = 1;
+
+    //SPDLOG_INFO("Mask 1: {}", emask);
+
+    Boundary bnds = Boundary::traceBoundary(emask, 1);
+    CHECK(bnds.edges().size() == 16);
+    auto lst = bnds.orderEdges();
+
+    CHECK(lst.size() == 2);
+    CHECK((lst.front().size() + lst.back().size()) == 16);
+  }
+
+  {
+    // Check it's not a fluke, try a different orientation.
+    Array<int, 2> emask({5, 5}, 0);
+
+    emask[1][2] = 1;
+    emask[1][3] = 1;
+    emask[2][1] = 1;
+    emask[3][1] = 1;
+    emask[2][3] = 1;
+    emask[3][2] = 1;
+    emask[3][3] = 1;
+
+    //SPDLOG_INFO("Mask 2: {}", emask);
+
+    Boundary bnds2 = Boundary::traceBoundary(emask, 1);
+    auto lst = bnds2.orderEdges();
+    CHECK(lst.size() == 2);
+    CHECK((lst.front().size() + lst.back().size()) == 16);
+  }
 
   {
     std::vector<CrackC> bnds3;
     bnds3.push_back(CrackC(BoundaryVertex(2, 2), CrackCodeT::CR_RIGHT));
     bnds3.push_back(CrackC(BoundaryVertex(2, 3), CrackCodeT::CR_DOWN));
     bnds3.push_back(CrackC(BoundaryVertex(3, 3), CrackCodeT::CR_LEFT));
-    lst = Boundary(bnds).orderEdges();
+    auto lst = Boundary(bnds3).orderEdges();
     REQUIRE(lst.size() == 1);
     CHECK(lst.front().size() == 3);
-    // std::cerr <<"Lst.size()=" << lst.size() << "\n";
-    // std::cerr <<"Lst.First().size()=" << lst.First() << "\n";
   }
 
   {
@@ -236,11 +262,10 @@ TEST_CASE("Boundary order edges")
     //bnds4.push_back(CrackC(BoundaryVertex(2,3),0));
     bnds4.push_back(CrackC(BoundaryVertex(3, 3), CrackCodeT::CR_LEFT));
     bnds4.push_back(CrackC(BoundaryVertex(3, 2), CrackCodeT::CR_UP));
-    lst = Boundary(bnds4).orderEdges();
+    auto lst = Boundary(bnds4).orderEdges();
     REQUIRE(lst.size() == 1);
     CHECK(lst.front().size() == 3);
-    //std::cerr <<"Lst.size()=" << lst.size() << "\n";
-    //std::cerr <<"Lst.First().size()=" << lst.First() << "\n";
   }
+#endif
 
 }
