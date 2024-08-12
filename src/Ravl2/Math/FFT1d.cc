@@ -14,6 +14,7 @@
 */
 
 #include <complex>
+#include <numbers>
 #include "Ravl2/Assert.hh"
 #include "Ravl2/Math.hh"
 #include "Ravl2/Math/FFT1d.hh"
@@ -28,14 +29,67 @@
 
 namespace Ravl2
 {
+  template <typename RealT>
+  void fft2(std::complex<RealT> *ft, int m, int inv)
+  {
+    int n, i, j, k, mm, mp;
+    const RealT tpi = std::numbers::pi_v<RealT> * 2; // 2 * pi
+    std::complex<RealT> *p, *q, *pf;
+    n = 1;
+    n <<= m;
+    pf = ft + n - 1;
+    for(j = 0, p = ft; p < pf; ++p) {
+      q = ft + j;
+      if(p < q) {
+        RealT t = p->real();
+        p->real(q->real());
+        q->real(t);
+        
+        t = p->imag();
+        p->imag(q->imag());
+        q->imag(t);
+      }
+      for(mm = n / 2; mm <= j; mm /= 2) j -= mm;
+      j += mm;
+    }
+    if(inv == 'd') {
+      RealT s = 1. / n;
+      for(p = ft; p <= pf;) {
+        (*p) *= s;
+        p++;
+      }
+    }
+    for(i = mp = 1; i <= m; ++i) {
+      mm = mp;
+      mp *= 2;
+      RealT ang = tpi / mp;
+      if(inv == 'd')
+        ang = -ang;
+      auto w = std::complex<RealT>(std::cos(ang),std::sin(ang));
+      for(j = 0; j < n; j += mp) {
+        p = ft + j;
+        auto u = std::complex<RealT>(1, 0);
+        for(k = 0; k < mm; ++k, ++p) {
+          q = p + mm;
+          std::complex<RealT> t1 = std::complex<RealT>(
+            q->real() * u.real() - q->imag() * u.imag(),
+            q->imag() * u.real() + q->real() * u.imag()
+          );
+          *q = p - t1;
+          *p += t1;
+          u = std::complex<RealT>(u.real() * w.real() - u.imag() * w.imag(),
+                                  u.imag() * w.real() + u.real() * w.imag());
+        }
+      }
+    }
+  }
 
-  using ccomplex = std::complex<float>;
-  using Cpx = ccomplex;
 
-  void pshuf(Cpx **pa, Cpx **pb, int *kk, int n)
+  template <typename RealT>
+  void pshuf(std::complex<RealT> **pa, std::complex<RealT> **pb, int *kk, int n)
   {
     int *m, i, j, k, jk;
-    ccomplex **p, **q;
+    std::complex<RealT> **p, **q;
     std::vector<int> mm(size_t(kk[0] + 1));
     for(i = 1, mm[0] = 1, m = mm.data(); i <= kk[0]; ++i, ++m)
       *(m + 1) = *m * kk[i];
@@ -51,16 +105,16 @@ namespace Ravl2
     }
   }
 
-  void fftgc(Cpx **pc, ccomplex *ft, int n, int *kk, int inv)
+  template <typename RealT>
+  void fftgc(std::complex<RealT> **pc, std::complex<RealT> *ft, int n, int *kk, int inv)
   {
-    using RealT = float;
-    Cpx a, b, z, w, *d, *p, **f, **fb;
-    const auto tpi = RealT(6.283185307179586);
+    std::complex<RealT> a, b, z, w, *d, *p, **f, **fb;
+    const auto tpi = std::numbers::pi_v<RealT> * 2;
     RealT q;
     int *mm, *m, kp, i, j, k, jk, jl;
     std::vector<int> mmVec(size_t(kk[0] + 1));
     mm = mmVec.data();
-    std::vector<Cpx> dVec((size_t(kk[kk[0]])));
+    std::vector<std::complex<RealT>> dVec((size_t(kk[kk[0]])));
     d = dVec.data();
 
     for(i = 1, *mm = 1, m = mm; i <= kk[0]; ++i, ++m)
@@ -85,7 +139,7 @@ namespace Ravl2
         p++;
       }
     } else {
-      std::vector<Cpx *> fVec((size_t(n)));
+      std::vector<std::complex<RealT> *> fVec((size_t(n)));
       f = fVec.data();
       for(j = 0; j < n; ++j)
         f[j] = pc[j];
@@ -98,9 +152,9 @@ namespace Ravl2
       q = tpi / RealT(mp);
       if(inv <= 'e')
         q = -q;
-      a = std::complex<RealT>(std::cos(q),std::sin(q));
+      a = std::complex<RealT>(std::cos(q), std::sin(q));
       q *= RealT(ms);
-      b = std::complex<RealT>(std::cos(q),std::sin(q));
+      b = std::complex<RealT>(std::cos(q), std::sin(q));
       for(j = 0; j < n; j += mp) {
         fb = pc + j;
         z = std::complex<RealT>(1., 0.);
@@ -126,16 +180,16 @@ namespace Ravl2
     }
   }
 
-  void fftgr(float *x, ccomplex *ft, int n, int *kk, int inv)
+  template <typename RealT>
+  void fftgr(float *x, std::complex<RealT> *ft, int n, int *kk, int inv)
   {
-    using RealT = float;
-    ccomplex a, b, z, w, *d, *p, *f, *fb;
+    std::complex<RealT> a, b, z, w, *d, *p, *f, *fb;
     const auto tpi = RealT(6.283185307179586);
     RealT sc, q, *t;
     int *mm, *m, kp, i, j, k, jk, jl, ms, mp;
     std::vector<int> mmVec(size_t(kk[0] + 1));
     mm = mmVec.data();
-    std::vector<Cpx> dVec((size_t(kk[kk[0]])));
+    std::vector<std::complex<RealT>> dVec((size_t(kk[kk[0]])));
     d = dVec.data();
     for(i = 1, *mm = 1, m = mm; i <= kk[0]; ++i, ++m)
       *(m + 1) = *m * kk[i];
@@ -162,9 +216,9 @@ namespace Ravl2
       q = tpi / RealT(mp);
       if(inv == 'd')
         q = -q;
-      a = std::complex<RealT>(std::cos(q),std::sin(q));
+      a = std::complex<RealT>(std::cos(q), std::sin(q));
       q *= RealT(ms);
-      b = std::complex<RealT>(std::cos(q),std::sin(q));
+      b = std::complex<RealT>(std::cos(q), std::sin(q));
       for(j = 0; j < n; j += mp) {
         fb = ft + j;
         z = std::complex<RealT>(1., 0.);
@@ -177,8 +231,7 @@ namespace Ravl2
             while(f > fb) {
               f -= ms;
               *p = std::complex<RealT>(f->real() + p->real() * w.real() - p->imag() * w.imag(),
-                                       f->imag() + p->imag() * w.real() + p->real() * w.imag()
-                                       );
+                                       f->imag() + p->imag() * w.real() + p->real() * w.imag());
             }
             w = std::complex<RealT>(w.real() * b.real() - w.imag() * b.imag(),
                                     w.imag() * b.real() + w.real() * b.imag());
@@ -195,184 +248,103 @@ namespace Ravl2
   //! @brief Compute the Fast Fourier Transform of a real signal.
   //! @param result The output of the FFT.
   //! @param data The input signal.
-  template<typename RealT>
-  void computeFFT(std::span<std::complex<RealT> > result,std::span<const RealT> data)
+  template <typename RealT>
+  void computeFFT(std::span<std::complex<RealT>> result, std::span<const RealT> data)
   {
-    (void) result;
-        (void) data;
+    if(result.size() != data.size()) {
+      throw std::runtime_error("computeFFT(), result and data must be the same size.");
+    }
+    int n = data.size();
+    std::array<int, 32> primeFactors {};
+    int nf = pfac(n, primeFactors.data(), 'o');
+    if(nf == n) {
+      SPDLOG_WARN("FFT1dBodyC::Init(), Failed to find prime factors. ");
+      throw std::runtime_error("FFT1dBodyC::Init(), Failed to find prime factors. ");
+    }
+    fftgr(data.data(),
+          result.data(),
+          n,
+          primeFactors,
+          'd');
   }
 
   //! @brief Compute inverse Fast Fourier Transform of a real signal.
   //! @param result The output of the FFT.
   //! @param data The input signal.
-  template<typename RealT>
-  void computeInverseFFT(std::span<std::complex<RealT> > result,std::span<const RealT> data);
+  template <typename RealT>
+  void computeInverseFFT(std::span<std::complex<RealT>> result, std::span<const RealT> data)
+  {
+    if(result.size() != data.size()) {
+      throw std::runtime_error("computeFFT(), result and data must be the same size.");
+    }
+    int n = data.size();
+    std::array<int, 32> primeFactors {};
+    int nf = pfac(n, primeFactors.data(), 'o');
+    if(nf == n) {
+      SPDLOG_WARN("FFT1dBodyC::Init(), Failed to find prime factors. ");
+      throw std::runtime_error("FFT1dBodyC::Init(), Failed to find prime factors. ");
+    }
+    fftgr(data.data(),
+          result.data(),
+          n,
+          primeFactors,
+          'i');
+  }
 
   //! @brief Compute the Fast Fourier Transform of a complex signal.
   //! @param result The output of the FFT.
   //! @param data The input signal.
-  template<typename RealT>
-  void computeFFT(std::span<std::complex<RealT> > result,std::span<const std::complex<RealT>> data);
+  template <typename RealT>
+  void computeFFT(std::span<std::complex<RealT>> result, std::span<const std::complex<RealT>> data)
+  {
+    if(result.size() != data.size()) {
+      throw std::runtime_error("computeFFT(), result and data must be the same size.");
+    }
+    int n = data.size();
+    std::array<int, 32> primeFactors {};
+    int nf = pfac(n, primeFactors.data(), 'o');
+    if(nf == n) {
+      SPDLOG_WARN("FFT1dBodyC::Init(), Failed to find prime factors. ");
+      throw std::runtime_error("FFT1dBodyC::Init(), Failed to find prime factors. ");
+    }
+
+    std::vector<std::complex<RealT>> tmpArr(n);
+    std::vector<std::complex<RealT> *> ptrArr;
+    ptrArr.reserve(size_t(n));
+    for(auto &resPtr : tmpArr)
+      ptrArr.push_back(&resPtr);
+
+    fftgc(ptrArr.data(), tmpArr.data(), n, primeFactors.data(), 'd');
+    for(size_t i = 0; i < result.size(); i++)
+      result[i] = *ptrArr[i];
+  }
 
   //! @brief Compute the inverse Fast Fourier Transform of a complex signal.
   //! @param result The output of the FFT.
   //! @param data The input signal.
-  template<typename RealT>
-  void computeInverseFFT(std::span<std::complex<RealT> > result,std::span<const std::complex<RealT>> data);
-
-
-#if 0
-  //: Constructor.
-
-  //! @brief Fast Fourier Transform (FFT) for 1D signals.
-  //! Uses the CCMath implementation
-
   template <typename RealT>
-  class FFT1dBodyC
+  void computeInverseFFT(std::span<std::complex<RealT>> result, std::span<const std::complex<RealT>> data)
   {
-  public:
-    FFT1dBodyC(int n,bool iinv,bool zeroPad = false);
-    //: Constructor.
-
-    ~FFT1dBodyC();
-    //: Destructor
-
-    bool Init(int n,bool iinv);
-    //: Create a plan with the given setup.
-
-    Array<std::complex<RealT>,1> Apply(const Array<std::complex<RealT>,1> &dat);
-    //: Apply transform to array.
-    // Note, only the first 'n' byte of dat are processed.
-    // if the array is shorter than the given length, an
-    // exception 'ErrorOutOfRangeC' will be thrown.
-
-    Array<std::complex<RealT>,1> Apply(const Array<RealT,1> &dat);
-    //: Apply transform to real array
-    // Note, only the first 'n' byte of dat are processed.
-    // if the array is shorter than the given length, an
-    // exception 'ErrorOutOfRangeC' will be thrown.
-
-    int N() const
-    { return n; }
-    //: The size of the transform.
-
-    bool IsZeroPad() const
-    { return zeroPad; }
-    //: Test if we're doing zero padding.
-
-  protected:
-    int n;  // Size of the transform.
-    bool inv; // Is the transform backward ??
-    bool pwr2; // Is length a power of two ?
-    bool zeroPad; // Zero pad input to 'n' bytes ?
-    int primeFactors[32];
-    int nf; // Number of factors. Sufficient for all 32-bit lengths.
-  };
-
-
-  template <typename RealT>
-  FFT1dBodyC<RealT>::FFT1dBodyC(int nn, bool iinv, bool nZeroPad)
-      : n(0),
-        inv(iinv),
-        zeroPad(nZeroPad)
-  {
-    Init(nn, iinv);
-  }
-
-  //: Create a plan with the given setup.
-
-  template <typename RealT>
-  bool FFT1dBodyC<RealT>::Init(int nn, bool iinv)
-  {
-    // Remember settings in case we asked...
-    inv = iinv;
-    pwr2 = isPow2(nn);
-    n = nn;
-    nf = pfac(n, primeFactors, 'o');
-    RavlAssertMsg(nf == n, "FFT1dBodyC::Init(), Failed to find prime factors. ");
-    return true;
-  }
-
-  //: Apply transform to array.
-
-  template <typename RealT>
-  Array<std::complex<RealT>, 1> FFT1dBodyC<RealT>::Apply(const Array<std::complex<RealT>, 1> &dat)
-  {
-    ONDEBUG(std::cerr << "FFT1dBodyC::Apply(Array<std::complex<RealT>,1>) n=" << n << " inv=" << inv << " \n");
-    Array<std::complex<RealT>, 1> ret(n);
-    Array<std::complex<RealT>, 1> tmpArr(n);
-    if(dat.size() < unsigned(n) && zeroPad) {
-      ONDEBUG(std::cerr << "Zero padding. \n");
-      ret = Array<std::complex<RealT>, 1>(n);
-      // Copy original data.
-      for(BufferAccessIter2C<std::complex<RealT>, std::complex<RealT>> it(dat, tmpArr); it; it++)
-        it.template data<1>() = it.template data<0>();
-      // Zero pad it.
-      for(BufferAccessIterC<std::complex<RealT>> ita(tmpArr, IndexRange<1>(dat.size(), n - 1)); ita; ita++)
-        *ita = 0;
-    } else {
-      RavlAssert(dat.size() == (unsigned)n);
-      tmpArr = dat.Copy();
+    if(result.size() != data.size()) {
+      throw std::runtime_error("computeFFT(), result and data must be the same size.");
     }
-    Array<ccomplex *, 1> ptrArr(n);
-    //ptrArr.fill(0);
-    //cerr << dat <<  "\n";
-    // TODO :- Would it be quicker to copy the array and use fft2 if length is a power of two ?
-    if(inv) {// Do inverse.
-      for(BufferAccessIter2C<ccomplex *, std::complex<RealT>> it(ptrArr, tmpArr); it; it++)
-        it.data<0>() = (ccomplex *)(&it.data<1>());
-      fftgc((ccomplex **)((void *)&(ptrArr[0])), (ccomplex *)((void *)&(tmpArr[0])), n, primeFactors, 'i');
-      for(BufferAccessIter2C<ccomplex *, std::complex<RealT>> itb(ptrArr, ret); itb; itb++)
-        itb.data<1>() = *((std::complex<RealT> *)itb.data<0>());
-    } else {// Do forward.
-      for(BufferAccessIter2C<ccomplex *, std::complex<RealT>> it(ptrArr, ret); it; it++)
-        it.data<0>() = (ccomplex *)(&it.data<1>());
-
-      fftgc((ccomplex **)((void *)&(ptrArr[0])), (ccomplex *)((void *)&(tmpArr[0])), n, primeFactors, 'd');
-
-      for(BufferAccessIter2C<ccomplex *, std::complex<RealT>> itb(ptrArr, ret); itb; itb++)
-        itb.data<1>() = *((std::complex<RealT> *)itb.data<0>());
+    int n = data.size();
+    std::array<int, 32> primeFactors {};
+    int nf = pfac(n, primeFactors.data(), 'o');
+    if(nf == n) {
+      SPDLOG_WARN("FFT1dBodyC::Init(), Failed to find prime factors. ");
+      throw std::runtime_error("FFT1dBodyC::Init(), Failed to find prime factors. ");
     }
 
-    //cerr << "result:" << ret << "\n";;
-    return ret;
+    std::vector<std::complex<RealT>> tmpArr(n);
+    std::vector<std::complex<RealT> *> ptrArr;
+    ptrArr.reserve(size_t(n));
+    for(auto &resPtr : tmpArr)
+      ptrArr.push_back(&resPtr);
+
+    fftgc(ptrArr.data(), tmpArr.data(), n, primeFactors, 'i');
+    for(size_t i = 0; i < result.size(); i++)
+      result[i] = *ptrArr[i];
   }
 
-  //: Apply transform to array.
-
-  template <typename RealT>
-  Array<std::complex<RealT>, 1> FFT1dBodyC::Apply(const Array<RealT, 1> &dat)
-  {
-    ONDEBUG(std::cerr << "FFT1dBodyC::Apply(Array<RealT,1>) n=" << n << " inv=" << inv << " \n");
-    if(dat.size() < (unsigned)n && zeroPad) {
-      ONDEBUG(std::cerr << "Zero padding. \n");
-      Array<RealT, 1> ndat(n);
-      // Copy original data.
-      for(BufferAccessIter2C<RealT, RealT> it(dat, ndat); it; it++)
-        it.data<1>() = it.data<0>();
-      // Zero pad it.
-      for(BufferAccessIterC<RealT> ita(ndat, IndexRange<1>(dat.size(), n - 1)); ita; ita++)
-        *ita = 0;
-      // Then try again.
-      return Apply(ndat);
-    } else {
-      RavlAssert(dat.size() == (unsigned)n);
-    }
-    Array<std::complex<RealT>, 1> ret(n);
-    if(inv)
-      fftgr((double *)&(dat[0]),
-            (ccomplex *)((void *)&(ret[0])),
-            n,
-            primeFactors,
-            'i');
-    else
-      fftgr((double *)&(dat[0]),
-            (ccomplex *)((void *)&(ret[0])),
-            n,
-            primeFactors,
-            'd');
-    return ret;
-  }
-
-#endif
 }// namespace Ravl2

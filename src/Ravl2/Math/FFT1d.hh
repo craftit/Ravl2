@@ -19,25 +19,25 @@ namespace Ravl2 {
   
 
   //! @brief Compute the Fast Fourier Transform of a real signal.
-  //! @param result The output of the FFT.
+  //! @param result The output of the FFT, must be the same size as the input signal.
   //! @param data The input signal.
   template<typename RealT>
   void computeFFT(std::span<std::complex<RealT> > result,std::span<const RealT> data);
 
   //! @brief Compute inverse Fast Fourier Transform of a real signal.
-  //! @param result The output of the FFT.
+  //! @param result The output of the FFT, must be the same size as the input signal.
   //! @param data The input signal.
   template<typename RealT>
   void computeInverseFFT(std::span<std::complex<RealT> > result,std::span<const RealT> data);
 
   //! @brief Compute the Fast Fourier Transform of a complex signal.
-  //! @param result The output of the FFT.
+  //! @param result The output of the FFT, must be the same size as the input signal.
   //! @param data The input signal.
   template<typename RealT>
   void computeFFT(std::span<std::complex<RealT> > result,std::span<const std::complex<RealT>> data);
 
   //! @brief Compute the inverse Fast Fourier Transform of a complex signal.
-  //! @param result The output of the FFT.
+  //! @param result The output of the FFT, must be the same size as the input signal.
   //! @param data The input signal.
   template<typename RealT>
   void computeInverseFFT(std::span<std::complex<RealT> > result,std::span<const std::complex<RealT>> data);
