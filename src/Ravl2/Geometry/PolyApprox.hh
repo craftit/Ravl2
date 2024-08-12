@@ -3,3 +3,8 @@
 //
 
 #pragma once
+
+namespace Ravl2
+{
+
+}

@@ -42,7 +42,8 @@ namespace Ravl2 {
   template<typename RealT>
   void computeInverseFFT(std::span<std::complex<RealT> > result,std::span<const std::complex<RealT>> data);
 
-  //! Declare there are flloat implementations of the above functions.
+
+  //! Declare there are float implementations of the above functions.
   extern template void computeFFT(std::span<std::complex<float> > result,std::span<const float> data);
   extern template void computeInverseFFT(std::span<std::complex<float> > result,std::span<const float> data);
   extern template void computeFFT(std::span<std::complex<float> > result,std::span<const std::complex<float>> data);

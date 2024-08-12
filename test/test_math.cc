@@ -1,9 +1,11 @@
 
 #include <catch2/catch_test_macros.hpp>
+#include <fmt/std.h>
 #include <spdlog/spdlog.h>
 
 #include "Ravl2/Math.hh"
 #include "Ravl2/Math/MeanVariance.hh"
+#include "Ravl2/Math/FastFourierTransform.hh"
 #include "Ravl2/Math/Sums1d2.hh"
 
 TEST_CASE("MeanVariance", "[MeanVariance]")
@@ -43,7 +45,7 @@ TEST_CASE("MeanVariance", "[MeanVariance]")
 
 }
 
-TEST_CASE("Sums1d2C", "[Sums1d2C]")
+TEST_CASE("Sums1_2")
 {
   using RealT = double;
   using namespace Ravl2;
@@ -101,3 +103,47 @@ TEST_CASE("Sums1d2C", "[Sums1d2C]")
   }
 }
 
+TEST_CASE("FastFourierTransform")
+{
+  using namespace Ravl2;
+  using RealT = float;
+  size_t arraySize = 10;
+
+  std::vector<RealT> data(arraySize);
+  std::vector<std::complex<RealT>> cdata(data.size());
+  for(unsigned i = 0;i < data.size();i++) {
+    data[i] = RealT(i);
+    cdata[i] = std::complex<RealT>(RealT(i),0);
+  }
+
+  std::vector<std::complex<RealT>> result1(data.size(),std::complex<RealT>(-1,0));
+  computeFFT(std::span(result1),std::span<const RealT>(data));
+
+  std::vector<std::complex<RealT>> result2(data.size(),std::complex<RealT>(-1,0));
+  computeFFT(std::span(result2),std::span<const std::complex<RealT> >(cdata));
+
+  // Check the results are the same from the real and complex FFT.
+  for(unsigned i = 0;i < data.size();i++) {
+    CHECK(isNearZero(result1[i].real() - result2[i].real() ));
+    CHECK(isNearZero(result1[i].imag() - result2[i].imag() ));
+  }
+
+
+  // Check the inverse FFT returns the original data.
+  std::vector<std::complex<RealT>> result3(data.size(),std::complex<RealT>(-1,0));
+  computeInverseFFT(std::span(result3),std::span<const std::complex<RealT> >(result1));
+  for(unsigned i = 0;i < data.size();i++) {
+    CHECK(isNearZero(result3[i].real() - data[i],1e-5f));
+    CHECK(isNearZero(result3[i].imag(),1e-5f));
+  }
+
+  // Check the real inverse FFT is the same as the complex inverse FFT.
+  std::fill(result1.begin(),result1.end(),std::complex<RealT>(0,0));
+  computeInverseFFT(std::span(result1),std::span<const std::complex<RealT> >(cdata));
+  std::fill(result2.begin(),result2.end(),std::complex<RealT>(0,0));
+  computeInverseFFT(std::span(result2),std::span<const RealT >(data));
+  for(unsigned i = 0;i < data.size();i++) {
+    CHECK(isNearZero(result2[i].real() - result1[i].real()));
+    CHECK(isNearZero(result2[i].imag() - result1[i].imag()));
+  }
+}

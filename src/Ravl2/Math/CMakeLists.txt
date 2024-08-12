@@ -4,9 +4,10 @@ include(GenerateExportHeader)
 add_library (Ravl2Math
         Sums1d2.cc Sums1d2.hh
         MeanVariance.cc MeanVariance.hh
-        FFT1d.cc FFT1d.hh
+        FastFourierTransform.cc FastFourierTransform.hh
         PrimeFactors.cc
         PrimeFactors.hh
+        FastFourierTransformMath.hh
         #        SumsNd2.hh SumsNd2.cc
 )
 
