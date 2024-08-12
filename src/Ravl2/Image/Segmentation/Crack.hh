@@ -65,19 +65,19 @@ namespace Ravl2
   class CrackC
   {
   public:
-    //: Creates an crack
-    // The value is undefined.
+    //! Creates an crack
+    //! The value is undefined.
     constexpr CrackC() = default;
 
-    // Create the crack with origin in the boundary vertex 'px' and with
-    // direction 'cc'.
+    //! Create the crack with origin in the boundary vertex 'px' and with
+    //! direction 'cc'.
     constexpr CrackC(const BoundaryVertex2 &px, const CrackCode &cc)
         : mAt(px),
           mCode(cc)
     {}
 
-    // Create the crack with origin in the boundary vertex 'px' and with
-    // direction 'cc'.
+    //! Create the crack with origin in the boundary vertex 'px' and with
+    //! direction 'cc'.
     constexpr CrackC(const BoundaryVertex2 &px, CrackCodeT cc)
         : mAt(px),
           mCode(cc)
@@ -123,9 +123,8 @@ namespace Ravl2
       return *this;
     }
 
-    // Creates the crack which starts at one corner of the pixel 'pxl'
-    // and has the direction 'cc'. The corner of the pixel is chosen
-    // in such way that the elementary crack is an elementary crack of the pixel.
+    //! @brief Creates the crack which starts at one corner of the pixel 'pxl' and has the direction 'cc'.
+    //! The corner of the pixel is chosen in such way that the elementary crack is an elementary crack of the pixel.
     static constexpr auto fromPixel(const Index<2> &pxl, const CrackCode &cc)
     {
       CrackC crack(pxl, cc);
@@ -273,7 +272,7 @@ namespace Ravl2
 
     //! Turns the crack code counterclockwise.
     // This is an in-place operation.
-    inline constexpr auto &turnCClock()
+    constexpr auto &turnCClock()
     {
       mCode.turnCClock();
       return *this;
@@ -304,3 +303,17 @@ namespace fmt
   struct formatter<Ravl2::CrackC> : ostream_formatter {
   };
 }// namespace fmt
+
+// Custom specialization of std::hash injected in namespace std.
+
+template<>
+struct std::hash<Ravl2::CrackC>
+{
+  std::size_t operator()(const Ravl2::CrackC& s) const noexcept
+  {
+    auto ret = size_t(s.at()[0]);
+    ret ^= size_t(s.at()[1]) << 4;
+    ret ^= size_t(s.code().code()) << 12;
+    return ret;
+  }
+};

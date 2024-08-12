@@ -152,7 +152,7 @@ namespace Ravl2
 
     //1 Turns the crack code clockwise.
     // This is an in-place operation.
-    inline constexpr CrackCode &turnClock()
+    constexpr CrackCode &turnClock()
     {
       crackCode = clockWiseTurn[int(crackCode)];
       return *this;
@@ -160,7 +160,7 @@ namespace Ravl2
 
     //! Turns the crack code counterclockwise.
     // This is an in-place operation.
-    inline constexpr CrackCode &turnCClock()
+    constexpr CrackCode &turnCClock()
     {
       crackCode = cClockWiseTurn[int(crackCode)];
       return *this;
@@ -168,7 +168,7 @@ namespace Ravl2
 
     //! Turns the crack code backward.
     // This is an in-place operation.
-    inline constexpr CrackCode &turnBack()
+    constexpr CrackCode &turnBack()
     {
       crackCode = backTurn[int(crackCode)];
       return *this;

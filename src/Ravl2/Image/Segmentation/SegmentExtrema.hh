@@ -12,6 +12,7 @@
 #include <memory>
 #include <cstdint>
 #include <spdlog/spdlog.h>
+#include "Ravl2/Index.hh"
 #include "Ravl2/Array.hh"
 #include "Ravl2/Image/Segmentation/FloodRegion.hh"
 #include "Ravl2/IndexRangeSet.hh"
@@ -35,9 +36,10 @@ namespace Ravl2
   class ExtremaRegionC
   {
   public:
+    //! Constructor.
     ExtremaRegionC() = default;
-    //: Constructor.
 
+    //! Destructor.
     ~ExtremaRegionC()
     {
       if(hist != nullptr)
@@ -45,14 +47,13 @@ namespace Ravl2
       if(thresh != nullptr)
         delete[] thresh;
     }
-    //: Destructor.
 
-    ExtremaRegionC *merge = nullptr;// Region to merge with.
-    uint32_t *hist = nullptr;       // Histogram of levels.
+    ExtremaRegionC *merge = nullptr;//!< Region to merge with.
+    uint32_t *hist = nullptr;       //!< Histogram of levels.
     uint32_t total = 0;
 
-    ExtremaThresholdC *thresh;// Thresholds
-    int nThresh = 0;          // Number of thresholds.
+    ExtremaThresholdC *thresh = nullptr;//!< Thresholds
+    int nThresh = 0;          //!< Number of thresholds.
 
     int maxValue = 0;
     int minValue = 0;
@@ -92,87 +93,83 @@ namespace Ravl2
     {
       histStack.reserve(100);
     }
-    //: Constructor.
 
+    //! Destructor.
     ~SegmentExtremaBaseC();
-    //: Destructor.
 
+    //! Setup structures for a given image size.
     void SetupImage(const IndexRange<2> &rect);
-    //: Setup structures for a given image size.
 
+    //! Generate regions.
     void GenerateRegions();
-    //: Generate regions.
 
+    //! Get number of levels being considered.
     [[nodiscard]] unsigned Levels() const
     {
       return unsigned(levels.range().size());
     }
-    //: Get number of levels being considered.
 
+    //! Access minimum size.
     [[nodiscard]] auto MinSize() const
     {
       return minSize;
     }
-    //: Access minimum size.
 
+    //! Access maximum size.
     [[nodiscard]] auto MaxSize() const
     {
       return maxSize;
     }
-    //: Access maximum size.
 
+    //! Access minimum margin
     [[nodiscard]] auto MinMargin() const
     {
       return minMargin;
     }
-    //: Access minimum margin
 
+    //! Access value limit
     [[nodiscard]] auto LimitMaxValue() const
     {
       return limitMaxValue;
     }
-    //: Access value limit
 
+    //! Access level set array.
     [[nodiscard]] Array<ExtremaChainPixelC *, 1> &LevelSets()
     {
       return levels;
     }
-    //: Access level set array.
 
   protected:
     //! Reallocate the current region set, free any memory used.
     void ReallocRegionMap(size_t newSize);
 
+    //! Find matching label.
     static ExtremaRegionC *FindLabel(ExtremaChainPixelC *lab);
-    //: Find matching label.
 
+    //! Find the labels around the pixel 'pix'
+    // put the results into 'labelArray' which must be at least 4 labels long.
+    // The number of labels found is returned.
     int ConnectedLabels(ExtremaChainPixelC *pix, ExtremaRegionC **labelArray);
-    //: Find the labels around the pixel 'pix'
+
+    //! Find the labels around the pixel 'pix'
     // put the results into 'labelArray' which must be at least 4 labels long.
     // The number of labels found is returned.
-
     int ConnectedLabels6(ExtremaChainPixelC *pix, ExtremaRegionC **labelArray);
-    //: Find the labels around the pixel 'pix'
-    // put the results into 'labelArray' which must be at least 4 labels long.
-    // The number of labels found is returned.
 
+    //! Add a new region.
     void AddRegion(ExtremaChainPixelC *pix, int level);
-    //: Add a new region.
 
+    //! Add pixel to region.
     void AddPixel(ExtremaChainPixelC *pix, int level, ExtremaRegionC *reg);
-    //: Add pixel to region.
 
+    //! Add pixel to region.
     void MergeRegions(ExtremaChainPixelC *pix, int level, ExtremaRegionC **labels, int n);
-    //: Add pixel to region.
 
+    //! Generate thresholds
     void Thresholds();
-    //: Generate thresholds
 
-    void Thresholds2();
-    //: Generate thresholds
-
+    //! Peak detection.
     void PeakDetection(Array<RealT, 1> &real);
-    //: Peak detection.
 
     Array<ExtremaChainPixelC, 2> pixs;
     Array<ExtremaChainPixelC *, 1> levels;
@@ -227,7 +224,7 @@ namespace Ravl2
     }
   };
 
-  //: Maximimally stable extremal region's  (MSER's)
+  //! @brief Maximally Stable Extremal Region's  (MSER's)
 
   // <p>In most images there are regions that can be detected with high repeatability since they
   // possess some distinguishing, invariant and stable property, the so called extremal regions.
@@ -255,16 +252,19 @@ namespace Ravl2
   class SegmentExtremaC : public SegmentExtremaBaseC
   {
   public:
-    SegmentExtremaC(uint32_t minRegionSize = 12, int theMinMargin = 10, int nLimitMaxPixelValue = 255)
+    //! Constructor.
+    //!param:minRegionSize - Minimum region size to detect.
+    //!param:minMargin - Threshold for region stability.
+    explicit SegmentExtremaC(uint32_t minRegionSize = 12, int theMinMargin = 10, int nLimitMaxPixelValue = 255)
         : SegmentExtremaBaseC(minRegionSize, theMinMargin, nLimitMaxPixelValue)
     {
       assert(minRegionSize > 0);
       assert(nLimitMaxPixelValue > 0);
     }
-    //: Constructor.
-    //!param:minRegionSize - Minimum region size to detect.
-    //!param:minMargin - Threshold for region stability.
 
+    //! Apply operation to img.
+    // Note: The boundaries generated by this function are not ordered. If you require ordered
+    // boundaries you can use its 'Order()' method to sort them.
     std::vector<Boundary> apply(const Array<PixelT, 2> &img)
     {
       if(typeid(PixelT) == typeid(uint8_t)) {// Should decided at compile time.
@@ -276,13 +276,12 @@ namespace Ravl2
       Thresholds();
       return GrowRegionBoundary(img);
     }
-    //: Apply operation to img.
-    // Note: The boundaries generated by this function are not ordered. If you require ordered
-    // boundries you can use its 'Order()' method to sort them.
 
+    //! Apply operation to img.
+    // Generates labeled images.
     std::vector<Array<int, 2>> applyMask(const Array<PixelT, 2> &img)
     {
-      if(typeid(PixelT) == typeid(uint8_t))// Should decided at compile time.
+      if(typeid(PixelT) == typeid(uint8_t)) // Should decided at compile time.
         SortPixelsByte(img);
       else
         SortPixels(img);
@@ -290,8 +289,10 @@ namespace Ravl2
       Thresholds();
       return GrowRegionMask(img);
     }
-    //: Apply operation to img.
-    // Generates labeled images.
+
+    //! Apply operation to img.
+    // Note: The boundaries generated by this function are not ordered. If you require ordered
+    // boundries you can use its 'Order()' method to sort them.
 
     std::vector<Boundary> apply(const Array<PixelT, 2> &img, const IndexRangeSet<2> &roi)
     {
@@ -300,9 +301,8 @@ namespace Ravl2
       Thresholds();
       return GrowRegionBoundary(img);
     }
-    //: Apply operation to img.
-    // Note: The boundaries generated by this function are not ordered. If you require ordered
-    // boundries you can use its 'Order()' method to sort them.
+    //! Apply operation to img.
+    // Generates labeled images.
 
     std::vector<Array<int, 2>> applyMask(const Array<PixelT, 2> &img, const IndexRangeSet<2> &roi)
     {
@@ -311,8 +311,6 @@ namespace Ravl2
       Thresholds();
       return GrowRegionMask(img);
     }
-    //: Apply operation to img.
-    // Generates labeled images.
 
   protected:
     bool SortPixels(const Array<PixelT, 2> &nimg);
@@ -534,9 +532,9 @@ namespace Ravl2
         auto regions = GrowRegionMask(*it);
         masks.insert(masks.end(), regions.begin(), regions.end());
       }
-      if(it->thresh != 0) {
+      if(it->thresh != nullptr) {
         delete[] it->thresh;
-        it->thresh = 0;
+        it->thresh = nullptr;
       }
     }
 
