@@ -67,7 +67,8 @@ namespace Ravl2
   inline ExtremaRegionC *SegmentExtremaBaseC::FindLabel(ExtremaChainPixelC *cp)
   {
     ExtremaRegionC *lab = cp->region;
-    if(lab == nullptr || lab->merge == nullptr) return lab;
+    if(lab == nullptr || lab->merge == nullptr)
+      return lab;
     ExtremaRegionC *at = lab->merge;
     while(at->merge != nullptr)
       at = at->merge;
@@ -83,7 +84,7 @@ namespace Ravl2
 
   //: Find the number of distinct labels around the pixel 'pix'
   // This eliminates duplicate values by comparing each result to
-  // those obtrained previously.
+  // those obtained previously.
   // Puts the results into 'labelArray' which must be at least 4 labels long.
   // The total number of labels found is returned.
 
@@ -110,12 +111,10 @@ namespace Ravl2
     return n;
   }
 
-  //: Add a new region.
   inline void SegmentExtremaBaseC::AddRegion(ExtremaChainPixelC *pix, int level)
   {
     ExtremaRegionC &region = regionMap[labelAlloc++];
     pix->region = &region;
-    //cerr << "SegmentExtremaBaseC::AddRegion(), Pix=" << (void *) pix << " Region=" << (void *) &region << "\n";
     region.total = 0;
     region.merge = nullptr;//&region;
     int nlevel = level + 1;// Don't need to clear this level as its going to be set anyway
@@ -123,8 +122,9 @@ namespace Ravl2
       region.hist = PopHist(nlevel);
     } else {
       int clearSize = (region.maxValue + 1) - nlevel;
-      if(clearSize > 0)
+      if(clearSize > 0) {
         memset(&(region.hist[nlevel]), 0, size_t(clearSize) * sizeof(int));
+      }
     }
 #ifndef NDEBUG
     // Check the histogram is clear.
@@ -249,7 +249,7 @@ namespace Ravl2
 
     for(auto it = regionMap.begin(); it != end; ++it) {
       if(it->total < minSize || (it->maxValue - it->minValue) < minMargin) {
-        it->nThresh = 0;// Ingore these regions.
+        it->nThresh = 0;// Ignore these regions.
         continue;       // Not enough levels in the region.
       }
       // Build the cumulative histogram.
@@ -281,13 +281,13 @@ namespace Ravl2
       for(up = i + 1; up < maxValue && i < maxValue; i++) {
         auto area_i = chist[i];
         if(area_i > maxSize) {
-          SPDLOG_INFO("Size limit reached. ");
+          ONDEBUG(SPDLOG_INFO("Size limit reached. "));
           break;// Quit if area is too large.
         }
 
         auto half_perimeter_i = int_round<double, decltype(area_i)>(2.1 * std::sqrt(double(area_i))) + area_i;
         if(half_perimeter_i == lastThresh)
-          continue;// If the thresholds are the same, the next margin will only be shorter.
+          continue; // If the thresholds are the same, the next margin will only be shorter.
         lastThresh = half_perimeter_i;
         while(up <= maxValue && chist[up] < half_perimeter_i) {
           up++;

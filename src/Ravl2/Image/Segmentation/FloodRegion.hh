@@ -8,6 +8,7 @@
 //! author="Charles Galambos, based on code by Jiri Matas."
 
 #include <queue>
+#include <utility>
 #include "Ravl2/Assert.hh"
 #include "Ravl2/Array.hh"
 #include "Ravl2/Image/DrawFrame.hh"
@@ -87,7 +88,7 @@ namespace Ravl2
   //! Flood based region growing.
   //! Grow a region from 'seed' including all connected pixel less than or equal to threshold, generate a boundary as the result.
 
-  template <class PixelT, class InclusionTestT = FloodRegionLessThanThresholdC<PixelT>>
+  template <class PixelT>
   class FloodRegionC
   {
   public:
@@ -118,50 +119,58 @@ namespace Ravl2
       return true;
     }
 
-    //! Grow a region from 'seed' including all connected pixel less than or equal to threshold, generate a mask as the result.
-    //! Returns true if the boundary has a non zero area.
-    bool GrowRegion(const Index<2> &seed, const InclusionTestT &inclusionCriteria, Boundary &boundary, size_t maxSize = 0);
+    //! @brief Grow a region from 'seed' including all connected pixel less than or equal to threshold, generate a mask as the result.
+    //! @param seed The seed pixel to start the region growing from.
+    //! @param inclusionTest The test to determine if a pixel is included in the region.
+    //! @param boundary The boundary of the region.
+    //! @param maxSize The maximum size of the region to grow. (0 = no limit)
+    //! @return true if the boundary has a non zero area.
+    template<typename InclusionTestT>
+    bool GrowRegion(const Index<2> &seed, InclusionTestT &&inclusionTest, Boundary &boundary, size_t maxSize = 0);
 
-    //! Grow a region from 'seed' including all connected pixel less than or equal to threshold, generate a mask as the result.
-    // The mask images are generated with a boundary
-    // Returns the region size.
-    template <typename MaskT>
-    size_t GrowRegion(const Index<2> &seed, const InclusionTestT &inclusionCriteria, Array<MaskT, 2> &mask, unsigned padding = 0, size_t maxSize = 0);
+    //! @brief Grow a region from 'seed' including all connected pixel less than or equal to threshold, generate a mask as the result.
+    //! @param seed The seed pixel to start the region growing from.
+    //! @param inclusionTest The test to determine if a pixel is included in the region.
+    //! @param mask The mask image of the region that will be generated.
+    //! @param padding The padding to add to the mask.
+    //! @param maxSize The maximum size of the region to grow. (0 = no limit)
+    //! @return The size of the region.
+    template <typename MaskT,typename InclusionTestT>
+    size_t GrowRegion(const Index<2> &seed, InclusionTestT &&inclusionTest, Array<MaskT, 2> &mask, unsigned padding = 0, size_t maxSize = 0);
 
+    //! Access marked pixel image.
     Array<int, 2> &MarkImage()
     {
       return marki;
     }
-    //: Access marked pixel image.
 
+    //! Access current region id.
     [[nodiscard]] int MarkId() const
     {
       return id;
     }
-    //: Access current region id.
 
   protected:
-    bool BaseGrowRegion(const Index<2> &seed, const InclusionTestT &inclusionCriteria, IndexRange<2> &rng);
-    //: Base grow region routine.
+    //! Base grow region routine.
+    template <typename InclusionTestT>
+    bool BaseGrowRegion(const Index<2> &seed, InclusionTestT &&inclusionTest, IndexRange<2> &rng);
 
     Array<PixelT, 2> img;
     Array<int, 2> marki;
     int id = 0;
-    InclusionTestT inclusionTest;
     std::queue<FloodRegionLineC> pixQueue;
   };
 
   //! Base grow region routine.
-  // A rewrite of code from: A Seed Fill Algorithm by Paul Heckbert from "Grahics Gems", Academic Press, 1990
+  // A rewrite of code from: A Seed Fill Algorithm by Paul Heckbert from "Graphics Gems", Academic Press, 1990
 
-  template <class PixelT, class InclusionTestT>
-  bool FloodRegionC<PixelT, InclusionTestT>::BaseGrowRegion(const Index<2> &seed, const InclusionTestT &inclusionCriteria, IndexRange<2> &rng)
+  template <class PixelT>
+  template <typename InclusionTestT>
+  bool FloodRegionC<PixelT>::BaseGrowRegion(const Index<2> &seed, InclusionTestT &&inclusionTest, IndexRange<2> &rng)
   {
-    // Check seed.
-    inclusionTest = inclusionCriteria;
     RavlAssert(img.range().contains(seed));
     if(!inclusionTest(img[seed]))
-      return false;// Empty region.
+      return false; // Empty region.
 
     // Make sure queue is empty.
     pixQueue = std::queue<FloodRegionLineC>();
@@ -242,11 +251,12 @@ namespace Ravl2
     return true;
   }
 
-  template <class PixelT, class InclusionTestT>
-  bool FloodRegionC<PixelT, InclusionTestT>::GrowRegion(const Index<2> &seed, const InclusionTestT &inclusionCriteria, Boundary &boundary, [[maybe_unused]] size_t maxSize)
+  template <class PixelT>
+  template <class InclusionTestT>
+  bool FloodRegionC<PixelT>::GrowRegion(const Index<2> &seed, InclusionTestT &&inclusionTest, Boundary &boundary, [[maybe_unused]] size_t maxSize)
   {
     IndexRange<2> rng;
-    if(!BaseGrowRegion(seed, inclusionCriteria, rng) || rng.area() <= 0) {
+    if(!BaseGrowRegion(seed, inclusionTest, rng) || rng.area() <= 0) {
       boundary = Boundary();
       return false;
     }
@@ -256,13 +266,13 @@ namespace Ravl2
     return true;
   }
 
-  template <class PixelT, class InclusionTestT>
-  template <typename MaskT>
-  size_t FloodRegionC<PixelT, InclusionTestT>::GrowRegion(const Index<2> &seed, const InclusionTestT &inclusionCriteria, Array<MaskT, 2> &mask, unsigned padding, size_t maxSize)
+  template <class PixelT>
+  template <typename MaskT, class InclusionTestT>
+  size_t FloodRegionC<PixelT>::GrowRegion(const Index<2> &seed, InclusionTestT &&inclusionTest, Array<MaskT, 2> &mask, unsigned padding, size_t maxSize)
   {
     IndexRange<2> rng;
 
-    if(!BaseGrowRegion(seed, inclusionCriteria, rng)) {
+    if(!BaseGrowRegion(seed, inclusionTest, rng)) {
       mask = Array<MaskT, 2>();
       return 0;
     }

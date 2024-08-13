@@ -160,7 +160,7 @@ namespace Ravl2
 
     //! Returns the endpoints of the boundary, i.e. if the boundary is closed,
     //! the list will be empty.
-    [[nodiscard]] std::vector<BoundaryVertex> findEndpoints(const std::unordered_map<BoundaryVertex, std::array<BoundaryVertex, 2>> &hashtable) const;
+    [[nodiscard]] static std::vector<BoundaryVertex> findEndpoints(const std::unordered_map<BoundaryVertex, std::array<BoundaryVertex, 2>> &hashtable) ;
   };
 
   //! Write out the boundary to a stream.

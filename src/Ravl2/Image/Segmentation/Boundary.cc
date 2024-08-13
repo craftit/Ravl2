@@ -149,7 +149,7 @@ namespace Ravl2
   std::unordered_map<BoundaryVertex, std::array<BoundaryVertex, 2>>  Boundary::CreateHashtable() const
   {
     std::unordered_map<BoundaryVertex, std::array<BoundaryVertex, 2>> hashtable;
-
+    hashtable.reserve(mEdges.size());
     for(const auto &edge : mEdges)
     {
       BoundaryVertex const bvertex1(edge.vertexBegin());
@@ -174,7 +174,7 @@ namespace Ravl2
     return hashtable;
   }
 
-  std::vector<BoundaryVertex> Boundary::findEndpoints(const std::unordered_map<BoundaryVertex, std::array<BoundaryVertex,2> > & hashtable) const
+  std::vector<BoundaryVertex> Boundary::findEndpoints(const std::unordered_map<BoundaryVertex, std::array<BoundaryVertex,2> > & hashtable)
   {
     BoundaryVertex const invalid_vertex(-1, -1);
     std::vector<BoundaryVertex> endpoints;
@@ -287,7 +287,7 @@ namespace Ravl2
     std::vector<Boundary> ret;
 
     std::unordered_map<BoundaryVertex,std::vector<CrackC> > leavers;
-
+    leavers.reserve(mEdges.size());
     // Make table of all possible paths.
     for(auto it : mEdges) {
       ONDEBUG(SPDLOG_INFO("Begin={} End={}", it.vertexBegin(), it.vertexEnd()));
@@ -300,6 +300,7 @@ namespace Ravl2
     CrackC invalid(BoundaryVertex(0,0),CrackCodeT::CR_NODIR);
 
     std::unordered_map<CrackC,CrackC> edges;
+    edges.reserve(mEdges.size() + (mEdges.size()>>2));
     for(auto it: mEdges) {
       std::vector<CrackC> &lst = leavers[it.vertexEnd()];
       size_t lstSize = lst.size();
@@ -333,6 +334,7 @@ namespace Ravl2
     ONDEBUG(SPDLOG_INFO("edges.size()={}", edges.size()));
 
     std::unordered_map<CrackC,Boundary> startMap;
+    startMap.reserve(edges.size());
     while(!edges.empty()) {
       auto it = edges.begin(); // Use iterator to pick an edge.
       std::vector<CrackC> bnds;
