@@ -113,38 +113,7 @@ namespace Ravl2
     }
     return bb;
   }
-
-
-  std::vector<Boundary> Boundary::order(const CrackC & firstEdge)
-  {
-    std::vector<Boundary> bnds;
-
-    auto hashtable = CreateHashtable();
-
-    std::vector<BoundaryVertex> endpoints = findEndpoints(hashtable);
-    if (endpoints.empty()){
-      bnds.push_back(OrderContinuous(hashtable, firstEdge));
-    }
-    else {
-      while(!endpoints.empty()) {
-        BoundaryVertex const ep_it = endpoints.back();
-
-        Boundary bnd = OrderContinuous(hashtable, CrackC(ep_it, CrackCode(CrackCodeT::CR_NODIR)));
-
-        // Go through and make sure the other end is deleted from the list.
-        auto at = std::find(endpoints.begin(), endpoints.end(), bnd.edges().back().vertexEnd());
-        if(at != endpoints.end()) {
-          *at = endpoints.back();
-          endpoints.pop_back();
-        };
-
-        bnds.push_back(std::move(bnd));
-      }
-    }
-
-    return bnds;
-  }
-
+  
 
   std::unordered_map<BoundaryVertex, std::array<BoundaryVertex, 2>>  Boundary::CreateHashtable() const
   {

@@ -83,10 +83,7 @@ namespace Ravl2
     //! The direction of the boundaries is determined by the constructor.<br>
     //! Boundaries that terminate at the edge of the array/image are left open.
     [[nodiscard]] std::vector<Boundary> orderEdges() const;
-
-    //!deprecated: Order boundary from edge. <br> order the edgels of this boundary such that it can be traced continuously along the direction of the first edge. The orientation of the boundary is set according to 'orient'. If the boundary is open, 'firstCrack' and 'orient' are ignored.<br>  Note: There is a bug in this code which can cause an infinite loop for some edge patterns. In particular where the two edges go through the same vertex.
-    [[nodiscard]] std::vector<Boundary> order(const CrackC &firstCrack);
-
+    
     //! @brief Return the orientation of the boundary.
     //! @return true: object is on the left side of edges relative to their direction;<br> false: on the right.
     [[nodiscard]] auto Orient() const
