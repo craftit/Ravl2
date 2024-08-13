@@ -15,17 +15,17 @@ namespace Ravl2
   //! @param boundary - the boundary of the region.
   //! @return the moments of the region.
   //! The sums can get large, ideally the boundary should be shifted to the origin.
-  template <typename RealT>
-   requires std::is_signed_v<RealT>
-  [[nodiscard]] Moments2<RealT> moments2(const Boundary &boundary)
+  template <typename SumT>
+   requires std::is_signed_v<SumT>
+  [[nodiscard]] Moments2<SumT> moments2(const Boundary &boundary)
   {
-    Moments2<RealT> moments;
+    Moments2<SumT> moments;
     for(const auto &edge : boundary.edges())
     {
       switch(edge.crackCode()) {
         case CrackCodeT::CR_UP: { // 1,1 start
-          RealT x = edge.at()[0]-1;
-          RealT y = edge.at()[1];
+          SumT x = edge.at()[0]-1;
+          SumT y = edge.at()[1];
           moments.M00() += y;
           moments.M10() += x * y;
           moments.M20() += x * x * y;
@@ -33,22 +33,22 @@ namespace Ravl2
 
         } break;
         case CrackCodeT::CR_DOWN: { // 0,0 start
-          RealT x = edge.at()[0];
-          RealT y = edge.at()[1];
+          SumT x = edge.at()[0];
+          SumT y = edge.at()[1];
           moments.M00() -= y;
           moments.M10() -= x * y;
           moments.M20() -= x * x * y;
           moments.M11() -= x * y * (y - 1) / 2;
         } break;
         case CrackCodeT::CR_RIGHT: { // 1,0 start
-          RealT x = edge.at()[0];
-          RealT y = edge.at()[1];
+          SumT x = edge.at()[0];
+          SumT y = edge.at()[1];
           moments.M01() += x * y;
           moments.M02() += x * y * y;
         } break;
         case CrackCodeT::CR_LEFT: { // 0,1 start
-          RealT x = edge.at()[0];
-          RealT y = edge.at()[1]-1;
+          SumT x = edge.at()[0];
+          SumT y = edge.at()[1]-1;
           moments.M01() -= x * y;
           moments.M02() -= x * y * y;
         } break;
