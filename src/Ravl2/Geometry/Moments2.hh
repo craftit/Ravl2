@@ -34,7 +34,7 @@ namespace Ravl2
     //! reset all counters to zero.
     void reset()
     {
-      m00 = m10 = m01 = m20 = m11 = m02 = 0.0;
+      m00 = m10 = m01 = m20 = m11 = m02 = RealT(0);
     }
 
     //! Adds a pixel to the object and updates sums.
@@ -63,136 +63,136 @@ namespace Ravl2
     //! Calculate the size of the principle axis.
     // It returns the new values for M02 and M20,
     // the largest is the first element of the vector.
-    Vector<RealT, 2> principalAxisSize() const;
+    [[nodiscard]] Vector<RealT, 2> principalAxisSize() const;
 
     //! Returns the ratio of the difference and the sum of moments m02 and m20.
     //! The value 0 means that objects is a symmetrical object,
     //! the value 1 corresponds to a one-dimensional object.
-    static RealT elongatedness(const Vector<RealT, 2> &principalAxisSize)
+    [[nodiscard]] static RealT elongatedness(const Vector<RealT, 2> &principalAxisSize)
     {
       RealT sumM = principalAxisSize[0] + principalAxisSize[1];
       return (sumM != 0) ? std::abs((principalAxisSize[0] - principalAxisSize[1]) / sumM) : 0;
     }
 
     //! Access 00 component.
-    inline RealT M00() const
+    [[nodiscard]] inline RealT M00() const
     {
       return m00;
     }
 
     //! Access 10 component.
-    inline RealT M10() const
+    [[nodiscard]] inline RealT M10() const
     {
       return m10;
     }
 
     //! Access 01 component.
-    inline RealT M01() const
+    [[nodiscard]] inline RealT M01() const
     {
       return m01;
     }
 
     //! Access 20 component.
-    inline RealT M20() const
+    [[nodiscard]] inline RealT M20() const
     {
       return m20;
     }
 
     //! Access 11 component.
-    inline RealT M11() const
+    [[nodiscard]] inline RealT M11() const
     {
       return m11;
     }
 
     //! Access 02 component.
-    inline RealT M02() const
+    [[nodiscard]] inline RealT M02() const
     {
       return m02;
     }
 
     //! Access 00 component.
-    inline RealT &M00()
+    [[nodiscard]] inline RealT &M00()
     {
       return m00;
     }
 
     //! Access 10 component.
-    inline RealT &M10()
+    [[nodiscard]] inline RealT &M10()
     {
       return m10;
     }
 
     //! Access 01 component.
-    inline RealT &M01()
+    [[nodiscard]] inline RealT &M01()
     {
       return m01;
     }
 
     //! Access 20 component.
-    inline RealT &M20()
+    [[nodiscard]] inline RealT &M20()
     {
       return m20;
     }
 
     //! Access 11 component.
-    inline RealT &M11()
+    [[nodiscard]] inline RealT &M11()
     {
       return m11;
     }
 
     //! Access 02 component.
-    inline RealT &M02()
+    [[nodiscard]] inline RealT &M02()
     {
       return m02;
     }
 
     //! Returns the moment m00, ie the area of the 2 dimensional object.
-    inline RealT area() const
+    [[nodiscard]] inline RealT area() const
     {
       return m00;
     }
 
     //! Returns the x co-ordinate of the centroid.
     //! The M00 moment must not be 0.
-    inline RealT centroidX() const
+    [[nodiscard]] inline RealT centroidX() const
     {
       return M10() / M00();
     }
 
     //! Returns the y co-ordinate of the centroid.
     //! The M00 moment must not be 0.
-    inline RealT centroidY() const
+    [[nodiscard]] inline RealT centroidY() const
     {
       return M01() / M00();
     }
 
     //! Returns the variance of the x.
-    inline RealT varX() const
+    [[nodiscard]] inline RealT varX() const
     {
       return m20 / m00 - sqr(centroidX());
     }
 
     //! Returns the variance of the y.
-    inline RealT varY() const
+    [[nodiscard]] inline RealT varY() const
     {
       return m02 / m00 - sqr(centroidY());
     }
 
     //! Returns the slope dY/dX. The used criterion is Sum(Y-y)^2 -> min.
     // It means dY/dX = k, where y = k*x+q.
-    inline RealT slopeY() const;
+    [[nodiscard]] inline RealT slopeY() const;
 
     //! Returns the slope dX/dY. The used criterion is Sum(X-x)^2 -> min.
     // It means dX/dY = k, where x = k*y+q.
-    inline RealT slopeX() const;
+    [[nodiscard]] inline RealT slopeX() const;
 
     //! Returns the estimate of q, if y = k*x+q.
     // The used criterion is Sum(Y-y)^2 -> min.
-    inline RealT interceptY() const;
+    [[nodiscard]] inline RealT interceptY() const;
 
     //! Returns the estimate of q, if y = k*y+q.
     // The used criterion is Sum(X-x)^2 -> min.
-    inline RealT interceptX() const;
+    [[nodiscard]] inline RealT interceptX() const;
 
     //! Return the covariance matrix.
     [[nodiscard]] Matrix<RealT, 2, 2> covariance() const;
@@ -217,13 +217,13 @@ namespace Ravl2
     }
 
     //! Add to sets of moments together.
-    Moments2 operator+(const Moments2 &m) const
+    [[nodiscard]] Moments2 operator+(const Moments2 &m) const
     {
       return Moments2(m00 + m.M00(), m10 + m.M10(), m01 + m.M01(), m20 + m.M20(), m11 + m.M11(), m02 + m.M02());
     }
 
     //! Subtract one set of moments from another.
-    Moments2 operator-(const Moments2 &m) const
+    [[nodiscard]] Moments2 operator-(const Moments2 &m) const
     {
       return Moments2(m00 - m.M00(), m10 - m.M10(), m01 - m.M01(), m20 - m.M20(), m11 - m.M11(), m02 - m.M02());
     }
@@ -309,6 +309,24 @@ namespace Ravl2
       >> mom.m20 >> mom.m11 >> mom.m02;
     return is;
   }
+
+  //! @brief Equality operator
+  //! This makes sense if RealT is integer type, the comparison is exact.
+  template<typename RealT>
+  [[nodiscard]] bool operator==(const Moments2<RealT> &lhs, const Moments2<RealT> &rhs)
+  {
+    return lhs.M00() == rhs.M00() && lhs.M10() == rhs.M10() && lhs.M01() == rhs.M01() &&
+           lhs.M20() == rhs.M20() && lhs.M11() == rhs.M11() && lhs.M02() == rhs.M02();
+  }
+
+  //! In equality operator
+  //! This makes sense if RealT is integer type, the comparison is exact.
+  template<typename RealT>
+  [[nodiscard]] inline bool operator!=(const Moments2<RealT> &lhs, const Moments2<RealT> &rhs)
+  {
+    return !(lhs == rhs);
+  }
+
 
   template <class RealT>
   inline void Moments2<RealT>::addPixel(const Index<2> &pxl)

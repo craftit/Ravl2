@@ -23,9 +23,6 @@ namespace Ravl2
   template <typename RealT>
   class Polygon2dC;
 
-  template <typename RealT>
-  class Moments;
-
   //! @brief Crack code boundary
 
   //! The class Boundary represents the 4-connected oriented boundary of an
@@ -174,7 +171,6 @@ namespace Ravl2
   //! @param type - the orientation of the boundary, this doesn't change the order of the points.
   //! @return the boundary.
   [[nodiscard]] Boundary toBoundary(IndexRange<2> rect, BoundaryOrientationT type = BoundaryOrientationT::INSIDE_LEFT);
-
 
   template <typename ArrayT, typename DataT>
     requires WindowedArray<ArrayT, DataT, 2>

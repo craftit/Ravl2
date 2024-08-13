@@ -9,6 +9,7 @@ add_library (Ravl2ImageSegmentation
         FloodRegion.cc FloodRegion.hh
         SegmentExtrema.cc SegmentExtrema.hh
         ConnectedComponents.cc ConnectedComponents.hh
+        BoundaryMoments.cc BoundaryMoments.hh
 )
 
 add_library(ravl2::Ravl2ImageSegmentation ALIAS Ravl2ImageSegmentation)

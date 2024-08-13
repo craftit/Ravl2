@@ -4,13 +4,15 @@
 // General Public License (LGPL). See the lgpl.licence file for details or
 // see http://www.gnu.org/copyleft/lesser.html
 // file-header-ends-here
-//! author="Radek Marik"
+//! author="Radek Marik and Charles Galambos"
 
 #include <catch2/catch_test_macros.hpp>
 #include <spdlog/spdlog.h>
 #include "Ravl2/Image/Segmentation/CrackCode.hh"
 #include "Ravl2/Image/Segmentation/Crack.hh"
 #include "Ravl2/Image/Segmentation/Boundary.hh"
+#include "Ravl2/Image/Segmentation/BoundaryMoments.hh"
+#include "Ravl2/Geometry/Moments2.hh"
 #include "Ravl2/Array.hh"
 
 #define DODEBUG	0
@@ -267,5 +269,123 @@ TEST_CASE("Boundary order edges")
     CHECK(lst.front().size() == 3);
   }
 #endif
+
+}
+
+
+TEST_CASE("Boundary Moments")
+{
+  using namespace Ravl2;
+
+  {
+    Array<int, 2> emask({5, 5}, 0);
+    emask[1][1] = 1;
+
+    Boundary bnds = Boundary::traceBoundary(emask, 1);
+
+    //SPDLOG_INFO("Boundary 1: {} ", bnds);
+
+    Moments2<int> momentsSimple;
+    for(auto at : emask.range()) {
+      if(emask[at] == 1) {
+        momentsSimple.addPixel(at);
+      }
+    }
+
+    auto moments = moments2<int>(bnds);
+    SPDLOG_INFO("1 Simple: {}  Moments: {}  ", momentsSimple, moments);
+
+    CHECK(momentsSimple == moments);
+  }
+
+  {
+    Array<int, 2> emask({5, 5}, 0);
+    emask[1][2] = 1;
+
+    Boundary bnds = Boundary::traceBoundary(emask, 1);
+
+    Moments2<int> momentsSimple;
+    for(auto at : emask.range()) {
+      if(emask[at] == 1) {
+        momentsSimple.addPixel(at);
+      }
+    }
+
+    auto moments = moments2<int>(bnds);
+    SPDLOG_INFO("1a Simple: {}  Moments: {}  ", momentsSimple, moments);
+    CHECK(momentsSimple == moments);
+  }
+
+  {
+    Array<int, 2> emask({5, 5}, 0);
+    emask[2][1] = 1;
+
+    Boundary bnds = Boundary::traceBoundary(emask, 1);
+
+    Moments2<int> momentsSimple;
+    for(auto at : emask.range()) {
+      if(emask[at] == 1) {
+        momentsSimple.addPixel(at);
+      }
+    }
+
+    auto moments = moments2<int>(bnds);
+    SPDLOG_INFO("1b Simple: {}  Moments: {}  ", momentsSimple, moments);
+    CHECK(momentsSimple == moments);
+  }
+
+  {
+    Array<int, 2> emask({5, 5}, 0);
+
+    emask[1][1] = 1;
+    emask[1][2] = 1;
+    emask[1][3] = 1;
+    emask[2][1] = 1;
+    emask[3][1] = 1;
+    emask[2][3] = 1;
+    emask[3][2] = 1;
+
+    //SPDLOG_INFO("Mask 1: {}", emask);
+
+    Boundary bnds = Boundary::traceBoundary(emask, 1);
+
+    // Compute the moments
+    Moments2<int> momentsSimple;
+    for(auto at : emask.range()) {
+      if(emask[at] == 1) {
+        momentsSimple.addPixel(at);
+      }
+    }
+
+    auto moments = moments2<int>(bnds);
+    SPDLOG_INFO("2 Simple: {}  Moments: {}  ", momentsSimple, moments);
+    CHECK(momentsSimple == moments);
+  }
+
+  {
+    Array<int, 2> emask({5, 5}, 0);
+
+    emask[1][1] = 1;
+    emask[1][2] = 1;
+    emask[1][3] = 1;
+    emask[2][1] = 1;
+    emask[2][2] = 1;
+
+    //SPDLOG_INFO("Mask 3: {}", emask);
+
+    Boundary bnds = Boundary::traceBoundary(emask, 1);
+
+    // Compute the moments
+    Moments2<int> momentsSimple;
+    for(auto at : emask.range()) {
+      if(emask[at] == 1) {
+        momentsSimple.addPixel(at);
+      }
+    }
+
+    auto moments = moments2<int>(bnds);
+    SPDLOG_INFO("3 Simple: {}  Moments: {}  ", momentsSimple, moments);
+    CHECK(momentsSimple == moments);
+  }
 
 }
