@@ -23,37 +23,37 @@ namespace Ravl2
   class FloodRegionLineC
   {
   public:
+    //! Constructor.
     FloodRegionLineC(Index<2> nstart, int colEnd, int ndr)
         : start(nstart),
           end(colEnd),
           dr(ndr)
     {}
-    //: Constructor.
 
+    //! Constructor.
     FloodRegionLineC(int row, int col, int colEnd, int ndr)
         : start(row, col),
           end(colEnd),
           dr(ndr)
     {}
-    //: Constructor.
 
+    //! Access start location
     [[nodiscard]] const Index<2> &Start() const
     {
       return start;
     }
-    //: Access start location
 
-    int End() const
+    //! Get end of line.
+    [[nodiscard]] int End() const
     {
       return end;
     }
-    //: Get end of line.
 
-    int DR() const
+    //! Row direction.
+    [[nodiscard]] int DR() const
     {
       return dr;
     }
-    //: Row direction.
 
   protected:
     Index<2> start;
@@ -81,7 +81,7 @@ namespace Ravl2
       return pix <= value;
     }
 
-  protected:
+  private:
     PixelT value {};
   };
 
@@ -102,13 +102,13 @@ namespace Ravl2
     }
 
     //! Access the image we're currently segmenting.
-    const Array<PixelT, 2> &Image() const
+    [[nodiscard]] const Array<PixelT, 2> &Image() const
     {
       return img;
     }
 
     //! Setup new image for processing.
-    bool SetupImage(const Array<PixelT, 2> &nimg)
+    void SetupImage(const Array<PixelT, 2> &nimg)
     {
       img = nimg;
       IndexRange<2> rng = img.range().expand(1);
@@ -116,7 +116,6 @@ namespace Ravl2
         marki = Array<int, 2>(rng, 0);
         id = 1;
       }
-      return true;
     }
 
     //! @brief Grow a region from 'seed' including all connected pixel less than or equal to threshold, generate a mask as the result.
@@ -139,7 +138,7 @@ namespace Ravl2
     size_t GrowRegion(const Index<2> &seed, InclusionTestT &&inclusionTest, Array<MaskT, 2> &mask, unsigned padding = 0, size_t maxSize = 0);
 
     //! Access marked pixel image.
-    Array<int, 2> &MarkImage()
+    [[nodiscard]] Array<int, 2> &MarkImage()
     {
       return marki;
     }
@@ -150,7 +149,7 @@ namespace Ravl2
       return id;
     }
 
-  protected:
+  private:
     //! Base grow region routine.
     template <typename InclusionTestT>
     bool BaseGrowRegion(const Index<2> &seed, InclusionTestT &&inclusionTest, IndexRange<2> &rng);
