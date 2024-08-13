@@ -23,6 +23,9 @@ namespace Ravl2
   template <typename RealT>
   class Polygon2dC;
 
+  template <typename RealT>
+  class Moments;
+
   //! @brief Crack code boundary
 
   //! The class Boundary represents the 4-connected oriented boundary of an
@@ -51,7 +54,7 @@ namespace Ravl2
     {}
 
     //! Empty boundary with orientation 'orient'.
-    //! If orient is true, the object is on the left of the boundary.
+    //! @param orient - orientation of the boundary.
     explicit Boundary(BoundaryOrientationT orient)
         : orientation(orient)
     {}
@@ -167,7 +170,10 @@ namespace Ravl2
   [[maybe_unused]] Boundary line2Boundary(const BoundaryVertex &startVertex, const BoundaryVertex &endVertex);
 
   //! @brief Creates a boundary around the rectangle.
-  Boundary toBoundary(IndexRange<2> rect, BoundaryOrientationT type = BoundaryOrientationT::INSIDE_LEFT);
+  //! @param rect - the rectangle defining the boundary.
+  //! @param type - the orientation of the boundary, this doesn't change the order of the points.
+  //! @return the boundary.
+  [[nodiscard]] Boundary toBoundary(IndexRange<2> rect, BoundaryOrientationT type = BoundaryOrientationT::INSIDE_LEFT);
 
 
   template <typename ArrayT, typename DataT>
