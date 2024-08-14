@@ -50,14 +50,14 @@ namespace Ravl2
     // --------- Undo normalisation ----------------
     // TODO:- Make this more efficient by expanding out manually.
     Conic2dC<RealT> Cr(result);
-    RealT d = 1/scale;
+    RealT d = scale;
     Matrix<RealT,3,3> Hi(
       {{ d,0,-mean[0] * d},
         {0,d,-mean[1] * d},
         { 0,0,1}});
 
     // Matrix<RealT,3,3> nC = Hi.TMul(Cr.C()) * Hi;
-    Matrix<RealT,3,3> nC = xt::linalg::dot(xt::transpose(Hi) , xt::linalg::dot(Cr.C(), Hi));
+    Matrix<RealT,3,3> nC = xt::linalg::dot( xt::linalg::dot(xt::transpose(Hi) ,Cr.C()), Hi);
     conic = Conic2dC(nC);
     return 0;
   }
