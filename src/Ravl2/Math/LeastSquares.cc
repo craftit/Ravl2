@@ -14,7 +14,7 @@
 //#include "Ravl/Exception.hh"
 //#include "Ravl/SVD.hh"
 
-namespace RavlN {
+//namespace Ravl2 {
 
 #if 0
   //: Find a least squares solution to A*x = b
@@ -73,4 +73,4 @@ namespace RavlN {
   }
 #endif
   
-}
+//}

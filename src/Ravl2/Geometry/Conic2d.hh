@@ -37,6 +37,15 @@ namespace Ravl2 {
       : p(params)
     {}
 
+    //! @brief Construct from parameter vector.
+    explicit Conic2dC(const VectorT<RealT> &params)
+    {
+      if(params.size() != 6) {
+        throw std::invalid_argument("Conic2dC: Invalid parameter vector size");
+      }
+      p = params;
+    }
+
     //! Construct from parameters
     Conic2dC(RealT a,RealT b,RealT c,RealT d,RealT e,RealT f)
     { p[0] = a; p[1] = b; p[2] = c; p[3] = d; p[4] = e; p[5] = f;  }
@@ -49,19 +58,19 @@ namespace Ravl2 {
     explicit Conic2dC(const Matrix<RealT,3,3> &matrix)
     {
       // Should check matrix is symmetric ?
-      p[0] = matrix[0][0];
-      p[1] = matrix[0][1] + matrix[1][0];
-      p[2] = matrix[1][1];
-      p[3] = matrix[0][2] + matrix[2][0];
-      p[4] = matrix[1][2] + matrix[2][1];
-      p[5] = matrix[2][2];
+      p[0] = matrix(0,0);
+      p[1] = matrix(0,1) + matrix(1,0);
+      p[2] = matrix(1,1);
+      p[3] = matrix(0,2) + matrix(2,0);
+      p[4] = matrix(1,2) + matrix(2,1);
+      p[5] = matrix(2,2);
     }
 
     //! @brief Is point on curve ?
     //! @param pnt - Point to test.
     //! @return true if point is on curve.
-    [[nodiscard]] bool IsOnCurve(const Point<RealT,2> &pnt) const
-    { return isNearZero(Residue(pnt)); }
+    [[nodiscard]] bool IsOnCurve(const Point<RealT,2> &pnt, RealT tolerance = RealT(1e-5)) const
+    { return isNearZero(Residue(pnt), tolerance); }
 
     //! @brief Compute the residue
     //! Compute x.T() * C * x, where x is projective version of pnt. <br>
@@ -79,9 +88,9 @@ namespace Ravl2 {
     //! Get the coefficient matrix. 'C'
     //! Such that  x.T() * C * x = 0
     [[nodiscard]] Matrix<RealT,3,3> C() const {
-      return Matrix<RealT,3,3>(p[0]  ,p[1]/2,p[3]/2,
-                               p[1]/2,p[2]  ,p[4]/2,
-                               p[3]/2,p[4]/2,p[5]);
+      return Matrix<RealT,3,3>({{p[0]  ,p[1]/2,p[3]/2},
+                                {p[1]/2,p[2]  ,p[4]/2},
+                                {p[3]/2,p[4]/2,p[5]}});
     }
 
 
@@ -194,3 +203,8 @@ namespace Ravl2 {
 }
 
 
+#if FMT_VERSION >= 90000
+template <typename RealT>
+struct fmt::formatter<Ravl2::Conic2dC<RealT> > : fmt::ostream_formatter {
+};
+#endif

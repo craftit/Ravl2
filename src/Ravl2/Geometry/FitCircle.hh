@@ -86,9 +86,9 @@ namespace Ravl2
     const RealT X = x[0] / -2;
     const RealT Y = x[1] / -2;
     const RealT radius = std::sqrt(((X * X) + (Y * Y)) - x[2]);
-    circle = Circle2dC<RealT>(toPoint<RealT>(X, Y) + mean, radius / scale);
+    circle = Circle2dC<RealT>((toPoint<RealT>(X, Y) * scale) + mean, radius * scale);
     //SPDLOG_INFO("Circle2dC::FitLSQ() Center={} Radius={}", circle.Centre(), circle.Radius());
-    return residual();
+    return residual() * scale;
   }
 
 

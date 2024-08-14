@@ -146,8 +146,13 @@ namespace Ravl2 {
     obj = Ellipse2dC(aff);
     return s;
   }
-
-  
 }
+
+#if FMT_VERSION >= 90000
+template <typename RealT>
+struct fmt::formatter<Ravl2::Ellipse2dC<RealT> > : fmt::ostream_formatter {
+};
+#endif
+
 
 

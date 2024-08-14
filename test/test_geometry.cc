@@ -10,6 +10,8 @@
 #include "Ravl2/Geometry/Circle.hh"
 #include "Ravl2/Geometry/FitCircle.hh"
 #include "Ravl2/Geometry/CircleIter.hh"
+#include "Ravl2/Geometry/Conic2d.hh"
+#include "Ravl2/Geometry/FitConic.hh"
 #include "Ravl2/Geometry/LineABC2d.hh"
 #include "Ravl2/Geometry/Affine.hh"
 #include "Ravl2/Geometry/ScaleTranslate.hh"
@@ -181,7 +183,7 @@ TEST_CASE("CircleIter", "[CircleIterC]")
   EXPECT_EQ(i,112);
 }
 
-TEST_CASE("Circle2", "[Circle2]")
+TEST_CASE("Circle2")
 {
   using namespace Ravl2;
 
@@ -210,6 +212,26 @@ TEST_CASE("Circle2", "[Circle2]")
     SPDLOG_INFO("Center={} Radius={} Residual={}", circle.Centre(), circle.Radius(), residual.value());
     CHECK(sumOfSqr(Point<float, 2>(circle.Centre() - toPoint<float>(1, 2))) < 0.01f);
     CHECK(std::abs(circle.Radius() - 2) < 0.01f);
+  }
+}
+
+TEST_CASE("Conic")
+{
+  using namespace Ravl2;
+  std::vector<Point<float,2>> pnts;
+  pnts.reserve(5);
+  pnts.push_back(Point<float,2>({1,0}));
+  pnts.push_back(Point<float,2>({2,-1}));
+  pnts.push_back(Point<float,2>({3,0}));
+  pnts.push_back(Point<float,2>({3,1}));
+  pnts.push_back(Point<float,2>({2,4}));
+  Ravl2::Conic2dC<float> conic {};
+  auto residual = fit(conic, pnts);
+  CHECK(residual.has_value());
+  SPDLOG_INFO("Conic: {}", conic);
+  for(auto p : pnts) {
+    SPDLOG_INFO("Point {} is on curve: {}", p, conic.Residue(p));
+    CHECK(conic.IsOnCurve(p));
   }
 }
 
@@ -253,7 +275,6 @@ TEST_CASE("Affine")
       CHECK(isNearZero(a1.SRMatrix()(1,1) - a2.SRMatrix()(1,1)));
     }
   }
-
 }
 
 TEST_CASE("ScaleTranslate")
