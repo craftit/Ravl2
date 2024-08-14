@@ -52,6 +52,9 @@ namespace Ravl2
 #endif
 
   //! @brief Fit points to a circle.
+  //! @param circle Circle to fit.
+  //! @param points Points to fit.
+  //! @return Residual from the least squares fit, or invalid option if it failed.
   //! 'residual' is from the least squares fit and can be used to assess
   //! the quality of the fit.  Returns false if fit failed.
   template <typename RealT>
@@ -62,29 +65,30 @@ namespace Ravl2
       return std::nullopt;
 
     typename MatrixT<RealT>::shape_type sh = {N, 3};
-    MatrixT<RealT> A = xt::zeros<RealT>(sh);
-    VectorT<RealT> B = xt::zeros<RealT>({N});
-    for(size_t i = 0; i < N; i++) {
-      const RealT X = points[i][0];
-      const RealT Y = points[i][1];
-      A[i][0] = X;
-      A[i][1] = Y;
-      A[i][2] = 1;
-      B[i] = -X * X - Y * Y;
-    }
-//    RealT residual = 0;
-//    if(!LeastSquaresQR_IP(A, B, residual))
-//      return std::nullopt;// Fit failed.
+    MatrixT<RealT> A = xt::empty<RealT>(sh);
+    VectorT<RealT> B = xt::empty<RealT>({N});
+    size_t i = 0;
+    auto [mean,scale] = normalise<RealT,2>(points,[&i,&A,&B](const Point<RealT,2> &pnt) {
+      const RealT X = pnt[0];
+      const RealT Y = pnt[1];
+      A(i,0) = X;
+      A(i,1) = Y;
+      A(i,2) = 1;
+      B(i) = -X * X - Y * Y;
+      i++;
+    });
 
     auto [x, residual, rank, s] = xt::linalg::lstsq(A, B);
+    //SPDLOG_INFO("Rank:{} Residual:{}", int(rank), residual());
+    if(rank < 3)
+      return std::nullopt;// Fit failed.
 
     const RealT X = x[0] / -2;
     const RealT Y = x[1] / -2;
-
-    circle = Circle2dC<RealT>(toPoint<RealT>(X, Y), std::sqrt(((X * X) + (Y * Y)) - B[2]));
-    SPDLOG_INFO("Circle2dC::FitLSQ() Center={} Radius={}", circle.Centre(), circle.Radius());
-    return residual;
-
+    const RealT radius = std::sqrt(((X * X) + (Y * Y)) - x[2]);
+    circle = Circle2dC<RealT>(toPoint<RealT>(X, Y) + mean, radius / scale);
+    //SPDLOG_INFO("Circle2dC::FitLSQ() Center={} Radius={}", circle.Centre(), circle.Radius());
+    return residual();
   }
 
 

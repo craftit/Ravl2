@@ -6,6 +6,7 @@
 // file-header-ends-here
 
 #include "Ravl2/Geometry/Conic2d.hh"
+#include "Ravl2/Geometry/FitConic.hh"
 
 #define DODEBUG  0
 #if DODEBUG
@@ -17,8 +18,6 @@
 namespace Ravl2 {
 
   //: Fit a conic to a set of points.
-  
-
 
 #if 0
 

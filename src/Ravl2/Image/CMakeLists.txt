@@ -9,6 +9,7 @@ add_library (Ravl2Image
         Array2Sqr2Iter2.hh
         DrawFrame.hh
         DrawCircle.hh DrawCircle.cc
+        DrawEllipse.hh
         DrawLine.hh
         DrawCross.hh
         DrawMask.hh DrawMask.cc

@@ -26,6 +26,7 @@ add_library (Ravl2Geometry
         FitLine.cc FitLine.hh
         PolyApprox.hh
         Conic2d.cc Conic2d.hh
+        FitConic.hh
         Ellipse2d.cc Ellipse2d.hh
 )
 

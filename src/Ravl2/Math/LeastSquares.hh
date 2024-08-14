@@ -36,8 +36,47 @@
 
 #include "Ravl2/Math/LinearAlgebra.hh"
 
-namespace RavlN
+namespace Ravl2
 {
+
+  //! @brief Normalise an array of points.
+  //! This finds the mean and variation of euclidean point position. It corrects the mean to zero
+  //! and the average variation to 1.
+  //!param: raw - Points to be normalised
+  //!param: func - Function/lambda to accept normalised point.
+  //! @return The mean subtracted from the points, and scale applied.
+  template <typename RealT, unsigned N,typename Container1T, typename FuncT>
+   requires std::is_floating_point_v<RealT>
+  std::tuple<Point<RealT,2>, RealT> normalise(const Container1T &raw,FuncT func)
+  {
+    Point<RealT,N> mean = 0;
+//    for(unsigned i =0;i < N;i++)
+//      mean[i] = 0;
+    for(auto it : raw) {
+      mean += it;
+    }
+    size_t pnts = raw.size();
+    if(pnts == 0) {
+      return { toPoint<RealT>(0,0), 1};
+    }
+    auto realSize = static_cast<RealT>(pnts);
+    mean /= realSize;
+    RealT d = 0;
+    for(auto it : raw) {
+      d += std::hypot(it[0] - mean[0],it[1] - mean[1]);
+    }
+    d = isNearZero(d) ? RealT(1) : (realSize/d);
+    for(auto it : raw) {
+      Point<RealT,N> pnt = (it - mean) * d;
+      func(pnt);
+    }
+//    return Matrix<RealT,3,3>(
+//      {{ d,0,-mean[0] * d},
+//        {0,d,-mean[1] * d},
+//        { 0,0,1}});
+    return {mean,d};
+  }
+
 #if 0
   //! @brief Find a least squares solution to A*x = b
   //! This destroys the contents of A, and replaces b with the solution vector.

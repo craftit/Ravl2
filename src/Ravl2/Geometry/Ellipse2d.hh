@@ -23,7 +23,8 @@ namespace Ravl2 {
   //! point on the ellipse.
 
   template<typename RealT>
-  class Ellipse2dC {
+  class Ellipse2dC
+  {
   public:
     //! @brief Default constructor.
     //! The parameters of the ellipse are left undefined.

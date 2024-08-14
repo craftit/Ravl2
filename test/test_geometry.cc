@@ -192,27 +192,24 @@ TEST_CASE("Circle2", "[Circle2]")
   pnts[3] = Point<float,2>({1,4});
   pnts[4] = Point<float,2>({1,4.01f}); // Just to add a slight error.
 
+  SECTION("Fit 3 points.")
+  {
+    Circle2dC<float> circle2;
+    EXPECT_TRUE(circle2.Fit(pnts[0], pnts[1], pnts[2]));
+    SPDLOG_INFO("Center={} Radius={}", circle2.Centre(), circle2.Radius());
+    float sqrMag = xt::sum(xt::square(Point<float, 2>(circle2.Centre() - Point<float, 2>({1, 2}))))[0];
+    CHECK(sqrMag < 0.01f);
+    CHECK(std::abs(circle2.Radius() - 2) < 0.01f);
+  }
 
-  Circle2dC<float> circle2;
-  EXPECT_TRUE(circle2.Fit(pnts[0],pnts[1],pnts[2]));
-  //SPDLOG_INFO("Center={} Radius={}", circle2.Centre(), circle2.Radius());
-  float sqrMag = xt::sum(xt::square(Point<float,2>(circle2.Centre() - Point<float,2>({1,2}))))[0];
-  CHECK(sqrMag < 0.01f);
-  CHECK(std::abs(circle2.Radius() - 2) < 0.01f);
-
-  using RealT = float;
+  SECTION("Fit N points.")
   {
     Circle2dC<float> circle;
     auto residual = Ravl2::fit(circle, pnts);
-
-
-//    if (!circle.FitLSQ(pnts, residual))
-//      return __LINE__;
-//    //cerr << "Residual=" << residual << "\n";
-//    //cerr << "Center=" << circle.Centre() << " Radius=" << circle.Radius() << "\n";
-//    if (Point<float, 2>(circle.Centre() - Point<float, 2>(1, 2)).SumOfSqr() > 0.01)
-//      return __LINE__;
-//    CHECK (std::abs(circle.Radius() - 2) < 0.01);
+    CHECK(residual.has_value());
+    SPDLOG_INFO("Center={} Radius={} Residual={}", circle.Centre(), circle.Radius(), residual.value());
+    CHECK(sumOfSqr(Point<float, 2>(circle.Centre() - toPoint<float>(1, 2))) < 0.01f);
+    CHECK(std::abs(circle.Radius() - 2) < 0.01f);
   }
 }
 
