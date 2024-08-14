@@ -8,6 +8,7 @@
 #include "Ravl2/Geometry/Geometry.hh"
 #include "Ravl2/Geometry/Moments2.hh"
 #include "Ravl2/Geometry/Circle.hh"
+#include "Ravl2/Geometry/FitCircle.hh"
 #include "Ravl2/Geometry/CircleIter.hh"
 #include "Ravl2/Geometry/LineABC2d.hh"
 #include "Ravl2/Geometry/Affine.hh"
@@ -199,18 +200,20 @@ TEST_CASE("Circle2", "[Circle2]")
   CHECK(sqrMag < 0.01f);
   CHECK(std::abs(circle2.Radius() - 2) < 0.01f);
 
-#if 0
-  Circle2dC<float> circle;
-  RealT residual;
-  if(!circle.FitLSQ(pnts,residual))
-    return __LINE__;
-  //cerr << "Residual=" << residual << "\n";
-  //cerr << "Center=" << circle.Centre() << " Radius=" << circle.Radius() << "\n";
-  if(Point<float,2>(circle.Centre() - Point<float,2>(1,2)).SumOfSqr() > 0.01)
-    return __LINE__;
-  if(Abs(circle.Radius() - 2) > 0.01)
-    return __LINE__;
-#endif
+  using RealT = float;
+  {
+    Circle2dC<float> circle;
+    auto residual = Ravl2::fit(circle, pnts);
+
+
+//    if (!circle.FitLSQ(pnts, residual))
+//      return __LINE__;
+//    //cerr << "Residual=" << residual << "\n";
+//    //cerr << "Center=" << circle.Centre() << " Radius=" << circle.Radius() << "\n";
+//    if (Point<float, 2>(circle.Centre() - Point<float, 2>(1, 2)).SumOfSqr() > 0.01)
+//      return __LINE__;
+//    CHECK (std::abs(circle.Radius() - 2) < 0.01);
+  }
 }
 
 TEST_CASE("Affine")

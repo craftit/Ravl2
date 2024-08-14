@@ -39,6 +39,10 @@ s/include "Ravl\/SysLog\.hh"/include <spdlog\/spdlog.h>/g
 /\/\/! file=/d
 /\/\/! userlevel=/d
 
+# Update documentation
+s/\/\/!param:/\/\/! @param /g
+s/\/\/!return:/\/\/! @return /g
+
 # Update some container types
 # Use std::vector< instead of DListC< by default
 s/DListC/std::vector/g
@@ -168,7 +172,7 @@ s/ Log(/ std::log(/g
 s/ Cos(/ std::cos(/g
 s/ Sin(/ std::sin(/g
 s/ Pow(/ std::pow(/g
-
+s/RavlConstN::pi/std::numbers::pi_v<RealT>/g
 s/IsAlmostZero(/isNearZero(/g
 s/CentroidX()/centroid<0>()/g
 s/CentroidY()/centroid<1>()/g

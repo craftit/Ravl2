@@ -4,18 +4,24 @@
 // General Public License (LGPL). See the lgpl.licence file for details or
 // see http://www.gnu.org/copyleft/lesser.html
 // file-header-ends-here
-#ifndef RAVLIMAGE_DRAWELLIPSE_HEADER
-#define RAVLIMAGE_DRAWELLIPSE_HEADER 1
 //! author="Charles Galambos"
+
+#pragma once
 
 #include "Ravl2/Geometry/Ellipse2d.hh"
 #include "Ravl2/Image/DrawPolygon.hh"
 
 namespace Ravl2
 {
+  //! @brief Draw an ellipse.
+  //! @param  image - Image to draw into.
+  //! @param  value - Value to draw.
+  //! @param  ellipse - Ellipse to draw.
+  //! This breaks the ellipse into 30 segments and draws as polygon. It could do
+  //! with a better way of choosing this number.
 
-  template <class DataT>
-  void DrawEllipse(Array<DataT, 2> &image, const DataT &value, const Ellipse2dC &ellipse, bool fill = false)
+  template <class DataT,typename RealT>
+  void DrawEllipse(Array<DataT, 2> &image, const DataT &value, const Ellipse2dC<RealT> &ellipse)
   {
     RealT maj, min;
     ellipse.Size(maj, min);
@@ -25,20 +31,37 @@ namespace Ravl2
         image[at] = value;
       return;
     }
-    RealT step = 2 * RavlConstN::pi / (maj + min);
-    Polygon2dC poly;
-    for(RealT a = 0; a < 2 * RavlConstN::pi; a += step)
+    RealT step = 2 * std::numbers::pi_v<RealT> / (maj + min);
+    Polygon2dC<RealT> poly;
+    for(RealT a = 0; a < 2 * std::numbers::pi_v<RealT>; a += step)
       poly.push_back(ellipse.Point(a));
-    DrawPolygon(image, value, poly, fill);
+    DrawPolygon(image, value, poly);
   }
-  //: Draw an ellipse.
-  //!param: image - Image to draw into.
-  //!param: value - Value to draw.
-  //!param: ellipse - Ellipse to draw.
-  //!param: fill - Fill polygon if true.
-  // Note, this currently just breaks the ellipse into 30 segments and draws as polygon. It could do
-  // with a better way of choosing this number.
+
+  //! @brief Draw a filled ellipse.
+  //! @param  image - Image to draw into.
+  //! @param  value - Value to draw.
+  //! @param  ellipse - Ellipse to draw.
+  //! This breaks the ellipse into 30 segments and draws as polygon. It could do
+  //! with a better way of choosing this number.
+
+  template <class DataT,typename RealT>
+  void DrawFilledEllipse(Array<DataT, 2> &image, const DataT &value, const Ellipse2dC<RealT> &ellipse)
+  {
+    RealT maj, min;
+    ellipse.Size(maj, min);
+    if((maj + min) < 3) {// Very small ?
+      Index<2> at = ellipse.Centre();
+      if(image.range().contains(at))
+        image[at] = value;
+      return;
+    }
+    RealT step = 2 * std::numbers::pi_v<RealT> / (maj + min);
+    Polygon2dC<RealT> poly;
+    for(RealT a = 0; a < 2 * std::numbers::pi_v<RealT>; a += step)
+      poly.push_back(ellipse.Point(a));
+    DrawFilledPolygon(image, value, poly, fill);
+  }
 
 }// namespace Ravl2
 
-#endif

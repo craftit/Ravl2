@@ -25,6 +25,8 @@ add_library (Ravl2Geometry
         Transform.cc Transform.hh
         FitLine.cc FitLine.hh
         PolyApprox.hh
+        Conic2d.cc Conic2d.hh
+        Ellipse2d.cc Ellipse2d.hh
 )
 
 add_library(ravl2::Ravl2Geometry ALIAS Ravl2Geometry)

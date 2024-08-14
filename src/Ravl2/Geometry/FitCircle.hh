@@ -7,8 +7,11 @@
 //! date="3/5/1997"
 //! author="Charles Galambos"
 
+#pragma once
+
+#include <spdlog/spdlog.h>
 #include "Ravl2/Geometry/Circle.hh"
-#include "Ravl2/LeastSquares.hh"
+#include "Ravl2/Math/LeastSquares.hh"
 
 #define DODEBUG 0
 #if DODEBUG
@@ -19,9 +22,7 @@
 
 namespace Ravl2
 {
-  ////////////////////
-  // Fit to some points.
-
+#if 0
   template <typename RealT>
   bool Circle2dC<RealT>::FitLSQ(const std::vector<Point<RealT, 2>> &points, RealT &residual)
   {
@@ -48,5 +49,46 @@ namespace Ravl2
     ONDEBUG(SPDLOG_INFO("Circle2dC::FitLSQ() Center={} Radius={}", Centre(), Radius()));
     return true;
   }
+#endif
+
+  //! @brief Fit points to a circle.
+  //! 'residual' is from the least squares fit and can be used to assess
+  //! the quality of the fit.  Returns false if fit failed.
+  template <typename RealT>
+  std::optional<RealT> fit(Circle2dC<RealT> &circle,const std::vector<Point<RealT, 2>> &points)
+  {
+    size_t N = points.size();
+    if(N < 3)// Under determined.
+      return std::nullopt;
+
+    typename MatrixT<RealT>::shape_type sh = {N, 3};
+    MatrixT<RealT> A = xt::zeros<RealT>(sh);
+    VectorT<RealT> B = xt::zeros<RealT>({N});
+    for(size_t i = 0; i < N; i++) {
+      const RealT X = points[i][0];
+      const RealT Y = points[i][1];
+      A[i][0] = X;
+      A[i][1] = Y;
+      A[i][2] = 1;
+      B[i] = -X * X - Y * Y;
+    }
+//    RealT residual = 0;
+//    if(!LeastSquaresQR_IP(A, B, residual))
+//      return std::nullopt;// Fit failed.
+
+    auto [x, residual, rank, s] = xt::linalg::lstsq(A, B);
+
+    const RealT X = x[0] / -2;
+    const RealT Y = x[1] / -2;
+
+    circle = Circle2dC<RealT>(toPoint<RealT>(X, Y), std::sqrt(((X * X) + (Y * Y)) - B[2]));
+    SPDLOG_INFO("Circle2dC::FitLSQ() Center={} Radius={}", circle.Centre(), circle.Radius());
+    return residual;
+
+  }
+
 
 }// namespace Ravl2
+
+#undef DODEBUG
+#undef ONDEBUG

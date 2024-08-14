@@ -8,6 +8,7 @@ add_library (Ravl2Math
         PrimeFactors.cc  PrimeFactors.hh
         FastFourierTransformMath.hh
         LinearAlgebra.cc LinearAlgebra.hh
+        LeastSquares.cc LeastSquares.hh
 )
 
 add_library(ravl2::Ravl2Math ALIAS Ravl2Math)

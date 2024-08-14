@@ -63,11 +63,6 @@ namespace Ravl2
       return true;
     }
 
-    //! Fit points to a circle.
-    // 'residual' is from the least squares fit and can be used to assess
-    // the quality of the fit.  Returns false if fit failed.
-    bool FitLSQ(const std::vector<Point<RealT, 2>> &points, RealT &residual);
-
     //! Constant access to radius.
     inline constexpr RealT &Radius()
     {
@@ -135,6 +130,14 @@ namespace Ravl2
     Point<RealT, 2> centre {};
     RealT radius = 0;
   };
+
+  //! @brief Fit points to a circle.
+  //! 'residual' is from the least squares fit and can be used to assess
+  //! the quality of the fit.  Returns false if fit failed.
+  template <typename RealT>
+  std::optional<RealT> fit(Circle2dC<RealT> &circle,const std::vector<Point<RealT, 2>> &points);
+
+
 
   // Let everyone know there's an implementation already generated for common cases
   extern template class Circle2dC<float>;
