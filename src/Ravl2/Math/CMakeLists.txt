@@ -5,16 +5,15 @@ add_library (Ravl2Math
         Sums1d2.cc Sums1d2.hh
         MeanVariance.cc MeanVariance.hh
         FastFourierTransform.cc FastFourierTransform.hh
-        PrimeFactors.cc
-        PrimeFactors.hh
+        PrimeFactors.cc  PrimeFactors.hh
         FastFourierTransformMath.hh
-        #        SumsNd2.hh SumsNd2.cc
+        LinearAlgebra.cc LinearAlgebra.hh
 )
 
 add_library(ravl2::Ravl2Math ALIAS Ravl2Math)
 
 target_link_libraries(Ravl2Math PRIVATE RAVL2_options RAVL2_warnings)
-target_link_libraries(Ravl2Math PUBLIC Ravl2Image )
+target_link_libraries(Ravl2Math PUBLIC Ravl2Core )
 
 target_include_directories(Ravl2Math ${WARNING_GUARD} PUBLIC
         $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src>

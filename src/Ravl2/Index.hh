@@ -112,6 +112,15 @@ namespace Ravl2
       return ret;
     }
 
+    //! Unary minus
+    [[nodiscard]] constexpr Index<N> operator-() const
+    {
+      Index<N> ret;
+      for(unsigned i = 0; i < N; i++)
+        ret[i] = -m_index[i];
+      return ret;
+    }
+
     //! Equality test.
     [[nodiscard]] constexpr bool operator==(const Index<N> &ind) const
     {

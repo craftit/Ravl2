@@ -259,6 +259,22 @@ namespace Ravl2
       std::swap(m20, m02);
     }
 
+    //! Shift the moments by a vector.
+    void shift(const Point<SumT, 2> &shift)
+    {
+      m20 += 2 * m10 * shift[0] + m00 * sqr(shift[0]);
+      m02 += 2 * m01 * shift[1] + m00 * sqr(shift[1]);
+      m11 += m10 * shift[1] + m01 * shift[0] + m00 * shift[0] * shift[1];
+      m10 += m00 * shift[0];
+      m01 += m00 * shift[1];
+    }
+
+    //! Shift the moments by an index.
+    inline void shift(const Index<2> &shift)
+    {
+      this->shift(toPoint<SumT>(shift));
+    }
+
     //! Serialization support
     template <class Archive>
     void serialize(Archive &ar)

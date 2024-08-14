@@ -41,6 +41,49 @@ TEST_CASE("Moments")
     ASSERT_FLOAT_EQ(moments.centroid()[0], 0.5);
     ASSERT_FLOAT_EQ(moments.centroid()[1], 0.5);
   }
+  SECTION("Shift")
+  {
+    Moments2<int> momentsA;
+    momentsA.addPixel(Index<2>(1,1));
+
+    Moments2<int> momentsB;
+    std::vector<Index<2>> pnts {
+      {1,1},
+      {1,2},
+      {2,2}
+    };
+    for(auto p : pnts)
+      momentsB.addPixel(p);
+
+    std::vector<Index<2>> offsets {
+      {0,0},
+      {1,0},
+      {0,1},
+      {1,1},
+      {2,1},
+      {1,2},
+      {2,2}
+    };
+
+    for(auto offset : offsets) {
+      {
+        Moments2<int> moments;
+        moments.addPixel(Index<2>(1, 1) + offset);
+        moments.shift(-offset);
+        //SPDLOG_INFO("A Offset {} : {}  shifted ", offset, moments);
+        CHECK(momentsA == moments);
+      }
+      {
+        Moments2<int> moments;
+        for(auto p : pnts) {
+          moments.addPixel(p + offset);
+        }
+        moments.shift(-offset);
+        //SPDLOG_INFO("B Offset {} : {}  shifted ", offset, moments);
+        CHECK(momentsB == moments);
+      }
+    }
+  }
 
   SECTION("Cereal IO")
   {

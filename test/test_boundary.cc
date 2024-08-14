@@ -295,6 +295,8 @@ TEST_CASE("Boundary Moments")
     auto moments = moments2<int>(bnds);
     SPDLOG_INFO("1 Simple: {}  Moments: {}  ", momentsSimple, moments);
 
+
+
     CHECK(momentsSimple == moments);
   }
 
@@ -313,6 +315,7 @@ TEST_CASE("Boundary Moments")
 
     auto moments = moments2<int>(bnds);
     SPDLOG_INFO("1a Simple: {}  Moments: {}  ", momentsSimple, moments);
+
     CHECK(momentsSimple == moments);
   }
 
@@ -332,6 +335,7 @@ TEST_CASE("Boundary Moments")
     auto moments = moments2<int>(bnds);
     SPDLOG_INFO("1b Simple: {}  Moments: {}  ", momentsSimple, moments);
     CHECK(momentsSimple == moments);
+
   }
 
   {
