@@ -20,10 +20,7 @@ namespace Ravl2
     if(samples < 5) {
       return std::nullopt;
     }
-
     // ---------- Compute parameters ----------------------
-//    if(samples == 5)
-//      samples++;
     typename MatrixT<RealT>::shape_type sh = {samples,6};
     Tensor<RealT,2> A(sh);
     size_t i = 0;
@@ -37,16 +34,11 @@ namespace Ravl2
       A(i,5) = 1;
       i++;
     });
-//    // Duplicate row to avoid problem with SVD.
-//    if(samples != points.size()) {
-//      i = points.size();
-//      A(i) = A(0);
-//    }
     //cerr << "A=" << A.range(0).size() << " " << A.range(1).size() << " Vec=" << c.size() << "\n";
     VectorT<RealT> result;
     LeastSquaresEq0Mag1(A,result);
 
-    //cerr << "Result1=" << result << "\n Cr=" << Cr<< "\n";
+    //SPDLOG_INFO("Result1={}", result);
     // --------- Undo normalisation ----------------
     // TODO:- Make this more efficient by expanding out manually.
     Conic2dC<RealT> Cr(result);

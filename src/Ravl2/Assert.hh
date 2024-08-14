@@ -10,6 +10,7 @@
       abort();                                  \
     }                                           \
   }
+
 #define RavlAlwaysAssertMsg(cond, ...) \
   {                                    \
     if(!(cond)) {                      \

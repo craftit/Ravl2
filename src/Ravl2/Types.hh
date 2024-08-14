@@ -128,7 +128,10 @@ struct fmt::formatter<xt::xarray<float>> : fmt::ostream_formatter {
 template <>
 struct fmt::formatter<Ravl2::Point2f> : fmt::ostream_formatter {
 };
-//template <> struct fmt::formatter<xt::xtensor<float,1> > : ostream_formatter{};
+template <>
+struct fmt::formatter<xt::xtensor<float,1> > : ostream_formatter {
+
+};
 template <>
 struct fmt::formatter<xt::xarray<float>::shape_type> : fmt::ostream_formatter {
 };

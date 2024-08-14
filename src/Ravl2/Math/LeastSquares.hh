@@ -89,13 +89,9 @@ namespace Ravl2
   bool LeastSquaresEq0Mag1(const Tensor<RealT, 2> &X, VectorT<RealT> &rv)
   {
     auto [U, S, V] = xt::linalg::svd(X);
-    auto v = xt::view(V, xt::all(), -1);
-    rv = xt::view(v, xt::all());
-//    SVDC<RealT> SVD(X,false,true);
-//    MatrixC v = SVD.GetV();
-//    TVectorC<RealT> sv = SVD.SingularValues();
-//    rv = v.SliceColumn(v.Cols()-1);
-//    return true;
+    // The result matrix V is transposed from what we would expect.
+    // rv = xt::view(V, xt::all(), -1);
+    rv = xt::view(V, -1, xt::all());
     return true;
   }
 

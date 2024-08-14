@@ -229,9 +229,13 @@ TEST_CASE("Conic")
   auto residual = fit(conic, pnts);
   CHECK(residual.has_value());
   SPDLOG_INFO("Conic: {}", conic);
+  //=-0.264764 -0.132382 -0.066191 1.05906 0.463337 -0.794292
+  Ravl2::Conic2dC<float> conic2(-0.264764f, -0.132382f, -0.066191f, 1.05906f, 0.463337f, -0.794292f);
+
   for(auto p : pnts) {
-    SPDLOG_INFO("Point {} is on curve: {}", p, conic.Residue(p));
-    CHECK(conic.IsOnCurve(p));
+    SPDLOG_INFO("Point {} is on curve: {} 2:{} ", p, conic.Residue(p), conic2.Residue(p));
+    CHECK(conic.IsOnCurve(p,1e-4f));
+    CHECK(conic2.IsOnCurve(p,1e-4f));
   }
 }
 
