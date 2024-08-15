@@ -19,6 +19,14 @@
 //#include "Ravl2/Ellipse2d.hh"
 //#include "Ravl2/Eigen.hh"
 
+
+#define DODEBUG 1
+#if DODEBUG
+#define ONDEBUG(x) x
+#else
+#define ONDEBUG(x)
+#endif
+
 namespace Ravl2 {
 
   //! @brief Conic in 2d space.
@@ -117,12 +125,12 @@ namespace Ravl2 {
       Matrix<RealT,2,2> t;
       if(!ComputeEllipse(centre,t))
         return false;
-      angle = std::atan2(-2*t[0][1],-t[0][0]+t[1][1])/2;
+      angle = std::atan2(-2*t(0,1),-t(0,0)+t(1,1))/2;
       RealT cosa=std::cos(angle);
       RealT sina=std::sin(angle);
-      RealT w = 2*t[0][1]*cosa*sina;
-      major = std::sqrt(1.0/(t[0][0]*cosa*cosa+w+t[1][1]*sina*sina));
-      minor = std::sqrt(1.0/(t[0][0]*sina*sina-w+t[1][1]*cosa*cosa));
+      RealT w = 2*t(0,1)*cosa*sina;
+      major = std::sqrt(1/(t(0,0)*cosa*cosa+w+t(1,1)*sina*sina));
+      minor = std::sqrt(1/(t(0,0)*sina*sina-w+t(1,1)*cosa*cosa));
       ONDEBUG(SPDLOG_INFO("Center={} Major={} Minor={} Angle={}", centre, major, minor, angle));
       return true;
     }
@@ -200,3 +208,6 @@ template <typename RealT>
 struct fmt::formatter<Ravl2::Conic2dC<RealT> > : fmt::ostream_formatter {
 };
 #endif
+
+#undef DODEBUG
+#undef ONDEBUG

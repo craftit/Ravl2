@@ -39,6 +39,9 @@ namespace Ravl2
       return IsElm();
     }
 
+    //! At valid position ?
+    [[nodiscard]] inline bool valid() const { return (octant > -1); }
+
     //! Get point.
     // Largest error from radius should be less than 0.5
     [[nodiscard]] inline const Index<2> &Data() const { return data; }
@@ -51,13 +54,13 @@ namespace Ravl2
 
     //! Goto next point.
     // Returns true if we're now at a valid point.
-    bool Next();
+    bool next();
 
     //! Goto next point.
     // Returns true if we're now at a valid point.
     bool operator++(int)
     {
-      return Next();
+      return next();
     }
 
   private:

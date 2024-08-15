@@ -38,7 +38,7 @@ namespace Ravl2
     }
   }
 
-  bool CircleIterC::Next()
+  bool CircleIterC::next()
   {
     octant++;
     switch(octant) {

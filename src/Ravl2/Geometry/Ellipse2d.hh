@@ -66,17 +66,17 @@ namespace Ravl2 {
     //!param: angle - Angle of major axis.
     Ellipse2dC(const Point<RealT,2> &centre,RealT major,RealT minor,RealT angle)
     {
-      p = FAffineC<2>(Matrix<RealT, 2, 2>(std::cos(angle), -std::sin(angle),
-                                          std::sin(angle), std::cos(angle)) *
-                      Matrix<RealT, 2, 2>(major, 0,
-                                          0, minor),
+      p = Affine<RealT,2>(xt::linalg::dot(Matrix<RealT, 2, 2>({{std::cos(angle), -std::sin(angle)},
+                                          {std::sin(angle), std::cos(angle)}}),
+                      Matrix<RealT, 2, 2>({{major, 0},
+                                               {0, minor}})),
                       centre);
     }
 
 
     //! Compute point on ellipse.
     [[nodiscard]] Point<RealT,2> point(RealT angle) const
-    { return p * Angle2Vector2d(angle); }
+    { return p(toVector<RealT>(std::cos(angle),std::sin(angle))); }
 
     //! Access as projection from unit circle centered on the origin
     [[nodiscard]] const Affine<RealT,2> &Projection() const

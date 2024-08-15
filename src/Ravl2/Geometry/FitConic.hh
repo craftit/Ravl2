@@ -3,7 +3,7 @@
 #include "Ravl2/Geometry/Conic2d.hh"
 #include "Ravl2/Geometry/Ellipse2d.hh"
 
-#define DODEBUG 0
+#define DODEBUG 1
 #if DODEBUG
 #define ONDEBUG(x) x
 #else
@@ -61,15 +61,15 @@ namespace Ravl2
   //! by Radim Halir and Jan Flusser.
 
   template<typename RealT>
-  bool fitEllipse(Conic2dC<RealT> &conic, const std::vector<Point<RealT,2>> &points) {
+  std::optional<RealT> fitEllipse(Conic2dC<RealT> &conic, const std::vector<Point<RealT,2>> &points) {
     if(points.size() < 5)
-      return false;
+      return std::nullopt;
 
     // Normalise points.
 
-    Matrix<RealT,3,3> Hi;
-    std::vector<Point<RealT,2>> normPoints;
-    Normalise(points,normPoints,Hi);
+//    Matrix<RealT,3,3> Hi;
+//    std::vector<Point<RealT,2>> normPoints;
+//    Normalise(points,normPoints,Hi);
 
     typename MatrixT<RealT>::shape_type sh = {points.size(), 3};
     Tensor<RealT,2> D1 = xt::empty<RealT>(sh);
@@ -84,17 +84,24 @@ namespace Ravl2
         D2(i,0) = l[0];
         D2(i,1) = l[1];
         D2(i,2) = 1;
+        i++;
       });
+    ONDEBUG(SPDLOG_INFO("Norm Mean={} Scale={}", mean, scale));
 
     Tensor<RealT,2> S1 = xt::linalg::dot(xt::transpose(D1),D1);
     Tensor<RealT,2> S2 = xt::linalg::dot(xt::transpose(D1),D2);
     Tensor<RealT,2> S3 = xt::linalg::dot(xt::transpose(D2),D2);
-    S3 = inverse(S3);
+
+    ONDEBUG(std::cerr << "S1=" << S1 << "\n");
+    ONDEBUG(std::cerr << "S2=" << S2 << "\n");
+    ONDEBUG(std::cerr << "S3=" << S3 << "\n");
+
+    S3 = xt::linalg::inv(S3);
     Tensor<RealT,2> T = xt::linalg::dot(S3,xt::transpose(S2)) * -1;
     Tensor<RealT,2> M = S1 + xt::linalg::dot(S2,T);
-    M = Tensor<RealT,2>({{M[2][0]/2,M[2][1]/2,M[2][2]/2},
-                         {-M[1][0],-M[1][1],-M[1][2]},
-                         {M[0][0]/2,M[0][1]/2,M[0][2]/2}});
+    M = Tensor<RealT,2>({{M(2,0)/2,M(2,1)/2,M(2,2)/2},
+                         {-M(1,0),-M(1,1),-M(1,2)},
+                         {M(0,0)/2,M(0,1)/2,M(0,2)/2}});
 
     ONDEBUG(std::cerr << "M=" << M << "\n");
 //    EigenValueC<RealT> evs(M);
@@ -103,29 +110,34 @@ namespace Ravl2
 //    ONDEBUG(std::cerr << "D=" << eD << "\n");
 //    Tensor<RealT,2> ev = evs.EigenVectors();
 
-    auto [ed,ev] = xt::linalg::eig(M);
+    auto [ed,ev] = xt::linalg::eigh(M);
 
     ONDEBUG(std::cerr << "ev=" << ev << "\n");
+    ONDEBUG(std::cerr << "ed=" << ed << "\n");
 //    VectorT<RealT> cond =
 //      VectorT<RealT>(ev.SliceRow(0)) * VectorT<RealT>(ev.SliceRow(2)) * 4
 //      - VectorT<RealT>(ev.SliceRow(1)) * VectorT<RealT>(ev.SliceRow(1));
 
     auto cond = xt::eval(xt::view(ev, 0, xt::all()) * xt::view(ev, 2, xt::all()) * 4 - xt::view(ev, 1, xt::all()) * xt::view(ev, 1, xt::all()));
 
-      //    //cerr << "Cond=" << cond << "\n";
+    ONDEBUG(std::cerr << "Cond=" << cond << "\n");
 //    VectorT<RealT> a1 = ev.SliceColumn(cond.IndexOfMax());
 //    VectorT<RealT> a = a1.Append(T * a1);
 
-    auto a1 = xt::view(ev, xt::all(), xt::argmax(cond));
-
-    Vector<RealT,6> a = xt::concatenate(a1, xt::linalg::dot(T * a1));
+    Vector<RealT,3> a1 = xt::view(ev, xt::all(), xt::argmax(cond)());
+    Vector<RealT,3> a2 = xt::linalg::dot(T , a1);
+    Vector<RealT,6> a = xt::concatenate(xt::xtuple(a1, a2),1);
 
     // Undo normalisation.
     Conic2dC Cr(a);
-    Matrix<RealT,3,3> nC = Hi.TMul(Cr.C()) * Hi;
-    conic = Conic2dC(nC);
+    Matrix<RealT,3,3> Hi(
+      {{ scale,0,-mean[0] * scale},
+       {0,scale,-mean[1] * scale},
+       { 0,0,1}});
 
-    return true;
+    Matrix<RealT,3,3> nC = xt::linalg::dot( xt::linalg::dot(xt::transpose(Hi) ,Cr.C()), Hi);
+    conic = Conic2dC(nC);
+    return 0;
   }
 #endif
 

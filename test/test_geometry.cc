@@ -218,12 +218,12 @@ TEST_CASE("CircleIter")
   RealT maxDist = 0;
   Point<float,2> origin({0,0});
   Point<float,2> at;
-  for(CircleIterC it(rad);it.IsElm();it.Next(),i++) {
+  for(CircleIterC it(rad);it.valid();it.next(),i++) {
     at[0] = float(it.Data()[0]);
     at[1] = float(it.Data()[1]);
     RealT dst =  euclidDistance<float,2>(at,origin);
     RealT diff = std::abs(RealT(rad) - dst);
-    //cerr << "Dst:" << Abs((RealT) rad - dst) << " ";
+    //cerr << "Dst:" << std::abs((RealT) rad - dst) << " ";
     CHECK(diff < 0.5f); // Should never be greater than 0.5 !
     if(diff > maxDist)
       maxDist = diff;
@@ -305,6 +305,7 @@ TEST_CASE("Ellipse")
 #if 1
     Conic2dC<float> conic {};
     auto residual = fit(conic, pnts);
+    //auto residual = fitEllipse(conic, pnts);
     CHECK(residual.has_value());
     SPDLOG_INFO("Ellipse: {}", conic);
 
@@ -318,13 +319,54 @@ TEST_CASE("Ellipse")
     }
 #endif
   }
-
-  SECTION("Fitting")
+#if 0
+  SECTION("Fitting Orientations")
   {
+    using RealT = float;
 
-
+    // Generates series of ellipses with orientations from 0 to pi
+    size_t numSteps = 10;
+    RealT angleStep = std::numbers::pi_v<RealT>/RealT(numSteps);
+    for(size_t j = 0;j < numSteps;j++) {
+      RealT tangle = RealT(j) * angleStep;
+      Point<RealT,2> gtc = toPoint<RealT>(50,50);
+      // Generate ellispe
+      Ellipse2dC<RealT> ellipse(gtc,RealT(40),RealT(20),tangle);
+      // Generate set of points on ellipse
+      RealT step = std::numbers::pi_v<RealT>/5;
+      std::vector<Point<RealT,2>> points(10);
+      size_t i = 0;
+      for(RealT a = 0;i < 10;a += step,i++) {
+        points[i] = ellipse.point(a);
+      }
+      // Fit set of points to ellipse as conic
+      Conic2dC<RealT> conic;
+      CHECK(fitEllipse(conic, points));
+      //cerr << "Conic=" << conic.C() << "\n";
+      Point<RealT,2> centre;
+      RealT min,maj,ang;
+      conic.EllipseParameters(centre,maj,min,ang);
+      //cerr << "Conic representation parameters=" << centre << " " << maj << " " << min << " " << ang << "   Diff=" << AngleC(ang,std::numbers::pi_v<RealT>).Diff(AngleC(tangle,std::numbers::pi_v<RealT>)) << "\n";
+      CHECK(xt::sum(xt::abs(centre - gtc))() < 0.00000001f);
+#if 0
+      if(std::abs(maj - 40) > 0.000000001) return __LINE__;
+      if(std::abs(min - 20) > 0.000000001) return __LINE__;
+      if(std::abs(AngleC(ang,std::numbers::pi_v<RealT>).Diff(AngleC(tangle,std::numbers::pi_v<RealT>))) > 0.000001) return __LINE__;
+      // Fit same set of points to ellipse as Ellipse2dC
+      Ellipse2dC ellipse2;
+      CHECK(FitEllipse(points,ellipse2));
+      // Check that fitted ellipse has same params as original
+      ellipse2.EllipseParameters(centre,maj,min,ang);
+      //cerr << "Ellipse representation parameters=" << centre << " " << maj << " " << min << " " << ang << "  Diff=" << AngleC(ang,std::numbers::pi_v<RealT>).Diff(AngleC(tangle,std::numbers::pi_v<RealT>)) << "\n";
+      if((centre - gtc).SumOfstd::abs() > 0.00000001) return __LINE__;
+      if(std::abs(maj - 40) > 0.000000001) return __LINE__;
+      if(std::abs(min - 20) > 0.000000001) return __LINE__;
+      //cerr << "param angle vs orig: " << ang << " " << tangle << endl;
+      if(std::abs(AngleC(ang,std::numbers::pi_v<RealT>).Diff(AngleC(tangle,std::numbers::pi_v<RealT>))) > 0.000001) return __LINE__;
+#endif
+    }
   }
-
+#endif
 }
 
 
