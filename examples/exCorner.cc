@@ -16,6 +16,7 @@
 #include "Ravl2/Image/DrawFrame.hh"
 #include "Ravl2/Image/DrawCross.hh"
 #include "Ravl2/OpenCV/Image.hh"
+#include "Ravl2/Resource.hh"
 
 #include <opencv2/imgcodecs.hpp>
 #include <opencv2/highgui.hpp>
@@ -35,7 +36,8 @@ int main(int argc,char **argv)
   bool deinterlace = false;
   
   int frameLimit = 0;
-  std::string inf = "/home/charles/src/Ravl2/data/lena.jpg";
+
+  std::string inf = findFileResource("data","lena.jpg",verbose);
   std::string outf = "out.ppm";
 
   app.add_option("-t", threshold, "Threshold. ");
@@ -69,7 +71,7 @@ int main(int argc,char **argv)
  auto cornerDet = Ravl2::CornerDetectorSusan(threshold);
   
   if(!seq) {
-    // Process a signle image
+    // Process a single image
     cv::startWindowThread();
 
     SPDLOG_INFO("Loading image '{}'", inf);
