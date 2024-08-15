@@ -20,22 +20,7 @@ namespace Ravl2 {
 
 #if 0
 
-  //: Fit ellipse to points.
-  
-  bool FitEllipse(const std::vector<Point<RealT,2>> &points,Ellipse2dC &ellipse) {
-    Conic2dC conic;
-    if(!FitEllipse(points,conic))
-      return false;
-    return conic.AsEllipse(ellipse);
-  }
 
-  //: Is point on the curve ?
-  
-  bool Ellipse2dC::IsOnCurve(const Point<RealT,2> &pnt) const {
-    Point<RealT,2> mp = p.Inverse() * pnt;
-    RealT d = mp.SumOfSqr() - 1;
-    return IsSmall(d);
-  }
 
   //: Compute various ellipse parameters.
   //!param: centre - Centre of ellipse.
@@ -73,20 +58,6 @@ namespace Ravl2 {
     return true;
   }
   
-
-  //: Compute an ellipse from a covariance matrix, mean, and standard deviation.
-  
-  Ellipse2dC EllipseMeanCovariance(const Matrix<RealT,2,2> &covar,const Point<RealT,2> &mean,RealT stdDev) {
-    Vector<RealT,2> dv;
-    Matrix<RealT,2,2> E;
-    EigenVectors(covar,E,dv);
-    ONDEBUG(cerr<<"l: "<<dv<<"\nE\n"<<E<<endl);
-    Matrix<RealT,2,2> d(stdDev*Sqrt(dv[0]),0,
-		0,stdDev*Sqrt(dv[1]));
-    // TODO:- Multiply out by hand to make it faster.
-    Matrix<RealT,2,2> sr = E * d;
-    return Ellipse2dC(sr,mean);
-  }
 
 #endif
   

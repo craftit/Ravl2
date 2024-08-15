@@ -174,8 +174,13 @@ s/ Sin(/ std::sin(/g
 s/ Pow(/ std::pow(/g
 s/RavlConstN::pi/std::numbers::pi_v<RealT>/g
 s/IsAlmostZero(/isNearZero(/g
+s/IsSmall(/isNearZero(/g
 s/CentroidX()/centroid<0>()/g
 s/CentroidY()/centroid<1>()/g
+
+# Do this later to avoid conflicts
+s/VectorC/VectorT<RealT>/g
+s/MatrixC/Tensor<RealT,2>/g
 
 # Deal with images
 s/ImageC<\([^>]*\)>/Array<\1,2>/g

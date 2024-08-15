@@ -13,6 +13,13 @@
 #include "Ravl2/Types.hh"
 #include "Ravl2/Geometry/Affine.hh"
 
+#define DODEBUG 0
+#if DODEBUG
+#define ONDEBUG(x) x
+#else
+#define ONDEBUG(x)
+#endif
+
 namespace Ravl2 {
   template<typename RealT>
   class Conic2dC;
@@ -79,27 +86,27 @@ namespace Ravl2 {
     { return p.Translation(); }
 
     //! Is point on the curve ?
-    [[nodiscard]] bool IsOnCurve(const Point<RealT,2> &pnt) const;
+    [[nodiscard]] bool IsOnCurve(const Point<RealT,2> &pnt,RealT tolerance=std::numeric_limits<RealT>::epsilon()) const
+    {
+      Point<RealT,2> mp = xt::linalg::dot(inverse(p), pnt);
+      RealT d = sumOfSqr(mp) - 1;
+      return isNearZero(d,tolerance);
+    }
 
-    //: Compute various ellipse parameters.
+    //! @brief Compute various ellipse parameters.
     //!param: centre - Centre of ellipse.
     //!param: major - Size of major axis.
     //!param: minor - Size of minor axis
     //!param: angle - Angle of major axis.
     bool EllipseParameters(Point<RealT,2> &centre,RealT &major,RealT &minor,RealT &angle) const;
 
-#if 0
-    //: Compute the size of major and minor axis.
-    //!param: major - Size of major axis.
-    //!param: minor - Size of minor axis
-    bool Size(RealT &major,RealT &minor) const
+    //! @brief Compute the size of major and minor axis.
+    //! @return Size of major and minor axis.
+    Vector<RealT,2> size() const
     {
-      FVectorC<2> vec = SVD(p.SRMatrix());
-      major = vec[0];
-      minor = vec[1];
-      return true;
+      auto [s,v,d] = xt::linalg::svd(p.SRMatrix(),false,false);
+      return toVector<RealT>(d);
     }
-#endif
 
   protected:    
     Affine<RealT,2> p; // Projection from unit circle.
@@ -107,9 +114,39 @@ namespace Ravl2 {
 
   //! @brief Represent conic as an ellipse.
   //! @param  conic - Conic to turn into an Ellipse
-  //!return: Ellipse if conic is an ellipse, otherwise std::nullopt.
+  //! @return Ellipse if conic is an ellipse, otherwise if hyperbola or degenerate std::nullopt.
   template<typename RealT>
-  std::optional<Ellipse2dC<RealT> > toEllipse(Conic2dC<RealT> &ellipse);
+  std::optional<Ellipse2dC<RealT> > toEllipse(Conic2dC<RealT> &ellipse) {
+    // Ellipse representation is transformation required to transform unit
+    // circle into ellipse.  This is the inverse of the "square root" of
+    // Euclidean matrix representation
+    Matrix<RealT,2,2> euc; // Euclidean representation of eclipse equation
+    Point<RealT,2> centre;
+    // Separate projective ellipse representation into Euclidean + translation
+    if(!ellipse.ComputeEllipse(centre,euc))
+      return false;
+    ONDEBUG(std::cerr << "Euclidean ellipse is:\n" << euc << endl);
+
+    // Then decompose to get orientation and scale
+    Vector<RealT,2> lambda;
+    Matrix<RealT,2,2> E;
+    EigenVectors(euc,E,lambda);
+    // lambda now contains inverted squared *minor* & *major* axes respectively
+    // (N.B.: check: E[0][1] *MUST* have same sign as ellipse orientation)
+    ONDEBUG(std::cerr << "Eigen decomp is:\n" << E << "\n" << lambda << endl);
+
+    Matrix<RealT,2,2> scale({{0,                 1/Sqrt(lambda[0])},
+                               {1/Sqrt(lambda[1]), 0                }});
+    // Columns are swapped in order to swap x & y to compensate for eigenvalue
+    // ordering.  I.e. so that [1,0] on unit circle gets mapped to
+    // end of major axis rather than minor axis.
+
+    // TODO:- Multiply out by hand to make it faster.
+    ellipse = Ellipse2dC(E * scale, centre);
+    ONDEBUG(cerr<<"Ellipse2dC:\n"<<ellipse<<endl);
+    ONDEBUG(cerr<<"[1,0] on unit circle goes to "<<ellipse.Projection()*(Vector<RealT,2>(1,0))<<" on ellipse"<<endl;);
+    return ellipse;
+  }
 
 
   //! @brief Fit ellipse to points.
@@ -124,7 +161,18 @@ namespace Ravl2 {
   //! @brief Compute an ellipse from a 2d covariance matrix, mean, and standard deviation.
   //! The ellipse is the contour of a 2-D Gaussian random variable which lies "stdDev" standard deviations from the mean.
   template<typename RealT>
-  Ellipse2dC<RealT> EllipseMeanCovariance(const Matrix<RealT,2,2> &covar,const Point<RealT,2> &mean,RealT stdDev = 1.0);
+  Ellipse2dC<RealT> EllipseMeanCovariance(const Matrix<RealT,2,2> &covar,const Point<RealT,2> &mean,RealT stdDev = 1.0)
+  {
+    Vector<RealT,2> dv;
+    Matrix<RealT,2,2> E;
+    EigenVectors(covar,E,dv);
+    ONDEBUG(cerr<<"l: "<<dv<<"\nE\n"<<E<<endl);
+    Matrix<RealT,2,2> d(stdDev*Sqrt(dv[0]),0,
+                          0,stdDev*Sqrt(dv[1]));
+    // TODO:- Multiply out by hand to make it faster.
+    Matrix<RealT,2,2> sr = E * d;
+    return Ellipse2dC(sr,mean);
+  }
 
   //:-
   //! docentry="Ravl.API.Math.Geometry.2D"
@@ -154,5 +202,7 @@ struct fmt::formatter<Ravl2::Ellipse2dC<RealT> > : fmt::ostream_formatter {
 };
 #endif
 
+#undef DODEBUG
+#undef ONDEBUG
 
 

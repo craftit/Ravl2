@@ -117,17 +117,16 @@ namespace Ravl2 {
       Matrix<RealT,2,2> t;
       if(!ComputeEllipse(centre,t))
         return false;
-      angle = atan2(-2*t[0][1],-t[0][0]+t[1][1])/2;
-      RealT cosa=Cos(angle);
-      RealT sina=Sin(angle);
+      angle = std::atan2(-2*t[0][1],-t[0][0]+t[1][1])/2;
+      RealT cosa=std::cos(angle);
+      RealT sina=std::sin(angle);
       RealT w = 2*t[0][1]*cosa*sina;
-      major =Sqrt(1.0/(t[0][0]*cosa*cosa+w+t[1][1]*sina*sina));
-      minor =Sqrt(1.0/(t[0][0]*sina*sina-w+t[1][1]*cosa*cosa));
-      ONDEBUG(std::cerr << "Center=" << centre << " Major=" << major << " Minor=" << minor << " Angle=" << angle << "\n");
+      major = std::sqrt(1.0/(t[0][0]*cosa*cosa+w+t[1][1]*sina*sina));
+      minor = std::sqrt(1.0/(t[0][0]*sina*sina-w+t[1][1]*cosa*cosa));
+      ONDEBUG(SPDLOG_INFO("Center={} Major={} Minor={} Angle={}", centre, major, minor, angle));
       return true;
     }
 
-  private:
     //! @brief Compute ellipse parameters.
     // Assumes conic is ellipse, computes ellipse centre and returns remaining parameters as symmetric 2D matrix
     bool ComputeEllipse(Point<RealT,2> &c,Matrix<RealT,2,2> &mat) const
@@ -162,25 +161,18 @@ namespace Ravl2 {
       RealT t = u[1] * scale * 0.5;
       mat = Matrix<RealT,2,2>(u[0] * scale,t,
                               t,u[2] * scale);
-
-//      ONDEBUG(std::cerr << "Scale=" << scale << "\n");
-//      ONDEBUG(std::cerr << "mat=" << mat << "\n");
-//      ONDEBUG(std::cerr << "c=" << c << "\n");
       return true;
     }
+
+  private:
 
     Vector<RealT,6> p; // 0-a 1-b 2-c 3-d 4-e 5-f 
   };
 
 #if 0
 
-  Conic2dC FitConic(const Array<Point<RealT,2>,1> &points);
-  //: Fit a conic to a set of points.
-  
   bool FitEllipse(const std::vector<Point<RealT,2>> &points,Conic2dC &conic);
   //: Fit ellipse
-  // Based on method presented in 'Numerically Stable Direct Least Squares Fitting of Ellipses' 
-  // by Radim Halir and Jan Flusser.
 #endif
 
   //! Write ellipse to text stream.
