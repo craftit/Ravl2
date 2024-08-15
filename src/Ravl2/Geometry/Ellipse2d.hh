@@ -12,6 +12,7 @@
 
 #include "Ravl2/Types.hh"
 #include "Ravl2/Geometry/Affine.hh"
+#include "Ravl2/Math/LinearAlgebra.hh"
 
 #define DODEBUG 0
 #if DODEBUG
@@ -88,9 +89,16 @@ namespace Ravl2 {
     //! Is point on the curve ?
     [[nodiscard]] bool IsOnCurve(const Point<RealT,2> &pnt,RealT tolerance=std::numeric_limits<RealT>::epsilon()) const
     {
-      Point<RealT,2> mp = xt::linalg::dot(inverse(p), pnt);
+      Point<RealT,2> mp = inverse(p)(pnt);
       RealT d = sumOfSqr(mp) - 1;
       return isNearZero(d,tolerance);
+    }
+
+    //! Compute the residue from
+    [[nodiscard]] RealT residue(const Point<RealT,2> &pnt) const
+    {
+      Point<RealT,2> mp = inverse(p)(pnt);
+      return sumOfSqr(mp) - 1;
     }
 
     //! @brief Compute various ellipse parameters.
@@ -112,40 +120,39 @@ namespace Ravl2 {
     Affine<RealT,2> p; // Projection from unit circle.
   };
 
-  //! @brief Represent conic as an ellipse.
+  //! @brief Represent conic as an conic.
   //! @param  conic - Conic to turn into an Ellipse
-  //! @return Ellipse if conic is an ellipse, otherwise if hyperbola or degenerate std::nullopt.
+  //! @return Ellipse if conic is an conic, otherwise if hyperbola or degenerate std::nullopt.
   template<typename RealT>
-  std::optional<Ellipse2dC<RealT> > toEllipse(Conic2dC<RealT> &ellipse) {
+  std::optional<Ellipse2dC<RealT> > toEllipse(const Conic2dC<RealT> &conic) {
     // Ellipse representation is transformation required to transform unit
-    // circle into ellipse.  This is the inverse of the "square root" of
+    // circle into conic.  This is the inverse of the "square root" of
     // Euclidean matrix representation
     Matrix<RealT,2,2> euc; // Euclidean representation of eclipse equation
     Point<RealT,2> centre;
-    // Separate projective ellipse representation into Euclidean + translation
-    if(!ellipse.ComputeEllipse(centre,euc))
-      return false;
-    ONDEBUG(std::cerr << "Euclidean ellipse is:\n" << euc << endl);
+    // Separate projective conic representation into Euclidean + translation
+    if(!conic.ComputeEllipse(centre,euc))
+      return std::nullopt;
+    ONDEBUG(std::cerr << "Euclidean conic is:\n" << euc << "\n Center="<< centre <<  std::endl);
 
     // Then decompose to get orientation and scale
-    Vector<RealT,2> lambda;
-    Matrix<RealT,2,2> E;
-    EigenVectors(euc,E,lambda);
+    auto [lambda,E] = xt::linalg::eigh(euc);
     // lambda now contains inverted squared *minor* & *major* axes respectively
-    // (N.B.: check: E[0][1] *MUST* have same sign as ellipse orientation)
-    ONDEBUG(std::cerr << "Eigen decomp is:\n" << E << "\n" << lambda << endl);
+    // (N.B.: check: E[0][1] *MUST* have same sign as conic orientation)
+    ONDEBUG(std::cerr << "Eigen decomp is:\n" << E << "\n" << lambda << std::endl);
 
-    Matrix<RealT,2,2> scale({{0,                 1/Sqrt(lambda[0])},
-                               {1/Sqrt(lambda[1]), 0                }});
+    Matrix<RealT,2,2> scale(
+      {{0,                             RealT(1)/std::sqrt(lambda[0])},
+       {RealT(1)/std::sqrt(lambda[1]), 0                            }}
+    );
     // Columns are swapped in order to swap x & y to compensate for eigenvalue
     // ordering.  I.e. so that [1,0] on unit circle gets mapped to
     // end of major axis rather than minor axis.
 
-    // TODO:- Multiply out by hand to make it faster.
-    ellipse = Ellipse2dC(E * scale, centre);
-    ONDEBUG(cerr<<"Ellipse2dC:\n"<<ellipse<<endl);
-    ONDEBUG(cerr<<"[1,0] on unit circle goes to "<<ellipse.Projection()*(Vector<RealT,2>(1,0))<<" on ellipse"<<endl;);
-    return ellipse;
+    auto ret = Ellipse2dC<RealT>(xt::linalg::dot(E,scale), centre);
+    ONDEBUG(std::cerr<<"Ellipse2dC:\n"<<ret<<std::endl);
+    ONDEBUG(std::cerr<<"[1,0] on unit circle goes to "<<ret.Projection()(toVector<RealT>(1,0))<<" on conic"<<std::endl);
+    return ret;
   }
 
 
@@ -166,7 +173,7 @@ namespace Ravl2 {
     Vector<RealT,2> dv;
     Matrix<RealT,2,2> E;
     EigenVectors(covar,E,dv);
-    ONDEBUG(cerr<<"l: "<<dv<<"\nE\n"<<E<<endl);
+    ONDEBUG(std::cerr<<"l: "<<dv<<"\nE\n"<<E<<std::endl);
     Matrix<RealT,2,2> d(stdDev*Sqrt(dv[0]),0,
                           0,stdDev*Sqrt(dv[1]));
     // TODO:- Multiply out by hand to make it faster.

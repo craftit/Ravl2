@@ -31,6 +31,7 @@
 #pragma GCC diagnostic ignored "-Wimplicit-float-conversion"
 #endif
 #include <xtensor/xmath.hpp>
+#include <xtensor/xsort.hpp>
 #include <xtensor-blas/xlinalg.hpp>
 #pragma GCC diagnostic pop
 

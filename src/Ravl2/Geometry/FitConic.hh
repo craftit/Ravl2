@@ -71,49 +71,57 @@ namespace Ravl2
     std::vector<Point<RealT,2>> normPoints;
     Normalise(points,normPoints,Hi);
 
+    typename MatrixT<RealT>::shape_type sh = {points.size(), 3};
+    Tensor<RealT,2> D1 = xt::empty<RealT>(sh);
+    Tensor<RealT,2> D2 = xt::empty<RealT>(sh);
+    size_t i = 0;
     // Fill in 'D'
-    MatrixC D1(points.size(),3);
-    for(BufferAccessIter2C<Point<RealT,2>,BufferAccessC<RealT> > it(normPoints,D1);it;it++) {
-      const Point<RealT,2> &l = it.data<0>();
-      it.data<1>()[0] = sqr(l[0]);
-      it.data<1>()[1] = l[0] * l[1];
-      it.data<1>()[2] = sqr(l[1]);
-    }
-    MatrixC D2(points.size(),3);
-    for(BufferAccessIter2C<Point<RealT,2>,BufferAccessC<RealT> > it(normPoints,D2);it;it++) {
-      const Point<RealT,2> &l = it.data<0>();
-      it.data<1>()[0] = l[0];
-      it.data<1>()[1] = l[1];
-      it.data<1>()[2] = 1;
-    }
+    auto [mean,scale] = normalise<RealT,2>(points,[&D1,&D2,&i](const Point<RealT,2> &l) {
+        D1(i,0) = sqr(l[0]);
+        D1(i,1) = l[0] * l[1];
+        D1(i,2) = sqr(l[1]);
 
-    MatrixC S1 = D1.TMul(D1);
-    MatrixC S2 = D1.TMul(D2);
-    MatrixC S3 = D2.TMul(D2);
-    S3.InverseIP();
-    MatrixC T = S3.MulT(S2) * -1;
-    MatrixC M = S1 + S2 * T;
-    M = MatrixC(M[2][0]/2,M[2][1]/2,M[2][2]/2,
-                -M[1][0],-M[1][1],-M[1][2],
-                M[0][0]/2,M[0][1]/2,M[0][2]/2);
+        D2(i,0) = l[0];
+        D2(i,1) = l[1];
+        D2(i,2) = 1;
+      });
+
+    Tensor<RealT,2> S1 = xt::linalg::dot(xt::transpose(D1),D1);
+    Tensor<RealT,2> S2 = xt::linalg::dot(xt::transpose(D1),D2);
+    Tensor<RealT,2> S3 = xt::linalg::dot(xt::transpose(D2),D2);
+    S3 = inverse(S3);
+    Tensor<RealT,2> T = xt::linalg::dot(S3,xt::transpose(S2)) * -1;
+    Tensor<RealT,2> M = S1 + xt::linalg::dot(S2,T);
+    M = Tensor<RealT,2>({{M[2][0]/2,M[2][1]/2,M[2][2]/2},
+                         {-M[1][0],-M[1][1],-M[1][2]},
+                         {M[0][0]/2,M[0][1]/2,M[0][2]/2}});
 
     ONDEBUG(std::cerr << "M=" << M << "\n");
-    EigenValueC<RealT> evs(M);
-    MatrixC eD;
-    evs.getD(eD);
-    ONDEBUG(std::cerr << "D=" << eD << "\n");
-    MatrixC ev = evs.EigenVectors();
-    ONDEBUG(std::cerr << "ev=" << ev << "\n");
-    VectorC cond =
-      VectorC(ev.SliceRow(0)) * VectorC(ev.SliceRow(2)) * 4
-      - VectorC(ev.SliceRow(1)) * VectorC(ev.SliceRow(1));
+//    EigenValueC<RealT> evs(M);
+//    Tensor<RealT,2> eD;
+//    evs.getD(eD);
+//    ONDEBUG(std::cerr << "D=" << eD << "\n");
+//    Tensor<RealT,2> ev = evs.EigenVectors();
 
-    //cerr << "Cond=" << cond << "\n";
-    VectorC a1 = ev.SliceColumn(cond.IndexOfMax());
-    VectorC a = a1.Append(T * a1);
+    auto [ed,ev] = xt::linalg::eig(M);
+
+    ONDEBUG(std::cerr << "ev=" << ev << "\n");
+//    VectorT<RealT> cond =
+//      VectorT<RealT>(ev.SliceRow(0)) * VectorT<RealT>(ev.SliceRow(2)) * 4
+//      - VectorT<RealT>(ev.SliceRow(1)) * VectorT<RealT>(ev.SliceRow(1));
+
+    auto cond = xt::eval(xt::view(ev, 0, xt::all()) * xt::view(ev, 2, xt::all()) * 4 - xt::view(ev, 1, xt::all()) * xt::view(ev, 1, xt::all()));
+
+      //    //cerr << "Cond=" << cond << "\n";
+//    VectorT<RealT> a1 = ev.SliceColumn(cond.IndexOfMax());
+//    VectorT<RealT> a = a1.Append(T * a1);
+
+    auto a1 = xt::view(ev, xt::all(), xt::argmax(cond));
+
+    Vector<RealT,6> a = xt::concatenate(a1, xt::linalg::dot(T * a1));
 
     // Undo normalisation.
-    Conic2dC Cr(static_cast<const Vector<RealT,6> &>(a));
+    Conic2dC Cr(a);
     Matrix<RealT,3,3> nC = Hi.TMul(Cr.C()) * Hi;
     conic = Conic2dC(nC);
 
@@ -132,7 +140,7 @@ namespace Ravl2
     auto result = toEllipse<RealT>(conic);
     if(!result.has_value())
       return std::nullopt;
-    ellipse = residual.value();
+    ellipse = result.value();
     return residual;
   }
 

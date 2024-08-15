@@ -139,17 +139,17 @@ namespace Ravl2 {
 
       // compute centre by completing the square on ax^2 +bxy + .....
       Vector<RealT,6> u = p;
-      RealT idet = 1 / (u[0] * u[2] - sqr(u[1]) * 0.25);
+      RealT idet = RealT(1) / (u[0] * u[2] - sqr(u[1]) * RealT(0.25));
       if(idet <= 0) {
         //cerr << "Not an ellipse.\n";
         return false;
       }
       //ONDEBUG(std::cerr << "idet=" << idet << "\n");
 
-      u *= std::sqrt(idet * 0.25);
+      u *= std::sqrt(idet * RealT(0.25));
 
-      c = Point<RealT,2>((-u[3] * u[2] + u[4] * u[1] * 0.5) * 2,
-                         (-u[0] * u[4] + u[3] * u[1] * 0.5) * 2);
+      c = toPoint<RealT>((-u[3] * u[2] + u[4] * u[1] * RealT(0.5)) * 2,
+                         (-u[0] * u[4] + u[3] * u[1] * RealT(0.5)) * 2);
 
       RealT scale = -1/(u[0] * sqr(c[0]) +
                         u[1] * c[0] * c[1] +
@@ -158,9 +158,9 @@ namespace Ravl2 {
                         u[4] * c[1] +
                         u[5]);
 
-      RealT t = u[1] * scale * 0.5;
-      mat = Matrix<RealT,2,2>(u[0] * scale,t,
-                              t,u[2] * scale);
+      RealT t = u[1] * scale * RealT(0.5);
+      mat = Matrix<RealT,2,2>({{u[0] * scale,t},
+                               {t,u[2] * scale}});
       return true;
     }
 

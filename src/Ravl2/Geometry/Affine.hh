@@ -43,15 +43,6 @@ namespace Ravl2
     //! Add a translation in direction T.
     inline void translate(const Vector<DataT, N> &T);
 
-    //! Transform Vector,  Scale, Rotate, Translate.
-    //! Take a vector and put it though the transformation.
-    inline Vector<DataT, N> operator*(const Vector<DataT, N> &in) const;
-
-    //! Compose this transform with 'In'
-    inline Affine<DataT, N> operator*(const Affine &in) const;
-
-    //! 'In' / 'Out' = this;
-    inline Affine<DataT, N> operator/(const Affine &in) const;
 
     //! Generate an inverse transformation.
     [[nodiscard]] Affine<DataT, N> inverse() const;
@@ -63,22 +54,29 @@ namespace Ravl2
     [[nodiscard]] const Matrix<DataT, N, N> &SRMatrix() const { return mSR; }
 
     //! Assignment.
-    inline Affine<DataT, N> &operator=(const Affine &oth);
+    inline Affine<DataT, N> &operator=(const Affine &oth) = default;
 
     //! Check all components of transform are real.
     [[nodiscard]] bool isReal() const;
 
     //! Transform Vector,  scale, Rotate, translate.
     // Take a vector and put it though the transformation.
-    auto operator()(const PointT &pnt) const
+    [[nodiscard]] auto operator()(const PointT &pnt) const
     {
       return PointT(xt::linalg::dot(mSR, pnt) + mT);
     }
 
     //! Compose this transform with 'In'
-    inline auto operator()(const Affine &in) const
+    [[nodiscard]] inline auto operator()(const Affine &in) const
     {
       return Affine(xt::linalg::dot(mSR, in.SRMatrix()), xt::linalg::dot(mSR, in.Translation()) + mT);
+    }
+
+    //! @brief Divide this transform by 'in'
+    [[nodiscard]] inline auto divideBy(const Affine &in) const
+    {
+      Matrix<DataT, N, N> invSr = xt::linalg::inv(in.SRMatrix());
+      return Affine(mSR * invSr, invSr * (mT - in.Translation()));
     }
 
     //! Serialization support
@@ -118,36 +116,21 @@ namespace Ravl2
   {
     Affine<DataT, N> ret;
     ret.mSR = xt::linalg::inv(mSR);
-    ret.mT = xt::linalg::dot(ret.mSR, mT);
-    ret.mT *= -1;
+    ret.mT = xt::linalg::dot(ret.mSR, mT) * -1;
     return ret;
   }
 
   template <typename DataT, unsigned N>
-  Vector<DataT, N> Affine<DataT, N>::operator*(const Vector<DataT, N> &in) const
+  Affine<DataT, N> operator*(const Affine<DataT, N> &lhs, const Affine<DataT, N> &rhs)
   {
-    return (mSR * in) + mT;
+    //return Affine(mSR * lhs.SRMatrix(), mSR * lhs.Translation() + mT);
+    return lhs(rhs);
   }
 
   template <typename DataT, unsigned N>
-  Affine<DataT, N> Affine<DataT, N>::operator*(const Affine<DataT, N> &in) const
+  Affine<DataT, N> operator/(const Affine<DataT, N> &lhs, const Affine<DataT, N> &rhs)
   {
-    return Affine(mSR * in.SRMatrix(), mSR * in.Translation() + mT);
-  }
-
-  template <typename DataT, unsigned N>
-  Affine<DataT, N> Affine<DataT, N>::operator/(const Affine<DataT, N> &in) const
-  {
-    Matrix<DataT, N, N> invSr = xt::linalg::inv(in.SRMatrix());
-    return Affine(mSR * invSr, invSr * (mT - in.Translation()));
-  }
-
-  template <typename DataT, unsigned N>
-  inline Affine<DataT, N> &Affine<DataT, N>::operator=(const Affine<DataT, N> &oth)
-  {
-    mSR = oth.mSR;
-    mT = oth.mT;
-    return *this;
+    return lhs.divideBy(rhs);
   }
 
   template <typename DataT, unsigned N>
@@ -172,7 +155,29 @@ namespace Ravl2
     return Affine<DataT, 2>(SR, translation);
   }
 
+  //! @brief Computer inverse of affine transformation.
+  template <typename DataT, unsigned N>
+  Affine<DataT, N> inverse(const Affine<DataT, N> &aff)
+  {
+    return aff.inverse();
+  }
+
+  //! @brief Send to output stream.
+  template <typename DataT, unsigned N>
+  inline std::ostream &operator<<(std::ostream &os, const Affine<DataT, N> &aff)
+  {
+    os << "Affine(" << aff.SRMatrix() << "," << aff.Translation() << ")";
+    return os;
+  }
+
   extern template class Affine<float, 2>;
   extern template class Affine<float, 3>;
 
 }// namespace Ravl2
+
+#if FMT_VERSION >= 90000
+template <typename RealT, unsigned N>
+struct fmt::formatter<Ravl2::Affine<RealT,N> > : fmt::ostream_formatter {
+};
+#endif
+

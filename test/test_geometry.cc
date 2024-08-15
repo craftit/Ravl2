@@ -157,8 +157,58 @@ TEST_CASE("Vector and Matrix")
   }
 }
 
+TEST_CASE("Affine")
+{
+  using namespace Ravl2;
+  SECTION( "Core. ")
+  {
+    Affine<float, 2>
+      a1 = affineFromScaleAngleTranslation(toVector<float>(2, 2), std::numbers::pi_v<float> / 2, toVector<float>(0, 0));
 
-TEST_CASE("CircleIter", "[CircleIterC]")
+    Point<float, 2> p = a1(toPoint<float>(0, 0));
+    //Point<float, 2> p = a1 * toPoint<float>(0, 0);
+    CHECK(euclidDistance(p, toPoint<float>(0, 0)) < 0.001f);
+  }
+  SECTION( "Composition. ")
+  {
+    Affine<float, 2>
+      a1 = affineFromScaleAngleTranslation(toVector<float>(2, 2), std::numbers::pi_v<float> / 2, toVector<float>(0, 0));
+    Affine<float, 2> a2 = affineFromScaleAngleTranslation(toVector<float>(1, 1), 0.0f, toVector<float>(10, 20));
+    Point<float, 2> p = toPoint<float>(0, 0);
+    Point<float, 2> pnt0 = a2(a1(p));
+    //SPDLOG_INFO("At: {} {} ", pnt0(0), pnt0(1));
+    CHECK(euclidDistance(pnt0, toPoint<float>(10, 20)) < 0.001f);
+    Point<float, 2> pnt = a1(a2(p));
+    //SPDLOG_INFO("At: {} {} ", pnt(0), pnt(1));
+    CHECK(euclidDistance(pnt, toPoint<float>(-40, 20)) < 0.001f);
+    Point<float, 2> q = toPoint<float>(5, 4);
+    CHECK(Ravl2::euclidDistance(a2(a1)(q), a2(a1(q))) < 0.001f);
+  }
+  SECTION( "Cereal. ")
+  {
+    Affine<float, 2>
+      a1 = affineFromScaleAngleTranslation(toVector<float>(1, 2), std::numbers::pi_v<float> / 3, toVector<float>(4, 5));
+    std::stringstream ss;
+    {
+      cereal::JSONOutputArchive oarchive(ss);
+      oarchive(a1);
+    }
+    //SPDLOG_INFO("Affine<float, 2>: {}", ss.str());
+    {
+      cereal::JSONInputArchive iarchive(ss);
+      Affine<float, 2> a2;
+      iarchive(a2);
+      CHECK(isNearZero(a1.Translation()[0] - a2.Translation()[0]));
+      CHECK(isNearZero(a1.Translation()[1] - a2.Translation()[1]));
+      CHECK(isNearZero(a1.SRMatrix()(0,0) - a2.SRMatrix()(0,0)));
+      CHECK(isNearZero(a1.SRMatrix()(0,1) - a2.SRMatrix()(0,1)));
+      CHECK(isNearZero(a1.SRMatrix()(1,0) - a2.SRMatrix()(1,0)));
+      CHECK(isNearZero(a1.SRMatrix()(1,1) - a2.SRMatrix()(1,1)));
+    }
+  }
+}
+
+TEST_CASE("CircleIter")
 {
   using namespace Ravl2;
   using RealT = float;
@@ -183,7 +233,7 @@ TEST_CASE("CircleIter", "[CircleIterC]")
   EXPECT_EQ(i,112);
 }
 
-TEST_CASE("Circle2")
+TEST_CASE("Circle")
 {
   using namespace Ravl2;
 
@@ -239,47 +289,45 @@ TEST_CASE("Conic")
   }
 }
 
-TEST_CASE("Affine")
+TEST_CASE("Ellipse")
 {
   using namespace Ravl2;
-  SECTION( "Composition. ")
+
+  SECTION("Simple Fit")
   {
-    Affine<float, 2>
-      a1 = affineFromScaleAngleTranslation(toVector<float>(2, 2), std::numbers::pi_v<float> / 2, toVector<float>(0, 0));
-    Affine<float, 2> a2 = affineFromScaleAngleTranslation(toVector<float>(1, 1), 0.0f, toVector<float>(10, 20));
-    Point<float, 2> p = toPoint<float>(0, 0);
-    Point<float, 2> pnt0 = a2(a1(p));
-    //SPDLOG_INFO("At: {} {} ", pnt0(0), pnt0(1));
-    CHECK(euclidDistance(pnt0, toPoint<float>(10, 20)) < 0.001f);
-    Point<float, 2> pnt = a1(a2(p));
-    //SPDLOG_INFO("At: {} {} ", pnt(0), pnt(1));
-    CHECK(euclidDistance(pnt, toPoint<float>(-40, 20)) < 0.001f);
-    Point<float, 2> q = toPoint<float>(5, 4);
-    CHECK(Ravl2::euclidDistance(a2(a1)(q), a2(a1(q))) < 0.001f);
+    std::vector<Point<float, 2>> pnts;
+    pnts.reserve(5);
+    pnts.push_back(Point<float, 2>({1, 0}));
+    pnts.push_back(Point<float, 2>({2, -1}));
+    pnts.push_back(Point<float, 2>({3, 0}));
+    pnts.push_back(Point<float, 2>({3, 1}));
+    pnts.push_back(Point<float, 2>({2, 4}));
+#if 1
+    Conic2dC<float> conic {};
+    auto residual = fit(conic, pnts);
+    CHECK(residual.has_value());
+    SPDLOG_INFO("Ellipse: {}", conic);
+
+    auto optEllipse = toEllipse(conic);
+    REQUIRE(optEllipse.has_value());
+
+    auto ellipse = optEllipse.value();
+    for(auto p : pnts) {
+      SPDLOG_INFO("Point {} is on curve: {} ", p, ellipse.residue(p));
+      CHECK(ellipse.IsOnCurve(p, 1e-4f));
+    }
+#endif
   }
-  SECTION( "Cereal. ")
+
+  SECTION("Fitting")
   {
-    Affine<float, 2>
-      a1 = affineFromScaleAngleTranslation(toVector<float>(1, 2), std::numbers::pi_v<float> / 3, toVector<float>(4, 5));
-    std::stringstream ss;
-    {
-      cereal::JSONOutputArchive oarchive(ss);
-      oarchive(a1);
-    }
-    //SPDLOG_INFO("Affine<float, 2>: {}", ss.str());
-    {
-      cereal::JSONInputArchive iarchive(ss);
-      Affine<float, 2> a2;
-      iarchive(a2);
-      CHECK(isNearZero(a1.Translation()[0] - a2.Translation()[0]));
-      CHECK(isNearZero(a1.Translation()[1] - a2.Translation()[1]));
-      CHECK(isNearZero(a1.SRMatrix()(0,0) - a2.SRMatrix()(0,0)));
-      CHECK(isNearZero(a1.SRMatrix()(0,1) - a2.SRMatrix()(0,1)));
-      CHECK(isNearZero(a1.SRMatrix()(1,0) - a2.SRMatrix()(1,0)));
-      CHECK(isNearZero(a1.SRMatrix()(1,1) - a2.SRMatrix()(1,1)));
-    }
+
+
   }
+
 }
+
+
 
 TEST_CASE("ScaleTranslate")
 {
