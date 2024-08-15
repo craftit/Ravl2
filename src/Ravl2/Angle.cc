@@ -6,5 +6,5 @@
 
 namespace Ravl2
 {
-  template class AngleC<float>;
+  template class Angle<float>;
 }

@@ -337,7 +337,7 @@ TEST_CASE("Ellipse")
 
     CHECK((std::abs(maj - RealT(2))) < 0.0000001f);
     CHECK(std::abs(min - 1) < 0.0000001f);
-    CHECK(std::abs(AngleC<RealT,1>(ang).Diff(AngleC<RealT,1>(0))) < 1e-5f);
+    CHECK(std::abs(Angle<RealT, 1>(ang).diff(Angle<RealT, 1>(0))) < 1e-5f);
 
   }
 #if 0
@@ -367,23 +367,23 @@ TEST_CASE("Ellipse")
       Point<RealT,2> centre;
       RealT min,maj,ang;
       conic.EllipseParameters(centre,maj,min,ang);
-      //cerr << "Conic representation parameters=" << centre << " " << maj << " " << min << " " << ang << "   Diff=" << AngleC(ang,std::numbers::pi_v<RealT>).Diff(AngleC(tangle,std::numbers::pi_v<RealT>)) << "\n";
+      //cerr << "Conic representation parameters=" << centre << " " << maj << " " << min << " " << ang << "   Diff=" << Angle(ang,std::numbers::pi_v<RealT>).Diff(Angle(tangle,std::numbers::pi_v<RealT>)) << "\n";
       CHECK(xt::sum(xt::abs(centre - gtc))() < 0.00000001f);
 #if 0
       if(std::abs(maj - 40) > 0.000000001) return __LINE__;
       if(std::abs(min - 20) > 0.000000001) return __LINE__;
-      if(std::abs(AngleC(ang,std::numbers::pi_v<RealT>).Diff(AngleC(tangle,std::numbers::pi_v<RealT>))) > 0.000001) return __LINE__;
+      if(std::abs(Angle(ang,std::numbers::pi_v<RealT>).Diff(Angle(tangle,std::numbers::pi_v<RealT>))) > 0.000001) return __LINE__;
       // Fit same set of points to ellipse as Ellipse2dC
       Ellipse2dC ellipse2;
       CHECK(FitEllipse(points,ellipse2));
       // Check that fitted ellipse has same params as original
       ellipse2.EllipseParameters(centre,maj,min,ang);
-      //cerr << "Ellipse representation parameters=" << centre << " " << maj << " " << min << " " << ang << "  Diff=" << AngleC(ang,std::numbers::pi_v<RealT>).Diff(AngleC(tangle,std::numbers::pi_v<RealT>)) << "\n";
+      //cerr << "Ellipse representation parameters=" << centre << " " << maj << " " << min << " " << ang << "  Diff=" << Angle(ang,std::numbers::pi_v<RealT>).Diff(Angle(tangle,std::numbers::pi_v<RealT>)) << "\n";
       if((centre - gtc).SumOfstd::abs() > 0.00000001) return __LINE__;
       if(std::abs(maj - 40) > 0.000000001) return __LINE__;
       if(std::abs(min - 20) > 0.000000001) return __LINE__;
       //cerr << "param angle vs orig: " << ang << " " << tangle << endl;
-      if(std::abs(AngleC(ang,std::numbers::pi_v<RealT>).Diff(AngleC(tangle,std::numbers::pi_v<RealT>))) > 0.000001) return __LINE__;
+      if(std::abs(Angle(ang,std::numbers::pi_v<RealT>).diff(Angle(tangle,std::numbers::pi_v<RealT>))) > 0.000001) return __LINE__;
 #endif
     }
   }
