@@ -168,7 +168,7 @@ namespace Ravl2 {
   //! @brief Compute an ellipse from a 2d covariance matrix, mean, and standard deviation.
   //! The ellipse is the contour of a 2-D Gaussian random variable which lies "stdDev" standard deviations from the mean.
   template<typename RealT>
-  Ellipse2dC<RealT> EllipseMeanCovariance(const Matrix<RealT,2,2> &covar,const Point<RealT,2> &mean,RealT stdDev = 1.0)
+  [[nodiscard]] Ellipse2dC<RealT> EllipseMeanCovariance(const Matrix<RealT,2,2> &covar,const Point<RealT,2> &mean,RealT stdDev = 1.0)
   {
     Vector<RealT,2> dv;
     Matrix<RealT,2,2> E;

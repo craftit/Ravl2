@@ -196,6 +196,7 @@ namespace Ravl2
 
   //! Convert an index to a point
   template <typename RealT, unsigned N>
+   requires std::is_convertible<int, RealT>::value
   constexpr inline Point<RealT, N> toPoint(const Index<N> &idx)
   {
     Point<RealT, N> ret;
@@ -207,13 +208,27 @@ namespace Ravl2
 
   //! Convert a parameter list of RealT to a point
   template <typename RealT, typename... DataT, unsigned N = sizeof...(DataT)>
-  constexpr inline Point<RealT, N> toPoint(DataT... data)
+   requires (std::is_convertible_v<DataT, RealT> && ...)
+  constexpr Point<RealT, N> toPoint(DataT... data)
   {
     return Point<RealT, N>({RealT(data)...});
   }
-
+  
+  //! Convert a parameter list of RealT to a point
+  template <typename RealT, typename SourceT,size_t N>
+   requires (std::is_convertible_v<SourceT, RealT>)
+  constexpr Point<RealT, N> toPoint(const Point<SourceT, N> &pnt)
+  {
+    Point<RealT, N> ret;
+    for(unsigned i = 0; i < N; i++) {
+      ret[i] = RealT(pnt[i]);
+    }
+    return ret;
+  }
+  
   //! Convert a parameter list of RealT to a point
   template <typename RealT, typename... DataT, unsigned N = sizeof...(DataT)>
+   requires (std::is_convertible_v<DataT, RealT> && ...)
   constexpr inline Vector<RealT, N> toVector(DataT... data)
   {
     return Vector<RealT, N>({RealT(data)...});
