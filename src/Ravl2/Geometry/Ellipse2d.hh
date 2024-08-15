@@ -106,14 +106,29 @@ namespace Ravl2 {
     //!param: major - Size of major axis.
     //!param: minor - Size of minor axis
     //!param: angle - Angle of major axis.
-    bool EllipseParameters(Point<RealT,2> &centre,RealT &major,RealT &minor,RealT &angle) const;
+    bool EllipseParameters(Point<RealT,2> &centre,RealT &major,RealT &minor,RealT &angle) const
+    {
+      centre = p.Translation();
+      ONDEBUG(std::cerr << "SRMatrix:\n"<<p.SRMatrix() << std::endl);
+      auto [u,s,vt] = xt::linalg::svd(p.SRMatrix(),true,true);
+      ONDEBUG(std::cerr << "U:\n"<<u<<"\nS:" << s << "V:\n"<<vt << std::endl);
+      // U contains the rotation in the form:
+      // cos -sin
+      // sin  cos
+      // hence angle can be computed as:
+      angle = std::atan2(u(1,0),u(0,0));
+      major = s[0];
+      minor = s[1];
+      ONDEBUG(std::cerr << "Center=" << centre << " Major=" << major << " Minor=" << minor << " Angle=" << angle << "\n");
+      return true;
+    }
 
     //! @brief Compute the size of major and minor axis.
     //! @return Size of major and minor axis.
     Vector<RealT,2> size() const
     {
-      auto [s,v,d] = xt::linalg::svd(p.SRMatrix(),false,false);
-      return toVector<RealT>(d);
+      auto [u,s,vt] = xt::linalg::svd(p.SRMatrix(),false,false);
+      return toVector<RealT>(s);
     }
 
   protected:    
@@ -170,14 +185,15 @@ namespace Ravl2 {
   template<typename RealT>
   [[nodiscard]] Ellipse2dC<RealT> EllipseMeanCovariance(const Matrix<RealT,2,2> &covar,const Point<RealT,2> &mean,RealT stdDev = 1.0)
   {
-    Vector<RealT,2> dv;
-    Matrix<RealT,2,2> E;
-    EigenVectors(covar,E,dv);
+//    Vector<RealT,2> dv;
+//    Matrix<RealT,2,2> E;
+//    EigenVectors(covar,E,dv);
+    auto [dv,E] = xt::linalg::eigh(covar);
     ONDEBUG(std::cerr<<"l: "<<dv<<"\nE\n"<<E<<std::endl);
-    Matrix<RealT,2,2> d(stdDev*Sqrt(dv[0]),0,
-                          0,stdDev*Sqrt(dv[1]));
-    // TODO:- Multiply out by hand to make it faster.
-    Matrix<RealT,2,2> sr = E * d;
+    Matrix<RealT,2,2> d(
+      {{stdDev*std::sqrt(dv[0]),0},
+      {0,stdDev*std::sqrt(dv[1])}});
+    Matrix<RealT,2,2> sr = xt::linalg::dot(E,d);
     return Ellipse2dC(sr,mean);
   }
 

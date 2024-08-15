@@ -5,6 +5,7 @@
 #include <cereal/archives/json.hpp>
 
 #include "Ravl2/Math.hh"
+#include "Ravl2/Angle.hh"
 #include "Ravl2/Geometry/Geometry.hh"
 #include "Ravl2/Geometry/Moments2.hh"
 #include "Ravl2/Geometry/Circle.hh"
@@ -318,6 +319,26 @@ TEST_CASE("Ellipse")
       CHECK(ellipse.IsOnCurve(p, 1e-4f));
     }
 #endif
+  }
+  SECTION("Mean Covariance")
+  {
+    using RealT = float;
+    SPDLOG_INFO("Mean Covariance");
+    Matrix<RealT,2,2> covar({{4,0},
+      {0,1}});
+    Vector<RealT,2> mean = toVector<RealT>(50,50);
+
+    Ellipse2dC<RealT> ellipse = EllipseMeanCovariance(covar,mean,1.0f);
+    SPDLOG_INFO("Ellipse: {}", ellipse);
+    Point<RealT,2> centre;
+    RealT min,maj,ang;
+    ellipse.EllipseParameters(centre,maj,min,ang);
+    SPDLOG_INFO("Parameters={} {} {} {} ", centre, maj, min, ang);
+
+    CHECK((std::abs(maj - RealT(2))) < 0.0000001f);
+    CHECK(std::abs(min - 1) < 0.0000001f);
+    CHECK(std::abs(AngleC<RealT,1>(ang).Diff(AngleC<RealT,1>(0))) < 1e-5f);
+
   }
 #if 0
   SECTION("Fitting Orientations")
