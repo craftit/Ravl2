@@ -40,9 +40,9 @@ namespace Ravl2
   {
     // Draw individual lines
     auto end = poly.end();
-    auto last = poly.last();
+    auto last = poly.back();
     for(auto it = poly.begin(); it != end; it++) {
-      DrawLine(dat, value, last, *it);
+      DrawLine(dat, value, LinePP2dC<CoordT>(last, *it));
       last = *it;
     }
   }

@@ -8,6 +8,7 @@
 
 #pragma once
 
+#include <numbers>
 #include "Ravl2/Geometry/Ellipse2d.hh"
 #include "Ravl2/Image/DrawPolygon.hh"
 
@@ -23,18 +24,18 @@ namespace Ravl2
   template <class DataT,typename RealT>
   void DrawEllipse(Array<DataT, 2> &image, const DataT &value, const Ellipse2dC<RealT> &ellipse)
   {
-    RealT maj, min;
-    ellipse.Size(maj, min);
-    if((maj + min) < 3) {// Very small ?
-      Index<2> at = ellipse.Centre();
-      if(image.range().contains(at))
+    auto [major,minor] = ellipse.size();
+    if((major + minor) < 3) {// Very small ?
+      auto at = toIndex(ellipse.Centre());
+       if(image.range().contains(at)) {
         image[at] = value;
+      }
       return;
     }
-    RealT step = 2 * std::numbers::pi_v<RealT> / (maj + min);
+    RealT step = 2 * std::numbers::pi_v<RealT> / (major + minor);
     Polygon2dC<RealT> poly;
     for(RealT a = 0; a < 2 * std::numbers::pi_v<RealT>; a += step)
-      poly.push_back(ellipse.Point(a));
+      poly.push_back(ellipse.point(a));
     DrawPolygon(image, value, poly);
   }
 

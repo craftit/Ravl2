@@ -124,11 +124,12 @@ namespace Ravl2 {
     }
 
     //! @brief Compute the size of major and minor axis.
-    //! @return Size of major and minor axis.
-    Vector<RealT,2> size() const
+    //! @return Size of major and minor axis, respectively.
+    [[nodiscard]]
+    std::tuple<RealT,RealT> size() const
     {
       auto [u,s,vt] = xt::linalg::svd(p.SRMatrix(),false,false);
-      return toVector<RealT>(s);
+      return {s[0],s[1]};
     }
 
   protected:    
@@ -185,9 +186,6 @@ namespace Ravl2 {
   template<typename RealT>
   [[nodiscard]] Ellipse2dC<RealT> EllipseMeanCovariance(const Matrix<RealT,2,2> &covar,const Point<RealT,2> &mean,RealT stdDev = 1.0)
   {
-//    Vector<RealT,2> dv;
-//    Matrix<RealT,2,2> E;
-//    EigenVectors(covar,E,dv);
     auto [dv,E] = xt::linalg::eigh(covar);
     ONDEBUG(std::cerr<<"l: "<<dv<<"\nE\n"<<E<<std::endl);
     Matrix<RealT,2,2> d(
