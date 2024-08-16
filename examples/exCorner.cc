@@ -69,10 +69,10 @@ int main(int argc,char **argv)
 //    cornerDet = CornerDetectorHarrisC(threshold,w,useTopHat);
 //  else
  auto cornerDet = Ravl2::CornerDetectorSusan(threshold);
-  
-  if(!seq) {
-    // Process a single image
-    cv::startWindowThread();
+ cv::startWindowThread();
+
+ if(!seq) {
+   // Process a single image
 
     SPDLOG_INFO("Loading image '{}'", inf);
 

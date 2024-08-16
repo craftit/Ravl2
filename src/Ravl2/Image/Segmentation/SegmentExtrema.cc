@@ -161,6 +161,7 @@ namespace Ravl2
 
   inline void SegmentExtremaBaseC::MergeRegions(ExtremaChainPixelC *pix, int level, ExtremaRegionC **labels, int n)
   {
+    ONDEBUG(SPDLOG_INFO("MergeRegions() Pix={} Level={} N={}", static_cast<void *>(pix), level, n));
     auto maxValue = labels[0]->total;
     ExtremaRegionC *max = labels[0];
 
@@ -200,7 +201,7 @@ namespace Ravl2
   void SegmentExtremaBaseC::GenerateRegions()
   {
     ExtremaChainPixelC *at;
-    int clevel = levels.range().min();
+    int clevel = valueRange.min();
     ExtremaRegionC *labels[6];
 
     // For each grey level value in image.
@@ -256,19 +257,23 @@ namespace Ravl2
       int maxValue = it->maxValue;
       int minValue = it->minValue;
       uint32_t sum = 0;
-      int i;
 
       //ONDEBUG(std::cerr << "Hist= " << it->minValue << " :");
-      for(i = minValue; i <= maxValue; i++) {
+      ONDEBUG(std::string histStr = fmt::format("Hist= {}->{} :", it->minValue, it->maxValue));
+      // Build cumulative histogram.
+      for(int i = minValue; i <= maxValue; i++) {
         sum += it->hist[i];
         chist[i] = sum;
-        //ONDEBUG(std::cerr << " " << it->hist[i]);
+        ONDEBUG(histStr += fmt::format(" {}", it->hist[i]));
       }
-      chist[maxValue] = sum;
+      assert(chist[maxValue] == sum);
+      ONDEBUG(SPDLOG_INFO("{}", histStr));
 
       //ONDEBUG(std::cerr << "  Closed=" << (it->closed != 0)<< "\n");
+      ONDEBUG(SPDLOG_INFO("Region={} Min={} Max={} Total={} Closed={}", it - regionMap.begin(), minValue, maxValue, sum, it->closed != nullptr));
       int up;
       // look for threshold that guarantee area bigger than minSize.
+      int i;
       for(i = minValue; i <= maxValue; i++) {
         if(chist[i] >= minSize)
           break;
@@ -310,7 +315,6 @@ namespace Ravl2
         et.margin = up - i;
         et.thresh = maxValue - 1;
       }
-      //ONDEBUG(std::cerr << "NThresh=" <<  nthresh << "\n");
       ONDEBUG(SPDLOG_INFO("Thresholds={} Kept={}", nthresh, it->nThresh));
       ExtremaThresholdC *newthresh = new ExtremaThresholdC[size_t(nthresh)];
       int nt = 0;

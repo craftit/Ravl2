@@ -4,119 +4,159 @@
 // General Public License (LGPL). See the lgpl.licence file for details or
 // see http://www.gnu.org/copyleft/lesser.html
 // file-header-ends-here
-//! rcsid="$Id$"
-//! lib=RavlImageProc
 //! author="Charles Galambos"
 //! docentry="Ravl.API.Images.Segmentation"
-//! userlevel=Normal
-//! file="Ravl/Image/Processing/Segmentation/extrema.cc"
 
-#include "Ravl2/Image/SegmentExtrema.hh"
-#include "Ravl/Option.hh"
-#include "Ravl/Image/Image.hh"
-#include "Ravl/IO.hh"
-#include "Ravl/DP/SequenceIO.hh"
-#include "Ravl/OS/Date.hh"
+#include <spdlog/spdlog.h>
+#include <CLI/CLI.hpp>
 
-using namespace RavlImageN;
+#include "Ravl2/Image/Segmentation/SegmentExtrema.hh"
+#include "Ravl2/Array.hh"
+#include "ravl2/config.hh"
+#include "Ravl2/OpenCV/Image.hh"
+#include "Ravl2/Resource.hh"
+
+#include <opencv2/imgcodecs.hpp>
+#include <opencv2/highgui.hpp>
+#include <opencv2/videoio.hpp>
 
 int main(int nargs,char **argv) {
-  OptionC opt(nargs,argv);
-  IntT minSize = opt.Int("ms",10,"Minimum region size. ");
-  RealT minMargin = opt.Real("mm",10,"Minimum margin. ");
-  IntT limit = opt.Int("l",255,"Limit on difference to consider.");
-  bool seq = opt.Boolean("s",false,"Process a sequence. ");
-  bool drawResults = opt.Boolean("d",false,"Draw results into a window.");
-  bool drawBlack = opt.Boolean("db",false,"Draw results into a black background.");
-  bool invert = opt.Boolean("inv",false,"Invert image before processing. ");
-  bool verbose = opt.Boolean("v",false,"Verbose mode. ");
-  bool useMasks = opt.Boolean("m",false,"Use masks. ");
-  IntT trim = opt.Int("t",0,"Trim the image being processed. ");
-  StringC displayImage = opt.String("di","@X","Display image destination. ");
-  StringC fn = opt.String("","test.pgm","Input image. ");
-  StringC ofn = opt.String("","","Output boundaries. ");
-  opt.Check();
+  using namespace Ravl2;
+  using RealT = float;
+  
+  CLI::App app{"Corner detection example program"};
 
-  
-  ImageC<ByteT> img;
-  
-  SegmentExtremaC<ByteT> lst(minSize,minMargin,limit);
-  
-  // Open image source.
-  DPIPortC<ImageC<ByteT> > inp;
-  if(!OpenISequence(inp,fn)) {
-    cerr <<  "Failed to open input sequence " << fn << "\n";
-    return 1;
+  int minSize = 10;
+  int minMargin = 10;
+  int limit = 255;
+  bool seq = false;
+  bool webCam = true;
+  bool drawResults = true;
+  bool drawBlack = false;
+  bool invert = false;
+  bool verbose = false;
+  bool useMasks = false;
+  std::string fn = findFileResource("data","lena.jpg",verbose);
+  std::string ofn = "";
+
+  app.add_option("--ms", minSize, "Minimum region size. ");
+  app.add_option("--mm", minMargin, "Minimum margin. ");
+  app.add_option("-l", limit, "Limit on difference to consider.");
+  app.add_flag("-s", seq, "Process a sequence. ");
+  app.add_flag("--webcam", webCam, "Use webcam as input.");
+  app.add_flag("-d", drawResults, "Draw results into a window.");
+  app.add_flag("--db", drawBlack, "Draw results into a black background.");
+  app.add_flag("--inv", invert, "Invert image before processing. ");
+  app.add_flag("-v", verbose, "Verbose mode. ");
+  app.add_flag("-m", useMasks, "Use masks. ");
+  app.add_option("-i", fn, "Input image. ");
+  app.add_option("-o", ofn, "Output boundaries. ");
+
+  bool show_version = false;
+  app.add_flag("--version", show_version, "Show version information");
+
+  CLI11_PARSE(app, nargs, argv);
+
+  if (show_version) {
+    fmt::print("{}\n", Ravl2::cmake::project_version);
   }
+  cv::startWindowThread();
+
+  Ravl2::Array<uint8_t,2> img;
   
-  DPOPortC<DListC<BoundaryC> > outp;
-  if(!ofn.IsEmpty()) {
-    if(!OpenOSequence(outp,ofn)) {
-      cerr <<  "Failed to open output sequence " << ofn << "\n";
+  SegmentExtremaC<uint8_t> lst(minSize,minMargin,limit);
+
+  cv::VideoCapture videoCapture;
+
+  if(seq) {
+    if(webCam) {
+      videoCapture.open(0);
+    } else {
+      videoCapture.open(fn);
+    }
+    if(!videoCapture.isOpened()) {
+      SPDLOG_ERROR("Failed to open video stream '{}'", fn);
       return 1;
     }
   }
-
-  IndexRange2dSetC trimSet;
-  trimSet = trimSet.Add(IndexRange2dC(trim,trim));
+//  IndexRange2dSetC trimSet;
+//  trimSet = trimSet.Add(IndexRange2dC(trim,trim));
   
-  ImageC<ByteT> pimg;
+  Ravl2::Array<uint8_t,2> pimg;
   int numberOfFrames = 0;
-  RealT totalTime = 0;
-  while(inp.Get(img)) {
+  std::chrono::steady_clock::duration totalTime {};
+  while(true)
+  {
+    cv::Mat frame;
+    if(seq) {
+      videoCapture >> frame;
+      if(frame.empty()) {
+        SPDLOG_INFO("End of video stream");
+        break;
+      }
+    } else {
+      frame = cv::imread(fn, cv::IMREAD_GRAYSCALE);
+      if(frame.empty()) {
+        SPDLOG_ERROR("Failed to load image '{}'", fn);
+        return 1;
+      }
+    }
+    img = toArray<uint8_t, 2>(frame);
+
     if(invert) {
-      if(pimg.IsEmpty())
-	pimg = ImageC<ByteT>(img.Frame());
-      for(Array2dIter2C<ByteT,ByteT> it(pimg,img);it;it++)
-	it.Data1() = 255 - it.Data2();
-    } else
+      if(!pimg.range().contains(img.range())) {
+        pimg = Ravl2::Array<uint8_t, 2>(img.range());
+      }
+      for(auto it = begin(pimg,img);it.valid();++it) {
+        it.template data<0>() = 255 - it.template data<1>();
+      }
+    } else {
       pimg = img;
-    //RavlN::Save("@X",pimg);
+    }
     if(useMasks) {
-      DListC<ImageC<IntT> > masks = lst.ApplyMask(pimg);
+      std::vector<Ravl2::Array<int,2> > masks = lst.applyMask(pimg);
       numberOfFrames++;
     } else {
-      DListC<BoundaryC> bounds;
-      DateC start = DateC::NowUTC();
-      if(trim > 0)
-	bounds = lst.Apply(pimg,trimSet);
-      else
-	bounds = lst.Apply(pimg);
-#if 0
-      for(DLIterC<BoundaryC> it(bounds);it;it++)
-        it->OrderEdges();
-#endif
-      DateC end = DateC::NowUTC();
-      totalTime += (end-start).Double();
+      std::vector<Boundary> bounds;
+      auto startTime = std::chrono::steady_clock::now();
+      bounds = lst.apply(pimg);
+      auto endTime = std::chrono::steady_clock::now();
+      totalTime += (endTime-startTime);
       numberOfFrames++;
-      if(verbose)
-        cerr << "Regions=" << bounds.Size() << "\n";
+      if(verbose) {
+        SPDLOG_INFO("Regions={}", bounds.size());
+      }
       if(drawResults) {
-        ImageC<ByteT> res;
+        Ravl2::Array<uint8_t,2> res;
         if(!drawBlack)
-          res = ImageC<ByteT>(img.Copy());
+          res = clone(img);
         else {
-          res = ImageC<ByteT>(img.Frame());
-          res.Fill(0);
+          res = Ravl2::Array<uint8_t,2>(img.range(), 0);
         }
         
         // Draw boundaries into image and display.
-        for(DLIterC<BoundaryC> bit(bounds);bit;bit++)
-          for(DLIterC<CrackC> it(*bit);it;it++)
-            res[it->LPixel()] = 255;
-        Save(displayImage,res);
-      }
-      if(outp.IsValid()) {
-        if(!outp.Put(bounds)) {
-          cerr << "ABORT: Failed to write output. \n";
-          return 1;
+        for(auto bit : bounds) {
+          for(auto it : bit.edges()) {
+            res[it.leftPixel()] = 255;
+          }
+        }
+        {
+          cv::Mat cvImg = toCvMat(res);
+          cv::namedWindow("Display Image", cv::WINDOW_AUTOSIZE );
+          cv::imshow("Display Image", cvImg);
         }
       }
     }
     if(!seq)
       break;
   }
-  cerr << "Frames a second " << numberOfFrames/totalTime << "\n";
-  cerr << "Pixels a second " << (img.Frame().Area() * numberOfFrames)/totalTime << "\n";
+  SPDLOG_INFO("Press any key to exit.");
+  if(drawResults) {
+    cv::waitKey(0);
+  }
+
+  double timeSeconds = std::chrono::duration<double>(totalTime).count();
+  SPDLOG_INFO("Frames a second {}", numberOfFrames/timeSeconds);
+  SPDLOG_INFO("Pixels a second {}", (img.range().area() * numberOfFrames)/timeSeconds);
   return 0;
 }

@@ -39,7 +39,7 @@ include(GenerateExportHeader)
 
 add_library(Ravl2Core
     Index.cc Index.hh
-    Angle.hh
+    Angle.hh Angle.cc
     Array1.cc Array1.hh
     Array.cc Array.hh
     ArrayIterZip.cc ArrayIterZip.hh
@@ -49,14 +49,11 @@ add_library(Ravl2Core
     Sentinel.cc Sentinel.hh
     Types.cc Types.hh
     Resource.cc Resource.hh
-        LoopIter.cc
-        LoopIter.hh
-        IndexRange1.cc
-        IndexRange1.hh
-        IndexRange.cc
-        IndexRange.hh
-        Concepts.hh
-        Angle.cc
+    LoopIter.cc LoopIter.hh
+    IndexRange1.cc IndexRange1.hh
+    IndexRange.cc IndexRange.hh
+    Concepts.hh
+
 )
 
 add_library(ravl2::Ravl2Core ALIAS Ravl2Core)

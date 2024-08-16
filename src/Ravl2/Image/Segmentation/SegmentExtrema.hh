@@ -26,8 +26,8 @@ namespace Ravl2
   {
   public:
     int thresh;//!< Threshold value.
-    int pos;
-    int margin;
+    int pos;   //!< Start of margin.  (thresh = pos + margin/2)
+    int margin; //!< Measure of stability.
     uint32_t area;//!< Expected area of region.
   };
 
@@ -339,28 +339,28 @@ namespace Ravl2
     }
 
   protected:
+    //! Do initial sorting of pixels.
     bool SortPixels(const Array<PixelT, 2> &nimg);
-    //: Do initial sorting of pixels.
 
+    //! Do initial sorting of pixels.
     bool SortPixelsByte(const Array<PixelT, 2> &nimg);
-    //: Do initial sorting of pixels.
 
+    //! Build a list from a byte image in regions of interest.
     bool SortPixels(const Array<PixelT, 2> &img, const IndexRangeSet<2> &roi);
-    //: Build a list from a byte image in regions of interest.
 
+    //! Grow regions.
     std::vector<Boundary> GrowRegionBoundary(const Array<PixelT, 2> &img);
-    //: Grow regions.
 
-    std::vector<Boundary> GrowRegionBoundary(ExtremaRegionC &region);
-    //: Grow regions associated with a extrema.
+    //! Grow regions associated with a extrema.
+    void GrowRegionBoundary(std::vector<Boundary> &boundaries,ExtremaRegionC &region);
 
+    //! Grow regions.
     std::vector<Array<int, 2>> GrowRegionMask(const Array<PixelT, 2> &img);
-    //: Grow regions.
 
+    //! Grow regions associated with a extrema.
     std::vector<Array<int, 2>> GrowRegionMask(ExtremaRegionC &region);
-    //: Grow regions associated with a extrema.
 
-    FloodRegionC<PixelT> flood;// Region fill code.
+    FloodRegionC<PixelT> flood;//!< Region fill code.
   };
 
   template <class PixelT>
@@ -519,8 +519,7 @@ namespace Ravl2
     end += labelAlloc;
     for(auto it = regionMap.begin(); it != end; ++it) {
       if(it->nThresh > 0) {
-        auto newBoundaries = GrowRegionBoundary(*it);
-        bounds.insert(bounds.end(), newBoundaries.begin(), newBoundaries.end());
+        GrowRegionBoundary(bounds,*it);
       }
       if(it->thresh != 0) {
         delete[] it->thresh;
@@ -532,15 +531,21 @@ namespace Ravl2
   }
 
   template <class PixelT>
-  std::vector<Boundary> SegmentExtremaC<PixelT>::GrowRegionBoundary(ExtremaRegionC &region)
+  void SegmentExtremaC<PixelT>::GrowRegionBoundary(std::vector<Boundary> &ret,ExtremaRegionC &region)
   {
-    std::vector<Boundary> ret;
     for(int i = 0; i < region.nThresh; i++) {
       Boundary boundary;
-      if(flood.GrowRegion(region.minat, FloodRegionLessThanThresholdC<PixelT>(PixelT(region.thresh[i].thresh)), boundary, maxSize))
-        ret.push_back(boundary);
+      if(!flood.GrowRegion(region.minat, FloodRegionLessThanThresholdC<PixelT>(PixelT(region.thresh[i].thresh)), boundary, maxSize)) {
+        SPDLOG_WARN("GrowRegionBoundary, Failed to grow region at:{} Threshold:{} Area:{} SeedValue:{}", region.minat, region.thresh[i].thresh, region.thresh[i].area,flood.Image()[region.minat]);
+        continue;
+      }
+#ifndef NDEBUG
+      if(boundary.area() != int(region.thresh[i].area)) {
+        SPDLOG_WARN("Area mismatch, At:{} Threshold:{} Boundary Size={} Area:{} Expected:{} ", region.minat, region.thresh[i].thresh, boundary.size(), boundary.area(),region.thresh[i].area);
+      }
+#endif
+      ret.push_back(boundary);
     }
-    return ret;
   }
 
   template <class PixelT>

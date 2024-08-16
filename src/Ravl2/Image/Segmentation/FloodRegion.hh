@@ -160,8 +160,8 @@ namespace Ravl2
     std::queue<FloodRegionLineC> pixQueue;
   };
 
-  //! Base grow region routine.
-  // A rewrite of code from: A Seed Fill Algorithm by Paul Heckbert from "Graphics Gems", Academic Press, 1990
+  //! @brief Base grow region routine.
+  //! A rewrite of code from: A Seed Fill Algorithm by Paul Heckbert from "Graphics Gems", Academic Press, 1990
 
   template <class PixelT>
   template <typename InclusionTestT>

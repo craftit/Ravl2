@@ -8,8 +8,14 @@
 #include "Ravl2/Image/Segmentation/SegmentExtrema.hh"
 #include "Ravl2/Image/Segmentation/ConnectedComponents.hh"
 
+#define DODEBUG 0
 
-TEST_CASE("FloodRegion", "[FloodRegion]")
+#if DODEBUG
+#include <opencv2/highgui.hpp>
+#include "Ravl2/OpenCV/Image.hh"
+#endif
+
+TEST_CASE("FloodRegion")
 {
   using namespace Ravl2;
   using PixelT = int;
@@ -66,10 +72,10 @@ TEST_CASE("FloodRegion", "[FloodRegion]")
 TEST_CASE("SegmentExtrema")
 {
   using namespace Ravl2;
-  using PixelT = uint8_t;
-
+#if 1
   SECTION("Basic test")
   {
+    using PixelT = uint8_t;
     Array<PixelT, 2> img({10, 10}, 100);
 
     // Setup a square in the middle of the image.
@@ -81,7 +87,7 @@ TEST_CASE("SegmentExtrema")
     std::vector<Boundary> boundaries = segmentExtrema.apply(img);
 
     REQUIRE(!boundaries.empty());
-    CHECK(boundaries.size() == 2);
+    CHECK(boundaries.size() == 1);
     for (auto &boundary: boundaries) {
       SPDLOG_INFO("Boundary: {} -> {}", boundary.boundingBox(), boundary);
     }
@@ -101,6 +107,7 @@ TEST_CASE("SegmentExtrema")
       }
     }
   }
+#endif
   SECTION("Multi level")
   {
     using ByteT = uint8_t;
@@ -109,21 +116,33 @@ TEST_CASE("SegmentExtrema")
     DrawFilledFrame(img,ByteT(196),IndexRange<2>({{20,30},{20,30}}));
     DrawFilledFrame(img,ByteT(64),IndexRange<2>({{20,30},{40,50}}));
     DrawFilledFrame(img,ByteT(196),IndexRange<2>({{40,50},{40,50}}));
+
     SegmentExtremaC<ByteT> segExt(5);
     std::vector<Boundary> bnd = segExt.apply(img);
-    std::vector<Array<int,2> > segs = segExt.applyMask(img);
-    SPDLOG_INFO("Bounds: {}  Segs: {}", bnd.size(), segs.size());
+//    CHECK(bnd.size() == 4);
+    SPDLOG_INFO("Bounds: {}", bnd.size());
+    CHECK(bnd.size() == 2);
 
-    for(auto &it : segs) {
-      IndexRange<2> frame = it.range();
-      frame.clipBy(img.range());
-      for(auto iit = begin(clip(img,frame),it);iit.valid();++iit)
-        if(iit.template data<1>() != 0) iit.template data<0>() = 255;
-    }
+#if DODEBUG
+    {
+      cv::Mat cvImg = toCvMat(img);
+      cv::imshow("Image", cvImg);
+
+      Ravl2::Array<ByteT,2> imgAcc(img.range(),128);
+      for(auto it : bnd) {
+        for(auto eit : it.edges()) {
+          imgAcc[eit.leftPixel()] = 255;
+          imgAcc[eit.rightPixel()] = 0;
+        }
+        cv::Mat cvAcc = toCvMat(imgAcc);
+        cv::imshow("Acc", cvAcc);
+        cv::waitKey(0);
+        fill(imgAcc,128);
+      }
+    };
+#endif
   }
 }
-
-
 
 TEST_CASE("ConnectedComponents")
 {

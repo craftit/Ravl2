@@ -8,7 +8,7 @@
 // This file will be generated automatically when you run the CMake configuration step.
 // It creates a namespace called `Ravl2`.
 // You can modify the source template at `configured_files/config.hh.in`.
-#include <internal_use_only/config.hh>
+#include "Ravl2/config.hh"
 
 int main(int argc, char **argv)
 {

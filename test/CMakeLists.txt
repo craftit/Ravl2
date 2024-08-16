@@ -59,6 +59,7 @@ target_link_libraries(
           ravl2::Ravl2Math
           ravl2::Ravl2Image
           ravl2::Ravl2ImageSegmentation
+          ravl2::Ravl2OpenCV
           Catch2::Catch2WithMain)
 
 if(WIN32 AND BUILD_SHARED_LIBS)
