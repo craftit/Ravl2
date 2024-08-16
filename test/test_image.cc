@@ -11,6 +11,7 @@
 #include "Ravl2/Image/ImageExtend.hh"
 #include "Ravl2/Image/ZigZagIter.hh"
 #include "Ravl2/Image/DCT2d.hh"
+#include "Ravl2/Image/Warp.hh"
 
 #define CHECK_EQ(a,b) CHECK((a) == (b))
 #define CHECK_NE(a,b) CHECK_FALSE((a) == (b))
@@ -24,7 +25,7 @@
 #define ASSERT_FLOAT_EQ(a,b) REQUIRE(Ravl2::isNearZero((a) -(b)))
 
 
-TEST_CASE("BilinearInterpolation", "[Image]")
+TEST_CASE("BilinearInterpolation")
 {
   Ravl2::Array<float,2> img({4,4},0);
   img[1][1] = 1.0;
@@ -43,8 +44,29 @@ TEST_CASE("BilinearInterpolation", "[Image]")
   ASSERT_FLOAT_EQ(0.25f,value2);
 }
 
+TEST_CASE("Warp")
+{
+  SECTION("Shift")
+  {
+    Ravl2::Array<float, 2> img({10, 10}, 0);
+    clip(img, img.range().shrink(3)) = 1.0f;
+    SPDLOG_INFO("Source:{}", img);
 
-TEST_CASE("PeakDetection", "[Image]")
+    auto transform = [](const Ravl2::Point2f &p) -> Ravl2::Point2f {
+      return p + Ravl2::toPoint<float>(1, 1);
+    };
+
+    Ravl2::Array<float, 2> target(img.range(), 0);
+    Ravl2::warp(target, img, transform);
+
+    SPDLOG_INFO("Target:{}", target);
+    //IndexRange<2> rng = img.range().shift(1, 1);
+  }
+
+}
+
+
+TEST_CASE("PeakDetection")
 {
   using namespace Ravl2;
   Array<int,2> img({10,10}, 0);
@@ -104,7 +126,7 @@ TEST_CASE("PeakDetection", "[Image]")
 }
 
 
-TEST_CASE("SubPixelPeakDetection", "[Image]")
+TEST_CASE("SubPixelPeakDetection")
 {
   using namespace Ravl2;
   Array<float,2> img({3,3} , 0);
@@ -150,7 +172,7 @@ TEST_CASE("Array2Sqr2Iter")
   ASSERT_EQ(count, 306);
 }
 
-TEST_CASE("Array2Sqr2Iter2", "[Image]")
+TEST_CASE("Array2Sqr2Iter2")
 {
   using namespace Ravl2;
 

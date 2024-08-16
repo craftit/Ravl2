@@ -185,6 +185,13 @@ namespace Ravl2
       return m_strides;
     }
 
+    //! Broadcast assignment
+    auto &operator=(const DataT &value)
+    {
+      fill(*this, value);
+      return *this;
+    }
+
 #if 0
     //! Copy data from another array
     //! Experimental

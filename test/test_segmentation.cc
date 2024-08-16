@@ -119,7 +119,6 @@ TEST_CASE("SegmentExtrema")
 
     SegmentExtremaC<ByteT> segExt(5);
     std::vector<Boundary> bnd = segExt.apply(img);
-//    CHECK(bnd.size() == 4);
     SPDLOG_INFO("Bounds: {}", bnd.size());
     CHECK(bnd.size() == 2);
 

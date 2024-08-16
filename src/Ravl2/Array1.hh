@@ -326,6 +326,13 @@ namespace Ravl2
       return *this;
     }
 #endif
+    //! Broadcast assignment
+    //! This fills the array with the given value.
+    auto &operator=(const DataT &value)
+    {
+      fill(*this, value);
+      return *this;
+    }
 
   protected:
     const IndexRange<1> *m_ranges = nullptr;

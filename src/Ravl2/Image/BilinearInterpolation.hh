@@ -4,10 +4,10 @@
 // General Public License (LGPL). See the lgpl.licence file for details or
 // see http://www.gnu.org/copyleft/lesser.html
 // file-header-ends-here
-#ifndef RAVLIMAGE_BILINEAR_HEADER
-#define RAVLIMAGE_BILINEAR_HEADER
 //! author="Charles Galambos"
 //! date="24/01/2001"
+
+#pragma once
 
 #include <cstdint>
 #include "Ravl2/Math.hh"
@@ -16,15 +16,6 @@
 
 namespace Ravl2
 {
-  //! @brief Pixel coordinate system
-  //! There are two types of pixel coordinates one uses the center of the pixel as the
-  //! coordinate and the other uses the top left corner of the pixel as the coordinate. These
-  //! have a 0.5 pixel offset.  The enum tells us which one to use.
-  enum class PixelCoordinateSystemT
-  {
-    Center,
-    TopLeft
-  };
 
   //! @brief Bilinear interpolation
   //! This function performs bi-linear interpolation on a 2D image, it does not perform any bounds checking.
@@ -52,6 +43,20 @@ namespace Ravl2
     return (pixel1[0] * (onemt * onemu)) + (pixel1[1] * (t * onemu)) + (pixel2[0] * (onemt * u)) + (pixel2[1] * (t * u));
   }
 
+  //! @brief Bilinear interpolation
+  //! This operation is used to assign the pixel value from the source to the target
+  //! This does not perform any bounds checking.
+  //! @param Source The target pixel to assign to
+  //! @param pnt The source pixel to assign from
+  template <typename SourceT, typename PointT>
+    requires WindowedArray<SourceT, typename SourceT::value_type, SourceT::dimensions>
+  struct InterpolateBilinear
+  {
+    constexpr auto operator()(const SourceT &source, const PointT &pnt) const
+    {
+      return interpolateBilinear(source, pnt);
+    }
+  };
+
 }// namespace Ravl2
 
-#endif

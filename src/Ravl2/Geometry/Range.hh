@@ -54,7 +54,7 @@ namespace Ravl2
     }
 
     //! Returns this object.
-    [[nodiscard]] inline const Range<RealT, 1> &range() const
+    [[nodiscard]] inline constexpr const Range<RealT, 1> &range() const
     {
       return *this;
     }
@@ -83,24 +83,23 @@ namespace Ravl2
       return mMax;
     }
 
+    //! Returns the index in the middle of the range, eg. (max()+min())/2.
     [[nodiscard]] inline constexpr RealT Center() const
     {
       return (min() + max()) / 2;
     }
-    //: Returns the index in the middle of the range, eg. (max()+min())/2.
 
+    //! Returns the index previous the middle of the range, eg. (max()+min())/2.
     [[nodiscard]] inline constexpr RealT CenterD() const
     {
       return (min() + max()) / 2;
     }
-    //: Returns the index previous the middle of the range, eg. (max()+min())/2.
 
+    //! Returns the index which is in the 'p' % of the whole range.
     [[nodiscard]] inline constexpr RealT Percentage(RealT p) const
     {
       return (max() - min()) * p / RealT(100.0) + min();
     }
-    //: Returns the index which is in the 'p' % of the whole range.
-
 
     //! Returns true if the minimum limit is bigger than the maximum limit.
     [[nodiscard]] inline constexpr bool empty() const
@@ -150,175 +149,169 @@ namespace Ravl2
     [[nodiscard]] bool In(const Range &range) const;
 
     //! @brief Returns true if this range contains at least one common index with the range 'r'.
-    [[nodiscard]] inline bool overlaps(const Range<RealT, 1> &r) const;
+    [[nodiscard]] inline constexpr bool overlaps(const Range<RealT, 1> &r) const
+    {
+      return (!empty() && !r.empty())
+        && (min() <= r.max() && max() >= r.min());
+    }
 
     //:-------------------
     //: Special operations.
 
-    inline const Range &SetOrigin(RealT position)
+    //! Set the origin of the range to 'position'.
+    // Returns a reference to this range.
+    inline constexpr const Range &SetOrigin(RealT position)
     {
       max() = position + max() - min();
       min() = position;
       return *this;
     }
-    //: Set the origin of the range to 'position'.
-    // Returns a reference to this range.
 
-    inline Range &operator++()
+    //! Move both the max and min of the range along 1.
+    // Returns a reference to this range.
+    inline constexpr Range &operator++()
     {
       min()++;
       max()++;
       return *this;
     }
-    //: Move both the max and min of the range along 1.
-    // Returns a reference to this range.
 
-    inline Range &operator--()
+    //! Move both the max and min of the range back 1.
+    // Returns a reference to this range.
+    inline constexpr Range &operator--()
     {
       min()--;
       max()--;
       return *this;
     }
-    //: Move both the max and min of the range back 1.
-    // Returns a reference to this range.
 
-    inline const Range &operator+=(RealT i);
-    //: Both minimum and maximum limits are shifted by adding the offset 'i'.
+    //! Both minimum and maximum limits are shifted by adding the offset 'i'.
     // Returns a reference to this range.
+    inline constexpr const Range &operator+=(RealT i);
 
-    inline const Range &operator-=(RealT i);
-    //: Both minimum and maximum limits are shifted by subtracting the offset 'i'.
+    //! Both minimum and maximum limits are shifted by subtracting the offset 'i'.
     // Returns a reference to this range.
+    inline constexpr const Range &operator-=(RealT i);
 
-    inline Range operator+(RealT i) const
+    //! Create a new Range with minimum and maximum limits shifted by adding the offset 'i'.
+    inline constexpr Range operator+(RealT i) const
     {
       return Range(min() + i, max() + i);
     }
-    //: Create a new Range with minimum and maximum limits shifted by adding the offset 'i'.
 
-    inline Range operator-(RealT i) const
+    //! Create a new Range with minimum and maximum limits shifted by subtracting the offset 'i'.
+    inline constexpr Range operator-(RealT i) const
     {
       return Range(min() - i, max() - i);
     }
-    //: Create a new Range with minimum and maximum limits shifted by subtracting the offset 'i'.
 
     //! This index range is clipped in place to contain at most the index range 'r'.
-    inline Range &clipBy(const Range &r);
+    inline constexpr Range &clipBy(const Range &r);
 
+    //! The value 'r' is clipped to be within this range.
     [[nodiscard]] inline RealT Clip(const RealT &r) const
     {
       RealT lower = min() > r ? min() : r;
       return lower < max() ? lower : max();
     }
-    //: The value 'r' is clipped to be within this range.
 
-    [[nodiscard]] inline Range FirstHalf() const
+    //! Returns the index range < min(), (max()+min())/2 >.
+    [[nodiscard]] constexpr inline Range FirstHalf() const
     {
       return Range(min(), Center());
     }
-    //: Returns the index range < min(), (max()+min())/2 >.
 
-    [[nodiscard]] inline Range FirstHalfD() const
+    //! Returns the index range < min(), (max()+min())/2 >.
+    [[nodiscard]] constexpr inline Range FirstHalfD() const
     {
       return Range(min(), CenterD());
     }
-    //: Returns the index range < min(), (max()+min())/2 >.
 
-    [[nodiscard]] inline Range Enlarge(RealT f) const
+    //! Returns the index range whose number of elements is enlarged by
+    //! the factor 'f'. The upper limits is changed.
+    [[nodiscard]] constexpr inline Range Enlarge(RealT f) const
     {
       return Range(min(), min() + size() * f - 1);
     }
-    //: Returns the index range whose number of elements is enlarged by
-    //: the factor 'f'. The upper limits is changed.
 
-    [[nodiscard]] inline Range expand(RealT n) const
+    //! Returns the range extended by adding 'n' items on both limits of
+    //! this range.
+    [[nodiscard]] constexpr inline Range expand(RealT n) const
     {
       return Range(mMin - n, mMax + n);
     }
-    //: Returns the range extended by adding 'n' items on both limits of
-    //: this range.
 
-    [[nodiscard]] inline Range shrink(RealT n) const
+    //! Returns the range extended by adding 'n' items on both limits of
+    //! this range.
+    [[nodiscard]] constexpr inline Range shrink(RealT n) const
     {
       return Range(mMin + n, mMax - n);
     }
-    //: Returns the range extended by adding 'n' items on both limits of
-    //: this range.
 
-    inline Range &ShrinkHigh(RealT n)
+    //! Returns the range shrunk by removing of the
+    //! last 'n' items on both limits of this range.
+    [[nodiscard]] constexpr inline Range shrinkMax(RealT n) const
     {
-      max() -= n;
-      return *this;
+      return Range(mMin, mMax - n);
     }
-    //: Returns the range shrinked by removing of the
-    //: last 'n' items on both limits of this range.
 
-    Range operator*(RealT scale) const
+    //! Scale range
+    constexpr Range operator*(RealT scale) const
     {
       return Range(min() * scale, max() * scale);
     }
-    //: Scale range
 
-    const Range &involve(RealT i)
+    //! Modify this range to ensure index i is contained within it.
+    constexpr const Range &involve(RealT i)
     {
       if(mMin > i) mMin = i;
       if(mMax < i) mMax = i;
       return *this;
     }
-    //: Modify this range to ensure index i is contained within it.
 
-    const Range &involve(const Range<RealT, 1> &subRange)
+    //! Modify this range to ensure subRange is contained within it.
+    constexpr const Range &involve(const Range<RealT, 1> &subRange)
     {
       involve(subRange.min());
       involve(subRange.max());
       return *this;
     }
-    //: Modify this range to ensure subRange is contained within it.
 
-    [[nodiscard]] IndexRange<1> toIndexRange() const
+    //! Get the smallest integer range containing the real range.
+    [[nodiscard]] constexpr IndexRange<1> toIndexRange() const
     {
       return IndexRange<1>(int_floor(mMin), int_ceil(mMax));
     }
-    //: Get the smallest integer range containing the real range.
 
   private:
-    RealT mMin = 0;// Minimum index.
-    RealT mMax = 0;// Maximum index.
-
-    //friend std::istream & operator>>(std::istream & s, Range & range);
+    RealT mMin = 0;
+    RealT mMax = 0;
   };
 
+  //: Returns true if the index 'i' is inside the index range 'r'.
   template <typename RealT>
   inline bool IsInside(RealT i, const Range<RealT, 1> &range)
   {
     return (range.min() <= i) && (i <= range.max());
   }
-  //: Returns true if the index 'i' is inside the index range 'r'.
 
-  template <typename RealT>
-  IndexRange<2> operator*(const Range<RealT, 1> &realRange, const IndexRange<2> &indexRange);
   //: Multiply an index range by a real range.
   // Multiplying by a real range of 0-1 is a unit transform.
-
   template <typename RealT>
-  std::istream &operator>>(std::istream &s, Range<RealT, 1> &r);
+  IndexRange<2> operator*(const Range<RealT, 1> &realRange, const IndexRange<2> &indexRange);
+
   //: Read range from input stream.
   // Read information from the intput stream 's' and sets the real range
   // according obtained data.
+  template <typename RealT>
+  std::istream &operator>>(std::istream &s, Range<RealT, 1> &r);
 
+  //: Saves the index range 'r' into the output stream 's'.
   template <typename RealT>
   std::ostream &operator<<(std::ostream &s, const Range<RealT, 1> &r);
-  //: Saves the index range 'r' into the output stream 's'.
 
   template <typename RealT>
-  inline bool Range<RealT, 1>::overlaps(const Range<RealT, 1> &r) const
-  {
-    return (!empty() && !r.empty())
-      && (min() <= r.max() && max() >= r.min());
-  }
-
-  template <typename RealT>
-  inline const Range<RealT, 1> &Range<RealT, 1>::operator+=(RealT i)
+  inline constexpr const Range<RealT, 1> &Range<RealT, 1>::operator+=(RealT i)
   {
     min() += i;
     max() += i;
@@ -326,7 +319,7 @@ namespace Ravl2
   }
 
   template <typename RealT>
-  inline const Range<RealT, 1> &Range<RealT, 1>::operator-=(RealT i)
+  inline constexpr const Range<RealT, 1> &Range<RealT, 1>::operator-=(RealT i)
   {
     min() -= i;
     max() -= i;
@@ -334,7 +327,7 @@ namespace Ravl2
   }
 
   template <typename RealT>
-  inline Range<RealT, 1> &Range<RealT, 1>::clipBy(const Range &r)
+  inline constexpr Range<RealT, 1> &Range<RealT, 1>::clipBy(const Range &r)
   {
     if(min() < r.min()) {
       min() = r.min();
@@ -414,7 +407,7 @@ namespace Ravl2
       return ret;
     }
 
-    //: Returns the bottom-right index of the rectangle.
+    //! Returns the bottom-right index of the rectangle.
     [[nodiscard]] inline constexpr Vector<RealT, N> End() const
     {
       Vector<RealT, N> ret;
@@ -483,6 +476,17 @@ namespace Ravl2
       Range ret;
       for(unsigned i = 0; i < N; ++i) {
         ret[i] = mRanges[i].shrink(n);
+      }
+      return ret;
+    }
+
+    //! Returns the range shrunk by removing of the
+    //! last 'n' items on both limits of this range in each dimension.
+    [[nodiscard]] inline constexpr Range shrinkMax(RealT n) const
+    {
+      Range ret;
+      for(unsigned i = 0; i < N; ++i) {
+        ret[i] = mRanges[i].shrinkMax(n);
       }
       return ret;
     }
@@ -609,9 +613,6 @@ namespace Ravl2
       }
       return false;
     }
-
-    //Range Rotate180(VectorC<RealT,N> centre);
-    //: Rotate rectangle 180 degree's around the given center.
 
     //! Returns true if this range contains a common area with
     //! the range 'r'.
@@ -743,12 +744,30 @@ namespace Ravl2
     return ret;
   }
 
+  //! Clamp a value to a range.
+  template <typename RealT>
+  constexpr RealT clamp(RealT val, const Range<RealT,1> &rng)
+  {
+    return std::clamp(val, rng.min(), rng.max());
+  }
+
+  //! Clamp a point to be within a range.
+  template <typename RealT,size_t N>
+  constexpr auto clamp(const Point<RealT,N> &pnt, const Range<RealT,unsigned(N)> &rng)
+  {
+    Point<RealT,N> ret;
+    for(size_t i = 0; i < N; i++)
+      ret[i] = clamp(pnt[i], rng[i]);
+    return ret;
+  }
+
   template <typename RealT>
   inline constexpr Range<RealT, 1> toRange(IndexRange<1> ir)
   {
     return Range<RealT, 1>(RealT(ir.min()), RealT(ir.max() + 1));
   }
 
+  //! Convert to smallest integer range containing the real range.
   template <typename RealT, unsigned N>
   inline constexpr IndexRange<N> toIndexRange(const Range<RealT, N> &ir)
   {
@@ -758,6 +777,7 @@ namespace Ravl2
     return ret;
   }
 
+  //! Convert to smallest integer range containing the real range.
   template <typename RealT>
   inline constexpr IndexRange<1> toIndexRange(Range<RealT, 1> ir)
   {
