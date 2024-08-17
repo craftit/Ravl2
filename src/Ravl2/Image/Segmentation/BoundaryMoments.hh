@@ -12,6 +12,7 @@ namespace Ravl2
 
 
   //! @brief Compute the moments of the region defined by the boundary.
+  //! This is in boundary coordinates, which are shift by half a pixel.
   //! @param boundary - the boundary of the region.
   //! @return the moments of the region.
   //! The sums can get large, ideally the boundary should be shifted to the origin.
@@ -57,6 +58,29 @@ namespace Ravl2
     }
     return moments;
   }
+  
+  //! Mean and covariance of the region defined by the boundary.
+  //! The boundary vertexes are on the pixel centers, this is corrected by adding 0.5 to the centroid.
+  //! @param boundary - the boundary of the region.
+  //! @return the area, mean and covariance of the region.
+  template <typename RealT>
+  [[nodiscard]] std::tuple<RealT, Point<RealT,2>, Matrix<RealT,2,2>> meanCovariance(const Boundary &boundary)
+  {
+    auto moments = Ravl2::moments2<int64_t>(boundary);
+    auto intCentroid = moments.centroid();
+    moments.shift(-intCentroid);
+    
+    Ravl2::Moments2<RealT> floatMoments(moments);
+    [[maybe_unused]] auto covariance = floatMoments.covariance();
+    
+    Ravl2::Point<RealT,2> floatCentroid = floatMoments.centroid() +
+      Ravl2::toPoint<RealT>(intCentroid) +
+        Ravl2::toPoint<RealT>(0.5,0.5); // Convert from boundary to pixel coordinates.
+    
+    return {RealT(moments.area()),floatCentroid, covariance};
+  }
+  
+  
 
   // Some common instantiations
   extern template Moments2<double> moments2<double>(const Boundary &boundary);
