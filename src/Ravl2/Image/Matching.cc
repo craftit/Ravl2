@@ -5,9 +5,9 @@
 // see http://www.gnu.org/copyleft/lesser.html
 // file-header-ends-here
 
-#include "ravl2/config.hh"
 #include "Ravl2/Image/Matching.hh"
 
+#define RAVL_USE_MMX 0
 #if RAVL_USE_MMX
 #include "Ravl2/mmx.hh"
 #endif
