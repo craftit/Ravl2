@@ -13,6 +13,7 @@
 #include "Ravl2/Math.hh"
 #include "Ravl2/Array.hh"
 #include "Ravl2/Geometry/Geometry.hh"
+#include "Ravl2/Geometry/Range.hh"
 
 namespace Ravl2
 {
@@ -57,6 +58,20 @@ namespace Ravl2
       return interpolateBilinear(source, pnt);
     }
   };
+
+  //! @brief Compute the bounds we can actually interpolate over
+  //! @param targetRange The range iterate over in a grid
+  //! @param interpolator The interpolator to use
+  //! @return The range of real points we can sample from
+  template <typename CoordTypeT, unsigned N, typename SourceT, typename PointT>
+  Range<CoordTypeT,N> interpolationBounds(const IndexRange<N> &indexRange, [[maybe_unused]] const InterpolateBilinear<SourceT,PointT> &interpolator)
+  {
+    Range<CoordTypeT,N> targetRange = toRange<CoordTypeT>(indexRange);
+    // We reduce the range by 1 plus the machine epsilon times the maximum image size to avoid sampling
+    // outside the image.
+    return targetRange.shrinkMax(CoordTypeT(1) + (std::numeric_limits<CoordTypeT>::epsilon() * 4096));
+  }
+
 
 }// namespace Ravl2
 
