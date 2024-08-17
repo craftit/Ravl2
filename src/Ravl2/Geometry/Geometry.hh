@@ -235,13 +235,14 @@ namespace Ravl2
   }
 
   //! Linear interpolation between two points
-  template <typename RealT, unsigned N>
+  template <typename RealT, size_t N>
   constexpr inline Point<RealT, N> lerp(const Point<RealT, N> &a, const Point<RealT, N> &b, RealT t)
   {
     Point<RealT, N> ret;
     for(unsigned i = 0; i < N; i++) {
       ret[i] = std::lerp(a[i],b[i],t);
     }
+    return ret;
   }
 
 }// namespace Ravl2

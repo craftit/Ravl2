@@ -120,7 +120,7 @@ namespace Ravl2
     //! This assumes 'bnd' is a single ordered boundary (See BoundryC::OrderEdges();).
     //! Straight edges are compressed into a single segment.
     template <typename RealT>
-    [[nodiscard]] Polygon2dC<RealT> polygon(bool bHalfPixelOffset = false) const;
+    [[nodiscard]] Polygon2dC<RealT> polygon(bool bHalfPixelOffset = true) const;
 
     //! Get number of edges in the boundary
     [[nodiscard]] auto size() const

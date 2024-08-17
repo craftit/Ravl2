@@ -83,7 +83,7 @@ namespace Ravl2 {
     { return p; }
 
     //! Centre of the ellipse.
-    [[nodiscard]] inline Point<RealT,2> Centre() const
+    [[nodiscard]] Point<RealT,2> Centre() const
     { return p.Translation(); }
 
     //! Is point on the curve ?
