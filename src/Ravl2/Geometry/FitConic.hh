@@ -144,7 +144,7 @@ namespace Ravl2
   //: Fit ellipse to points.
 
   template<typename RealT>
-  std::optional<RealT> fit(Ellipse2dC<RealT> &ellipse, const std::vector<Point<RealT,2>> &points) {
+  constexpr std::optional<RealT> fit(Ellipse2dC<RealT> &ellipse, const std::vector<Point<RealT,2>> &points) {
     Conic2dC<RealT> conic;
     auto residual = fit(conic,points);
     if(!residual.has_value())

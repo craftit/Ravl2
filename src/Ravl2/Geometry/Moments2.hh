@@ -24,44 +24,44 @@ namespace Ravl2
   public:
     //! Default constructor
     // Creates the moment object with all moments set to be zero.
-    Moments2() = default;
+    constexpr Moments2() = default;
 
     //! Convert from another set of moments with different SumT type.
     template<typename Sum2T>
-    explicit Moments2(const Moments2<Sum2T> &mom)
+    constexpr explicit Moments2(const Moments2<Sum2T> &mom)
       : m00(SumT(mom.M00())), m10(SumT(mom.M10())), m01(SumT(mom.M01())),
         m20(SumT(mom.M20())), m11(SumT(mom.M11())), m02(SumT(mom.M02()))
     {}
 
     //! Constructor from a set of values.
-    Moments2(SumT nm00, SumT nm10, SumT nm01, SumT nm20, SumT nm11, SumT nm02)
+    constexpr Moments2(SumT nm00, SumT nm10, SumT nm01, SumT nm20, SumT nm11, SumT nm02)
         : m00(nm00), m10(nm10), m01(nm01), m20(nm20), m11(nm11), m02(nm02)
     {}
 
     //! reset all counters to zero.
-    void reset()
+    constexpr void reset()
     {
       m00 = m10 = m01 = m20 = m11 = m02 = SumT(0);
     }
 
     //! Adds a pixel to the object and updates sums.
-    inline void addPixel(const Index<2> &pxl);
+    constexpr inline void addPixel(const Index<2> &pxl);
 
     //! Adds a position with a weight to the object and updates sums.
-    inline void addPixel(const Point<SumT, 2> &pxl);
+    constexpr inline void addPixel(const Point<SumT, 2> &pxl);
 
     //! Adds a position with a weight to the object and updates sums.
-    inline void addPixel(const Point<SumT, 2> &pxl, SumT weight);
+    constexpr inline void addPixel(const Point<SumT, 2> &pxl, SumT weight);
 
     //! Add pixel to set.
-    const Moments2 &operator+=(const Index<2> &pxl)
+    constexpr const Moments2 &operator+=(const Index<2> &pxl)
     {
       addPixel(pxl);
       return *this;
     }
 
     //! Add pixel to set.
-    const Moments2 &operator+=(const Point<SumT, 2> &point)
+    constexpr const Moments2 &operator+=(const Point<SumT, 2> &point)
     {
       addPixel(point);
       return *this;
@@ -70,144 +70,144 @@ namespace Ravl2
     //! Calculate the size of the principle axis.
     // It returns the new values for M02 and M20,
     // the largest is the first element of the vector.
-    [[nodiscard]] Vector<SumT, 2> principalAxisSize() const;
+    [[nodiscard]] constexpr Vector<SumT, 2> principalAxisSize() const;
 
     //! Returns the ratio of the difference and the sum of moments m02 and m20.
     //! The value 0 means that objects is a symmetrical object,
     //! the value 1 corresponds to a one-dimensional object.
-    [[nodiscard]] static SumT elongatedness(const Vector<SumT, 2> &principalAxisSize)
+    [[nodiscard]] constexpr static SumT elongatedness(const Vector<SumT, 2> &principalAxisSize)
     {
       SumT sumM = principalAxisSize[0] + principalAxisSize[1];
       return (sumM != 0) ? std::abs((principalAxisSize[0] - principalAxisSize[1]) / sumM) : 0;
     }
 
     //! Access 00 component.
-    [[nodiscard]] inline SumT M00() const
+    [[nodiscard]] constexpr inline SumT M00() const
     {
       return m00;
     }
 
     //! Access 10 component.
-    [[nodiscard]] inline SumT M10() const
+    [[nodiscard]] constexpr inline SumT M10() const
     {
       return m10;
     }
 
     //! Access 01 component.
-    [[nodiscard]] inline SumT M01() const
+    [[nodiscard]] constexpr inline SumT M01() const
     {
       return m01;
     }
 
     //! Access 20 component.
-    [[nodiscard]] inline SumT M20() const
+    [[nodiscard]] constexpr inline SumT M20() const
     {
       return m20;
     }
 
     //! Access 11 component.
-    [[nodiscard]] inline SumT M11() const
+    [[nodiscard]] constexpr inline SumT M11() const
     {
       return m11;
     }
 
     //! Access 02 component.
-    [[nodiscard]] inline SumT M02() const
+    [[nodiscard]] constexpr inline SumT M02() const
     {
       return m02;
     }
 
     //! Access 00 component.
-    [[nodiscard]] inline SumT &M00()
+    [[nodiscard]] constexpr inline SumT &M00()
     {
       return m00;
     }
 
     //! Access 10 component.
-    [[nodiscard]] inline SumT &M10()
+    [[nodiscard]] constexpr inline SumT &M10()
     {
       return m10;
     }
 
     //! Access 01 component.
-    [[nodiscard]] inline SumT &M01()
+    [[nodiscard]] constexpr inline SumT &M01()
     {
       return m01;
     }
 
     //! Access 20 component.
-    [[nodiscard]] inline SumT &M20()
+    [[nodiscard]] constexpr inline SumT &M20()
     {
       return m20;
     }
 
     //! Access 11 component.
-    [[nodiscard]] inline SumT &M11()
+    [[nodiscard]] constexpr inline SumT &M11()
     {
       return m11;
     }
 
     //! Access 02 component.
-    [[nodiscard]] inline SumT &M02()
+    [[nodiscard]] constexpr inline SumT &M02()
     {
       return m02;
     }
 
     //! Returns the moment m00, ie the area of the 2 dimensional object.
-    [[nodiscard]] inline SumT area() const
+    [[nodiscard]] constexpr inline SumT area() const
     {
       return m00;
     }
 
     //! Returns the x co-ordinate of the centroid.
     //! The M00 moment must not be 0.
-    [[nodiscard]] inline SumT centroidX() const
+    [[nodiscard]] constexpr inline SumT centroidX() const
     {
       return M10() / M00();
     }
 
     //! Returns the y co-ordinate of the centroid.
     //! The M00 moment must not be 0.
-    [[nodiscard]] inline SumT centroidY() const
+    [[nodiscard]] constexpr inline SumT centroidY() const
     {
       return M01() / M00();
     }
 
     //! Returns the variance of the x.
-    [[nodiscard]] inline SumT varX() const
+    [[nodiscard]] constexpr inline SumT varX() const
     {
       return m20 / m00 - sqr(centroidX());
     }
 
     //! Returns the variance of the y.
-    [[nodiscard]] inline SumT varY() const
+    [[nodiscard]] constexpr inline SumT varY() const
     {
       return m02 / m00 - sqr(centroidY());
     }
 
     //! Returns the slope dY/dX. The used criterion is Sum(Y-y)^2 -> min.
     // It means dY/dX = k, where y = k*x+q.
-    [[nodiscard]] inline SumT slopeY() const;
+    [[nodiscard]] constexpr inline SumT slopeY() const;
 
     //! Returns the slope dX/dY. The used criterion is Sum(X-x)^2 -> min.
     // It means dX/dY = k, where x = k*y+q.
-    [[nodiscard]] inline SumT slopeX() const;
+    [[nodiscard]] constexpr inline SumT slopeX() const;
 
     //! Returns the estimate of q, if y = k*x+q.
     // The used criterion is Sum(Y-y)^2 -> min.
-    [[nodiscard]] inline SumT interceptY() const;
+    [[nodiscard]] constexpr inline SumT interceptY() const;
 
     //! Returns the estimate of q, if y = k*y+q.
     // The used criterion is Sum(X-x)^2 -> min.
-    [[nodiscard]] inline SumT interceptX() const;
+    [[nodiscard]] constexpr inline SumT interceptX() const;
 
     //! Return the covariance matrix.
-    [[nodiscard]] Matrix<SumT, 2, 2> covariance() const;
+    [[nodiscard]] constexpr Matrix<SumT, 2, 2> covariance() const;
 
     //! Calculate the centroid.
     template<unsigned Axis>
       requires (Axis < 2)
-    [[nodiscard]] SumT centroid() const
+    [[nodiscard]] constexpr SumT centroid() const
     {
       if constexpr(Axis == 0) {
         return M10() / M00();
@@ -219,7 +219,7 @@ namespace Ravl2
     //! Calculate the variance
     template<unsigned Axis>
       requires (Axis < 2)
-    [[nodiscard]] SumT var() const
+    [[nodiscard]] constexpr SumT var() const
     {
       if constexpr(Axis == 0) {
         return m20 / m00 - sqr(centroid<0>());
@@ -229,38 +229,38 @@ namespace Ravl2
     }
 
     //! Calculate the centroid.
-    [[nodiscard]] Point<SumT, 2> centroid() const
+    [[nodiscard]] constexpr Point<SumT, 2> centroid() const
     {
       return Point<SumT, 2>({centroid<0>(), centroid<1>()});
     }
 
     //! Add to sets of moments together.
-    [[nodiscard]] Moments2 operator+(const Moments2 &m) const
+    [[nodiscard]] constexpr Moments2 operator+(const Moments2 &m) const
     {
       return Moments2(m00 + m.M00(), m10 + m.M10(), m01 + m.M01(), m20 + m.M20(), m11 + m.M11(), m02 + m.M02());
     }
 
     //! Subtract one set of moments from another.
-    [[nodiscard]] Moments2 operator-(const Moments2 &m) const
+    [[nodiscard]] constexpr Moments2 operator-(const Moments2 &m) const
     {
       return Moments2(m00 - m.M00(), m10 - m.M10(), m01 - m.M01(), m20 - m.M20(), m11 - m.M11(), m02 - m.M02());
     }
 
     //! Add to sets of moments to this one.
-    const Moments2 &operator+=(const Moments2 &m);
+    constexpr const Moments2 &operator+=(const Moments2 &m);
 
     //! Subtract a set of moments to this one.
-    const Moments2 &operator-=(const Moments2 &m);
+    constexpr const Moments2 &operator-=(const Moments2 &m);
 
     //! Swap X and Y co-ordinates.
-    void swapXY()
+    constexpr void swapXY()
     {
       std::swap(m10, m01);
       std::swap(m20, m02);
     }
 
     //! Shift the moments by a vector.
-    void shift(const Point<SumT, 2> &shift)
+    constexpr void shift(const Point<SumT, 2> &shift)
     {
       m20 += 2 * m10 * shift[0] + m00 * sqr(shift[0]);
       m02 += 2 * m01 * shift[1] + m00 * sqr(shift[1]);
@@ -270,7 +270,7 @@ namespace Ravl2
     }
 
     //! Shift the moments by an index.
-    inline void shift(const Index<2> &shift)
+    constexpr inline void shift(const Index<2> &shift)
     {
       this->shift(toPoint<SumT>(shift));
     }
@@ -307,7 +307,7 @@ namespace Ravl2
   //: Return the covariance matrix.
 
   template <class SumT>
-  Matrix<SumT, 2, 2> Moments2<SumT>::covariance() const
+  constexpr Matrix<SumT, 2, 2> Moments2<SumT>::covariance() const
   {
     if(isNearZero(m00))
       return Matrix<SumT, 2, 2>({{1, 0}, {0, 1}});// if m00 is too small (prevent effective division by zero)
@@ -319,7 +319,7 @@ namespace Ravl2
   }
 
   template <class SumT>
-  Vector<SumT, 2> Moments2<SumT>::principalAxisSize() const
+  constexpr Vector<SumT, 2> Moments2<SumT>::principalAxisSize() const
   {
     Matrix<SumT, 2, 2> mat = covariance();
     auto vec = xt::linalg::eigvalsh(mat);
@@ -347,7 +347,7 @@ namespace Ravl2
   //! @brief Equality operator
   //! This makes sense if SumT is integer type, the comparison is exact.
   template<typename SumT>
-  [[nodiscard]] bool operator==(const Moments2<SumT> &lhs, const Moments2<SumT> &rhs)
+  [[nodiscard]] constexpr bool operator==(const Moments2<SumT> &lhs, const Moments2<SumT> &rhs)
   {
     return lhs.M00() == rhs.M00() && lhs.M10() == rhs.M10() && lhs.M01() == rhs.M01() &&
            lhs.M20() == rhs.M20() && lhs.M11() == rhs.M11() && lhs.M02() == rhs.M02();
@@ -356,14 +356,14 @@ namespace Ravl2
   //! In equality operator
   //! This makes sense if SumT is integer type, the comparison is exact.
   template<typename SumT>
-  [[nodiscard]] inline bool operator!=(const Moments2<SumT> &lhs, const Moments2<SumT> &rhs)
+  [[nodiscard]] constexpr inline bool operator!=(const Moments2<SumT> &lhs, const Moments2<SumT> &rhs)
   {
     return !(lhs == rhs);
   }
 
 
   template <class SumT>
-  inline void Moments2<SumT>::addPixel(const Index<2> &pxl)
+  constexpr inline void Moments2<SumT>::addPixel(const Index<2> &pxl)
   {
     auto a = SumT(pxl[0]);
     auto b = SumT(pxl[1]);
@@ -377,7 +377,7 @@ namespace Ravl2
   }
 
   template <class SumT>
-  inline void Moments2<SumT>::addPixel(const Point<SumT, 2> &pxl)
+  constexpr inline void Moments2<SumT>::addPixel(const Point<SumT, 2> &pxl)
   {
     SumT a = pxl[0];
     SumT b = pxl[1];
@@ -391,7 +391,7 @@ namespace Ravl2
   }
 
   template <class SumT>
-  void Moments2<SumT>::addPixel(const Point<SumT, 2> &pxl, SumT weight)
+  constexpr void Moments2<SumT>::addPixel(const Point<SumT, 2> &pxl, SumT weight)
   {
     SumT a = pxl[0];
     SumT b = pxl[1];
@@ -407,7 +407,7 @@ namespace Ravl2
   }
 
   template <class SumT>
-  inline const Moments2<SumT> &Moments2<SumT>::operator+=(const Moments2<SumT> &m)
+  constexpr inline const Moments2<SumT> &Moments2<SumT>::operator+=(const Moments2<SumT> &m)
   {
     m00 += m.M00();
     m10 += m.M10();
@@ -419,7 +419,7 @@ namespace Ravl2
   }
 
   template <class SumT>
-  inline const Moments2<SumT> &Moments2<SumT>::operator-=(const Moments2<SumT> &m)
+  constexpr inline const Moments2<SumT> &Moments2<SumT>::operator-=(const Moments2<SumT> &m)
   {
     m00 -= m.M00();
     m10 -= m.M10();
@@ -431,7 +431,7 @@ namespace Ravl2
   }
 
   template <class SumT>
-  inline SumT Moments2<SumT>::slopeY() const
+  constexpr inline SumT Moments2<SumT>::slopeY() const
   {
     SumT det = m00 * m20 - m10 * m10;
     if(isNearZero(det))
@@ -440,7 +440,7 @@ namespace Ravl2
   }
 
   template <class SumT>
-  inline SumT Moments2<SumT>::interceptY() const
+  constexpr inline SumT Moments2<SumT>::interceptY() const
   {
     SumT det = m00 * m20 - m10 * m10;
     if(isNearZero(det))
@@ -449,7 +449,7 @@ namespace Ravl2
   }
 
   template <class SumT>
-  inline SumT Moments2<SumT>::slopeX() const
+  constexpr inline SumT Moments2<SumT>::slopeX() const
   {
     SumT det = m00 * m02 - m01 * m01;
     if(isNearZero(det))
@@ -458,7 +458,7 @@ namespace Ravl2
   }
 
   template <class SumT>
-  inline SumT Moments2<SumT>::interceptX() const
+  constexpr inline SumT Moments2<SumT>::interceptX() const
   {
     SumT det = m00 * m02 - m01 * m01;
     if(isNearZero(det))

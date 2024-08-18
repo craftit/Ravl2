@@ -15,7 +15,7 @@ namespace Ravl2
 
   template <typename RealT, typename TransformT, unsigned N>
    requires PointTransform<TransformT, RealT, N>
-  [[nodiscard]] PointSet<RealT, N> transform(const TransformT &trans, const Range<RealT, N> &range)
+  [[nodiscard]] constexpr PointSet<RealT, N> transform(const TransformT &trans, const Range<RealT, N> &range)
   {
     // Go through each corner of the range and transform it
     PointSet<RealT, N> points;
@@ -32,7 +32,7 @@ namespace Ravl2
   //! Compute the axis-aligned bounding box of a point set.
 
   template <typename RealT, unsigned N>
-  [[nodiscard]] Range<RealT, N> boundingBox(const PointSet<RealT, N> &points)
+  [[nodiscard]] constexpr Range<RealT, N> boundingBox(const PointSet<RealT, N> &points)
   {
     Range<RealT, N> range = Range<RealT, N>::mostEmpty();
     for(const auto &pnt : points) {
@@ -44,7 +44,7 @@ namespace Ravl2
   //! Transform a PointSet by a point transform
   template <typename RealT, typename TransformT, unsigned N>
    requires PointTransform<TransformT, RealT, N>
-  [[nodiscard]] PointSet<RealT, N> transform(const TransformT &trans, const PointSet<RealT, N> &points)
+  [[nodiscard]] constexpr PointSet<RealT, N> transform(const TransformT &trans, const PointSet<RealT, N> &points)
   {
     PointSet<RealT, N> newPoints;
     for (const auto &pnt: points) {

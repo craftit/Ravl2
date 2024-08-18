@@ -37,16 +37,16 @@ namespace Ravl2 {
   public:
     //! @brief Default constructor.
     //! The conic is undefined.
-    Conic2dC() = default;
+    constexpr Conic2dC() = default;
 
     //! @brief Construct from parameter vector.
     //! @param  params - Parameters, entry 0 = a, 1 = b, 2 = c, 3 = d, 4 = e, 5 = f
-    explicit Conic2dC(const Vector<RealT,6> &params)
+    constexpr explicit Conic2dC(const Vector<RealT,6> &params)
       : p(params)
     {}
 
     //! @brief Construct from parameter vector.
-    explicit Conic2dC(const VectorT<RealT> &params)
+    constexpr explicit Conic2dC(const VectorT<RealT> &params)
     {
       if(params.size() != 6) {
         throw std::invalid_argument("Conic2dC: Invalid parameter vector size");
@@ -55,7 +55,7 @@ namespace Ravl2 {
     }
 
     //! Construct from parameters
-    Conic2dC(RealT a,RealT b,RealT c,RealT d,RealT e,RealT f)
+    constexpr Conic2dC(RealT a,RealT b,RealT c,RealT d,RealT e,RealT f)
     { p[0] = a; p[1] = b; p[2] = c; p[3] = d; p[4] = e; p[5] = f;  }
 
     //! @brief Construct from matrix C in projective ellipse equation x.T() * C * x = 0.
@@ -63,7 +63,7 @@ namespace Ravl2 {
     //!      (  a  b/2 d/2 )
     //!  C = ( b/2  c  e/2 )
     //!      ( d/2 e/2  f  )</pre>
-    explicit Conic2dC(const Matrix<RealT,3,3> &matrix)
+    constexpr explicit Conic2dC(const Matrix<RealT,3,3> &matrix)
     {
       // Should check matrix is symmetric ?
       p[0] = matrix(0,0);
@@ -77,13 +77,13 @@ namespace Ravl2 {
     //! @brief Is point on curve ?
     //! @param pnt - Point to test.
     //! @return true if point is on curve.
-    [[nodiscard]] bool IsOnCurve(const Point<RealT,2> &pnt, RealT tolerance = RealT(1e-5)) const
+    [[nodiscard]] constexpr bool IsOnCurve(const Point<RealT,2> &pnt, RealT tolerance = RealT(1e-5)) const
     { return isNearZero(Residue(pnt), tolerance); }
 
     //! @brief Compute the residue
     //! Compute x.T() * C * x, where x is projective version of pnt. <br>
     //! Hence gives a measure of distance of point from curve
-    [[nodiscard]] RealT Residue(const Point<RealT,2> &pnt) const {
+    [[nodiscard]] constexpr RealT Residue(const Point<RealT,2> &pnt) const {
       return 
 	p[0] * sqr(pnt[0]) + 
 	p[1] * pnt[0] * pnt[1] +
@@ -95,7 +95,7 @@ namespace Ravl2 {
 
     //! Get the coefficient matrix. 'C'
     //! Such that  x.T() * C * x = 0
-    [[nodiscard]] Matrix<RealT,3,3> C() const {
+    [[nodiscard]] constexpr Matrix<RealT,3,3> C() const {
       return Matrix<RealT,3,3>({{p[0]  ,p[1]/2,p[3]/2},
                                 {p[1]/2,p[2]  ,p[4]/2},
                                 {p[3]/2,p[4]/2,p[5]}});
@@ -103,7 +103,7 @@ namespace Ravl2 {
 
 
     //! Find the tangent at point 'pnt', where pnt is on the conic.
-    [[nodiscard]] LineABC2dC<RealT> tangent(const Point<RealT,2> &pnt)
+    [[nodiscard]] constexpr LineABC2dC<RealT> tangent(const Point<RealT,2> &pnt)
     {
       // TODO:- This can be simplified a lot.
       Vector<RealT,3> res= dot(C(),toVector<RealT>(pnt[0],pnt[1],1));
@@ -112,7 +112,7 @@ namespace Ravl2 {
 
     //! Access parameter vector.
     //! 0-a 1-b 2-c 3-d 4-e 5-f
-    [[nodiscard]] const Vector<RealT,6> &Parameters() const
+    [[nodiscard]] constexpr const Vector<RealT,6> &Parameters() const
     { return p; }
 
     //! @brief Compute various ellipse parameters.
@@ -120,7 +120,7 @@ namespace Ravl2 {
     //! @param  major - Size of major axis.
     //! @param  minor - Size of minor axis
     //! @param  angle - Angle of major axis.
-    bool EllipseParameters(Point<RealT,2> &centre,RealT &major,RealT &minor,RealT &angle) const
+    constexpr bool EllipseParameters(Point<RealT,2> &centre,RealT &major,RealT &minor,RealT &angle) const
     {
       Matrix<RealT,2,2> t;
       if(!ComputeEllipse(centre,t))
@@ -137,7 +137,7 @@ namespace Ravl2 {
 
     //! @brief Compute ellipse parameters.
     // Assumes conic is ellipse, computes ellipse centre and returns remaining parameters as symmetric 2D matrix
-    bool ComputeEllipse(Point<RealT,2> &c,Matrix<RealT,2,2> &mat) const
+    constexpr bool ComputeEllipse(Point<RealT,2> &c,Matrix<RealT,2,2> &mat) const
     {
       // (Bill Xmas) I think what this does is:
       // - compute centre by completing the square on ax^2 +bxy + .....
@@ -173,7 +173,6 @@ namespace Ravl2 {
     }
 
   private:
-
     Vector<RealT,6> p; // 0-a 1-b 2-c 3-d 4-e 5-f 
   };
 

@@ -17,7 +17,7 @@ namespace Ravl2
 
   template <typename RealT,typename ContainerT>
   requires std::is_same_v<typename ContainerT::value_type,Point<RealT,2>>
-  RealT fitLSQ(LineABC2dC<RealT> &line,const ContainerT &points)
+  constexpr RealT fitLSQ(LineABC2dC<RealT> &line,const ContainerT &points)
   {
     Moments2<RealT> sums;
     // Ideally we should normalize the points to the centroid and then fit the line

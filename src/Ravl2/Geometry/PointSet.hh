@@ -28,34 +28,34 @@ namespace Ravl2
     using value_type = typename PointArrayT::value_type;
 
     //! Empty list of points.
-    PointSet() = default;
+    constexpr PointSet() = default;
 
     //! Construct from list of points
-    explicit PointSet(const std::vector<Point<RealT, N>> &points)
+    constexpr explicit PointSet(const std::vector<Point<RealT, N>> &points)
         : std::vector<Point<RealT, N>>(points)
     {}
 
     //! Returns the centroid (mean) of the points
-    [[nodiscard]] Point<RealT, N> PointCentroid() const;
+    [[nodiscard]] constexpr Point<RealT, N> PointCentroid() const;
 
     //! Calculates the barycentric coordinate of point
-    [[nodiscard]] std::vector<RealT> BarycentricCoordinate(const Point<RealT, N> &point) const;
+    [[nodiscard]] constexpr std::vector<RealT> BarycentricCoordinate(const Point<RealT, N> &point) const;
 
     //! Compute the bounding rectangle for the point set.
-    [[nodiscard]] Range<RealT, N> BoundingRectangle() const;
+    [[nodiscard]] constexpr Range<RealT, N> BoundingRectangle() const;
 
     //! translate point set by adding a vector.
-    const PointSet &operator+=(const Vector<RealT, N> &offset);
+    constexpr const PointSet &operator+=(const Vector<RealT, N> &offset);
 
     //! translate point set by subracting a vector.
-    const PointSet &operator-=(const Vector<RealT, N> &offset);
+    constexpr const PointSet &operator-=(const Vector<RealT, N> &offset);
 
     //! scale the point set by multiplying the points by 'scale'.
-    const PointSet &operator*=(RealT scale);
+    constexpr const PointSet &operator*=(RealT scale);
 
     //! Transform the points in place
     template <PointTransform transform>
-    const PointSet<RealT, N> &operator*=(const transform &trans)
+    constexpr const PointSet<RealT, N> &operator*=(const transform &trans)
     {
       for(auto &it : *this)
         *it = trans(*it);
@@ -77,7 +77,7 @@ namespace Ravl2
     }
 
   protected:
-    static RealT pCot(const Point<RealT, 2> &oPointA, const Point<RealT, 2> &oPointB, const Point<RealT, 2> &oPointC)
+    static constexpr RealT pCot(const Point<RealT, 2> &oPointA, const Point<RealT, 2> &oPointB, const Point<RealT, 2> &oPointC)
     {
       Point<RealT, 2> oBA = (oPointA - oPointB);
       Point<RealT, 2> oBC = (oPointC - oPointB);
@@ -89,7 +89,7 @@ namespace Ravl2
   };
 
   template <typename RealT, unsigned N>
-  Point<RealT, N> PointSet<RealT, N>::PointCentroid() const
+  constexpr Point<RealT, N> PointSet<RealT, N>::PointCentroid() const
   {
     // Create return value
     Point<RealT, N> centroid {};
@@ -106,7 +106,7 @@ namespace Ravl2
   }
 
   template <typename RealT, unsigned N>
-  static RealT PCot(const Point<RealT, N> &oPointA, const Point<RealT, N> &oPointB, const Point<RealT, N> &oPointC)
+  static constexpr RealT PCot(const Point<RealT, N> &oPointA, const Point<RealT, N> &oPointB, const Point<RealT, N> &oPointC)
   {
     auto oBA = oPointA - oPointB;
     auto oBC = oPointC - oPointB;
@@ -117,7 +117,7 @@ namespace Ravl2
   }
 
   template <typename RealT, unsigned N>
-  std::vector<RealT> PointSet<RealT, N>::BarycentricCoordinate(const Point<RealT, N> &point) const
+  constexpr std::vector<RealT> PointSet<RealT, N>::BarycentricCoordinate(const Point<RealT, N> &point) const
   {
     // Create return array
     std::vector<RealT> oWeights(this->size());
@@ -157,7 +157,7 @@ namespace Ravl2
   //! Compute the bounding rectangle for the point set.
 
   template <typename RealT, unsigned N>
-  Range<RealT, N> PointSet<RealT, N>::BoundingRectangle() const
+  constexpr Range<RealT, N> PointSet<RealT, N>::BoundingRectangle() const
   {
     Range<RealT, N> ret;
     auto point = this->begin();
@@ -173,7 +173,7 @@ namespace Ravl2
   //! Translate point set by vector.
 
   template <typename RealT, unsigned N>
-  const PointSet<RealT, N> &PointSet<RealT, N>::operator+=(const Vector<RealT, N> &offset)
+  constexpr const PointSet<RealT, N> &PointSet<RealT, N>::operator+=(const Vector<RealT, N> &offset)
   {
     for(auto &it : *this)
       it += offset;
@@ -183,7 +183,7 @@ namespace Ravl2
   //! Translate point set by subracting a vector.
 
   template <typename RealT, unsigned N>
-  const PointSet<RealT, N> &PointSet<RealT, N>::operator-=(const Vector<RealT, N> &offset)
+  constexpr const PointSet<RealT, N> &PointSet<RealT, N>::operator-=(const Vector<RealT, N> &offset)
   {
     for(auto &it : *this)
       it -= offset;
@@ -193,7 +193,7 @@ namespace Ravl2
   //! Scale the point set by multiplying the points by 'scale'.
 
   template <typename RealT, unsigned N>
-  const PointSet<RealT, N> &PointSet<RealT, N>::operator*=(RealT scale)
+  constexpr const PointSet<RealT, N> &PointSet<RealT, N>::operator*=(RealT scale)
   {
     for(auto &it : *this)
       it *= scale;

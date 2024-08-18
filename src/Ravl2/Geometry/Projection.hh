@@ -31,7 +31,7 @@ namespace Ravl2
 
     //! Default constructor.
     //! Creates an identity transform.
-    Projection() = default;
+    constexpr Projection() = default;
 
     //! Construct a projective transform.
     //! @param: transform - the 2D projective transformation
@@ -39,7 +39,7 @@ namespace Ravl2
     //! <p>These are the scale values that the last term in the projective vectors must have for correct normalisation.  They are usually set = 1.  However for some optimisation operations better results are obtained if values more representative of typical components of the vector are used.
     //! In the projection "b = P a", Iz and Oz is the scale values for a and b respectively.</p>
     //! <p> This constructor assumes that the values of the last column of "transform" have already been set to correspond to the value of "iz".</p>
-    explicit Projection(const Matrix<RealT,N,N> &transform, RealT Oz = 1, RealT Iz = 1)
+    constexpr explicit Projection(const Matrix<RealT,N,N> &transform, RealT Oz = 1, RealT Iz = 1)
       : trans(transform),
 	iz(Iz),
 	oz(Oz)
@@ -49,7 +49,7 @@ namespace Ravl2
     //! @param: affineTransform - the 2D affine transform
     //! @param: Iz, Oz - the projective scale values for the input and output vectors
     //! The parameters that are not specified by the affine transform are set to 0.
-    explicit Projection(const Affine<RealT, N> &affineTransform, RealT Oz = 1, RealT Iz = 1)
+    constexpr explicit Projection(const Affine<RealT, N> &affineTransform, RealT Oz = 1, RealT Iz = 1)
       : iz(Iz),
         oz(Oz)
     {
@@ -64,13 +64,13 @@ namespace Ravl2
     }
 
     //! project a point through the transform.
-    Point<RealT,N> project(const Point<RealT,2> &pnt) const {
+    constexpr Point<RealT,N> project(const Point<RealT,2> &pnt) const {
       Vector<RealT,N+1> vo = xt::linalg::dot(trans,Vector<RealT,3>(pnt[0],pnt[1],iz));
       return oz * Vector<RealT,N>(vo)/vo[N];
     }
 
     //! project a point through the transform.
-    Point<RealT,N> operator()(const Point<RealT,N> &pnt) const
+    constexpr Point<RealT,N> operator()(const Point<RealT,N> &pnt) const
     { return project(pnt); }
 
 #if 0
@@ -108,11 +108,11 @@ namespace Ravl2
 #endif
 
     //! Invert transform.
-    Projection Inverse() const
+    constexpr Projection Inverse() const
     { return Projection(inverse(trans), iz, oz); }
 
     //! Returns identity projection
-    static Projection identity(RealT oz=1, RealT iz=1) {
+    static constexpr Projection identity(RealT oz=1, RealT iz=1) {
       Matrix<RealT,3,3> m (Matrix<RealT,3,3>::I());
       m[2][2] = oz/iz;
       return Projection(m, oz, iz);
@@ -120,44 +120,44 @@ namespace Ravl2
 
     //! Access transformation matrix.
     //! This is NOT the homography between images unless the scaling factors are both 1.
-    Matrix<RealT,3,3> &matrix()
+    constexpr Matrix<RealT,3,3> &matrix()
     { return trans; }
 
     //! Access transformation matrix.
     //! This is NOT the homography between images unless the scaling factors are both 1.
-    const Matrix<RealT,3,3> &matrix() const
+    constexpr const Matrix<RealT,3,3> &matrix() const
     { return trans; }
 
     //! Accesss iz.
-    RealT IZ() const
+    constexpr RealT IZ() const
     { return iz; }
 
     //! Accesss oz.
-    RealT OZ() const
+    constexpr RealT OZ() const
     { return oz; }
 
     //! Accesss iz.
-    RealT &IZ()
+    constexpr RealT &IZ()
     { return iz; }
 
     //! Accesss oz.
-    RealT &OZ()
+    constexpr RealT &OZ()
     { return oz; }
 
     //! Test if projection is near affine.
-    bool IsNearAffine(const RealT tolerance = 1e-6) const
+    constexpr bool IsNearAffine(const RealT tolerance = 1e-6) const
     { return (std::abs(trans[2][2]) + std::abs(trans[2][0])) * (iz / oz) < tolerance; }
 
     //! Get homography
     //! This returns the projection normalised to make the projective scales both = 1
-    Matrix<RealT,3,3> Homography() const;
+    constexpr Matrix<RealT,3,3> Homography() const;
 
     //! Get an affine approximation of this projective transform
     //! @return: the affine approximation
-    Affine<RealT, 2> AffineApproximation() const;
+    constexpr Affine<RealT, 2> AffineApproximation() const;
 
     //! True if not the zero projection and Matrix<RealT,3,3> is "real"
-    [[nodiscard]] inline bool IsValid() const
+    [[nodiscard]]constexpr  inline bool IsValid() const
     { return !isNearZero(xt::sum(xt::abs(trans))())  && isReal(trans); }
 
     //! Serialization support

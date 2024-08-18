@@ -25,7 +25,7 @@ namespace Ravl2
     inline constexpr Circle2dC() = default;
 
     //! Constructor.
-    inline constexpr Circle2dC(const Point<RealT, 2> &at, RealT rad)
+    inline constexpr Circle2dC(const Point<RealT, 2> &at, RealT rad) noexcept
         : centre(at),
           radius(rad)
     {}
@@ -64,57 +64,57 @@ namespace Ravl2
     }
 
     //! Constant access to radius.
-    inline constexpr RealT &Radius()
+    [[nodiscard]] inline constexpr RealT &Radius()
     {
       return radius;
     }
 
     //! Constant access to radius.
-    inline constexpr RealT Radius() const
+    [[nodiscard]] inline constexpr RealT Radius() const
     {
       return radius;
     }
 
     //! Centre of circle.
-    inline constexpr Point<RealT, 2> &Centre()
+    [[nodiscard]] inline constexpr Point<RealT, 2> &Centre()
     {
       return centre;
     }
 
     //! Constant access to centre of circle.
-    inline constexpr Point<RealT, 2> Centre() const
+    [[nodiscard]] inline constexpr Point<RealT, 2> Centre() const
     {
       return centre;
     }
 
     //! Is point inside circle ?
-    inline constexpr bool IsInside(const Point<RealT, 2> &point) const
+    [[nodiscard]] inline constexpr bool IsInside(const Point<RealT, 2> &point) const
     {
       return squaredEuclidDistance(centre, point) < (radius * radius);
     }
 
     //! Find the closest point on the circle to 'point'.
-    inline constexpr Point<RealT, 2> Projection(const Point<RealT, 2> &point) const
+    [[nodiscard]] inline constexpr Point<RealT, 2> Projection(const Point<RealT, 2> &point) const
     {
       Vector<RealT, 2> dir = point - centre;
       return centre + (radius / norm_l2(dir)) * dir;
     }
 
     //! Angle between origin and point p.
-    inline constexpr RealT Angle(const Point<RealT, 2> &p) const
+    [[nodiscard]] inline constexpr RealT Angle(const Point<RealT, 2> &p) const
     {
       return angle(p, centre);
     }
 
     //! Get point on circle at given angle.
-    inline constexpr Point<RealT, 2> Value(RealT angle) const
+    [[nodiscard]] inline constexpr Point<RealT, 2> Value(RealT angle) const
     {
       return toPoint<RealT>(centre[0] + radius * std::cos(angle),
                             centre[1] + radius * std::sin(angle));
     }
 
     //! Distance to closest point on perimeter.
-    inline constexpr RealT Distance(const Point<RealT, 2> &p) const
+    [[nodiscard]] inline constexpr RealT Distance(const Point<RealT, 2> &p) const
     {
       return std::abs(euclidDistance(centre, p) - radius);
     }

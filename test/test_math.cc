@@ -39,7 +39,7 @@ TEST_CASE("MeanVariance", "[MeanVariance]")
     var +=sqr(RealT(i) - 5);
     data[i] = RealT(i);
   }
-  MeanVariance<RealT> mv3 = computeMeanVariance(data, SampleStatisticsT::POPULATION);
+  MeanVariance<RealT> mv3 = computeMeanVariance(data, SampleStatisticsT::SAMPLE);
   CHECK(isNearZero(mv3.mean() - 5));
   CHECK(isNearZero(mv3.variance() - (var/10)));
 

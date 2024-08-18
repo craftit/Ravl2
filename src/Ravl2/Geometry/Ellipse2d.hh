@@ -36,11 +36,11 @@ namespace Ravl2 {
   public:
     //! @brief Default constructor.
     //! The parameters of the ellipse are left undefined.
-    Ellipse2dC() = default;
+    constexpr Ellipse2dC() = default;
 
     //! Create from conic parameters.
     //!param: conicParams - Conic parameters a to f, where a * sqr(row) + b * row * col + c * sqr(col) + d * row + e * col + f = 0
-    explicit Ellipse2dC(const Vector<RealT,6> &conicParams)
+    constexpr explicit Ellipse2dC(const Vector<RealT,6> &conicParams)
     {
       Conic2dC conic(conicParams);
       conic.AsEllipse(*this); // What to do if this fails?
@@ -48,14 +48,14 @@ namespace Ravl2 {
 
     //! Construct from affine transform from unit circle centered on the origin
     //!param: np - Transform from unit circle centered on the origin
-    explicit Ellipse2dC(const Affine<RealT,2> &np)
+    constexpr explicit Ellipse2dC(const Affine<RealT,2> &np)
       : p(np)
     {}
 
     //! Construct from affine transform from unit circle centered on the origin
     //!param: sr - scale rotation matrix.
     //!param: off - offset from origin
-    Ellipse2dC(const Matrix<RealT,2,2> &sr,const Vector<RealT,2> &off)
+    constexpr Ellipse2dC(const Matrix<RealT,2,2> &sr,const Vector<RealT,2> &off)
       : p(sr,off)
     {}
 
@@ -64,7 +64,7 @@ namespace Ravl2 {
     //!param: major - Size of major axis. (at given angle)
     //!param: minor - Size of minor axis.
     //!param: angle - Angle of major axis.
-    Ellipse2dC(const Point<RealT,2> &centre,RealT major,RealT minor,RealT angle)
+    constexpr Ellipse2dC(const Point<RealT,2> &centre,RealT major,RealT minor,RealT angle)
     {
       p = Affine<RealT,2>(xt::linalg::dot(Matrix<RealT, 2, 2>({{std::cos(angle), -std::sin(angle)},
                                           {std::sin(angle), std::cos(angle)}}),
@@ -75,19 +75,19 @@ namespace Ravl2 {
 
 
     //! Compute point on ellipse.
-    [[nodiscard]] Point<RealT,2> point(RealT angle) const
+    [[nodiscard]] constexpr Point<RealT,2> point(RealT angle) const
     { return p(toVector<RealT>(std::cos(angle),std::sin(angle))); }
 
     //! Access as projection from unit circle centered on the origin
-    [[nodiscard]] const Affine<RealT,2> &Projection() const
+    [[nodiscard]] constexpr const Affine<RealT,2> &Projection() const
     { return p; }
 
     //! Centre of the ellipse.
-    [[nodiscard]] Point<RealT,2> Centre() const
+    [[nodiscard]] constexpr Point<RealT,2> Centre() const
     { return p.Translation(); }
 
     //! Is point on the curve ?
-    [[nodiscard]] bool IsOnCurve(const Point<RealT,2> &pnt,RealT tolerance=std::numeric_limits<RealT>::epsilon()) const
+    [[nodiscard]] constexpr bool IsOnCurve(const Point<RealT,2> &pnt,RealT tolerance=std::numeric_limits<RealT>::epsilon()) const
     {
       Point<RealT,2> mp = inverse(p)(pnt);
       RealT d = sumOfSqr(mp) - 1;
@@ -95,7 +95,7 @@ namespace Ravl2 {
     }
 
     //! Compute the residue from
-    [[nodiscard]] RealT residue(const Point<RealT,2> &pnt) const
+    [[nodiscard]] constexpr RealT residue(const Point<RealT,2> &pnt) const
     {
       Point<RealT,2> mp = inverse(p)(pnt);
       return sumOfSqr(mp) - 1;
@@ -106,7 +106,7 @@ namespace Ravl2 {
     //!param: major - Size of major axis.
     //!param: minor - Size of minor axis
     //!param: angle - Angle of major axis.
-    bool EllipseParameters(Point<RealT,2> &centre,RealT &major,RealT &minor,RealT &angle) const
+    constexpr bool EllipseParameters(Point<RealT,2> &centre,RealT &major,RealT &minor,RealT &angle) const
     {
       centre = p.Translation();
       ONDEBUG(std::cerr << "SRMatrix:\n"<<p.SRMatrix() << std::endl);
@@ -126,7 +126,7 @@ namespace Ravl2 {
     //! @brief Compute the size of major and minor axis.
     //! @return Size of major and minor axis, respectively.
     [[nodiscard]]
-    std::tuple<RealT,RealT> size() const
+    constexpr std::tuple<RealT,RealT> size() const
     {
       auto [u,s,vt] = xt::linalg::svd(p.SRMatrix(),false,false);
       return {s[0],s[1]};
@@ -140,7 +140,7 @@ namespace Ravl2 {
   //! @param  conic - Conic to turn into an Ellipse
   //! @return Ellipse if conic is an conic, otherwise if hyperbola or degenerate std::nullopt.
   template<typename RealT>
-  std::optional<Ellipse2dC<RealT> > toEllipse(const Conic2dC<RealT> &conic) {
+  constexpr std::optional<Ellipse2dC<RealT> > toEllipse(const Conic2dC<RealT> &conic) {
     // Ellipse representation is transformation required to transform unit
     // circle into conic.  This is the inverse of the "square root" of
     // Euclidean matrix representation
@@ -178,13 +178,13 @@ namespace Ravl2 {
   //! Based on method presented in 'Numerically Stable Direct Least Squares Fitting of Ellipses'
   //! by Radim Halir and Jan Flusser.
   template<typename RealT>
-  bool FitEllipse(const std::vector<Point<RealT,2>> &points,Ellipse2dC<RealT> &ellipse);
+  constexpr bool FitEllipse(const std::vector<Point<RealT,2>> &points,Ellipse2dC<RealT> &ellipse);
 
   //! docentry="Ravl.API.Math.Statistics;Ravl.API.Math.Geometry.2D"
   //! @brief Compute an ellipse from a 2d covariance matrix, mean, and standard deviation.
   //! The ellipse is the contour of a 2-D Gaussian random variable which lies "stdDev" standard deviations from the mean.
   template<typename RealT>
-  [[nodiscard]] Ellipse2dC<RealT> EllipseMeanCovariance(const Matrix<RealT,2,2> &covar,const Point<RealT,2> &mean,RealT stdDev = 1.0)
+  [[nodiscard]] constexpr Ellipse2dC<RealT> EllipseMeanCovariance(const Matrix<RealT,2,2> &covar,const Point<RealT,2> &mean,RealT stdDev = 1.0)
   {
     auto [dv,E] = xt::linalg::eigh(covar);
     ONDEBUG(std::cerr<<"l: "<<dv<<"\nE\n"<<E<<std::endl);

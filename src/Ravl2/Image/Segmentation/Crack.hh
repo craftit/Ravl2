@@ -67,18 +67,18 @@ namespace Ravl2
   public:
     //! Creates an crack
     //! The value is undefined.
-    constexpr CrackC() = default;
+    constexpr CrackC() noexcept = default;
 
     //! Create the crack with origin in the boundary vertex 'px' and with
     //! direction 'cc'.
-    constexpr CrackC(const BoundaryVertex2 &px, const CrackCode &cc)
+    constexpr CrackC(const BoundaryVertex2 &px, const CrackCode &cc) noexcept
         : mAt(px),
           mCode(cc)
     {}
 
     //! Create the crack with origin in the boundary vertex 'px' and with
     //! direction 'cc'.
-    constexpr CrackC(const BoundaryVertex2 &px, CrackCodeT cc)
+    constexpr CrackC(const BoundaryVertex2 &px, CrackCodeT cc) noexcept
         : mAt(px),
           mCode(cc)
     {}
@@ -86,7 +86,7 @@ namespace Ravl2
     // Create the crack with origin in the boundary vertex 'begin' pointing
     // towards the boundary vertex 'end'. The direction is automatically
     // generated.
-    constexpr CrackC(const BoundaryVertex2 &beginAt, const BoundaryVertex2 &endAt)
+    constexpr CrackC(const BoundaryVertex2 &beginAt, const BoundaryVertex2 &endAt) noexcept
         : mAt(beginAt),
           mCode(CrackCodeT::CR_NODIR)
     {

@@ -448,7 +448,7 @@ namespace Ravl2
     }
 
     //! @brief Test if the range is empty.
-    [[nodiscard]] inline bool empty() const
+    [[nodiscard]] constexpr inline bool empty() const
     {
       for(unsigned i = 0; i < N; ++i) {
         if(mRanges[i].empty()) {

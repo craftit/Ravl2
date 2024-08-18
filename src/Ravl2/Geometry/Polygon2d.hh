@@ -37,15 +37,15 @@ namespace Ravl2
     using value_type = typename PointSet<RealT, 2>::value_type;
 
     //! Empty list of points.
-    Polygon2dC() = default;
+    constexpr Polygon2dC() = default;
 
     //! Construct from list of points
-    explicit Polygon2dC(const std::vector<Point<RealT, 2>> &points)
+    constexpr explicit Polygon2dC(const std::vector<Point<RealT, 2>> &points)
         : PointSet<RealT, 2>(points)
     {}
 
     //! Construct from list of points
-    explicit Polygon2dC(std::vector<Point<RealT, 2>> &&points)
+    constexpr explicit Polygon2dC(std::vector<Point<RealT, 2>> &&points)
         : PointSet<RealT, 2>(std::move(points))
     {}
 

@@ -24,16 +24,16 @@ namespace Ravl2
   {
   public:
     //! Empty list of points.
-    PolyLine() = default;
+    constexpr PolyLine() = default;
 
     //! Construct from list of points
-    PolyLine(const std::vector<Point<RealT,N>>& points)
+    constexpr PolyLine(const std::vector<Point<RealT,N>>& points)
       : PointSet<RealT,2>(points)
     {}
 
     //! @brief Returns true if the polygon is self intersecting.
     //! If any line segments cross each other then the polygon is self intersecting.
-    [[nodiscard]] bool IsSelfIntersecting() const {
+    [[nodiscard]] constexpr bool isSelfIntersecting() const {
       auto ft = this->begin();
       const auto theEnd = this->end();
       if(!ft) return false;
@@ -59,7 +59,7 @@ namespace Ravl2
     PolyLine<RealT,N> Approx(RealT distLimit) const;
 
     //! Measure the length of the poly line in euclidean space.
-    RealT Length() const {
+    [[nodiscard]] constexpr RealT length() const {
       auto ft = this->begin();
       const auto theEnd = this->end();
       if(ft == theEnd) return 0;
