@@ -160,7 +160,7 @@ namespace Ravl2
   Polygon2dC<RealT> Boundary::polygon(bool bHalfPixelOffset) const
   {
     Polygon2dC<RealT> polygon;
-    
+    polygon.reserve(mEdges.size());
     auto et = mEdges.begin();
     auto endAt = mEdges.end();
     if(et == endAt) {

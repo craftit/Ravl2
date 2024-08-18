@@ -99,12 +99,6 @@ namespace Ravl2
     [[nodiscard]]
     Point<RealT, 2> Centroid() const;
 
-    //! Return the length of the curve.
-    [[nodiscard]] RealT Length() const
-    {
-      return Perimeter();
-    }
-
     //! Returns true if the polygon is self intersecting, ie do any sides cross
     [[nodiscard]] bool IsSelfIntersecting() const;
 
