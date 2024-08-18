@@ -5,8 +5,17 @@ include(cmake/CPM.cmake)
 # targets
 function(RAVL2_setup_dependencies)
 
-#  find_package(BLAS REQUIRED)
-#  find_package(LAPACK REQUIRED)
+  #if on apple and BLA_VENDOR is not set, set it to Apple
+  if (APPLE AND NOT DEFINED BLA_VENDOR)
+    if(APPLE)
+      set(BLA_VENDOR "Apple")
+    else()
+      set(BLA_VENDOR "All")
+    endif ()
+  endif()
+
+  find_package(BLAS REQUIRED)
+  find_package(LAPACK REQUIRED)
 
   # Try and use native packages if they're available
 
