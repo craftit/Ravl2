@@ -114,14 +114,7 @@ namespace Ravl2
 
     //! Get the bounding box around all pixels on the inside edge of the boundary.
     [[nodiscard]] IndexRange<2> boundingBox() const;
-
-    //! @brief Convert a boundary to a polygon.
-    //! @param: bHalfPixelOffset - should (-0.5,-0.5) be added to the polygon points?
-    //! This assumes 'bnd' is a single ordered boundary (See BoundryC::OrderEdges();).
-    //! Straight edges are compressed into a single segment.
-    template <typename RealT>
-    [[nodiscard]] Polygon2dC<RealT> polygon(bool bHalfPixelOffset = true) const;
-
+    
     //! Get number of edges in the boundary
     [[nodiscard]] auto size() const
     {
@@ -203,7 +196,34 @@ namespace Ravl2
     }
     return Boundary(std::move(mEdges), BoundaryOrientationT::INSIDE_LEFT);
   }
-
+  
+  //! @brief Convert a boundary to a polygon.
+  //! This assumes 'bnd' is a single ordered boundary (See BoundryC::OrderEdges();).
+  //! Straight edges are compressed into a single segment.
+  
+  template <typename RealT>
+  Polygon2dC<RealT> toPolygon(const Boundary &bnd)
+  {
+    Polygon2dC<RealT> polygon;
+    
+    auto et = bnd.edges().begin();
+    auto endAt = bnd.edges().end();
+    if(et == endAt) {
+      return polygon;
+    }
+    auto const halfPixelOffset = toPoint<RealT>(-0.5,-0.5);
+    polygon.push_back(toPoint<RealT>(et->vertexBegin())+halfPixelOffset);
+    auto lastCode = et->code();
+    polygon.back() += halfPixelOffset;
+    for (++et; et != endAt; ++et) {
+      if (et->code() == lastCode)
+        continue;
+      lastCode = et->code();
+      polygon.push_back(toPoint<RealT>(et->vertexBegin()) + halfPixelOffset);
+    }
+    return polygon;
+  }
+  
 }// namespace Ravl2
 
 namespace fmt

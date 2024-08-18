@@ -15,10 +15,10 @@ namespace Ravl2
 {
 
   //! Sums of a variable.
-  // This class provides a way of calculating statistics about
-  // a variable.  Care should be taken when using this class
-  // particularly when the variable is a 'float' the precision is limited
-  // and we're summing potentially large numbers.
+  //! This class provides a way of calculating statistics about
+  //! a variable.  Care should be taken when using this class
+  //! particularly when the variable is a 'float' the precision is limited
+  //! and we're summing potentially large numbers.
 
   template <typename RealT>
   class Sums1d2C
@@ -34,10 +34,20 @@ namespace Ravl2
           mSum(nsum),
           mSum2(nsum2)
     {}
-
+    
     //! Create a Sums1d2C from mean variance.
-    [[nodiscard]] static constexpr Sums1d2C<RealT> fromMeanVariance(unsigned n, RealT mean, RealT variance, bool useSampleStatistics = true);
-
+    //! @param n - Number of data points.
+    //! @param mean - Mean of the data.
+    //! @param variance - Variance of the data.
+    //! @param useSampleStatistics - When true compute statistics as a sample of a random variable. (Normalise covariance by n-1 )
+    //! @return Sums1d2C
+    [[nodiscard]] constexpr Sums1d2C<RealT> fromMeanVariance(unsigned n, RealT mean, RealT variance, SampleStatisticsT useSampleStatistics = SampleStatisticsT::POPULATION)
+    {
+      RealT rn = RealT(n);
+      RealT sum = mean * rn;
+      return Sums1d2C(n, sum, variance * (rn - ((useSampleStatistics == SampleStatisticsT::SAMPLE)? 1 : 0)) + sqr(sum) / rn);
+    }
+    
     //! Reset all counters.
     constexpr void reset()
     {
@@ -108,25 +118,24 @@ namespace Ravl2
     {
       return mSum2;
     }
-
-    //! Calculate the mean and variance for this sample.
-    //!param: sampleStatistics - When true compute statistics as a sample of a random variable. (Normalise covariance by n-1 )
-    [[nodiscard]] constexpr MeanVariance<RealT> toMeanVariance(bool sampleStatistics = true) const
-    {
-      return MeanVariance<RealT>(mN, mean(), variance(sampleStatistics));
-    }
-
+    
     //! Compute the variance of the sample.
-    [[nodiscard]] constexpr RealT variance(bool sampleStatistics = true) const
+    [[nodiscard]] constexpr RealT variance(SampleStatisticsT sampleStatistics) const
     {
       RealT rn = RealT(mN);
       RealT sn = rn;
-      if(sampleStatistics) sn--;
+      if(sampleStatistics == SampleStatisticsT::SAMPLE) sn--;
       RealT var = (mSum2 - sqr(mSum) / rn) / sn;
       if(var < 0) var = 0;
       return var;
     }
-
+    
+    //! Compute the standard deviation of the sample.
+    [[nodiscard]] constexpr RealT stdDeviation(SampleStatisticsT sampleStatistics) const
+    {
+      return std::sqrt(variance(sampleStatistics));
+    }
+    
     //! Compute the mean of the sample.
     [[nodiscard]] constexpr RealT mean() const
     {
@@ -137,14 +146,15 @@ namespace Ravl2
     //! Add value as part of a rolling average.
     //!param: rollLen - Length of rolling average.
     //!param: value   - Value to add.
-    inline constexpr void AddRollingAverage(unsigned rollLength, RealT value)
+    inline constexpr void addRollingAverage(unsigned rollLength, RealT value)
     {
       if(rollLength < mN) {
         RealT rollFraction = (RealT(rollLength - 1) / (RealT(rollLength)));
         mSum *= rollFraction;
         mSum2 *= rollFraction;
-      } else
+      } else {
         mN++;
+      }
       mSum += value;
       mSum2 += sqr(value);
     }
@@ -164,15 +174,6 @@ namespace Ravl2
     RealT mSum2 = 0;// Sum of square data.
   };
 
-  template <typename RealT>
-  constexpr Sums1d2C<RealT> Sums1d2C<RealT>::fromMeanVariance(unsigned n, RealT mean, RealT variance, bool useSampleStatistics)
-  {
-    RealT rn = RealT(n);
-    RealT sum = mean * rn;
-    return Sums1d2C(n, sum, variance * (rn - (useSampleStatistics ? 1 : 0)) + sqr(sum) / rn);
-  }
-
-  //: Create a Sums1d2C from mean variance.
 
   template <typename RealT>
   std::ostream &operator<<(std::ostream &s, const Sums1d2C<RealT> &mv)
@@ -190,7 +191,28 @@ namespace Ravl2
     mv = Sums1d2C(n, s1, s2);
     return s;
   }
-
+  
+  //! Calculate the mean and variance for this sample.
+  //! @param sums - The sums of the data.
+  //! @param sampleStatistics - When true compute statistics as a sample of a random variable. (Normalise covariance by n-1 )
+  //! @return MeanVariance
+  template <typename RealT>
+  [[nodiscard]] constexpr MeanVariance<RealT> toMeanVariance(const Sums1d2C<RealT> &sums, SampleStatisticsT sampleStatistics)
+  {
+    return MeanVariance<RealT>(sums.count(), sums.mean(), sums.variance(sampleStatistics));
+  }
+  
+  
+  //! Convert a MeanVariance to Sums1d2C.
+  //! @param mv - The mean and variance of the data.
+  //! @param sampleStatistic - When true compute statistics as a sample of a random variable. (Normalise covariance by n-1 )
+  //! @return Sums1d2C
+  template <typename RealT>
+  [[nodiscard]] constexpr Sums1d2C<RealT> toSums(const MeanVariance<RealT> &mv, SampleStatisticsT sampleStatistic)
+  {
+    return Sums1d2C<RealT>::fromMeanVariance(mv.count(), mv.mean(), mv.variance(), sampleStatistic);
+  }
+  
   extern template class Sums1d2C<double>;
   extern template class Sums1d2C<float>;
 

@@ -15,11 +15,17 @@
 
 namespace Ravl2
 {
-
+  //! Enum indicating if we should use sample statistics.
+  enum class SampleStatisticsT
+  {
+    SAMPLE,
+    POPULATION
+  };
+  
   //! Mean and variance of a single variable.
-  // If you want to build up statistics about a sample use the Sums1d2C
-  // class to accumulate the information and create a MeanVariance<RealT> from
-  // there.
+  //! If you want to build up statistics about a sample use the Sums1d2C
+  //! class to accumulate the information and create a MeanVariance<RealT> from
+  //! there.
 
   template <typename RealT>
   class MeanVariance
@@ -109,10 +115,10 @@ namespace Ravl2
   };
 
   //! Calculate the mean and variance from an array of numbers.
-  //!param: sampleStatistics - When true compute statistics as a sample of a random variable. (Normalise covariance by n-1 )
-
+  //! @param data The data to compute the mean and variance of.
+  //! @param sampleStatistics - When true compute statistics as a sample of a random variable. (Normalise covariance by n-1 )
   template <typename RealT>
-  constexpr MeanVariance<RealT> computeMeanVariance(const std::vector<RealT> &data, bool sampleStatistics = true)
+  constexpr MeanVariance<RealT> computeMeanVariance(const std::vector<RealT> &data, SampleStatisticsT sampleStatistics)
   {
     auto n = data.size();
     RealT var = 0;
@@ -121,10 +127,10 @@ namespace Ravl2
       sum += it;
       var += sqr(it);
     }
-    RealT rn = RealT(n);
-    RealT mean = sum / rn;
+    const RealT rn = RealT(n);
+    const RealT mean = sum / rn;
     RealT sn = rn;
-    if(sampleStatistics) sn--;
+    if(sampleStatistics == SampleStatisticsT::SAMPLE) sn--;
     var = (var - sqr(sum) / rn) / sn;
     return MeanVariance<RealT>(n, mean, var);
   }
@@ -134,8 +140,9 @@ namespace Ravl2
   template <typename RealT>
   constexpr MeanVariance<RealT> &MeanVariance<RealT>::operator+=(const MeanVariance<RealT> &mv)
   {
-    if(mv.count() == 0)
+    if(mv.count() == 0) {
       return *this;
+    }
     const RealT number1 = RealT(count());
     const RealT number2 = RealT(mv.count());
     const RealT nDen = number1 + number2;
@@ -221,7 +228,8 @@ namespace Ravl2
   std::istream &operator>>(std::istream &s, MeanVariance<RealT> &mv)
   {
     size_t n;
-    RealT v1, v2;
+    RealT v1;
+    RealT v2;
     s >> n >> v1 >> v2;
     mv = MeanVariance(n, v1, v2);
     return s;

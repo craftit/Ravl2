@@ -156,40 +156,7 @@ namespace Ravl2
     return endpoints;
   }
 
-  template <typename RealT>
-  Polygon2dC<RealT> Boundary::polygon(bool bHalfPixelOffset) const
-  {
-    Polygon2dC<RealT> polygon;
-    
-    auto et = mEdges.begin();
-    auto endAt = mEdges.end();
-    if(et == endAt) {
-      return polygon;
-    }
-    polygon.push_back(toPoint<RealT>(*et));
-    auto lastCode = et->code();
-    if (bHalfPixelOffset) {
-      auto halfPixelOffset = toPoint<RealT>(-0.5f,-0.5f);
-      polygon.back() += halfPixelOffset;
-      for (++et; et != endAt; ++et) {
-        if (et->code() == lastCode)
-          continue;
-        lastCode = et->code();
-        polygon.push_back(toPoint<RealT>(*et) + halfPixelOffset);
-      }
-    }
-    else {
-      for (++et; et != endAt; ++et) {
-        if (et->code() == lastCode)
-          continue;
-        lastCode = et->code();
-        polygon.push_back(toPoint<RealT>(*et));
-      }
-    }
-    return polygon;
-  }
-
-
+  
    Boundary Boundary::OrderContinuous(const std::unordered_map<BoundaryVertex,std::array<BoundaryVertex,2> > & hashtable,
                                      const CrackC & firstEdge
   )
