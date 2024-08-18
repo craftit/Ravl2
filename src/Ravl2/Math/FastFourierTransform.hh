@@ -13,7 +13,7 @@
 
 #include <complex>
 #include <span>
-#include "Ravl2/Array1.hh"
+#include <vector>
 
 namespace Ravl2 {
   
@@ -22,34 +22,55 @@ namespace Ravl2 {
   //! @param result The output of the FFT, must be the same size as the input signal.
   //! @param data The input signal.
   template<typename RealT>
-  void computeFFT(std::span<std::complex<RealT> > result,std::span<const RealT> data);
-
+  void fastFourierTransform(std::span<std::complex<RealT> > result,std::span<const RealT> data);
+  
   //! @brief Compute inverse Fast Fourier Transform of a real signal.
   //! @param result The output of the FFT, must be the same size as the input signal.
   //! @param data The input signal.
   template<typename RealT>
-  void computeInverseFFT(std::span<std::complex<RealT> > result,std::span<const RealT> data);
-
+  void inverseFastFourierTransform(std::span<std::complex<RealT> > result,std::span<const RealT> data);
+  
   //! @brief Compute the Fast Fourier Transform of a complex signal.
   //! @param result The output of the FFT, must be the same size as the input signal.
   //! @param data The input signal.
   template<typename RealT>
-  void computeFFT(std::span<std::complex<RealT> > result,std::span<const std::complex<RealT>> data);
-
+  void fastFourierTransform(std::span<std::complex<RealT> > result,std::span<const std::complex<RealT>> data);
+  
   //! @brief Compute the inverse Fast Fourier Transform of a complex signal.
   //! @param result The output of the FFT, must be the same size as the input signal.
   //! @param data The input signal.
   template<typename RealT>
-  void computeInverseFFT(std::span<std::complex<RealT> > result,std::span<const std::complex<RealT>> data);
-
-
+  void inverseFastFourierTransform(std::span<std::complex<RealT> > result,std::span<const std::complex<RealT>> data);
+  
+  
+  //! @brief Compute the Fast Fourier Transform of a real signal.
+  //! @param data The input signal.  maybe a std::vector, std::array, or similar.
+  //! @return The FFT of 'data'
+  template<typename RealT, typename ContainerT>
+  [[nodiscard]] std::vector<std::complex<RealT> > fastFourierTransform(const ContainerT &data) {
+    std::vector<std::complex<RealT> > result(data.size());
+    using std::span;
+    fastFourierTransform(span(result),span(data));
+    return result;
+  }
+  
+  //! @brief Compute inverse Fast Fourier Transform of a real signal.
+  //! @param data The input signal. maybe a std::vector, std::array, or similar.
+  //! @return The inverse FFT of 'data'
+  template<typename RealT, typename ContainerT>
+  [[nodiscard]] std::vector<std::complex<RealT> > inverseFastFourierTransform(const ContainerT &data) {
+    std::vector<std::complex<RealT> > result(data.size());
+    using std::span;
+    inverseFastFourierTransform(span(result),span(data));
+    return result;
+  }
+  
   //! Declare there are float implementations of the above functions.
-  extern template void computeFFT(std::span<std::complex<float> > result,std::span<const float> data);
-  extern template void computeInverseFFT(std::span<std::complex<float> > result,std::span<const float> data);
-  extern template void computeFFT(std::span<std::complex<float> > result,std::span<const std::complex<float>> data);
-  extern template void computeInverseFFT(std::span<std::complex<float> > result,std::span<const std::complex<float>> data);
-
-
+  extern template void fastFourierTransform(std::span<std::complex<float> > result,std::span<const float> data);
+  extern template void inverseFastFourierTransform(std::span<std::complex<float> > result,std::span<const float> data);
+  extern template void fastFourierTransform(std::span<std::complex<float> > result,std::span<const std::complex<float>> data);
+  extern template void inverseFastFourierTransform(std::span<std::complex<float> > result,std::span<const std::complex<float>> data);
+  
 }
 
 #endif

@@ -27,9 +27,9 @@ namespace Ravl2
 {
 
   //! Declare there are float implementations of the above functions.
-  template void computeFFT(std::span<std::complex<float> > result,std::span<const float> data);
-  template void computeInverseFFT(std::span<std::complex<float> > result,std::span<const float> data);
-  template void computeFFT(std::span<std::complex<float> > result,std::span<const std::complex<float>> data);
-  template void computeInverseFFT(std::span<std::complex<float> > result,std::span<const std::complex<float>> data);
+  template void fastFourierTransform(std::span<std::complex<float> > result,std::span<const float> data);
+  template void inverseFastFourierTransform(std::span<std::complex<float> > result,std::span<const float> data);
+  template void fastFourierTransform(std::span<std::complex<float> > result,std::span<const std::complex<float>> data);
+  template void inverseFastFourierTransform(std::span<std::complex<float> > result,std::span<const std::complex<float>> data);
 
 }// namespace Ravl2
