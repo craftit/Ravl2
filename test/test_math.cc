@@ -39,7 +39,7 @@ TEST_CASE("MeanVariance", "[MeanVariance]")
     var +=sqr(RealT(i) - 5);
     data[i] = RealT(i);
   }
-  MeanVariance<RealT> mv3 = computeMeanVariance(data);
+  MeanVariance<RealT> mv3 = computeMeanVariance(data, SampleStatisticsT::POPULATION);
   CHECK(isNearZero(mv3.mean() - 5));
   CHECK(isNearZero(mv3.variance() - (var/10)));
 
@@ -51,9 +51,9 @@ TEST_CASE("Sums1_2")
   using namespace Ravl2;
 
   {
-    auto sum = Sums1d2C<RealT>::fromMeanVariance(10,5.0,2.0);
+    auto sum = Sums1d2C<RealT>::fromMeanVariance(10,5.0,2.0,SampleStatisticsT::POPULATION);
     CHECK(isNearZero(sum.mean()-5));
-    CHECK(isNearZero(sum.variance()-2));
+    CHECK(isNearZero(sum.variance(SampleStatisticsT::POPULATION)-2));
   }
 
 
@@ -77,7 +77,7 @@ TEST_CASE("Sums1_2")
 
       MeanVariance<RealT> added = mva;
       added += mvb;
-      MeanVariance<RealT> comp = computeMeanVariance(data,false);
+      MeanVariance<RealT> comp = computeMeanVariance(data,SampleStatisticsT::POPULATION);
 #if 0
       SPDLOG_INFO("Val:{} Sum: {} {}  added:{} {}  inc:{} {} comp:{} {}",
           val,
@@ -93,11 +93,11 @@ TEST_CASE("Sums1_2")
 #endif
 
       CHECK(isNearZero(sum.mean()-added.mean(),1e-6));
-      CHECK(isNearZero(sum.variance(false)-added.variance(),1e-6));
+      CHECK(isNearZero(sum.variance(SampleStatisticsT::POPULATION)-added.variance(),1e-6));
       CHECK(isNearZero(sum.mean()-mvinc.mean(),1e-6));
-      CHECK(isNearZero(sum.variance(false)-mvinc.variance(),1e-6));
+      CHECK(isNearZero(sum.variance(SampleStatisticsT::POPULATION)-mvinc.variance(),1e-6));
       CHECK(isNearZero(sum.mean()-comp.mean(),1e-6));
-      CHECK(isNearZero(sum.variance(false)-comp.variance(),1e-6));
+      CHECK(isNearZero(sum.variance(SampleStatisticsT::POPULATION)-comp.variance(),1e-6));
 
     }
   }
@@ -117,10 +117,10 @@ TEST_CASE("FastFourierTransform")
   }
 
   std::vector<std::complex<RealT>> result1(data.size(),std::complex<RealT>(-1,0));
-  computeFFT(std::span(result1),std::span<const RealT>(data));
+  fastFourierTransform(std::span(result1), std::span<const RealT>(data));
 
   std::vector<std::complex<RealT>> result2(data.size(),std::complex<RealT>(-1,0));
-  computeFFT(std::span(result2),std::span<const std::complex<RealT> >(cdata));
+  fastFourierTransform(std::span(result2), std::span<const std::complex<RealT>>(cdata));
 
   // Check the results are the same from the real and complex FFT.
   for(unsigned i = 0;i < data.size();i++) {
@@ -131,7 +131,7 @@ TEST_CASE("FastFourierTransform")
 
   // Check the inverse FFT returns the original data.
   std::vector<std::complex<RealT>> result3(data.size(),std::complex<RealT>(-1,0));
-  computeInverseFFT(std::span(result3),std::span<const std::complex<RealT> >(result1));
+  inverseFastFourierTransform(std::span(result3), std::span<const std::complex<RealT>>(result1));
   for(unsigned i = 0;i < data.size();i++) {
     CHECK(isNearZero(result3[i].real() - data[i],1e-5f));
     CHECK(isNearZero(result3[i].imag(),1e-5f));
@@ -139,9 +139,9 @@ TEST_CASE("FastFourierTransform")
 
   // Check the real inverse FFT is the same as the complex inverse FFT.
   std::fill(result1.begin(),result1.end(),std::complex<RealT>(0,0));
-  computeInverseFFT(std::span(result1),std::span<const std::complex<RealT> >(cdata));
+  inverseFastFourierTransform(std::span(result1), std::span<const std::complex<RealT>>(cdata));
   std::fill(result2.begin(),result2.end(),std::complex<RealT>(0,0));
-  computeInverseFFT(std::span(result2),std::span<const RealT >(data));
+  inverseFastFourierTransform(std::span(result2), std::span<const RealT>(data));
   for(unsigned i = 0;i < data.size();i++) {
     CHECK(isNearZero(result2[i].real() - result1[i].real()));
     CHECK(isNearZero(result2[i].imag() - result1[i].imag()));

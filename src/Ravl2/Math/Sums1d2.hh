@@ -41,7 +41,7 @@ namespace Ravl2
     //! @param variance - Variance of the data.
     //! @param useSampleStatistics - When true compute statistics as a sample of a random variable. (Normalise covariance by n-1 )
     //! @return Sums1d2C
-    [[nodiscard]] constexpr Sums1d2C<RealT> fromMeanVariance(unsigned n, RealT mean, RealT variance, SampleStatisticsT useSampleStatistics = SampleStatisticsT::POPULATION)
+    [[nodiscard]] static constexpr Sums1d2C<RealT> fromMeanVariance(unsigned n, RealT mean, RealT variance, SampleStatisticsT useSampleStatistics = SampleStatisticsT::POPULATION)
     {
       RealT rn = RealT(n);
       RealT sum = mean * rn;

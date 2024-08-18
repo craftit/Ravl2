@@ -305,10 +305,10 @@ namespace Ravl2
   //! @param result The output of the FFT.
   //! @param data The input signal.
   template <typename RealT>
-  void computeFFT(std::span<std::complex<RealT>> result, std::span<const RealT> data)
+  void fastFourierTransform(std::span<std::complex<RealT>> result, std::span<const RealT> data)
   {
     if(result.size() != data.size()) {
-      throw std::runtime_error("computeFFT(), result and data must be the same size.");
+      throw std::runtime_error("fastFourierTransform(), result and data must be the same size.");
     }
     size_t n = data.size();
     std::array<int, 32> primeFactors {};
@@ -330,10 +330,10 @@ namespace Ravl2
   //! @param result The output of the FFT.
   //! @param data The input signal.
   template <typename RealT>
-  void computeInverseFFT(std::span<std::complex<RealT>> result, std::span<const RealT> data)
+  void inverseFastFourierTransform(std::span<std::complex<RealT>> result, std::span<const RealT> data)
   {
     if(result.size() != data.size()) {
-      throw std::runtime_error("computeFFT(), result and data must be the same size.");
+      throw std::runtime_error("fastFourierTransform(), result and data must be the same size.");
     }
     size_t n = data.size();
     std::array<int, 32> primeFactors {};
@@ -353,10 +353,10 @@ namespace Ravl2
   //! @param result The output of the FFT.
   //! @param data The input signal.
   template <typename RealT>
-  void computeFFT(std::span<std::complex<RealT>> result, std::span<const std::complex<RealT>> data)
+  void fastFourierTransform(std::span<std::complex<RealT>> result, std::span<const std::complex<RealT>> data)
   {
     if(result.size() != data.size()) {
-      throw std::runtime_error("computeFFT(), result and data must be the same size.");
+      throw std::runtime_error("fastFourierTransform(), result and data must be the same size.");
     }
     size_t n = data.size();
     std::array<int, 32> primeFactors {};
@@ -383,10 +383,10 @@ namespace Ravl2
   //! @param result The output of the FFT.
   //! @param data The input signal.
   template <typename RealT>
-  void computeInverseFFT(std::span<std::complex<RealT>> result, std::span<const std::complex<RealT>> data)
+  void inverseFastFourierTransform(std::span<std::complex<RealT>> result, std::span<const std::complex<RealT>> data)
   {
     if(result.size() != data.size()) {
-      throw std::runtime_error("computeFFT(), result and data must be the same size.");
+      throw std::runtime_error("fastFourierTransform(), result and data must be the same size.");
     }
     size_t n = data.size();
     std::array<int, 32> primeFactors {};
