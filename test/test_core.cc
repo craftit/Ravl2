@@ -23,7 +23,7 @@
 #define ASSERT_EQ(a,b) REQUIRE((a) == (b))
 #define ASSERT_NE(a,b) REQUIRE_FALSE((a) == (b))
 
-TEST_CASE("Math", "[int_floor]")
+TEST_CASE("Math")
 {
   // Check the int_floor
   CHECK_EQ(Ravl2::int_floor(1.0),1);

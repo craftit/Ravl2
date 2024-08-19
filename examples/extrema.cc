@@ -12,7 +12,7 @@
 
 #include "Ravl2/Image/Segmentation/SegmentExtrema.hh"
 #include "Ravl2/Array.hh"
-#include "ravl2/config.hh"
+#include "Ravl2/config.hh"
 #include "Ravl2/OpenCV/Image.hh"
 #include "Ravl2/Resource.hh"
 

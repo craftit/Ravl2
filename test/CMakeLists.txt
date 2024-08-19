@@ -49,6 +49,9 @@ add_executable(tests
         test_segmentation.cc
         test_pixel.cc
         test_lines.cc
+        test_CallbackArray.cc
+        test_base64.cc
+        test_configuration.cc
 )
 target_link_libraries(
   tests

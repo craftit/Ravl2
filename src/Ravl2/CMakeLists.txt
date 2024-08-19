@@ -45,7 +45,12 @@ add_library(Ravl2Core
     IndexRange1.cc IndexRange1.hh
     IndexRange.cc IndexRange.hh
     Concepts.hh
-
+    CallbackArray.cc CallbackArray.hh
+    FileIO.cc FileIO.hh
+    StringUtils.cc StringUtils.hh
+    Base64.cc Base64.hh
+    Configuration.cc Configuration.hh
+    ConfigJson.cc ConfigJson.hh
 )
 
 add_library(ravl2::Ravl2Core ALIAS Ravl2Core)

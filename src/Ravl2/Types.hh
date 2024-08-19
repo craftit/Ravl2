@@ -119,6 +119,9 @@ namespace Ravl2
   //! This is a hack to prevent the compiler optimizing away benchmark code
   void doNothing();
 
+  //! Get a human-readable name for a type.
+  std::string typeName(const std::type_info &type);
+
 }// namespace Ravl2
 
 #if FMT_VERSION >= 90000

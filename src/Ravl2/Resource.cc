@@ -7,7 +7,7 @@
 #include <thread>
 #include <vector>
 #include <spdlog/spdlog.h>
-#include "nlohmann/json.hpp"
+#include <nlohmann/json.hpp>
 #include "Ravl2/Resource.hh"
 
 namespace Ravl2
