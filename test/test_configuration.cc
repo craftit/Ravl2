@@ -20,7 +20,7 @@
 class TestClass
 {
 public:
-  TestClass(Ravl2::Configuration &config)
+  explicit TestClass(Ravl2::Configuration &config)
   {
     m_a = config.getNumber("value", "test 1", 0, 0, 100);
   }

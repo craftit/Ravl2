@@ -1,7 +1,3 @@
-//
-// Created by Charles Galambos on 06/03/2021.
-//
-//! @file
 //! @brief Configuration file handling
 //! @author Charles Galambos
 //! @date 06/03/2021
