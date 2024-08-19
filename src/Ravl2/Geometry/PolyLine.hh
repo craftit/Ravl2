@@ -27,7 +27,7 @@ namespace Ravl2
     constexpr PolyLine() = default;
 
     //! Construct from list of points
-    constexpr PolyLine(const std::vector<Point<RealT,N>>& points)
+    constexpr explicit PolyLine(const std::vector<Point<RealT,N>>& points)
       : PointSet<RealT,2>(points)
     {}
 
@@ -56,7 +56,7 @@ namespace Ravl2
     //! line defined by the two end points and if it is further than the distance limit adding it
     //! to the approximation. The procedure is then repeated for each of the segments either side
     //! of the furthest point.
-    PolyLine<RealT,N> Approx(RealT distLimit) const;
+    [[nodiscard]] PolyLine<RealT,N> Approx(RealT distLimit) const;
 
     //! Measure the length of the poly line in euclidean space.
     [[nodiscard]] constexpr RealT length() const {
