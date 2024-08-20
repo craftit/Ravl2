@@ -97,6 +97,12 @@ namespace Ravl2
     //! @return True if the next position exists.
     virtual bool next(std::streampos &pos) = 0;
 
+    //! Add object to the end of the stream.
+    void push_back(const ObjectT &obj) {
+      std::streampos pos = mEnd;
+      write(obj,pos);
+    }
+
     //! Get the start offset of the stream.
     [[nodiscard]] std::streampos beginOffset() const
     { return mStart; }
@@ -165,7 +171,7 @@ namespace Ravl2
   //! @param formatHint - A hint to the format of the file.
   //! @return True if the object was saved successfully.
   template <typename ObjectT>
-  bool save(const ObjectT &object, const std::string &url, std::string_view formatHint = "")
+  bool save(const std::string &url, const ObjectT &object, std::string_view formatHint = "")
   {
     auto container = openOutput(url, typeid(ObjectT), formatHint);
     if(!container)
