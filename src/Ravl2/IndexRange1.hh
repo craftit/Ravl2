@@ -137,6 +137,13 @@ namespace Ravl2
       return {m_min + amount, m_max - amount};
     }
 
+    //! Returns the range shrunk by removing of the
+    //! last 'n' items on the max side.
+    [[nodiscard]] constexpr inline IndexRange<1> shrinkMax(int amount) const
+    {
+      return {m_min, m_max - amount};
+    }
+
     //! Shrink the range by given size,
     //! min is increased by min of amount.min(), and max decreased by amount.max()
     [[nodiscard]] constexpr IndexRange<1> shrink(const IndexRange<1> &amount) const

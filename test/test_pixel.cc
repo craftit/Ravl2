@@ -68,6 +68,7 @@ TEST_CASE("Pixels")
     CHECK(isNearZero(pixel.template get<ImageChannel::ChrominanceU>() - 0.0f));
     CHECK(isNearZero(pixel.template get<ImageChannel::ChrominanceV>() - 0.0f));
 
+    // Test converting to RGB
     PixelRGB32F rgb;
     assign(rgb, pixel);
 

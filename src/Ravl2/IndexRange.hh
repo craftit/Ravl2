@@ -178,6 +178,16 @@ namespace Ravl2
       return ret;
     }
 
+    //! Returns the range shrunk by removing of the
+    //! last 'n' items on both limits of this range in each dimension.
+    [[nodiscard]] constexpr IndexRange<N> shrinkMax(int amount) const
+    {
+      IndexRange<N> ret;
+      for(unsigned i = 0; i < N; i++)
+        ret[i] = m_range[i].shrinkMax(amount);
+      return ret;
+    }
+
     //! Shrink the range in from both ends by amount.
     [[nodiscard]] constexpr IndexRange<N> shrink(const Index<N> &ind) const noexcept
     {

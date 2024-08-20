@@ -25,7 +25,7 @@ namespace Ravl2
   void DrawLine(ArrayT Dat, const DataT &Value, const LinePP2dC<CoordTypeT> &aLine)
   {
     LinePP2dC<CoordTypeT> line = aLine;
-    if(!line.clipBy(toRange<CoordTypeT>(Dat.range())))
+    if(!line.clipBy(toRange<CoordTypeT>(Dat.range().shrinkMax(1))))
       return;
 
     for(Line2dIterC it(toIndex<2>(line.P1()), toIndex<2>(line.P2())); it; ++it)

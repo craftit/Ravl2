@@ -229,28 +229,27 @@ namespace Ravl2
 
     //! Returns the index range whose number of elements is enlarged by
     //! the factor 'f'. The upper limits is changed.
-    [[nodiscard]] constexpr inline Range Enlarge(RealT f) const
+    [[nodiscard]] constexpr Range Enlarge(RealT f) const
     {
-      return Range(min(), min() + size() * f - 1);
+      return Range(min(), min() + (size() * f) - 1);
     }
 
     //! Returns the range extended by adding 'n' items on both limits of
     //! this range.
-    [[nodiscard]] constexpr inline Range expand(RealT n) const
+    [[nodiscard]] constexpr Range expand(RealT n) const
     {
       return Range(mMin - n, mMax + n);
     }
 
     //! Returns the range extended by adding 'n' items on both limits of
     //! this range.
-    [[nodiscard]] constexpr inline Range shrink(RealT n) const
+    [[nodiscard]] constexpr Range shrink(RealT n) const
     {
       return Range(mMin + n, mMax - n);
     }
 
-    //! Returns the range shrunk by removing of the
-    //! last 'n' items on both limits of this range.
-    [[nodiscard]] constexpr inline Range shrinkMax(RealT n) const
+    //! Returns the range shrunk by reducing the max of the range by 'n'.
+    [[nodiscard]] constexpr Range shrinkMax(RealT n) const
     {
       return Range(mMin, mMax - n);
     }
