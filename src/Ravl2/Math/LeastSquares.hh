@@ -48,7 +48,7 @@ namespace Ravl2
   //! @return The mean subtracted from the points, and scale applied.
   template<typename RealT, unsigned N, typename Container1T, typename FuncT>
   requires std::is_floating_point_v<RealT>
-  std::tuple<Point<RealT, 2>, RealT> normalise(const Container1T &raw, FuncT func)
+  std::tuple<Point<RealT, N>, RealT> normalise(const Container1T &raw, FuncT func)
   {
     Point<RealT, N> mean;
     for (unsigned i = 0; i < N; i++)
@@ -69,7 +69,7 @@ namespace Ravl2
       } else {
         RealT sum = 0;
         for (unsigned i = 0; i < N; i++) {
-          sum += std::pow(it[i] - mean[i], 2);
+          sum += RealT(std::pow(it[i] - mean[i], 2));
         }
         d += std::sqrt(sum);
       }

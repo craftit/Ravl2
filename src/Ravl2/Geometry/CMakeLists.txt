@@ -28,6 +28,8 @@ add_library (Ravl2Geometry
         Conic2d.cc Conic2d.hh
         FitConic.hh
         Ellipse2d.cc Ellipse2d.hh
+        VectorOffset.hh
+        FitVectorOffset.hh
 )
 
 add_library(ravl2::Ravl2Geometry ALIAS Ravl2Geometry)

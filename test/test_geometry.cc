@@ -16,6 +16,8 @@
 #include "Ravl2/Geometry/LineABC2d.hh"
 #include "Ravl2/Geometry/Affine.hh"
 #include "Ravl2/Geometry/ScaleTranslate.hh"
+#include "Ravl2/Geometry/VectorOffset.hh"
+#include "Ravl2/Geometry/FitVectorOffset.hh"
 
 #define CHECK_EQ(a,b) CHECK((a) == (b))
 #define CHECK_NE(a,b) CHECK_FALSE((a) == (b))
@@ -423,3 +425,89 @@ TEST_CASE("ScaleTranslate")
     }
   }
 }
+
+
+TEST_CASE("Planes")
+{
+  using namespace Ravl2;
+  using RealT = float;
+  std::mt19937 rng(static_cast<std::mt19937::result_type>(random()));
+  std::uniform_real_distribution<RealT> random1(-1.0, 1.0);
+  std::normal_distribution<RealT> randomGauss(0.0, 1.0);
+  auto randomValue = [&random1,&rng](RealT scale) -> RealT
+  { return (random1(rng)* scale); };
+
+
+  SECTION("VectorOffset")
+  {
+
+    for(int i =0 ;i < 100;i++) {
+
+       VectorOffset<RealT,3> plane(toVector<RealT>(randomValue(10),randomValue(10),randomValue(10)),
+                         toPoint<RealT>(randomValue(10),randomValue(10),randomValue(10)));
+
+      auto testPoint = toPoint<RealT>(randomValue(10),randomValue(10),randomValue(10));
+
+      auto closestPoint = plane.projection(testPoint);
+      RealT distance = euclidDistance(closestPoint, testPoint);
+      CHECK(std::abs(distance - plane.distance(testPoint)) < 0.00001f);
+    }
+  }
+
+  SECTION("Fit VectorOffset")
+  {
+    std::vector<Point<RealT,3>> points;
+    points.push_back(toPoint<RealT>(1,1,1));
+    points.push_back(toPoint<RealT>(1,2,1));
+    points.push_back(toPoint<RealT>(2,1,2));
+    VectorOffset<RealT,3> plane;
+    CHECK(fit(plane,points));
+
+    for(auto pnt: points) {
+      RealT dist = plane.distance(pnt);
+      CHECK(dist < 1e-6f);
+    }
+  }
+
+
+#if 0
+
+  for(int i =0 ;i < 100;i++) {
+
+    PlanePVV3dC plane(Point3dC(RandomValue(10),RandomValue(10),RandomValue(10)),
+                      Vector3dC(RandomValue(10),RandomValue(10),RandomValue(10)),
+                      Vector3dC(RandomValue(10),RandomValue(10),RandomValue(10))
+    );
+
+    Point3dC testPoint(RandomValue(10),RandomValue(10),RandomValue(10));
+
+    Point3dC closestPoint = plane.ClosestPoint(testPoint);
+    RealT distance = closestPoint.EuclideanDistance(testPoint);
+    if(Abs(distance - plane.EuclideanDistance(testPoint)) > 0.000000001)
+      return __LINE__;
+
+    // Check 'ProjectionOnto'
+    Point2dC pCloesestPoint = plane.Projection(testPoint);
+    if(closestPoint.EuclideanDistance(plane.Point(pCloesestPoint)) > 0.00000001) return __LINE__;
+  }
+
+  SECTION( "Fit PointVectorVector")
+  {
+    PlanePVV3dC plane;
+    if(!FitPlane(points,plane))
+      return __LINE__;
+
+    for(int i =0;i < 3;i++) {
+      if(plane.EuclideanDistance(points[i]) > 0.001)
+        return __LINE__;
+    }
+  }
+
+#endif
+
+
+
+}
+
+
+

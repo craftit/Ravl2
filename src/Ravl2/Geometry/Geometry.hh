@@ -85,7 +85,7 @@ namespace Ravl2
   }
 
 
-  template <typename RealT, unsigned long N>
+  template <typename RealT, size_t N>
   constexpr RealT squaredEuclidDistance(const Point<RealT, N> &a, const Point<RealT, N> &b)
   {
     RealT sum = 0;
@@ -95,7 +95,7 @@ namespace Ravl2
     return sum;
   }
 
-  template <typename RealT, unsigned N>
+  template <typename RealT, size_t N>
   constexpr auto euclidDistance(const Point<RealT, N> &a, const Point<RealT, N> &b)
   {
     RealT sum = 0;

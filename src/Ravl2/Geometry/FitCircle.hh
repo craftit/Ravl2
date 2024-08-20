@@ -22,34 +22,6 @@
 
 namespace Ravl2
 {
-#if 0
-  template <typename RealT>
-  bool Circle2dC<RealT>::FitLSQ(const std::vector<Point<RealT, 2>> &points, RealT &residual)
-  {
-    auto N = points.size();
-    if(N < 3)// Under determined.
-      return false;
-    MatrixT<RealT> A(N, 3);
-    VectorT<RealT> B(N);
-    for(int i = 0; i < N; i++) {
-      const RealT X = points[i][0];
-      const RealT Y = points[i][1];
-      A[i][0] = X;
-      A[i][1] = Y;
-      A[i][2] = 1;
-      B[i] = -X * X - Y * Y;
-    }
-    if(!LeastSquaresQR_IP(A, B, residual))
-      return false;// Fit failed.
-
-    const RealT X = B[0] / -2;
-    const RealT Y = B[1] / -2;
-    Centre() = Point<RealT, 2>({X, Y});
-    Radius() = std::sqrt(((X * X) + (Y * Y)) - B[2]);
-    ONDEBUG(SPDLOG_INFO("Circle2dC::FitLSQ() Center={} Radius={}", Centre(), Radius()));
-    return true;
-  }
-#endif
 
   //! @brief Fit points to a circle.
   //! @param circle Circle to fit.
