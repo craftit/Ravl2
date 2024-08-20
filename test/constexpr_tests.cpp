@@ -5,6 +5,8 @@
 #include "Ravl2/ArrayIterZip.hh"
 #include "Ravl2/Geometry/Geometry.hh"
 #include "Ravl2/ScanWindow.hh"
+#include "Ravl2/FileIO.hh"
+#include "Ravl2/SequenceIO.hh"
 
 TEST_CASE("Array iterators conform to c++ concepts.", "[Array]")
 {
@@ -38,6 +40,11 @@ TEST_CASE("Array iterators conform to c++ concepts.", "[Array]")
   STATIC_REQUIRE(std::input_iterator<Ravl2::ArrayIterZipN<1,int,float> >);
   STATIC_REQUIRE(std::input_iterator<Ravl2::ArrayIterZipN<2,int> >);
   STATIC_REQUIRE(std::input_iterator<Ravl2::ArrayIterZipN<2,int,float> >);
+
+  STATIC_REQUIRE(std::indirectly_readable<Ravl2::InputStreamIterator<int> >);
+  STATIC_REQUIRE(std::input_iterator<Ravl2::InputStreamIterator<int> >);
+  STATIC_REQUIRE(std::indirectly_writable<Ravl2::OutputStreamIterator<int>, int>);
+//  STATIC_REQUIRE(std::output_iterator<Ravl2::OutputStreamIterator<int>, int>);
 
   static_assert(WindowedIterator<Ravl2::ArrayIterZipN<1,int> > , "ArrayIterZipN<1,int> does not satisfy WindowedIterator");
   static_assert(WindowedIterator<Ravl2::ArrayIterZipN<2,int> > , "ArrayIterZipN<2,int> does not satisfy WindowedIterator");

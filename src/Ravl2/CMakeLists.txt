@@ -51,6 +51,8 @@ add_library(Ravl2Core
     Base64.cc Base64.hh
     Configuration.cc Configuration.hh
     ConfigJson.cc ConfigJson.hh
+        SequenceIO.cc
+        SequenceIO.hh
 )
 
 add_library(ravl2::Ravl2Core ALIAS Ravl2Core)
