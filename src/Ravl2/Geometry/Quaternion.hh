@@ -7,7 +7,8 @@
 #include "Ravl2/Types.hh"
 #include "Ravl2/Geometry/Geometry.hh"
 
-namespace Ravl2 {
+namespace Ravl2
+{
 
 	//! @brief Quaternion representation of a rotation in 3d space
 
@@ -15,6 +16,9 @@ namespace Ravl2 {
 	class Quaternion
 	{
 	public:
+          using value_type = RealT;
+          constexpr static unsigned dimension = 3;
+
 		void normalise()
 		{
 			// Calculate the magnitude
@@ -79,14 +83,21 @@ namespace Ravl2 {
 		//! Rotate vector
 		//! Maybe a different precision from the quaternion type.
 		template<typename Real2T>
-		[[nodiscard]] Vector<Real2T,3> rotate(const Vector<Real2T,3> &v) const	{
+		[[nodiscard]] Vector<Real2T,3> rotate(const Vector<Real2T,3> &v) const
+                {
                   assert(isNormalised());
                   Vector<Real2T,3> const xyz({Real2T(m_vec[1]),Real2T(m_vec[2]),Real2T(m_vec[3])});
                   Vector<Real2T,3> const t = 2.0f * xt::linalg::cross(xyz, v);
                   return v + m_vec[0] * t + xt::linalg::cross(xyz, t);
                 }
 
-		//! Compute the inverse rotation
+                //! @brief Transform Vector
+                [[nodiscard]] constexpr auto operator()(const Vector<RealT, 3> &pnt) const
+                {
+                  return rotate(pnt);
+                }
+
+                //! Compute the inverse rotation
 		[[nodiscard]] Quaternion<RealT> inverse() const
                 {
                   auto const norm2v = sqr(m_vec[0]) + sqr(m_vec[1])+ sqr(m_vec[2])+ sqr(m_vec[3]);
@@ -175,37 +186,6 @@ namespace Ravl2 {
                   return ret;
                 }
 
-
-		//! Spherical linear interpolation between two quaternions
-		//! @param t The interpolation parameter
-		//! @param other The other quaternion
-		//! @return The interpolated quaternion
-		[[nodiscard]]
-		Quaternion slerp(float t,const Quaternion &other) const
-                {
-                  const RealT one = RealT(1.0) - std::numeric_limits<RealT>::epsilon();
-                  RealT d = xt::linalg::dot(m_vec, other.m_vec)();
-                  RealT absD = std::fabs(d);
-
-                  RealT scale0;
-                  RealT scale1;
-
-                  if(absD >= one) {
-                    scale0 = RealT(1) - t;
-                    scale1 = t;
-                  } else {
-                    // theta is the angle between the 2 quaternions
-                    RealT theta = std::acos(absD);
-                    RealT sinTheta = std::sin(theta);
-
-                    scale0 = std::sin((RealT(1) - t) * theta) / sinTheta;
-                    scale1 = std::sin((t * theta)) / sinTheta;
-                  }
-                  if(d < RealT(0)) scale1 = -scale1;
-
-                  return Quaternion(scale0 * m_vec + scale1 * other.m_vec);
-                }
-
           private:
             Vector<RealT,4> m_vec {1.0,0,0,0} ;
 	};
@@ -225,7 +205,40 @@ namespace Ravl2 {
         }
 
 
-	//! Add two quaternions
+
+        //! @brief Spherical linear interpolation between two quaternions
+        //! @param p1 First quaternion, given at t=0
+        //! @param p2 Second quaternion, given at t=1
+        //! @param t The interpolation parameter
+        //! @return The interpolated quaternion
+        template<typename RealT>
+        [[nodiscard]]
+        Quaternion<RealT> slerp(const Quaternion<RealT> &p1,const Quaternion<RealT> &p2, float t)
+        {
+          const RealT one = RealT(1.0) - std::numeric_limits<RealT>::epsilon();
+          RealT d = xt::linalg::dot(p1.asVector(), p2.asVector())();
+          RealT absD = std::fabs(d);
+
+          RealT scale0;
+          RealT scale1;
+
+          if(absD >= one) {
+            scale0 = RealT(1) - t;
+            scale1 = t;
+          } else {
+            // theta is the angle between the 2 quaternions
+            RealT theta = std::acos(absD);
+            RealT sinTheta = std::sin(theta);
+
+            scale0 = std::sin((RealT(1) - t) * theta) / sinTheta;
+            scale1 = std::sin((t * theta)) / sinTheta;
+          }
+          if(d < RealT(0)) scale1 = -scale1;
+
+          return Quaternion<RealT>(scale0 * p1.asVector() + scale1 * p2.asVector());
+        }
+
+        //! Add two quaternions
         template<typename RealT>
 	inline Quaternion<RealT> operator+(const Quaternion<RealT> &qt1,const Quaternion<RealT> &qt2)
 	{ return Quaternion(qt1.asVector() + qt2.asVector()); }
@@ -264,5 +277,9 @@ namespace Ravl2 {
           auto angles = val.eulerAngles();
           return fmt::format("Q: {} {} {}",angles[0],angles[1],angles[2]);
         }
+
+
+        extern template class Quaternion<float>;
+
 
 }

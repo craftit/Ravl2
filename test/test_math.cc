@@ -8,7 +8,7 @@
 #include "Ravl2/Math/FastFourierTransform.hh"
 #include "Ravl2/Math/Sums1d2.hh"
 
-TEST_CASE("MeanVariance", "[MeanVariance]")
+TEST_CASE("MeanVariance")
 {
   using namespace Ravl2;
   using RealT = double;
@@ -43,6 +43,23 @@ TEST_CASE("MeanVariance", "[MeanVariance]")
   CHECK(isNearZero(mv3.mean() - 5));
   CHECK(isNearZero(mv3.variance() - (var/10)));
 
+}
+
+TEST_CASE("MathFuncs")
+{
+  using namespace Ravl2;
+  using RealT = double;
+
+  CHECK(isNearZero(deg2rad(180.0) - std::numbers::pi_v<RealT>));
+  CHECK(isNearZero(rad2deg(std::numbers::pi_v<RealT>) - 180.0));
+  CHECK(isNearZero(sign(1.0) - 1.0));
+  CHECK(isNearZero(sign(-1.0) + 1.0));
+  CHECK(isNearZero(sqr(2.0) - 4.0));
+  CHECK(isPow2(2));
+  CHECK_FALSE(isPow2(5));
+  CHECK(isPow2(8));
+  CHECK_FALSE(isPow2(9));
+  CHECK(isPow2(16));
 }
 
 TEST_CASE("Sums1_2")

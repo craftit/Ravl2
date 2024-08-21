@@ -3,6 +3,7 @@
 
 #include <cstdint>
 #include <cmath>
+#include <numbers>
 
 namespace Ravl2
 {
@@ -67,5 +68,20 @@ namespace Ravl2
   {
     return x * x;
   }
+
+  //! @brief Convert degrees to radians
+  template <typename RealT>
+  inline RealT deg2rad(RealT x)
+  {
+    return x * static_cast<RealT>(std::numbers::pi / 180.0);
+  }
+
+  //! @brief Convert radians to degrees
+  template <typename RealT>
+  inline RealT rad2deg(RealT x)
+  {
+    return x * static_cast<RealT>(180.0 / std::numbers::pi);
+  }
+
 
 }// namespace Ravl2

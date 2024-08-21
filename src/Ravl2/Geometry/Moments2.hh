@@ -22,6 +22,9 @@ namespace Ravl2
   class Moments2
   {
   public:
+    using value_type = SumT;
+    constexpr static unsigned dimension = 2;
+
     //! Default constructor
     // Creates the moment object with all moments set to be zero.
     constexpr Moments2() = default;

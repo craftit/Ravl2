@@ -9,10 +9,16 @@
 namespace Ravl2
 {
 
+  //! @brief Isometry in 3d space.
+  //! This class represents a rigid transformation in 3d space.
+
   template<typename RealT>
   class Isometry3
   {
   public:
+    using value_type = RealT;
+    constexpr static unsigned dimension = 3;
+
     Isometry3() = default;
 
     Isometry3(const Quaternion<RealT> &rotation,const Vector<RealT,3> &translation)
@@ -24,13 +30,19 @@ namespace Ravl2
     [[nodiscard]] Vector<RealT,3> transform(const Vector<RealT,3> &v) const
     { return m_rotation.rotate(v) + m_translation; }
 
-    const Vector<RealT,3> &translation() const
+    //! @brief Transform Vector
+    [[nodiscard]] constexpr auto operator()(const Vector<RealT, 3> &pnt) const
+    {
+      return transform(pnt);
+    }
+
+    [[nodiscard]] const Vector<RealT,3> &translation() const
     { return m_translation; }
 
-    const Quaternion<RealT> &rotation() const
+    [[nodiscard]] const Quaternion<RealT> &rotation() const
     { return m_rotation; }
 
-    //! Add a translation
+    //! Add a translation to this transform
     void translate(const Vector<RealT,3> &v)
     { m_translation += v; }
 
@@ -43,7 +55,7 @@ namespace Ravl2
     [[nodiscard]] Isometry3<RealT> inverse() const
     {
       Quaternion inv = m_rotation.inverse();
-      return Isometry3<RealT>(inv,inv.rotate(-m_translation));
+      return Isometry3<RealT>(inv,inv.template rotate<RealT>(-m_translation));
     }
 
   private:
@@ -70,5 +82,8 @@ namespace Ravl2
       iso1.rotation().rotate(iso2.translation()) + iso1.translation()
     );
   }
+
+  extern template class Isometry3<float>;
+
 
 }
