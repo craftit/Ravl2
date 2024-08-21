@@ -13,36 +13,11 @@ namespace Ravl2
 
 #if 0
   Point<RealT, 3> PlaneABCD3dC::Intersection(const LinePV3dC &l) const
-  {
-    RealT nu = mNormal.Dot(l.Vector());
-    if(isNearZero(nu))
-      throw ExceptionNumericalC("PlaneABCD3dC::Intersection(): the line is almost parallel to the plane:\n");
-    return l.PointT(-Value(l.FirstPoint()) / nu);
-  }
 
   Point<RealT, 3> PlaneABCD3dC::Intersection(const PlaneABCD3dC &planeB,
                                              const PlaneABCD3dC &planeC) const
-  {
-    Vector<RealT, 3> n1xn2(Normal().Cross(planeB.Normal()));
-    RealT tripleSP = n1xn2.Dot(planeC.Normal());
-    if(isNearZero(tripleSP))
-      throw ExceptionNumericalC("PlaneABCD3dC::Intersection(): the planes are almost parallel");
-    Vector<RealT, 3> n2xn3(planeB.Normal().Cross(planeC.Normal()));
-    Vector<RealT, 3> n3xn1(planeC.Normal().Cross(Normal()));
-    return Point<RealT, 3>(n2xn3 * D() + n3xn1 * planeB.D() + n1xn2 * planeC.D())
-      / (-tripleSP);
-  }
 
   LinePV3dC PlaneABCD3dC::Intersection(const PlaneABCD3dC &plane) const
-  {
-    Vector<RealT, 3> direction(Normal().Cross(plane.Normal()));
-    RealT den = direction.SumOfSqr();
-    if(isNearZero(den))
-      throw ExceptionNumericalC("PlaneABCD3dC::Intersection(): the planes are almost parallel");
-    Vector<RealT, 3> n212(plane.Normal().Cross(direction));
-    Vector<RealT, 3> n121(direction.Cross(Normal()));
-    return LinePV3dC((n212 * D() + n121 * plane.D()) / (-den), direction);
-  }
 #endif
   template class PlaneABCD3dC<float>;
 

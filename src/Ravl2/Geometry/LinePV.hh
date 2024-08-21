@@ -23,8 +23,7 @@ namespace Ravl2
     {
     public:
       //! Creates the non-existing line (0,0,0) [0,0,0].
-      inline LinePV() = default;
-
+      LinePV() = default;
 
       //! Creates the line passing through the point 'a' and with
       //! the direction 'v'.
@@ -34,13 +33,12 @@ namespace Ravl2
 
       //: Creates the line passing through the points 'first' and
       //: second.
-      static LinePV<RealT,N> fromPoints(const Point<RealT,N> &first, const Point<RealT,N> &second)
+      [[nodiscard]] static LinePV<RealT,N> fromPoints(const Point<RealT,N> &first, const Point<RealT,N> &second)
       {
         return LinePV<RealT,N>(first, second - first);
       }
 
       //: Returns the point of the line.
-
       [[nodiscard]] inline const Point<RealT,N> &FirstPoint() const
       {
         return mPoint;
@@ -92,19 +90,11 @@ namespace Ravl2
         return mDirection;
       }
 
+      //: Make the direction part of the line a unit vector.
       void MakeDirectionUnitDirection()
       {
         mDirection /= norm_l2(mDirection);
       }
-      //: Make the direction part of the line a unit vector.
-
-//      LinePP<RealT,N> LinePP() const;
-//      //: Returns the line segment represented by the start point and the end
-//      //: point.
-//      // The start point is equal to the start point of this line.
-//      // The end point of the returned line is determined by the sum of the
-//      // start point and the direction vector of this line.
-
 
       //: Returns the shortest distance between the lines.
       [[nodiscard]] RealT Distance(const LinePV<RealT,N> &line) const
@@ -129,38 +119,7 @@ namespace Ravl2
         return RealT(norm_l2(cross(Direction(),(FirstPoint() - p)) / norm_l2(Direction()))());
       }
 
-#if 0
-      //: Returns the line which passes through the closest points
-      //: of both lines.
-      // The returned line has the first point on this line and
-      // the second point on the 'line'.
-      [[nodiscard]] LinePV<RealT,N> ShortestLine(const LinePV<RealT,N> & line) const {
-        auto axb = cross(Direction(),line.Direction());
-        RealT axbNorm = sumOfSqr(axb);
-
-        if (isNearZero(axbNorm))
-          throw std::runtime_error("LinePV<RealT,N>::ShortestLine(): the lines are almost parallel");
-        Vector<RealT,N> pmr(FirstPoint() - line.FirstPoint());
-        Point<RealT,N> p1(FirstPoint()
-                           + Direction() * ((xt::linalg::dot(axb,cross(line.Direction(),pmr))) / axbNorm);
-        Point<RealT,N> p2(line.FirstPoint()
-                           + line.Direction() * ((xt::linalg::dot(axb,cross(Direction(),pmr))) / axbNorm));
-        return LinePV<RealT,N>::fromPoints(p1, p2);
-      }
-
-      //: Returns the point which belongs to both lines.
-      // If the lines have no intersection, the function returns the point which
-      // lies in the middle of the shortest line segment between both lines.
-      [[nodiscard]] Point<RealT,N> Intersection(const LinePV<RealT,N> &l) const
-      { return ShortestLine(l).MiddlePoint(); }
-#endif
-
-#if 0
-    LinePV<RealT,N> ProjectionInto(const PlaneABCD3dC & p) const;
-    // Returns the line which is the orthogonal projection of this
-    // line into the plane 'p'.
-#endif
-    private:
+    protected:
       Point<RealT,N> mPoint;     // the first point of the line
       Vector<RealT,N> mDirection;// the direction of the line
     };

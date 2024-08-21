@@ -4,12 +4,11 @@
 // General Public License (LGPL). See the lgpl.licence file for details or
 // see http://www.gnu.org/copyleft/lesser.html
 // file-header-ends-here
-#ifndef RAVL_FFT1D_HEADER
-#define RAVL_FFT1D_HEADER 1
-////////////////////////////////////////////////////////////////////
 //! example=exFFT1d.cc
 //! author="Charles Galambos"
 //! docentry="Ravl.API.Math.Signals.1D"
+
+#pragma once
 
 #include <complex>
 #include <span>
@@ -74,4 +73,3 @@ namespace Ravl2
 
 }// namespace Ravl2
 
-#endif

@@ -24,7 +24,8 @@
 #include "Ravl2/PlaneABCD3d.hh"
 
 namespace Ravl2 {
-  
+
+#if 0
   RealT LinePV3dC::Distance(const LinePV3dC & line) const { 
     // more information in Rektorys: 
     // Prehled uzite matematiky, SNTL, Praha 1988, p. 205
@@ -73,5 +74,6 @@ namespace Ravl2 {
     line.direction = secondPoint - line.point;
     return inS;
   }
-  
+#endif
+
 }
