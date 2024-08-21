@@ -14,21 +14,9 @@ namespace Ravl2
   static_assert(PointTransform<Projection<float, 2>>, "Projection<int,2> does not satisfy PointTransform");
 
 #if 0
-  //: Get homography
-  // This returns the projection normalised so that the projective scales are both = 1
-  
-  Matrix<RealT,3,3> Projection2dC::Homography() const {
-    Matrix<RealT,3,3> mat1(1,0,0,
-		   0,1,0,
-		   0,0,iz);
-    Matrix<RealT,3,3> mat2(1,0,0,
-		   0,1,0,
-		   0,0,oz);
-    Matrix<RealT,3,3> ret = mat2.Inverse() * trans * mat1;
-    return ret;
-  }
 
-  FAffineC<2> Projection2dC::AffineApproximation() const {
+  FAffineC<2> Projection2dC::AffineApproximation() const
+  {
     Matrix<RealT,3,3> htrans = Homography();
     RealT t1 = htrans[0][2] / htrans[2][2];
     RealT t2 = htrans[1][2] / htrans[2][2];
@@ -40,7 +28,6 @@ namespace Ravl2
   }
   //: Get an affine approximation of this projective transform
   //!return: the affine approximation
-  
 
 
   template <class DataContainerT> // assumed to be a container of Point<RealT,2>
@@ -325,21 +312,8 @@ namespace Ravl2
     proj =  toNorm * mat * fromNorm;
     return true;    
   }
-  
-
-  //: Read from a stream.
-  
-  std::istream &operator>>(std::istream &s,Projection2dC &proj) {
-    s >> proj.Matrix() >> proj.IZ() >> proj.OZ();
-    return s;
-  }
-
-  //: Write to a stream.
-  
-  std::ostream &operator<<(std::ostream &s,const Projection2dC &proj) {
-    s << proj.Matrix() << ' ' << proj.IZ() << ' ' << proj.OZ();
-    return s;
-  }
 
 #endif
+  template class Projection<float, 2>;
+
 }// namespace Ravl2

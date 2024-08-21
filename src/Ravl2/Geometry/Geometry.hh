@@ -265,4 +265,28 @@ namespace Ravl2
     return ret;
   }
 
+  //! Check all elements of a matrix are real
+  //! That is not nan or infinite
+  template <typename RealT, size_t N,size_t M>
+  [[nodiscard]] bool isReal(Matrix<RealT, N, M> const &m)
+  {
+    for(auto x : m) {
+      if(std::isinf(x) || std::isnan(x))
+        return false;
+    }
+    return true;
+  }
+
+  //! Check all elements of a vector are real
+  //! That is not nan or infinite
+  template <typename RealT, size_t N>
+  [[nodiscard]] bool isReal(Vector<RealT, N> const &v)
+  {
+    for(auto x : v) {
+      if(std::isinf(x) || std::isnan(x))
+        return false;
+    }
+    return true;
+  }
+
 }// namespace Ravl2
