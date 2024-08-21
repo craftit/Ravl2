@@ -4,9 +4,6 @@
 // General Public License (LGPL). See the lgpl.licence file for details or
 // see http://www.gnu.org/copyleft/lesser.html
 // file-header-ends-here
-#ifndef RAVL_LINEPV3D_HEADER
-#define RAVL_LINEPV3D_HEADER
-/////////////////////////////////////////////////////////////////////////
 //! userlevel=Normal
 //! author="Radek Marik"
 //! docentry="Ravl.API.Math.Geometry.3D"
@@ -14,6 +11,8 @@
 //! date="06/08/1995"
 //! lib=RavlMath
 //! file="Ravl/Math/Geometry/Euclidean/3D/LinePV3d.hh"
+
+#pragma once
 
 #include "Ravl/Point3d.hh"
 #include "Ravl/Vector3d.hh"
@@ -163,4 +162,3 @@ namespace RavlN
 
 }// namespace RavlN
 
-#endif

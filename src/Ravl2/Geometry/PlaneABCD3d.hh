@@ -178,6 +178,7 @@ namespace Ravl2
 
   //: Least squares fit of a plane to a set of points in 3d
   // At least 3 points are needed.
+  template <typename RealT>
   bool FitPlane(const std::vector<Point<RealT, 3>> &points, PlaneABCD3dC &plane);
 
   template <typename RealT>

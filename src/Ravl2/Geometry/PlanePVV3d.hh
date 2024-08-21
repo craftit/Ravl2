@@ -15,8 +15,8 @@
 namespace Ravl2
 {
 
-  //: Plane in 3D space
-  // The PlanePVV3dC class represents the plane in 3 dimensional Euclidian
+  //! Plane in 3D space
+  // The PlanePVV3dC class represents the plane in 3 dimensional Euclidean
   // space. The plane is represented by one point and 2 vectors.
 
   template <typename RealT>
@@ -51,11 +51,11 @@ namespace Ravl2
     //:-=============================================-
     //: Access to the plane elements and conversions.
 
-    inline const Point<RealT, 3> &Point() const
-    {
-      return mOrigin;
-    }
-    // Access to the point of the constant object.
+//    inline const Point<RealT, 3> &Point() const
+//    {
+//      return mOrigin;
+//    }
+//    // Access to the point of the constant object.
 
     inline const Vector<RealT, 3> &Vector1() const
     {
@@ -93,7 +93,7 @@ namespace Ravl2
     }
     // Returns the normal of the plane.
 
-    PlaneABCD3dC PlaneABCD3d() const;
+    PlaneABCD3dC<RealT> PlaneABCD3d() const;
     // Converts this plane representation.
 
     inline PlanePVV3dC &UnitVectors()
@@ -122,7 +122,7 @@ namespace Ravl2
     // The coordinate system is determined by the point of
     // the plane and its two vectors.
 
-    Point<RealT, 2> ProjectedIntersection(const LinePV3dC &l) const;
+    Point<RealT, 2> ProjectedIntersection(const LinePV3dC<RealT> &l) const;
     // Returns the coordinates (t1,t2) of the point of intersection
     // of this plane with the line 'l'. The coordinate system of the returned
     // point is determined by the point of the plane and its two vectors.

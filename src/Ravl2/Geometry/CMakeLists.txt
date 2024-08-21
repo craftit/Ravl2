@@ -32,6 +32,7 @@ add_library (Ravl2Geometry
         FitVectorOffset.hh
         Quaternion.cc Quaternion.hh
         Isometry3.cc Isometry3.hh
+        LinePV.cc LinePV.hh
 )
 
 add_library(ravl2::Ravl2Geometry ALIAS Ravl2Geometry)
