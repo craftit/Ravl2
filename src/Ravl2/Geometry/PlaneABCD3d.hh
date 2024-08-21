@@ -11,6 +11,7 @@
 #pragma once
 
 #include "Ravl2/Types.hh"
+#include "Ravl2/Geometry/Geometry.hh"
 #include "Ravl2/Geometry/VectorOffset.hh"
 
 namespace Ravl2
@@ -22,137 +23,135 @@ namespace Ravl2
   class PlaneABCD3dC
   {
   public:
-    PlaneABCD3dC()
-        : normal(0.0, 0.0, 0.0),
-          d(0.0)
-    {}
     //: The non-existing plane (0,0,0,0).
+    PlaneABCD3dC() = default;
 
-    PlaneABCD3dC(RealT aa, RealT bb, RealT cc, RealT dd)
-        : normal(aa, bb, cc),
-          d(dd)
-    {}
     //: The plane determined by the equation aa*x+bb*y+cc*z+dd = 0.
-
-    PlaneABCD3dC(const Vector<RealT, 3> &n, RealT p)
-        : normal(n),
-          d(-p)
+    PlaneABCD3dC(RealT aa, RealT bb, RealT cc, RealT dd)
+      : mNormal(toVector<RealT>(aa, bb, cc)),
+        mD(dd)
     {}
+
     //: Creates the plane determined by the vector equation n*x = p.
-
-    PlaneABCD3dC(const Vector<RealT, 3> &n, const Point<RealT, 3> &p)
-        : normal(n),
-          d(-(n.Dot(p)))
+    PlaneABCD3dC(const Vector<RealT, 3> &n, RealT p)
+        : mNormal(n),
+          mD(-p)
     {}
+
     //: Creates the plane with normal 'n' passing through the point 'p'.
+    PlaneABCD3dC(const Vector<RealT, 3> &n, const Point<RealT, 3> &p)
+        : mNormal(n),
+          mD(-(xt::linalg::dot(n,p)()))
+    {}
 
-    inline PlaneABCD3dC(const Point<RealT, 3> &p,
-                        const Vector<RealT, 3> &v1,
-                        const Vector<RealT, 3> &v2)
-        : normal(v1.Cross(v2))
-    {
-      d = -normal.Dot(p);
-    }
     //: The plane [p; v1; v2].
-
-    inline PlaneABCD3dC(const Point<RealT, 3> &p1,
-                        const Point<RealT, 3> &p2,
-                        const Point<RealT, 3> &p3)
-        : normal(Vector<RealT, 3>(p2 - p1).Cross(Vector<RealT, 3>(p3 - p1)))
+    PlaneABCD3dC(const Point<RealT, 3> &p,
+                const Vector<RealT, 3> &v1,
+                const Vector<RealT, 3> &v2)
+        : mNormal(cross(v1,v2))
     {
-      d = -normal.Dot(p1);
+      mD = RealT(-xt::linalg::dot(mNormal,p)());
     }
-    //: The plane passing through three points 'p1', 'p2', and 'p3'.
 
+    //: The plane passing through three points 'p1', 'p2', and 'p3'.
+    static inline PlaneABCD3dC<RealT> fromPoints(const Point<RealT, 3> &p1,
+                                                const Point<RealT, 3> &p2,
+                                                const Point<RealT, 3> &p3)
+    {
+      return PlaneABCD3dC<RealT>(p1, p2 - p1, p3 - p1);
+    }
+
+    //: Returns the normal of the plane.
     inline Vector<RealT, 3> Normal() const
     {
-      return (normal);
+      return (mNormal);
     }
-    //: Returns the normal of the plane.
 
+    //: Returns parameter a.
     inline RealT A() const
     {
-      return (normal[0]);
+      return (mNormal[0]);
     }
-    //: Returns parameter a.
 
+    //: Returns parameter b.
     inline RealT B() const
     {
-      return (normal[1]);
+      return (mNormal[1]);
     }
-    //: Returns parameter b.
 
+    //: returns parameter c.
     inline RealT C() const
     {
-      return (normal[2]);
+      return (mNormal[2]);
     }
-    //: returns parameter c.
 
+    //: Returns parameter d.
     RealT D() const
     {
-      return (d);
+      return (mD);
     }
-    //: Returns parameter d.
 
+    //: Normalizes the normal vector to be unit.
     inline PlaneABCD3dC &UnitNormal()
     {
-      RealT size = normal.Magnitude();
-      normal /= size;
-      d /= size;
+      RealT mag = RealT(norm_l2(mNormal)());
+      mNormal /= mag;
+      mD /= mag;
       return (*this);
     }
-    //: Normalizes the normal vector to be unit.
 
-    inline RealT Value(const Point<RealT, 3> &p) const
-    {
-      return normal.Dot(p) + d;
-    }
     //: Returns the value of the expression 'normal.Dot(p) + d'
     // This is often used in analytical geometry.
-
-    Point<RealT, 3> ClosestPoint(const Point<RealT, 3> &p) const
+    [[nodiscard]] inline RealT Value(const Point<RealT, 3> &p) const
     {
-      return p + normal * (-(normal.Dot(p) + d) / normal.SumOfSqr());
+      return xt::linalg::dot(mNormal,p)() + mD;
     }
-    //: Find closest point to 'p' that lies on the plane.
 
-    inline RealT DirectedEuclideanDistance(const Point<RealT, 3> &p) const
+    //: Find the closest point to 'p' that lies on the plane.
+    [[nodiscard]] Point<RealT, 3> ClosestPoint(const Point<RealT, 3> &p) const
     {
-      return Value(p) / normal.Magnitude();
+      return p + mNormal * (-(xt::linalg::dot(mNormal,p) + mD) / sumOfSqr(mNormal));
     }
-    //: Returns the directed Euclidian distance of the point 'p' from
+
+    //: Returns the directed Euclidean distance of the point 'p' from
     //: this plane.
     // If returned value is positive the point is in the direction of the
     // plane normal.
-
-    inline RealT DirEuclidDistance(const Point<RealT, 3> &p) const
+    [[nodiscard]] inline RealT DirectedEuclideanDistance(const Point<RealT, 3> &p) const
     {
-      return DirectedEuclideanDistance(p);
+      return Value(p) / norm_l2(mNormal);
     }
+
     //: Returns the directed Euclidian distance of the point 'p' from
     //: this plane.
     // If returned value is positive the point is in the direction of the
     // plane normal.
     // Obsolete, use DirectedEuclideanDistance()
+    [[nodiscard]] inline RealT DirEuclidDistance(const Point<RealT, 3> &p) const
+    {
+      return DirectedEuclideanDistance(p);
+    }
 
-    inline RealT EuclideanDistance(const Point<RealT, 3> &p) const
+    //: Returns the Euclidean distance of the point 'p' from this plane.
+    [[nodiscard]] inline RealT EuclideanDistance(const Point<RealT, 3> &p) const
     {
       return std::abs(DirEuclidDistance(p));
     }
-    //: Returns the Euclidean distance of the point 'p' from this plane.
 
+    //: Returns the Euclidean distance of the point 'p' from this plane.
     inline RealT EuclidDistance(const Point<RealT, 3> &p) const
     {
       return EuclideanDistance(p);
     }
-    //: Returns the Euclidean distance of the point 'p' from this plane.
 
+    //: Returns the plane parallel to this plane and passing through
+    //: the point 'p'.
     inline PlaneABCD3dC ParallelPlane(const Point<RealT, 3> &p) const
     {
       return PlaneABCD3dC(Normal(), p);
     }
-    //: Returns the plane parallel to this plane and passing through
-    //: the point 'p'.
+
+#if 0
 
     Point<RealT, 3> Intersection(const LinePV3dC &l) const;
     //: Returns the point which is the intersection of this plane with
@@ -168,31 +167,35 @@ namespace Ravl2
     //: Returns the line which is the intersection of this plane with
     // the plane 'plane'.
     // If the intersection does not exist the function throw an ExceptionNumericalC
-
+#endif
   private:
-    Vector<RealT, 3> normal;
-    RealT d;
-
-    friend std::istream &operator>>(std::istream &inS, PlaneABCD3dC &plane);
+    Vector<RealT, 3> mNormal;
+    RealT mD;
   };
 
   //: Least squares fit of a plane to a set of points in 3d
   // At least 3 points are needed.
   template <typename RealT>
-  bool FitPlane(const std::vector<Point<RealT, 3>> &points, PlaneABCD3dC &plane);
+  bool FitPlane(const std::vector<Point<RealT, 3>> &points, PlaneABCD3dC<RealT> &plane);
 
   template <typename RealT>
-  std::ostream &operator<<(std::ostream &outS, const PlaneABCD3dC &plane)
+  std::ostream &operator<<(std::ostream &outS, const PlaneABCD3dC<RealT> &plane)
   {
     outS << plane.Normal() << ' ' << plane.D();
     return (outS);
   }
 
   template <typename RealT>
-  std::istream &operator>>(std::istream &inS, PlaneABCD3dC &plane)
+  std::istream &operator>>(std::istream &inS, PlaneABCD3dC<RealT> &plane)
   {
-    inS >> plane.normal >> plane.d;
+    Vector<RealT, 3> dir;
+    RealT d;
+    inS >> dir >> d;
+    plane = PlaneABCD3dC<RealT>(dir, d);
     return (inS);
   }
+
+  extern template class PlaneABCD3dC<float>;
+
 
 }// namespace Ravl2

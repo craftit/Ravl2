@@ -4,10 +4,11 @@
 // General Public License (LGPL). See the lgpl.licence file for details or
 // see http://www.gnu.org/copyleft/lesser.html
 // file-header-ends-here
-#pragma once
 //! author="Radek Marik"
 //! date="26/02/1994"
 //! docentry="Ravl.API.Math.Geometry.3D"
+
+#pragma once
 
 #include "Ravl2/Types.hh"
 #include "Ravl2/Geometry/PlaneABCD3d.hh"
@@ -16,7 +17,7 @@ namespace Ravl2
 {
 
   //! Plane in 3D space
-  // The PlanePVV3dC class represents the plane in 3 dimensional Euclidean
+  // The PlanePVV3dC class represents the plane in 3-dimensional Euclidean
   // space. The plane is represented by one point and 2 vectors.
 
   template <typename RealT>
@@ -87,14 +88,11 @@ namespace Ravl2
     }
     // Access to the second vector.
 
-    inline Vector<RealT, 3> Normal() const
+    [[nodiscard]] Vector<RealT, 3> Normal() const
     {
-      return vector1.Cross(vector2);
+      return cross(vector1,vector2);
     }
     // Returns the normal of the plane.
-
-    PlaneABCD3dC<RealT> PlaneABCD3d() const;
-    // Converts this plane representation.
 
     inline PlanePVV3dC &UnitVectors()
     {
@@ -107,13 +105,17 @@ namespace Ravl2
     //:-=============================================-
     //: Geometrical constructions.
 
+#if 0
+    PlaneABCD3dC<RealT> PlaneABCD3d() const;
+    // Converts this plane representation.
+
     RealT EuclideanDistance(const Point<RealT, 3> &point) const;
     // Measure the euclidean distance between 'point' and the plane.
 
     Point<RealT, 3> ClosestPoint(const Point<RealT, 3> &p) const;
     // Find the closest point on the plane to 'p'
 
-    Point<RealT, 3> Intersection(const LinePV3dC &l) const;
+    Point<RealT, 3> Intersection(const LinePV3dC<RealT> &l) const;
     // Returns the point of intersection of this plane with the line 'l'.
 
     Point<RealT, 2> Projection(const Point<RealT, 3> &point) const;
@@ -138,13 +140,12 @@ namespace Ravl2
       return Point() + vector1 * par[0] + vector2 * par[1];
     }
     // Returns the point of the plane: point + t1 * vector1 + t2 * vector2.
+#endif
 
   private:
     Point<RealT, 3> mOrigin;
     Vector<RealT, 3> vector1;
     Vector<RealT, 3> vector2;
-
-    friend std::istream &operator>>(std::istream &inS, PlanePVV3dC &plane);
   };
 
   template <typename RealT>

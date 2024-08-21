@@ -16,45 +16,41 @@
 // Modifications:
 //
 //
-//! rcsid="$Id$"
-//! lib=RavlMath
-//! file="Ravl/Math/Geometry/Euclidean/3D/LinePV3d.cc"
 
-#include "Ravl/StdMath.hh"     //::Abs()
-#include "Ravl/Point3d.hh"
-#include "Ravl/Vector3d.hh"
-#include "Ravl/LinePV3d.hh"
-#include "Ravl/PlaneABCD3d.hh"
-#include "Ravl/Stream.hh"
+#include "Ravl2/StdMath.hh"     //::std::abs()
+#include "Ravl2/Point3d.hh"
+#include "Ravl2/Vector3d.hh"
+#include "Ravl2/LinePV3d.hh"
+#include "Ravl2/PlaneABCD3d.hh"
 
-namespace RavlN {
+namespace Ravl2 {
   
   RealT LinePV3dC::Distance(const LinePV3dC & line) const { 
     // more information in Rektorys: 
     // Prehled uzite matematiky, SNTL, Praha 1988, p. 205
     
-    Vector3dC axb(Vector().Cross(line.Vector()));
+    Vector<RealT,3> axb(Vector().Cross(line.Vector()));
     RealT modul = axb.Magnitude();
     if (modul == 0)
       return line.Distance(FirstPoint());
-    return RavlN::Abs(Vector3dC(line.FirstPoint() - FirstPoint()).Dot(axb))/modul;
+    return RavlN::std::abs(Vector<RealT,3>(line.FirstPoint() - FirstPoint()).Dot(axb))/modul;
   }
   
   LinePV3dC LinePV3dC::ShortestLine(const LinePV3dC & line) const {
-    Vector3dC axb(Vector().Cross(line.Vector()));
+    Vector<RealT,3> axb(Vector().Cross(line.Vector()));
     RealT     axbNorm = axb.SumOfSqr();
     
-    if (IsAlmostZero(axbNorm))
+    if (isNearZero(axbNorm))
       throw ExceptionNumericalC("LinePV3dC::ShortestLine(): the lines are almost parallel");    
-    Vector3dC pmr(FirstPoint() - line.FirstPoint());
-    Point3dC p1(FirstPoint()
+    Vector<RealT,3> pmr(FirstPoint() - line.FirstPoint());
+    Point<RealT,3> p1(FirstPoint()
 		+ Vector() * ((axb.Dot(line.Vector().Cross(pmr))) / axbNorm));
-    Point3dC p2(line.FirstPoint()
+    Point<RealT,3> p2(line.FirstPoint()
 		+ line.Vector() * ((axb.Dot(Vector().Cross(pmr))) / axbNorm));
     return LinePV3dC(p1, p2);
   }
   
-  Point3dC LinePV3dC::Intersection(const LinePV3dC & l) const
+  Point<RealT,3> LinePV3dC::Intersection(const LinePV3dC & l) const
   { return ShortestLine(l).MiddlePoint(); }
   
 #if 0
@@ -64,15 +60,15 @@ namespace RavlN {
   }
 #endif
   
-  ostream & 
-  operator<<(ostream & outS, const LinePV3dC & line) {
+  std::ostream & 
+  operator<<(std::ostream & outS, const LinePV3dC & line) {
     outS << line.FirstPoint() << ' ' << line.SecondPoint();
     return outS;
   }
 
-  istream & 
-  operator>>(istream & inS, LinePV3dC & line) {
-    Point3dC secondPoint;
+  std::istream & 
+  operator>>(std::istream & inS, LinePV3dC & line) {
+    Point<RealT,3> secondPoint;
     inS >> line.point >> secondPoint;
     line.direction = secondPoint - line.point;
     return inS;

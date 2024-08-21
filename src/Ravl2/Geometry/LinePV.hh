@@ -29,7 +29,7 @@ namespace Ravl2
       //! Creates the line passing through the point 'a' and with
       //! the direction 'v'.
       inline LinePV(const Point<RealT,N> &a, const Vector<RealT,N> &v)
-          : point(a), direction(v)
+          : mPoint(a), mDirection(v)
       {}
 
       //: Creates the line passing through the points 'first' and
@@ -43,14 +43,14 @@ namespace Ravl2
 
       [[nodiscard]] inline const Point<RealT,N> &FirstPoint() const
       {
-        return point;
+        return mPoint;
       }
 
       //: Returns the point which is the end point of the direction
       //: vector placed in the first point of the line.
       [[nodiscard]] inline Point<RealT,N> SecondPoint() const
       {
-        return point + direction;
+        return mPoint + mDirection;
       }
 
       //: Returns the point which is in the middle of the FirstPoint()
@@ -64,37 +64,37 @@ namespace Ravl2
       // Obsolete, use Point(l)
       [[nodiscard]] Point<RealT,N> PointT(RealT lambda) const
       {
-        return point + direction * lambda;
+        return mPoint + mDirection * lambda;
       }
 
       //: Returns the point FirstPoint() + lambda * direction.
       [[nodiscard]] Point<RealT,N> at(RealT lambda) const
       {
-        return point + direction * lambda;
+        return mPoint + mDirection * lambda;
       }
 
       //: Return the paramiter of the closest point on the line to 'pnt'.
       // Use at() to get to the corresponding point on the line.
       [[nodiscard]] RealT ParClosest(const Point<RealT,N> &pnt) const
       {
-        return (xt::linalg::dot(direction,(pnt - point)) / xt::sum(direction * direction))();
+        return (xt::linalg::dot(mDirection,(pnt - mPoint)) / xt::sum(mDirection * mDirection))();
       }
 
       //: Returns the direction vector of this line.
       inline const Vector<RealT,N> &lineDirection() const
       {
-        return direction;
+        return mDirection;
       }
 
       //: Returns the direction vector of this line.
       [[nodiscard]] inline const Vector<RealT,N> &Direction() const
       {
-        return direction;
+        return mDirection;
       }
 
       void MakeDirectionUnitDirection()
       {
-        direction /= norm_l2(direction);
+        mDirection /= norm_l2(mDirection);
       }
       //: Make the direction part of the line a unit vector.
 
@@ -161,8 +161,8 @@ namespace Ravl2
     // line into the plane 'p'.
 #endif
     private:
-      Point<RealT,N> point;     // the first point of the line
-      Vector<RealT,N> direction;// the direction of the line
+      Point<RealT,N> mPoint;     // the first point of the line
+      Vector<RealT,N> mDirection;// the direction of the line
     };
 
 

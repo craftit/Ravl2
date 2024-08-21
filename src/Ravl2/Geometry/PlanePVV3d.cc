@@ -6,12 +6,9 @@
 // file-header-ends-here
 /////////////////////////////////////////////////////////////
 
-#include "Ravl2/PlanePVV3d.hh"
-#include "Ravl2/LinePV3d.hh"
-#include "Ravl2/Point2d.hh"
-#include "Ravl2/PlaneABCD3d.hh"
-#include "Ravl2/FMatrix.hh"
-#include "Ravl2/CCMath.hh"
+#include "Ravl2/Geometry/PlanePVV3d.hh"
+#include "Ravl2/Geometry/LinePV3d.hh"
+#include "Ravl2/Geometry/PlaneABCD3d.hh"
 
 extern "C" {
 double qrlsq(double *a, double *b, int m, int n, int *f);
@@ -19,7 +16,7 @@ double qrlsq(double *a, double *b, int m, int n, int *f);
 
 namespace Ravl2
 {
-
+#if 0
   // Returns the point of intersection of this plane with the line 'l'.
 
   Point<RealT, 3> PlanePVV3dC::Intersection(const LinePV3dC &l) const
@@ -67,5 +64,6 @@ namespace Ravl2
   {
     return Projection(PlanePVV3dC::Intersection(l));
   }
+#endif
 
 }// namespace Ravl2

@@ -6,17 +6,15 @@
 // file-header-ends-here
 ///////////////////////////////////////////////////////////////////
 
-#include "Ravl2/Point3d.hh"
-#include "Ravl2/Vector3d.hh"
-#include "Ravl2/LinePV3d.hh"
-#include "Ravl2/PlaneABCD3d.hh"
+#include "Ravl2/Geometry/PlaneABCD3d.hh"
 
 namespace Ravl2
 {
 
+#if 0
   Point<RealT, 3> PlaneABCD3dC::Intersection(const LinePV3dC &l) const
   {
-    RealT nu = normal.Dot(l.Vector());
+    RealT nu = mNormal.Dot(l.Vector());
     if(isNearZero(nu))
       throw ExceptionNumericalC("PlaneABCD3dC::Intersection(): the line is almost parallel to the plane:\n");
     return l.PointT(-Value(l.FirstPoint()) / nu);
@@ -45,5 +43,8 @@ namespace Ravl2
     Vector<RealT, 3> n121(direction.Cross(Normal()));
     return LinePV3dC((n212 * D() + n121 * plane.D()) / (-den), direction);
   }
+#endif
+  template class PlaneABCD3dC<float>;
+
 
 }// namespace Ravl2
