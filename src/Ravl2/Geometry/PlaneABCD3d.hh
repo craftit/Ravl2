@@ -164,7 +164,7 @@ namespace Ravl2
     //: Returns the point which is the intersection of three planes.
     // If the intersection does not exist the function throw an ExceptionNumericalC
 
-    LinePV3dC Intersection(const PlaneABCD3dC &plane) const;
+    LinePV3dC<RealT> Intersection(const PlaneABCD3dC &plane) const;
     //: Returns the line which is the intersection of this plane with
     // the plane 'plane'.
     // If the intersection does not exist the function throw an ExceptionNumericalC

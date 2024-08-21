@@ -32,12 +32,6 @@ namespace Ravl2
 
     auto [u, s, v] = xt::linalg::svd(covar, true, true);
 
-#if 0
-    std::cerr << "Singular values= " << s << "\n";
-    std::cerr << "U= " << u << "\n";
-    std::cerr << "V= " << v << "\n";
-#endif
-
     // Find the smallest singular value,
     // they are normally sorted, but let's be paranoid.
     RealT min = s[0];
@@ -55,10 +49,7 @@ namespace Ravl2
       normal[i] *= scale;
       d += normal[i] * mean[i];
     }
-    //-(a * mean[0] + b * mean[1] + c * mean[2]);
-
     plane = VectorOffset<RealT, N>(normal, -d);
-
     return true;
   }
 
