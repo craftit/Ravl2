@@ -26,17 +26,17 @@ namespace Ravl2
 
     //! Creates the line determined by the equation a*x+b*y+c = 0.
     inline constexpr LineABC2dC(RealT a, RealT b, RealT c)
-        : normal({a, b}), d(c)
+        : normal({a, b}), mD(c)
     {}
 
     //! Creates the line determined by the equation norm[0]*x+norm[1]*y+c = 0.
     inline constexpr LineABC2dC(Vector<RealT, 2> norm, RealT vd)
-        : normal(norm), d(vd)
+        : normal(norm), mD(vd)
     {}
 
     //! Creates the line passing through two points 'end' and 'start'.
     inline constexpr LineABC2dC(const Point<RealT, 2> &start, const Point<RealT, 2> &end)
-        : normal(perpendicular(Vector<RealT, 2>(end - start))), d(-dot(this->normal, start)())
+        : normal(perpendicular(Vector<RealT, 2>(end - start))), mD(-dot(this->normal, start)())
     {}
 
     //! Creates the line passing through two points 'end' and 'start'.
@@ -74,7 +74,7 @@ namespace Ravl2
     //! system.
     [[nodiscard]] inline constexpr RealT Rho() const
     {
-      return this->d / Ravl2::norm_l2(this->normal);
+      return this->mD / Ravl2::norm_l2(this->normal);
     }
 
     //! Returns parameter a.
@@ -92,7 +92,7 @@ namespace Ravl2
     //! Returns parameter c.
     [[nodiscard]] inline constexpr RealT C() const
     {
-      return this->d;
+      return this->mD;
     }
 
     //! Returns the value of x coordinate if the y coordinate is known.
@@ -113,7 +113,7 @@ namespace Ravl2
     //! used in geometrical computations.
     [[nodiscard]] inline constexpr RealT Residuum(const Point<RealT, 2> &p) const
     {
-      return (this->normal[0] * p[0] + this->normal[1] * p[1]) + this->d;
+      return (this->normal[0] * p[0] + this->normal[1] * p[1]) + this->mD;
     }
 
     //! Normalizes the equation so that the normal vector is unit.
@@ -121,7 +121,7 @@ namespace Ravl2
     {
       RealT size = Ravl2::norm_l2(this->normal);
       this->normal /= size;
-      this->d /= size;
+      this->mD /= size;
       return *this;
     }
 
@@ -191,14 +191,14 @@ namespace Ravl2
     template <class Archive>
     constexpr void serialize(Archive &ar)
     {
-      ar(normal[0], normal[1], d);
+      ar(normal[0], normal[1], mD);
     }
 
   private:
     Vector<RealT, 2> normal {};
     // The normal of the line.
 
-    RealT d = 0.0;
+    RealT mD = 0.0;
     // The distance of the line from the origin of the coordinate system
     // multiplied by the size of the normal vector of the line.
   };

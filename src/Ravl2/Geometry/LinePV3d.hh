@@ -21,8 +21,8 @@
 namespace RavlN
 {
 
-  class LinePP3dC;
-  class PlaneABCD3dC;
+//  class LinePP3dC;
+//  class PlaneABCD3dC;
 
   //: Line determined by one point and a vector in 3D space
   // The LinePV3dC class represents the line in 3 dimensional Euclidian

@@ -5,6 +5,7 @@
 #pragma once
 
 #include "Ravl2/Types.hh"
+#include "Ravl2/Geometry/Geometry.hh"
 #include "Ravl2/Math/LeastSquares.hh"
 
 namespace Ravl2
@@ -30,19 +31,19 @@ namespace Ravl2
     {}
 
     //! Returns the normal of the plane.
-    inline Vector<RealT, 3> normal() const
+    [[nodiscard]] inline Vector<RealT, 3> normal() const
     {
-      return (normal);
+      return mNormal;
     }
 
     //! Returns the offset of the plane.
-    inline RealT offset() const
+    [[nodiscard]] inline RealT offset() const
     {
       return (mD);
     }
 
     //! Returns the offset of the plane.
-    inline RealT d() const
+    [[nodiscard]] inline RealT d() const
     {
       return (mD);
     }
@@ -88,5 +89,9 @@ namespace Ravl2
     Vector<RealT, N> mNormal;
     RealT mD = 0;
   };
+
+  extern template class VectorOffset<float, 2>;
+  extern template class VectorOffset<float, 3>;
+
 
 }// namespace Ravl2
