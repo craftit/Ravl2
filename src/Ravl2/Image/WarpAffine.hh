@@ -1,4 +1,4 @@
-// This file is part of RAVL, Recognition And Vision Library 
+// This file is part of RAVL, Recognition And Vision Library
 // Copyright (C) 2001, University of Surrey
 // This code may be redistributed under the terms of the GNU Lesser
 // General Public License (LGPL). See the lgpl.licence file for details or
@@ -15,8 +15,8 @@
 //#include "Ravl2/Image/PixelMixer.hh"
 #include "Ravl2/Image/BilinearInterpolation.hh"
 
-namespace Ravl2 {
-
+namespace Ravl2
+{
 
 #if 0
   //! Performs an affine warp of an image using bi-Linear Interpolation.
@@ -163,7 +163,7 @@ namespace Ravl2 {
 	lstart += sdir;
       }
       return;
-    }    
+    }
 #if 0
     Vector<RealT,2> endv(0,((RealT) orng.range(1).size()));
     // This attempts to be clever project the line back into
@@ -224,9 +224,9 @@ namespace Ravl2 {
       }
       lstart += sdir;
     }
-    
+
 #endif    
   }
 #endif
 
-}
+}// namespace Ravl2

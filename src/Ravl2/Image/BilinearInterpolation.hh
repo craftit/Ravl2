@@ -51,8 +51,7 @@ namespace Ravl2
   //! @param pnt The source pixel to assign from
   template <typename SourceT, typename PointT>
     requires WindowedArray<SourceT, typename SourceT::value_type, SourceT::dimensions>
-  struct InterpolateBilinear
-  {
+  struct InterpolateBilinear {
     constexpr auto operator()(const SourceT &source, const PointT &pnt) const
     {
       return interpolateBilinear(source, pnt);
@@ -64,14 +63,12 @@ namespace Ravl2
   //! @param interpolator The interpolator to use
   //! @return The range of real points we can sample from
   template <typename CoordTypeT, unsigned N, typename SourceT, typename PointT>
-  Range<CoordTypeT,N> interpolationBounds(const IndexRange<N> &indexRange, [[maybe_unused]] const InterpolateBilinear<SourceT,PointT> &interpolator)
+  Range<CoordTypeT, N> interpolationBounds(const IndexRange<N> &indexRange, [[maybe_unused]] const InterpolateBilinear<SourceT, PointT> &interpolator)
   {
-    Range<CoordTypeT,N> targetRange = toRange<CoordTypeT>(indexRange);
+    Range<CoordTypeT, N> targetRange = toRange<CoordTypeT>(indexRange);
     // We reduce the range by 1 plus the machine epsilon times the maximum image size to avoid sampling
     // outside the image.
     return targetRange.shrinkMax(CoordTypeT(1) + (std::numeric_limits<CoordTypeT>::epsilon() * 4096));
   }
 
-
 }// namespace Ravl2
-

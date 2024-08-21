@@ -14,23 +14,23 @@ namespace Ravl2
     if(points.size() < 3)
       return false;
 
-    Matrix<RealT,N,N> covar = xt::zeros<RealT>({N, N});
+    Matrix<RealT, N, N> covar = xt::zeros<RealT>({N, N});
 
-    auto [mean,scale] = normalise<RealT,N>(points, [&covar](const Point<RealT, N> &pnt) {
-      for(size_t i = 0; i <N; i++) {
+    auto [mean, scale] = normalise<RealT, N>(points, [&covar](const Point<RealT, N> &pnt) {
+      for(size_t i = 0; i < N; i++) {
         for(size_t j = i; j < 3; j++)
-          covar(i,j) += pnt[i] * pnt[j];
+          covar(i, j) += pnt[i] * pnt[j];
       }
     });
 
     // Make it symmetric.
     for(size_t i = 0; i < N; i++) {
       for(size_t j = i + 1; j < N; j++) {
-        covar(j,i) = covar(i,j);
+        covar(j, i) = covar(i, j);
       }
     }
 
-    auto [u, s, v] = xt::linalg::svd(covar,true,true);
+    auto [u, s, v] = xt::linalg::svd(covar, true, true);
 
 #if 0
     std::cerr << "Singular values= " << s << "\n";
@@ -62,4 +62,4 @@ namespace Ravl2
     return true;
   }
 
-}
+}// namespace Ravl2

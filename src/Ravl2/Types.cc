@@ -30,7 +30,6 @@ namespace Ravl2
     return fmt::format("({},{})", v[0], v[1]);
   }
 
-
   //! Demangle a C++ name
 
   std::string demangle(const char *name)

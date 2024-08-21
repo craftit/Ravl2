@@ -98,7 +98,6 @@ namespace Ravl2
         addResourcePath("fonts", RAVL_SOURCE_DIR "/share/Ravl2/fonts");
         addResourcePath("models", RAVL_SOURCE_DIR "/share/Ravl2/models");
       }
-
     }
     return paths;
   }

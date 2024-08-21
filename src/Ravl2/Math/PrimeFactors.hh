@@ -28,8 +28,8 @@ namespace Ravl2
   //          if a factorization fails. The dimension 32 for the factor
   //          array kk is sufficient to hold all factors of 32-bit integers.
 
-  size_t pfac(size_t n,size_t *kk,int fe);
+  size_t pfac(size_t n, size_t *kk, int fe);
 
   size_t pfac(size_t n, int *kk, int fe);
 
-}
+}// namespace Ravl2

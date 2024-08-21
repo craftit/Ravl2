@@ -83,7 +83,7 @@ namespace Ravl2
     //! The direction of the boundaries is determined by the constructor.<br>
     //! Boundaries that terminate at the edge of the array/image are left open.
     [[nodiscard]] std::vector<Boundary> orderEdges() const;
-    
+
     //! @brief Return the orientation of the boundary.
     //! @return true: object is on the left side of edges relative to their direction;<br> false: on the right.
     [[nodiscard]] auto Orient() const
@@ -114,7 +114,7 @@ namespace Ravl2
 
     //! Get the bounding box around all pixels on the inside edge of the boundary.
     [[nodiscard]] IndexRange<2> boundingBox() const;
-    
+
     //! Get number of edges in the boundary
     [[nodiscard]] auto size() const
     {
@@ -146,11 +146,11 @@ namespace Ravl2
 
     //! Returns a continuous boundary; if the boundary is open, 'orient' will be
     //! ignored and 'firstCrack' must be one of the end points of the boundary.
-    [[nodiscard]] static Boundary OrderContinuous(const std::unordered_map<BoundaryVertex, std::array<BoundaryVertex, 2>> &hashtable, const CrackC &firstCrack) ;
+    [[nodiscard]] static Boundary OrderContinuous(const std::unordered_map<BoundaryVertex, std::array<BoundaryVertex, 2>> &hashtable, const CrackC &firstCrack);
 
     //! Returns the endpoints of the boundary, i.e. if the boundary is closed,
     //! the list will be empty.
-    [[nodiscard]] static std::vector<BoundaryVertex> findEndpoints(const std::unordered_map<BoundaryVertex, std::array<BoundaryVertex, 2>> &hashtable) ;
+    [[nodiscard]] static std::vector<BoundaryVertex> findEndpoints(const std::unordered_map<BoundaryVertex, std::array<BoundaryVertex, 2>> &hashtable);
   };
 
   //! Write out the boundary to a stream.
@@ -196,34 +196,34 @@ namespace Ravl2
     }
     return Boundary(std::move(mEdges), BoundaryOrientationT::INSIDE_LEFT);
   }
-  
+
   //! @brief Convert a boundary to a polygon.
   //! This assumes 'bnd' is a single ordered boundary (See BoundryC::OrderEdges();).
   //! Straight edges are compressed into a single segment.
-  
+
   template <typename RealT>
   Polygon2dC<RealT> toPolygon(const Boundary &bnd)
   {
     Polygon2dC<RealT> polygon;
-    
+
     auto et = bnd.edges().begin();
     auto endAt = bnd.edges().end();
     if(et == endAt) {
       return polygon;
     }
-    auto const halfPixelOffset = toPoint<RealT>(-0.5,-0.5);
-    polygon.push_back(toPoint<RealT>(et->vertexBegin())+halfPixelOffset);
+    auto const halfPixelOffset = toPoint<RealT>(-0.5, -0.5);
+    polygon.push_back(toPoint<RealT>(et->vertexBegin()) + halfPixelOffset);
     auto lastCode = et->code();
     polygon.back() += halfPixelOffset;
-    for (++et; et != endAt; ++et) {
-      if (et->code() == lastCode)
+    for(++et; et != endAt; ++et) {
+      if(et->code() == lastCode)
         continue;
       lastCode = et->code();
       polygon.push_back(toPoint<RealT>(et->vertexBegin()) + halfPixelOffset);
     }
     return polygon;
   }
-  
+
 }// namespace Ravl2
 
 namespace fmt

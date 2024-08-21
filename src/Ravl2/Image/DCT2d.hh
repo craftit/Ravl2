@@ -184,8 +184,7 @@ namespace Ravl2
     //! Make assigment operator private.
     const VecRadDCT &operator=(const VecRadDCT &oth) = delete;
 
-
-    size_t N = 0; //!< Input size
+    size_t N = 0;//!< Input size
     int N0 = 0;  //!< Output size
     int m = 0;
     std::vector<RealT> ct;

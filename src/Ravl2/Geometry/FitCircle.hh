@@ -30,7 +30,7 @@ namespace Ravl2
   //! 'residual' is from the least squares fit and can be used to assess
   //! the quality of the fit.  Returns false if fit failed.
   template <typename RealT>
-  std::optional<RealT> fit(Circle2dC<RealT> &circle,const std::vector<Point<RealT, 2>> &points)
+  std::optional<RealT> fit(Circle2dC<RealT> &circle, const std::vector<Point<RealT, 2>> &points)
   {
     size_t N = points.size();
     if(N < 3)// Under determined.
@@ -40,12 +40,12 @@ namespace Ravl2
     MatrixT<RealT> A = xt::empty<RealT>(sh);
     VectorT<RealT> B = xt::empty<RealT>({N});
     size_t i = 0;
-    auto [mean,scale] = normalise<RealT,2>(points,[&i,&A,&B](const Point<RealT,2> &pnt) {
+    auto [mean, scale] = normalise<RealT, 2>(points, [&i, &A, &B](const Point<RealT, 2> &pnt) {
       const RealT X = pnt[0];
       const RealT Y = pnt[1];
-      A(i,0) = X;
-      A(i,1) = Y;
-      A(i,2) = 1;
+      A(i, 0) = X;
+      A(i, 1) = Y;
+      A(i, 2) = 1;
       B(i) = -X * X - Y * Y;
       i++;
     });
@@ -63,7 +63,6 @@ namespace Ravl2
     //SPDLOG_INFO("Circle2dC::FitLSQ() Center={} Radius={}", circle.Centre(), circle.Radius());
     return residual() * scale;
   }
-
 
 }// namespace Ravl2
 

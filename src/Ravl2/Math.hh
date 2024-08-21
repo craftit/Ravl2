@@ -41,13 +41,14 @@ namespace Ravl2
   //! @brief Is integer power of 2 ?
   //! @return true if 'i' is a power of 2.
 
-  template<typename IntT>
-  requires std::is_integral<IntT>::value
-  [[nodiscard]] inline constexpr bool isPow2(IntT i) {
+  template <typename IntT>
+    requires std::is_integral<IntT>::value
+  [[nodiscard]] inline constexpr bool isPow2(IntT i)
+  {
     IntT j = 1;
     while(j < i)
       j *= 2;
-    return i==j;
+    return i == j;
   }
 
   //! @brief Is x near zero ?
@@ -82,6 +83,5 @@ namespace Ravl2
   {
     return x * static_cast<RealT>(180.0 / std::numbers::pi);
   }
-
 
 }// namespace Ravl2

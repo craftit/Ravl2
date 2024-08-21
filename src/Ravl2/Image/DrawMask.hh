@@ -17,33 +17,33 @@ namespace Ravl2
   //! Draw a mask into an image.
   //! Where the mask is non-zero, the image is set to the 'value'.
 
-  template<typename ArrayTargetT,
-      typename ArrayMaskT,
-      typename PixelTestT,
-      typename ValueT,
-      typename DataT = typename ArrayTargetT::value_type,
-      unsigned N = ArrayTargetT::dimensions>
-  requires WindowedArray<ArrayTargetT, DataT, N> && std::is_convertible_v<ValueT, DataT>
-  void DrawMask(ArrayTargetT &img, const ArrayMaskT &mask, const ValueT &value, Index<N> offset,PixelTestT test)
+  template <typename ArrayTargetT,
+            typename ArrayMaskT,
+            typename PixelTestT,
+            typename ValueT,
+            typename DataT = typename ArrayTargetT::value_type,
+            unsigned N = ArrayTargetT::dimensions>
+    requires WindowedArray<ArrayTargetT, DataT, N> && std::is_convertible_v<ValueT, DataT>
+  void DrawMask(ArrayTargetT &img, const ArrayMaskT &mask, const ValueT &value, Index<N> offset, PixelTestT test)
   {
-    IndexRange<2> drawRect = mask.range() + offset; // Get rectangle.
+    IndexRange<2> drawRect = mask.range() + offset;// Get rectangle.
     drawRect.clipBy(img.range());
-    if (drawRect.area() <= 0)
+    if(drawRect.area() <= 0)
       return;
     IndexRange<2> maskRect = drawRect - offset;
-    for (auto it = begin(clip(img,drawRect), clip(mask,maskRect)); it.valid(); ++it) {
-      if (test(it.template data<1>()))
+    for(auto it = begin(clip(img, drawRect), clip(mask, maskRect)); it.valid(); ++it) {
+      if(test(it.template data<1>()))
         it.template data<0>() = value;
     }
   }
 
-  template<typename ArrayTargetT,
-      typename ArrayMaskT,
-      typename ValueT,
-      typename DataT = typename ArrayTargetT::value_type,
-      typename MaskT = typename ArrayMaskT::value_type,
-      unsigned N = ArrayTargetT::dimensions>
-  requires WindowedArray<ArrayTargetT, DataT, N> && std::is_convertible_v<ValueT, DataT>
+  template <typename ArrayTargetT,
+            typename ArrayMaskT,
+            typename ValueT,
+            typename DataT = typename ArrayTargetT::value_type,
+            typename MaskT = typename ArrayMaskT::value_type,
+            unsigned N = ArrayTargetT::dimensions>
+    requires WindowedArray<ArrayTargetT, DataT, N> && std::is_convertible_v<ValueT, DataT>
   void DrawMask(ArrayTargetT &img, const ArrayMaskT &mask, const ValueT &value, Index<N> offset = {})
   {
     DrawMask(img, mask, value, offset, [](const MaskT &maskValue) -> bool { return maskValue > 0; });

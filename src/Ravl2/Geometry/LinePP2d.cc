@@ -7,13 +7,13 @@
 
 #include "Ravl2/Geometry/LinePP2d.hh"
 
-
 namespace Ravl2
 {
   namespace
   {
 
-    enum class ContainCodeT : unsigned {
+    enum class ContainCodeT : unsigned
+    {
       TOP = 0x1,
       BOTTOM = 0x2,
       RIGHT = 0x4,
@@ -21,39 +21,39 @@ namespace Ravl2
     };
 
     //! Or operator for ContainCodeT
-    inline unsigned operator | (unsigned a, ContainCodeT b)
+    inline unsigned operator|(unsigned a, ContainCodeT b)
     {
       return a | static_cast<unsigned>(b);
     }
 
     //! Or operator for ContainCodeT
-    inline unsigned operator & (unsigned a, ContainCodeT b)
+    inline unsigned operator&(unsigned a, ContainCodeT b)
     {
       return (a) & static_cast<unsigned>(b);
     }
 
     //! In place or operator for ContainCodeT
-    inline unsigned &operator |= (unsigned &a, ContainCodeT b)
+    inline unsigned &operator|=(unsigned &a, ContainCodeT b)
     {
       a = a | b;
       return a;
     }
 
-    template<typename RealT>
+    template <typename RealT>
     [[nodiscard]] inline unsigned containsCode(const Point<RealT, 2> &pnt, const Range<RealT, 2> &rng)
     {
       unsigned ret = 0;
-      if (pnt[0] > rng.range(0).max())
+      if(pnt[0] > rng.range(0).max())
         ret |= ContainCodeT::BOTTOM;
-      else if (pnt[0] < rng.range(0).min())
-        ret |=ContainCodeT::TOP;
-      if (pnt[1] > rng.range(1).max())
+      else if(pnt[0] < rng.range(0).min())
+        ret |= ContainCodeT::TOP;
+      if(pnt[1] > rng.range(1).max())
         ret |= ContainCodeT::RIGHT;
-      else if (pnt[1] < rng.range(1).min())
+      else if(pnt[1] < rng.range(1).min())
         ret |= ContainCodeT::LEFT;
       return ret;
     }
-  }
+  }// namespace
 
   //! @brief Clip line by given rectangle.
   //! @return false if no part of the line is in the rectangle.
@@ -100,7 +100,6 @@ namespace Ravl2
     return accept;
   }
 
-
   template <typename RealT>
   bool LinePP2dC<RealT>::IsPointIn(const Point<RealT, 2> &pnt, RealT tolerance) const
   {
@@ -146,14 +145,13 @@ namespace Ravl2
   }
 
   template <typename RealT>
-  [[nodiscard]] std::optional<Point<RealT, 2> > LinePP2dC<RealT>::innerIntersection(const LinePP2dC &l) const
+  [[nodiscard]] std::optional<Point<RealT, 2>> LinePP2dC<RealT>::innerIntersection(const LinePP2dC &l) const
   {
     RealT p = ParIntersection(l);
     if(p < RealT(0) || p > RealT(1))
       return std::nullopt;
     return this->P1() + this->direction() * p;
   }
-
 
   template <typename RealT>
   bool LinePP2dC<RealT>::IntersectRow(RealT row, RealT &col) const

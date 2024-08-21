@@ -7,7 +7,6 @@
 //! author="Radek Marik"
 //! date="26.04.1994"
 
-
 #include <algorithm>
 #include <spdlog/spdlog.h>
 #include "Ravl2/Image/Segmentation/Boundary.hh"
@@ -113,14 +112,12 @@ namespace Ravl2
     }
     return bb;
   }
-  
 
-  std::unordered_map<BoundaryVertex, std::array<BoundaryVertex, 2>>  Boundary::CreateHashtable() const
+  std::unordered_map<BoundaryVertex, std::array<BoundaryVertex, 2>> Boundary::CreateHashtable() const
   {
     std::unordered_map<BoundaryVertex, std::array<BoundaryVertex, 2>> hashtable;
     hashtable.reserve(mEdges.size());
-    for(const auto &edge : mEdges)
-    {
+    for(const auto &edge : mEdges) {
       BoundaryVertex const bvertex1(edge.vertexBegin());
       BoundaryVertex const bvertex2(edge.vertexEnd());
       BoundaryVertex const invalid_vertex(-1, -1);
@@ -129,37 +126,35 @@ namespace Ravl2
       if(at == hashtable.end()) {
         hashtable.emplace(bvertex1, std::array<BoundaryVertex, 2> {bvertex2, invalid_vertex});
       } else {
-        hashtable.emplace(bvertex1, std::array<BoundaryVertex,2>{at->second[0], bvertex2});
+        hashtable.emplace(bvertex1, std::array<BoundaryVertex, 2> {at->second[0], bvertex2});
       }
 
       at = hashtable.find(bvertex2);
       if(at == hashtable.end()) {
         hashtable.emplace(bvertex2, std::array<BoundaryVertex, 2> {bvertex1, invalid_vertex});
       } else {
-        hashtable.emplace(bvertex2, std::array<BoundaryVertex,2>{at->second[0], bvertex1});
+        hashtable.emplace(bvertex2, std::array<BoundaryVertex, 2> {at->second[0], bvertex1});
       }
     }
 
     return hashtable;
   }
 
-  std::vector<BoundaryVertex> Boundary::findEndpoints(const std::unordered_map<BoundaryVertex, std::array<BoundaryVertex,2> > & hashtable)
+  std::vector<BoundaryVertex> Boundary::findEndpoints(const std::unordered_map<BoundaryVertex, std::array<BoundaryVertex, 2>> &hashtable)
   {
     BoundaryVertex const invalid_vertex(-1, -1);
     std::vector<BoundaryVertex> endpoints;
     for(auto it : hashtable) {
       BoundaryVertex const neighbour1 = it.second[0];
       BoundaryVertex const neighbour2 = it.second[1];
-      if (neighbour1==invalid_vertex || neighbour2==invalid_vertex)
+      if(neighbour1 == invalid_vertex || neighbour2 == invalid_vertex)
         endpoints.push_back(it.first);
     }
     return endpoints;
   }
 
-   
-  Boundary Boundary::OrderContinuous(const std::unordered_map<BoundaryVertex,std::array<BoundaryVertex,2> > & hashtable,
-                                     const CrackC & firstEdge
-  )
+  Boundary Boundary::OrderContinuous(const std::unordered_map<BoundaryVertex, std::array<BoundaryVertex, 2>> &hashtable,
+                                     const CrackC &firstEdge)
   {
     std::vector<CrackC> bnd;
     BoundaryVertex present_vertex = firstEdge.vertexBegin();
@@ -176,14 +171,17 @@ namespace Ravl2
     BoundaryVertex neighbour1 = it->second[0];
     BoundaryVertex neighbour2 = it->second[1];
 
-    if (firstEdge.vertexEnd()==neighbour1) next_vertex = neighbour1;
-    else if (firstEdge.vertexEnd()==neighbour2) next_vertex = neighbour2;
-    else if (neighbour1==invalid_vertex) next_vertex = neighbour2;
-    else if (neighbour2==invalid_vertex) next_vertex = neighbour1;
+    if(firstEdge.vertexEnd() == neighbour1) next_vertex = neighbour1;
+    else if(firstEdge.vertexEnd() == neighbour2)
+      next_vertex = neighbour2;
+    else if(neighbour1 == invalid_vertex)
+      next_vertex = neighbour2;
+    else if(neighbour2 == invalid_vertex)
+      next_vertex = neighbour1;
 
     bnd.emplace_back(present_vertex, next_vertex);
 
-    for(;;){
+    for(;;) {
       present_vertex = bnd.back().vertexEnd();
       previous_vertex = bnd.back().vertexBegin();
       it = hashtable.find(present_vertex);
@@ -195,25 +193,24 @@ namespace Ravl2
       neighbour1 = it->second[0];
       neighbour2 = it->second[1];
 
-      if (previous_vertex == neighbour1) {
+      if(previous_vertex == neighbour1) {
         next_vertex = neighbour2;
       } else {
         next_vertex = neighbour1;
       }
 
-      if (next_vertex!=invalid_vertex) {
+      if(next_vertex != invalid_vertex) {
         bnd.emplace_back(present_vertex, next_vertex);
       }
 
-      if (next_vertex==bnd.front().vertexBegin() || next_vertex==invalid_vertex) {
+      if(next_vertex == bnd.front().vertexBegin() || next_vertex == invalid_vertex) {
         break;
       }
       // boundary has been traced
     }
 
-    return  Boundary(std::move(bnd));
+    return Boundary(std::move(bnd));
   }
-
 
   //: Generate a set of ordered boundaries.
 
@@ -222,7 +219,7 @@ namespace Ravl2
     ONDEBUG(SPDLOG_INFO("std::vector<Boundary> Boundary::OrderEdges() const"));
     std::vector<Boundary> ret;
 
-    std::unordered_map<BoundaryVertex,std::vector<CrackC> > leavers;
+    std::unordered_map<BoundaryVertex, std::vector<CrackC>> leavers;
     leavers.reserve(mEdges.size());
     // Make table of all possible paths.
     for(auto it : mEdges) {
@@ -233,23 +230,22 @@ namespace Ravl2
     ONDEBUG(SPDLOG_INFO("leavers.size()={}", leavers.size()));
 
     // Make table of preferred paths.
-    CrackC invalid(BoundaryVertex(0,0),CrackCodeT::CR_NODIR);
+    CrackC invalid(BoundaryVertex(0, 0), CrackCodeT::CR_NODIR);
 
-    std::unordered_map<CrackC,CrackC> edges;
-    edges.reserve(mEdges.size() + (mEdges.size()>>2));
-    for(auto it: mEdges) {
+    std::unordered_map<CrackC, CrackC> edges;
+    edges.reserve(mEdges.size() + (mEdges.size() >> 2));
+    for(auto it : mEdges) {
       std::vector<CrackC> &lst = leavers[it.vertexEnd()];
       size_t lstSize = lst.size();
-      ONDEBUG(SPDLOG_INFO("End={} Size:{}", it.vertexEnd(),lstSize));
+      ONDEBUG(SPDLOG_INFO("End={} Size:{}", it.vertexEnd(), lstSize));
       switch(lstSize) {
-        case 0: // Nothing leaving...
+        case 0:// Nothing leaving...
           edges[it] = invalid;
           break;
         case 1:
           edges[it] = lst.front();
           break;
-        case 2:
-        {
+        case 2: {
           // Need to choose the edge to follow
           RelativeCrackCodeT rc1 = it.code().relative(lst.front().code());
           RelativeCrackCodeT rc2 = it.code().relative(lst.back().code());
@@ -260,19 +256,19 @@ namespace Ravl2
           }
         } break;
         default:
-          RavlAssertMsg(0,"Boundary::orderEdges(), Unexpected edge topology. ");
+          RavlAssertMsg(0, "Boundary::orderEdges(), Unexpected edge topology. ");
           break;
       }
     }
-    leavers.clear(); // Done with these.
+    leavers.clear();// Done with these.
 
     // Separate boundaries or boundary segments.
     ONDEBUG(SPDLOG_INFO("edges.size()={}", edges.size()));
 
-    std::unordered_map<CrackC,Boundary> startMap;
+    std::unordered_map<CrackC, Boundary> startMap;
     startMap.reserve(edges.size());
     while(!edges.empty()) {
-      auto it = edges.begin(); // Use iterator to pick an edge.
+      auto it = edges.begin();// Use iterator to pick an edge.
       std::vector<CrackC> bnds;
       CrackC at = it->first;
       CrackC first = at;
@@ -285,7 +281,7 @@ namespace Ravl2
         at = atIsAt->second;
         edges.erase(atIsAt);
       }
-      if(at == first) { // If its a loop we're done.
+      if(at == first) {// If its a loop we're done.
         ONDEBUG(SPDLOG_INFO("Found closed boundary with {} edges ", bnds.size()));
         ret.push_back(Boundary(std::move(bnds)));
       } else {
@@ -298,7 +294,7 @@ namespace Ravl2
           ONDEBUG(SPDLOG_INFO("Joining boundary. "));
           //nbnds.DelFirst();
           const auto &edgeList = atIsAt->second.edges();
-          bnds.insert(bnds.end(),edgeList.begin(),edgeList.end());
+          bnds.insert(bnds.end(), edgeList.begin(), edgeList.end());
           first = bnds.front();
           startMap.erase(atIsAt);
         }

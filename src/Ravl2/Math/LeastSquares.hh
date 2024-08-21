@@ -46,36 +46,36 @@ namespace Ravl2
   //!param: raw - Points to be normalised
   //!param: func - Function/lambda to accept normalised point.
   //! @return The mean subtracted from the points, and scale applied.
-  template<typename RealT, unsigned N, typename Container1T, typename FuncT>
-  requires std::is_floating_point_v<RealT>
+  template <typename RealT, unsigned N, typename Container1T, typename FuncT>
+    requires std::is_floating_point_v<RealT>
   std::tuple<Point<RealT, N>, RealT> normalise(const Container1T &raw, FuncT func)
   {
     Point<RealT, N> mean;
-    for (unsigned i = 0; i < N; i++)
+    for(unsigned i = 0; i < N; i++)
       mean[i] = 0;
-    for (auto it: raw) {
+    for(auto it : raw) {
       mean += it;
     }
     size_t pnts = raw.size();
-    if (pnts == 0) {
+    if(pnts == 0) {
       return {toPoint<RealT>(0, 0), 1};
     }
     auto realSize = static_cast<RealT>(pnts);
     mean /= realSize;
     RealT d = 0;
-    for (auto it: raw) {
+    for(auto it : raw) {
       if constexpr(N == 2) {
         d += std::hypot(it[0] - mean[0], it[1] - mean[1]);
       } else {
         RealT sum = 0;
-        for (unsigned i = 0; i < N; i++) {
+        for(unsigned i = 0; i < N; i++) {
           sum += RealT(std::pow(it[i] - mean[i], 2));
         }
         d += std::sqrt(sum);
       }
     }
     d = isNearZero(d) ? RealT(1) : (realSize / d);
-    for (auto it: raw) {
+    for(auto it : raw) {
       Point<RealT, N> pnt = (it - mean) * d;
       func(pnt);
     }
@@ -86,7 +86,7 @@ namespace Ravl2
   //!param: X - Equation matrix.
   //!param: rv - Result vector.
   //!return: true if solution found.
-  template<typename RealT>
+  template <typename RealT>
   bool LeastSquaresEq0Mag1(const Tensor<RealT, 2> &X, VectorT<RealT> &rv)
   {
     auto [U, S, V] = xt::linalg::svd(X);
@@ -95,7 +95,6 @@ namespace Ravl2
     rv = xt::view(V, -1, xt::all());
     return true;
   }
-
 
 #if 0
     //! @brief Find a least squares solution to A*x = b
@@ -132,7 +131,6 @@ namespace Ravl2
     //!param: rank - Limit to rank of solution.
     // From Appendix 5 of the Second edition of Multiple View Geometry by
     // R. Hartly and A.Zisserman.
-
 
 #endif
 

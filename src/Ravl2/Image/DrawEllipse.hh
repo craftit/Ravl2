@@ -21,13 +21,13 @@ namespace Ravl2
   //! This breaks the ellipse into 30 segments and draws as polygon. It could do
   //! with a better way of choosing this number.
 
-  template <class DataT,typename RealT>
+  template <class DataT, typename RealT>
   void DrawEllipse(Array<DataT, 2> &image, const DataT &value, const Ellipse2dC<RealT> &ellipse)
   {
-    auto [major,minor] = ellipse.size();
+    auto [major, minor] = ellipse.size();
     if((major + minor) < 3) {// Very small ?
       auto at = toIndex(ellipse.Centre());
-       if(image.range().contains(at)) {
+      if(image.range().contains(at)) {
         image[at] = value;
       }
       return;
@@ -46,7 +46,7 @@ namespace Ravl2
   //! This breaks the ellipse into 30 segments and draws as polygon. It could do
   //! with a better way of choosing this number.
 
-  template <class DataT,typename RealT>
+  template <class DataT, typename RealT>
   void DrawFilledEllipse(Array<DataT, 2> &image, const DataT &value, const Ellipse2dC<RealT> &ellipse)
   {
     RealT maj, min;
@@ -65,4 +65,3 @@ namespace Ravl2
   }
 
 }// namespace Ravl2
-

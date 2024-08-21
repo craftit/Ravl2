@@ -212,4 +212,3 @@ namespace Ravl2
   //: Read from text stream.
 
 }// namespace Ravl2
-

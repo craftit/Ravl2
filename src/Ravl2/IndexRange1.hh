@@ -370,7 +370,6 @@ namespace Ravl2
     int m_max {-1};
   };
 
-
   //! Iterator through a 1 dimensional range.
 
   template <>
@@ -438,7 +437,6 @@ namespace Ravl2
     int m_at {};
   };
 
-
   //! Start of the range.
   inline constexpr IndexRangeIterator<1> IndexRange<1>::begin() const
   {
@@ -450,7 +448,6 @@ namespace Ravl2
   {
     return IndexRangeIterator<1> {m_max + 1};
   }
-
 
   //! Serialization support
   template <class Archive>
@@ -464,10 +461,9 @@ namespace Ravl2
     archive(range.min(), range.max());
   }
 
-
   extern template class IndexRange<1>;
   extern template class IndexRangeIterator<1>;
-}
+}// namespace Ravl2
 
 namespace fmt
 {

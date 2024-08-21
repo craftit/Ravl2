@@ -135,9 +135,7 @@ namespace Ravl2
   //! 'residual' is from the least squares fit and can be used to assess
   //! the quality of the fit.  Returns false if fit failed.
   template <typename RealT>
-  std::optional<RealT> fit(Circle2dC<RealT> &circle,const std::vector<Point<RealT, 2>> &points);
-
-
+  std::optional<RealT> fit(Circle2dC<RealT> &circle, const std::vector<Point<RealT, 2>> &points);
 
   // Let everyone know there's an implementation already generated for common cases
   extern template class Circle2dC<float>;

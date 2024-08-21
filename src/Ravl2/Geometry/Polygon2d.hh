@@ -69,7 +69,7 @@ namespace Ravl2
     //! Note that this only works if the other polygon is convex.
     //! Ref.: -  Foley. van Dam. Feiner. Hughes: Computer Graphics Principles and Practice
     //!         Addison Wesley Publishing Company, 1996, pp. 123-129
-    [[nodiscard]] Polygon2dC<RealT> ClipByConvex(const Polygon2dC<RealT> &oth,BoundaryOrientationT othOrientation = BoundaryOrientationT::INSIDE_LEFT) const;
+    [[nodiscard]] Polygon2dC<RealT> ClipByConvex(const Polygon2dC<RealT> &oth, BoundaryOrientationT othOrientation = BoundaryOrientationT::INSIDE_LEFT) const;
 
     //! @brief Clips this polygon by the line
     //! @param: line - a line
@@ -132,14 +132,11 @@ namespace Ravl2
 
     //! Add a point checking it isn't a duplicate of the last one.
     void addBack(const Point<RealT, 2> &pnt);
-
   };
-
 
   //! Let the compiler know that we will use these classes with the following types
   extern template class Polygon2dC<float>;
   extern template class Polygon2dC<double>;
-
 
   //! @brief Compute the moments of a polygon
   //! see http://www9.in.tum.de/forschung/fgbv/tech-reports/1996/FGBV-96-04-Steger.pdf for details
@@ -160,17 +157,19 @@ namespace Ravl2
   //! @param: orientation - the orientation of the boundary
   //! If BoundaryOrientationT::INSIDE_LEFT makes a counter clockwise polygon, with a positive area.
   template <typename RealT>
-  [[nodiscard]] inline Polygon2dC<RealT> toPolygon(const Range<RealT,2> &range, BoundaryOrientationT orientation = BoundaryOrientationT::INSIDE_LEFT)
-  { return Polygon2dC<RealT>(range,orientation); }
+  [[nodiscard]] inline Polygon2dC<RealT> toPolygon(const Range<RealT, 2> &range, BoundaryOrientationT orientation = BoundaryOrientationT::INSIDE_LEFT)
+  {
+    return Polygon2dC<RealT>(range, orientation);
+  }
 
   //! Convert an IndexRange to a polygon
   //! @param: range - the range defining the rectangle for the polygon
   //! @param: orientation - the orientation of the boundary
   //! If BoundaryOrientationT::INSIDE_LEFT makes a counter clockwise polygon, with a positive area.
-  template<typename RealT>
+  template <typename RealT>
   [[nodiscard]] inline Polygon2dC<RealT> toPolygon(const IndexRange<2> &range, BoundaryOrientationT orientation = BoundaryOrientationT::INSIDE_LEFT)
   {
-    return Polygon2dC<RealT>(toRange<RealT>(range),orientation);
+    return Polygon2dC<RealT>(toRange<RealT>(range), orientation);
   }
 
 }// namespace Ravl2
@@ -180,5 +179,3 @@ template <>
 struct fmt::formatter<Ravl2::Polygon2dC<float>> : fmt::ostream_formatter {
 };
 #endif
-
-

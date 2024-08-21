@@ -25,7 +25,7 @@ namespace Ravl2
   {
     // Draw one-colour polygon
     for(Polygon2dIterC<CoordT> it(poly); it.valid(); ++it) {
-      fill(clip(dat[it.row()],it.rowIndexRange()), value);
+      fill(clip(dat[it.row()], it.rowIndexRange()), value);
     }
   }
 

@@ -212,20 +212,17 @@ namespace Ravl2
     }
   }
 
-
   // Let everyone know there's an implementation already generated for common cases
   extern template class Index<1>;
   extern template class Index<2>;
   extern template class Index<3>;
 }// namespace Ravl2
 
-
 // Custom specialization of std::hash injected in namespace std.
-template<unsigned N>
-requires (N > 0)
-struct std::hash<Ravl2::Index<N> >
-{
-  std::size_t operator()(const Ravl2::Index<N>& s) const noexcept
+template <unsigned N>
+  requires(N > 0)
+struct std::hash<Ravl2::Index<N>> {
+  std::size_t operator()(const Ravl2::Index<N> &s) const noexcept
   {
     std::size_t ret = std::size_t(s[0]);
     for(unsigned i = 1; i < N; i++) {
@@ -241,4 +238,3 @@ namespace fmt
   struct formatter<Ravl2::Index<N>> : ostream_formatter {
   };
 }// namespace fmt
-

@@ -470,7 +470,6 @@ namespace Ravl2
     return strm;
   }
 
-
   //! Iterate through an N dimensional range.
 
   template <unsigned N>
@@ -519,7 +518,7 @@ namespace Ravl2
     //! Return true if we're still in the range.
     constexpr bool nextRow()
     {
-      m_at[N-1] = m_range->min()[N-1];
+      m_at[N - 1] = m_range->min()[N - 1];
       for(unsigned i = N - 2; i > 0; --i) {
         ++m_at[i];
         if(m_at[i] <= m_range->max()[i])
@@ -534,8 +533,8 @@ namespace Ravl2
     [[nodiscard]]
     constexpr inline bool next()
     {
-      ++m_at[N-1];
-      if(m_at[N-1] <= m_range->max()[N-1])
+      ++m_at[N - 1];
+      if(m_at[N - 1] <= m_range->max()[N - 1])
         return true;
       nextRow();
       return false;
@@ -618,10 +617,9 @@ namespace Ravl2
     }
   }
 
-
   extern template class IndexRange<2>;
   extern template class IndexRange<3>;
   extern template class IndexRangeIterator<2>;
   extern template class IndexRangeIterator<3>;
 
-}
+}// namespace Ravl2

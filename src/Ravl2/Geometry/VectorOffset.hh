@@ -12,7 +12,7 @@ namespace Ravl2
 
   //! @brief Vector and offset. This defines a line in 2D space, and a plane in 3D space.
 
-  template<typename RealT,size_t N>
+  template <typename RealT, size_t N>
   class VectorOffset
   {
   public:
@@ -20,26 +20,32 @@ namespace Ravl2
     VectorOffset() = default;
 
     //! Constructor from a vector and an offset.
-    VectorOffset(const Vector<RealT,N> & norm, RealT p)
-     : mNormal(norm), mD(p)
+    VectorOffset(const Vector<RealT, N> &norm, RealT p)
+        : mNormal(norm), mD(p)
     {}
 
     //! Constructor from a vector and a point on the plane/line.
-    VectorOffset(const Vector<RealT,N> & norm, const Point<RealT,N> & p)
-      : mNormal(norm), mD( xt::sum(norm * p)() )
+    VectorOffset(const Vector<RealT, N> &norm, const Point<RealT, N> &p)
+        : mNormal(norm), mD(xt::sum(norm * p)())
     {}
 
     //! Returns the normal of the plane.
-    inline Vector<RealT,3> normal() const
-    { return(normal); }
+    inline Vector<RealT, 3> normal() const
+    {
+      return (normal);
+    }
 
     //! Returns the offset of the plane.
     inline RealT offset() const
-    { return(mD); }
+    {
+      return (mD);
+    }
 
     //! Returns the offset of the plane.
     inline RealT d() const
-    { return(mD); }
+    {
+      return (mD);
+    }
 
     //! Returns the value of the function dot(p,normal) + d often
     //! used in geometrical computations.
@@ -79,9 +85,8 @@ namespace Ravl2
     }
 
   protected:
-    Vector<RealT,N> mNormal;
+    Vector<RealT, N> mNormal;
     RealT mD = 0;
   };
 
-
-}
+}// namespace Ravl2

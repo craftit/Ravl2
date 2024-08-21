@@ -126,7 +126,8 @@ namespace Ravl2
     }
 
     //! Returns true if the lines are parallel.
-    [[nodiscard]] inline constexpr bool AreParallel(const LineABC2dC &line) const {
+    [[nodiscard]] inline constexpr bool AreParallel(const LineABC2dC &line) const
+    {
       RealT crossSize = cross(Normal(), line.Normal());
       return isNearZero(crossSize);
     }
@@ -136,11 +137,11 @@ namespace Ravl2
     //! The intersection is assigned to 'here'.
     inline constexpr bool Intersection(const LineABC2dC &line, Point<RealT, 2> &here) const
     {
-      RealT crossSize = cross(Normal(),line.Normal());
+      RealT crossSize = cross(Normal(), line.Normal());
       if(isNearZero(crossSize))
         return false;
       here = toPoint<RealT>((line.C() * B() - line.B() * C()) / crossSize,
-                             (line.A() * C() - line.C() * A()) / crossSize);
+                            (line.A() * C() - line.C() * A()) / crossSize);
       return true;
     }
 
@@ -153,7 +154,7 @@ namespace Ravl2
       if(isNearZero(crossSize))
         return toPoint<RealT>(0.0, 0.0);
       return toPoint<RealT>((line.C() * B() - line.B() * C()) / crossSize,
-                             (line.A() * C() - line.C() * A()) / crossSize);
+                            (line.A() * C() - line.C() * A()) / crossSize);
     }
 
     //! Returns the squared Euclidean distance of the 'point' from the line.
@@ -162,7 +163,6 @@ namespace Ravl2
       RealT t = Residuum(point);
       return sqr(t) / sumOfSqr(normal);
     }
-
 
     //! Returns the signed distance of the 'point' from the line.
     //! The return value is greater than 0 if the point is on the left
@@ -204,19 +204,20 @@ namespace Ravl2
   };
 
   template <typename RealT>
-  std::ostream &operator<<(std::ostream &outS, const LineABC2dC<RealT> &line) {
+  std::ostream &operator<<(std::ostream &outS, const LineABC2dC<RealT> &line)
+  {
     outS << line.A() << ' ' << line.B() << ' ' << line.C();
-    return(outS);
+    return (outS);
   }
 
   template <typename RealT>
-  std::istream &operator>>(std::istream &inS, LineABC2dC<RealT> &line)  {
+  std::istream &operator>>(std::istream &inS, LineABC2dC<RealT> &line)
+  {
     RealT a, b, c;
     inS >> a >> b >> c;
     line = LineABC2dC<RealT>(a, b, c);
     return (inS);
   }
-
 
   // Let everyone know there's an implementation already generated for common cases
   extern template class LineABC2dC<float>;
@@ -225,6 +226,6 @@ namespace Ravl2
 
 #if FMT_VERSION >= 90000
 template <typename RealT>
-struct fmt::formatter<Ravl2::LineABC2dC<RealT> > : fmt::ostream_formatter {
+struct fmt::formatter<Ravl2::LineABC2dC<RealT>> : fmt::ostream_formatter {
 };
 #endif

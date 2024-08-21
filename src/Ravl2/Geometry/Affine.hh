@@ -43,7 +43,6 @@ namespace Ravl2
     //! Add a translation in direction T.
     inline constexpr void translate(const Vector<DataT, N> &T);
 
-
     //! Generate an inverse transformation.
     [[nodiscard]] constexpr Affine<DataT, N> inverse() const;
 
@@ -87,8 +86,8 @@ namespace Ravl2
     }
 
   protected:
-    Matrix<DataT, N, N> mSR = xt::eye<DataT>(N);  //!< Scale/rotate.
-    Vector<DataT, N> mT = xt::zeros<DataT>({N});  //!< Translate.
+    Matrix<DataT, N, N> mSR = xt::eye<DataT>(N);//!< Scale/rotate.
+    Vector<DataT, N> mT = xt::zeros<DataT>({N});//!< Translate.
   };
 
   /////////////////////////////////////////////////
@@ -177,7 +176,6 @@ namespace Ravl2
 
 #if FMT_VERSION >= 90000
 template <typename RealT, unsigned N>
-struct fmt::formatter<Ravl2::Affine<RealT,N> > : fmt::ostream_formatter {
+struct fmt::formatter<Ravl2::Affine<RealT, N>> : fmt::ostream_formatter {
 };
 #endif
-

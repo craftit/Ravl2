@@ -162,16 +162,20 @@ namespace Ravl2
     //! @brief Construct an input stream.
     //! @param input - The input container.
     explicit StreamInput(std::unique_ptr<StreamInputContainer<ObjectT>> input)
-            : mInput(std::move(input))
+        : mInput(std::move(input))
     {}
 
     //! @brief Begin iterator.
     [[nodiscard]] auto begin() const
-    {  return InputStreamIterator<ObjectT>(mInput.get(),mInput != nullptr ? mInput->beginOffset() : 0); }
+    {
+      return InputStreamIterator<ObjectT>(mInput.get(), mInput != nullptr ? mInput->beginOffset() : 0);
+    }
 
     //! @brief End iterator.
     [[nodiscard]] auto end() const
-    {  return InputStreamIterator<ObjectT>(mInput.get(),mInput != nullptr ? mInput->endOffset() : 0); }
+    {
+      return InputStreamIterator<ObjectT>(mInput.get(), mInput != nullptr ? mInput->endOffset() : 0);
+    }
 
     //! Test if the stream is valid.
     [[nodiscard]] bool valid() const
@@ -232,6 +236,7 @@ namespace Ravl2
     {
       return *mOutput;
     }
+
   private:
     std::unique_ptr<StreamOutputContainer<ObjectT>> mOutput;
   };
@@ -245,7 +250,7 @@ namespace Ravl2
   [[nodiscard]] StreamInput<ObjectT> inputStream(const std::string &url, std::string_view formatHint)
   {
     auto inStream = openInput(url, typeid(ObjectT), formatHint);
-    return StreamInput<ObjectT>(static_cast<StreamInputContainer<ObjectT> >(std::move(inStream)));
+    return StreamInput<ObjectT>(static_cast<StreamInputContainer<ObjectT>>(std::move(inStream)));
   }
 
   //! @brief Open an output stream for writing.
@@ -256,9 +261,7 @@ namespace Ravl2
   [[nodiscard]] StreamOutput<ObjectT> outputStream(const std::string &url, std::string_view formatHint)
   {
     auto outStream = openOutput(url, typeid(ObjectT), formatHint);
-    return StreamOutput<ObjectT>(static_cast<StreamOutputContainer<ObjectT> >(std::move(outStream)));
+    return StreamOutput<ObjectT>(static_cast<StreamOutputContainer<ObjectT>>(std::move(outStream)));
   }
 
-
-
-}
+}// namespace Ravl2

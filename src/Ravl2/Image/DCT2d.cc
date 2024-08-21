@@ -73,7 +73,6 @@ namespace Ravl2
       return 0.0f;
   }
 
-
   void
   forwardDCT(Array<float, 2> &dest, const Array<float, 2> &src)
   {
@@ -160,7 +159,7 @@ namespace Ravl2
       N = 0;
       return;
     }
-    m = int_ceil( std::log(size) / std::log(2.0));
+    m = int_ceil(std::log(size) / std::log(2.0));
     N = 1 << m;
     cosines.resize(size_t(N));
     makecosinetable();
@@ -400,7 +399,7 @@ namespace Ravl2
   {
     int rows, n;
     Array<RealT, 2> s(fi.range());//double s[512][512];
-    copy(s,fi);
+    copy(s, fi);
     for(rows = 0; rows < N; rows++) {
       for(n = 0; n < N / 2; n++) {
         fi[n][rows] = s[2 * n][rows];
@@ -413,7 +412,7 @@ namespace Ravl2
   {
     int cols, n;
     Array<RealT, 2> s(fi.range());//double s[512][512];
-    copy(s,fi);
+    copy(s, fi);
     for(cols = 0; cols < N; cols++) {
       auto firow = fi[cols];
       auto srow = s[cols];
@@ -435,7 +434,6 @@ namespace Ravl2
 #ifndef __clang__
 #pragma GCC diagnostic ignored "-Wuseless-cast"
 #endif
-
 
   VecRadDCT::VecRadDCT(unsigned int size, unsigned int pts)
   {
@@ -710,7 +708,7 @@ namespace Ravl2
 
   void VecRadDCT::firo3(Array<RealT, 2> &fi) const
   {
-    int  eo, group, nog, p, q, F;
+    int eo, group, nog, p, q, F;
 
     bitreversalrows();
     for(size_t rows = 0; rows < N; rows++) {
@@ -753,7 +751,7 @@ namespace Ravl2
           for(int j = 1; j < group; j++) {
             q--;
             auto a = ((r[size_t(p)][rows] << 1) ^ MASK[F]); /* CC*/
-            auto b = q;                             /*CC*/
+            auto b = q;                                     /*CC*/
             std::swap(fi[int(a)][int(rows)], fi[b][int(rows)]);
             F = 1 - F;
             p -= F;
@@ -822,7 +820,7 @@ namespace Ravl2
   void VecRadDCT::bitreversalrows() const
   {
     for(size_t rows = 0; rows < N; rows++) {
-      size_t  l = 1;
+      size_t l = 1;
       r[0][rows] = 0;
       for(size_t i = 1; i < size_t(m); i++) {
         for(size_t j = 0; j < l; j++) {

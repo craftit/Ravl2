@@ -16,7 +16,7 @@ namespace Ravl2
 
 #define NO_PRIMES 310
 
-  static std::array<size_t,NO_PRIMES> kpf = {
+  static std::array<size_t, NO_PRIMES> kpf = {
     2, 3, 5, 7, 11, 13, 17, 19, 23, 29,                         /*   0 */
     31, 37, 41, 43, 47, 53, 59, 61, 67, 71,                     /*  10 */
     73, 79, 83, 89, 97, 101, 103, 107, 109, 113,                /*  20 */
@@ -83,32 +83,30 @@ namespace Ravl2
   size_t pfac(size_t nn, int *kk, int fe)
   {
     int n = int(nn);
-    int num,j,k,dc=1;
-    if(fe=='e') {
-      n-=(n%2);
-      dc=2;
+    int num, j, k, dc = 1;
+    if(fe == 'e') {
+      n -= (n % 2);
+      dc = 2;
     }
-    for(;;n-=dc) {
+    for(;; n -= dc) {
       num = n;
       j = k = 0;
-      while(j<31){
+      while(j < 31) {
         if(num % int(kpf[size_t(k)]) != 0) {
-          if(k==(NO_PRIMES-1))
+          if(k == (NO_PRIMES - 1))
             break;
           ++k;
         } else {
-          kk[++j]=int(kpf[size_t(k)]);
-          num=num/int(kpf[size_t(k)]);
-          if(num==1) {
-            kk[0]=j;
+          kk[++j] = int(kpf[size_t(k)]);
+          num = num / int(kpf[size_t(k)]);
+          if(num == 1) {
+            kk[0] = j;
             return size_t(n);
           }
         }
       }
     }
     return 0;
-
   }
-
 
 }// namespace Ravl2

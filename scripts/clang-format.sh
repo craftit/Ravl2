@@ -16,11 +16,11 @@ for arg in "$@"; do
   if [ -f $arg ]; then
     # Format the file
     echo "Formatting $arg"
-    #clang-format -i $arg
+    clang-format -i $arg
   else
     # Format all source files in the directory
-    echo "Formatting director $arg"
-    # find $SRC_DIR -type f \( -name "*.hh" -o -name "*.cc" \) -print0 | xargs -0 clang-format -i
+    echo "Formatting directory $arg"
+    find $arg -type f \( -name "*.hh" -o -name "*.cc" \) -print0 | xargs -0 clang-format -i
   fi
 done
 

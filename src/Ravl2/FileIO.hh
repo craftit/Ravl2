@@ -22,7 +22,6 @@ namespace Ravl2
     //! @brief Get the type of the object.
     //! @return The type of the object.
     [[nodiscard]] virtual const std::type_info &type() const = 0;
-
   };
 
   template <typename ObjectT>
@@ -30,7 +29,6 @@ namespace Ravl2
 
   template <typename ObjectT>
   class OutputStreamIterator;
-
 
   //! @brief Container that represents a file or data stream that could have one or more object to be read.
   //! It allows a stream of objects to be treated as a normal c++ container, with begin and end iterators.
@@ -45,7 +43,9 @@ namespace Ravl2
     //! @brief Get the type of the object.
     //! @return The type of the object.
     [[nodiscard]] const std::type_info &type() const override
-    { return typeid(ObjectT); }
+    {
+      return typeid(ObjectT);
+    }
 
     //! Read the object at the current position in the stream.e
     //! @param obj - The object to read into.
@@ -60,21 +60,32 @@ namespace Ravl2
 
     //! Get the start offset of the stream.
     [[nodiscard]] std::streampos beginOffset() const
-    { return mStart; }
+    {
+      return mStart;
+    }
 
     //! Get the end offset of the stream.
     [[nodiscard]] std::streampos endOffset() const
-    { return mEnd; }
+    {
+      return mEnd;
+    }
 
     //! Test if the stream is empty.
     [[nodiscard]] bool empty() const
-    { return mStart == mEnd; }
+    {
+      return mStart == mEnd;
+    }
 
     [[nodiscard]] auto begin() const
-    {  return InputStreamIterator<ObjectT>(*this,mStart); }
+    {
+      return InputStreamIterator<ObjectT>(*this, mStart);
+    }
 
     [[nodiscard]] auto end() const
-    {  return InputStreamIterator<ObjectT>(*this,mEnd); }
+    {
+      return InputStreamIterator<ObjectT>(*this, mEnd);
+    }
+
   protected:
     std::streampos mStart = 0;
     std::streampos mEnd = std::numeric_limits<std::streampos>::max();
@@ -89,13 +100,15 @@ namespace Ravl2
     //! @brief Get the type of the object.
     //! @return The type of the object.
     [[nodiscard]] const std::type_info &type() const override
-    { return typeid(ObjectT); }
+    {
+      return typeid(ObjectT);
+    }
 
     //! Write an object to the stream.
     //! @param obj - The object to write.
     //! @param pos - The position in the stream where the object was written.
     //! @return True if the object was written.
-    virtual bool write(const ObjectT &obj,std::streampos &pos) = 0;
+    virtual bool write(const ObjectT &obj, std::streampos &pos) = 0;
 
     //! Goto next position in the stream without writing an object.
     //! @param pos - The position in the stream where the object was written.
@@ -103,30 +116,38 @@ namespace Ravl2
     virtual bool next(std::streampos &pos) = 0;
 
     //! Add object to the end of the stream.
-    void push_back(const ObjectT &obj) {
+    void push_back(const ObjectT &obj)
+    {
       std::streampos pos = mEnd;
-      write(obj,pos);
+      write(obj, pos);
     }
 
     //! Get the start offset of the stream.
     [[nodiscard]] std::streampos beginOffset() const
-    { return mStart; }
+    {
+      return mStart;
+    }
 
     //! Get the end offset of the stream.
     [[nodiscard]] std::streampos endOffset() const
-    { return mEnd; }
+    {
+      return mEnd;
+    }
 
     [[nodiscard]] auto begin() const
-    {  return OutputStreamIterator<ObjectT>(*this,mStart); }
+    {
+      return OutputStreamIterator<ObjectT>(*this, mStart);
+    }
 
     [[nodiscard]] auto end() const
-    {  return OutputStreamIterator<ObjectT>(*this,mEnd); }
+    {
+      return OutputStreamIterator<ObjectT>(*this, mEnd);
+    }
 
   protected:
     std::streampos mStart = 0;
     std::streampos mEnd = std::numeric_limits<std::streampos>::max();
   };
-
 
   //! @brief Open a base stream for reading.
   //! @param url - The filename to open.
@@ -134,7 +155,7 @@ namespace Ravl2
   //! @param formatHint - A hint to the format of the file.
   //! @return A pointer to the stream.
 
-  [[nodiscard]] std::unique_ptr<StreamBase> openInput(const std::string &url, const std::type_info &type,std::string_view formatHint);
+  [[nodiscard]] std::unique_ptr<StreamBase> openInput(const std::string &url, const std::type_info &type, std::string_view formatHint);
 
   //! @brief Open a base stream for writing.
   //! @param url - The filename to open.
@@ -142,7 +163,7 @@ namespace Ravl2
   //! @param formatHint - A hint to the format of the file.
   //! @return A pointer to the stream.
 
-  [[nodiscard]] std::unique_ptr<StreamBase> openOutput(const std::string &url, const std::type_info &type,std::string_view formatHint);
+  [[nodiscard]] std::unique_ptr<StreamBase> openOutput(const std::string &url, const std::type_info &type, std::string_view formatHint);
 
   //! @brief Load a file into an object.
   //! The file is loaded using the cereal library.
@@ -154,7 +175,7 @@ namespace Ravl2
   template <typename ObjectT>
   bool load(ObjectT &object, const std::string &url, std::string_view formatHint = "")
   {
-    auto container = openInput(url,typeid(ObjectT),formatHint);
+    auto container = openInput(url, typeid(ObjectT), formatHint);
     if(!container)
       return false;
     auto *input = dynamic_cast<StreamInputContainer<ObjectT> *>(container.get());
@@ -189,7 +210,5 @@ namespace Ravl2
     std::streampos pos = output->beginOffset();
     return output->write(object, pos);
   }
-
-
 
 }// namespace Ravl2

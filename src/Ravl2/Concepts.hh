@@ -8,13 +8,13 @@
 
 namespace Ravl2
 {
-  template<unsigned N>
+  template <unsigned N>
   class Index;
 
-  template<unsigned N>
+  template <unsigned N>
   class IndexRange;
 
-  template<typename DataT, unsigned N>
+  template <typename DataT, unsigned N>
   class ArrayAccess;
 
   //! SimpleArray concept,  0 based array with a size() method
@@ -25,12 +25,11 @@ namespace Ravl2
   //!   a.end() - returns an iterator to the end of the array or a sentinel
 
   template <typename ArrayT, typename DataT = typename ArrayT::value_type>
-  concept SimpleArray = requires(ArrayT a, int ind)
-  {
+  concept SimpleArray = requires(ArrayT a, int ind) {
     { a[ind] } -> std::convertible_to<DataT>;
     { a.size() } -> std::convertible_to<unsigned>;
-    { a.begin() } ;
-    { a.end() } ;
+    { a.begin() };
+    { a.end() };
   };
 
   //! Declaration of the concept “WindowedArray”, which is satisfied by any type “ArrayT”
@@ -43,8 +42,7 @@ namespace Ravl2
   //!   a.strides() - returns the strides of the array
 
   template <typename ArrayT, typename DataT = typename ArrayT::value_type, unsigned N = ArrayT::dimensions>
-  concept WindowedArray = requires(ArrayT a, Index<N> ind, IndexRange<N> rng)
-  {
+  concept WindowedArray = requires(ArrayT a, Index<N> ind, IndexRange<N> rng) {
     { ArrayT::dimensions } -> std::convertible_to<unsigned>;
     { a[ind] } -> std::convertible_to<DataT>;
     { a.range() } -> std::convertible_to<IndexRange<N>>;
@@ -63,13 +61,12 @@ namespace Ravl2
   //!   iter.index() - returns the index of the current element, maybe computed from the iterator
 
   template <typename IterT, typename DataT = typename IterT::value_type, unsigned N = IterT::dimensions>
-  concept WindowedIterator = requires(IterT iter)
-  {
+  concept WindowedIterator = requires(IterT iter) {
     { *iter } -> std::convertible_to<DataT>;
     { ++iter } -> std::convertible_to<IterT &>;
     { iter.valid() } -> std::convertible_to<bool>;
     { iter.next() } -> std::convertible_to<bool>;
-    { iter.index() } -> std::convertible_to<Index<N> >;
+    { iter.index() } -> std::convertible_to<Index<N>>;
   };
 
   //! Define the WindowedRowIterator concept
@@ -80,14 +77,11 @@ namespace Ravl2
   //!   iter.index() - returns the index of the current element, maybe computed from the iterator
 
   template <typename IterT, typename DataT = typename IterT::value_type, unsigned N = IterT::dimensions>
-  concept WindowedRowIterator = requires(IterT iter)
-  {
+  concept WindowedRowIterator = requires(IterT iter) {
     { iter.valid() } -> std::convertible_to<bool>;
-    { iter.index() } -> std::convertible_to<Index<N> >;
+    { iter.index() } -> std::convertible_to<Index<N>>;
     { iter.row() } -> SimpleArray;
-    { iter.nextRow() } ;
+    { iter.nextRow() };
   };
 
-
-
-} // namespace Ravl2
+}// namespace Ravl2

@@ -1,4 +1,4 @@
-// This file is part of RAVL, Recognition And Vision Library 
+// This file is part of RAVL, Recognition And Vision Library
 // Copyright (C) 2004, University of Surrey
 // This code may be redistributed under the terms of the GNU Lesser
 // General Public License (LGPL). See the lgpl.licence file for details or
@@ -16,7 +16,8 @@
 #define ONDEBUG(x)
 #endif
 
-namespace Ravl2 {
+namespace Ravl2
+{
 
 #if 0
   //: Compute various ellipse parameters.
@@ -45,7 +46,6 @@ namespace Ravl2 {
     return true;
   }
 
-
 #endif
-  
-}
+
+}// namespace Ravl2

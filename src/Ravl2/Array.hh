@@ -373,6 +373,7 @@ namespace Ravl2
     {
       return std::span<DataT>(mPtr, size_t(mEnd - mPtr));
     }
+
   protected:
     DataT *mPtr {};
     const DataT *mEnd {};
@@ -790,4 +791,3 @@ namespace Ravl2
   extern template class ArrayAccess<float, 2>;
   extern template class ArrayIter<float, 2>;
 }// namespace Ravl2
-

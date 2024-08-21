@@ -21,8 +21,7 @@ namespace Ravl2
   //! Line defined by 2 points in 2-dimensional space.
 
   template <typename RealT>
-  class LinePP2dC
-      : public LinePP<RealT, 2>
+  class LinePP2dC : public LinePP<RealT, 2>
   {
   public:
     LinePP2dC() = default;
@@ -91,7 +90,7 @@ namespace Ravl2
     {
       auto area = triangleArea2(Pt, this->P1(), this->P2());
       if(orientation == BoundaryOrientationT::INSIDE_RIGHT) {
-	return area <= 0;
+        return area <= 0;
       }
       return area >= 0;
     }
@@ -129,7 +128,7 @@ namespace Ravl2
     //! Calculate the intersection point between this line and l within this segment limits
     //! @param l - another line
     //! @return a point if the lines intersect within the segment limits, otherwise nullopt
-    [[nodiscard]] std::optional<Point<RealT, 2> > innerIntersection(const LinePP2dC &l) const;
+    [[nodiscard]] std::optional<Point<RealT, 2>> innerIntersection(const LinePP2dC &l) const;
 
     //! Find the column position which intersects the given row.
     //! @param row - Row for which we want to find the intersecting column
@@ -183,9 +182,10 @@ namespace Ravl2
   //! @brief Clip line by given rectangle.
   //! Optional will be empty if the line is entirely outside the rectangle.
   template <typename RealT>
-  [[nodiscard]]  inline std::optional<LinePP<RealT, 2> > clip(LinePP<RealT, 2> aLine,const Range<RealT, 2> &rng) {
+  [[nodiscard]] inline std::optional<LinePP<RealT, 2>> clip(LinePP<RealT, 2> aLine, const Range<RealT, 2> &rng)
+  {
     LinePP2dC<RealT> line(aLine);
-    if (!line.clipBy(rng)) {
+    if(!line.clipBy(rng)) {
       return std::nullopt;
     }
     return line;
@@ -194,15 +194,14 @@ namespace Ravl2
   //! @brief Find the intersection of two lines.
   //! Optional will be empty if the lines are parallel.
   template <typename RealT>
-  [[nodiscard]] inline std::optional<Point<RealT, 2> >  intersection(const LinePP2dC<RealT> &l1, const LinePP2dC<RealT> &l2)
+  [[nodiscard]] inline std::optional<Point<RealT, 2>> intersection(const LinePP2dC<RealT> &l1, const LinePP2dC<RealT> &l2)
   {
     Point<RealT, 2> here;
-    if (!l1.Intersection(l2, here)) {
+    if(!l1.Intersection(l2, here)) {
       return std::nullopt;
     }
     return here;
   }
-
 
   extern template class LinePP2dC<double>;
   extern template class LinePP2dC<float>;

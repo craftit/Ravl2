@@ -17,7 +17,7 @@ namespace Ravl2
   class ScanWindow<DataT, 1>
   {
   public:
-    using value_type = ArrayAccess<DataT,1>;
+    using value_type = ArrayAccess<DataT, 1>;
     constexpr static unsigned dimensions = 1;
 
     constexpr ScanWindow(const ArrayAccess<DataT, 1> &img, const IndexRange<1> &window)
@@ -95,7 +95,7 @@ namespace Ravl2
   class ScanWindow
   {
   public:
-    using value_type = ArrayAccess<DataT,N>;
+    using value_type = ArrayAccess<DataT, N>;
     constexpr static unsigned dimensions = N;
 
     constexpr ScanWindow(const Ravl2::ArrayAccess<DataT, N> &img, const IndexRange<N> &window)

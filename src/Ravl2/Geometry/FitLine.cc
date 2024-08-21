@@ -7,4 +7,4 @@
 namespace Ravl2
 {
 
-} // Ravl2
+}// namespace Ravl2

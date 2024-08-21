@@ -292,7 +292,7 @@ namespace Ravl2
 
         auto half_perimeter_i = int_round<double, decltype(area_i)>(2.1 * std::sqrt(double(area_i))) + area_i;
         if(half_perimeter_i == lastThresh)
-          continue; // If the thresholds are the same, the next margin will only be shorter.
+          continue;// If the thresholds are the same, the next margin will only be shorter.
         lastThresh = half_perimeter_i;
         while(up <= maxValue && chist[up] < half_perimeter_i) {
           up++;

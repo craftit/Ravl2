@@ -112,7 +112,7 @@ namespace Ravl2
     //! the rectangle is always covered
     static constexpr auto mostEmpty()
     {
-      return Range<RealT,1>(std::numeric_limits<RealT>::max(), std::numeric_limits<RealT>::min());
+      return Range<RealT, 1>(std::numeric_limits<RealT>::max(), std::numeric_limits<RealT>::min());
     }
 
     //! Returns true if the minimum limit is smaller than or equal to the maximum value
@@ -689,11 +689,16 @@ namespace Ravl2
 
     //! Minimum value of the range in the given dimension.
     [[nodiscard]] constexpr RealT min(unsigned n) const
-    { return mRanges[n].min(); }
+    {
+      return mRanges[n].min();
+    }
 
     //! Maximum value of the range in the given dimension.
     [[nodiscard]] constexpr RealT max(unsigned n) const
-    { return mRanges[n].max(); }
+    {
+      return mRanges[n].max();
+    }
+
   private:
     std::array<Range<RealT, 1>, N> mRanges;
   };
@@ -745,16 +750,16 @@ namespace Ravl2
 
   //! Clamp a value to a range.
   template <typename RealT>
-  constexpr RealT clamp(RealT val, const Range<RealT,1> &rng)
+  constexpr RealT clamp(RealT val, const Range<RealT, 1> &rng)
   {
     return std::clamp(val, rng.min(), rng.max());
   }
 
   //! Clamp a point to be within a range.
-  template <typename RealT,size_t N>
-  constexpr auto clamp(const Point<RealT,N> &pnt, const Range<RealT,unsigned(N)> &rng)
+  template <typename RealT, size_t N>
+  constexpr auto clamp(const Point<RealT, N> &pnt, const Range<RealT, unsigned(N)> &rng)
   {
-    Point<RealT,N> ret;
+    Point<RealT, N> ret;
     for(size_t i = 0; i < N; i++)
       ret[i] = clamp(pnt[i], rng[i]);
     return ret;

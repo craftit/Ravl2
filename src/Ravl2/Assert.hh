@@ -23,7 +23,7 @@ namespace Ravl2
   private:
     spdlog::level::level_enum m_oldLevel;
   };
-}
+}// namespace Ravl2
 
 #define RavlAlwaysAssert(cond)                  \
   {                                             \

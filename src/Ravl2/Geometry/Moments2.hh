@@ -30,10 +30,10 @@ namespace Ravl2
     constexpr Moments2() = default;
 
     //! Convert from another set of moments with different SumT type.
-    template<typename Sum2T>
+    template <typename Sum2T>
     constexpr explicit Moments2(const Moments2<Sum2T> &mom)
-      : m00(SumT(mom.M00())), m10(SumT(mom.M10())), m01(SumT(mom.M01())),
-        m20(SumT(mom.M20())), m11(SumT(mom.M11())), m02(SumT(mom.M02()))
+        : m00(SumT(mom.M00())), m10(SumT(mom.M10())), m01(SumT(mom.M01())),
+          m20(SumT(mom.M20())), m11(SumT(mom.M11())), m02(SumT(mom.M02()))
     {}
 
     //! Constructor from a set of values.
@@ -208,8 +208,8 @@ namespace Ravl2
     [[nodiscard]] constexpr Matrix<SumT, 2, 2> covariance() const;
 
     //! Calculate the centroid.
-    template<unsigned Axis>
-      requires (Axis < 2)
+    template <unsigned Axis>
+      requires(Axis < 2)
     [[nodiscard]] constexpr SumT centroid() const
     {
       if constexpr(Axis == 0) {
@@ -220,8 +220,8 @@ namespace Ravl2
     }
 
     //! Calculate the variance
-    template<unsigned Axis>
-      requires (Axis < 2)
+    template <unsigned Axis>
+      requires(Axis < 2)
     [[nodiscard]] constexpr SumT var() const
     {
       if constexpr(Axis == 0) {
@@ -318,7 +318,7 @@ namespace Ravl2
     SumT cent2 = centroid<1>();
     SumT diag = m11 / m00 - cent1 * cent2;
     return Matrix<SumT, 2, 2>({{m20 / m00 - sqr(cent1), diag},
-                                {diag, m02 / m00 - sqr(cent2)}});
+                               {diag, m02 / m00 - sqr(cent2)}});
   }
 
   template <class SumT>
@@ -349,21 +349,19 @@ namespace Ravl2
 
   //! @brief Equality operator
   //! This makes sense if SumT is integer type, the comparison is exact.
-  template<typename SumT>
+  template <typename SumT>
   [[nodiscard]] constexpr bool operator==(const Moments2<SumT> &lhs, const Moments2<SumT> &rhs)
   {
-    return lhs.M00() == rhs.M00() && lhs.M10() == rhs.M10() && lhs.M01() == rhs.M01() &&
-           lhs.M20() == rhs.M20() && lhs.M11() == rhs.M11() && lhs.M02() == rhs.M02();
+    return lhs.M00() == rhs.M00() && lhs.M10() == rhs.M10() && lhs.M01() == rhs.M01() && lhs.M20() == rhs.M20() && lhs.M11() == rhs.M11() && lhs.M02() == rhs.M02();
   }
 
   //! In equality operator
   //! This makes sense if SumT is integer type, the comparison is exact.
-  template<typename SumT>
+  template <typename SumT>
   [[nodiscard]] constexpr inline bool operator!=(const Moments2<SumT> &lhs, const Moments2<SumT> &rhs)
   {
     return !(lhs == rhs);
   }
-
 
   template <class SumT>
   constexpr inline void Moments2<SumT>::addPixel(const Index<2> &pxl)
@@ -476,7 +474,6 @@ namespace Ravl2
 
 #if FMT_VERSION >= 90000
 template <typename SumT>
-struct fmt::formatter<Ravl2::Moments2<SumT> > : fmt::ostream_formatter {
+struct fmt::formatter<Ravl2::Moments2<SumT>> : fmt::ostream_formatter {
 };
 #endif
-

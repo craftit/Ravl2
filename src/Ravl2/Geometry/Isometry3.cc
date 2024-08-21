@@ -10,4 +10,4 @@ namespace Ravl2
 
   template class Isometry3<float>;
 
-}
+}// namespace Ravl2

@@ -660,7 +660,7 @@ namespace Ravl2
   }
 
   template <typename ArrayT, typename DataT = typename ArrayT::value_type, unsigned N = ArrayT::dimensions>
-  requires WindowedArray<ArrayT, DataT, N>
+    requires WindowedArray<ArrayT, DataT, N>
   std::ostream &operator<<(std::ostream &os, const ArrayT &array)
   {
     os << "Array " << array.range() << "\n  ";

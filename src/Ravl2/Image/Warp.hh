@@ -17,8 +17,7 @@ namespace Ravl2
   //! @param Target The target pixel to assign to
   //! @param Source The source pixel to assign from
   template <typename TargetT, typename SourceT>
-  struct AssignOp
-  {
+  struct AssignOp {
     void operator()(TargetT &Target, const SourceT &Source) const
     {
       Target = Source;
@@ -29,14 +28,14 @@ namespace Ravl2
   //! @param targetRange The range to iterate over in a grid
   //! @param transform The point-to-point mapping to use
   //! @return The range of pixels the transformed points will sample from
-  template <typename TransformT, unsigned N,typename CoordTypeT = float>
-  Range<CoordTypeT,N> projectedBounds(const IndexRange<N> &targetRange, const TransformT &transform)
+  template <typename TransformT, unsigned N, typename CoordTypeT = float>
+  Range<CoordTypeT, N> projectedBounds(const IndexRange<N> &targetRange, const TransformT &transform)
   {
-    Range<CoordTypeT,N> transformedRange;
-    for(unsigned i = 0; i < (1u<<N); i++) {
-      Point<CoordTypeT,N> pnt;
+    Range<CoordTypeT, N> transformedRange;
+    for(unsigned i = 0; i < (1u << N); i++) {
+      Point<CoordTypeT, N> pnt;
       for(unsigned j = 0; j < N; j++) {
-        pnt[j] = CoordTypeT((i & (1u<<j)) ? targetRange.max(j) : targetRange.min(j));
+        pnt[j] = CoordTypeT((i & (1u << j)) ? targetRange.max(j) : targetRange.min(j));
       }
       transformedRange.involve(transform(pnt));
     }
@@ -81,7 +80,7 @@ namespace Ravl2
         } else {
           mirroredPoint[i] = realSourceRange.min(i) + realSourceRange.size(i) - diff;
         }
-      } else  if(sourcePoint[i] >= realSourceRange.max(i)) {
+      } else if(sourcePoint[i] >= realSourceRange.max(i)) {
         auto diff = sourcePoint[i] - realSourceRange.max(i);
         auto numWraps = 1 + int(diff / realSourceRange.size(i));
         if(numWraps % 2 == 0) {
@@ -97,12 +96,12 @@ namespace Ravl2
   //! @brief Enum for the strategy to use for points outside the source image
   enum class WarpWrapMode
   {
-    Stop,   //!< Stop the warp operation
-    Leave,  //!< Leave the target image unchanged
-    Fill,   //!< Fill the target image with a fill value
-    Clamp,  //!< Clamp the point to the source image
-    Wrap,   //!< Wrap the point to the source image (experimental)
-    Mirror  //!< Mirror the point in the source image (experimental)
+    Stop, //!< Stop the warp operation
+    Leave,//!< Leave the target image unchanged
+    Fill, //!< Fill the target image with a fill value
+    Clamp,//!< Clamp the point to the source image
+    Wrap, //!< Wrap the point to the source image (experimental)
+    Mirror//!< Mirror the point in the source image (experimental)
   };
 
   //! @brief Warp an image using a point transform
@@ -122,18 +121,16 @@ namespace Ravl2
     typename SourceArrayT,
     typename TransformT,
     typename FillTypeT = typename TargetArrayT::value_type,
-    typename PointT = Point<float,SourceArrayT::dimensions>,
-    typename SamplerT = InterpolateBilinear<SourceArrayT,PointT>,
+    typename PointT = Point<float, SourceArrayT::dimensions>,
+    typename SamplerT = InterpolateBilinear<SourceArrayT, PointT>,
     typename OperationT = AssignOp<typename TargetArrayT::value_type, typename SourceArrayT::value_type>,
-    unsigned N = SourceArrayT::dimensions
-      >
-    requires WindowedArray<TargetArrayT, typename TargetArrayT::value_type, TargetArrayT::dimensions> &&
-    WindowedArray<SourceArrayT, typename SourceArrayT::value_type, SourceArrayT::dimensions>
+    unsigned N = SourceArrayT::dimensions>
+    requires WindowedArray<TargetArrayT, typename TargetArrayT::value_type, TargetArrayT::dimensions> && WindowedArray<SourceArrayT, typename SourceArrayT::value_type, SourceArrayT::dimensions>
   bool warp(TargetArrayT &target,
             const SourceArrayT &source,
             const TransformT &transform,
             const FillTypeT &fillValue = {},
-	    OperationT &&operation = OperationT(),
+            OperationT &&operation = OperationT(),
             SamplerT &&sampler = SamplerT())
   {
     // Get the range of pixels the transformed points will sample from
@@ -158,7 +155,7 @@ namespace Ravl2
       }
       return true;
     } else {
-      if constexpr (wrapMode == WarpWrapMode::Stop) {
+      if constexpr(wrapMode == WarpWrapMode::Stop) {
         return false;
       } else {
         // Iterate over the target image
@@ -171,15 +168,15 @@ namespace Ravl2
             // Get the point in the source image
             auto sourcePoint = transform(toPoint<CoordTypeT>(targetIndex));
 
-            if constexpr (wrapMode == WarpWrapMode::Clamp) {
+            if constexpr(wrapMode == WarpWrapMode::Clamp) {
               // Clamp the point to the source image
-              sourcePoint = clamp(sourcePoint,realSourceRange);
-            } else if constexpr (wrapMode == WarpWrapMode::Wrap) {
+              sourcePoint = clamp(sourcePoint, realSourceRange);
+            } else if constexpr(wrapMode == WarpWrapMode::Wrap) {
               // Wrap the point to the source image
-              sourcePoint = wrapPoint(sourcePoint,realSourceRange);
-            } else if constexpr (wrapMode == WarpWrapMode::Mirror) {
+              sourcePoint = wrapPoint(sourcePoint, realSourceRange);
+            } else if constexpr(wrapMode == WarpWrapMode::Mirror) {
               // Mirror the point in the source image
-              sourcePoint = mirrorPoint(sourcePoint,realSourceRange);
+              sourcePoint = mirrorPoint(sourcePoint, realSourceRange);
             } else if constexpr(wrapMode == WarpWrapMode::Leave || wrapMode == WarpWrapMode::Fill) {
               // Check if the source point is within the source image
               if(realSourceRange.contains(sourcePoint)) {
@@ -203,6 +200,4 @@ namespace Ravl2
     }
   }
 
-
-
-} // Ravl2
+}// namespace Ravl2

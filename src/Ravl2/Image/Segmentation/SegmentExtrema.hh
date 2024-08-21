@@ -25,9 +25,9 @@ namespace Ravl2
   class ExtremaThresholdC
   {
   public:
-    int thresh;//!< Threshold value.
-    int pos;   //!< Start of margin.  (thresh = pos + margin/2)
-    int margin; //!< Measure of stability.
+    int thresh;   //!< Threshold value.
+    int pos;      //!< Start of margin.  (thresh = pos + margin/2)
+    int margin;   //!< Measure of stability.
     uint32_t area;//!< Expected area of region.
   };
 
@@ -53,7 +53,7 @@ namespace Ravl2
     uint32_t total = 0;
 
     ExtremaThresholdC *thresh = nullptr;//!< Thresholds
-    int nThresh = 0;          //!< Number of thresholds.
+    int nThresh = 0;                    //!< Number of thresholds.
 
     int maxValue = 0;
     int minValue = 0;
@@ -276,7 +276,7 @@ namespace Ravl2
     //!   int - Threshold to apply
     //!   size_t - Expected area of the region.
 
-    template<typename CallbackT>
+    template <typename CallbackT>
     void apply(const Array<PixelT, 2> &img, CallbackT &&callback)
     {
       if constexpr(typeid(PixelT) == typeid(uint8_t)) {
@@ -292,7 +292,7 @@ namespace Ravl2
       for(auto it = regionMap.begin(); it != end; ++it) {
         if(it->nThresh > 0) {
           for(int i = 0; i < it->nThresh; i++) {
-            callback(it->minat, it->thresh[i].thresh,it->thresh[i].area);
+            callback(it->minat, it->thresh[i].thresh, it->thresh[i].area);
           }
         }
         if(it->thresh != nullptr) {
@@ -302,12 +302,11 @@ namespace Ravl2
       }
     }
 
-
     //! @brief Segment image into label images.
     //! Generates labeled images.
     std::vector<Array<int, 2>> applyMask(const Array<PixelT, 2> &img)
     {
-      if(typeid(PixelT) == typeid(uint8_t)) // Should decided at compile time.
+      if(typeid(PixelT) == typeid(uint8_t))// Should decided at compile time.
         SortPixelsByte(img);
       else
         SortPixels(img);
@@ -352,7 +351,7 @@ namespace Ravl2
     std::vector<Boundary> GrowRegionBoundary(const Array<PixelT, 2> &img);
 
     //! Grow regions associated with a extrema.
-    void GrowRegionBoundary(std::vector<Boundary> &boundaries,ExtremaRegionC &region);
+    void GrowRegionBoundary(std::vector<Boundary> &boundaries, ExtremaRegionC &region);
 
     //! Grow regions.
     std::vector<Array<int, 2>> GrowRegionMask(const Array<PixelT, 2> &img);
@@ -519,7 +518,7 @@ namespace Ravl2
     end += labelAlloc;
     for(auto it = regionMap.begin(); it != end; ++it) {
       if(it->nThresh > 0) {
-        GrowRegionBoundary(bounds,*it);
+        GrowRegionBoundary(bounds, *it);
       }
       if(it->thresh != 0) {
         delete[] it->thresh;
@@ -531,17 +530,17 @@ namespace Ravl2
   }
 
   template <class PixelT>
-  void SegmentExtremaC<PixelT>::GrowRegionBoundary(std::vector<Boundary> &ret,ExtremaRegionC &region)
+  void SegmentExtremaC<PixelT>::GrowRegionBoundary(std::vector<Boundary> &ret, ExtremaRegionC &region)
   {
     for(int i = 0; i < region.nThresh; i++) {
       Boundary boundary;
       if(!flood.GrowRegion(region.minat, FloodRegionLessThanThresholdC<PixelT>(PixelT(region.thresh[i].thresh)), boundary, maxSize)) {
-        SPDLOG_WARN("GrowRegionBoundary, Failed to grow region at:{} Threshold:{} Area:{} SeedValue:{}", region.minat, region.thresh[i].thresh, region.thresh[i].area,flood.Image()[region.minat]);
+        SPDLOG_WARN("GrowRegionBoundary, Failed to grow region at:{} Threshold:{} Area:{} SeedValue:{}", region.minat, region.thresh[i].thresh, region.thresh[i].area, flood.Image()[region.minat]);
         continue;
       }
 #ifndef NDEBUG
       if(boundary.area() != int(region.thresh[i].area)) {
-        SPDLOG_WARN("Area mismatch, At:{} Threshold:{} Boundary Size={} Area:{} Expected:{} ", region.minat, region.thresh[i].thresh, boundary.size(), boundary.area(),region.thresh[i].area);
+        SPDLOG_WARN("Area mismatch, At:{} Threshold:{} Boundary Size={} Area:{} Expected:{} ", region.minat, region.thresh[i].thresh, boundary.size(), boundary.area(), region.thresh[i].area);
       }
 #endif
       ret.push_back(boundary);

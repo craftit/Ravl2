@@ -65,7 +65,6 @@ namespace Ravl2
     return (orient == BoundaryOrientationT::INSIDE_LEFT) ? BoundaryOrientationT::INSIDE_RIGHT : BoundaryOrientationT::INSIDE_LEFT;
   }
 
-
   template <typename DataT>
   using VectorT = xt::xtensor<DataT, 1>;
 
@@ -128,11 +127,11 @@ namespace Ravl2
 template <>
 struct fmt::formatter<xt::xarray<float>> : fmt::ostream_formatter {
 };
-template <typename RealT,size_t N>
-struct fmt::formatter<Ravl2::Point<RealT,N>> : fmt::ostream_formatter {
+template <typename RealT, size_t N>
+struct fmt::formatter<Ravl2::Point<RealT, N>> : fmt::ostream_formatter {
 };
-template <typename RealT,size_t N>
-struct fmt::formatter<xt::xtensor<RealT,N> > : ostream_formatter {
+template <typename RealT, size_t N>
+struct fmt::formatter<xt::xtensor<RealT, N>> : ostream_formatter {
 };
 template <>
 struct fmt::formatter<xt::xarray<float>::shape_type> : fmt::ostream_formatter {

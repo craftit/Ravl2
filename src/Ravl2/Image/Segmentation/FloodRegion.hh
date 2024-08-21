@@ -124,7 +124,7 @@ namespace Ravl2
     //! @param boundary The boundary of the region.
     //! @param maxSize The maximum size of the region to grow. (0 = no limit)
     //! @return true if the boundary has a non zero area.
-    template<typename InclusionTestT>
+    template <typename InclusionTestT>
     bool GrowRegion(const Index<2> &seed, InclusionTestT &&inclusionTest, Boundary &boundary, size_t maxSize = 0);
 
     //! @brief Grow a region from 'seed' including all connected pixel less than or equal to threshold, generate a mask as the result.
@@ -134,7 +134,7 @@ namespace Ravl2
     //! @param padding The padding to add to the mask.
     //! @param maxSize The maximum size of the region to grow. (0 = no limit)
     //! @return The size of the region.
-    template <typename MaskT,typename InclusionTestT>
+    template <typename MaskT, typename InclusionTestT>
     size_t GrowRegion(const Index<2> &seed, InclusionTestT &&inclusionTest, Array<MaskT, 2> &mask, unsigned padding = 0, size_t maxSize = 0);
 
     //! Access marked pixel image.
@@ -169,7 +169,7 @@ namespace Ravl2
   {
     RavlAssert(img.range().contains(seed));
     if(!inclusionTest(img[seed]))
-      return false; // Empty region.
+      return false;// Empty region.
 
     // Make sure queue is empty.
     pixQueue = std::queue<FloodRegionLineC>();

@@ -14,7 +14,7 @@ namespace Ravl2
   //! @param container the container
   //! @param it the iterator
   //! @return the next element
-  template<typename ContainerT, typename IteratorT, typename DataT = typename ContainerT::value_type>
+  template <typename ContainerT, typename IteratorT, typename DataT = typename ContainerT::value_type>
   const DataT &nextDataCrc(const ContainerT &container, const IteratorT &it)
   {
     assert(!container.empty());
@@ -26,21 +26,21 @@ namespace Ravl2
   //! @brief Iterator that holds a position and allows for circular iteration, from the end, go to the beginning
   //! This is particularly useful for porting code that originally used a circular linked list.
 
-  template<class Container>
+  template <class Container>
   class LoopIter
   {
   public:
     //! Constructor
     explicit LoopIter(Container &c)
-      : container(c),
-	iter(c.begin())
+        : container(c),
+          iter(c.begin())
     {
     }
 
     //! Constructor
     LoopIter(Container &c, typename Container::iterator it)
-      : container(c),
-	iter(it)
+        : container(c),
+          iter(it)
     {
     }
 
@@ -112,7 +112,7 @@ namespace Ravl2
       auto next = iter;
       ++next;
       if(next == container.end())
-	next = container.begin();
+        next = container.begin();
       return *next;
     }
 
@@ -140,7 +140,7 @@ namespace Ravl2
 
   //! Helper function to create a circular iterator
   //! This creates an iterator that points to the last valid element
-  template<class Container>
+  template <class Container>
   LoopIter<Container>
   beginLoopLast(Container &c)
   {
@@ -148,10 +148,10 @@ namespace Ravl2
   }
 
   //! Helper function to create a circular iterator
-  template<class Container>
+  template <class Container>
   LoopIter<Container>
   beginLoopFirst(Container &c)
   {
     return LoopIter<Container>::First(c);
   }
-}
+}// namespace Ravl2

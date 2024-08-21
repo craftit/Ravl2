@@ -204,7 +204,7 @@ namespace Ravl2
   std::ostream &operator<<(std::ostream &s, const PointSet<RealT, N> &dat)
   {
     s << dat.size() << std::endl;
-    for(auto it: dat) {
+    for(auto it : dat) {
       s << ' ' << it;
     }
     return s;
@@ -216,15 +216,15 @@ namespace Ravl2
 
 #if FMT_VERSION >= 90000
 template <>
-struct fmt::formatter<Ravl2::PointSet<float,2>> : fmt::ostream_formatter {
+struct fmt::formatter<Ravl2::PointSet<float, 2>> : fmt::ostream_formatter {
 };
 template <>
-struct fmt::formatter<Ravl2::PointSet<double,2>> : fmt::ostream_formatter {
+struct fmt::formatter<Ravl2::PointSet<double, 2>> : fmt::ostream_formatter {
 };
 template <>
-struct fmt::formatter<Ravl2::PointSet<float,3>> : fmt::ostream_formatter {
+struct fmt::formatter<Ravl2::PointSet<float, 3>> : fmt::ostream_formatter {
 };
 template <>
-struct fmt::formatter<Ravl2::PointSet<double,3>> : fmt::ostream_formatter {
+struct fmt::formatter<Ravl2::PointSet<double, 3>> : fmt::ostream_formatter {
 };
 #endif

@@ -13,8 +13,8 @@
 namespace Ravl2
 {
   //! @brief Fit a conic to a set of points.
-  template<typename RealT>
-  std::optional<RealT> fit(Conic2dC<RealT> &conic, const std::vector<Point<RealT,2>> &points)
+  template <typename RealT>
+  std::optional<RealT> fit(Conic2dC<RealT> &conic, const std::vector<Point<RealT, 2>> &points)
   {
     auto samples = points.size();
     ONDEBUG(std::cerr << "FitConic(), Points=" << points.size() << "\n");
@@ -22,35 +22,35 @@ namespace Ravl2
       return std::nullopt;
     }
     // ---------- Compute parameters ----------------------
-    typename MatrixT<RealT>::shape_type sh = {samples,6};
-    Tensor<RealT,2> A(sh);
+    typename MatrixT<RealT>::shape_type sh = {samples, 6};
+    Tensor<RealT, 2> A(sh);
     size_t i = 0;
 
-    auto [mean,scale] = normalise<RealT,2>(points,[&i,&A](const Point<RealT,2> &p) {
-      A(i,0) = sqr(p[0]);
-      A(i,1) = p[0] * p[1];
-      A(i,2) = sqr(p[1]);
-      A(i,3) = p[0];
-      A(i,4) = p[1];
-      A(i,5) = 1;
+    auto [mean, scale] = normalise<RealT, 2>(points, [&i, &A](const Point<RealT, 2> &p) {
+      A(i, 0) = sqr(p[0]);
+      A(i, 1) = p[0] * p[1];
+      A(i, 2) = sqr(p[1]);
+      A(i, 3) = p[0];
+      A(i, 4) = p[1];
+      A(i, 5) = 1;
       i++;
     });
     //cerr << "A=" << A.range(0).size() << " " << A.range(1).size() << " Vec=" << c.size() << "\n";
     VectorT<RealT> result;
-    LeastSquaresEq0Mag1(A,result);
+    LeastSquaresEq0Mag1(A, result);
 
     //SPDLOG_INFO("Result1={}", result);
     // --------- Undo normalisation ----------------
     // TODO:- Make this more efficient by expanding out manually.
     Conic2dC<RealT> Cr(result);
     RealT d = scale;
-    Matrix<RealT,3,3> Hi(
-      {{ d,0,-mean[0] * d},
-        {0,d,-mean[1] * d},
-        { 0,0,1}});
+    Matrix<RealT, 3, 3> Hi(
+      {{d, 0, -mean[0] * d},
+       {0, d, -mean[1] * d},
+       {0, 0, 1}});
 
     // Matrix<RealT,3,3> nC = Hi.TMul(Cr.C()) * Hi;
-    Matrix<RealT,3,3> nC = xt::linalg::dot( xt::linalg::dot(xt::transpose(Hi) ,Cr.C()), Hi);
+    Matrix<RealT, 3, 3> nC = xt::linalg::dot(xt::linalg::dot(xt::transpose(Hi), Cr.C()), Hi);
     conic = Conic2dC(nC);
     return 0;
   }
@@ -143,10 +143,11 @@ namespace Ravl2
 
   //: Fit ellipse to points.
 
-  template<typename RealT>
-  constexpr std::optional<RealT> fit(Ellipse2dC<RealT> &ellipse, const std::vector<Point<RealT,2>> &points) {
+  template <typename RealT>
+  constexpr std::optional<RealT> fit(Ellipse2dC<RealT> &ellipse, const std::vector<Point<RealT, 2>> &points)
+  {
     Conic2dC<RealT> conic;
-    auto residual = fit(conic,points);
+    auto residual = fit(conic, points);
     if(!residual.has_value())
       return residual;
     auto result = toEllipse<RealT>(conic);
@@ -156,7 +157,7 @@ namespace Ravl2
     return residual;
   }
 
-}
+}// namespace Ravl2
 
 #undef DODEBUG
 #undef ONDEBUG

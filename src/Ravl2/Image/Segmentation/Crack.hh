@@ -306,10 +306,9 @@ namespace fmt
 
 // Custom specialization of std::hash injected in namespace std.
 
-template<>
-struct std::hash<Ravl2::CrackC>
-{
-  std::size_t operator()(const Ravl2::CrackC& s) const noexcept
+template <>
+struct std::hash<Ravl2::CrackC> {
+  std::size_t operator()(const Ravl2::CrackC &s) const noexcept
   {
     auto ret = size_t(s.at()[0]);
     ret ^= size_t(s.at()[1]) << 4;

@@ -28,15 +28,15 @@ namespace Ravl2
     //! Constructor.
     Corner(const Point<float, 2> &location, RealT ndV, RealT ndH, uint8_t nlevel)
         : mLocation(location),
-	  mGrad({ndV, ndH}),
-	  mLevel(nlevel)
+          mGrad({ndV, ndH}),
+          mLevel(nlevel)
     {}
 
     //! Constructor.
     Corner(const Point<float, 2> &location, const Vector<float, 2> &ngrad, uint8_t nlevel)
         : mLocation(location),
-	  mGrad(ngrad),
-	  mLevel(nlevel)
+          mGrad(ngrad),
+          mLevel(nlevel)
     {}
 
     //! Get location of corner.
@@ -89,9 +89,9 @@ namespace Ravl2
     inline RealT distance(const Corner &Oth) const;
 
   private:
-    Point<float, 2> mLocation;  //!< Location of corner.
-    Vector<float, 2> mGrad;//!< gradient of point.
-    uint8_t mLevel;        //!< Intensity of point.
+    Point<float, 2> mLocation;//!< Location of corner.
+    Vector<float, 2> mGrad;   //!< gradient of point.
+    uint8_t mLevel;           //!< Intensity of point.
   };
 
   std::ostream &operator<<(std::ostream &out, const Corner &corn);
