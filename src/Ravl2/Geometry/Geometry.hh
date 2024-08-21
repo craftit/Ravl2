@@ -71,6 +71,13 @@ namespace Ravl2
     return RealT(std::acos((xt::linalg::dot(a, b) / (norm_l2(a) * norm_l2(b)))()));
   }
 
+  template <typename RealT>
+   requires std::is_floating_point<RealT>::value
+  [[nodiscard]] RealT norm_l2(RealT v)
+  {
+    return std::abs(v);
+  }
+
   //! Compute the l2 norm of a vector
   template <typename RealT, size_t N>
   [[nodiscard]] RealT norm_l2(const Vector<RealT, N> &v)
@@ -124,6 +131,13 @@ namespace Ravl2
     return xt::sum(a * a)();
   }
 
+  template <typename RealT>
+   requires std::is_floating_point<RealT>::value
+  constexpr RealT sumOfSqr(RealT a)
+  {
+    return std::abs(a);
+  }
+
   template <typename A, typename B>
   constexpr auto cityBlockDistance(xt::xexpression<A> a, xt::xexpression<B> b)
   {
@@ -165,6 +179,15 @@ namespace Ravl2
   RealT cross(const Point<RealT, 2> &a, const Point<RealT, 2> &b)
   {
     return a[0] * b[1] - a[1] * b[0];
+  }
+
+  //! Cross product of two 2d vectors
+  template <typename RealT>
+  Point<RealT,3> cross(const Point<RealT, 3> &a, const Point<RealT, 3> &b)
+  {
+    return {a[1] * b[2] - a[2] * b[1],
+            a[2] * b[0] - a[0] * b[2],
+            a[0] * b[1] - a[1] * b[0]};
   }
 
   //! Convert a point to the closest integer index
