@@ -42,86 +42,86 @@ namespace Ravl2
     }
 
     //! Returns the start point of the line segment.
-    constexpr const Point<RealT, N> &FirstPoint() const
+    [[nodiscard]] constexpr const Point<RealT, N> &FirstPoint() const
     {
       return point[0];
     }
 
     //! Returns the end point of the line segment.
-    constexpr const Point<RealT, N> &SecondPoint() const
+    [[nodiscard]] constexpr const Point<RealT, N> &SecondPoint() const
     {
       return point[1];
     }
 
     //! Returns the start point of the line segment.
-    constexpr Point<RealT, N> &FirstPoint()
+    [[nodiscard]] constexpr Point<RealT, N> &FirstPoint()
     {
       return point[0];
     }
 
     //! Returns the end point of the line segment.
-    constexpr Point<RealT, N> &SecondPoint()
+    [[nodiscard]] constexpr Point<RealT, N> &SecondPoint()
     {
       return point[1];
     }
 
     //! Returns the mid point of the line segment.
-    constexpr Point<RealT, N> MidPoint() const
+    [[nodiscard]] constexpr Point<RealT, N> MidPoint() const
     {
       return (point[1] + point[0]) / 2.0;
     }
 
     //! Returns the start point of the line segment.
     //! It is equivalent to the function FirstPoint().
-    constexpr const Point<RealT, N> &P1() const
+    [[nodiscard]] constexpr const Point<RealT, N> &P1() const
     {
       return point[0];
     }
 
     //! Returns the start point of the line segment.
     //! It is equivalent to the function SecondPoint().
-    constexpr const Point<RealT, N> &P2() const
+    [[nodiscard]] constexpr const Point<RealT, N> &P2() const
     {
       return point[1];
     }
 
     //! Returns the start point of the line segment.
     //! It is equivalent to the function FirstPoint().
-    constexpr Point<RealT, N> &P1()
+    [[nodiscard]] constexpr Point<RealT, N> &P1()
     {
       return point[0];
     }
 
     //! Returns the start point of the line segment.
     //! It is equivalent to the function SecondPoint().
-    constexpr Point<RealT, N> &P2()
+    [[nodiscard]] constexpr Point<RealT, N> &P2()
     {
       return point[1];
     }
 
     //! Returns the ith point.
-    constexpr const Point<RealT, N> &operator[](const unsigned i) const
+    [[nodiscard]] constexpr const Point<RealT, N> &operator[](const unsigned i) const
     {
       RavlAssertMsg(i == 0 || i == 1, "Index out of range 0..1");
       return point[i];
     }
 
     //! Returns the ith point.
-    constexpr Point<RealT, N> &operator[](const unsigned i)
+    [[nodiscard]] constexpr Point<RealT, N> &operator[](const unsigned i)
     {
       RavlAssertMsg(i == 0 || i == 1, "Index out of range 0..1");
       return point[i];
     }
 
     //! Returns the line segment translated into the new position.
-    constexpr LinePP<RealT, N> operator+(const Vector<RealT, N> &v) const
+    [[nodiscard]] constexpr LinePP<RealT, N> operator+(const Vector<RealT, N> &v) const
     {
       return LinePP<RealT, N>(Point<RealT, N>(P1() + v), Point<RealT, N>(P2() + v));
     }
 
     //! Moves the line segment into the new position.
     // The operator is equivalent to the member function Translate().
-    constexpr LinePP<RealT, N> &operator+=(const Vector<RealT, N> &v)
+    [[nodiscard]] constexpr LinePP<RealT, N> &operator+=(const Vector<RealT, N> &v)
     {
       point[0] += v;
       point[1] += v;
@@ -130,7 +130,7 @@ namespace Ravl2
 
     //! Moves the line segment into the new position.
     // The member function is equivalent to the operator+=.
-    constexpr LinePP<RealT, N> &Translate(const Vector<RealT, N> &v)
+    [[nodiscard]] constexpr LinePP<RealT, N> &Translate(const Vector<RealT, N> &v)
     {
       return operator+=(v);
     }
@@ -144,7 +144,7 @@ namespace Ravl2
     }
 
     //! Returns a line with swapped endpoints
-    constexpr LinePP<RealT, N> Swapped() const
+    [[nodiscard]] constexpr LinePP<RealT, N> Swapped() const
     {
       return LinePP<RealT, N>(P2(), P1());
     }
@@ -152,7 +152,7 @@ namespace Ravl2
     //! Get the direction of the line segment as a free vector.
     //! The magnitude of the vector is the length of the line segment.
     //! This was called 'Vector()' in the original code.
-    constexpr Vector<RealT, N> direction() const
+    [[nodiscard]] constexpr Vector<RealT, N> direction() const
     {
       return point[1] - point[0];
     }
@@ -176,20 +176,20 @@ namespace Ravl2
     }
 
     //! Returns the length of the line in euclidian space.
-    constexpr RealT Length() const
+    [[nodiscard]] constexpr RealT Length() const
     {
       return euclidDistance(point[0], point[1]);
     }
 
     //! Returns the point of the line: FirstPoint() + t * direction().
-    constexpr Point<RealT, N> PointAt(const RealT t) const
+    [[nodiscard]] constexpr Point<RealT, N> PointAt(const RealT t) const
     {
       return FirstPoint() + direction() * t;
     }
 
     //! Returns the parameter of the closest point on the line to 'pnt'.
     //! Where 0 is at the start point and 1 is at the end.
-    constexpr RealT ParClosest(const Point<RealT, N> &pnt) const
+    [[nodiscard]] constexpr RealT ParClosest(const Point<RealT, N> &pnt) const
     {
       auto v = direction();
       RealT l2 = sqr(v[0]) + sqr(v[1]);

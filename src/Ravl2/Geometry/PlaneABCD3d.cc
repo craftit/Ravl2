@@ -43,15 +43,6 @@ namespace Ravl2 {
     return LinePV3dC((n212 * D() + n121 * plane.D())/(-den), direction); 
   }
   
-  std::ostream & operator<<(std::ostream & outS, const PlaneABCD3dC & plane) {
-    outS << plane.Normal() << ' ' << plane.D();
-    return(outS);
-  }
-  
-  std::istream & operator>>(std::istream & inS, PlaneABCD3dC & plane) {
-    inS >> plane.normal >> plane.d;
-    return(inS);
-  }
 
 }
 

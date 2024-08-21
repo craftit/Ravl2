@@ -20,20 +20,15 @@
 #include "Ravl/Vector3d.hh"
 #include "Ravl/FLinePP.hh"
 
-#if RAVL_COMPILER_MIPSPRO
-#include "Ravl/BinStream.hh"
-#endif
 namespace RavlN
 {
-
-  class Line3dPVC;
-  class Vector3dC;
 
   //: Line determined by two points in 3D space
   // The class LinePP3dC represents an oriented line segment in 3 dimensional
   // Euclidian space. Furthermore, it has the same features as any line
   // in Euclidian space. A line is represented by 2 points.
 
+  template <typename RealT>
   class LinePP3dC : public FLinePPC<3>
   {
   public:
@@ -130,15 +125,6 @@ namespace RavlN
     return s >> ((FLinePPC<3> &)line);
   }
 
-  inline BinOStreamC &operator<<(BinOStreamC &s, const LinePP3dC &line)
-  {
-    return s << ((const FLinePPC<3> &)line);
-  }
-
-  inline BinIStreamC &operator>>(BinIStreamC &s, LinePP3dC &line)
-  {
-    return s >> ((FLinePPC<3> &)line);
-  }
 
 }// namespace RavlN
 #endif

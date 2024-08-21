@@ -4,24 +4,17 @@
 // General Public License (LGPL). See the lgpl.licence file for details or
 // see http://www.gnu.org/copyleft/lesser.html
 // file-header-ends-here
-#ifndef RAVL_PLAN3PVV_HH 
-#define RAVL_PLAN3PVV_HH
-////////////////////////////////////////////////////////////////////////////
+#pragma once
 //! author="Radek Marik"
 //! date="26/02/1994"
 //! docentry="Ravl.API.Math.Geometry.3D"
 
-#include "Ravl2/Types.hh" //RealT
-#include "Ravl2/Point3d.hh"
-#include "Ravl2/Point2d.hh"
-#include "Ravl2/Vector3d.hh"
+#include "Ravl2/Types.hh"
+#include "Ravl2/Geometry/PlaneABCD3d.hh"
 
 namespace Ravl2 {
 
-  class Point<RealT,2>;
-  class LinePV3dC;
-  class PlaneABCD3dC;
-  
+
   //: Plane in 3D space
   // The PlanePVV3dC class represents the plane in 3 dimensional Euclidian
   // space. The plane is represented by one point and 2 vectors.
@@ -30,47 +23,38 @@ namespace Ravl2 {
   class PlanePVV3dC
   {
   public:
-    
-    inline PlanePVV3dC()
-      : origin(toPoint<RealT>(0,0,0)),
-	vector1({0,0,0}),
-	vector2({0,0,0})
+    //! Creates the plane P:(0,0,0),V1:[0,0,0],V2:[0,0,0].
+    PlanePVV3dC() = default;
+
+    //! Copy constructor.
+    PlanePVV3dC(const PlanePVV3dC & plane) = default;
+
+
+    //! Creates the plane [p; v1; v2].
+    inline PlanePVV3dC(const Point<RealT,3>  & p,
+                       const Vector<RealT,3> & v1,
+                       const Vector<RealT,3> & v2)
+        : mOrigin(p),
+          vector1(v1),
+          vector2(v2)
     {}
-    // Creates the plane P:(0,0,0),V1:[0,0,0],V2:[0,0,0].
-    
-    inline PlanePVV3dC(const PlanePVV3dC & plane)    
-      : Point<RealT,3>(plane),
-	vector1(plane.vector1),
-	vector2(plane.vector2)
-    {}
-    
-    // Copy constructor.
-    
-    inline PlanePVV3dC(const Point<RealT,3>  & p1,
-		       const Point<RealT,3>  & p2,
-		       const Point<RealT,3>  & p3)    
-      : Point<RealT,3>(p1),
-	vector1(p2-p1),
-	vector2(p3-p1)
-    {}
-    
+
     // Creates the plane determined by three points 'p1', 'p2', and 'p3'.
     // The first vector is equal to p2-p1, the second one to p3-p1.
+    static PlanePVV3dC<RealT> fromPoints(
+                       const Point<RealT,3>  & p1,
+		       const Point<RealT,3>  & p2,
+		       const Point<RealT,3>  & p3)    
+    {
+      return PlanePVV3dC<RealT>(p1,p2-p1,p3-p1);
+    }
     
-    inline PlanePVV3dC(const Point<RealT,3>  & p,
-		       const Vector<RealT,3> & v1,
-		       const Vector<RealT,3> & v2)
-      : Point<RealT,3>(p),
-	vector1(v1),
-	vector2(v2)
-    {}
-    // Creates the plane [p; v1; v2].
-    
+
     //:-=============================================-
     //: Access to the plane elements and conversions.
     
     inline const Point<RealT,3> & Point() const
-    { return *this; }
+    { return mOrigin; }
     // Access to the point of the constant object.
     
     inline const Vector<RealT,3> & Vector1() const
@@ -81,8 +65,8 @@ namespace Ravl2 {
     { return vector2; }
     // Access to the second vector of the constant object.
     
-    inline Point<RealT,3> & origin()
-    { return origin; }
+    inline Point<RealT,3> &origin()
+    { return mOrigin; }
     // Access to the point.
     
     inline Vector<RealT,3> & Vector1()
@@ -140,25 +124,38 @@ namespace Ravl2 {
     
   private:
     
-    //:-======================-
-    //: Object representation.
-    Point<RealT,3> origin;
+    Point<RealT,3> mOrigin;
     Vector<RealT,3> vector1;
     Vector<RealT,3> vector2;
     
     friend std::istream & operator>>(std::istream & inS, PlanePVV3dC & plane);
   };
   
-  std::ostream & operator<<(std::ostream & outS, const PlanePVV3dC & plane);
-  std::istream & operator>>(std::istream & inS, PlanePVV3dC & plane);
+  template<typename RealT>
+  std::ostream & operator<<(std::ostream & outS, const PlanePVV3dC<RealT> & plane){
+    const Point<RealT,3>  & p  = plane.Point();
+    const Vector<RealT,3> & v1 = plane.Vector1();
+    const Vector<RealT,3> & v2 = plane.Vector2();
+    outS << p << ' ' << v1 << ' ' << v2;
+    return(outS);
+  }
+
+  template<typename RealT>
+  std::istream & operator>>(std::istream & inS, PlanePVV3dC<RealT> & plane){
+    Point<RealT,3>  & p  = plane.Point();
+    Vector<RealT,3> & v1 = plane.Vector1();
+    Vector<RealT,3> & v2 = plane.Vector2();
+    inS >> p >> v1 >> v2;
+    return(inS);
+  }
 
   //: Least squares fit of a plane to a set of points in 3d
   // At least 3 points are needed.
-  bool FitPlane(const std::vector<Point<RealT,3>> &points,PlanePVV3dC &plane);
+  template<typename RealT>
+  bool FitPlane(const std::vector<Point<RealT,3>> &points,PlanePVV3dC<RealT> &plane);
   
   
 }
 
-#endif
 
 

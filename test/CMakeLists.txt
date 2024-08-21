@@ -52,6 +52,7 @@ add_executable(tests
         test_CallbackArray.cc
         test_base64.cc
         test_configuration.cc
+        test_quaternion.cc
 )
 target_link_libraries(
   tests

@@ -151,9 +151,18 @@ namespace Ravl2
   // At least 3 points are needed.
   bool FitPlane(const std::vector<Point<RealT,3>> &points,PlaneABCD3dC &plane);
   
-  std::ostream & operator<<(std::ostream & outS, const PlaneABCD3dC & plane);
-  std::istream & operator>>(std::istream & inS, PlaneABCD3dC & plane);
-  
+  template<typename RealT>
+  std::ostream & operator<<(std::ostream & outS, const PlaneABCD3dC & plane){
+    outS << plane.Normal() << ' ' << plane.D();
+    return(outS);
+  }
+
+  template<typename RealT>
+  std::istream & operator>>(std::istream & inS, PlaneABCD3dC & plane) {
+    inS >> plane.normal >> plane.d;
+    return(inS);
+  }
+
 }
 
 

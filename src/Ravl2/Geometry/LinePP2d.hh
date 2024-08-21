@@ -21,7 +21,8 @@ namespace Ravl2
   //! Line defined by 2 points in 2-dimensional space.
 
   template <typename RealT>
-  class LinePP2dC : public LinePP<RealT, 2>
+  class LinePP2dC
+      : public LinePP<RealT, 2>
   {
   public:
     LinePP2dC() = default;

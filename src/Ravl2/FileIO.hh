@@ -34,6 +34,9 @@ namespace Ravl2
 
   //! @brief Container that represents a file or data stream that could have one or more object to be read.
   //! It allows a stream of objects to be treated as a normal c++ container, with begin and end iterators.
+  //! The streampos, is implementation defined, but is used to represent the position in the stream
+  //! but the exact meaning of the position is implementation defined. It could be a byte offset, or a line number,
+  //! etc.
 
   template <typename ObjectT>
   class StreamInputContainer : public StreamBase
@@ -76,6 +79,8 @@ namespace Ravl2
     std::streampos mStart = 0;
     std::streampos mEnd = std::numeric_limits<std::streampos>::max();
   };
+
+  //! @brief Container that represents a file or data stream that could have one or more object to be written.
 
   template <typename ObjectT>
   class StreamOutputContainer : public StreamBase

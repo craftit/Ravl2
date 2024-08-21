@@ -17,9 +17,7 @@ extern "C" {  double qrlsq(double *a,double *b,int m,int n,int *f) ; }
 
 namespace Ravl2 {
 
-  PlaneABCD3dC PlanePVV3dC::PlaneABCD3d() const
-  { return PlaneABCD3dC(Normal(), Point()); }
-  
+
   
   // Returns the point of intersection of this plane with the line 'l'.
   
@@ -61,22 +59,7 @@ namespace Ravl2 {
   Point<RealT,2> PlanePVV3dC::ProjectedIntersection(const LinePV3dC & l) const 
   { return Projection(PlanePVV3dC::Intersection(l)); }
   
-  std::ostream & operator<<(std::ostream & outS, const PlanePVV3dC & plane) {
-    const Point<RealT,3>  & p  = plane.Point();
-    const Vector<RealT,3> & v1 = plane.Vector1();
-    const Vector<RealT,3> & v2 = plane.Vector2();
-    outS << p << ' ' << v1 << ' ' << v2;
-    return(outS);
-  }
-  
-  std::istream & operator>>(std::istream & inS, PlanePVV3dC & plane) {
-    Point<RealT,3>  & p  = plane.Point();
-    Vector<RealT,3> & v1 = plane.Vector1();
-    Vector<RealT,3> & v2 = plane.Vector2();
-    inS >> p >> v1 >> v2;
-    return(inS);
-  }
-  
+
 }
 
 

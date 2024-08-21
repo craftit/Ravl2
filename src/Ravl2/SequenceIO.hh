@@ -87,7 +87,10 @@ namespace Ravl2
   class OutputStreamIterator
   {
   public:
+    using iterator_category = std::output_iterator_tag;
     using value_type = ObjectT;
+    using difference_type = void;
+    using pointer = void;
 
     //! @brief Construct an iterator.
     //! @details This constructor is used to construct an iterator.
@@ -103,42 +106,11 @@ namespace Ravl2
         : mContainer(nullptr)
     {}
 
-    //! @brief Proxy object that allows an object to be written to the stream.
-    class WriteProxy
+    //! @brief Write an object to the container.
+    auto &operator=(const ObjectT &object)
     {
-    public:
-      WriteProxy(StreamOutputContainer<ObjectT> *too, std::streampos pos)
-          : mContainer(too),
-            mPos(pos)
-      {}
-
-
-      ObjectT &operator=(ObjectT &&object)
-      {
-        mObject = object;
-        return object;
-      }
-
-      ObjectT &operator=(const ObjectT &object)
-      {
-        mObject = object;
-        return object;
-      }
-
-      operator ObjectT &&()
-      {
-        return mObject;
-      }
-    private:
-      ObjectT mObject;
-      StreamOutputContainer<ObjectT> *mContainer;
-      std::streampos mPos;
-    };
-
-    //! @return The object that the iterator is pointing to.
-    WriteProxy operator*() const
-    {
-      return WriteProxy(mContainer, mPos);
+      mContainer->write(object, mPos);
+      return *this;
     }
 
     //! @brief Increment the iterator.

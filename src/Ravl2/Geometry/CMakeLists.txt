@@ -30,6 +30,8 @@ add_library (Ravl2Geometry
         Ellipse2d.cc Ellipse2d.hh
         VectorOffset.hh
         FitVectorOffset.hh
+        Quaternion.cc Quaternion.hh
+        Isometry3.cc Isometry3.hh
 )
 
 add_library(ravl2::Ravl2Geometry ALIAS Ravl2Geometry)
