@@ -7,6 +7,7 @@ add_library (Ravl2x3D
   PinholeCamera1.cc PinholeCamera1.hh
   PinholeCamera2.cc PinholeCamera2.hh
   PinholeCamera3.cc PinholeCamera3.hh
+  PinholeCameraArray.cc PinholeCameraArray.hh
 )
 
 add_library(ravl2::Ravl2x3D ALIAS Ravl2x3D)
