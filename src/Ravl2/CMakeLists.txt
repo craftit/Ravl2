@@ -16,6 +16,7 @@ add_subdirectory(Geometry)
 add_subdirectory(Math)
 add_subdirectory(Pixel)
 add_subdirectory(Image)
+add_subdirectory(3D)
 add_subdirectory(OpenCV)
 
 # If dlib is found, add the dlib subdirectory
@@ -51,8 +52,7 @@ add_library(Ravl2Core
     Base64.cc Base64.hh
     Configuration.cc Configuration.hh
     ConfigJson.cc ConfigJson.hh
-        SequenceIO.cc
-        SequenceIO.hh
+    SequenceIO.cc SequenceIO.hh
 )
 
 add_library(ravl2::Ravl2Core ALIAS Ravl2Core)

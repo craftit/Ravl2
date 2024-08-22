@@ -122,6 +122,20 @@ namespace Ravl2
       return *mPtr;
     }
 
+    //! Element by element call operator access
+    template <typename... IndexDataT, unsigned IndexN = sizeof...(IndexDataT)>
+    constexpr inline auto operator()(IndexDataT... data)
+    {
+      return operator[](Index<IndexN>({int(data)...}));
+    }
+
+    //! Element by element call operator access
+    template <typename... IndexDataT, unsigned IndexN = sizeof...(IndexDataT)>
+    constexpr inline auto operator()(IndexDataT... data) const
+    {
+      return operator[](Index<IndexN>({int(data)...}));
+    }
+
     //! Range of index's for dim
     [[nodiscard]] constexpr const IndexRange<1> &range(unsigned i) const
     {

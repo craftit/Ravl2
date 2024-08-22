@@ -54,6 +54,7 @@ add_executable(tests
         test_configuration.cc
         test_quaternion.cc
         test_RankedScoreArray.cc
+        test_3d.cc
         checks.hh
 )
 target_link_libraries(
@@ -65,6 +66,7 @@ target_link_libraries(
           ravl2::Ravl2Math
           ravl2::Ravl2Image
           ravl2::Ravl2ImageSegmentation
+          ravl2::Ravl2x3D
           ravl2::Ravl2OpenCV
           Catch2::Catch2WithMain)
 

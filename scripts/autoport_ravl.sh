@@ -201,6 +201,17 @@ s/ istream / std::istream /g
 s/(ostream /(std::ostream /g
 s/(istream /(std::istream /g
 
+# Indexing
+s/[0][0]/(0,0)/g
+s/[0][1]/(0,1)/g
+s/[0][2]/(0,2)/g
+s/[1][0]/(1,0)/g
+s/[1][1]/(1,1)/g
+s/[1][2]/(1,2)/g
+s/[2][0]/(2,0)/g
+s/[2][1]/(2,1)/g
+s/[2][2]/(2,2)/g
+
 # Namespaces
 # Delete lines with "using namespace RavlN;" and "using namespace RavlImageN;" after any whitespace
 /^\s*using namespace RavlN;/d

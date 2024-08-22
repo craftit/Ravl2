@@ -588,7 +588,7 @@ TEST_CASE("ShiftView", "Array<N>")
   }
 }
 
-TEST_CASE("ZipN", "[ZipIterN]")
+TEST_CASE("ZipN")
 {
   using namespace Ravl2;
   Array<int, 2> a({4, 4});
@@ -617,7 +617,7 @@ TEST_CASE("ZipN", "[ZipIterN]")
 }
 
 
-TEST_CASE("ScanWindow2", "[ScanWindow]")
+TEST_CASE("ScanWindow2")
 {
   Ravl2::Array<int, 2> val(Ravl2::IndexRange<2>({11, 10}));
   int at = 0;
@@ -699,7 +699,7 @@ TEST_CASE("ScanWindow2", "[ScanWindow]")
   CHECK_EQ(count, 9 * 10 * 4);
 }
 
-TEST_CASE("ScanWindow1", "[ScanWindow1]")
+TEST_CASE("ScanWindow1")
 {
   Ravl2::Array<int, 1> val(Ravl2::IndexRange<1>(0,9));
   int at = 0;
@@ -725,7 +725,7 @@ TEST_CASE("ScanWindow1", "[ScanWindow1]")
   CHECK(count > 0);
 }
 
-TEST_CASE("AnotherIterTest", "[ArrayIter]")
+TEST_CASE("AnotherIterTest")
 {
   Ravl2::Array<int, 2> narray({4,4},1);
   Ravl2::IndexRange<2> nrng({{narray.range(0).min() + 1, narray.range(0).max()},
