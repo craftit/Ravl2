@@ -4,6 +4,9 @@ include(GenerateExportHeader)
 add_library (Ravl2x3D
   PinholeCamera.cc PinholeCamera.hh
   PinholeCamera0.cc PinholeCamera0.hh
+  PinholeCamera1.cc PinholeCamera1.hh
+  PinholeCamera2.cc PinholeCamera2.hh
+  PinholeCamera3.cc PinholeCamera3.hh
 )
 
 add_library(ravl2::Ravl2x3D ALIAS Ravl2x3D)

@@ -18,48 +18,46 @@ namespace Ravl3DN
   //: Container for an array of pinhole cameras
   // This wrapper provides IO to construct the appropriate camera models and return access via PinholeCameraC
 
-  class PinholeCameraArrayC 
+  class PinholeCameraArrayC
   {
-  public: 
-  
+  public:
     PinholeCameraArrayC()
-    { }
+    {}
     // default constructor
 
     PinholeCameraArrayC(unsigned size, unsigned distortion);
     // Constructor
-  
-  public:
 
-    std::vector<PinholeCameraC>& Array()
+  public:
+    std::vector<PinholeCameraC> &Array()
     {
       return m_cameras;
-    }    
+    }
     //: Access the array of cameras
 
-    const std::vector<PinholeCameraC>& Array() const
+    const std::vector<PinholeCameraC> &Array() const
     {
       return m_cameras;
-    }    
+    }
     //: Access the array of cameras
 
     size_t size() const
     {
-       return m_cameras.size();
+      return m_cameras.size();
     }
     //: Return the number of cameras in the array
 
-    const PinholeCameraC& operator[](IntT i) const
+    const PinholeCameraC &operator[](IntT i) const
     {
-       return m_cameras[i];
+      return m_cameras[i];
     }
-    // Read-only access to the 'i'-th element of the array.     
-    
-    inline PinholeCameraC& operator[](IntT i)
+    // Read-only access to the 'i'-th element of the array.
+
+    inline PinholeCameraC &operator[](IntT i)
     {
-       return m_cameras[i];
+      return m_cameras[i];
     }
-    // Read-write access  to the 'i'-th element of the array. 
+    // Read-write access  to the 'i'-th element of the array.
 
     unsigned DistortionModel() const
     {
@@ -70,23 +68,19 @@ namespace Ravl3DN
     // If you need to access the camera parameters you can construct a handle from the base handle as follows
     // PinholeCamera1C c(dynamic_cast<PinholeCameraBody1C&>(camera.Body()));
 
-    bool Triangulate(Vector<RealT,3>& pt3D, const std::vector<std::tuple<unsigned, Vector<RealT,2>> >& points) const;
+    bool Triangulate(Vector<RealT, 3> &pt3D, const std::vector<std::tuple<unsigned, Vector<RealT, 2>>> &points) const;
     //: Triangulate points in a set of camera images
     // Returns false if <2 points or singular
 
   protected:
-  
     unsigned m_distortion;
-    std::vector<PinholeCameraC> m_cameras; // The reference counted container
-    
-  }; 
+    std::vector<PinholeCameraC> m_cameras;// The reference counted container
+  };
 
-  istream& operator>>(istream& s, PinholeCameraArrayC& camera);
+  std::istream &operator>>(std::istream &s, PinholeCameraArrayC &camera);
   //:Read camera parameters from a text stream.
 
-  ostream& operator<<(ostream& s, const PinholeCameraArrayC& camera);
+  std::ostream &operator<<(std::ostream &s, const PinholeCameraArrayC &camera);
   //:Write camera parameters to a text stream.
 
-};
-
-
+};// namespace Ravl3DN
