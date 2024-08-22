@@ -53,6 +53,8 @@ add_executable(tests
         test_base64.cc
         test_configuration.cc
         test_quaternion.cc
+        test_RankedScoreArray.cc
+        checks.hh
 )
 target_link_libraries(
   tests

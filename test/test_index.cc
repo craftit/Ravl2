@@ -1,16 +1,11 @@
 #include <random>
 #include <vector>
 
-#include <catch2/catch_test_macros.hpp>
+#include "checks.hh"
 #include <cereal/archives/json.hpp>
-#include <spdlog/spdlog.h>
 
 #include "Ravl2/Index.hh"
 #include "Ravl2/IndexRangeSet.hh"
-
-#define CHECK_EQ(a,b) CHECK((a) == (b))
-#define ASSERT_EQ(a,b) REQUIRE((a) == (b))
-#define ASSERT_NE(a,b) REQUIRE_FALSE((a) == (b))
 
 TEST_CASE("Index")
 {

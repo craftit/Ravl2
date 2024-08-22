@@ -9,7 +9,7 @@
 
 #include <numbers>
 #include <random>
-#include <catch2/catch_test_macros.hpp>
+#include "checks.hh"
 #include <cereal/archives/json.hpp>
 #include <spdlog/spdlog.h>
 
