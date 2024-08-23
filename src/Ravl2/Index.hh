@@ -31,7 +31,7 @@ namespace Ravl2
     using value_type = int;
     constexpr static unsigned dimensions = N;
 
-    //! array of indexs
+    //! array of indices
     constexpr Index(std::initializer_list<int> val)
     {
       if(val.size() == 1) {

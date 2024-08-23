@@ -26,39 +26,39 @@ namespace Ravl2
   class Angle
   {
   public:
-    //: Construct from value in radians.
+    //! Construct from value in radians.
     inline explicit Angle(RealT anglerad = 0)
         : angle(anglerad)
     {
       Normalise();
     }
 
-    //: Normalise the angle to values between 0 and max.
+    //! Normalise the angle to values between 0 and max.
     inline void Normalise()
     {
       angle -= std::floor(angle / m_max) * m_max;
     }
 
-    //: Normalise the angle to values between 0 and max.
-    // Returns the normalised angle.
+    //! Normalise the angle to values between 0 and max.
+    //! Returns the normalised angle.
     [[nodiscard]] inline RealT Normalise(RealT value) const
     {
       return value - std::floor(value / m_max) * m_max;
     }
 
-    //: Subtract angles.
+    //! Subtract angles.
     inline Angle operator-(const Angle &val) const
     {
       return Angle(angle - val.angle);
     }
 
-    //: Add angles.
+    //! Add angles.
     inline Angle operator+(const Angle &val) const
     {
       return Angle(angle + val.angle);
     }
 
-    //: Subtract angles.
+    //! Subtract angles.
     inline const Angle &operator-=(const Angle &val)
     {
       angle -= val.angle;
@@ -66,7 +66,7 @@ namespace Ravl2
       return *this;
     }
 
-    //: Add angles.
+    //! Add angles.
     inline const Angle &operator+=(const Angle &val)
     {
       angle += val.angle;
@@ -74,7 +74,7 @@ namespace Ravl2
       return *this;
     }
 
-    //: Test if this angle lies between angle1 and angle2.
+    //! Test if this angle lies between angle1 and angle2.
     [[nodiscard]] inline bool IsBetween(RealT angle1, RealT angle2) const
     {
       RealT diff1 = Normalise(angle2 - angle1);
@@ -82,14 +82,14 @@ namespace Ravl2
       return (diff1 < diff2);
     }
 
-    //: Test if this angle lies between angle1 and angle2.
+    //! Test if this angle lies between angle1 and angle2.
     [[nodiscard]] inline bool IsBetween(const Angle &angle1, const Angle &angle2) const
     {
       return IsBetween(angle1.Value(), angle2.Value());
     }
 
-    //: Find the difference between two angles.
-    // it returns values in the rangle +/- max/2.
+    //! Find the difference between two angles.
+    //! it returns values in the rangle +/- max/2.
     [[nodiscard]] inline RealT diff(const Angle<RealT, N> &val) const
     {
       RealT ret = angle - val.angle;
@@ -103,19 +103,19 @@ namespace Ravl2
       return ret;
     }
 
-    //: Get maximum angle.
+    //! Get maximum angle.
     [[nodiscard]] inline RealT MaxAngle() const { return m_max; };
 
-    //: Get value of angle.
+    //! Get value of angle.
     [[nodiscard]] inline RealT Value() const { return angle; }
 
-    //: Get sin of angle.
+    //! Get sin of angle.
     [[nodiscard]] inline RealT Sin() const { return std::sin(N != 0 ? angle : angle * 2 * std::numbers::pi_v<RealT>); }
 
-    //: Get cos of angle.
+    //! Get cos of angle.
     [[nodiscard]] inline RealT Cos() const { return std::cos(N != 0 ? angle : angle * 2 * std::numbers::pi_v<RealT>); }
 
-    //: Dump to stream.
+    //! Dump to stream.
     void Dump(std::ostream &out) const
     {
       out << "Ang:" << angle << " Max:" << m_max;

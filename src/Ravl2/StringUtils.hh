@@ -9,10 +9,10 @@
 
 namespace Ravl2
 {
-  //! Remove space characters from the beginning and end of the string.
+  //! Remove white space characters from the beginning and end of the string.
   [[nodiscard]] std::string_view topAndTail(std::string_view word);
 
-  //! Remove space characters from the beginning and end of the string.
+  //! Remove white space characters from the beginning and end of the string.
   [[nodiscard]] std::string topAndTail(const std::string &word);
 
   //! top and tail all strings in a list.
@@ -36,7 +36,7 @@ namespace Ravl2
   std::string generateUniqueId(size_t size);
 
   //! Generate an string indent
-  inline std::string indent(int level)
+  inline std::string indent(unsigned level)
   {
     return std::string(std::string::size_type(level), ' ');
   }

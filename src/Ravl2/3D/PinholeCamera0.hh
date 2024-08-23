@@ -218,7 +218,7 @@ namespace Ravl2
     RealT m_cy = 0;
     RealT m_fx = 1;
     RealT m_fy = 1;
-    Matrix<RealT, 3, 3> m_R;
+    Matrix<RealT, 3, 3> m_R = xt::eye<RealT>(3);
     Vector<RealT, 3> m_t;
     IndexRange<2> m_frame;
   };

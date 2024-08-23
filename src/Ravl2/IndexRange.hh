@@ -10,7 +10,7 @@ namespace Ravl2
 {
 
   //! N-dimensional range of index's
-  // The range is inclusive of all values.
+  //! The range is inclusive of all values.
 
   template <unsigned N>
   class IndexRange

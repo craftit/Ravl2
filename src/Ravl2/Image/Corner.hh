@@ -94,11 +94,11 @@ namespace Ravl2
     uint8_t mLevel;           //!< Intensity of point.
   };
 
-  std::ostream &operator<<(std::ostream &out, const Corner &corn);
   //: Write corner to a stream.
+  std::ostream &operator<<(std::ostream &out, const Corner &corn);
 
-  std::istream &operator>>(std::istream &in, Corner &corn);
   //: Read corner from a stream.
+  std::istream &operator>>(std::istream &in, Corner &corn);
 
   //////////////////////////////////////
   // A somewhat arbitrary distance measure between two corners.

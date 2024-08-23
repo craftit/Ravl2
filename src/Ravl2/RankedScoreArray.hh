@@ -14,8 +14,8 @@
 
 namespace Ravl2 {
 
-  //: Keep a ranked array of results.
-  // KeyT = score value, higher values preferred over smaller ones.
+  //! @brief Keep a ranked array of results.
+  //! KeyT = score value, higher values preferred over smaller ones.
 
   template<typename KeyT,typename DataT,typename ArrayT = std::vector<std::tuple<KeyT,DataT>> >
   class RankedScoreArray

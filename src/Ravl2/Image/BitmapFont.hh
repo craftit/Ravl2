@@ -23,71 +23,70 @@ namespace Ravl2
   class BitmapFont
   {
   public:
-    BitmapFont()
-    {}
     //: Default constructor.
     // Creates an empty font.
+    BitmapFont() = default;
 
-    BitmapFont(std::vector<Array<uint8_t, 2>> &nGlyphs)
+    //: Constructor from array of image.
+    explicit BitmapFont(std::vector<Array<uint8_t, 2>> &nGlyphs)
         : glyphs(nGlyphs)
     {}
-    //: Constructor from array of image.
 
+    //: Access character.
     Array<uint8_t, 2> &operator[](size_t let)
     {
       return glyphs[let];
     }
-    //: Access character.
 
+    //: Access character.
     const Array<uint8_t, 2> &operator[](size_t let) const
     {
       return glyphs[let];
     }
-    //: Access character.
 
+    //: Access image array.
     std::vector<Array<uint8_t, 2>> &Glyphs()
     {
       return glyphs;
     }
-    //: Access image array.
 
+    //: Access image array.
     const std::vector<Array<uint8_t, 2>> &Glyphs() const
     {
       return glyphs;
     }
-    //: Access image array.
 
+    //: Is this a valid font.
     bool IsValid() const
     {
       return glyphs.size() != 0;
     }
-    //: Is this a valid font.
 
-    Index<2> Center(const std::string &text) const;
     //: Get the offset to the centre of the string.
+    Index<2> Center(const std::string &text) const;
 
-    Index<2> Size(const std::string &text) const;
     //: Compute the size of image required to render 'text'.
+    Index<2> Size(const std::string &text) const;
 
+    //: Count the number of glyphs in the font.
     auto Count() const
     {
       return glyphs.size();
     }
-    //: Count the number of glyphs in the font.
 
   protected:
     std::vector<Array<uint8_t, 2>> glyphs;
   };
 
-  BitmapFont LoadPSF1(const std::string &fontFile);
   //: Load PSF1 font.
   // If the file is not recognised an invalid BitmapFont will be returned
+  BitmapFont LoadPSF1(const std::string &fontFile);
 
-  BitmapFont LoadPSF2(const std::string &fontFile);
   //: Load PSF2 font.
   // If the file is not recognised an invalid BitmapFont will be returned
+  BitmapFont LoadPSF2(const std::string &fontFile);
 
-  BitmapFont &DefaultFont();
   //: Access default font.
+  BitmapFont &DefaultFont();
 
 }// namespace Ravl2

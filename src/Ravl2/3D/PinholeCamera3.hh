@@ -25,7 +25,7 @@ namespace Ravl2
     PinholeCamera3() = default;
 
     //! construct from an undistorted pinhole camera
-    PinholeCamera3(const PinholeCamera0<RealT> &c0)
+    explicit PinholeCamera3(const PinholeCamera0<RealT> &c0)
         : PinholeCamera0<RealT>(c0)
     {}
 
@@ -38,13 +38,13 @@ namespace Ravl2
 
   public:
     //: First radial distortion coefficient
-    const RealT &k1() const
+    [[nodiscard]] const RealT &k1() const
     {
       return this->m_k1;
     };
 
     //: Second radial distortion coefficient
-    const RealT &k2() const
+    [[nodiscard]] const RealT &k2() const
     {
       return this->m_k2;
     };
@@ -130,6 +130,7 @@ namespace Ravl2
     }
 
   protected:
+    //: Apply radial distortion
     Vector<RealT, 2> Distort0(const Vector<RealT, 2> &z) const
     {
       Vector<RealT, 2> ret = z;
@@ -143,8 +144,8 @@ namespace Ravl2
       }
       return ret;
     }
-    //: Apply radial distortion
 
+    //: Remove radial distortion
     Vector<RealT, 2> Undistort0(const Vector<RealT, 2> &z) const
     {
       Vector<RealT, 2> ret = z;
@@ -169,7 +170,6 @@ namespace Ravl2
       }
       return ret;
     }
-    //: Remove radial distortion
 
     /*
      * Function undist2dist: 

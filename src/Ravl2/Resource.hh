@@ -13,16 +13,16 @@ namespace Ravl2
   //! @param section Section name.  'config', 'data', 'models'
   //! @param key Key name
   //! @return File path, it will be empty if not found
-  std::string findFileResource(const std::string_view &section, const std::string_view &key, bool verbose = false);
+  [[nodiscard]] std::string findFileResource(const std::string_view &section, const std::string_view &key, bool verbose = false);
 
   //! Find a directory resource
   //! @param section Section name
   //! @param key Key name, maybe empty
   //! @return Directory path, it will be empty if not found
-  std::string findDirectoryResource(const std::string_view &section, const std::string_view &key = "");
+  [[nodiscard]] std::string findDirectoryResource(const std::string_view &section, const std::string_view &key = "");
 
   //! Dump the resource paths to a string
   //! @return String containing the resource paths
-  std::string dumpResourcePaths();
+  [[nodiscard]] std::string dumpResourcePaths();
 
 }// namespace Ravl2

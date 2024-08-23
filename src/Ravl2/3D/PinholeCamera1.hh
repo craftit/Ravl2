@@ -27,7 +27,7 @@ namespace Ravl2
     PinholeCamera1() = default;
 
     //! construct from an undistorted pinhole camera
-    PinholeCamera1(const PinholeCamera0<RealT> &c0)
+    explicit PinholeCamera1(const PinholeCamera0<RealT> &c0)
         : PinholeCamera0<RealT>(c0)
     {}
 
@@ -38,13 +38,13 @@ namespace Ravl2
 
   public:
     //: first order radial distortion
-    RealT &k1()
+    [[nodiscard]] RealT &k1()
     {
       return m_k1;
     };
 
     //: first order radial distortion
-    const RealT &k1() const
+    [[nodiscard]] const RealT &k1() const
     {
       return m_k1;
     };
