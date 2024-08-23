@@ -1,6 +1,6 @@
 # RAVL2,  Recognition And Vision Library 2
 
-This version of Ravl2 is work in progress, and may still change significantly.
+This version of Ravl2 is work in progress, implementations maybe incomplete and may change significantly.
 
 There are still also some files not fully ported, and parts of the cmake
 templates that are still generic.
@@ -54,6 +54,7 @@ The code is organized into the following directories:
 - cmake: Contains cmake configuration files
 - data: Contains data files used by examples and tests. These are not intended to be installed with the library.
 - examples: Contains example code
+- scripts: Scripts for working with the project, notably autoport_ravl.sh for updating the code from the original Ravl library.
 - share: Resources used by the library. 
 - src: Contains the source code
   - 3D: Contains 3D geometry code
@@ -61,11 +62,19 @@ The code is organized into the following directories:
   - Geometry: Affine transforms, and geometric constructions
   - Math: Contains common math, linear algebra, and optimization code
   - OpenCV: Interoperability with OpenCV
-  - Pixel: Contains pixel and colour space handling.
+  - Pixel: Pixel and colour space handling.
   - Qt: Interoperability with Qt
   - Image: Contains image processing code
     - Segmentation: Image segmentation, boundaries, and region growing
 - test: Contains unit tests
+- 
+
+The project is intended to be documents by doxygen.
+
+## Licensing
+
+The original Ravl code was released under LGPL. Any new code in this project
+is released under the MIT license.
 
 ## Coding Conventions
 
@@ -82,7 +91,9 @@ There is a .clang-format file in the root directory that can be used to format t
 
 The output is the first argument(s).
 
-### Functions
+## Library Design
+
+### Common functions
 
  * fill(x,value) - fill x with value
  * copy(x,y) - copy y to x
@@ -92,7 +103,13 @@ The output is the first argument(s).
  * access(x) - Return a reference to the data in x.  Assigning to an access object has broadcast semantics.
  * clone(x) - Return a deep copy of x that maybe modified without affecting the original.
 
-### Memory management
+### Array<x> 
 
-  * Array<x> - Contain a shared pointer to the data, copying an array does not copy the data.
+ * The last dimension is contiguous in memory, allowing for efficient access to the data.
+ * The array is a view of the data, and can be reshaped without copying the data.
+
+These are designed to be easy to construct from other containers.
+
+ * This uses a thread safe reference counted handle to the data. 
+ * Other than the buffer the uses is responsible for coordinating access to the data.
 
