@@ -11,11 +11,13 @@
 #include <memory>
 #include <functional>
 #include <vector>
+#include <deque>
+#include <map>
 
 namespace Ravl2
 {
 
-  //! Type conversion for file formats.
+  //! Abstract type conversion for use with file formats.
 
   class TypeConverter
   {
@@ -25,7 +27,7 @@ namespace Ravl2
 
     //! Constructor.
     TypeConverter(float factor,const std::type_info &from, const std::type_info &to)
-        : m_factor(factor),
+        : m_conversionLoss(factor),
           m_from(from),
           m_to(to)
     {}
@@ -45,16 +47,16 @@ namespace Ravl2
     }
 
     //! Get the conversion factor.
-    [[nodiscard]] float factor() const noexcept
+    [[nodiscard]] float conversionLoss() const noexcept
     {
-      return m_factor;
+      return m_conversionLoss;
     }
 
     //! Convert via std::any.
     [[nodiscard]] virtual std::any convert(const std::any &from) const = 0;
 
   private:
-    float m_factor = 1.0f;
+    float m_conversionLoss = 1.0f;
     const std::type_info &m_from = typeid(void);
     const std::type_info &m_to = typeid(void);
   };
@@ -101,24 +103,31 @@ namespace Ravl2
 
     //! Add a type conversion.
     template <typename FromT, typename ToT, typename ConverterT>
-    void add(float cost, const ConverterT &converter)
+    bool add(float cost, const ConverterT &converter)
     {
-      //m_converters.emplace_back(std::make_shared<TypeConversionImpl<FromT, ToT, ConverterT>>(cost, converter));
+      auto x = std::make_shared<TypeConversionImpl<FromT, ToT, ConverterT>>(cost, converter);
+      m_converters[std::type_index(typeid(FromT))].push_back(x);
+      return true;
     }
+
+    //! Find a convertion chain, with a best first search.
+    [[nodiscard]] std::optional<std::vector<std::shared_ptr<TypeConverter>>> find(const std::type_info &from, const std::type_info &to) const;
 
     //! Convert from one type to another.
-    [[nodiscard]] std::any convert(const std::any &from, const std::type_info &to) const
-    {
-      (void)from;
-        (void)to;
-      return std::any();
-    }
+    [[nodiscard]] std::optional<std::any> convert(const std::any &from, const std::type_info &to) const;
 
   private:
-    //std::unordered_map<std::pair<const std::type_info &, const std::type_info &>, std::shared_ptr<TypeConverter>> m_converters;
-    std::unordered_map<std::type_index, std::vector<TypeConverter>> m_converters;
+    std::unordered_map<std::type_index, std::vector<std::shared_ptr<TypeConverter>>> m_converters;
   };
 
+  TypeConverterMap &typeConverterMap();
+
+  //! Register a converter.
+  template <typename ConverterT, typename FromT, typename ToT = >
+  bool registerTypeConverter(float cost, const ConverterT &converter)
+  {
+    return typeConverterMap().add<FromT, ToT, ConverterT>(cost, converter);
+  }
 
 }// namespace Ravl2
 
