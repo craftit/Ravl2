@@ -55,9 +55,15 @@ namespace Ravl2
   class ProbeLoadContext
   {
   public:
+    ProbeLoadContext(const std::string &filename, const std::type_index &targetType, const std::vector<uint8_t> &data)
+        : m_filename(filename),
+          m_targetType(targetType),
+          m_data(data)
+    {
+      m_extension = filename.substr(filename.find_last_of('.') + 1);
+    }
 
 
-  private:
     std::string m_extension;
     std::string m_filename;
     std::type_index m_targetType;
@@ -68,7 +74,11 @@ namespace Ravl2
 
   class LoadFormat
   {
+  public:
 
+  private:
+    std::string m_name;
+    std::string m_extension;
   };
 
 

@@ -13,6 +13,10 @@
 #include <vector>
 #include <deque>
 #include <map>
+#include <optional>
+#include <tuple>
+#include <type_traits>
+#include <utility>
 
 namespace Ravl2
 {
@@ -72,9 +76,9 @@ namespace Ravl2
     TypeConversionImpl() = default;
 
     //! Constructor.
-    explicit TypeConversionImpl(float cost,const ConverterT &converter)
-        : TypeConverter(cost, typeid(FromT), typeid(ToT)),
-          m_converter(converter)
+    explicit TypeConversionImpl(float cost, ConverterT &&converter)
+      : TypeConverter(cost, typeid(FromT), typeid(ToT)),
+        m_converter(std::move(converter))
     {}
 
     //! Get the converter.
@@ -123,10 +127,16 @@ namespace Ravl2
   TypeConverterMap &typeConverterMap();
 
   //! Register a converter.
-  template <typename ConverterT, typename FromT, typename ToT = >
-  bool registerTypeConverter(float cost, const ConverterT &converter)
+
+  template <typename Callable>
+  bool registerConversion(Callable&& callable,float cost)
   {
-    return typeConverterMap().add<FromT, ToT, ConverterT>(cost, converter);
+    using CallableType = std::decay_t<Callable>;
+    using ReturnTypeT = std::invoke_result_t<CallableType>;
+    using FunctionType = std::function<CallableType>;
+    using FirstParamTypeT = std::tuple_element_t<0, typename FunctionType::argument_type>;
+    typeConverterMap().add(TypeConversionImpl<FirstParamTypeT, ReturnTypeT, CallableType>(cost, callable));
+    return true;
   }
 
 }// namespace Ravl2
