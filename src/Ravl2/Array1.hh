@@ -138,6 +138,18 @@ namespace Ravl2
       return mPtr[i];
     }
 
+    //! Index access
+    constexpr inline auto &operator()(int i)
+    {
+      return mPtr[i];
+    }
+
+    //! Index access
+    constexpr inline const auto &operator()(int i) const
+    {
+      return mPtr[i];
+    }
+
     //! Access element point
     [[nodiscard]] constexpr DataT *data() const
     {

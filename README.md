@@ -1,23 +1,82 @@
-# RAVL2
+# RAVL2,  Recognition And Vision Library 2
 
-Recognition And Vision Library 2
+This version of Ravl2 is work in progress, and may still change significantly.
 
-Goals:
+There are still also some files not fully ported, and parts of the cmake
+templates that are still generic.
+
+## Goals:
 
  - Efficient interoperability with other vision libraries such as opencv
  - Port algorithms from RAVL to use new c++ idioms
 
+## Supported platforms
 
- - Some routines are adapted from ccmath. the original code can be found at: https://github.com/adis300/ccmath
+ - Linux
+ - MacOS 
+
+A windows port should be possible, but is not currently supported.
+
+## Building
+
+Pre-requisites:
+
+ - CMake 3.21 or higher
+ - A C++20 compatible compiler
+ - OpenCV 4.5 or higher
+ - BLAS and LAPACK libraries
+
+The code uses many other libraries, but if not present natively they will be downloaded and built as part of the build process.
+See 'Dependencies.cmake' for a full list of dependencies.
+
+Project options can be found in 'ProjectOptions.cmake'.
+
+The build itself should be straight forward:
+
+```bash
+mkdir build
+cd build
+cmake ..
+cmake --build .
+```
 
 
-## Conventions
+## Related code
+
+  - Much of the code comes via a cmake port of the original Ravl library: https://github.com/craftit/RavlX.git
+  - Adapted from ccmath. the original code can be found at: https://github.com/adis300/ccmath
+  - The cmake setup is based on this project template: https://github.com/cpp-best-practices/cmake_template
+
+## Code structure
+
+The code is organized into the following directories:
+
+- cmake: Contains cmake configuration files
+- data: Contains data files used by examples and tests. These are not intended to be installed with the library.
+- examples: Contains example code
+- share: Resources used by the library. 
+- src: Contains the source code
+  - 3D: Contains 3D geometry code
+  - DLib: Contains interoperability code with DLib.
+  - Geometry: Affine transforms, and geometric constructions
+  - Math: Contains common math, linear algebra, and optimization code
+  - OpenCV: Interoperability with OpenCV
+  - Pixel: Contains pixel and colour space handling.
+  - Qt: Interoperability with Qt
+  - Image: Contains image processing code
+    - Segmentation: Image segmentation, boundaries, and region growing
+- test: Contains unit tests
+
+## Coding Conventions
+
+There is a .clang-format file in the root directory that can be used to format the code.
 
 ### Naming
 
  * Scoped objects like classes and namespaces are named with CamelCase. 
  * Functions and variables start with lower case.
  * Types such as template arguments end with a 'T'
+ * It is preferred that member variables are prefixed with 'm'
 
 ### Argument order
 
