@@ -76,4 +76,24 @@ namespace Ravl2
     }
     return result;
   }
+
+  namespace {
+    // These are used to register conversions, they are not used directly. They current content
+    // is as much for checking the compiler is happy constructing the function as anything else.
+
+    [[maybe_unused]] bool g_reg = registerConversion([](float val) { return double(val); }, 1.0f);
+
+    int func(int16_t x)
+    {
+        return x;
+    }
+    [[maybe_unused]] bool g_reg2 = registerConversion(func, 1.0f);
+
+    int64_t func2(const int32_t &x)
+    {
+      return x;
+    }
+    [[maybe_unused]] bool g_reg3 = registerConversion(func2, 1.0f);
+  }
+
 }// namespace Ravl2
