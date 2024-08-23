@@ -53,6 +53,9 @@ add_library(Ravl2Core
     Configuration.cc Configuration.hh
     ConfigJson.cc ConfigJson.hh
     SequenceIO.cc SequenceIO.hh
+    IO/FileFormat.cc IO/FileFormat.hh
+        IO/TypeConverter.cc
+        IO/TypeConverter.hh
 )
 
 add_library(ravl2::Ravl2Core ALIAS Ravl2Core)
