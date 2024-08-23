@@ -396,7 +396,7 @@ namespace Ravl2
     // Sort pixels into appropriate lists.
     RavlAssert(pixs.range().contains(img.range()));
 
-    for(auto it = begin(img, clip(pixs, img.range())); it.valid(); it++) {
+    for(auto it = zip(img, clip(pixs, img.range())); it.valid(); it++) {
       it.template data<1>().region = 0;
       PixelT val = it.template data<0>();
       if(val > limitMaxValue) {
@@ -425,7 +425,7 @@ namespace Ravl2
 
     // Sort pixels into appropriate lists.
     valueRange = IndexRange<1>::mostEmpty();
-    for(auto it = begin(img, clip(pixs, img.range())); it.valid(); ++it) {
+    for(auto it = zip(img, clip(pixs, img.range())); it.valid(); ++it) {
       it.template data<1>().region = nullptr;
       int val = it.template data<0>();
       if(val > limitMaxValue)

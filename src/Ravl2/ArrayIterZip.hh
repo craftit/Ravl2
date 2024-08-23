@@ -230,7 +230,7 @@ namespace Ravl2
   //! Make zip N constructor
   template <typename... ArrayT, unsigned N = std::tuple_element<0, std::tuple<ArrayT...>>::type::dimensions>
     requires(WindowedArray<ArrayT, typename ArrayT::value_type, N> && ...)
-  constexpr auto begin(const ArrayT &...arrays) noexcept -> ArrayIterZipN<N, typename ArrayT::value_type...>
+  constexpr auto zip(const ArrayT &...arrays) noexcept -> ArrayIterZipN<N, typename ArrayT::value_type...>
   {
     return ArrayIterZipN<N, typename ArrayT::value_type...>(arrays...);
   }
@@ -255,7 +255,7 @@ namespace Ravl2
   template <unsigned N, typename FuncT, typename... ArrayT>
   constexpr void forEach(FuncT func, ArrayT &...arrays)
   {
-    auto iter = begin(arrays...);
+    auto iter = zip(arrays...);
     while(iter.valid()) {
       do {
         expandCall(iter, func, std::make_index_sequence<sizeof...(ArrayT)>());

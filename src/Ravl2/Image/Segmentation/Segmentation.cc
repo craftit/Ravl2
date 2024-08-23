@@ -20,7 +20,7 @@ namespace Ravl2
       : segmap(nsegmap.range()),
         labels(0)
   {
-    for(auto it = begin(segmap, nsegmap); it.valid(); ++it) {
+    for(auto it = zip(segmap, nsegmap); it.valid(); ++it) {
       it.data<0>() = unsigned(it.data<1>() >= 0 ? it.data<1>() : 0);
       if(it.data<0>() > labels)
         labels = it.data<0>();

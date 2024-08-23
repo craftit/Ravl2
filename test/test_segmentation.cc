@@ -54,7 +54,7 @@ TEST_CASE("FloodRegion")
     CHECK(area == size_t(rng.area()));
     int count = 0;
     //SPDLOG_INFO("Mask: {}", mask);
-    for(auto it = begin(mask,clip(img,mask.range())); it.valid(); ++it) {
+    for(auto it = zip(mask,clip(img,mask.range())); it.valid(); ++it) {
       if(it.template data<0>() == 1) {
 	CHECK(it.template data<1>() == 10);
 	count++;

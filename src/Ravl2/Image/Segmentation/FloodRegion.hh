@@ -282,7 +282,7 @@ namespace Ravl2
       DrawFrame(mask, MaskT(0), padding, mask.range());
     size_t size = 0;
 
-    for(auto it = begin(clip(mask, rng), clip(marki, rng)); it.valid(); it++) {
+    for(auto it = zip(clip(mask, rng), clip(marki, rng)); it.valid(); it++) {
       if(it.template data<1>() == id) {
         size++;
         it.template data<0>() = 1;

@@ -284,8 +284,6 @@ TEST_CASE("Boundary Moments")
     auto moments = moments2<int>(bnds);
     SPDLOG_INFO("1 Simple: {}  Moments: {}  ", momentsSimple, moments);
 
-
-
     CHECK(momentsSimple == moments);
   }
 

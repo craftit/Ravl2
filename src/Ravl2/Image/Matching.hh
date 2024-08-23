@@ -23,7 +23,7 @@ namespace Ravl2
                              const Array<DataT, 2> &img)
   {
     SumT diff = 0;
-    for(auto it = begin(imgTemplate, img); it.valid();) {
+    for(auto it = zip(imgTemplate, img); it.valid();) {
       do {
         diff += std::abs(SumT(it.template data<0>()) - SumT(it.template data<1>()));
       } while(it.next());

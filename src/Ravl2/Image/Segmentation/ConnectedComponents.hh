@@ -99,7 +99,7 @@ namespace Ravl2
     // Label the first row.
     labelTable.push_back(0);// usually a special label
     {
-      auto it1 = begin(ip, jp);
+      auto it1 = zip(ip, jp);
       if(!it1.valid())
         return {jp, 0};                         // Zero size image.
       auto newLab = unsigned(labelTable.size());// Label first pixel in the image.
@@ -230,7 +230,7 @@ namespace Ravl2
     if(ignoreZero) {
       std::vector<int> arr(labelTable.size() + 1, -1);
       int curr = 1;
-      for(auto it = begin(ip, jp); it.valid(); ++it) {
+      for(auto it = zip(ip, jp); it.valid(); ++it) {
         if(it.template data<0>() == zero)
           it.template data<1>() = 0;
         else {

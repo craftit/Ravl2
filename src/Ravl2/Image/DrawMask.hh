@@ -31,7 +31,7 @@ namespace Ravl2
     if(drawRect.area() <= 0)
       return;
     IndexRange<2> maskRect = drawRect - offset;
-    for(auto it = begin(clip(img, drawRect), clip(mask, maskRect)); it.valid(); ++it) {
+    for(auto it = zip(clip(img, drawRect), clip(mask, maskRect)); it.valid(); ++it) {
       if(test(it.template data<1>()))
         it.template data<0>() = value;
     }

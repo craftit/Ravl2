@@ -323,7 +323,7 @@ TEST_CASE("DiscreteCosineTransform (forwardDCT)")
     Array<RealT, 2> rimg;
     inverseDCT(rimg, res);
 
-    for (auto it = begin(rimg, img); it.valid(); ++it) {
+    for (auto it = zip(rimg, img); it.valid(); ++it) {
       CHECK(std::abs(it.template data<0>() - it.template data<1>()) < 0.001f);
     }
   }
@@ -333,7 +333,7 @@ TEST_CASE("DiscreteCosineTransform (forwardDCT)")
     ChanDCT chandct(unsigned(img.range(0).size()));
     Array<RealT, 2> cimg = chandct.forwardDCT(img);
     //SPDLOG_INFO("ChanRes:{}", cimg);
-    for (auto it = begin(cimg, res); it.valid(); ++it) {
+    for (auto it = zip(cimg, res); it.valid(); ++it) {
       CHECK(std::abs(it.template data<0>() - it.template data<1>()) < 0.001f);
     }
 
@@ -350,7 +350,7 @@ TEST_CASE("DiscreteCosineTransform (forwardDCT)")
 
     //SPDLOG_INFO("VecRadRes:{}", cimg2);
     unsigned count = 0;
-    for (auto it = begin(cimg2, res); it.valid(); ++it) {
+    for (auto it = zip(cimg2, res); it.valid(); ++it) {
       CHECK(std::abs(it.template data<0>() - it.template data<1>()) < 0.001f);
       count++;
       if(count > nPts)

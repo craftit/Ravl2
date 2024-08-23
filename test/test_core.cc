@@ -599,7 +599,7 @@ TEST_CASE("ZipN")
     a[ai] = at;
     b[ai] = unsigned (at++);
   }
-  auto it = begin(a, b);
+  auto it = zip(a, b);
   int count = 0;
   CHECK(it.valid());
   CHECK(it.index<0>() == Index<2>({0, 0}));
