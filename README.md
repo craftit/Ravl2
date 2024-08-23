@@ -27,7 +27,16 @@ Pre-requisites:
  - BLAS and LAPACK libraries
 
 The code uses many other libraries, but if not present natively they will be downloaded and built as part of the build process.
-See 'Dependencies.cmake' for a full list of dependencies.
+See 'Dependencies.cmake' for a full list of dependencies. Some of the libraries used include:
+
+ - cereal - For serialization
+ - spdlog - For logging
+ - xtensor - For multi-dimensional arrays
+ - xtensor-blas - For linear algebra
+ - catch2 - For unit tests
+ - fmt - For formatting
+ - nlohmann_json - For json parsing
+ - CLI11 - For command line parsing
 
 Project options can be found in 'ProjectOptions.cmake'.
 

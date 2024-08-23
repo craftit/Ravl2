@@ -107,7 +107,7 @@ int main(int nargs,char **argv) {
       if(!pimg.range().contains(img.range())) {
         pimg = Ravl2::Array<uint8_t, 2>(img.range());
       }
-      for(auto it = begin(pimg,img);it.valid();++it) {
+      for(auto it = zip(pimg,img);it.valid();++it) {
         it.template data<0>() = 255 - it.template data<1>();
       }
     } else {
