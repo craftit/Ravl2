@@ -53,6 +53,13 @@ namespace Ravl2
     return demangle(type.name());
   }
 
+  //! Get a human-readable name for a type.
+  std::string typeName(const std::type_index &type)
+  {
+    return demangle(type.name());
+  }
+
+
   void doNothing()
   {}
 

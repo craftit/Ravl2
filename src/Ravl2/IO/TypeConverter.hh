@@ -16,8 +16,10 @@
 #include <tuple>
 #include <type_traits>
 #include <utility>
+#include <unordered_set>
+#include <shared_mutex>
 #include <spdlog/spdlog.h>
-//#include "Ravl2/function_traits.hh"
+#include "Ravl2/Types.hh"
 
 namespace Ravl2
 {
@@ -31,7 +33,7 @@ namespace Ravl2
     TypeConverter() = default;
 
     //! Constructor.
-    TypeConverter(float factor,const std::type_info &from, const std::type_info &to)
+    TypeConverter(float factor,const std::type_info &to, const std::type_info &from)
         : m_conversionLoss(factor),
           m_from(from),
           m_to(to)
@@ -78,13 +80,13 @@ namespace Ravl2
 
     //! Constructor.
     explicit TypeConversionImpl(CallableT &&converter,float cost)
-      : TypeConverter(cost, typeid(FromT), typeid(ToT)),
+      : TypeConverter(cost, typeid(ToT), typeid(FromT)),
         m_converter(std::move(converter))
     {}
 
     //! Constructor.
     explicit TypeConversionImpl(const CallableT &converter,float cost)
-        : TypeConverter(cost, typeid(FromT), typeid(ToT)),
+        : TypeConverter(cost,  typeid(ToT), typeid(FromT)),
           m_converter(converter)
     {}
 
@@ -96,6 +98,68 @@ namespace Ravl2
 
   private:
     CallableT m_converter;
+  };
+
+  struct ConversionChain
+  {
+  public:
+    ConversionChain()
+     : mEndAt(typeid(void))
+    {}
+
+    ConversionChain(std::vector<std::shared_ptr<TypeConverter>> &&chain,std::type_index endAt,float loss)
+      : chain(std::move(chain)),
+        mEndAt(endAt),
+        loss(loss)
+    {}
+
+    [[nodiscard]] std::any convert(const std::any &from) const
+    {
+      std::any x = from;
+      for(auto &y : chain)
+      {
+        x = y->convert(x);
+      }
+      return x;
+    }
+
+    [[nodiscard]] float conversionLoss() const
+    {
+      return loss;
+    }
+
+    //! Get the source type.
+    //! There must be at least one conversion in the chain.
+    [[nodiscard]] const std::type_info &from() const noexcept
+    {
+      assert(!chain.empty());
+      return chain.front()->from();
+    }
+
+    //! Get the target type.
+    [[nodiscard]] const auto &to() const noexcept
+    {
+      return mEndAt;
+    }
+
+    //! Get the number of conversions in the chain.
+    [[nodiscard]] size_t size() const noexcept
+    {
+      return chain.size();
+    }
+
+    //! Append a conversion to the chain and return a new chain.
+    [[nodiscard]] ConversionChain append(std::shared_ptr<TypeConverter> converter) const
+    {
+      assert(converter->from() == mEndAt);
+      std::vector<std::shared_ptr<TypeConverter>> newChain = chain;
+      newChain.push_back(converter);
+      return ConversionChain(std::move(newChain),converter->to(),loss * converter->conversionLoss());
+    }
+  private:
+    std::vector<std::shared_ptr<TypeConverter>> chain;
+    std::type_index mEndAt; //!< We need to store this as the last conversion may be empty.
+    float loss = 1.0f;
   };
 
   //! Type conversion
@@ -111,7 +175,10 @@ namespace Ravl2
     bool add(CallableT &&converter, float cost)
     {
       auto x = std::make_shared<TypeConversionImpl<ToT, FromT, CallableT>>(std::forward<CallableT>(converter),cost);
+      std::lock_guard lock(m_mutex);
       m_converters[std::type_index(typeid(FromT))].push_back(x);
+      m_conversionCache.clear();
+      mVersion++;
       return true;
     }
 
@@ -120,19 +187,72 @@ namespace Ravl2
     bool add(const CallableT &converter,float cost)
     {
       auto x = std::make_shared<TypeConversionImpl<ToT, FromT, CallableT>>(converter,cost);
+      std::lock_guard lock(m_mutex);
       m_converters[std::type_index(typeid(FromT))].push_back(x);
+      m_conversionCache.clear();
+      mVersion++;
       return true;
     }
 
+    //! Dump the conversion map.
+    void dump()
+    {
+      std::shared_lock lock(m_mutex);
+      for(const auto &x : m_converters)
+      {
+        SPDLOG_INFO("From: {}",typeName(x.first));
+        for(const auto &y : x.second)
+        {
+          SPDLOG_INFO("  To: {}",typeName(y->to()));
+        }
+      }
+    }
 
-    //! Find a convertion chain, with a best first search.
-    [[nodiscard]] std::optional<std::vector<std::shared_ptr<TypeConverter>>> find(const std::type_info &from, const std::type_info &to) const;
+    //! Find a convertion chain with a best first search.
+    [[nodiscard]] std::optional<ConversionChain> find(const std::type_info &to, const std::type_info &from);
+
+    //! Find a convertion chain to one of set of possible types with a best first search.
+    [[nodiscard]] std::optional<ConversionChain> find(const std::unordered_set<std::type_index> &to,const std::type_info &from);
 
     //! Convert from one type to another.
-    [[nodiscard]] std::optional<std::any> convert(const std::any &from, const std::type_info &to) const;
+    [[nodiscard]] std::optional<std::any> convert(const std::type_info &to, const std::any &from);
 
   private:
+    std::shared_mutex m_mutex;
     std::unordered_map<std::type_index, std::vector<std::shared_ptr<TypeConverter>>> m_converters;
+    struct CacheKey {
+      CacheKey()
+        : from(typeid(void))
+      {}
+      CacheKey(const std::type_info &from, const std::unordered_set<std::type_index> &to)
+        : from(from),
+          to(to.begin(),to.end())
+      {}
+
+      bool operator==(const CacheKey &other) const
+      {
+        return from == other.from && to == other.to;
+      }
+
+      bool operator!=(const CacheKey &other) const
+      {
+        return !(*this == other);
+      }
+
+      std::type_index from;
+      std::unordered_set<std::type_index> to;
+    };
+    struct Hash {
+      size_t operator()(const CacheKey &key) const
+      {
+        size_t hash = std::hash<std::type_index>()(key.from);
+        for(const auto &x : key.to)
+          hash ^= std::hash<std::type_index>()(x);
+        return hash;
+      }
+    };
+    std::unordered_map<CacheKey,std::optional<ConversionChain>,Hash> m_conversionCache;
+    size_t mVersion = 0;
   };
 
   TypeConverterMap &typeConverterMap();
@@ -206,6 +326,23 @@ namespace Ravl2
   {
     typeConverterMap().add<ToT,std::decay_t<FromT>,ToT (*)(FromT)>(func, cost);
     return true;
+  }
+
+  //! Convert from one type to another using the default type converter map.
+  //! This mechanism is intended for use with file formats where code may not have access to the types.
+  template<typename ToT,typename FromT>
+  ToT typeConvert(const FromT &from)
+  {
+    if constexpr(std::is_same_v<ToT,std::decay_t<FromT> >)
+      return from;
+    if constexpr(std::is_convertible_v<FromT,ToT>)
+      return static_cast<ToT>(from);
+    auto x = typeConverterMap().convert(typeid(ToT), from);
+    if(!x.has_value()) {
+      SPDLOG_WARN("Don't know how to convert {} to {}",typeName(typeid(FromT)),typeName(typeid(ToT)));
+      throw std::runtime_error("Failed to convert type");
+    }
+    return std::any_cast<ToT>(x.value());
   }
 
 }// namespace Ravl2

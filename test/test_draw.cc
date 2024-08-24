@@ -17,7 +17,7 @@
 #define EXPECT_NE(a,b) CHECK_FALSE((a) == (b))
 #define ASSERT_FLOAT_EQ(a,b) REQUIRE(Ravl2::isNearZero((a) -(b)))
 
-TEST_CASE("Draw", "[DrawLine]")
+TEST_CASE("Draw")
 {
   using namespace Ravl2;
   

@@ -121,6 +121,9 @@ namespace Ravl2
   //! Get a human-readable name for a type.
   std::string typeName(const std::type_info &type);
 
+  //! Get a human-readable name for a type.
+  std::string typeName(const std::type_index &type);
+
 }// namespace Ravl2
 
 #if FMT_VERSION >= 90000

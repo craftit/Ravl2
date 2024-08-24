@@ -2,6 +2,7 @@
 // Created by charles on 23/08/24.
 //
 
+#include <shared_mutex>
 #include "Ravl2/IO/TypeConverter.hh"
 
 namespace Ravl2
@@ -12,52 +13,68 @@ namespace Ravl2
     return instance;
   }
 
-  std::optional<std::vector<std::shared_ptr<TypeConverter>>> TypeConverterMap::find(const std::type_info &from, const std::type_info &to) const
+  std::optional<ConversionChain> TypeConverterMap::find(const std::unordered_set<std::type_index> &to, const std::type_info &from)
   {
-    // Best first search for a chain of converters.
-    if(from == to)
-    {
-      return std::vector<std::shared_ptr<TypeConverter>>{};
-    }
-    struct ChainEntryT
-    {
-      std::vector<std::shared_ptr<TypeConverter>> chain;
-      std::type_index from;
-      float loss = 1.0f; //1.0f is no loss
-    };
-    std::multimap<float,ChainEntryT> solutions;
-    std::unordered_map<std::type_index, float> visited;
-    visited[std::type_index(from)] = 1.0f;
 
-    solutions.emplace(1.0f,ChainEntryT{{},std::type_index(from),1.0f});
-
-    while(!solutions.empty())
-    {
-      auto [loss,entry] = *solutions.begin();
-      solutions.erase(solutions.begin());
-      if(entry.from == std::type_index(to))
-      {
-        return entry.chain;
+      std::shared_lock lock(m_mutex);
+      auto startVersion = mVersion;
+      CacheKey cacheKey = {from,to};
+      auto it = m_conversionCache.find(cacheKey);
+      if(it != m_conversionCache.end()) {
+        return it->second;
       }
-      for(auto &x : m_converters.at(entry.from))
-      {
-        // Note we want to avoid loss, so higher loss is better.
-        auto newLoss = loss * x->conversionLoss() * 0.999f; // Prefer shorter chains
-        if(newLoss > visited[std::type_index(x->to())])
-        {
-          visited[std::type_index(x->to())] = newLoss;
-          auto newEntry = entry;
-          newEntry.chain.push_back(x);
-          newEntry.from = std::type_index(x->to());
-          newEntry.loss = newLoss;
-          solutions.emplace(newLoss,newEntry);
+
+      std::multimap<float, ConversionChain> solutions;
+      std::unordered_map<std::type_index, float> visited;
+      visited[std::type_index(from)] = 1.0f;
+
+      solutions.emplace(1.0f, ConversionChain {{}, std::type_index(from), 1.0f});
+
+      while(!solutions.empty()) {
+        auto [loss, entry] = *solutions.begin();
+        solutions.erase(solutions.begin());
+        if(to.contains(entry.to())) {
+          lock.unlock();
+          SPDLOG_TRACE("Found conversion from '{}' to '{}' with {} steps. ", typeName(from), typeName(entry.to()), entry.size());
+          std::lock_guard writeLock(m_mutex);
+          // If the version has not changed by another thread, we can update the cache.
+          if(startVersion == mVersion) {
+            m_conversionCache.emplace(cacheKey,entry);
+          }
+          return entry;
+        }
+        auto fromList = m_converters.find(entry.to());
+        if(fromList == m_converters.end()) {
+          continue;
+        }
+        for(auto &x : fromList->second) {
+          // Note we want to avoid loss, so higher loss is better.
+          auto newLoss = loss * x->conversionLoss() * 0.999f;// Prefer shorter chains
+          if(newLoss > visited[std::type_index(x->to())]) {
+            visited[std::type_index(x->to())] = newLoss;
+            solutions.emplace(newLoss, entry.append(x));
+          }
         }
       }
+      lock.unlock();
+    {
+      std::lock_guard writeLock(m_mutex);
+      // If the version has not changed by another thread, we can update the cache.
+      if(startVersion == mVersion) {
+        m_conversionCache.emplace(cacheKey,std::nullopt);
+      }
     }
+    SPDLOG_TRACE("Failed to find conversion from {} to {}", typeName(from), typeName(*to.begin()));
     return std::nullopt;
   }
 
-  std::optional<std::any> TypeConverterMap::convert(const std::any &from, const std::type_info &to) const
+  std::optional<ConversionChain> TypeConverterMap::find(const std::type_info &to, const std::type_info &from)
+  {
+    std::unordered_set<std::type_index> toSet{to};
+    return find(toSet,from);
+  }
+
+  std::optional<std::any> TypeConverterMap::convert(const std::type_info &to, const std::any &from)
   {
     const auto& fromType = from.type();
     if(fromType == to)
@@ -69,12 +86,7 @@ namespace Ravl2
     {
       return std::nullopt;
     }
-    auto result = from;
-    for(auto &x : converters.value())
-    {
-      result = x->convert(result);
-    }
-    return result;
+    return converters.value().convert(from);
   }
 
   namespace {
@@ -83,7 +95,7 @@ namespace Ravl2
 
     [[maybe_unused]] bool g_reg = registerConversion([](float val) { return double(val); }, 1.0f);
 
-    int func(int16_t x)
+    int32_t func(int16_t x)
     {
         return x;
     }
