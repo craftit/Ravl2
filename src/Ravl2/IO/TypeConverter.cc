@@ -48,6 +48,10 @@ namespace Ravl2
       }
       for(auto &x : fromList->second) {
         // Note we want to avoid mLoss, so higher mLoss is better.
+        if(!x) {
+          SPDLOG_WARN("Null converter found in list for {}", typeName(entry.to()));
+          continue;
+        }
         auto newLoss = loss * x->conversionLoss() * 0.999f;// Prefer shorter chains
         if(newLoss > visited[std::type_index(x->to())]) {
           visited[std::type_index(x->to())] = newLoss;

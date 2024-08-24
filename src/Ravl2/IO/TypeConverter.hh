@@ -172,10 +172,13 @@ namespace Ravl2
     //! Append a conversion to the mChain and return a new mChain.
     [[nodiscard]] ConversionChain append(std::shared_ptr<TypeConverter> converter) const
     {
+      assert(converter != nullptr);
       assert(converter->from() == mEndAt);
       std::vector<std::shared_ptr<TypeConverter>> newChain = mChain;
+      auto const &toType = converter->to();
+      auto newLoss = mLoss * converter->conversionLoss();
       newChain.emplace_back(std::move(converter));
-      return {std::move(newChain),converter->to(), mLoss * converter->conversionLoss()};
+      return {std::move(newChain),toType, newLoss};
     }
   private:
     std::vector<std::shared_ptr<TypeConverter>> mChain;
