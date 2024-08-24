@@ -58,6 +58,8 @@ add_library(Ravl2Core
     IO/Save.cc IO/Save.hh
         IO/InputFormat.cc
         IO/InputFormat.hh
+        IO/Cereal.cc
+        IO/Cereal.hh
 )
 
 add_library(ravl2::Ravl2Core ALIAS Ravl2Core)

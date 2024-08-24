@@ -7,7 +7,7 @@
 namespace Ravl2
 {
 
-  [[nodiscard]] std::optional<SaveFormat::OutputPlanT> openOutput(const std::string &url, const std::type_info &type, const nlohmann::json &formatHint)
+  [[nodiscard]] std::optional<OutputFormat::OutputPlanT> openOutput(const std::string &url, const std::type_info &type, const nlohmann::json &formatHint)
   {
     // Is there a protocol in the URL?
     auto protocolEnd = url.find("://");
@@ -35,7 +35,7 @@ namespace Ravl2
     }
 
     // Create the context
-    ProbeSaveContext ctx(url, rawFilename, protocol, ext, formatHint, std::type_index(type));
+    ProbeOutputContext ctx(url, rawFilename, protocol, ext, formatHint, type);
 
     return saveFormatMap().probe(ctx);
 

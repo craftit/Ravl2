@@ -801,6 +801,11 @@ namespace Ravl2
   extern template class ArrayAccess<uint8_t, 2>;
   extern template class ArrayIter<uint8_t, 2>;
 
+  extern template class Array<uint16_t, 2>;
+  extern template class ArrayAccess<uint16_t, 2>;
+  extern template class ArrayIter<uint16_t, 2>;
+
+
   extern template class Array<float, 2>;
   extern template class ArrayAccess<float, 2>;
   extern template class ArrayIter<float, 2>;

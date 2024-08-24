@@ -6,13 +6,14 @@
 
 namespace Ravl2
 {
-  void SaveFormatMap::add(std::unique_ptr<SaveFormat> format)
+  bool SaveFormatMap::add(std::unique_ptr<OutputFormat> format)
   {
     std::lock_guard lock(m_mutex);
     m_formatByExtension[format->extension()].push_back(std::move(format));
+    return true;
   }
 
-  std::optional<SaveFormat::OutputPlanT> SaveFormatMap::probe(const ProbeSaveContext &ctx)
+  std::optional<OutputFormat::OutputPlanT> SaveFormatMap::probe(const ProbeOutputContext &ctx)
   {
     std::shared_lock lock(m_mutex);
     auto it = m_formatByExtension.find(ctx.m_extension);
@@ -34,5 +35,7 @@ namespace Ravl2
     static SaveFormatMap map;
     return map;
   }
+
+
 
 }

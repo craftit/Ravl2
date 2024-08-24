@@ -73,7 +73,7 @@ namespace Ravl2
   //! @param type - The type of the object to write.
   //! @param formatHint - A hint to the format of the file.
   //! @return A pointer to the stream.
-  [[nodiscard]] std::optional<SaveFormat::OutputPlanT> openOutput(const std::string &url, const std::type_info &type, const nlohmann::json &formatHint);
+  [[nodiscard]] std::optional<OutputFormat::OutputPlanT> openOutput(const std::string &url, const std::type_info &type, const nlohmann::json &formatHint);
 
   //! @brief Save an object to a file.
   //! @praam object - The object to save.

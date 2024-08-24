@@ -1,25 +1,56 @@
 
-#include "Load.hh"
+#include "Ravl2/IO/Load.hh"
 
 namespace Ravl2
 {
 
-  [[nodiscard]] std::unique_ptr<StreamInputBase> openInput(const std::string &url, const std::type_info &type, std::string_view formatHint)
+  [[nodiscard]] std::optional<InputFormat::InputPlanT> openInput(const std::string &url, const std::type_info &type, std::string_view formatHint)
   {
-    (void)url;
-    (void)type;
-    (void)formatHint;
+    // Is there a protocol in the URL?
+    auto protocolEnd = url.find("://");
+    std::string protocol;
+    std::string rawFilename;
+    if(protocolEnd != std::string::npos)
+    {
+      protocol = url.substr(0, protocolEnd);
+      rawFilename = url.substr(protocolEnd + 3);
+    } else
+    {
+      protocol = "file";
+      rawFilename = url;
+    }
 
-    return nullptr;
+    // Get the extension
+    auto extStart = url.find_last_of('.');
+    std::string ext;
+    if(extStart != std::string::npos)
+    {
+      ext = url.substr(extStart + 1);
+    } else
+    {
+      ext = "";
+    }
+
+    ProbeInputContext ctx(url, rawFilename, protocol, ext, formatHint, type);
+
+    // Open the file
+    std::unique_ptr<std::istream> tmpStrm =  std::make_unique<std::ifstream>(rawFilename);
+    if(!tmpStrm->good())
+    {
+      return std::nullopt;
+    }
+    ctx.m_data = std::vector<uint8_t>(256);
+    tmpStrm->read(reinterpret_cast<char *>(ctx.m_data.data()), std::streamsize(ctx.m_data.size()));
+    auto numRead = tmpStrm->gcount();
+    if(size_t(numRead) < ctx.m_data.size() && numRead >= 0)
+    {
+      ctx.m_data.resize(size_t(numRead));
+    }
+    tmpStrm->seekg(0);
+    ctx.mStream = std::move(tmpStrm);
+
+    return InputFormatMap().probe(ctx);
   }
 
-  [[nodiscard]] std::unique_ptr<StreamInputBase> openOutput(const std::string &url, const std::type_info &type, std::string_view formatHint)
-  {
-    (void)url;
-    (void)type;
-    (void)formatHint;
-
-    return nullptr;
-  }
 
 }// namespace Ravl2

@@ -13,50 +13,6 @@
 
 namespace Ravl2
 {
-  //! @brief Abstract container that represents a file, that could have one or more objects.
-  //! @details This class is used to represent a file that could have one or more objects.
-
-  class StreamInputBase
-  {
-  public:
-    virtual ~StreamInputBase() = default;
-
-    //! @brief Get the type of the object.
-    //! @return The type of the object.
-    [[nodiscard]] virtual const std::type_info &type() const = 0;
-
-    //! @brief Read the object at the current position in the stream as a std::any
-    //! @param pos - The position in the stream
-    //! @return The object as a std::any.
-    virtual std::any anyRead(std::streampos pos) = 0;
-
-    //! Goto next position in the stream and read the object.
-    //! @param pos - The position in the stream where the object was written.
-    //! @return The object.
-    virtual std::any anyNext(std::streampos &pos) = 0;
-
-    //! Get the start offset of the stream.
-    [[nodiscard]] std::streampos beginOffset() const
-    {
-      return mStart;
-    }
-
-    //! Get the end offset of the stream.
-    [[nodiscard]] std::streampos endOffset() const
-    {
-      return mEnd;
-    }
-
-    //! Test if the stream is empty.
-    [[nodiscard]] bool empty() const
-    {
-      return mStart == mEnd;
-    }
-
-  protected:
-    std::streampos mStart = 0;
-    std::streampos mEnd = std::numeric_limits<std::streampos>::max();
-  };
 
   template <typename ObjectT>
   class InputStreamIterator;
@@ -81,27 +37,10 @@ namespace Ravl2
       return typeid(ObjectT);
     }
 
-    //! Read the object at the current position in the stream.e
-    //! @param obj - The object to read into.
-    //! @param pos - The position in the stream
-    //! @return True if an object was read.
-    virtual std::optional<ObjectT> read(std::streampos pos) = 0;
-
     //! Goto next position in the stream and read the object.
     //! @param pos - The position in the stream where the object was written.
     //! @return The object.
     virtual std::optional<ObjectT> next(std::streampos &pos) = 0;
-
-    //! @brief Read the object at the current position in the stream as a std::any
-    //! @param pos - The position in the stream
-    //! @return The object as a std::any.
-    std::any anyRead(std::streampos pos) final
-    {
-      auto obj = read(pos);
-      if(obj.has_value())
-        return std::move(obj.value());
-      return {};
-    }
 
     //! Goto next position in the stream and read the object.
     //! @param pos - The position in the stream where the object was written.
@@ -136,7 +75,7 @@ namespace Ravl2
   //! @param formatHint - A hint to the format of the file.
   //! @return A pointer to the stream.
 
-  [[nodiscard]] std::unique_ptr<StreamInputBase> openInput(const std::string &url, const std::type_info &type,  const nlohmann::json &formatHint);
+  [[nodiscard]] std::optional<InputFormat::InputPlanT> openInput(const std::string &url, const std::type_info &type,  const nlohmann::json &formatHint);
 
   //! @brief Load a file into an object.
   //! The file is loaded using the cereal library.
@@ -149,19 +88,35 @@ namespace Ravl2
   bool load(ObjectT &object, const std::string &url, const nlohmann::json &formatHint = {})
   {
     auto container = openInput(url, typeid(ObjectT), formatHint);
-    if(!container)
+    if(!container.has_value())
       return false;
-    auto *input = dynamic_cast<StreamInputContainer<ObjectT> *>(container.get());
-    if(!input) {
-      SPDLOG_ERROR("Failed to cast container to InputContainer<ObjectT>");
-      return false;
-    }
-    auto tmp = input->read(input->beginOffset());
-    if(tmp.has_value()) {
+    std::streampos pos = get<0>(container.value())->beginOffset();
+    if(get<1>(container.value()).size() == 0) {
+      auto *input = dynamic_cast<StreamInputContainer<ObjectT> *>(get<0>(container.value()).get());
+      if(!input) {
+        SPDLOG_ERROR("Failed to cast container to InputContainer<ObjectT>");
+        return false;
+      }
+      auto tmp = input->next(pos);
+      if(!tmp.has_value()) {
+        SPDLOG_ERROR("Failed to read object from stream");
+        return false;
+      }
       object = std::move(tmp.value());
       return true;
     }
-    return false;
+    auto loaded = get<0>(container.value())->anyNext(pos);
+    if(!loaded.has_value()) {
+      SPDLOG_ERROR("Failed to read object from stream");
+      return false;
+    }
+    auto resultAny = get<1>(container.value()).convert(loaded);
+    if(!resultAny.has_value()) {
+      SPDLOG_ERROR("Failed to convert object from stream");
+      return false;
+    }
+    object = std::move(std::any_cast<ObjectT>(resultAny));
+    return true;
   }
 
 

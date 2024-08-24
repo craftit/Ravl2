@@ -51,10 +51,10 @@ namespace Ravl2
 
   //! Information about a file we're saving.
 
-  class ProbeSaveContext
+  class ProbeOutputContext
   {
   public:
-    ProbeSaveContext(std::string url, const std::string &filename, std::string protocol, std::string ext, nlohmann::json formatHint,const std::type_index &sourceType)
+    ProbeOutputContext(std::string url, const std::string &filename, std::string protocol, std::string ext, nlohmann::json formatHint,const std::type_info &sourceType)
         : m_url(std::move(url)),
           m_filename(filename),
           m_protocol(std::move(protocol)),
@@ -70,7 +70,7 @@ namespace Ravl2
     std::string m_protocol; //! The protocol used to save the file. http, file, etc.
     std::string m_extension;
     nlohmann::json m_formatHint;
-    std::type_index m_sourceType;
+    const std::type_info &m_sourceType;
   };
 
 
@@ -78,20 +78,20 @@ namespace Ravl2
   //! We select the format to use on save based on the file extension, and the data type.
   //! The user may also provide json to specify the format.
 
-  class SaveFormat
+  class OutputFormat
   {
   public:
 
     //! Default constructor.
-    SaveFormat() = default;
+    OutputFormat() = default;
 
     //! Constructor.
-    SaveFormat(std::string format, std::string extension)
+    OutputFormat(std::string format, std::string extension)
       : m_format(std::move(format)),
         m_extension(std::move(extension))
     {}
 
-    virtual ~SaveFormat() = default;
+    virtual ~OutputFormat() = default;
 
     //! Get the format.
     [[nodiscard]] const std::string &format() const noexcept
@@ -109,7 +109,7 @@ namespace Ravl2
     using OutputPlanT = std::tuple<std::unique_ptr<StreamOutputBase>,ConversionChain >;
 
     //! Test if we can save this type.
-    [[nodiscard]] virtual std::optional<OutputPlanT> probe(const ProbeSaveContext &ctx) const = 0;
+    [[nodiscard]] virtual std::optional<OutputPlanT> probe(const ProbeOutputContext &ctx) const = 0;
 
   private:
     std::string m_format;
@@ -124,14 +124,16 @@ namespace Ravl2
   {
   public:
     //! Add a format to the map.
-    void add(std::unique_ptr<SaveFormat> format);
+    //! @param format - The format to add.
+    //! @return True if the format was added.
+    bool add(std::unique_ptr<OutputFormat> format);
 
     //! Get the format for a given extension.
-    [[nodiscard]] std::optional<SaveFormat::OutputPlanT> probe(const ProbeSaveContext &ctx);
+    [[nodiscard]] std::optional<OutputFormat::OutputPlanT> probe(const ProbeOutputContext &ctx);
 
   private:
     std::shared_mutex m_mutex;
-    std::unordered_map<std::string, std::vector<std::unique_ptr<SaveFormat> > > m_formatByExtension;
+    std::unordered_map<std::string, std::vector<std::unique_ptr<OutputFormat> > > m_formatByExtension;
   };
 
   SaveFormatMap &saveFormatMap();
