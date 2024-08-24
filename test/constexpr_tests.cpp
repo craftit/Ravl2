@@ -6,8 +6,8 @@
 #include "Ravl2/Geometry/Geometry.hh"
 #include "Ravl2/Geometry/Isometry3.hh"
 #include "Ravl2/ScanWindow.hh"
-#include "Ravl2/FileIO.hh"
-#include "Ravl2/SequenceIO.hh"
+#include "Ravl2/IO/Load.hh"
+#include "Ravl2/IO/SequenceIO.hh"
 
 TEST_CASE("Array iterators conform to c++ concepts.", "[Array]")
 {

@@ -47,14 +47,17 @@ add_library(Ravl2Core
     IndexRange.cc IndexRange.hh
     Concepts.hh
     CallbackArray.cc CallbackArray.hh
-    FileIO.cc FileIO.hh
     StringUtils.cc StringUtils.hh
     Base64.cc Base64.hh
     Configuration.cc Configuration.hh
     ConfigJson.cc ConfigJson.hh
-    SequenceIO.cc SequenceIO.hh
-    IO/FileFormat.cc IO/FileFormat.hh
+    IO/SequenceIO.cc IO/SequenceIO.hh
+        IO/OutputFormat.cc IO/OutputFormat.hh
     IO/TypeConverter.cc IO/TypeConverter.hh
+    IO/Load.cc IO/Load.hh
+    IO/Save.cc IO/Save.hh
+        IO/InputFormat.cc
+        IO/InputFormat.hh
 )
 
 add_library(ravl2::Ravl2Core ALIAS Ravl2Core)

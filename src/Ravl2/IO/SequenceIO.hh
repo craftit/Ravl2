@@ -4,7 +4,8 @@
 
 #pragma once
 
-#include "Ravl2/FileIO.hh"
+#include "Ravl2/IO/Load.hh"
+#include "Ravl2/IO/Save.hh"
 
 namespace Ravl2
 {

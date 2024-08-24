@@ -11,11 +11,11 @@ TEST_CASE("Conversions")
 
   SECTION("Conversion search")
   {
-    // This is a one step conversion from int32_t to int16_t
+    // This is a one-step conversion from int32_t to int16_t
     auto conv = typeConverterMap().find(typeid(int32_t),typeid(int16_t));
     CHECK(conv.has_value());
 
-    // This is a two step conversion from int64_t to int16_t
+    // This is a two-step conversion from int64_t to int16_t
     auto conv2 = typeConverterMap().find(typeid(int64_t),typeid(int16_t));
     CHECK(conv2.has_value());
 
@@ -27,7 +27,7 @@ TEST_CASE("Conversions")
 
   SECTION("Conversion")
   {
-    // This is a one step conversion from int32_t to int16_t
+    // This is a one-step conversion from int32_t to int16_t
     {
       auto conv = typeConverterMap().find(typeid(int32_t), typeid(int16_t));
       CHECK(conv.has_value());
@@ -49,6 +49,11 @@ TEST_CASE("Conversions")
       CHECK(i64 == int64_t(i16));
     }
 
+    {
+      int16_t i16 = 0x1234;
+      auto i64 = typeConvert<int64_t>(i16);
+      CHECK(i64 == int64_t(i16));
+    }
 
   }
 

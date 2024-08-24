@@ -24,7 +24,8 @@
 namespace Ravl2
 {
 
-  //! Abstract type conversion for use with file formats.
+  //! Base class for a type conversions.
+  //! The 'loss' is a value between 0 and 1 that represents the loss of bits in the conversion. 0.5 would represent a 50% loss of bits.
 
   class TypeConverter
   {
@@ -33,12 +34,20 @@ namespace Ravl2
     TypeConverter() = default;
 
     //! Constructor.
+    //! @param factor - The conversion loss factor, between 0 and 1.  1-Meaning no loss, 0 meaning all information is lost.
+    //! @param to - The target type.
+    //! @param from - The source type.
     TypeConverter(float factor,const std::type_info &to, const std::type_info &from)
         : m_conversionLoss(factor),
           m_from(from),
           m_to(to)
-    {}
+    {
+      // There is no point in a conversion that looses all the information, but we can't create information.
+      // so the loss should be greater than 0 and less or equal to 1.
+      assert(factor > 0.0f && factor <= 1.0f);
+    }
 
+    //! Make destructor virtual.
     virtual ~TypeConverter() = default;
 
     //! Get the source type.
@@ -54,12 +63,15 @@ namespace Ravl2
     }
 
     //! Get the conversion factor.
+    //! @return conversion loss factor, between 0 and 1.  1-Meaning no loss, 0 meaning all information is lost.
     [[nodiscard]] float conversionLoss() const noexcept
     {
       return m_conversionLoss;
     }
 
-    //! Convert via std::any.
+    //! Convert types via std::any.
+    //! @param from - The source type, it must be of the type specified by from().
+    //! @return The converted type which will be of the type specified by to().
     [[nodiscard]] virtual std::any convert(const std::any &from) const = 0;
 
   private:
@@ -100,6 +112,10 @@ namespace Ravl2
     CallableT m_converter;
   };
 
+
+  //! Type conversion chain.
+  //! This provides a way to chain together a series of type conversions.
+
   struct ConversionChain
   {
   public:
@@ -113,6 +129,9 @@ namespace Ravl2
           mLoss(loss)
     {}
 
+    //! @brief Convert from one type to another.
+    //! @param from - The source type which must be of the type returned by from().
+    //! @return The converted type which will be of the type returned by to().
     [[nodiscard]] std::any convert(const std::any &from) const
     {
       std::any x = from;
@@ -123,6 +142,8 @@ namespace Ravl2
       return x;
     }
 
+    //! Get the conversion loss for this chain of conversions.
+    //! @return An estimate of the conversion loss between 0 and 1.  1-Meaning no loss, 0 meaning all information is lost.
     [[nodiscard]] float conversionLoss() const
     {
       return mLoss;
@@ -153,8 +174,8 @@ namespace Ravl2
     {
       assert(converter->from() == mEndAt);
       std::vector<std::shared_ptr<TypeConverter>> newChain = mChain;
-      newChain.push_back(converter);
-      return ConversionChain(std::move(newChain),converter->to(), mLoss * converter->conversionLoss());
+      newChain.emplace_back(std::move(converter));
+      return {std::move(newChain),converter->to(), mLoss * converter->conversionLoss()};
     }
   private:
     std::vector<std::shared_ptr<TypeConverter>> mChain;
@@ -162,7 +183,7 @@ namespace Ravl2
     float mLoss = 1.0f;
   };
 
-  //! Type conversion
+  //! Set of type conversions for use with file formats.
 
   class TypeConverterMap
   {
@@ -195,18 +216,7 @@ namespace Ravl2
     }
 
     //! Dump the conversion map.
-    void dump()
-    {
-      std::shared_lock lock(m_mutex);
-      for(const auto &x : m_converters)
-      {
-        SPDLOG_INFO("From: {}",typeName(x.first));
-        for(const auto &y : x.second)
-        {
-          SPDLOG_INFO("  To: {}",typeName(y->to()));
-        }
-      }
-    }
+    void dump();
 
     //! Find a convertion mChain with a best first search.
     [[nodiscard]] std::optional<ConversionChain> find(const std::type_info &to, const std::type_info &from);
@@ -259,7 +269,7 @@ namespace Ravl2
 
   namespace detail
   {
-    // Helper to get type of a function arguments and return type.
+    // Helper to get type of function arguments and return type.
     template <typename T>
     struct function_traits;
 
