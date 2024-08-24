@@ -108,15 +108,15 @@ namespace Ravl2
     {}
 
     ConversionChain(std::vector<std::shared_ptr<TypeConverter>> &&chain,std::type_index endAt,float loss)
-      : chain(std::move(chain)),
+      : mChain(std::move(chain)),
         mEndAt(endAt),
-        loss(loss)
+          mLoss(loss)
     {}
 
     [[nodiscard]] std::any convert(const std::any &from) const
     {
       std::any x = from;
-      for(auto &y : chain)
+      for(auto &y : mChain)
       {
         x = y->convert(x);
       }
@@ -125,15 +125,15 @@ namespace Ravl2
 
     [[nodiscard]] float conversionLoss() const
     {
-      return loss;
+      return mLoss;
     }
 
     //! Get the source type.
-    //! There must be at least one conversion in the chain.
+    //! There must be at least one conversion in the mChain.
     [[nodiscard]] const std::type_info &from() const noexcept
     {
-      assert(!chain.empty());
-      return chain.front()->from();
+      assert(!mChain.empty());
+      return mChain.front()->from();
     }
 
     //! Get the target type.
@@ -142,24 +142,24 @@ namespace Ravl2
       return mEndAt;
     }
 
-    //! Get the number of conversions in the chain.
+    //! Get the number of conversions in the mChain.
     [[nodiscard]] size_t size() const noexcept
     {
-      return chain.size();
+      return mChain.size();
     }
 
-    //! Append a conversion to the chain and return a new chain.
+    //! Append a conversion to the mChain and return a new mChain.
     [[nodiscard]] ConversionChain append(std::shared_ptr<TypeConverter> converter) const
     {
       assert(converter->from() == mEndAt);
-      std::vector<std::shared_ptr<TypeConverter>> newChain = chain;
+      std::vector<std::shared_ptr<TypeConverter>> newChain = mChain;
       newChain.push_back(converter);
-      return ConversionChain(std::move(newChain),converter->to(),loss * converter->conversionLoss());
+      return ConversionChain(std::move(newChain),converter->to(), mLoss * converter->conversionLoss());
     }
   private:
-    std::vector<std::shared_ptr<TypeConverter>> chain;
+    std::vector<std::shared_ptr<TypeConverter>> mChain;
     std::type_index mEndAt; //!< We need to store this as the last conversion may be empty.
-    float loss = 1.0f;
+    float mLoss = 1.0f;
   };
 
   //! Type conversion
@@ -208,10 +208,10 @@ namespace Ravl2
       }
     }
 
-    //! Find a convertion chain with a best first search.
+    //! Find a convertion mChain with a best first search.
     [[nodiscard]] std::optional<ConversionChain> find(const std::type_info &to, const std::type_info &from);
 
-    //! Find a convertion chain to one of set of possible types with a best first search.
+    //! Find a convertion mChain to one of set of possible types with a best first search.
     [[nodiscard]] std::optional<ConversionChain> find(const std::unordered_set<std::type_index> &to,const std::type_info &from);
 
     //! Convert from one type to another.
@@ -222,16 +222,16 @@ namespace Ravl2
     std::unordered_map<std::type_index, std::vector<std::shared_ptr<TypeConverter>>> m_converters;
     struct CacheKey {
       CacheKey()
-        : from(typeid(void))
+        : mFrom(typeid(void))
       {}
       CacheKey(const std::type_info &from, const std::unordered_set<std::type_index> &to)
-        : from(from),
-          to(to.begin(),to.end())
+        : mFrom(from),
+            mTo(to.begin(),to.end())
       {}
 
       bool operator==(const CacheKey &other) const
       {
-        return from == other.from && to == other.to;
+        return mFrom == other.mFrom && mTo == other.mTo;
       }
 
       bool operator!=(const CacheKey &other) const
@@ -239,14 +239,14 @@ namespace Ravl2
         return !(*this == other);
       }
 
-      std::type_index from;
-      std::unordered_set<std::type_index> to;
+      std::type_index mFrom;
+      std::unordered_set<std::type_index> mTo;
     };
     struct Hash {
       size_t operator()(const CacheKey &key) const
       {
-        size_t hash = std::hash<std::type_index>()(key.from);
-        for(const auto &x : key.to)
+        size_t hash = std::hash<std::type_index>()(key.mFrom);
+        for(const auto &x : key.mTo)
           hash ^= std::hash<std::type_index>()(x);
         return hash;
       }

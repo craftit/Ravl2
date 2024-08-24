@@ -48,7 +48,7 @@ namespace Ravl2
           continue;
         }
         for(auto &x : fromList->second) {
-          // Note we want to avoid loss, so higher loss is better.
+          // Note we want to avoid mLoss, so higher mLoss is better.
           auto newLoss = loss * x->conversionLoss() * 0.999f;// Prefer shorter chains
           if(newLoss > visited[std::type_index(x->to())]) {
             visited[std::type_index(x->to())] = newLoss;
