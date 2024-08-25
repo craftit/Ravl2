@@ -3,11 +3,13 @@
 //
 
 #include "Ravl2/IO/Save.hh"
+#include "Ravl2/IO/OutputFormat.hh"
+
 
 namespace Ravl2
 {
 
-  [[nodiscard]] std::optional<OutputFormat::OutputPlanT> openOutput(const std::string &url, const std::type_info &type, const nlohmann::json &formatHint)
+  [[nodiscard]] std::optional<StreamOutputPlan> openOutput(const std::string &url, const std::type_info &type, const nlohmann::json &formatHint)
   {
     // Is there a protocol in the URL?
     auto protocolEnd = url.find("://");

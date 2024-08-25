@@ -21,10 +21,17 @@ namespace Ravl2
     return true;
   }
 
-  std::optional<InputFormat::InputPlanT> InputFormatMap::probe(const ProbeInputContext &ctx)
+  std::optional<StreamInputPlan> InputFormatMap::probe(const ProbeInputContext &ctx)
   {
     std::shared_lock lock(m_mutex);
     (void) ctx;
     return std::nullopt;
   }
+
+  InputFormatMap &inputFormatMap()
+  {
+    static InputFormatMap map;
+    return map;
+  }
+
 }

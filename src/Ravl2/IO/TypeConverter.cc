@@ -121,4 +121,14 @@ namespace Ravl2
     [[maybe_unused]] bool g_reg3 = registerConversion(func2, 1.0f);
   }// namespace
 
+
+  std::any ConversionChain::convert(const std::any &from) const
+  {
+      std::any x = from;
+      for(auto &y : mChain)
+      {
+          x = y->convert(x);
+      }
+      return x;
+  }
 }// namespace Ravl2

@@ -52,14 +52,14 @@ add_library(Ravl2Core
     Configuration.cc Configuration.hh
     ConfigJson.cc ConfigJson.hh
     IO/SequenceIO.cc IO/SequenceIO.hh
-        IO/OutputFormat.cc IO/OutputFormat.hh
+    IO/OutputFormat.cc IO/OutputFormat.hh
     IO/TypeConverter.cc IO/TypeConverter.hh
     IO/Load.cc IO/Load.hh
     IO/Save.cc IO/Save.hh
-        IO/InputFormat.cc
-        IO/InputFormat.hh
-        IO/Cereal.cc
-        IO/Cereal.hh
+    IO/InputFormat.cc IO/InputFormat.hh
+    IO/Cereal.cc IO/Cereal.hh
+    IO/StreamInput.hh IO/StreamInput.cc
+    IO/StreamOutput.cc IO/StreamOutput.hh
 )
 
 add_library(ravl2::Ravl2Core ALIAS Ravl2Core)

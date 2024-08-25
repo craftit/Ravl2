@@ -8,8 +8,7 @@
 #include <spdlog/spdlog.h>
 #include <optional>
 #include <any>
-#include "Ravl2/IO/TypeConverter.hh"
-#include "Ravl2/IO/InputFormat.hh"
+#include "Ravl2/IO/StreamInput.hh"
 
 namespace Ravl2
 {
@@ -20,7 +19,7 @@ namespace Ravl2
   //! @param formatHint - A hint to the format of the file.
   //! @return A pointer to the stream.
 
-  [[nodiscard]] std::optional<InputFormat::InputPlanT> openInput(const std::string &url, const std::type_info &type,  const nlohmann::json &formatHint);
+  [[nodiscard]] std::optional<StreamInputPlan> openInput(const std::string &url, const std::type_info &type,  const nlohmann::json &formatHint);
 
   //! @brief Load a file into an object.
   //! The file is loaded using the cereal library.
@@ -35,9 +34,9 @@ namespace Ravl2
     auto container = openInput(url, typeid(ObjectT), formatHint);
     if(!container.has_value())
       return false;
-    std::streampos pos = get<0>(container.value())->beginOffset();
-    if(get<1>(container.value()).size() == 0) {
-      auto *input = dynamic_cast<StreamInputContainer<ObjectT> *>(get<0>(container.value()).get());
+    std::streampos pos = container.value().mStream->beginOffset();
+    if(!container.value().mConversion) {
+      auto *input = dynamic_cast<StreamInputContainer<ObjectT> *>(container.value().mStream.get());
       if(!input) {
         SPDLOG_ERROR("Failed to cast container to InputContainer<ObjectT>");
         return false;
@@ -50,12 +49,12 @@ namespace Ravl2
       object = std::move(tmp.value());
       return true;
     }
-    auto loaded = get<0>(container.value())->anyNext(pos);
+    auto loaded = container.value().mStream->anyNext(pos);
     if(!loaded.has_value()) {
       SPDLOG_ERROR("Failed to read object from stream");
       return false;
     }
-    auto resultAny = get<1>(container.value()).convert(loaded);
+    auto resultAny = container.value().mConversion(loaded);
     if(!resultAny.has_value()) {
       SPDLOG_ERROR("Failed to convert object from stream");
       return false;

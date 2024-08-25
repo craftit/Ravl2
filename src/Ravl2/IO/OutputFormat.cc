@@ -20,7 +20,7 @@ namespace Ravl2
     return true;
   }
 
-  std::optional<OutputFormat::OutputPlanT> OutputFormatMap::probe(const ProbeOutputContext &ctx)
+  std::optional<StreamOutputPlan> OutputFormatMap::probe(const ProbeOutputContext &ctx)
   {
     std::shared_lock lock(m_mutex);
     auto it = m_formatByExtension.find(ctx.m_extension);

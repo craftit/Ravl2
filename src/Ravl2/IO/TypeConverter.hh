@@ -132,14 +132,12 @@ namespace Ravl2
     //! @brief Convert from one type to another.
     //! @param from - The source type which must be of the type returned by from().
     //! @return The converted type which will be of the type returned by to().
-    [[nodiscard]] std::any convert(const std::any &from) const
+    [[nodiscard]] std::any convert(const std::any &from) const;
+
+    //! Convert via operator().
+    [[nodiscard]] std::any operator()(const std::any &from) const
     {
-      std::any x = from;
-      for(auto &y : mChain)
-      {
-        x = y->convert(x);
-      }
-      return x;
+      return convert(from);
     }
 
     //! Get the conversion loss for this chain of conversions.

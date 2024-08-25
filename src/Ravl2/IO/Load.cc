@@ -1,10 +1,11 @@
 
 #include "Ravl2/IO/Load.hh"
+#include "Ravl2/IO/InputFormat.hh"
 
 namespace Ravl2
 {
 
-  [[nodiscard]] std::optional<InputFormat::InputPlanT> openInput(const std::string &url, const std::type_info &type, std::string_view formatHint)
+  [[nodiscard]] std::optional<StreamInputPlan> openInput(const std::string &url, const std::type_info &type, std::string_view formatHint)
   {
     // Is there a protocol in the URL?
     auto protocolEnd = url.find("://");

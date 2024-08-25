@@ -19,10 +19,10 @@ namespace Ravl2
   {
     constexpr static uint32_t m_magicNumber = 0xABBA2024;
     CerealArchiveHeader() = default;
-    CerealArchiveHeader(const std::string &typeName)
+    explicit CerealArchiveHeader(const std::string &theTypeName)
       : m_magic(m_magicNumber),
         version(1),
-        typeName(typeName)
+        typeName(theTypeName)
     {}
     uint32_t m_magic = 0;
     uint16_t version = 0;
@@ -75,7 +75,7 @@ namespace Ravl2
     //! Goto next position in the stream and read the object.
     //! @param pos - The position in the stream where the object was written.
     //! @return The object.
-    virtual std::optional<ObjectT> next(std::streampos &pos)
+    std::optional<ObjectT> next(std::streampos &pos) final
     {
       if (m_stream->eof())
         return std::nullopt;
@@ -125,19 +125,19 @@ namespace Ravl2
     }
 
     //! Test if we can save this type.
-    [[nodiscard]] std::optional<OutputPlanT> probe(const ProbeOutputContext &ctx) const final
+    [[nodiscard]] std::optional<StreamOutputPlan> probe(const ProbeOutputContext &ctx) const final
     {
       if(ctx.m_extension != this->extension()) {
         return std::nullopt;
       }
       if (ctx.m_sourceType == typeid(ObjectT))
       {
-        return std::make_tuple(createStream(ctx), ConversionChain());
+        return StreamOutputPlan {createStream(ctx), {},1.0f};
       }
       std::optional<ConversionChain> conv = typeConverterMap().find(typeid(ObjectT), ctx.m_sourceType);
-      if (conv)
+      if (conv.has_value())
       {
-        return std::make_tuple(createStream(ctx), *conv);
+        return StreamOutputPlan  {createStream(ctx), conv.value(), 1.0f};
       }
       return std::nullopt;
     }
@@ -160,9 +160,9 @@ namespace Ravl2
       return std::make_unique<StreamInputCerealArchive<ObjectT, ArchiveT>>(std::move(stream));
     }
 
-    [[nodiscard]] std::optional<InputPlanT> probe(const ProbeInputContext &ctx) const final
+    [[nodiscard]] std::optional<StreamInputPlan> probe(const ProbeInputContext &ctx) const final
     {
-      if(ctx.m_extension != this->extension() || ctx.m_data.size() < 4)
+      if(ctx.m_data.size() < 4)
       {
         return std::nullopt;
       }
@@ -180,7 +180,7 @@ namespace Ravl2
       }
       if(ctx.m_targetType == typeid(ObjectT))
       {
-        return std::make_tuple(createStream(ctx), ConversionChain());
+        return StreamInputPlan { createStream(ctx), {}, 1.0f };
       }
       return std::nullopt;
     }

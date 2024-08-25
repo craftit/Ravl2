@@ -11,8 +11,7 @@
 #include <spdlog/spdlog.h>
 #include <optional>
 #include <any>
-#include "Ravl2/IO/TypeConverter.hh"
-#include "Ravl2/IO/OutputFormat.hh"
+#include "Ravl2/IO/StreamOutput.hh"
 #include <nlohmann/json.hpp>
 #include <utility>
 
@@ -24,7 +23,7 @@ namespace Ravl2
   //! @param type - The type of the object to write.
   //! @param formatHint - A hint to the format of the file.
   //! @return A pointer to the stream.
-  [[nodiscard]] std::optional<OutputFormat::OutputPlanT> openOutput(const std::string &url, const std::type_info &type, const nlohmann::json &formatHint);
+  [[nodiscard]] std::optional<StreamOutputPlan> openOutput(const std::string &url, const std::type_info &type, const nlohmann::json &formatHint);
 
   //! @brief Save an object to a file.
   //! @praam object - The object to save.
@@ -37,14 +36,14 @@ namespace Ravl2
     auto thePlan = openOutput(url, typeid(ObjectT),formatHint);
     if(!thePlan.has_value())
       return false;
-    if(get<1>(thePlan.value()).size() == 0) {
-      auto *output = dynamic_cast<StreamOutputContainer<ObjectT> *>(get<0>(thePlan.value()));
+    if(!thePlan.value().mConversion) {
+      auto *output = dynamic_cast<StreamOutputContainer<ObjectT> *>(thePlan->mStream.get());
       // Can we write directly to the stream?
       if(output != nullptr) {
         return output->write(object, output->beginOffset());
       }
     }
-    return get<0>(thePlan.value())->anyWrite(get<1>(thePlan.value()).convert(std::any(object)), get<0>(thePlan.value())->beginOffset());
+    return thePlan.value().mStream->anyWrite(thePlan.value().mConversion(std::any(object)), thePlan->mStream->beginOffset());
   }
 
 

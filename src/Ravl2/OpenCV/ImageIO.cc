@@ -6,6 +6,8 @@
 #include "Ravl2/OpenCV/Image.hh"
 #include "Ravl2/OpenCV/ImageIO.hh"
 #include "Ravl2/IO/TypeConverter.hh"
+#include "Ravl2/IO/InputFormat.hh"
+#include "Ravl2/IO/OutputFormat.hh"
 #include "Ravl2/IO/Load.hh"
 #include "Ravl2/IO/Save.hh"
 
@@ -13,8 +15,8 @@ namespace Ravl2
 {
 
   namespace {
-    //std::function<std::optional<InputPlanT>(const ProbeInputContext &)/
-    [[maybe_unused]] bool g_regFmt = InputFormatMap().add(std::make_shared<InputFormatCall>("OpenCV","png,jpg,jpeg,bmp,tiff",-1,[](const ProbeInputContext &ctx) -> std::optional<InputFormat::InputPlanT> {
+    //std::function<std::optional<StreamInputPlan>(const ProbeInputContext &)/
+    [[maybe_unused]] bool g_regFmt =inputFormatMap().add(std::make_shared<InputFormatCall>("OpenCV","png,jpg,jpeg,bmp,tiff",-1,[](const ProbeInputContext &ctx) -> std::optional<StreamInputPlan> {
       //! If we are looking for a cv::Mat, we can just read the file directly.
       if(ctx.m_targetType == typeid(cv::Mat)) {
         auto strm = std::make_shared<StreamInputCall<cv::Mat>>([filename = ctx.m_filename](std::streampos &pos) -> std::optional<cv::Mat> {
@@ -24,14 +26,14 @@ namespace Ravl2
         });
 
         //std::tuple<std::shared_ptr<StreamInputBase>, ConversionChain> plan =
-        return std::make_tuple(std::shared_ptr<StreamInputBase>(strm), ConversionChain());
+        return StreamInputPlan {std::shared_ptr<StreamInputBase>(strm), {}, 1.0f};
       }
 
       return std::nullopt;
     }));
 
-    //std::function<std::optional<OutputPlanT>(const ProbeOutputContext &)/
-    [[maybe_unused]] bool g_regFmt1 = OutputFormatMap().add(std::make_shared<OutputFormatCall>("OpenCV","png,jpg,jpeg,bmp,tiff",-1,[](const ProbeOutputContext &ctx) -> std::optional<OutputFormat::OutputPlanT> {
+    //std::function<std::optional<StreamOutputPlan>(const ProbeOutputContext &)/
+    [[maybe_unused]] bool g_regFmt1 = outputFormatMap().add(std::make_shared<OutputFormatCall>("OpenCV","png,jpg,jpeg,bmp,tiff",-1,[](const ProbeOutputContext &ctx) -> std::optional<StreamOutputPlan> {
 
       //! If we are looking for a cv::Mat, we can just read the file directly.
       if(ctx.m_sourceType == typeid(cv::Mat)) {
@@ -44,7 +46,7 @@ namespace Ravl2
           return 0;
         });
 
-        return std::make_tuple(std::unique_ptr<StreamOutputBase>(std::move(strm)), ConversionChain());
+        return StreamOutputPlan { std::move(strm), {}, 1.0f };
 #endif
       }
       return std::nullopt;
