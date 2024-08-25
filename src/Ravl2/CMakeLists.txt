@@ -14,7 +14,6 @@ find_package(Qt5 QUIET)
 
 add_subdirectory(Geometry)
 add_subdirectory(Math)
-add_subdirectory(Pixel)
 add_subdirectory(Image)
 add_subdirectory(3D)
 add_subdirectory(OpenCV)
@@ -51,6 +50,8 @@ add_library(Ravl2Core
     Base64.cc Base64.hh
     Configuration.cc Configuration.hh
     ConfigJson.cc ConfigJson.hh
+    Pixel/Pixel.cc Pixel/Pixel.hh
+    Pixel/Colour.cc Pixel/Colour.hh
     IO/SequenceIO.cc IO/SequenceIO.hh
     IO/OutputFormat.cc IO/OutputFormat.hh
     IO/TypeConverter.cc IO/TypeConverter.hh
@@ -60,6 +61,8 @@ add_library(Ravl2Core
     IO/Cereal.cc IO/Cereal.hh
     IO/StreamInput.hh IO/StreamInput.cc
     IO/StreamOutput.cc IO/StreamOutput.hh
+        IO/InputStreamMem.cc
+        IO/InputStreamMem.hh
 )
 
 add_library(ravl2::Ravl2Core ALIAS Ravl2Core)
