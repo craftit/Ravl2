@@ -8,6 +8,7 @@
 #include <spdlog/spdlog.h>
 #include <optional>
 #include <any>
+#include <nlohmann/json.hpp>
 #include "Ravl2/IO/StreamInput.hh"
 
 namespace Ravl2
@@ -28,8 +29,10 @@ namespace Ravl2
   //! @param formatHint - A hint to the format of the file.
   //! @return True if the file was loaded successfully.
 
+  const nlohmann::json &defaultLoadFormatHint();
+
   template <typename ObjectT>
-  bool load(ObjectT &object, const std::string &url, const nlohmann::json &formatHint = {})
+  bool load(ObjectT &object, const std::string &url, const nlohmann::json &formatHint = defaultLoadFormatHint())
   {
     auto container = openInput(url, typeid(ObjectT), formatHint);
     if(!container.has_value())
@@ -63,5 +66,14 @@ namespace Ravl2
     return true;
   }
 
+  //! @brief Load a file into an object.
+  template <typename ObjectT>
+  std::optional<ObjectT> load(const std::string &url, const nlohmann::json &formatHint = defaultLoadFormatHint())
+  {
+    ObjectT object;
+    if(load(object, url, formatHint))
+      return object;
+    return std::nullopt;
+  }
 
 }// namespace Ravl2

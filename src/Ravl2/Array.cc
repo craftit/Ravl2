@@ -11,6 +11,9 @@ namespace Ravl2
   template class ArrayAccess<uint16_t, 2>;
   template class ArrayIter<uint16_t, 2>;
 
+  template class Array<int32_t, 2>;
+  template class Array<int64_t, 2>;
+
   template class Array<float, 2>;
   template class ArrayAccess<float, 2>;
   template class ArrayIter<float, 2>;

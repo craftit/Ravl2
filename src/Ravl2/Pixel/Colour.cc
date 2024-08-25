@@ -1,5 +1,6 @@
 
 #include "Ravl2/Pixel/Colour.hh"
+#include "Ravl2/IO/TypeConverter.hh"
 
 // This file is part of RAVL, Recognition And Vision Library
 // Copyright (C) 2001, University of Surrey
@@ -13,11 +14,10 @@
 
 namespace Ravl2
 {
-  //  inline RealYUVValueC::RealYUVValueC(const RealRGBValueC &v)
-  //  { Mul(ImageRGBtoYUVMatrixStd,v,*this); }
-  //
-  //  inline RealRGBValueC::RealRGBValueC(const RealYUVValueC &v)
-  //  { Mul(ImageYUVtoRGBMatrix,v,*this)s; }
+  void initColourConversion()
+  {
+    // This is a no-op function to ensure that the colour conversion tables are initialised.
+  }
 
   /*
    From RGB to YUV, the definition seems to be (by Google consensus)
@@ -71,15 +71,38 @@ namespace Ravl2
       //return &(values[128 + 256 * 128]);
       return values;
     }
+
+    [[maybe_unused]] bool g_reg1 = registerConversion(convert<Array<PixelY8,2>,Array<PixelYUV8,2>>, 0.33f);
+    [[maybe_unused]] bool g_reg2 = registerConversion(convert<Array<PixelY8,2>,Array<PixelRGB8,2>>, 0.33f);
+    [[maybe_unused]] bool g_reg3 = registerConversion(convert<Array<PixelRGB8,2>,Array<PixelYUV8,2>>, 0.75f);
+    [[maybe_unused]] bool g_reg4 = registerConversion(convert<Array<PixelYUV8,2>,Array<PixelRGB8,2>>, 0.75f);
+    [[maybe_unused]] bool g_reg5 = registerConversion(convert<Array<PixelYUV8,2>,Array<PixelY8,2>>, 1.0f);
+    [[maybe_unused]] bool g_reg6 = registerConversion(convert<Array<PixelRGB8,2>,Array<PixelY8,2>>, 1.0f);
+    [[maybe_unused]] bool g_reg7 = registerConversion(convert<Array<PixelRGB8,2>,Array<PixelBGR8,2>>, 1.0f);
+    [[maybe_unused]] bool g_reg8 = registerConversion(convert<Array<PixelBGR8,2>,Array<PixelRGB8,2>>, 1.0f);
+    [[maybe_unused]] bool g_reg9 = registerConversion(convert<Array<PixelRGB8,2>,Array<PixelRGBA8,2>>, 1.0f);
+    [[maybe_unused]] bool g_reg10 = registerConversion(convert<Array<PixelBGRA8,2>,Array<PixelRGBA8,2>>, 1.0f);
+    [[maybe_unused]] bool g_reg11 = registerConversion(convert<Array<PixelBGRA8,2>,Array<PixelBGRA8,2>>, 1.0f);
+    [[maybe_unused]] bool g_reg12 = registerConversion(convert<Array<PixelD32F,2>,Array<PixelD16,2>>, 1.0f);
+
   }// namespace
 
   const std::array<int, 256> ColorConversion::mRGBcYUV_ubLookup = UBLookup();
   const std::array<int, 256> ColorConversion::mRGBcYUV_vrLookup = VRLookup();
   const std::array<int, 256 * 256> ColorConversion::mRGBcYUV_uvgLookup = UVGLookup();
 
-  template void convert(Array<PixelY8, 3> &dest, const Array<PixelYUV8, 3> &src);
-  template void convert(Array<PixelYUV8, 3> &dest, const Array<PixelY8, 3> &src);
-  template void convert(Array<PixelRGB8, 3> &dest, const Array<PixelYUV8, 3> &src);
-  template void convert(Array<PixelRGB8, 3> &dest, const Array<PixelY8, 3> &src);
+  template void convert(Array<PixelY8, 2> &dest, const Array<PixelYUV8, 2> &src);
+  template void convert(Array<PixelY8, 2> &dest, const Array<PixelRGB8, 2> &src);
+  template void convert(Array<PixelYUV8, 2> &dest, const Array<PixelY8, 2> &src);
+  template void convert(Array<PixelRGB8, 2> &dest, const Array<PixelYUV8, 2> &src);
+  template void convert(Array<PixelYUV8, 2> &dest, const Array<PixelRGB8, 2> &src);
+  template void convert(Array<PixelRGB8, 2> &dest, const Array<PixelY8, 2> &src);
+  template void convert(Array<PixelRGB8, 2> &dest, const Array<PixelBGR8, 2> &src);
+  template void convert(Array<PixelBGR8, 2> &dest, const Array<PixelRGB8, 2> &src);
+  template void convert(Array<PixelRGB8, 2> &dest, const Array<PixelRGBA8, 2> &src);
+  template void convert(Array<PixelBGRA8, 2> &dest, const Array<PixelRGBA8, 2> &src);
+  template void convert(Array<PixelRGBA8, 2> &dest, const Array<PixelBGRA8, 2> &src);
+  template void convert(Array<PixelD32F, 2> &dest, const Array<PixelD16, 2> &src);
+
 
 }// namespace Ravl2

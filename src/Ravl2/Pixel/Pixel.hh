@@ -291,6 +291,7 @@ namespace Ravl2
   using PixelY8 = Pixel<uint8_t, ImageChannel::Luminance>;
   using PixelY16 = Pixel<uint16_t, ImageChannel::Luminance>;
   using PixelD16 = Pixel<uint16_t, ImageChannel::Depth>;
+  using PixelD32F = Pixel<float, ImageChannel::Depth>;
   using PixelRGB8 = Pixel<uint8_t, ImageChannel::Red, ImageChannel::Green, ImageChannel::Blue>;
   using PixelRGBA8 = Pixel<uint8_t, ImageChannel::Red, ImageChannel::Green, ImageChannel::Blue, ImageChannel::Alpha>;
   using PixelRGB16 = Pixel<uint16_t, ImageChannel::Red, ImageChannel::Green, ImageChannel::Blue>;

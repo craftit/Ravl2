@@ -4,10 +4,16 @@
 
 #include "Ravl2/IO/Save.hh"
 #include "Ravl2/IO/OutputFormat.hh"
+#include <nlohmann/json.hpp>
 
 
 namespace Ravl2
 {
+  const nlohmann::json &defaultSaveFormatHint()
+  {
+    static nlohmann::json hint;
+    return hint;
+  }
 
   [[nodiscard]] std::optional<StreamOutputPlan> openOutput(const std::string &url, const std::type_info &type, const nlohmann::json &formatHint)
   {

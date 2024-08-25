@@ -2,7 +2,8 @@
 // Created by charles galambos on 06/08/2024.
 //
 
-#include "Pixel.hh"
+#include "Ravl2/Pixel/Pixel.hh"
+#include "Ravl2/Pixel/Colour.hh"
 
 namespace Ravl2
 {
@@ -80,6 +81,12 @@ namespace Ravl2
     else
       channel = ImageChannel::Unused;
     return strm;
+  }
+
+  // This helps ensure that the colour conversions are linked if the user uses any of the pixel classes.
+  void initPixel()
+  {
+    initColourConversion();
   }
 
   template class Pixel<uint8_t, ImageChannel::Red, ImageChannel::Green, ImageChannel::Blue>;

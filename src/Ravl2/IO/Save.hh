@@ -11,9 +11,10 @@
 #include <spdlog/spdlog.h>
 #include <optional>
 #include <any>
-#include "Ravl2/IO/StreamOutput.hh"
 #include <nlohmann/json.hpp>
 #include <utility>
+#include "Ravl2/IO/StreamOutput.hh"
+
 
 namespace Ravl2
 {
@@ -25,13 +26,16 @@ namespace Ravl2
   //! @return A pointer to the stream.
   [[nodiscard]] std::optional<StreamOutputPlan> openOutput(const std::string &url, const std::type_info &type, const nlohmann::json &formatHint);
 
+  const nlohmann::json &defaultSaveFormatHint();
+
+
   //! @brief Save an object to a file.
   //! @praam object - The object to save.
   //! @param url - The filename to save to.
   //! @param formatHint - A hint to the format of the file.
   //! @return True if the object was saved successfully.
   template <typename ObjectT>
-  bool save(const std::string &url, const ObjectT &object, const nlohmann::json &formatHint = {})
+  bool save(const std::string &url, const ObjectT &object, const nlohmann::json &formatHint = defaultSaveFormatHint())
   {
     auto thePlan = openOutput(url, typeid(ObjectT),formatHint);
     if(!thePlan.has_value())

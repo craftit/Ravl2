@@ -181,10 +181,32 @@ namespace Ravl2
     }
   }
 
+  // Convert a return a new array
+  template<typename DestT, typename SourceT>
+  DestT convert(const SourceT &src)
+  {
+    DestT dest;
+    convert(dest, src);
+    return dest;
+  }
+
   // Declare some common conversions
-  extern template void convert(Array<PixelY8, 3> &dest, const Array<PixelYUV8, 3> &src);
-  extern template void convert(Array<PixelYUV8, 3> &dest, const Array<PixelY8, 3> &src);
-  extern template void convert(Array<PixelRGB8, 3> &dest, const Array<PixelYUV8, 3> &src);
-  extern template void convert(Array<PixelRGB8, 3> &dest, const Array<PixelY8, 3> &src);
+  extern template void convert(Array<PixelY8, 2> &dest, const Array<PixelYUV8, 2> &src);
+  extern template void convert(Array<PixelY8, 2> &dest, const Array<PixelRGB8, 2> &src);
+  extern template void convert(Array<PixelYUV8, 2> &dest, const Array<PixelY8, 2> &src);
+  extern template void convert(Array<PixelYUV8, 2> &dest, const Array<PixelRGB8, 2> &src);
+  extern template void convert(Array<PixelRGB8, 2> &dest, const Array<PixelYUV8, 2> &src);
+  extern template void convert(Array<PixelRGB8, 2> &dest, const Array<PixelY8, 2> &src);
+
+  extern template void convert(Array<PixelRGB8, 2> &dest, const Array<PixelBGR8, 2> &src);
+  extern template void convert(Array<PixelBGR8, 2> &dest, const Array<PixelRGB8, 2> &src);
+  extern template void convert(Array<PixelBGR8, 2> &dest, const Array<PixelRGBA8, 2> &src);
+  extern template void convert(Array<PixelBGRA8, 2> &dest, const Array<PixelRGBA8, 2> &src);
+  extern template void convert(Array<PixelRGBA8, 2> &dest, const Array<PixelBGRA8, 2> &src);
+
+  extern template void convert(Array<PixelD32F, 2> &dest, const Array<PixelD16, 2> &src);
+
+  // Call to ensure that the conversion functions are registered
+  extern void initColourConversion();
 
 }// namespace Ravl2

@@ -11,7 +11,6 @@
 #include <functional>
 #include <memory>
 #include <optional>
-#include <nlohmann/json.hpp>
 
 namespace Ravl2
 {

@@ -4,6 +4,11 @@
 
 namespace Ravl2
 {
+  const nlohmann::json &defaultFormatHint()
+  {
+    static nlohmann::json hint;
+    return hint;
+  }
 
   [[nodiscard]] std::optional<StreamInputPlan> openInput(const std::string &url, const std::type_info &type, std::string_view formatHint)
   {

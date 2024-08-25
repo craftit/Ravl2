@@ -15,7 +15,7 @@
 #include "Ravl2/Image/CornerDetectorSusan.hh"
 #include "Ravl2/Image/DrawFrame.hh"
 #include "Ravl2/Image/DrawCross.hh"
-#include "Ravl2/OpenCV/Image.hh"
+#include "Ravl2/IO/Load.hh"
 #include "Ravl2/Resource.hh"
 
 #include <opencv2/imgcodecs.hpp>
@@ -76,14 +76,11 @@ int main(int argc,char **argv)
 
     SPDLOG_INFO("Loading image '{}'", inf);
 
-    cv::Mat cvImg = imread(inf, cv::IMREAD_GRAYSCALE);
+    Ravl2::Array<uint8_t,2> img;
 
-    if(cvImg.data == nullptr) {
-      SPDLOG_ERROR("Failed to load image '{}'", inf);
-      return 1;
-    }
+    Ravl2::load(img, inf);
 
-    Ravl2::Array<uint8_t,2> img = Ravl2::toArray<uint8_t,2>(cvImg);
+
 
 //    if(!RavlN::Load(inf,img)) { // Load an image.
 //      SPDLOG_ERROR("Failed to load image '{}'", inf);
