@@ -87,20 +87,20 @@ namespace Ravl2
   //! etc.
 
   template <typename ObjectT>
-  class StreamInputContainer : public StreamInputBase
+  class StreamInput : public StreamInputBase
   {
   public:
     //! Default constructor.
-    StreamInputContainer() = default;
+    StreamInput() = default;
 
     //! Construct a stream with a start and end offset.
-    explicit StreamInputContainer(std::streampos start, std::streampos end = std::numeric_limits<std::streampos>::max())
+    explicit StreamInput(std::streampos start, std::streampos end = std::numeric_limits<std::streampos>::max())
         : StreamInputBase(start, end)
     {}
 
     //! @brief Get the type of the object.
     //! @return The type of the object.
-    [[nodiscard]] const std::type_info &type() const override
+    [[nodiscard]] const std::type_info &type() const final
     {
       return typeid(ObjectT);
     }
@@ -140,7 +140,7 @@ namespace Ravl2
 
   template <typename ObjectT>
   class StreamInputCall
-      : public StreamInputContainer<ObjectT>
+      : public StreamInput<ObjectT>
   {
   public:
     //! @brief Constructor.
@@ -148,7 +148,7 @@ namespace Ravl2
     //! @param end - The end of the stream.
     //! @param callback - The callback to read the object.
     explicit StreamInputCall(std::function<std::optional<ObjectT>(std::streampos &)> callback,std::streampos begin = 0, std::streampos end = std::numeric_limits<std::streampos>::max())
-        : StreamInputContainer<ObjectT>(begin, end),
+        : StreamInput<ObjectT>(begin, end),
           mCallback(std::move(callback))
     {}
 

@@ -71,7 +71,7 @@ namespace Ravl2
   //! Plan for getting the output
   struct StreamOutputPlan
   {
-    std::unique_ptr<StreamOutputBase> mStream;
+    std::shared_ptr<StreamOutputBase> mStream;
     std::function<std::any(std::any)> mConversion;
     float mCost = 1.0f;
   };
@@ -79,21 +79,20 @@ namespace Ravl2
   //! @brief Container that represents a file or data stream that could have one or more object to be written.
 
   template <typename ObjectT>
-  class StreamOutputContainer
-      : public StreamOutputBase
+  class StreamOutput : public StreamOutputBase
   {
   public:
     //! Default constructor.
-    StreamOutputContainer() = default;
+    StreamOutput() = default;
 
     //! Construct a stream with a start and end offset.
-    explicit StreamOutputContainer(std::streampos start, std::streampos end = std::numeric_limits<std::streampos>::max())
+    explicit StreamOutput(std::streampos start, std::streampos end = std::numeric_limits<std::streampos>::max())
         : StreamOutputBase(start, end)
     {}
 
     //! @brief Get the type of the object.
     //! @return The type of the object.
-    [[nodiscard]] const std::type_info &type() const override
+    [[nodiscard]] const std::type_info &type() const final
     {
       return typeid(ObjectT);
     }
@@ -137,7 +136,7 @@ namespace Ravl2
 
   template <typename ObjectT>
   class StreamOutputCall
-      : public StreamOutputContainer<ObjectT>
+      : public StreamOutput<ObjectT>
   {
   public:
     //! @brief Construct a stream with a lambda.
@@ -145,7 +144,7 @@ namespace Ravl2
     //! @param start - The start position in the stream.
     //! @param end - The end position in the stream.
     explicit StreamOutputCall(std::function<std::streampos(const ObjectT &, std::streampos)> writeCall, std::streampos start = 0, std::streampos end = std::numeric_limits<std::streampos>::max())
-        : StreamOutputContainer<ObjectT>(start, end),
+        : StreamOutput<ObjectT>(start, end),
           mWrite(writeCall)
     {}
 

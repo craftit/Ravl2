@@ -8,7 +8,7 @@
 #include "Ravl2/IO/TypeConverter.hh"
 #include "Ravl2/IO/InputFormat.hh"
 #include "Ravl2/IO/OutputFormat.hh"
-#include "Ravl2/IO/InputStreamMem.hh"
+#include "Ravl2/IO/InputStreamContainer.hh"
 #include "Ravl2/IO/Load.hh"
 #include "Ravl2/IO/Save.hh"
 
@@ -23,7 +23,7 @@ namespace Ravl2
       std::optional<ConversionChain> convChain = typeConverterMap().find(ctx.m_targetType, typeid(ViaT));
       if(!convChain.has_value())
         return std::nullopt;
-      return StreamInputPlan {std::make_shared<InputStreamMem<ViaT> >(toArray<ViaPixelT,N>(img)), convChain.value(), convChain.value().conversionLoss()};
+      return StreamInputPlan {std::make_shared<InputStreamContainer<ViaT> >(toArray<ViaPixelT,N>(img)), convChain.value(), convChain.value().conversionLoss()};
     }
 
     //std::function<std::optional<StreamInputPlan>(const ProbeInputContext &)/

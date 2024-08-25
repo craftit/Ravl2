@@ -39,7 +39,7 @@ namespace Ravl2
   //! @brief Archive that uses cereal to write objects to a stream.
   //! @tparam ObjectT - The type of object to write.
   template <typename ObjectT, typename ArchiveT>
-  class StreamOutputCerealArchive : public StreamOutputContainer<ObjectT>
+  class StreamOutputCerealArchive : public StreamOutput<ObjectT>
   {
   public:
     explicit StreamOutputCerealArchive(std::unique_ptr<std::ostream> stream)
@@ -64,7 +64,7 @@ namespace Ravl2
   //! @brief Archive that uses cereal to write objects to a stream.
   //! @tparam ObjectT - The type of object to write.
   template <typename ObjectT, typename ArchiveT>
-  class StreamInputCerealArchive : public StreamInputContainer<ObjectT>
+  class StreamInputCerealArchive : public StreamInput<ObjectT>
   {
   public:
     explicit StreamInputCerealArchive(std::unique_ptr<std::istream> stream)

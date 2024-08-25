@@ -26,8 +26,8 @@ namespace Ravl2
   //! @return A pointer to the stream.
   [[nodiscard]] std::optional<StreamOutputPlan> openOutput(const std::string &url, const std::type_info &type, const nlohmann::json &formatHint);
 
-  const nlohmann::json &defaultSaveFormatHint();
-
+  //! Default save format hint.
+  [[nodiscard]] const nlohmann::json &defaultSaveFormatHint();
 
   //! @brief Save an object to a file.
   //! @praam object - The object to save.
@@ -41,7 +41,7 @@ namespace Ravl2
     if(!thePlan.has_value())
       return false;
     if(!thePlan.value().mConversion) {
-      auto *output = dynamic_cast<StreamOutputContainer<ObjectT> *>(thePlan->mStream.get());
+      auto *output = dynamic_cast<StreamOutput<ObjectT> *>(thePlan->mStream.get());
       // Can we write directly to the stream?
       if(output != nullptr) {
         return output->write(object, output->beginOffset());

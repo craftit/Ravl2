@@ -22,14 +22,15 @@ namespace Ravl2
 
   [[nodiscard]] std::optional<StreamInputPlan> openInput(const std::string &url, const std::type_info &type,  const nlohmann::json &formatHint);
 
+  //! Default load format hint.
+  [[nodiscard]] const nlohmann::json &defaultLoadFormatHint();
+
   //! @brief Load a file into an object.
   //! The file is loaded using the cereal library.
   //! @param url - The filename to load.
   //! @param object - The object to load into.
   //! @param formatHint - A hint to the format of the file.
   //! @return True if the file was loaded successfully.
-
-  const nlohmann::json &defaultLoadFormatHint();
 
   template <typename ObjectT>
   bool load(ObjectT &object, const std::string &url, const nlohmann::json &formatHint = defaultLoadFormatHint())
@@ -39,7 +40,7 @@ namespace Ravl2
       return false;
     std::streampos pos = container.value().mStream->beginOffset();
     if(!container.value().mConversion) {
-      auto *input = dynamic_cast<StreamInputContainer<ObjectT> *>(container.value().mStream.get());
+      auto *input = dynamic_cast<StreamInput<ObjectT> *>(container.value().mStream.get());
       if(!input) {
         SPDLOG_ERROR("Failed to cast container to InputContainer<ObjectT>");
         return false;

@@ -10,20 +10,19 @@
 namespace Ravl2
 {
    //! @brief A stream that just reads from a vector in memory.
-   template <typename ObjectT>
-   class InputStreamMem
-     : public StreamInputContainer<ObjectT>
+   template <typename ObjectT, typename ContainerT = std::vector<ObjectT>>
+   class InputStreamContainer : public StreamInput<ObjectT>
    {
    public:
-     InputStreamMem() = default;
+     InputStreamContainer() = default;
 
      //! Construct with a vector of objects.
-      explicit InputStreamMem(std::vector<ObjectT> objects)
+      explicit InputStreamContainer(std::vector<ObjectT> objects)
         : m_objects(std::move(objects))
       {}
 
     //! Construct with a single object.
-    explicit InputStreamMem(ObjectT && object)
+    explicit InputStreamContainer(ObjectT && object)
         : m_objects {std::move(object)}
     {}
 
@@ -44,8 +43,8 @@ namespace Ravl2
     }
 
    private:
-     std::vector<ObjectT> m_objects;
+     ContainerT m_objects;
    };
 
-   extern template class InputStreamMem<std::string>;
+   extern template class InputStreamContainer<std::string>;
 }
