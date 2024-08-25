@@ -80,8 +80,6 @@ int main(int argc,char **argv)
 
     Ravl2::load(img, inf);
 
-
-
 //    if(!RavlN::Load(inf,img)) { // Load an image.
 //      SPDLOG_ERROR("Failed to load image '{}'", inf);
 //      return 1;

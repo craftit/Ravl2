@@ -5,6 +5,7 @@ add_library (Ravl2OpenCV
         Image.hh Image.cc
         Geometry.cc Geometry.hh
         ImageIO.cc ImageIO.hh
+        Display.cc Display.hh
 )
 
 add_library(ravl2::Ravl2OpenCV ALIAS Ravl2OpenCV)

@@ -9,12 +9,15 @@
 #include "Ravl2/IO/InputFormat.hh"
 #include "Ravl2/IO/OutputFormat.hh"
 #include "Ravl2/IO/InputStreamContainer.hh"
-#include "Ravl2/IO/Load.hh"
 #include "Ravl2/IO/Save.hh"
+#include "Ravl2/OpenCV/Display.hh"
 
 namespace Ravl2
 {
-
+  void initOpenCVImageIO()
+  {
+    initOpenCVDisplay();
+  }
   namespace {
     template<typename ViaPixelT,unsigned N=2>
     std::optional<StreamInputPlan> makePlan(cv::Mat img, const ProbeInputContext &ctx)
@@ -56,7 +59,6 @@ namespace Ravl2
         return std::nullopt;
     }));
 
-    //std::function<std::optional<StreamOutputPlan>(const ProbeOutputContext &)/
     [[maybe_unused]] bool g_regFmt1 = outputFormatMap().add(std::make_shared<OutputFormatCall>("OpenCV","png,jpg,jpeg,bmp,tiff",-1,[](const ProbeOutputContext &ctx) -> std::optional<StreamOutputPlan> {
 
       //! If we are looking for a cv::Mat, we can just read the file directly.
