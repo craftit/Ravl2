@@ -14,61 +14,6 @@
 namespace Ravl2
 {
 
-  template <typename ObjectT>
-  class InputStreamIterator;
-
-  template <typename ObjectT>
-  class OutputStreamIterator;
-
-  //! @brief Container that represents a file or data stream that could have one or more object to be read.
-  //! It allows a stream of objects to be treated as a normal c++ container, with begin and end iterators.
-  //! The streampos, is implementation defined, but is used to represent the position in the stream
-  //! but the exact meaning of the position is implementation defined. It could be a byte offset, or a line number,
-  //! etc.
-
-  template <typename ObjectT>
-  class StreamInputContainer : public StreamInputBase
-  {
-  public:
-    //! @brief Get the type of the object.
-    //! @return The type of the object.
-    [[nodiscard]] const std::type_info &type() const override
-    {
-      return typeid(ObjectT);
-    }
-
-    //! Goto next position in the stream and read the object.
-    //! @param pos - The position in the stream where the object was written.
-    //! @return The object.
-    virtual std::optional<ObjectT> next(std::streampos &pos) = 0;
-
-    //! Goto next position in the stream and read the object.
-    //! @param pos - The position in the stream where the object was written.
-    //! @return The object.
-    std::any anyNext(std::streampos &pos) final
-    {
-      auto obj = next(pos);
-      if(obj.has_value())
-            return std::move(obj.value());
-      return {};
-    }
-
-    //! Get start iterator.
-    [[nodiscard]] auto begin() const
-    {
-      return InputStreamIterator<ObjectT>(*this, mStart);
-    }
-
-    //! Get end iterator.
-    [[nodiscard]] auto end() const
-    {
-      return InputStreamIterator<ObjectT>(*this, mEnd);
-    }
-
-  protected:
-  };
-
-
   //! @brief Open a base stream for reading.
   //! @param url - The filename to open.
   //! @param type - The type of the object to read.

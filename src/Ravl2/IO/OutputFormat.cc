@@ -3,17 +3,24 @@
 //
 
 #include "Ravl2/IO/OutputFormat.hh"
+#include "Ravl2/StringUtils.hh"
 
 namespace Ravl2
 {
-  bool SaveFormatMap::add(std::unique_ptr<OutputFormat> format)
+  bool OutputFormatMap::add(std::shared_ptr<OutputFormat> format)
   {
+    auto extensions = splitStrings(format->extension(),',');
     std::lock_guard lock(m_mutex);
-    m_formatByExtension[format->extension()].push_back(std::move(format));
+    if(extensions.empty()) {
+      m_formatByExtension[""].push_back(std::move(format));
+      return true;
+    }
+    for(auto &ext : extensions)
+      m_formatByExtension[ext].push_back(format);
     return true;
   }
 
-  std::optional<OutputFormat::OutputPlanT> SaveFormatMap::probe(const ProbeOutputContext &ctx)
+  std::optional<OutputFormat::OutputPlanT> OutputFormatMap::probe(const ProbeOutputContext &ctx)
   {
     std::shared_lock lock(m_mutex);
     auto it = m_formatByExtension.find(ctx.m_extension);
@@ -30,9 +37,9 @@ namespace Ravl2
     return std::nullopt;
   }
 
-  SaveFormatMap &saveFormatMap()
+  OutputFormatMap &outputFormatMap()
   {
-    static SaveFormatMap map;
+    static OutputFormatMap map;
     return map;
   }
 

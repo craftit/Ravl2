@@ -2,14 +2,22 @@
 // Created by charles on 24/08/24.
 //
 
-#include "InputFormat.hh"
+#include "Ravl2/IO/InputFormat.hh"
+#include "Ravl2/StringUtils.hh"
 
 namespace Ravl2
 {
 
-  bool InputFormatMap::add(std::unique_ptr<InputFormat> format) {
+  bool InputFormatMap::add(std::shared_ptr<InputFormat> format) {
+    auto extensions = splitStrings(format->extension(),',');
     std::lock_guard lock(m_mutex);
-    m_formatByExtension[format->extension()].push_back(std::move(format));
+    if(extensions.empty()) {
+      m_formatByExtension[""].push_back(std::move(format));
+      return true;
+    }
+    for(auto &ext : extensions) {
+      m_formatByExtension[ext].push_back(std::move(format));
+    }
     return true;
   }
 

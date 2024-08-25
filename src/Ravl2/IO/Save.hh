@@ -19,55 +19,6 @@
 namespace Ravl2
 {
 
-  //! @brief Container that represents a file or data stream that could have one or more object to be written.
-
-  template <typename ObjectT>
-  class StreamOutputContainer
-      : public StreamOutputBase
-  {
-  public:
-    //! @brief Get the type of the object.
-    //! @return The type of the object.
-    [[nodiscard]] const std::type_info &type() const override
-    {
-      return typeid(ObjectT);
-    }
-
-    //! Write an object to the stream.
-    //! @param obj - The object to write.
-    //! @param pos - The position in the stream where the object was written.
-    //! @return True if the object was written.
-    virtual std::streampos write(const ObjectT &obj, std::streampos pos) = 0;
-
-    //! @brief Write an object to the stream.
-    //! @param value - The object to write.
-    //! @param pos - The position in the stream
-    //! @return The position in the stream after writing the object.
-    std::streampos anyWrite(std::any value,std::streampos pos) final {
-      if(value.type() != typeid(ObjectT))
-        throw std::bad_any_cast();
-      auto obj = std::any_cast<ObjectT>(value);
-      return write(obj, pos);
-    }
-
-    //! Add object to the end of the stream.
-    void push_back(const ObjectT &obj)
-    {
-      std::streampos pos = mEnd;
-      write(obj, pos);
-    }
-
-    [[nodiscard]] auto begin() const
-    {
-      return OutputStreamIterator<ObjectT>(*this, mStart);
-    }
-
-    [[nodiscard]] auto end() const
-    {
-      return OutputStreamIterator<ObjectT>(*this, mEnd);
-    }
-  };
-
   //! @brief Open a base stream for writing.
   //! @param url - The filename to open.
   //! @param type - The type of the object to write.

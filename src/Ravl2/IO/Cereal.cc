@@ -8,7 +8,7 @@
 namespace Ravl2
 {
   namespace {
-    [[maybe_unused]] bool regFormat1 = saveFormatMap().add(std::make_unique<CerealSaveFormat<IndexRangeSet<2>,cereal::BinaryOutputArchive>>());
+    [[maybe_unused]] bool regFormat1 = outputFormatMap().add(std::make_unique<CerealSaveFormat<IndexRangeSet<2>,cereal::BinaryOutputArchive>>());
     [[maybe_unused]] bool regFormat2 = InputFormatMap().add(std::make_unique<CerealLoadFormat<IndexRangeSet<2>,cereal::BinaryInputArchive>>());
   }
 }

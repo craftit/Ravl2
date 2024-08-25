@@ -200,6 +200,8 @@ s/ ostream / std::ostream /g
 s/ istream / std::istream /g
 s/(ostream /(std::ostream /g
 s/(istream /(std::istream /g
+s/IStreamC/std::unique_ptr<std::istream>/g
+s/OStreamC/std::unique_ptr<std::ostream>/g
 
 # Indexing
 s/\[0\]\[0\]/(0,0)/g

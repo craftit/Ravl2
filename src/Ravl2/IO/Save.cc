@@ -37,7 +37,7 @@ namespace Ravl2
     // Create the context
     ProbeOutputContext ctx(url, rawFilename, protocol, ext, formatHint, type);
 
-    return saveFormatMap().probe(ctx);
+    return outputFormatMap().probe(ctx);
 
   }
 
