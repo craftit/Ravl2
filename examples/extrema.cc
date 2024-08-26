@@ -27,7 +27,7 @@ int main(int nargs,char **argv) {
   CLI::App app{"Corner detection example program"};
 
   int minSize = 10;
-  int minMargin = 10;
+  int minMargin = 8;
   int limit = 255;
   bool seq = true;
   bool webCam = true;

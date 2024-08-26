@@ -13,7 +13,7 @@ namespace Ravl2
 
   std::optional<StreamInputPlan> openInput(const std::string &url, const std::type_info &type,  const nlohmann::json &formatHint)
   {
-    bool verbose = true;
+    bool verbose = false;
     if(formatHint.is_object()) {
       verbose = formatHint.value("verbose", verbose);
     }
