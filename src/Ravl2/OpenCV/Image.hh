@@ -20,6 +20,7 @@ namespace Ravl2
     return cv::Mat(N, sizes.data(), cv::DataType<DataT>::type, addressOfMin(m));
   }
 
+
   //! Create a Ravl2::Array from a cv::Mat
   //! The type of the array must be the same as the cv::Mat
   //! This uses reference counting to ensure that the cv::Mat is not destroyed before the array
@@ -47,6 +48,10 @@ namespace Ravl2
   //! Make to Array for  Array<PixelBGR8, N>
   template <>
   Array<PixelBGR8, 2> toArray(const cv::Mat &m);
+
+  //! Make to cv::Mat for  Array<PixelBGR8, N>
+  template <>
+  cv::Mat toCvMat(const Array<PixelBGR8, 2> &m);
 
   //! Create a Ravl2::ArrayView from a cv::Mat
   //! The type of the array must be the same as the cv::Mat

@@ -41,4 +41,12 @@ namespace Ravl2
                                std::shared_ptr<PixelBGR8[]>(dataPtr, [val = cv::Mat(m)]([[maybe_unused]] PixelBGR8 *delPtr) { assert(static_cast<void *>(delPtr) == val.data); }));
   }
 
+  template <>
+  cv::Mat toCvMat(const Array<PixelBGR8, 2> &m)
+  {
+    cv::Mat img(cv::Size(m.range(1).size(), m.range(0).size()), CV_8UC3, addressOfMin(m));
+    return img;
+  }
+
+
 }// namespace Ravl2

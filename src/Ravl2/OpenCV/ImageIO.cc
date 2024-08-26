@@ -111,6 +111,9 @@ namespace Ravl2
         case CV_64FC1: {
           return makePlan<double>(img, ctx);
         }
+        case CV_8UC3: {
+          return makePlan<PixelBGR8>(img, ctx);
+        }
         default: break;
       }
 
@@ -236,6 +239,7 @@ namespace Ravl2
     [[maybe_unused]] bool g_reg4 = registerConversion([](Array<int32_t, 2> img) -> cv::Mat { return toCvMat(img); }, 0.95f);
     [[maybe_unused]] bool g_reg5 = registerConversion([](Array<float, 2> img) -> cv::Mat { return toCvMat(img); }, 0.95f);
     [[maybe_unused]] bool g_reg6 = registerConversion([](Array<double, 2> img) -> cv::Mat { return toCvMat(img); }, 0.95f);
+    [[maybe_unused]] bool g_reg7 = registerConversion([](Array<PixelBGR8 , 2> img) -> cv::Mat { return toCvMat(img); }, 0.95f);
 
   }// namespace
 }// namespace Ravl2
