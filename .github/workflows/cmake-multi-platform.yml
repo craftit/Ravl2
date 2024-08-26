@@ -23,25 +23,34 @@ jobs:
       #
       # To add more build types (Release, Debug, RelWithDebInfo, etc.) customize the build_type list.
       matrix:
-        os: [ubuntu-latest, windows-latest]
+        os: [ubuntu-24.04] #[ubuntu-latest, windows-latest]
         build_type: [Release]
-        c_compiler: [gcc, clang, cl]
+        # The CMake generator to use. The default generator is used if not specified.
+        c_compiler: [gcc, clang] # [gcc, clang, cl]
         include:
-          - os: windows-latest
-            c_compiler: cl
-            cpp_compiler: cl
-          - os: ubuntu-latest
+#          - os: ubuntu-latest
+#            c_compiler: gcc
+#            cpp_compiler: g++
+#          - os: ubuntu-latest
+#            c_compiler: clang
+#            cpp_compiler: clang++
+          - os: ubuntu-24.04
             c_compiler: gcc
             cpp_compiler: g++
-          - os: ubuntu-latest
+          - os: ubuntu-24.04
             c_compiler: clang
             cpp_compiler: clang++
+        #          - os: windows-latest
+        #            c_compiler: cl
+        #            cpp_compiler: cl
         exclude:
           - os: windows-latest
             c_compiler: gcc
           - os: windows-latest
             c_compiler: clang
           - os: ubuntu-latest
+            c_compiler: cl
+          - os: ubuntu-24.04
             c_compiler: cl
 
     steps:
@@ -53,6 +62,19 @@ jobs:
       shell: bash
       run: |
         echo "build-output-dir=${{ github.workspace }}/build" >> "$GITHUB_OUTPUT"
+
+    - name: Install build packages (Ubuntu)
+      uses: awalsh128/cache-apt-pkgs-action@latest
+      if: runner.os != 'Windows'
+      with:
+        packages:  build-essential libopencv-dev libxtensor-dev libxtensor-blas-dev libspdlog-dev libfmt-dev libcli11-dev libblas-dev liblapack-dev
+        version: 1.0
+
+    - name: Install build packages (Windows)
+      if: runner.os == 'Windows'
+      run: |
+          choco install -y visualstudio2019buildtools visualstudio2019-workload-vctools
+          choco install -y opencv xtensor xtensor-blas spdlog fmt cli11
 
     - name: Configure CMake
       # Configure CMake in a 'build' subdirectory. `CMAKE_BUILD_TYPE` is only required if you are using a single-configuration generator such as make.
@@ -66,7 +88,13 @@ jobs:
 
     - name: Build
       # Build your program with the given configuration. Note that --config is needed because the default Windows generator is a multi-config generator (Visual Studio generator).
+      if: runner.os == 'Windows'
       run: cmake --build ${{ steps.strings.outputs.build-output-dir }} --config ${{ matrix.build_type }}
+
+    - name: Build
+      # Build your program with the given configuration.
+      if: runner.os != 'Windows'
+      run: cmake --build ${{ steps.strings.outputs.build-output-dir }}
 
     - name: Test
       working-directory: ${{ steps.strings.outputs.build-output-dir }}

@@ -1,0 +1,20 @@
+#ifndef RAVL2_CONFIG_HPP
+#define RAVL2_CONFIG_HPP
+
+#include <string>
+
+#define RAVL_USE_MMX 0
+
+// this is a basic example of how a CMake configured file might look
+// in this particular case, we are using it to set the version number of our executable
+namespace Ravl2::cmake {
+inline constexpr std::string_view project_name = "@PROJECT_NAME@";
+inline constexpr std::string_view project_version = "@PROJECT_VERSION@";
+inline constexpr int project_version_major { @PROJECT_VERSION_MAJOR@ };
+inline constexpr int project_version_minor { @PROJECT_VERSION_MINOR@ };
+inline constexpr int project_version_patch { @PROJECT_VERSION_PATCH@ };
+inline constexpr int project_version_tweak { @PROJECT_VERSION_TWEAK@ };
+inline constexpr std::string_view git_sha = "@GIT_SHA@";
+}// namespace Ravl2::cmake
+
+#endif
