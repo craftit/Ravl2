@@ -4,14 +4,19 @@
 
 namespace Ravl2
 {
-  const nlohmann::json &defaultFormatHint()
+
+  const nlohmann::json &defaultLoadFormatHint()
   {
     static nlohmann::json hint;
     return hint;
   }
 
-  [[nodiscard]] std::optional<StreamInputPlan> openInput(const std::string &url, const std::type_info &type, std::string_view formatHint)
+  std::optional<StreamInputPlan> openInput(const std::string &url, const std::type_info &type,  const nlohmann::json &formatHint)
   {
+    bool verbose = false;
+    if(formatHint.is_object()) {
+      verbose = formatHint.value("verbose", verbose);
+    }
     // Is there a protocol in the URL?
     auto protocolEnd = url.find("://");
     std::string protocol;
@@ -37,7 +42,14 @@ namespace Ravl2
       ext = "";
     }
 
+    if(verbose) {
+      SPDLOG_INFO("Opening input stream for file: {} Extension:'{}' Protocol:'{}' ", url, ext, protocol);
+    }
+
     ProbeInputContext ctx(url, rawFilename, protocol, ext, formatHint, type);
+
+    // Do we want to be verbose?
+    ctx.m_verbose = verbose;
 
     // Open the file
     std::unique_ptr<std::istream> tmpStrm =  std::make_unique<std::ifstream>(rawFilename);
@@ -52,10 +64,13 @@ namespace Ravl2
     {
       ctx.m_data.resize(size_t(numRead));
     }
+    if(verbose) {
+      SPDLOG_INFO("Read {} bytes from file", ctx.m_data.size());
+    }
     tmpStrm->seekg(0);
     ctx.mStream = std::move(tmpStrm);
 
-    return InputFormatMap().probe(ctx);
+    return inputFormatMap().probe(ctx);
   }
 
 

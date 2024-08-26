@@ -36,6 +36,7 @@ namespace Ravl2
     nlohmann::json m_formatHint;
     const std::type_info &m_targetType;
     std::vector<uint8_t> m_data;
+    bool m_verbose = false;
   };
 
   //! Load file format
@@ -45,9 +46,10 @@ namespace Ravl2
   public:
     InputFormat() = default;
 
-    InputFormat(std::string name, std::string extension,int priority = 0)
+    InputFormat(std::string name, std::string extension, std::string protocol,int priority = 0)
         : m_name(std::move(name)),
           m_extension(std::move(extension)),
+          m_protocol(std::move(protocol)),
           m_priority(priority)
     {}
 
@@ -66,6 +68,24 @@ namespace Ravl2
       return m_extension;
     }
 
+    //! Get the protocol of the format.
+    [[nodiscard]] const std::string &protocol() const noexcept
+    {
+      return m_protocol;
+    }
+
+    //! Test if we support a protocol.
+    [[nodiscard]] bool supportsProtocol(const std::string &protocol) const noexcept
+    {
+      return m_protocol == protocol;
+    }
+
+    //! Test if we support an extension.
+    [[nodiscard]] bool supportsExtension(const std::string &extension) const noexcept
+    {
+      return m_extension == extension;
+    }
+
     //! @brief Test if we can load this type.
     //! @param ctx - The context to see if we can load.
     //! @return optional, if format is unknown, return nullopt, otherwise return data the format can use to load the file.
@@ -79,6 +99,7 @@ namespace Ravl2
   private:
     std::string m_name;
     std::string m_extension;
+    std::string m_protocol;
     int m_priority = 0;
   };
 
@@ -91,8 +112,8 @@ namespace Ravl2
     //! @param name - The name of the format.
     //! @param extension - Expected extension of the format.
     //! @param priority - Priority of the format. Higher is better, default is 0.
-    InputFormatCall(std::string name, std::string extension, int priority, std::function<std::optional<StreamInputPlan>(const ProbeInputContext &)> probe)
-      : InputFormat(std::move(name), std::move(extension), priority),
+    InputFormatCall(std::string name, std::string extension, std::string protocol, int priority, std::function<std::optional<StreamInputPlan>(const ProbeInputContext &)> probe)
+      : InputFormat(std::move(name), std::move(extension), std::move(protocol), priority),
         m_probe(std::move(probe))
     {}
 

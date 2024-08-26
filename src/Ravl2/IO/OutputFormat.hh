@@ -22,9 +22,7 @@ namespace Ravl2
         m_extension(std::move(ext)),
         m_formatHint(std::move(formatHint)),
         m_sourceType(sourceType)
-    {
-      m_extension = filename.substr(filename.find_last_of('.') + 1);
-    }
+    {}
 
     std::string m_url; //! The URL of the file.
     std::string m_filename; //! The name of the file, with the extension but without the protocol.
@@ -32,6 +30,7 @@ namespace Ravl2
     std::string m_extension;
     nlohmann::json m_formatHint;
     const std::type_info &m_sourceType;
+    bool m_verbose = false;
   };
 
 
@@ -47,19 +46,20 @@ namespace Ravl2
     OutputFormat() = default;
 
     //! Constructor.
-    OutputFormat(std::string format, std::string extension,int priority = 0)
-      : m_format(std::move(format)),
+    OutputFormat(std::string format, std::string extension, std::string protocol,int priority = 0)
+      : m_name(std::move(format)),
         m_extension(std::move(extension)),
+        m_protocol(std::move(protocol)),
         m_priority(priority)
     {}
 
     //! Virtual destructor.
     virtual ~OutputFormat() = default;
 
-    //! Get the format.
-    [[nodiscard]] const std::string &format() const noexcept
+    //! Get the format name.
+    [[nodiscard]] const std::string &name() const noexcept
     {
-      return m_format;
+      return m_name;
     }
 
     //! Get the extension.
@@ -68,19 +68,37 @@ namespace Ravl2
       return m_extension;
     }
 
+    //! Get the protocol.
+    [[nodiscard]] const std::string &protocol() const noexcept
+    {
+      return m_protocol;
+    }
+
     //! Get the priority of the format.
     [[nodiscard]] int priority() const noexcept
     {
       return m_priority;
     }
 
+    //! Test if we support a protocol.
+    [[nodiscard]] bool supportsProtocol(const std::string &protocol) const noexcept
+    {
+      return m_protocol == protocol;
+    }
+
+    //! Test if we support an extension.
+    [[nodiscard]] bool supportsExtension(const std::string &extension) const noexcept
+    {
+      return m_extension == extension;
+    }
 
     //! Test if we can save this type.
     [[nodiscard]] virtual std::optional<StreamOutputPlan> probe(const ProbeOutputContext &ctx) const = 0;
 
   private:
-    std::string m_format;
+    std::string m_name;
     std::string m_extension; //!< Extension of the file, maybe a comma separated list.
+    std::string m_protocol; //!< Protocol of the file.
     int m_priority = 0;
   };
 
@@ -94,8 +112,8 @@ namespace Ravl2
     //! @param format - The format of the file.
     //! @param extension - The extension of the file. - If empty, the format handles multiple extensions, maybe a comma separated list.
     //! @param callback - The callback to write the object.
-    OutputFormatCall(std::string format, std::string extension, int priority, std::function<std::optional<StreamOutputPlan>(const ProbeOutputContext &)> callback)
-      : OutputFormat(std::move(format), std::move(extension), priority),
+    OutputFormatCall(std::string name, std::string extension, std::string protocol, int priority, std::function<std::optional<StreamOutputPlan>(const ProbeOutputContext &)> callback)
+      : OutputFormat(std::move(name), std::move(extension), protocol, priority),
         m_callback(std::move(callback))
     {}
 

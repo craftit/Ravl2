@@ -30,10 +30,13 @@ namespace Ravl2
   [[nodiscard]] const nlohmann::json &defaultSaveFormatHint();
 
   //! @brief Save an object to a file.
-  //! @praam object - The object to save.
+  //! @param object - The object to save.
   //! @param url - The filename to save to.
   //! @param formatHint - A hint to the format of the file.
   //! @return True if the object was saved successfully.
+  //!
+  //! Format hints include
+  //!  - "verbose" - If true, print verbose output.
   template <typename ObjectT>
   bool save(const std::string &url, const ObjectT &object, const nlohmann::json &formatHint = defaultSaveFormatHint())
   {
@@ -47,7 +50,7 @@ namespace Ravl2
         return output->write(object, output->beginOffset());
       }
     }
-    return thePlan.value().mStream->anyWrite(thePlan.value().mConversion(std::any(object)), thePlan->mStream->beginOffset());
+    return thePlan.value().mStream->anyWrite(thePlan.value().mConversion(std::any(object)), thePlan->mStream->beginOffset()) >= 0;
   }
 
 

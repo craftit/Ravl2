@@ -641,7 +641,7 @@ namespace Ravl2
   //! Serialize the content of an array.
 
   template <typename ArchiveT, typename ArrayT, typename DataT = typename ArrayT::value_type, unsigned N = ArrayT::dimensions>
-    requires WindowedArray<ArrayT, DataT, N>
+    requires WindowedArray<ArrayT, DataT, N> && std::is_class<ArchiveT>::value
   void save(ArchiveT &archive,
             ArrayT const &arr)
   {
@@ -653,7 +653,7 @@ namespace Ravl2
   //! Deserialize the content of an array.
 
   template <typename ArchiveT, typename ArrayT, typename DataT = typename ArrayT::value_type, unsigned N = ArrayT::dimensions>
-    requires WindowedArray<ArrayT, DataT, N>
+    requires WindowedArray<ArrayT, DataT, N>  && std::is_class<ArchiveT>::value
   void load(ArchiveT &archive,
             ArrayT &arr)
   {

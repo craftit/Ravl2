@@ -15,7 +15,9 @@
 #include "Ravl2/Image/CornerDetectorSusan.hh"
 #include "Ravl2/Image/DrawFrame.hh"
 #include "Ravl2/Image/DrawCross.hh"
+#include "Ravl2/OpenCV/ImageIO.hh"
 #include "Ravl2/IO/Load.hh"
+#include "Ravl2/IO/Save.hh"
 #include "Ravl2/Resource.hh"
 
 #include <opencv2/imgcodecs.hpp>
@@ -24,6 +26,8 @@
 int main(int argc,char **argv)
 {
   using namespace Ravl2;
+
+  initOpenCVImageIO();
 
   CLI::App app{"Corner detection example program"};
 
@@ -64,10 +68,6 @@ int main(int argc,char **argv)
 
   // Setup corner detector.
   
-//  CornerDetectorC cornerDet;
-//  if(useHarris)
-//    cornerDet = CornerDetectorHarrisC(threshold,w,useTopHat);
-//  else
  auto cornerDet = Ravl2::CornerDetectorSusan(threshold);
  cv::startWindowThread();
 
@@ -78,13 +78,11 @@ int main(int argc,char **argv)
 
     Ravl2::Array<uint8_t,2> img;
 
-    Ravl2::load(img, inf);
+    if(!Ravl2::load(img, inf)) {
+      SPDLOG_ERROR("Failed to load image '{}'", inf);
+      return 1;
+    }
 
-//    if(!RavlN::Load(inf,img)) { // Load an image.
-//      SPDLOG_ERROR("Failed to load image '{}'", inf);
-//      return 1;
-//    }
-    
     // Find the corners.
     std::vector<Ravl2::Corner> corners;
     if(verbose) {
@@ -113,15 +111,15 @@ int main(int argc,char **argv)
       SPDLOG_INFO("Displaying image");
     }
 
-    cv::namedWindow("Display Image", cv::WINDOW_AUTOSIZE );
-    cv::imshow("Display Image", cvImg);
-    SPDLOG_INFO("Press any key to exit.");
-    cv::waitKey(0);
+    if(!Ravl2::save("display://Corners",img)) {
+      SPDLOG_ERROR("Failed to save image");
+      return 1;
+    }
+//    cv::namedWindow("Display Image", cv::WINDOW_AUTOSIZE );
+//    cv::imshow("Display Image", cvImg);
+//    SPDLOG_INFO("Press any key to exit.");
+//    cv::waitKey(0);
 
-//    if(!RavlN::Save(outf,img)) {
-//      cerr << "Failed to save image '" << inf << "'\n";
-//      return 1;
-//    }
     return 0;
   }
   SPDLOG_ERROR("Sequence processing not implemented yet.");

@@ -30,20 +30,38 @@ namespace Ravl2
     }
 
     //std::function<std::optional<StreamInputPlan>(const ProbeInputContext &)/
-    [[maybe_unused]] bool g_regFmt =inputFormatMap().add(std::make_shared<InputFormatCall>("OpenCV","png,jpg,jpeg,bmp,tiff",-1,[](const ProbeInputContext &ctx) -> std::optional<StreamInputPlan> {
-      //! If we are looking for a cv::Mat, we can just read the file directly.
-      if(ctx.m_targetType == typeid(cv::Mat)) {
-        auto strm = std::make_shared<StreamInputCall<cv::Mat>>([filename = ctx.m_filename](std::streampos &pos) -> std::optional<cv::Mat> {
-          if(pos != 0)
-            return std::nullopt;
-          return cv::imread(filename, cv::IMREAD_UNCHANGED);
-        });
-      }
+    [[maybe_unused]] bool g_regFmt = inputFormatMap().add(std::make_shared<InputFormatCall>("OpenCV","png,jpg,jpeg,bmp,tiff","file",-1,[](const ProbeInputContext &ctx) -> std::optional<StreamInputPlan> {
+        //! If we are looking for a cv::Mat, we can just read the file directly.
+        if(ctx.m_targetType == typeid(cv::Mat)) {
+          auto strm = std::make_shared<StreamInputCall<cv::Mat>>([filename = ctx.m_filename](std::streampos &pos) -> std::optional<cv::Mat> {
+            if(pos != 0)
+              return std::nullopt;
+            return cv::imread(filename, cv::IMREAD_UNCHANGED);
+          });
+          if(ctx.m_verbose) {
+            SPDLOG_INFO("Plan made for opened OpenCV image file: {}", ctx.m_filename);
+          }
+          return StreamInputPlan { strm, {}, 1.0f };
+        }
+        // Apply some heuristics to determine the type of the image we want to load.
+        // Ideally this would be delt with in the type converter, but opencv gives
+        // us no information about the colour space of the image.
+        cv::ImreadModes readMode = cv::IMREAD_UNCHANGED;
+        if(ctx.m_targetType == typeid(Array<uint8_t,2>) || ctx.m_targetType == typeid(Array<int8_t,2>)
+           || ctx.m_targetType == typeid(Array<uint16_t,2>) || ctx.m_targetType == typeid(Array<int16_t,2>)
+           || ctx.m_targetType == typeid(Array<int32_t,2>) || ctx.m_targetType == typeid(Array<float,2>)
+           || ctx.m_targetType == typeid(Array<double,2>)) {
+          readMode = cv::IMREAD_GRAYSCALE;
+        }
 
         // The best we can do is loaded it directly and look for a conversion.
-        cv::Mat img = cv::imread(ctx.m_filename, cv::IMREAD_UNCHANGED);
-        if(img.empty())
+        cv::Mat img = cv::imread(ctx.m_filename, readMode);
+        if(img.empty()) {
+          if(ctx.m_verbose) {
+            SPDLOG_INFO("Failed to load image: {}", ctx.m_filename);
+          }
           return std::nullopt;
+        }
 
         switch(img.type())
         {
@@ -54,12 +72,18 @@ namespace Ravl2
           case CV_32SC1: { return makePlan<int32_t>(img, ctx); }
           case CV_32FC1: { return makePlan<float>(img, ctx); }
           case CV_64FC1: { return makePlan<double>(img, ctx); }
-          default: { return std::nullopt; }
+          default: break;
         }
+
+        int depth = CV_MAT_DEPTH(img.type());
+        int channels = CV_MAT_CN(img.type());
+        int baseType = CV_MAT_TYPE(img.type());
+
+        SPDLOG_WARN("Don't know how to convert OpenCV image type: {}.  Depth:{} Channels:{} baseType:{}", img.type(), depth, channels, baseType);
         return std::nullopt;
     }));
 
-    [[maybe_unused]] bool g_regFmt1 = outputFormatMap().add(std::make_shared<OutputFormatCall>("OpenCV","png,jpg,jpeg,bmp,tiff",-1,[](const ProbeOutputContext &ctx) -> std::optional<StreamOutputPlan> {
+    [[maybe_unused]] bool g_regFmt1 = outputFormatMap().add(std::make_shared<OutputFormatCall>("OpenCV","png,jpg,jpeg,bmp,tiff","file",-1,[](const ProbeOutputContext &ctx) -> std::optional<StreamOutputPlan> {
 
       //! If we are looking for a cv::Mat, we can just read the file directly.
       if(ctx.m_sourceType == typeid(cv::Mat)) {

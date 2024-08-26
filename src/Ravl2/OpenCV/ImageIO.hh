@@ -6,5 +6,5 @@
 
 namespace Ravl2
 {
-
+  void initOpenCVImageIO();
 }

@@ -19,7 +19,6 @@ namespace Ravl2
   //! @param type - The type of the object to read.
   //! @param formatHint - A hint to the format of the file.
   //! @return A pointer to the stream.
-
   [[nodiscard]] std::optional<StreamInputPlan> openInput(const std::string &url, const std::type_info &type,  const nlohmann::json &formatHint);
 
   //! Default load format hint.
@@ -31,6 +30,9 @@ namespace Ravl2
   //! @param object - The object to load into.
   //! @param formatHint - A hint to the format of the file.
   //! @return True if the file was loaded successfully.
+  //!
+  //! Format hints include
+  //!  - "verbose" - If true, print verbose output.
 
   template <typename ObjectT>
   bool load(ObjectT &object, const std::string &url, const nlohmann::json &formatHint = defaultLoadFormatHint())

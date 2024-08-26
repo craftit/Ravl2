@@ -136,6 +136,7 @@ namespace Ravl2
     }
     if(!outStreamPlan.value().mConversion) {
       return std::make_shared<StreamOutputCall<ObjectT> >([plan = outStreamPlan.value()](const ObjectT &object, std::streampos pos) -> ObjectT {
+        (void)pos;
         return std::any_cast<ObjectT>(plan.mConversion(std::any(object)));
       }, outStreamPlan->mStream->beginOffset(), outStreamPlan->mStream->endOffset());
     }

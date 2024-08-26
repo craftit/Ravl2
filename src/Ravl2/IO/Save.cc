@@ -17,6 +17,12 @@ namespace Ravl2
 
   [[nodiscard]] std::optional<StreamOutputPlan> openOutput(const std::string &url, const std::type_info &type, const nlohmann::json &formatHint)
   {
+    bool verbose = false;
+    if(formatHint.is_object())
+    {
+      verbose = formatHint.value("verbose", verbose);
+    }
+
     // Is there a protocol in the URL?
     auto protocolEnd = url.find("://");
     std::string protocol;
@@ -32,19 +38,23 @@ namespace Ravl2
     }
 
     // Get the extension
-    auto extStart = url.find_last_of('.');
+    auto extStart = rawFilename.find_last_of('.');
     std::string ext;
     if(extStart != std::string::npos)
     {
-      ext = url.substr(extStart + 1);
+      ext = rawFilename.substr(extStart + 1);
     } else
     {
       ext = "";
     }
+    if(verbose)
+    {
+      SPDLOG_INFO("Opening output file: '{}' Protocol:'{}'  Extension:'{}'  Type:'{}'", url, protocol, ext, typeName(type));
+    }
 
     // Create the context
     ProbeOutputContext ctx(url, rawFilename, protocol, ext, formatHint, type);
-
+    ctx.m_verbose = verbose;
     return outputFormatMap().probe(ctx);
 
   }

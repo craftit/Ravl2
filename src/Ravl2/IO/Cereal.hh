@@ -115,7 +115,7 @@ namespace Ravl2
   {
   public:
     CerealSaveFormat()
-      : OutputFormat("CerealBin", "bin")
+      : OutputFormat("CerealBin", "bin", "file")
     {}
 
     [[nodiscard]] std::unique_ptr<StreamOutputBase> createStream(const ProbeOutputContext &context) const
@@ -151,7 +151,7 @@ namespace Ravl2
   {
   public:
     CerealLoadFormat()
-        : InputFormat("CerealBin", "bin")
+        : InputFormat("CerealBin", "bin", "file")
     {}
 
     [[nodiscard]] std::unique_ptr<StreamInputBase> createStream(const ProbeInputContext &context) const
