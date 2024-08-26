@@ -9,8 +9,7 @@
 #include <spdlog/spdlog.h>
 #include <CLI/CLI.hpp>
 
-#include <internal_use_only/config.hh>
-
+#include "Ravl2/config.hh"
 #include "Ravl2/Image/CornerDetectorSusan.hh"
 #include "Ravl2/Image/DrawFrame.hh"
 #include "Ravl2/OpenCV/ImageIO.hh"
