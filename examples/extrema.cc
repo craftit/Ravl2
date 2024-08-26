@@ -29,7 +29,7 @@ int main(int nargs,char **argv) {
   int minSize = 10;
   int minMargin = 10;
   int limit = 255;
-  bool seq = false;
+  bool seq = true;
   bool webCam = true;
   bool drawResults = true;
   bool drawBlack = false;

@@ -157,8 +157,6 @@ namespace Ravl2
     //! @return The object.
     std::optional<ObjectT> next(std::streampos &pos) override
     {
-      if(pos >= this->mEnd)
-        return {};
       return mCallback(pos);
     }
 

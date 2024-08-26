@@ -128,6 +128,7 @@ namespace Ravl2
       std::streampos at = mStream->endOffset();
       auto value = mStream->next(at);
       if(!value.has_value()) {
+        SPDLOG_WARN("Failed to read object from stream.");
         throw std::runtime_error("Failed to read object from stream");
       }
       return value.value();
@@ -166,6 +167,7 @@ namespace Ravl2
     }
     auto strmPtr = std::dynamic_pointer_cast<StreamInput<ObjectT>>(inStreamPlan->mStream);
     if(!strmPtr) {
+      SPDLOG_WARN("Failed to cast stream to input stream");
       throw std::runtime_error("Failed to cast stream to input stream");
     }
     return StreamInputProxy<ObjectT>(strmPtr);

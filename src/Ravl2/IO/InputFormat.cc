@@ -45,7 +45,7 @@ namespace Ravl2
         auto plan = fmt->probe(ctx);
         if(plan.has_value()) {
           if(ctx.m_verbose) {
-            SPDLOG_INFO("Fond plan.");
+            SPDLOG_INFO("Found plan.");
           }
           return plan;
         }

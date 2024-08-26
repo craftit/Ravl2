@@ -185,15 +185,16 @@ namespace Ravl2
       }
 
       auto strm = std::make_shared<StreamInputCall<cv::Mat>>([videoCapture,firstFrame,isFirst=true](std::streampos &pos) mutable -> std::optional<cv::Mat> {
-        if(pos != 0) {
-          return std::nullopt;
-        }
+        SPDLOG_INFO("Reading frame from video stream.");
+        (void)pos; // Just ignore the position,  we can't seek in a video stream.
         if(isFirst) {
           isFirst = false;
+          SPDLOG_INFO("First frame type: {}", firstFrame.type());
           return firstFrame;
         }
         videoCapture >> firstFrame;
         if(firstFrame.empty()) {
+          SPDLOG_WARN("Failed to read frame from video stream.");
           return std::nullopt;
         }
         return firstFrame;
