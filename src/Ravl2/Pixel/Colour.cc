@@ -84,6 +84,7 @@ namespace Ravl2
     [[maybe_unused]] bool g_reg10 = registerConversion(convert<Array<PixelBGRA8,2>,Array<PixelRGBA8,2>>, 1.0f);
     [[maybe_unused]] bool g_reg11 = registerConversion(convert<Array<PixelBGRA8,2>,Array<PixelBGRA8,2>>, 1.0f);
     [[maybe_unused]] bool g_reg12 = registerConversion(convert<Array<PixelD32F,2>,Array<PixelD16,2>>, 1.0f);
+    [[maybe_unused]] bool g_reg13 = registerConversion(convert<Array<uint8_t,2>,Array<PixelY8,2>>, 0.33f);
 
   }// namespace
 

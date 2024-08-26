@@ -13,7 +13,7 @@ namespace Ravl2
 
   std::optional<StreamInputPlan> openInput(const std::string &url, const std::type_info &type,  const nlohmann::json &formatHint)
   {
-    bool verbose = false;
+    bool verbose = true;
     if(formatHint.is_object()) {
       verbose = formatHint.value("verbose", verbose);
     }
@@ -51,24 +51,25 @@ namespace Ravl2
     // Do we want to be verbose?
     ctx.m_verbose = verbose;
 
-    // Open the file
-    std::unique_ptr<std::istream> tmpStrm =  std::make_unique<std::ifstream>(rawFilename);
-    if(!tmpStrm->good())
+    // Should we try and read data from the file into memory?
+    if(protocol == "file")
     {
-      return std::nullopt;
+      std::unique_ptr<std::istream> tmpStrm = std::make_unique<std::ifstream>(rawFilename);
+      if(!tmpStrm->good()) {
+        return std::nullopt;
+      }
+      ctx.m_data = std::vector<uint8_t>(256);
+      tmpStrm->read(reinterpret_cast<char *>(ctx.m_data.data()), std::streamsize(ctx.m_data.size()));
+      auto numRead = tmpStrm->gcount();
+      if(size_t(numRead) < ctx.m_data.size() && numRead >= 0) {
+        ctx.m_data.resize(size_t(numRead));
+      }
+      if(verbose) {
+        SPDLOG_INFO("Read {} bytes from file", ctx.m_data.size());
+      }
+      tmpStrm->seekg(0);
+      ctx.mStream = std::move(tmpStrm);
     }
-    ctx.m_data = std::vector<uint8_t>(256);
-    tmpStrm->read(reinterpret_cast<char *>(ctx.m_data.data()), std::streamsize(ctx.m_data.size()));
-    auto numRead = tmpStrm->gcount();
-    if(size_t(numRead) < ctx.m_data.size() && numRead >= 0)
-    {
-      ctx.m_data.resize(size_t(numRead));
-    }
-    if(verbose) {
-      SPDLOG_INFO("Read {} bytes from file", ctx.m_data.size());
-    }
-    tmpStrm->seekg(0);
-    ctx.mStream = std::move(tmpStrm);
 
     return inputFormatMap().probe(ctx);
   }

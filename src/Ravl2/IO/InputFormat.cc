@@ -52,23 +52,25 @@ namespace Ravl2
       }
     }
     // Check for a default format
-    auto defIt = m_formatByExtension.find("");
-    if(defIt != m_formatByExtension.end()) {
-      const auto &fmtList = m_formatByExtension.at("");
-      for(const auto &fmt : fmtList) {
-        if(ctx.m_verbose) {
-          SPDLOG_INFO("Probing format: {}. Supports Protocol:{} ", fmt->name(), ctx.m_filename,fmt->supportsProtocol(ctx.m_protocol));
-        }
-        if(!fmt->supportsProtocol(ctx.m_protocol))
-          continue;
-        if(!ctx.m_extension.empty() && !fmt->supportsExtension(ctx.m_extension))
-          continue;
-        auto plan = fmt->probe(ctx);
-        if(plan.has_value()) {
+    if(!ctx.m_extension.empty()) {
+      auto defIt = m_formatByExtension.find("");
+      if(defIt != m_formatByExtension.end()) {
+        const auto &fmtList = m_formatByExtension.at("");
+        for(const auto &fmt : fmtList) {
           if(ctx.m_verbose) {
-            SPDLOG_INFO("Fond plan.");
+            SPDLOG_INFO("Probing format: {}. Supports Protocol:{} ", fmt->name(), ctx.m_filename, fmt->supportsProtocol(ctx.m_protocol));
           }
-          return plan;
+          if(!fmt->supportsProtocol(ctx.m_protocol))
+            continue;
+          if(!ctx.m_extension.empty() && !fmt->supportsExtension(ctx.m_extension))
+            continue;
+          auto plan = fmt->probe(ctx);
+          if(plan.has_value()) {
+            if(ctx.m_verbose) {
+              SPDLOG_INFO("Fond plan.");
+            }
+            return plan;
+          }
         }
       }
     }

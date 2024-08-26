@@ -84,16 +84,28 @@ namespace Ravl2
   class StreamInputProxy
   {
   public:
+    //! @brief Construct a default stream proxy, this is invalid.
+    StreamInputProxy() = default;
+
     //! @brief Construct a handle to an input stream.
     //! @param stream - The stream to handle.
     explicit StreamInputProxy(const std::shared_ptr<StreamInput<ObjectT> > &stream)
-      : mStream(&stream)
+      : mStream(stream)
+    {}
+
+    //! @brief Construct a handle to an input stream.
+    //! @param stream - The stream to handle.
+    explicit StreamInputProxy(std::shared_ptr<StreamInput<ObjectT> > &&stream)
+      : mStream(std::move(stream))
     {}
 
     //! @brief Get the begin iterator.
     //! @return The begin iterator.
     [[nodiscard]] InputStreamIterator<ObjectT> begin() const
     {
+      if(!mStream) {
+        return InputStreamIterator<ObjectT>();
+      }
       return InputStreamIterator<ObjectT>(*mStream, mStream->beginOffset());
     }
 
@@ -101,18 +113,31 @@ namespace Ravl2
     //! @return The end iterator.
     [[nodiscard]] InputStreamIterator<ObjectT> end() const
     {
+      if(!mStream) {
+        return InputStreamIterator<ObjectT>();
+      }
       return InputStreamIterator<ObjectT>(*mStream, mStream->endOffset());
     }
 
     //! @brief Get an object from the stream.
     ObjectT get() const
     {
+      if(!mStream) {
+        throw std::runtime_error("Stream is not valid");
+      }
       std::streampos at = mStream->endOffset();
       auto value = mStream->next(at);
       if(!value.has_value()) {
         throw std::runtime_error("Failed to read object from stream");
       }
       return value.value();
+    }
+
+    //! @brief Test if the stream is valid.
+    //! @return True if the stream is valid.
+    [[nodiscard]] bool valid() const
+    {
+      return mStream != nullptr;
     }
 
   private:
@@ -125,19 +150,25 @@ namespace Ravl2
   //! @return A handle to the stream.
 
   template <typename ObjectT>
-  [[nodiscard]] StreamInputProxy<ObjectT> inputStream(const std::string &url,const nlohmann::json &formatHint = defaultLoadFormatHint())
+  [[nodiscard]] StreamInputProxy<ObjectT> openInputStream(const std::string &url,const nlohmann::json &formatHint = defaultLoadFormatHint())
   {
     auto inStreamPlan = openInput(url, typeid(ObjectT), formatHint);
     if(!inStreamPlan.has_value()) {
-      return StreamInput<ObjectT>();
+      SPDLOG_ERROR("Failed to open input stream for '{}'", url);
+      return {};
     }
     if(inStreamPlan.value().mConversion) {
-      return StreamInputCall<ObjectT>([plan = inStreamPlan.value()](std::streampos pos) -> ObjectT {
+      auto strmPtr = std::make_shared<StreamInputCall<ObjectT>>([plan = inStreamPlan.value()](std::streampos pos) -> ObjectT {
         return std::any_cast<ObjectT>(plan.mConversion(plan.mStream->anyNext(pos)));
       }, inStreamPlan->mStream->beginOffset(), inStreamPlan->mStream->endOffset());
+
+      return StreamInputProxy<ObjectT>(std::dynamic_pointer_cast<StreamInput<ObjectT>>(strmPtr));
     }
     auto strmPtr = std::dynamic_pointer_cast<StreamInput<ObjectT>>(inStreamPlan->mStream);
-    return StreamInput<ObjectT>(std::move(strmPtr));
+    if(!strmPtr) {
+      throw std::runtime_error("Failed to cast stream to input stream");
+    }
+    return StreamInputProxy<ObjectT>(strmPtr);
   }
 
 

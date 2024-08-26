@@ -4,6 +4,7 @@
 #include <spdlog/spdlog.h>
 #include <opencv2/core.hpp>
 #include "Ravl2/Array.hh"
+#include "Ravl2/Pixel/Pixel.hh"
 
 namespace Ravl2
 {
@@ -42,6 +43,10 @@ namespace Ravl2
     return Array<DataT, N>(dataPtr, indexRange, strides,
                            std::shared_ptr<DataT[]>(dataPtr, [val = cv::Mat(m)]([[maybe_unused]] DataT *delPtr) { assert(static_cast<void *>(delPtr) == val.data); }));
   }
+
+  //! Make to Array for  Array<PixelBGR8, N>
+  template <>
+  Array<PixelBGR8, 2> toArray(const cv::Mat &m);
 
   //! Create a Ravl2::ArrayView from a cv::Mat
   //! The type of the array must be the same as the cv::Mat

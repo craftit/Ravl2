@@ -11,17 +11,12 @@
 
 #include <internal_use_only/config.hh>
 
-//#include "Ravl2/Image/CornerDetectorHarris.hh"
 #include "Ravl2/Image/CornerDetectorSusan.hh"
 #include "Ravl2/Image/DrawFrame.hh"
-#include "Ravl2/Image/DrawCross.hh"
 #include "Ravl2/OpenCV/ImageIO.hh"
 #include "Ravl2/IO/Load.hh"
 #include "Ravl2/IO/Save.hh"
 #include "Ravl2/Resource.hh"
-
-#include <opencv2/imgcodecs.hpp>
-#include <opencv2/highgui.hpp>
 
 int main(int argc,char **argv)
 {
@@ -32,26 +27,14 @@ int main(int argc,char **argv)
   CLI::App app{"Corner detection example program"};
 
   int threshold = 30;
-  int w = 3;
-  bool useHarris = false;
-  bool useTopHat = true;
-  bool seq = false;
   bool verbose = false;
-  bool deinterlace = false;
-  
-  int frameLimit = 0;
-
-  std::string inf = findFileResource("data","lena.jpg",verbose);
-  std::string outf = "out.ppm";
 
   app.add_option("-t", threshold, "Threshold. ");
-  app.add_option("-w", w, "width of filter mask. ");
-  app.add_flag("--hr", useHarris, "Use harris corner detector, else use susan. ");
-  app.add_flag("--th", useTopHat, "Use top hat filter in harris corner detector. ");
-  app.add_flag("--seq", seq, "Process a sequence. ");
   app.add_flag("-v", verbose, "Verbose mode. ");
-  app.add_flag("-d", deinterlace, "Deinterlace images");
-  app.add_option("--fl", frameLimit, "Limit on the number of frames to process in a sequence. ");
+
+  std::string inf = findFileResource("data","lena.jpg",verbose);
+  std::string outf = "display://Corners";
+
   app.add_option("-i", inf, "Input image. ");
   app.add_option("-o", outf, "Output image. ");
 
@@ -65,103 +48,34 @@ int main(int argc,char **argv)
     return EXIT_SUCCESS;
   }
 
-
   // Setup corner detector.
   
  auto cornerDet = Ravl2::CornerDetectorSusan(threshold);
- cv::startWindowThread();
 
- if(!seq) {
-   // Process a single image
+  Ravl2::Array<uint8_t,2> img;
 
-    SPDLOG_INFO("Loading image '{}'", inf);
-
-    Ravl2::Array<uint8_t,2> img;
-
-    if(!Ravl2::load(img, inf)) {
-      SPDLOG_ERROR("Failed to load image '{}'", inf);
-      return 1;
-    }
-
-    // Find the corners.
-    std::vector<Ravl2::Corner> corners;
-    if(verbose) {
-      SPDLOG_INFO("Extracting corners");
-    }
-    corners = cornerDet.apply(img);
-
-    if(verbose) {
-      SPDLOG_INFO("Drawing {} corners", corners.size());
-    }
-    // Draw boxes around the corners.
-    
-    uint8_t val = 0;
-    for(auto it : corners) {
-      auto pixelIndex = Ravl2::toIndex<2>(it.location());
-      Ravl2::IndexRange<2> rect = Ravl2::IndexRange<2>(pixelIndex,pixelIndex).expand(5);
-      if(verbose) {
-        SPDLOG_INFO("Drawing {} -> {}", pixelIndex, rect);
-      }
-      Ravl2::DrawFrame(img,val,rect);
-      //Ravl2::DrawCross(img, val, pixelIndex, 5);
-    }
-    
-    // Save image to a file.
-    if(verbose) {
-      SPDLOG_INFO("Displaying image");
-    }
-
-    if(!Ravl2::save("display://Corners",img)) {
-      SPDLOG_ERROR("Failed to save image");
-      return 1;
-    }
-//    cv::namedWindow("Display Image", cv::WINDOW_AUTOSIZE );
-//    cv::imshow("Display Image", cvImg);
-//    SPDLOG_INFO("Press any key to exit.");
-//    cv::waitKey(0);
-
-    return 0;
+  if(!Ravl2::load(img, inf)) {
+    SPDLOG_ERROR("Failed to load image '{}'", inf);
+    return 1;
   }
-  SPDLOG_ERROR("Sequence processing not implemented yet.");
-//  {
-//    // Process a sequence
-//
-//    DPIPortC<ImageC<uint8_t> > imgIn;
-//    if(!OpenISequence(imgIn,inf,"",verb)) {
-//      cerr << "Failed to open input '" << inf << "' \n";
-//      return 1;
-//    }
-//
-//    DPOPortC<ImageC<uint8_t> > imgOut;
-//    if(!outf.IsEmpty()) { // If there's no output specificied do nothing, (Good for profiling.)
-//      if(!OpenOSequence(imgOut,outf,"",verb)) {
-//        cerr << "Failed to open input '" << outf << "' \n";
-//        return 1;
-//      }
-//    }
-//
-//    ImageC<uint8_t> img;
-//    while(imgIn.Get(img) && frameLimit-- != 0) {
-//      if(deinterlace)
-//        img = DeinterlaceSubsample(img);
-//
-//      // Find the corners.
-//
-//      auto corners = cornerDet.Apply(img);
-//
-//      // Draw boxes around the corners.
-//      if(imgOut.IsValid()) {
-//        uint8_t val = 255;
-//        for(auto it : corners) {
-//          IndexRange<2> rect(it.Location(),5);
-//          DrawFrame(img,val,rect);
-//        }
-//
-//        // Write image out.
-//
-//        imgOut.Put(img);
-//      }
-//    }
-//  }
+
+  // Find the corners.
+  std::vector<Ravl2::Corner> corners = cornerDet.apply(img);
+
+  // Draw boxes around the corners.
+  uint8_t val = 0;
+  for(auto it : corners) {
+    // Convert floating point to the closest integer index.
+    auto pixelIndex = Ravl2::toIndex<2>(it.location());
+    Ravl2::IndexRange<2> rect = Ravl2::IndexRange<2>(pixelIndex,pixelIndex).expand(5);
+    Ravl2::DrawFrame(img,val,rect);
+  }
+
+  // Save image to a file.
+  if(!Ravl2::save(outf,img)) {
+    SPDLOG_ERROR("Failed to save image");
+    return 1;
+  }
+
   return 0;
 }

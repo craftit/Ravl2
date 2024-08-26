@@ -84,4 +84,9 @@ namespace Ravl2
     { iter.nextRow() };
   };
 
+  //! Test if an object is an cereal style archive
+  template <typename Archive>
+  concept CerealArchive = requires(Archive &archive) {
+  { archive(cereal::make_nvp("test", 0)) };
+  };
 }// namespace Ravl2

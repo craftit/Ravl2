@@ -11,6 +11,8 @@
 
 namespace Ravl2
 {
+  // Call to ensure that the conversion functions are registered
+  extern void initColourConversion();
 
   //! Define a struct to handle color conversions
   //! This is here to work around the fact that we can't partially specialize functions in a namespace
@@ -162,6 +164,13 @@ namespace Ravl2
     (target.template set<TargetChannels>(get<TargetChannels, TargetCompT>(source)), ...);
   }
 
+  //! Assign a pixel value to a scalar
+  constexpr void assign(uint8_t &target,
+                        const Pixel<uint8_t ,ImageChannel::Luminance> &source)
+  {
+    target = source.template get<ImageChannel::Luminance, uint8_t>();
+  }
+
   //! Copy data from a source array to destination array
   template <typename Array1T, typename Array2T, typename Data1T = typename Array1T::value_type, unsigned N = Array1T::dimensions>
     requires(WindowedArray<Array1T, typename Array1T::value_type, N> && WindowedArray<Array2T, typename Array2T::value_type, N>) && (N >= 2)
@@ -206,7 +215,5 @@ namespace Ravl2
 
   extern template void convert(Array<PixelD32F, 2> &dest, const Array<PixelD16, 2> &src);
 
-  // Call to ensure that the conversion functions are registered
-  extern void initColourConversion();
 
 }// namespace Ravl2

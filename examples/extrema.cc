@@ -13,17 +13,17 @@
 #include "Ravl2/Image/Segmentation/SegmentExtrema.hh"
 #include "Ravl2/Array.hh"
 #include "Ravl2/config.hh"
-#include "Ravl2/OpenCV/Image.hh"
+#include "Ravl2/OpenCV/ImageIO.hh"
 #include "Ravl2/Resource.hh"
-
-#include <opencv2/imgcodecs.hpp>
-#include <opencv2/highgui.hpp>
-#include <opencv2/videoio.hpp>
+#include "Ravl2/IO/OutputSequence.hh"
+#include "Ravl2/IO/InputSequence.hh"
 
 int main(int nargs,char **argv) {
   using namespace Ravl2;
   using RealT = float;
-  
+
+  initOpenCVImageIO();
+
   CLI::App app{"Corner detection example program"};
 
   int minSize = 10;
@@ -37,7 +37,7 @@ int main(int nargs,char **argv) {
   bool verbose = false;
   bool useMasks = false;
   std::string fn = findFileResource("data","lena.jpg",verbose);
-  std::string ofn = "";
+  std::string ofn = "display://Boundaries";
 
   app.add_option("--ms", minSize, "Minimum region size. ");
   app.add_option("--mm", minMargin, "Minimum margin. ");
@@ -49,6 +49,12 @@ int main(int nargs,char **argv) {
   app.add_flag("--inv", invert, "Invert image before processing. ");
   app.add_flag("-v", verbose, "Verbose mode. ");
   app.add_flag("-m", useMasks, "Use masks. ");
+  if(webCam) {
+    fn = "camera://0";
+  }
+  if(drawResults) {
+    ofn = "display://Extrema";
+  }
   app.add_option("-i", fn, "Input image. ");
   app.add_option("-o", ofn, "Output boundaries. ");
 
@@ -60,49 +66,29 @@ int main(int nargs,char **argv) {
   if (show_version) {
     fmt::print("{}\n", Ravl2::cmake::project_version);
   }
-  cv::startWindowThread();
 
-  Ravl2::Array<uint8_t,2> img;
+  using ImageT = Ravl2::Array<uint8_t,2>;
+
+  StreamOutputProxy<ImageT> outputStream  = openOutputStream<ImageT>(ofn);
+  if(!outputStream.valid()) {
+    return 1;
+  }
+
+  StreamInputProxy<ImageT> inputStream = openInputStream<ImageT>(fn);
+  if(!inputStream.valid()) {
+    return 1;
+  }
   
   SegmentExtremaC<uint8_t> lst(minSize,minMargin,limit);
 
-  cv::VideoCapture videoCapture;
-
-  if(seq) {
-    if(webCam) {
-      videoCapture.open(0);
-    } else {
-      videoCapture.open(fn);
-    }
-    if(!videoCapture.isOpened()) {
-      SPDLOG_ERROR("Failed to open video stream '{}'", fn);
-      return 1;
-    }
-  }
-//  IndexRange2dSetC trimSet;
-//  trimSet = trimSet.Add(IndexRange2dC(trim,trim));
-  
-  Ravl2::Array<uint8_t,2> pimg;
   int numberOfFrames = 0;
+  IndexRange<2> imgRange;
   std::chrono::steady_clock::duration totalTime {};
   while(true)
   {
-    cv::Mat frame;
-    if(seq) {
-      videoCapture >> frame;
-      if(frame.empty()) {
-        SPDLOG_INFO("End of video stream");
-        break;
-      }
-    } else {
-      frame = cv::imread(fn, cv::IMREAD_GRAYSCALE);
-      if(frame.empty()) {
-        SPDLOG_ERROR("Failed to load image '{}'", fn);
-        return 1;
-      }
-    }
-    img = toArray<uint8_t, 2>(frame);
-
+    Ravl2::Array<uint8_t,2> img = inputStream.get();
+    imgRange = img.range();
+    Ravl2::Array<uint8_t,2> pimg;
     if(invert) {
       if(!pimg.range().contains(img.range())) {
         pimg = Ravl2::Array<uint8_t, 2>(img.range());
@@ -140,23 +126,15 @@ int main(int nargs,char **argv) {
             res[it.leftPixel()] = 255;
           }
         }
-        {
-          cv::Mat cvImg = toCvMat(res);
-          cv::namedWindow("Display Image", cv::WINDOW_AUTOSIZE );
-          cv::imshow("Display Image", cvImg);
-        }
+        outputStream.put(res);
       }
     }
     if(!seq)
       break;
   }
-  SPDLOG_INFO("Press any key to exit.");
-  if(drawResults) {
-    cv::waitKey(0);
-  }
 
   double timeSeconds = std::chrono::duration<double>(totalTime).count();
   SPDLOG_INFO("Frames a second {}", numberOfFrames/timeSeconds);
-  SPDLOG_INFO("Pixels a second {}", (img.range().area() * numberOfFrames)/timeSeconds);
+  SPDLOG_INFO("Pixels a second {}", (imgRange.area() * numberOfFrames)/timeSeconds);
   return 0;
 }

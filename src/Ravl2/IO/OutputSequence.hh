@@ -81,11 +81,20 @@ namespace Ravl2
   class StreamOutputProxy
   {
   public:
+    StreamOutputProxy() = default;
+
     //! @brief Construct a stream proxy.
     //! @details This constructor is used to construct a stream proxy.
     //! @param stream - The stream to proxy.
     explicit StreamOutputProxy(std::shared_ptr<StreamOutput<ObjectT> > &&stream)
       : mStream(std::move(stream))
+    {}
+
+    //! @brief Construct a stream proxy.
+    //! @details This constructor is used to construct a stream proxy.
+    //! @param stream - The stream to proxy.
+    explicit StreamOutputProxy(const std::shared_ptr<StreamOutput<ObjectT> > &stream)
+      : mStream(stream)
     {}
 
     //! @brief Get the begin iterator.
@@ -118,6 +127,12 @@ namespace Ravl2
       mStream->write(object, mStream->endOffset());
     }
 
+    //! @brief test if stream is valid, and ready to write to
+    //! @return True if the stream is valid.
+    [[nodiscard]] bool valid() const
+    {
+      return mStream != nullptr;
+    }
   private:
     std::shared_ptr<StreamOutput<ObjectT> > mStream;
   };
@@ -128,22 +143,23 @@ namespace Ravl2
   //! @param formatHint - A hint to the format of the file.
   //! @return A handle to the stream.
   template <typename ObjectT>
-  [[nodiscard]] StreamOutputProxy<ObjectT> outputStream(const std::string &url, const nlohmann::json &formatHint = defaultSaveFormatHint())
+  [[nodiscard]] StreamOutputProxy<ObjectT> openOutputStream(const std::string &url, const nlohmann::json &formatHint = defaultSaveFormatHint())
   {
     auto outStreamPlan = openOutput(url, typeid(ObjectT), formatHint);
     if(!outStreamPlan.has_value()) {
-      return StreamOutput<ObjectT>();
+      SPDLOG_ERROR("Failed to open output stream for '{}'", url);
+      return {};
     }
-    if(!outStreamPlan.value().mConversion) {
-      return std::make_shared<StreamOutputCall<ObjectT> >([plan = outStreamPlan.value()](const ObjectT &object, std::streampos pos) -> ObjectT {
+    if(outStreamPlan.value().mConversion) {
+      auto outStrm = std::make_shared<StreamOutputCall<ObjectT> >([plan = outStreamPlan.value()](const ObjectT &object, std::streampos pos) -> std::streampos {
         (void)pos;
-        return std::any_cast<ObjectT>(plan.mConversion(std::any(object)));
+        return plan.mStream->anyWrite(plan.mConversion(std::any(object)), pos);
       }, outStreamPlan->mStream->beginOffset(), outStreamPlan->mStream->endOffset());
+
+      return StreamOutputProxy<ObjectT>( dynamic_pointer_cast<StreamOutput<ObjectT> >(outStrm) );
     }
     auto outStream = dynamic_pointer_cast<StreamOutput<ObjectT> >(outStreamPlan.value().mStream);
-    if(outStream) {
-      return StreamOutputProxy<ObjectT>(std::move(outStream));
-    }
+    return  StreamOutputProxy<ObjectT>(std::move(outStream)) ;
   }
 
 }

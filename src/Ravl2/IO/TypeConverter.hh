@@ -178,11 +178,32 @@ namespace Ravl2
       newChain.emplace_back(std::move(converter));
       return {std::move(newChain),toType, newLoss};
     }
+
+    //! Prepend a conversion to the mChain and return a new mChain.
+    [[nodiscard]] ConversionChain prepend(std::shared_ptr<TypeConverter> converter) const
+    {
+      assert(converter != nullptr);
+      assert(converter->to() == from());
+      std::vector<std::shared_ptr<TypeConverter>> newChain;
+      auto newLoss = mLoss * converter->conversionLoss();
+      newChain.reserve(mChain.size() + 1);
+      newChain.push_back(std::move(converter));
+      newChain.insert(newChain.end(),mChain.begin(),mChain.end());
+      return {std::move(newChain),mEndAt, newLoss};
+    }
+
   private:
     std::vector<std::shared_ptr<TypeConverter>> mChain;
     std::type_index mEndAt; //!< We need to store this as the last conversion may be empty.
     float mLoss = 1.0f;
   };
+
+  //! Helper to make a type conversion.
+  template <typename ToT, typename FromT,typename CallableT>
+  std::shared_ptr<TypeConversionImpl<ToT, FromT, CallableT> > makeTypeConversion(CallableT &&converter, float cost)
+  {
+    return std::make_shared<TypeConversionImpl<ToT, FromT, CallableT>>(std::forward<CallableT>(converter),cost);
+  }
 
   //! Set of type conversions for use with file formats.
 
@@ -196,9 +217,9 @@ namespace Ravl2
     template <typename ToT, typename FromT,typename CallableT>
     bool add(CallableT &&converter, float cost)
     {
-      auto x = std::make_shared<TypeConversionImpl<ToT, FromT, CallableT>>(std::forward<CallableT>(converter),cost);
+      auto x = makeTypeConversion<ToT,FromT,CallableT>(std::forward<CallableT>(converter),cost);
       std::lock_guard lock(m_mutex);
-      m_converters[std::type_index(typeid(FromT))].push_back(x);
+      m_converters[std::type_index(x->from())].push_back(x);
       m_conversionCache.clear();
       mVersion++;
       return true;
