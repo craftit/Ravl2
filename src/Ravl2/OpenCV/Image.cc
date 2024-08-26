@@ -21,7 +21,6 @@ namespace Ravl2
   template ArrayView<double, 2> toArrayView<double, 2>(const cv::Mat &m);
   template ArrayView<uint8_t, 3> toArrayView<uint8_t, 3>(const cv::Mat &m);
 
-
   //! Make to Array for  Array<PixelBGR8, N>
   template <>
   Array<PixelBGR8, 2> toArray(const cv::Mat &m)
@@ -47,6 +46,5 @@ namespace Ravl2
     cv::Mat img(cv::Size(m.range(1).size(), m.range(0).size()), CV_8UC3, addressOfMin(m));
     return img;
   }
-
 
 }// namespace Ravl2

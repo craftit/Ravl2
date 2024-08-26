@@ -15,14 +15,13 @@
 namespace Ravl2
 {
 
-  struct CerealArchiveHeader
-  {
+  struct CerealArchiveHeader {
     constexpr static uint32_t m_magicNumber = 0xABBA2024;
     CerealArchiveHeader() = default;
     explicit CerealArchiveHeader(const std::string &theTypeName)
-      : m_magic(m_magicNumber),
-        version(1),
-        typeName(theTypeName)
+        : m_magic(m_magicNumber),
+          version(1),
+          typeName(theTypeName)
     {}
     uint32_t m_magic = 0;
     uint16_t version = 0;
@@ -35,7 +34,6 @@ namespace Ravl2
     }
   };
 
-
   //! @brief Archive that uses cereal to write objects to a stream.
   //! @tparam ObjectT - The type of object to write.
   template <typename ObjectT, typename ArchiveT>
@@ -43,8 +41,8 @@ namespace Ravl2
   {
   public:
     explicit StreamOutputCerealArchive(std::unique_ptr<std::ostream> stream)
-      : m_archive(*stream),
-        m_stream(std::move(stream))
+        : m_archive(*stream),
+          m_stream(std::move(stream))
     {}
 
     std::streampos write(const ObjectT &obj, std::streampos pos) override
@@ -77,23 +75,20 @@ namespace Ravl2
     //! @return The object.
     std::optional<ObjectT> next(std::streampos &pos) final
     {
-      if (m_stream->eof())
+      if(m_stream->eof())
         return std::nullopt;
       m_stream->seekg(pos);
       CerealArchiveHeader header;
       m_archive(header);
-      if(header.m_magic != 0xABBA2024)
-      {
+      if(header.m_magic != 0xABBA2024) {
         spdlog::error("Magic number mismatch in stream. Expected 0xABBA2024 got {}", header.m_magic);
         return std::nullopt;
       }
-      if(header.version != 1)
-      {
+      if(header.version != 1) {
         spdlog::error("Version mismatch in stream. Expected 1 got {}", header.version);
         return std::nullopt;
       }
-      if (header.typeName != typeName(typeid(ObjectT)))
-      {
+      if(header.typeName != typeName(typeid(ObjectT))) {
         spdlog::error("Type mismatch in stream. Expected {} got {}", typeName(typeid(ObjectT)), header.typeName);
         return std::nullopt;
       }
@@ -110,12 +105,11 @@ namespace Ravl2
 
   //! @brief File format for saving objects to a binary file using cereal.
   template <typename ObjectT, typename ArchiveT>
-  class CerealSaveFormat
-   : public OutputFormat
+  class CerealSaveFormat : public OutputFormat
   {
   public:
     CerealSaveFormat()
-      : OutputFormat("CerealBin", "bin", "file")
+        : OutputFormat("CerealBin", "bin", "file")
     {}
 
     [[nodiscard]] std::unique_ptr<StreamOutputBase> createStream(const ProbeOutputContext &context) const
@@ -130,24 +124,20 @@ namespace Ravl2
       if(ctx.m_extension != this->extension()) {
         return std::nullopt;
       }
-      if (ctx.m_sourceType == typeid(ObjectT))
-      {
-        return StreamOutputPlan {createStream(ctx), {},1.0f};
+      if(ctx.m_sourceType == typeid(ObjectT)) {
+        return StreamOutputPlan {createStream(ctx), {}, 1.0f};
       }
       std::optional<ConversionChain> conv = typeConverterMap().find(typeid(ObjectT), ctx.m_sourceType);
-      if (conv.has_value())
-      {
-        return StreamOutputPlan  {createStream(ctx), conv.value(), 1.0f};
+      if(conv.has_value()) {
+        return StreamOutputPlan {createStream(ctx), conv.value(), 1.0f};
       }
       return std::nullopt;
     }
-
   };
 
   //! @brief Cereal load format.
   template <typename ObjectT, typename ArchiveT>
-  class CerealLoadFormat
-      : public InputFormat
+  class CerealLoadFormat : public InputFormat
   {
   public:
     CerealLoadFormat()
@@ -162,8 +152,7 @@ namespace Ravl2
 
     [[nodiscard]] std::optional<StreamInputPlan> probe(const ProbeInputContext &ctx) const final
     {
-      if(ctx.m_data.size() < 4)
-      {
+      if(ctx.m_data.size() < 4) {
         return std::nullopt;
       }
       {
@@ -173,19 +162,15 @@ namespace Ravl2
         std::string headerTypeName;
         uint16_t version = 0;
         archive(version, headerTypeName);
-        if(headerTypeName != typeName(typeid(ObjectT)) || version != 1)
-        {
+        if(headerTypeName != typeName(typeid(ObjectT)) || version != 1) {
           return std::nullopt;
         }
       }
-      if(ctx.m_targetType == typeid(ObjectT))
-      {
-        return StreamInputPlan { createStream(ctx), {}, 1.0f };
+      if(ctx.m_targetType == typeid(ObjectT)) {
+        return StreamInputPlan {createStream(ctx), {}, 1.0f};
       }
       return std::nullopt;
     }
   };
 
-
-}
-
+}// namespace Ravl2

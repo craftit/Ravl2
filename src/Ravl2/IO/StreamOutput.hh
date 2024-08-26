@@ -43,7 +43,7 @@ namespace Ravl2
     //! @param value - The object to write.
     //! @param pos - The position in the stream
     //! @return The position in the stream after writing the object.
-    virtual std::streampos anyWrite(std::any value,std::streampos pos) = 0;
+    virtual std::streampos anyWrite(std::any value, std::streampos pos) = 0;
 
     //! Get the start offset of the stream.
     [[nodiscard]] std::streampos beginOffset() const
@@ -69,8 +69,7 @@ namespace Ravl2
   };
 
   //! Plan for getting the output
-  struct StreamOutputPlan
-  {
+  struct StreamOutputPlan {
     std::shared_ptr<StreamOutputBase> mStream;
     std::function<std::any(std::any)> mConversion;
     float mCost = 1.0f;
@@ -107,7 +106,8 @@ namespace Ravl2
     //! @param value - The object to write.
     //! @param pos - The position in the stream
     //! @return The position in the stream after writing the object.
-    std::streampos anyWrite(std::any value,std::streampos pos) final {
+    std::streampos anyWrite(std::any value, std::streampos pos) final
+    {
       if(value.type() != typeid(ObjectT))
         throw std::bad_any_cast();
       auto obj = std::any_cast<ObjectT>(value);
@@ -135,8 +135,7 @@ namespace Ravl2
   //! @brief Writer implemented with a lambda.
 
   template <typename ObjectT>
-  class StreamOutputCall
-      : public StreamOutput<ObjectT>
+  class StreamOutputCall : public StreamOutput<ObjectT>
   {
   public:
     //! @brief Construct a stream with a lambda.
@@ -156,9 +155,9 @@ namespace Ravl2
     {
       return mWrite(obj, pos);
     }
+
   private:
     std::function<std::streampos(const ObjectT &, std::streampos)> mWrite;
   };
 
-
-}
+}// namespace Ravl2

@@ -1,11 +1,11 @@
-// This file is part of RAVL, Recognition And Vision Library 
+// This file is part of RAVL, Recognition And Vision Library
 // Copyright (C) 2001, University of Surrey
 // This code may be redistributed under the terms of the GNU Lesser
 // General Public License (LGPL). See the lgpl.licence file for details or
 // see http://www.gnu.org/copyleft/lesser.html
 // file-header-ends-here
 // IAPS - Image analysis program system
-// 
+//
 // File name  : Line3dPV.cc
 // Description: line determined by 2 points in 3D space
 // Last change: 26.10.1992
@@ -17,13 +17,14 @@
 //
 //
 
-#include "Ravl2/StdMath.hh"     //::std::abs()
+#include "Ravl2/StdMath.hh"//::std::abs()
 #include "Ravl2/Point3d.hh"
 #include "Ravl2/Vector3d.hh"
 #include "Ravl2/LinePV3d.hh"
 #include "Ravl2/PlaneABCD3d.hh"
 
-namespace Ravl2 {
+namespace Ravl2
+{
 
 #if 0
   RealT LinePV3dC::Distance(const LinePV3dC & line) const { 
@@ -53,7 +54,7 @@ namespace Ravl2 {
   
   Point<RealT,3> LinePV3dC::Intersection(const LinePV3dC & l) const
   { return ShortestLine(l).MiddlePoint(); }
-  
+
 #if 0
   LinePV3dC LinePV3dC::ProjectionInto(const PlaneABCD3dC & p) const {
     return LinePV3dC(FirstPoint(), 
@@ -76,4 +77,4 @@ namespace Ravl2 {
   }
 #endif
 
-}
+}// namespace Ravl2

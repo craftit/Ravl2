@@ -49,7 +49,6 @@ namespace Ravl2
       return this->m_k2;
     };
 
-
   public:
     //: Project 3D point in space to 2D image point
     //  Can result in a divide-by-zero for degenerate points.
@@ -69,7 +68,7 @@ namespace Ravl2
     {
       // Distortion-free projection
       Vector<RealT, 3> Rx = (this->m_R * x) + this->m_t;
-      if(isNearZero(Rx[2],RealT(1E-3)))
+      if(isNearZero(Rx[2], RealT(1E-3)))
         return false;
       Vector<RealT, 2> zd = Distort0(toVector<RealT>(Rx[0] / Rx[2], Rx[1] / Rx[2]));
       z[0] = this->m_cx + this->m_fx * zd[0];
@@ -125,8 +124,7 @@ namespace Ravl2
     {
       archive(cereal::base_class<PinholeCamera0<RealT>>(this),
               cereal::make_nvp("k1", this->m_k1),
-              cereal::make_nvp("k2", this->m_k2)
-      );
+              cereal::make_nvp("k2", this->m_k2));
     }
 
   protected:
@@ -150,10 +148,7 @@ namespace Ravl2
     {
       Vector<RealT, 2> ret = z;
       // NOTE: do not undistort a point greater than one image width/height outside the image as this may not converge
-      if((this->m_k1 != 0 || this->m_k2 != 0) &&
-         z[0] > (RealT(this->m_frame.min(1) - this->m_frame.range(1).size()) - this->m_cx) / this->m_fx && z[0] < (RealT(this->m_frame.max(1) + this->m_frame.range(1).size()) - this->m_cx) / this->m_fx &&
-         z[1] > (RealT(this->m_frame.min(0) - this->m_frame.range(0).size()) - this->m_cy) / this->m_fy && z[1] < (RealT(this->m_frame.max(0) + this->m_frame.range(0).size()) - this->m_cy) / this->m_fy)
-      {
+      if((this->m_k1 != 0 || this->m_k2 != 0) && z[0] > (RealT(this->m_frame.min(1) - this->m_frame.range(1).size()) - this->m_cx) / this->m_fx && z[0] < (RealT(this->m_frame.max(1) + this->m_frame.range(1).size()) - this->m_cx) / this->m_fx && z[1] > (RealT(this->m_frame.min(0) - this->m_frame.range(0).size()) - this->m_cy) / this->m_fy && z[1] < (RealT(this->m_frame.max(0) + this->m_frame.range(0).size()) - this->m_cy) / this->m_fy) {
         const RealT &xd = z[0];
         const RealT &yd = z[1];
         RealT dl = std::sqrt(xd * xd + yd * yd);
@@ -215,4 +210,3 @@ namespace Ravl2
   extern template class PinholeCamera3<float>;
 
 };// namespace Ravl2
-

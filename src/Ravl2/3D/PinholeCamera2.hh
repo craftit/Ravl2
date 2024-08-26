@@ -84,7 +84,7 @@ namespace Ravl2
     {
       // Distortion-free projection
       Vector<RealT, 3> Rx = (this->m_R * x) + this->m_t;
-      if(isNearZero(Rx[2],RealT(1E-3)))
+      if(isNearZero(Rx[2], RealT(1E-3)))
         return false;
       RealT dx = this->m_fx * Rx[0] / Rx[2];
       RealT dy = this->m_fy * Rx[1] / Rx[2];
@@ -126,12 +126,7 @@ namespace Ravl2
     {
       Vector<RealT, 2> ret = z;
       // NOTE: do not undistort a point greater than one image width/height outside the image as this may not converge
-      if((this->m_k3 != 0 || this->m_k5 != 0) &&
-         z[0] > RealT(this->m_frame.min(1) - this->m_frame.range(1).size()) &&
-         z[0] < RealT(this->m_frame.max(1) + this->m_frame.range(1).size()) &&
-         z[1] > RealT(this->m_frame.min(0) - this->m_frame.range(0).size()) &&
-         z[1] < RealT(this->m_frame.max(0) + this->m_frame.range(0).size()))
-      {
+      if((this->m_k3 != 0 || this->m_k5 != 0) && z[0] > RealT(this->m_frame.min(1) - this->m_frame.range(1).size()) && z[0] < RealT(this->m_frame.max(1) + this->m_frame.range(1).size()) && z[1] > RealT(this->m_frame.min(0) - this->m_frame.range(0).size()) && z[1] < RealT(this->m_frame.max(0) + this->m_frame.range(0).size())) {
         RealT xu = this->m_sizex * (z[0] - this->m_cx);
         RealT yu = this->m_sizey * (z[1] - this->m_cy);
         RealT dl = std::sqrt(xu * xu + yu * yu);
@@ -157,10 +152,8 @@ namespace Ravl2
               cereal::make_nvp("sizex", this->m_sizex),
               cereal::make_nvp("sizey", this->m_sizey),
               cereal::make_nvp("k3", this->m_k3),
-              cereal::make_nvp("k5", this->m_k5)
-              );
+              cereal::make_nvp("k5", this->m_k5));
     }
-
 
   protected:
     /*

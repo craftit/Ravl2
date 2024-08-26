@@ -72,19 +72,19 @@ namespace Ravl2
       return values;
     }
 
-    [[maybe_unused]] bool g_reg1 = registerConversion(convert<Array<PixelY8,2>,Array<PixelYUV8,2>>, 0.33f);
-    [[maybe_unused]] bool g_reg2 = registerConversion(convert<Array<PixelY8,2>,Array<PixelRGB8,2>>, 0.33f);
-    [[maybe_unused]] bool g_reg3 = registerConversion(convert<Array<PixelRGB8,2>,Array<PixelYUV8,2>>, 0.75f);
-    [[maybe_unused]] bool g_reg4 = registerConversion(convert<Array<PixelYUV8,2>,Array<PixelRGB8,2>>, 0.75f);
-    [[maybe_unused]] bool g_reg5 = registerConversion(convert<Array<PixelYUV8,2>,Array<PixelY8,2>>, 1.0f);
-    [[maybe_unused]] bool g_reg6 = registerConversion(convert<Array<PixelRGB8,2>,Array<PixelY8,2>>, 1.0f);
-    [[maybe_unused]] bool g_reg7 = registerConversion(convert<Array<PixelRGB8,2>,Array<PixelBGR8,2>>, 1.0f);
-    [[maybe_unused]] bool g_reg8 = registerConversion(convert<Array<PixelBGR8,2>,Array<PixelRGB8,2>>, 1.0f);
-    [[maybe_unused]] bool g_reg9 = registerConversion(convert<Array<PixelRGB8,2>,Array<PixelRGBA8,2>>, 1.0f);
-    [[maybe_unused]] bool g_reg10 = registerConversion(convert<Array<PixelBGRA8,2>,Array<PixelRGBA8,2>>, 1.0f);
-    [[maybe_unused]] bool g_reg11 = registerConversion(convert<Array<PixelBGRA8,2>,Array<PixelBGRA8,2>>, 1.0f);
-    [[maybe_unused]] bool g_reg12 = registerConversion(convert<Array<PixelD32F,2>,Array<PixelD16,2>>, 1.0f);
-    [[maybe_unused]] bool g_reg13 = registerConversion(convert<Array<uint8_t,2>,Array<PixelY8,2>>, 0.33f);
+    [[maybe_unused]] bool g_reg1 = registerConversion(convert<Array<PixelY8, 2>, Array<PixelYUV8, 2>>, 0.33f);
+    [[maybe_unused]] bool g_reg2 = registerConversion(convert<Array<PixelY8, 2>, Array<PixelRGB8, 2>>, 0.33f);
+    [[maybe_unused]] bool g_reg3 = registerConversion(convert<Array<PixelRGB8, 2>, Array<PixelYUV8, 2>>, 0.75f);
+    [[maybe_unused]] bool g_reg4 = registerConversion(convert<Array<PixelYUV8, 2>, Array<PixelRGB8, 2>>, 0.75f);
+    [[maybe_unused]] bool g_reg5 = registerConversion(convert<Array<PixelYUV8, 2>, Array<PixelY8, 2>>, 1.0f);
+    [[maybe_unused]] bool g_reg6 = registerConversion(convert<Array<PixelRGB8, 2>, Array<PixelY8, 2>>, 1.0f);
+    [[maybe_unused]] bool g_reg7 = registerConversion(convert<Array<PixelRGB8, 2>, Array<PixelBGR8, 2>>, 1.0f);
+    [[maybe_unused]] bool g_reg8 = registerConversion(convert<Array<PixelBGR8, 2>, Array<PixelRGB8, 2>>, 1.0f);
+    [[maybe_unused]] bool g_reg9 = registerConversion(convert<Array<PixelRGB8, 2>, Array<PixelRGBA8, 2>>, 1.0f);
+    [[maybe_unused]] bool g_reg10 = registerConversion(convert<Array<PixelBGRA8, 2>, Array<PixelRGBA8, 2>>, 1.0f);
+    [[maybe_unused]] bool g_reg11 = registerConversion(convert<Array<PixelBGRA8, 2>, Array<PixelBGRA8, 2>>, 1.0f);
+    [[maybe_unused]] bool g_reg12 = registerConversion(convert<Array<PixelD32F, 2>, Array<PixelD16, 2>>, 1.0f);
+    [[maybe_unused]] bool g_reg13 = registerConversion(convert<Array<uint8_t, 2>, Array<PixelY8, 2>>, 0.33f);
 
   }// namespace
 
@@ -104,6 +104,5 @@ namespace Ravl2
   template void convert(Array<PixelBGRA8, 2> &dest, const Array<PixelRGBA8, 2> &src);
   template void convert(Array<PixelRGBA8, 2> &dest, const Array<PixelBGRA8, 2> &src);
   template void convert(Array<PixelD32F, 2> &dest, const Array<PixelD16, 2> &src);
-
 
 }// namespace Ravl2

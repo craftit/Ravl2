@@ -89,14 +89,14 @@ namespace Ravl2
 
     //! @brief Construct a handle to an input stream.
     //! @param stream - The stream to handle.
-    explicit StreamInputProxy(const std::shared_ptr<StreamInput<ObjectT> > &stream)
-      : mStream(stream)
+    explicit StreamInputProxy(const std::shared_ptr<StreamInput<ObjectT>> &stream)
+        : mStream(stream)
     {}
 
     //! @brief Construct a handle to an input stream.
     //! @param stream - The stream to handle.
-    explicit StreamInputProxy(std::shared_ptr<StreamInput<ObjectT> > &&stream)
-      : mStream(std::move(stream))
+    explicit StreamInputProxy(std::shared_ptr<StreamInput<ObjectT>> &&stream)
+        : mStream(std::move(stream))
     {}
 
     //! @brief Get the begin iterator.
@@ -142,7 +142,7 @@ namespace Ravl2
     }
 
   private:
-    std::shared_ptr<StreamInput<ObjectT> > mStream;
+    std::shared_ptr<StreamInput<ObjectT>> mStream;
   };
 
   //! @brief Open an input stream for reading.
@@ -151,7 +151,7 @@ namespace Ravl2
   //! @return A handle to the stream.
 
   template <typename ObjectT>
-  [[nodiscard]] StreamInputProxy<ObjectT> openInputStream(const std::string &url,const nlohmann::json &formatHint = defaultLoadFormatHint())
+  [[nodiscard]] StreamInputProxy<ObjectT> openInputStream(const std::string &url, const nlohmann::json &formatHint = defaultLoadFormatHint())
   {
     auto inStreamPlan = openInput(url, typeid(ObjectT), formatHint);
     if(!inStreamPlan.has_value()) {
@@ -161,7 +161,8 @@ namespace Ravl2
     if(inStreamPlan.value().mConversion) {
       auto strmPtr = std::make_shared<StreamInputCall<ObjectT>>([plan = inStreamPlan.value()](std::streampos pos) -> ObjectT {
         return std::any_cast<ObjectT>(plan.mConversion(plan.mStream->anyNext(pos)));
-      }, inStreamPlan->mStream->beginOffset(), inStreamPlan->mStream->endOffset());
+      },
+                                                                inStreamPlan->mStream->beginOffset(), inStreamPlan->mStream->endOffset());
 
       return StreamInputProxy<ObjectT>(std::dynamic_pointer_cast<StreamInput<ObjectT>>(strmPtr));
     }
@@ -172,6 +173,5 @@ namespace Ravl2
     }
     return StreamInputProxy<ObjectT>(strmPtr);
   }
-
 
 }// namespace Ravl2

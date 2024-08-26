@@ -10,4 +10,4 @@ namespace Ravl2
   template class LinePV<float, 2>;
   template class LinePV<float, 3>;
 
-}
+}// namespace Ravl2

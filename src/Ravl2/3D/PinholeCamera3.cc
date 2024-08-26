@@ -12,4 +12,4 @@ namespace Ravl2
 
   template class PinholeCamera3<float>;
 
-};// namespace Ravl3DN
+};// namespace Ravl2

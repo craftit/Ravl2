@@ -72,4 +72,3 @@ namespace Ravl2
   extern template void inverseFastFourierTransform(std::span<std::complex<float>> result, std::span<const std::complex<float>> data);
 
 }// namespace Ravl2
-

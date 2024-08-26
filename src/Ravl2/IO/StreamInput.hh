@@ -67,8 +67,7 @@ namespace Ravl2
   };
 
   //! Plan for getting the output
-  struct StreamInputPlan
-  {
+  struct StreamInputPlan {
     std::shared_ptr<StreamInputBase> mStream;
     std::function<std::any(std::any)> mConversion;
     float mCost = 1.0f;
@@ -139,15 +138,14 @@ namespace Ravl2
   //! @brief Implementation of a stream input container that reads objects from a stream via a callback.
 
   template <typename ObjectT>
-  class StreamInputCall
-      : public StreamInput<ObjectT>
+  class StreamInputCall : public StreamInput<ObjectT>
   {
   public:
     //! @brief Constructor.
     //! @param begin - The start of the stream.
     //! @param end - The end of the stream.
     //! @param callback - The callback to read the object.
-    explicit StreamInputCall(std::function<std::optional<ObjectT>(std::streampos &)> callback,std::streampos begin = 0, std::streampos end = std::numeric_limits<std::streampos>::max())
+    explicit StreamInputCall(std::function<std::optional<ObjectT>(std::streampos &)> callback, std::streampos begin = 0, std::streampos end = std::numeric_limits<std::streampos>::max())
         : StreamInput<ObjectT>(begin, end),
           mCallback(std::move(callback))
     {}
@@ -164,4 +162,4 @@ namespace Ravl2
     std::function<std::optional<ObjectT>(std::streampos &)> mCallback;
   };
 
-}
+}// namespace Ravl2

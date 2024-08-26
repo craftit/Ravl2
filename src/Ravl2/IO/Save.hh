@@ -15,7 +15,6 @@
 #include <utility>
 #include "Ravl2/IO/StreamOutput.hh"
 
-
 namespace Ravl2
 {
 
@@ -40,7 +39,7 @@ namespace Ravl2
   template <typename ObjectT>
   bool save(const std::string &url, const ObjectT &object, const nlohmann::json &formatHint = defaultSaveFormatHint())
   {
-    auto thePlan = openOutput(url, typeid(ObjectT),formatHint);
+    auto thePlan = openOutput(url, typeid(ObjectT), formatHint);
     if(!thePlan.has_value())
       return false;
     if(!thePlan.value().mConversion) {
@@ -53,5 +52,4 @@ namespace Ravl2
     return thePlan.value().mStream->anyWrite(thePlan.value().mConversion(std::any(object)), thePlan->mStream->beginOffset()) >= 0;
   }
 
-
-}
+}// namespace Ravl2

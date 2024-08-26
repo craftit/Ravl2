@@ -9,4 +9,4 @@ namespace Ravl2
   template class VectorOffset<float, 2>;
   template class VectorOffset<float, 3>;
 
-}
+}// namespace Ravl2

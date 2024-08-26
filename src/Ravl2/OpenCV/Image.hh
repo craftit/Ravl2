@@ -20,7 +20,6 @@ namespace Ravl2
     return cv::Mat(N, sizes.data(), cv::DataType<DataT>::type, addressOfMin(m));
   }
 
-
   //! Create a Ravl2::Array from a cv::Mat
   //! The type of the array must be the same as the cv::Mat
   //! This uses reference counting to ensure that the cv::Mat is not destroyed before the array

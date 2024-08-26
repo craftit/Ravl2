@@ -18,7 +18,7 @@ namespace Ravl2
   //: Container for an array of pinhole cameras
   // This wrapper provides IO to construct the appropriate camera models and return access via PinholeCameraT
 
-  template<typename PinholeCameraT,typename RealT>
+  template <typename PinholeCameraT, typename RealT>
   class PinholeCameraArray
   {
   public:
@@ -109,7 +109,7 @@ namespace Ravl2
         for(iCam = 0; iCam < iNum; iCam++) {
           std::tuple<unsigned, Vector<RealT, 2>> imgPt1a = points[iCam];
           // Get the jacobian
-          Matrix<RealT,2, 3> Jz;
+          Matrix<RealT, 2, 3> Jz;
           m_cameras[imgPt1a.template data<0>()].ProjectJacobian(Jz, pt3D);
           int i, j;
           for(i = 0; i < 2; i++)
@@ -139,5 +139,4 @@ namespace Ravl2
     std::vector<PinholeCameraT> m_cameras;// The reference counted container
   };
 
-
-};// namespace Ravl3DN
+};// namespace Ravl2

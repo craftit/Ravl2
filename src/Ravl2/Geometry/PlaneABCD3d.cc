@@ -21,5 +21,4 @@ namespace Ravl2
 #endif
   template class PlaneABCD3dC<float>;
 
-
 }// namespace Ravl2

@@ -59,7 +59,6 @@ namespace Ravl2
     return demangle(type.name());
   }
 
-
   void doNothing()
   {}
 

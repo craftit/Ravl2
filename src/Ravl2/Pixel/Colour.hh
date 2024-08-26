@@ -166,7 +166,7 @@ namespace Ravl2
 
   //! Assign a pixel value to a scalar
   constexpr void assign(uint8_t &target,
-                        const Pixel<uint8_t ,ImageChannel::Luminance> &source)
+                        const Pixel<uint8_t, ImageChannel::Luminance> &source)
   {
     target = source.template get<ImageChannel::Luminance, uint8_t>();
   }
@@ -191,7 +191,7 @@ namespace Ravl2
   }
 
   // Convert a return a new array
-  template<typename DestT, typename SourceT>
+  template <typename DestT, typename SourceT>
   DestT convert(const SourceT &src)
   {
     DestT dest;
@@ -214,6 +214,5 @@ namespace Ravl2
   extern template void convert(Array<PixelRGBA8, 2> &dest, const Array<PixelBGRA8, 2> &src);
 
   extern template void convert(Array<PixelD32F, 2> &dest, const Array<PixelD16, 2> &src);
-
 
 }// namespace Ravl2

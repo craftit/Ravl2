@@ -94,7 +94,6 @@ namespace Ravl2
       ar(mNormal, mD);
     }
 
-
   protected:
     Vector<RealT, N> mNormal;
     RealT mD = 0;
@@ -102,6 +101,5 @@ namespace Ravl2
 
   extern template class VectorOffset<float, 2>;
   extern template class VectorOffset<float, 3>;
-
 
 }// namespace Ravl2

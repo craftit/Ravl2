@@ -5,13 +5,13 @@
 #include "Ravl2/IO/InputFormat.hh"
 #include "Ravl2/StringUtils.hh"
 
-
 namespace Ravl2
 {
 
-  bool InputFormatMap::add(std::shared_ptr<InputFormat> format) {
-    SPDLOG_TRACE("Adding format: '{}' Ext:'{}'  Map:{}", format->name(), format->extension(), static_cast<void*>(this));
-    auto extensions = splitStrings(format->extension(),',');
+  bool InputFormatMap::add(std::shared_ptr<InputFormat> format)
+  {
+    SPDLOG_TRACE("Adding format: '{}' Ext:'{}'  Map:{}", format->name(), format->extension(), static_cast<void *>(this));
+    auto extensions = splitStrings(format->extension(), ',');
     std::lock_guard lock(m_mutex);
     if(extensions.empty()) {
       m_formatByExtension[""].push_back(std::move(format));
@@ -28,7 +28,7 @@ namespace Ravl2
   {
     std::shared_lock lock(m_mutex);
     if(ctx.m_verbose) {
-      SPDLOG_INFO("Probing input for file: {}. Protocol:{}  Have {} entries in map '{}' ", ctx.m_filename, ctx.m_protocol, m_formatByExtension.size(), static_cast<void*>(this));
+      SPDLOG_INFO("Probing input for file: {}. Protocol:{}  Have {} entries in map '{}' ", ctx.m_filename, ctx.m_protocol, m_formatByExtension.size(), static_cast<void *>(this));
     }
     auto extIt = m_formatByExtension.find(ctx.m_extension);
     if(extIt != m_formatByExtension.end()) {
@@ -38,7 +38,7 @@ namespace Ravl2
       }
       for(const auto &fmt : fmtList) {
         if(ctx.m_verbose) {
-          SPDLOG_INFO("Probing format: {}. Supports Protocol:{} ({})", fmt->name(), fmt->supportsProtocol(ctx.m_protocol),fmt->protocol());
+          SPDLOG_INFO("Probing format: {}. Supports Protocol:{} ({})", fmt->name(), fmt->supportsProtocol(ctx.m_protocol), fmt->protocol());
         }
         if(!fmt->supportsProtocol(ctx.m_protocol))
           continue;
@@ -84,4 +84,4 @@ namespace Ravl2
     return map;
   }
 
-}
+}// namespace Ravl2

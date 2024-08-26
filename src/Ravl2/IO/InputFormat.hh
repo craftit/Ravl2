@@ -19,13 +19,13 @@ namespace Ravl2
   class ProbeInputContext
   {
   public:
-    ProbeInputContext(std::string url, std::string filename, std::string protocol, std::string ext, nlohmann::json formatHint,const std::type_info &targetType)
-      : m_url(std::move(url)),
-        m_filename(std::move(filename)),
-        m_protocol(std::move(protocol)),
-        m_extension(std::move(ext)),
-        m_formatHint(std::move(formatHint)),
-        m_targetType(targetType)
+    ProbeInputContext(std::string url, std::string filename, std::string protocol, std::string ext, nlohmann::json formatHint, const std::type_info &targetType)
+        : m_url(std::move(url)),
+          m_filename(std::move(filename)),
+          m_protocol(std::move(protocol)),
+          m_extension(std::move(ext)),
+          m_formatHint(std::move(formatHint)),
+          m_targetType(targetType)
     {}
 
     std::shared_ptr<std::istream> mStream;
@@ -46,7 +46,7 @@ namespace Ravl2
   public:
     InputFormat() = default;
 
-    InputFormat(std::string name, std::string extension, std::string protocol,int priority = 0)
+    InputFormat(std::string name, std::string extension, std::string protocol, int priority = 0)
         : m_name(std::move(name)),
           m_extension(std::move(extension)),
           m_protocol(std::move(protocol)),
@@ -96,6 +96,7 @@ namespace Ravl2
     {
       return m_priority;
     }
+
   private:
     std::string m_name;
     std::string m_extension;
@@ -104,8 +105,7 @@ namespace Ravl2
   };
 
   //! Wrapper for a function or lambda that can probe a file format.
-  class InputFormatCall
-    : public InputFormat
+  class InputFormatCall : public InputFormat
   {
   public:
     //! Constructor
@@ -113,14 +113,15 @@ namespace Ravl2
     //! @param extension - Expected extension of the format.
     //! @param priority - Priority of the format. Higher is better, default is 0.
     InputFormatCall(std::string name, std::string extension, std::string protocol, int priority, std::function<std::optional<StreamInputPlan>(const ProbeInputContext &)> probe)
-      : InputFormat(std::move(name), std::move(extension), std::move(protocol), priority),
-        m_probe(std::move(probe))
+        : InputFormat(std::move(name), std::move(extension), std::move(protocol), priority),
+          m_probe(std::move(probe))
     {}
 
     //! @brief Test if we can load this type.
     //! @param ctx - The context to see if we can load.
     //! @return optional, if format is unknown, return nullopt, otherwise return data the format can use to load the file.
-    [[nodiscard]] std::optional<StreamInputPlan> probe(const ProbeInputContext &ctx) const final {
+    [[nodiscard]] std::optional<StreamInputPlan> probe(const ProbeInputContext &ctx) const final
+    {
       return m_probe(ctx);
     }
 
@@ -144,11 +145,9 @@ namespace Ravl2
 
   private:
     std::shared_mutex m_mutex;
-    std::unordered_map<std::string, std::vector<std::shared_ptr<InputFormat> > > m_formatByExtension;
+    std::unordered_map<std::string, std::vector<std::shared_ptr<InputFormat>>> m_formatByExtension;
   };
 
   InputFormatMap &inputFormatMap();
 
-
-
-}
+}// namespace Ravl2

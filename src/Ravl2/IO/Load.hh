@@ -19,7 +19,7 @@ namespace Ravl2
   //! @param type - The type of the object to read.
   //! @param formatHint - A hint to the format of the file.
   //! @return A pointer to the stream.
-  [[nodiscard]] std::optional<StreamInputPlan> openInput(const std::string &url, const std::type_info &type,  const nlohmann::json &formatHint);
+  [[nodiscard]] std::optional<StreamInputPlan> openInput(const std::string &url, const std::type_info &type, const nlohmann::json &formatHint);
 
   //! Default load format hint.
   [[nodiscard]] const nlohmann::json &defaultLoadFormatHint();

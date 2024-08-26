@@ -6,7 +6,6 @@
 #include "Ravl2/IO/OutputFormat.hh"
 #include <nlohmann/json.hpp>
 
-
 namespace Ravl2
 {
   const nlohmann::json &defaultSaveFormatHint()
@@ -18,8 +17,7 @@ namespace Ravl2
   [[nodiscard]] std::optional<StreamOutputPlan> openOutput(const std::string &url, const std::type_info &type, const nlohmann::json &formatHint)
   {
     bool verbose = false;
-    if(formatHint.is_object())
-    {
+    if(formatHint.is_object()) {
       verbose = formatHint.value("verbose", verbose);
     }
 
@@ -27,12 +25,10 @@ namespace Ravl2
     auto protocolEnd = url.find("://");
     std::string protocol;
     std::string rawFilename;
-    if(protocolEnd != std::string::npos)
-    {
+    if(protocolEnd != std::string::npos) {
       protocol = url.substr(0, protocolEnd);
       rawFilename = url.substr(protocolEnd + 3);
-    } else
-    {
+    } else {
       protocol = "file";
       rawFilename = url;
     }
@@ -40,15 +36,12 @@ namespace Ravl2
     // Get the extension
     auto extStart = rawFilename.find_last_of('.');
     std::string ext;
-    if(extStart != std::string::npos)
-    {
+    if(extStart != std::string::npos) {
       ext = rawFilename.substr(extStart + 1);
-    } else
-    {
+    } else {
       ext = "";
     }
-    if(verbose)
-    {
+    if(verbose) {
       SPDLOG_INFO("Opening output file: '{}' Protocol:'{}'  Extension:'{}'  Type:'{}'", url, protocol, ext, typeName(type));
     }
 
@@ -56,7 +49,6 @@ namespace Ravl2
     ProbeOutputContext ctx(url, rawFilename, protocol, ext, formatHint, type);
     ctx.m_verbose = verbose;
     return outputFormatMap().probe(ctx);
-
   }
 
 }// namespace Ravl2

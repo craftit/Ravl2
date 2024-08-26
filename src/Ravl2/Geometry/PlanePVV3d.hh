@@ -49,11 +49,11 @@ namespace Ravl2
       return PlanePVV3dC<RealT>(p1, p2 - p1, p3 - p1);
     }
 
-//    inline const Point<RealT, 3> &Point() const
-//    {
-//      return mOrigin;
-//    }
-//    // Access to the point of the constant object.
+    //    inline const Point<RealT, 3> &Point() const
+    //    {
+    //      return mOrigin;
+    //    }
+    //    // Access to the point of the constant object.
 
     // Access to the first vector of the constant object.
     inline const Vector<RealT, 3> &Vector1() const
@@ -101,7 +101,9 @@ namespace Ravl2
 
     //! Converts this plane representation to PlaneABCD3dC.
     [[nodiscard]] PlaneABCD3dC<RealT> PlaneABCD3d() const
-    { return PlaneABCD3dC(Normal(), this->mOrigin); }
+    {
+      return PlaneABCD3dC(Normal(), this->mOrigin);
+    }
 
     // Returns the point of intersection of this plane with the line 'l'.
     [[nodiscard]] Point<RealT, 3> Intersection(const LinePV3dC<RealT> &l) const
@@ -111,10 +113,14 @@ namespace Ravl2
 
     //! Get the euclidean distance of the point 'point' from this plane.
     [[nodiscard]] RealT distance(const Point<RealT, 3> &point) const
-    { return PlaneABCD3d().distance(point); }
+    {
+      return PlaneABCD3d().distance(point);
+    }
 
     Point<RealT, 3> ClosestPoint(const Point<RealT, 3> &p) const
-    { return PlaneABCD3d().projection(p); }
+    {
+      return PlaneABCD3d().projection(p);
+    }
 
     //! Returns the coordinates (t1,t2) of the point projected onto the plane.
     // The coordinate system is determined by the point of
@@ -122,16 +128,16 @@ namespace Ravl2
     [[nodiscard]] Point<RealT, 2> Projection(const Point<RealT, 3> &pointOnPlane) const
     {
       Matrix<RealT, 3, 2> a;
-      at(0,0) = mVector1[0];
-      at(1,0) = mVector1[1];
-      at(2,0) = mVector1[2];
-      at(0,1) = mVector2[0];
-      at(1,1) = mVector2[1];
-      at(2,1) = mVector2[2];
+      at(0, 0) = mVector1[0];
+      at(1, 0) = mVector1[1];
+      at(2, 0) = mVector1[2];
+      at(0, 1) = mVector2[0];
+      at(1, 1) = mVector2[1];
+      at(2, 1) = mVector2[2];
       Point<RealT, 3> tmp = pointOnPlane;
       tmp -= mOrigin;
-      auto [ sol,residual,rank,s ] = xt::linalg::lstsq(a, tmp);
-      return toPoint<RealT>(sol(0,0), sol(1,0));
+      auto [sol, residual, rank, s] = xt::linalg::lstsq(a, tmp);
+      return toPoint<RealT>(sol(0, 0), sol(1, 0));
     }
 
     //! Returns the coordinates (t1,t2) of the point of intersection
@@ -151,7 +157,7 @@ namespace Ravl2
     //! Returns the point of the plane: point + t1 * mVector1 + t2 * mVector2.
     inline Point<RealT, 3> at(const Point<RealT, 2> &par) const
     {
-      return  mOrigin + mVector1 * par[0] + mVector2 * par[1];
+      return mOrigin + mVector1 * par[0] + mVector2 * par[1];
     }
 
   private:

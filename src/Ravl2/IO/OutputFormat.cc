@@ -9,9 +9,9 @@ namespace Ravl2
 {
   bool OutputFormatMap::add(std::shared_ptr<OutputFormat> format)
   {
-    auto extensions = splitStrings(format->extension(),',');
+    auto extensions = splitStrings(format->extension(), ',');
     std::lock_guard lock(m_mutex);
-    SPDLOG_TRACE("Adding format: '{}' Ext:'{}'  Map:{}", format->name(), format->extension(), static_cast<void*>(this));
+    SPDLOG_TRACE("Adding format: '{}' Ext:'{}'  Map:{}", format->name(), format->extension(), static_cast<void *>(this));
     if(extensions.empty()) {
       m_formatByExtension[""].push_back(std::move(format));
       return true;
@@ -24,7 +24,7 @@ namespace Ravl2
   std::optional<StreamOutputPlan> OutputFormatMap::probe(const ProbeOutputContext &ctx)
   {
     if(ctx.m_verbose) {
-      SPDLOG_INFO("Probing for '{}' with extension '{}' and protocol '{}' at {} ", ctx.m_filename,ctx.m_extension,ctx.m_protocol,static_cast<void*>(this));
+      SPDLOG_INFO("Probing for '{}' with extension '{}' and protocol '{}' at {} ", ctx.m_filename, ctx.m_extension, ctx.m_protocol, static_cast<void *>(this));
     }
     std::shared_lock lock(m_mutex);
 
@@ -35,8 +35,7 @@ namespace Ravl2
       SPDLOG_INFO("Found {} possible formats for '{}'", it->second.size(), ctx.m_filename);
     }
 
-    for(const auto &format : it->second)
-    {
+    for(const auto &format : it->second) {
       if(ctx.m_verbose) {
         SPDLOG_INFO("Probing format: '{}' for '{}'", format->name(), ctx.m_filename);
       }
@@ -58,6 +57,4 @@ namespace Ravl2
     return map;
   }
 
-
-
-}
+}// namespace Ravl2

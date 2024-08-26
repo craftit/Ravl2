@@ -86,15 +86,15 @@ namespace Ravl2
     //! @brief Construct a stream proxy.
     //! @details This constructor is used to construct a stream proxy.
     //! @param stream - The stream to proxy.
-    explicit StreamOutputProxy(std::shared_ptr<StreamOutput<ObjectT> > &&stream)
-      : mStream(std::move(stream))
+    explicit StreamOutputProxy(std::shared_ptr<StreamOutput<ObjectT>> &&stream)
+        : mStream(std::move(stream))
     {}
 
     //! @brief Construct a stream proxy.
     //! @details This constructor is used to construct a stream proxy.
     //! @param stream - The stream to proxy.
-    explicit StreamOutputProxy(const std::shared_ptr<StreamOutput<ObjectT> > &stream)
-      : mStream(stream)
+    explicit StreamOutputProxy(const std::shared_ptr<StreamOutput<ObjectT>> &stream)
+        : mStream(stream)
     {}
 
     //! @brief Get the begin iterator.
@@ -133,10 +133,10 @@ namespace Ravl2
     {
       return mStream != nullptr;
     }
-  private:
-    std::shared_ptr<StreamOutput<ObjectT> > mStream;
-  };
 
+  private:
+    std::shared_ptr<StreamOutput<ObjectT>> mStream;
+  };
 
   //! @brief Open an output stream for writing.
   //! @param url - The filename to open.
@@ -151,15 +151,16 @@ namespace Ravl2
       return {};
     }
     if(outStreamPlan.value().mConversion) {
-      auto outStrm = std::make_shared<StreamOutputCall<ObjectT> >([plan = outStreamPlan.value()](const ObjectT &object, std::streampos pos) -> std::streampos {
+      auto outStrm = std::make_shared<StreamOutputCall<ObjectT>>([plan = outStreamPlan.value()](const ObjectT &object, std::streampos pos) -> std::streampos {
         (void)pos;
         return plan.mStream->anyWrite(plan.mConversion(std::any(object)), pos);
-      }, outStreamPlan->mStream->beginOffset(), outStreamPlan->mStream->endOffset());
+      },
+                                                                 outStreamPlan->mStream->beginOffset(), outStreamPlan->mStream->endOffset());
 
-      return StreamOutputProxy<ObjectT>( dynamic_pointer_cast<StreamOutput<ObjectT> >(outStrm) );
+      return StreamOutputProxy<ObjectT>(dynamic_pointer_cast<StreamOutput<ObjectT>>(outStrm));
     }
-    auto outStream = dynamic_pointer_cast<StreamOutput<ObjectT> >(outStreamPlan.value().mStream);
-    return  StreamOutputProxy<ObjectT>(std::move(outStream)) ;
+    auto outStream = dynamic_pointer_cast<StreamOutput<ObjectT>>(outStreamPlan.value().mStream);
+    return StreamOutputProxy<ObjectT>(std::move(outStream));
   }
 
-}
+}// namespace Ravl2

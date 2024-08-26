@@ -638,7 +638,6 @@ namespace Ravl2
     };
   }// namespace detail
 
-
   //! Serialize the content of an array.
 
   template <CerealArchive ArchiveT, typename ArrayT, typename DataT = typename ArrayT::value_type, unsigned N = ArrayT::dimensions>

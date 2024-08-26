@@ -17,4 +17,4 @@ namespace Ravl2
 
   void initOpenCVImageIO();
 
-}
+}// namespace Ravl2

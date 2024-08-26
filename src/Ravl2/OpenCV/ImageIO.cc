@@ -34,13 +34,12 @@ namespace Ravl2
       using ViaT = Ravl2::Array<ViaPixelT, N>;
       std::optional<ConversionChain> convChain = typeConverterMap().find(ctx.m_targetType, typeid(ViaT));
       if(!convChain.has_value()) {
-        SPDLOG_WARN("No conversion chain found for {} <- {}",typeName(ctx.m_targetType), typeName(typeid(ViaT)));
+        SPDLOG_WARN("No conversion chain found for {} <- {}", typeName(ctx.m_targetType), typeName(typeid(ViaT)));
         return std::nullopt;
       }
-      static auto convType = makeTypeConversion<ViaT,cv::Mat>([](cv::Mat img) -> ViaT { return toArray<ViaPixelT,2>(img); },1.0f);
+      static auto convType = makeTypeConversion<ViaT, cv::Mat>([](cv::Mat img) -> ViaT { return toArray<ViaPixelT, 2>(img); }, 1.0f);
       return convChain.value().prepend(convType);
     }
-
 
     //! Loading images.
 
@@ -142,8 +141,7 @@ namespace Ravl2
       return std::nullopt;
     }));
 
-
-    std::optional<StreamInputPlan> makeVideoCapturePlan(cv::VideoCapture &videoCapture,const ProbeInputContext &ctx)
+    std::optional<StreamInputPlan> makeVideoCapturePlan(cv::VideoCapture &videoCapture, const ProbeInputContext &ctx)
     {
       // We need to read a frame to get the type of the video.
       cv::Mat firstFrame;
@@ -183,12 +181,12 @@ namespace Ravl2
         int channels = CV_MAT_CN(firstFrame.type());
         int baseType = CV_MAT_TYPE(firstFrame.type());
 
-        SPDLOG_WARN("Don't know how to convert OpenCV image type: {}.  Depth:{} Channels:{} baseType:{} ({})", firstFrame.type(), depth, channels, baseType,CV_8UC3);
+        SPDLOG_WARN("Don't know how to convert OpenCV image type: {}.  Depth:{} Channels:{} baseType:{} ({})", firstFrame.type(), depth, channels, baseType, CV_8UC3);
         return std::nullopt;
       }
 
-      auto strm = std::make_shared<StreamInputCall<cv::Mat>>([videoCapture,firstFrame,isFirst=true](std::streampos &pos) mutable -> std::optional<cv::Mat> {
-        (void)pos; // Just ignore the position,  we can't seek in a video stream.
+      auto strm = std::make_shared<StreamInputCall<cv::Mat>>([videoCapture, firstFrame, isFirst = true](std::streampos &pos) mutable -> std::optional<cv::Mat> {
+        (void)pos;// Just ignore the position,  we can't seek in a video stream.
         if(isFirst) {
           isFirst = false;
           return firstFrame;
@@ -205,7 +203,7 @@ namespace Ravl2
 
     //! Load a video file
     [[maybe_unused]] bool g_regFmt2 = inputFormatMap().add(std::make_shared<InputFormatCall>("OpenCV", "avi,mp4,mov", "file", -1, [](const ProbeInputContext &ctx) -> std::optional<StreamInputPlan> {
-      cv::VideoCapture videoCapture ;
+      cv::VideoCapture videoCapture;
       if(!videoCapture.open(ctx.m_filename)) {
         if(ctx.m_verbose) {
           SPDLOG_INFO("Failed to open video stream '{}'", ctx.m_filename);
@@ -217,7 +215,7 @@ namespace Ravl2
 
     //! Open a webcam
     [[maybe_unused]] bool g_regFmt3 = inputFormatMap().add(std::make_shared<InputFormatCall>("OpenCV", "", "camera", -1, [](const ProbeInputContext &ctx) -> std::optional<StreamInputPlan> {
-      cv::VideoCapture videoCapture ;
+      cv::VideoCapture videoCapture;
       // Convert the filename to an integer.
       int cameraId = std::stoi(ctx.m_filename);
       if(!videoCapture.open(cameraId)) {
@@ -239,7 +237,7 @@ namespace Ravl2
     [[maybe_unused]] bool g_reg4 = registerConversion([](Array<int32_t, 2> img) -> cv::Mat { return toCvMat(img); }, 0.95f);
     [[maybe_unused]] bool g_reg5 = registerConversion([](Array<float, 2> img) -> cv::Mat { return toCvMat(img); }, 0.95f);
     [[maybe_unused]] bool g_reg6 = registerConversion([](Array<double, 2> img) -> cv::Mat { return toCvMat(img); }, 0.95f);
-    [[maybe_unused]] bool g_reg7 = registerConversion([](Array<PixelBGR8 , 2> img) -> cv::Mat { return toCvMat(img); }, 0.95f);
+    [[maybe_unused]] bool g_reg7 = registerConversion([](Array<PixelBGR8, 2> img) -> cv::Mat { return toCvMat(img); }, 0.95f);
 
   }// namespace
 }// namespace Ravl2

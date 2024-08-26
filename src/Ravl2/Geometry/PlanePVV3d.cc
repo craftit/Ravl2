@@ -10,7 +10,6 @@
 #include "Ravl2/Geometry/LinePV3d.hh"
 #include "Ravl2/Geometry/PlaneABCD3d.hh"
 
-
 namespace Ravl2
 {
 

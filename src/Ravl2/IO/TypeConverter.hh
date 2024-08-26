@@ -37,7 +37,7 @@ namespace Ravl2
     //! @param factor - The conversion loss factor, between 0 and 1.  1-Meaning no loss, 0 meaning all information is lost.
     //! @param to - The target type.
     //! @param from - The source type.
-    TypeConverter(float factor,const std::type_info &to, const std::type_info &from)
+    TypeConverter(float factor, const std::type_info &to, const std::type_info &from)
         : m_conversionLoss(factor),
           m_from(from),
           m_to(to)
@@ -80,10 +80,9 @@ namespace Ravl2
     const std::type_info &m_to = typeid(void);
   };
 
-
   //! Type conversion implementation.
 
-  template <typename ToT, typename FromT,typename CallableT>
+  template <typename ToT, typename FromT, typename CallableT>
   class TypeConversionImpl : public TypeConverter
   {
   public:
@@ -91,14 +90,14 @@ namespace Ravl2
     TypeConversionImpl() = default;
 
     //! Constructor.
-    explicit TypeConversionImpl(CallableT &&converter,float cost)
-      : TypeConverter(cost, typeid(ToT), typeid(FromT)),
-        m_converter(std::move(converter))
+    explicit TypeConversionImpl(CallableT &&converter, float cost)
+        : TypeConverter(cost, typeid(ToT), typeid(FromT)),
+          m_converter(std::move(converter))
     {}
 
     //! Constructor.
-    explicit TypeConversionImpl(const CallableT &converter,float cost)
-        : TypeConverter(cost,  typeid(ToT), typeid(FromT)),
+    explicit TypeConversionImpl(const CallableT &converter, float cost)
+        : TypeConverter(cost, typeid(ToT), typeid(FromT)),
           m_converter(converter)
     {}
 
@@ -112,20 +111,18 @@ namespace Ravl2
     CallableT m_converter;
   };
 
-
   //! Type conversion chain.
   //! This provides a way to chain together a series of type conversions.
 
-  struct ConversionChain
-  {
+  struct ConversionChain {
   public:
     ConversionChain()
-     : mEndAt(typeid(void))
+        : mEndAt(typeid(void))
     {}
 
-    ConversionChain(std::vector<std::shared_ptr<TypeConverter>> &&chain,std::type_index endAt,float loss)
-      : mChain(std::move(chain)),
-        mEndAt(endAt),
+    ConversionChain(std::vector<std::shared_ptr<TypeConverter>> &&chain, std::type_index endAt, float loss)
+        : mChain(std::move(chain)),
+          mEndAt(endAt),
           mLoss(loss)
     {}
 
@@ -176,7 +173,7 @@ namespace Ravl2
       auto const &toType = converter->to();
       auto newLoss = mLoss * converter->conversionLoss();
       newChain.emplace_back(std::move(converter));
-      return {std::move(newChain),toType, newLoss};
+      return {std::move(newChain), toType, newLoss};
     }
 
     //! Prepend a conversion to the mChain and return a new mChain.
@@ -188,21 +185,21 @@ namespace Ravl2
       auto newLoss = mLoss * converter->conversionLoss();
       newChain.reserve(mChain.size() + 1);
       newChain.push_back(std::move(converter));
-      newChain.insert(newChain.end(),mChain.begin(),mChain.end());
-      return {std::move(newChain),mEndAt, newLoss};
+      newChain.insert(newChain.end(), mChain.begin(), mChain.end());
+      return {std::move(newChain), mEndAt, newLoss};
     }
 
   private:
     std::vector<std::shared_ptr<TypeConverter>> mChain;
-    std::type_index mEndAt; //!< We need to store this as the last conversion may be empty.
+    std::type_index mEndAt;//!< We need to store this as the last conversion may be empty.
     float mLoss = 1.0f;
   };
 
   //! Helper to make a type conversion.
-  template <typename ToT, typename FromT,typename CallableT>
-  std::shared_ptr<TypeConversionImpl<ToT, FromT, CallableT> > makeTypeConversion(CallableT &&converter, float cost)
+  template <typename ToT, typename FromT, typename CallableT>
+  std::shared_ptr<TypeConversionImpl<ToT, FromT, CallableT>> makeTypeConversion(CallableT &&converter, float cost)
   {
-    return std::make_shared<TypeConversionImpl<ToT, FromT, CallableT>>(std::forward<CallableT>(converter),cost);
+    return std::make_shared<TypeConversionImpl<ToT, FromT, CallableT>>(std::forward<CallableT>(converter), cost);
   }
 
   //! Set of type conversions for use with file formats.
@@ -214,10 +211,10 @@ namespace Ravl2
     TypeConverterMap() = default;
 
     //! Add a type conversion.
-    template <typename ToT, typename FromT,typename CallableT>
+    template <typename ToT, typename FromT, typename CallableT>
     bool add(CallableT &&converter, float cost)
     {
-      auto x = makeTypeConversion<ToT,FromT,CallableT>(std::forward<CallableT>(converter),cost);
+      auto x = makeTypeConversion<ToT, FromT, CallableT>(std::forward<CallableT>(converter), cost);
       std::lock_guard lock(m_mutex);
       m_converters[std::type_index(x->from())].push_back(x);
       m_conversionCache.clear();
@@ -226,10 +223,10 @@ namespace Ravl2
     }
 
     //! Add a type conversion.
-    template <typename ToT, typename FromT,typename CallableT>
-    bool add(const CallableT &converter,float cost)
+    template <typename ToT, typename FromT, typename CallableT>
+    bool add(const CallableT &converter, float cost)
     {
-      auto x = std::make_shared<TypeConversionImpl<ToT, FromT, CallableT>>(converter,cost);
+      auto x = std::make_shared<TypeConversionImpl<ToT, FromT, CallableT>>(converter, cost);
       std::lock_guard lock(m_mutex);
       m_converters[std::type_index(typeid(FromT))].push_back(x);
       m_conversionCache.clear();
@@ -244,7 +241,7 @@ namespace Ravl2
     [[nodiscard]] std::optional<ConversionChain> find(const std::type_info &to, const std::type_info &from);
 
     //! Find a convertion mChain to one of set of possible types with a best first search.
-    [[nodiscard]] std::optional<ConversionChain> find(const std::unordered_set<std::type_index> &to,const std::type_info &from);
+    [[nodiscard]] std::optional<ConversionChain> find(const std::unordered_set<std::type_index> &to, const std::type_info &from);
 
     //! Convert from one type to another.
     [[nodiscard]] std::optional<std::any> convert(const std::type_info &to, const std::any &from);
@@ -254,11 +251,11 @@ namespace Ravl2
     std::unordered_map<std::type_index, std::vector<std::shared_ptr<TypeConverter>>> m_converters;
     struct CacheKey {
       CacheKey()
-        : mFrom(typeid(void))
+          : mFrom(typeid(void))
       {}
       CacheKey(const std::type_info &from, const std::unordered_set<std::type_index> &to)
-        : mFrom(from),
-            mTo(to.begin(),to.end())
+          : mFrom(from),
+            mTo(to.begin(), to.end())
       {}
 
       bool operator==(const CacheKey &other) const
@@ -283,7 +280,7 @@ namespace Ravl2
         return hash;
       }
     };
-    std::unordered_map<CacheKey,std::optional<ConversionChain>,Hash> m_conversionCache;
+    std::unordered_map<CacheKey, std::optional<ConversionChain>, Hash> m_conversionCache;
     size_t mVersion = 0;
   };
 
@@ -296,86 +293,79 @@ namespace Ravl2
     struct function_traits;
 
     template <typename R, typename... Args>
-    struct function_traits<std::function<R(Args...)>>
-    {
-        using result_type = R;
-        using argument_type = std::tuple<Args...>;
+    struct function_traits<std::function<R(Args...)>> {
+      using result_type = R;
+      using argument_type = std::tuple<Args...>;
     };
 
     // Class member function
     template <typename C, typename R, typename... Args>
-    struct function_traits<R(C::*)(Args...)>
-    {
-        using result_type = R;
-        using argument_type = std::tuple<Args...>;
+    struct function_traits<R (C::*)(Args...)> {
+      using result_type = R;
+      using argument_type = std::tuple<Args...>;
     };
 
     template <typename C, typename R, typename... Args>
-    struct function_traits<R(C::*)(Args...) const>
-    {
+    struct function_traits<R (C::*)(Args...) const> {
       using result_type = R;
       using argument_type = std::tuple<Args...>;
     };
 
     // Deal with function pointers
     template <typename R, typename... Args>
-    struct function_traits<R(*)(Args...)>
-    {
-        using result_type = R;
-        using argument_type = std::tuple<Args...>;
+    struct function_traits<R (*)(Args...)> {
+      using result_type = R;
+      using argument_type = std::tuple<Args...>;
     };
 
     template <typename R, typename... Args>
-    struct function_traits<R(&)(Args...)>
-    {
+    struct function_traits<R (&)(Args...)> {
       using result_type = R;
       using argument_type = std::tuple<Args...>;
     };
 
     // Deal with lambda types
     template <typename T>
-     requires std::is_class_v<T>
-    struct function_traits<T>
-      : public function_traits<decltype(&T::operator())>
-    {};
-  }
+      requires std::is_class_v<T>
+    struct function_traits<T> : public function_traits<decltype(&T::operator())> {
+    };
+  }// namespace detail
 
   //! Register a converter based on a lambda.
   template <typename FuncT, typename OperatorT = decltype(&FuncT::operator())>
     requires std::is_class_v<FuncT> && (std::tuple_size<typename detail::function_traits<OperatorT>::argument_type>::value == 1)
-  bool registerConversion(FuncT &&callable,float cost)
+  bool registerConversion(FuncT &&callable, float cost)
   {
     // We need to look at the signature of the lambda operator() to get the types.
     using ToT = typename detail::function_traits<OperatorT>::result_type;
-    using FromT = std::tuple_element_t<0,typename detail::function_traits<OperatorT>::argument_type>;
-    typeConverterMap().add<ToT,std::decay_t<FromT>,FuncT>(std::forward<FuncT>(callable), cost);
+    using FromT = std::tuple_element_t<0, typename detail::function_traits<OperatorT>::argument_type>;
+    typeConverterMap().add<ToT, std::decay_t<FromT>, FuncT>(std::forward<FuncT>(callable), cost);
     return true;
   }
 
   //! Register a converter based on a function pointer.
-  template <typename ToT,typename FromT>
-  bool registerConversion(ToT (*func)(FromT),float cost)
+  template <typename ToT, typename FromT>
+  bool registerConversion(ToT (*func)(FromT), float cost)
   {
-    typeConverterMap().add<ToT,std::decay_t<FromT>,ToT (*)(FromT)>(func, cost);
+    typeConverterMap().add<ToT, std::decay_t<FromT>, ToT (*)(FromT)>(func, cost);
     return true;
   }
 
   //! Convert from one type to another using the default type converter map.
   //! This mechanism is intended for use with file formats where code may not have access to the types.
-  template<typename ToT,typename FromT>
+  template <typename ToT, typename FromT>
   ToT typeConvert(const FromT &from)
   {
-    if constexpr(std::is_same_v<ToT,std::decay_t<FromT> >)
+    if constexpr(std::is_same_v<ToT, std::decay_t<FromT>>)
       return from;
-    if constexpr(std::is_convertible_v<FromT,ToT>)
+    if constexpr(std::is_convertible_v<FromT, ToT>)
       return static_cast<ToT>(from);
     auto x = typeConverterMap().convert(typeid(ToT), from);
     if(!x.has_value()) {
-      SPDLOG_WARN("Don't know how to convert {} to {}",typeName(typeid(FromT)),typeName(typeid(ToT)));
+      SPDLOG_WARN("Don't know how to convert {} to {}", typeName(typeid(FromT)), typeName(typeid(ToT)));
       throw std::runtime_error("Failed to convert type");
     }
     return std::any_cast<ToT>(x.value());
   }
 
 }// namespace Ravl2
-

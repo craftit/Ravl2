@@ -21,9 +21,8 @@ namespace Ravl2
   // The LinePV3dC class represents the line in 3 dimensional Euclidean
   // space. The line is represented by one point and its direction vector.
 
-  template<typename RealT>
-  class LinePV3dC
-    : public LinePV<RealT,3>
+  template <typename RealT>
+  class LinePV3dC : public LinePV<RealT, 3>
   {
   public:
     //:----------------------------------------------
@@ -32,28 +31,26 @@ namespace Ravl2
     //: Creates the non-existing line (0,0,0) [0,0,0].
     inline LinePV3dC() = default;
 
-
     //: Creates the line passing through the point 'a' and with
     //: the direction 'v'.
-    inline LinePV3dC(const Point<RealT,3> &a, const Vector<RealT,3> &v)
-      : LinePV<RealT,3>(a,v)
+    inline LinePV3dC(const Point<RealT, 3> &a, const Vector<RealT, 3> &v)
+        : LinePV<RealT, 3>(a, v)
     {}
 
-//    //: Creates the line passing through the points 'first' and
-//    //: second.
-//    inline LinePV3dC(const Point<RealT,3> &first, const Point<RealT,3> &second)
-//        : point(first), mDirection(second - first)
-//    {}
-
+    //    //: Creates the line passing through the points 'first' and
+    //    //: second.
+    //    inline LinePV3dC(const Point<RealT,3> &first, const Point<RealT,3> &second)
+    //        : point(first), mDirection(second - first)
+    //    {}
 
     //: Returns the shortest distance between the lines.
     RealT Distance(const LinePV3dC &line) const
     {
       // more information in Rektorys:
       // Prehled uzite matematiky, SNTL, Praha 1988, p. 205
-      auto axb = cross(this->Direction(),line.Direction());
+      auto axb = cross(this->Direction(), line.Direction());
       auto modul = Ravl2::norm_l2(axb);
-      if (isNearZero(modul)) {
+      if(isNearZero(modul)) {
         return line.Distance(this->FirstPoint());
       }
       return std::abs(RealT(xt::linalg::dot(line.FirstPoint() - this->FirstPoint(), axb)())) / modul;
@@ -63,25 +60,28 @@ namespace Ravl2
     //: of both lines.
     // The returned line has the first point on this line and
     // the second point on the 'line'.
-    [[nodiscard]] LinePV<RealT,3> ShortestLine(const LinePV<RealT,3> & line) const {
-      auto axb = cross(this->Direction(),line.Direction());
+    [[nodiscard]] LinePV<RealT, 3> ShortestLine(const LinePV<RealT, 3> &line) const
+    {
+      auto axb = cross(this->Direction(), line.Direction());
       RealT axbNorm = sumOfSqr(axb);
 
-      if (isNearZero(axbNorm))
+      if(isNearZero(axbNorm))
         throw std::runtime_error("LinePV<RealT,3>::ShortestLine(): the lines are almost parallel");
-      Vector<RealT,3> pmr(this->FirstPoint() - line.FirstPoint());
-      Point<RealT,3> p1(this->FirstPoint()
-                         + this->Direction() * ((xt::linalg::dot(axb,cross(line.Direction(),pmr))) / axbNorm));
-      Point<RealT,3> p2(line.FirstPoint()
-                         + line.Direction() * ((xt::linalg::dot(axb,cross(this->Direction(),pmr))) / axbNorm));
-      return LinePV<RealT,3>::fromPoints(p1, p2);
+      Vector<RealT, 3> pmr(this->FirstPoint() - line.FirstPoint());
+      Point<RealT, 3> p1(this->FirstPoint()
+                         + this->Direction() * ((xt::linalg::dot(axb, cross(line.Direction(), pmr))) / axbNorm));
+      Point<RealT, 3> p2(line.FirstPoint()
+                         + line.Direction() * ((xt::linalg::dot(axb, cross(this->Direction(), pmr))) / axbNorm));
+      return LinePV<RealT, 3>::fromPoints(p1, p2);
     }
 
     //: Returns the point which belongs to both lines.
     // If the lines have no intersection, the function returns the point which
     // lies in the middle of the shortest line segment between both lines.
-    [[nodiscard]] Point<RealT,3> Intersection(const LinePV<RealT,3> &l) const
-    { return ShortestLine(l).MiddlePoint(); }
+    [[nodiscard]] Point<RealT, 3> Intersection(const LinePV<RealT, 3> &l) const
+    {
+      return ShortestLine(l).MiddlePoint();
+    }
 
 #if 0
 
@@ -89,7 +89,6 @@ namespace Ravl2
     // line into the plane 'p'.
     LinePV3dC ProjectionInto(const PlaneABCD3dC<RealT> & p) const;
 #endif
-
   };
 
 #if 0
@@ -101,4 +100,3 @@ namespace Ravl2
 #endif
 
 }// namespace Ravl2
-

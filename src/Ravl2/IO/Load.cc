@@ -11,7 +11,7 @@ namespace Ravl2
     return hint;
   }
 
-  std::optional<StreamInputPlan> openInput(const std::string &url, const std::type_info &type,  const nlohmann::json &formatHint)
+  std::optional<StreamInputPlan> openInput(const std::string &url, const std::type_info &type, const nlohmann::json &formatHint)
   {
     bool verbose = false;
     if(formatHint.is_object()) {
@@ -21,12 +21,10 @@ namespace Ravl2
     auto protocolEnd = url.find("://");
     std::string protocol;
     std::string rawFilename;
-    if(protocolEnd != std::string::npos)
-    {
+    if(protocolEnd != std::string::npos) {
       protocol = url.substr(0, protocolEnd);
       rawFilename = url.substr(protocolEnd + 3);
-    } else
-    {
+    } else {
       protocol = "file";
       rawFilename = url;
     }
@@ -34,11 +32,9 @@ namespace Ravl2
     // Get the extension
     auto extStart = url.find_last_of('.');
     std::string ext;
-    if(extStart != std::string::npos)
-    {
+    if(extStart != std::string::npos) {
       ext = url.substr(extStart + 1);
-    } else
-    {
+    } else {
       ext = "";
     }
 
@@ -52,8 +48,7 @@ namespace Ravl2
     ctx.m_verbose = verbose;
 
     // Should we try and read data from the file into memory?
-    if(protocol == "file")
-    {
+    if(protocol == "file") {
       std::unique_ptr<std::istream> tmpStrm = std::make_unique<std::ifstream>(rawFilename);
       if(!tmpStrm->good()) {
         return std::nullopt;
@@ -73,6 +68,5 @@ namespace Ravl2
 
     return inputFormatMap().probe(ctx);
   }
-
 
 }// namespace Ravl2

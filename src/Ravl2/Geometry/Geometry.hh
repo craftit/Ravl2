@@ -72,7 +72,7 @@ namespace Ravl2
   }
 
   template <typename RealT>
-   requires std::is_floating_point<RealT>::value
+    requires std::is_floating_point<RealT>::value
   [[nodiscard]] RealT norm_l2(RealT v)
   {
     return std::abs(v);
@@ -132,7 +132,7 @@ namespace Ravl2
   }
 
   template <typename RealT>
-   requires std::is_floating_point<RealT>::value
+    requires std::is_floating_point<RealT>::value
   constexpr RealT sumOfSqr(RealT a)
   {
     return std::abs(a);
@@ -183,7 +183,7 @@ namespace Ravl2
 
   //! Cross product of two 2d vectors
   template <typename RealT>
-  Point<RealT,3> cross(const Point<RealT, 3> &a, const Point<RealT, 3> &b)
+  Point<RealT, 3> cross(const Point<RealT, 3> &a, const Point<RealT, 3> &b)
   {
     return {a[1] * b[2] - a[2] * b[1],
             a[2] * b[0] - a[0] * b[2],
@@ -267,7 +267,7 @@ namespace Ravl2
 
   //! Check all elements of a matrix are real
   //! That is not nan or infinite
-  template <typename RealT, size_t N,size_t M>
+  template <typename RealT, size_t N, size_t M>
   [[nodiscard]] bool isReal(Matrix<RealT, N, M> const &m)
   {
     for(auto x : m) {
