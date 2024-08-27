@@ -3,6 +3,7 @@
 
 #include <spdlog/spdlog.h>
 #include <opencv2/core.hpp>
+#include "Ravl2/IndexRange.hh"
 #include "Ravl2/Array.hh"
 #include "Ravl2/Pixel/Pixel.hh"
 
