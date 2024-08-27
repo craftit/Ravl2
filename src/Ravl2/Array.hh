@@ -553,6 +553,41 @@ namespace Ravl2
       return m_data[dind];
     }
 
+    //! Element by element call operator access
+    template <typename... IndexDataT, unsigned IndexN = sizeof...(IndexDataT)>
+      requires std::is_convertible_v<IndexDataT..., int> && (IndexN <= N)
+    constexpr inline auto& operator()(IndexDataT... data)
+    {
+      return operator[](Index<IndexN>({int(data)...}));
+    }
+
+    //! Element by element call operator access
+    template <typename... IndexDataT, unsigned IndexN = sizeof...(IndexDataT)>
+     requires std::is_convertible_v<IndexDataT..., int> && (IndexN <= N)
+    constexpr inline auto operator()(IndexDataT... data) const
+    {
+      return operator[](Index<IndexN>({int(data)...}));
+    }
+
+    //! Index an element
+    template<unsigned M>
+      requires(M <= N)
+    [[nodiscard]]
+    constexpr inline auto operator()(Index<M> ind) const
+    {
+      return operator[](ind);
+    }
+
+    //! Index an element
+    template<unsigned M>
+      requires(M <= N)
+    [[nodiscard]]
+    constexpr inline auto& operator()(Index<M> ind)
+    {
+      return operator[](ind);
+    }
+
+
     //! Get begin iterator
     [[nodiscard]] constexpr ArrayIter<DataT, N> begin() const
     {

@@ -273,6 +273,22 @@ namespace Ravl2
       return m_data[i.index(0)];
     }
 
+    //! Access indexed element.
+    [[nodiscard]] inline constexpr DataT &operator()(int i) noexcept
+    {
+      assert(m_ranges != nullptr);
+      assert(m_ranges->contains(i));
+      return m_data[i];
+    }
+
+    //! Access indexed element.
+    [[nodiscard]] inline constexpr const DataT &operator()(int i) const noexcept
+    {
+      assert(m_ranges != nullptr);
+      assert(m_ranges->contains(i));
+      return m_data[i];
+    }
+
     //! Range of index's for row
     [[nodiscard]] constexpr const IndexRange<1> &range() const
     {
@@ -446,6 +462,20 @@ namespace Ravl2
     {
       assert(m_range.contains(i));
       return m_data[i.index(0)];
+    }
+
+    //! Access next dimension of array.
+    [[nodiscard]] constexpr DataT &operator()(int i)
+    {
+      assert(m_range.contains(i));
+      return m_data[i];
+    }
+
+    //! Access next dimension of array.
+    [[nodiscard]] constexpr const DataT &operator()(int i) const
+    {
+      assert(m_range.contains(i));
+      return m_data[i];
     }
 
     //! Access range of array
