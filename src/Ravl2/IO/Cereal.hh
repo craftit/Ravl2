@@ -20,30 +20,43 @@ namespace Ravl2
   struct CerealArchiveHeader {
     constexpr static uint32_t m_magicNumber = 0xABBA2024;
     CerealArchiveHeader() = default;
-    explicit CerealArchiveHeader(std::string theTypeName)
-        : m_magic(m_magicNumber),
-          version(1),
-          typeName(std::move(theTypeName))
-    {}
+    explicit CerealArchiveHeader(std::string theTypeName);
     uint32_t m_magic = 0;
-    uint16_t version = 0;
+    uint16_t fileFormatVersion = 0;
+    uint16_t majorVersion = 0;
+    uint16_t minorVersion = 0;
+    uint16_t patchVersion = 0;
+    uint16_t tweakVersion = 0;
+    std::string gitHash;
     std::string typeName;
 
     template<class Archive>
     void save(Archive & archive) const
     {
-      archive(m_magic, version, typeName);
+      archive(cereal::make_nvp("magic", m_magic),
+	      cereal::make_nvp("formatVersion", fileFormatVersion),
+	      cereal::make_nvp("majorVersion", majorVersion),
+	      cereal::make_nvp("minorVersion", minorVersion),
+	      cereal::make_nvp("patchVersion", patchVersion),
+	      cereal::make_nvp("tweakVersion", tweakVersion),
+	      cereal::make_nvp("gitHash", gitHash),
+	      cereal::make_nvp("typeName", typeName));
     }
 
     template<class Archive>
     void load(Archive & archive)
     {
-      archive(m_magic);
+      archive(cereal::make_nvp("magic", m_magic));
       if(m_magic != m_magicNumber) {
 	throw std::runtime_error("Magic number mismatch in stream.");
       }
-      // We should check the version here too.
-      archive(version, typeName);
+      archive(cereal::make_nvp("formatVersion", fileFormatVersion),
+	      cereal::make_nvp("majorVersion", majorVersion),
+	      cereal::make_nvp("minorVersion", minorVersion),
+	      cereal::make_nvp("patchVersion", patchVersion),
+	      cereal::make_nvp("tweakVersion", tweakVersion),
+	      cereal::make_nvp("gitHash", gitHash),
+	      cereal::make_nvp("typeName", typeName));
     }
   };
 
@@ -232,8 +245,8 @@ namespace Ravl2
       if(header.m_magic != 0xABBA2024) {
 	return std::nullopt;
       }
-      if(header.version != 1) {
-	SPDLOG_WARN("Version mismatch in stream. Expected 1 got {}", header.version);
+      if(header.fileFormatVersion != 1) {
+	SPDLOG_WARN("Version mismatch in stream. Expected 1 got {}", header.fileFormatVersion);
 	return std::nullopt;
       }
       // We need a lock now, as we are accessing the factory.
