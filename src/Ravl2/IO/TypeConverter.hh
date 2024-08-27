@@ -243,19 +243,23 @@ namespace Ravl2
     //! Find a convertion mChain to one of set of possible types with a best first search.
     [[nodiscard]] std::optional<ConversionChain> find(const std::unordered_set<std::type_index> &to, const std::type_info &from);
 
+    //! Find a convertion mChain to one of set of possible types with a best first search.
+    [[nodiscard]] std::optional<ConversionChain> find(const std::type_index &to, const std::unordered_set<std::type_index> &from);
+
     //! Convert from one type to another.
     [[nodiscard]] std::optional<std::any> convert(const std::type_info &to, const std::any &from);
 
   private:
+    //! Find a convertion mChain to one of set of possible types with a best first search.
+    [[nodiscard]] std::optional<ConversionChain> findInternal(const std::unordered_set<std::type_index> &to, const std::unordered_set<std::type_index> &from);
+
     std::shared_mutex m_mutex;
     std::unordered_map<std::type_index, std::vector<std::shared_ptr<TypeConverter>>> m_converters;
     struct CacheKey {
-      CacheKey()
-          : mFrom(typeid(void))
-      {}
-      CacheKey(const std::type_info &from, const std::unordered_set<std::type_index> &to)
+      CacheKey() = default;
+      CacheKey(const std::unordered_set<std::type_index> &from, const std::unordered_set<std::type_index> &to)
           : mFrom(from),
-            mTo(to.begin(), to.end())
+            mTo(to)
       {}
 
       bool operator==(const CacheKey &other) const
@@ -268,13 +272,16 @@ namespace Ravl2
         return !(*this == other);
       }
 
-      std::type_index mFrom;
+      std::unordered_set<std::type_index> mFrom;
       std::unordered_set<std::type_index> mTo;
     };
     struct Hash {
       size_t operator()(const CacheKey &key) const
       {
-        size_t hash = std::hash<std::type_index>()(key.mFrom);
+	size_t hash = 7;
+	for(const auto &x : key.mFrom)
+	  hash ^= std::hash<std::type_index>()(x);
+	hash *= 31;
         for(const auto &x : key.mTo)
           hash ^= std::hash<std::type_index>()(x);
         return hash;

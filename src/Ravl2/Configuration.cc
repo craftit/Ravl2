@@ -15,7 +15,6 @@
 namespace Ravl2
 {
 
-#if 1
   ConfigFactory &defaultConfigFactory()
   {
     static std::shared_ptr<ConfigFactory> factory = std::make_shared<ConfigFactory>();
@@ -211,7 +210,5 @@ namespace Ravl2
     flagAsUsed(name);
     return it->second.get();
   }
-
-#endif
 
 }// namespace Ravl2

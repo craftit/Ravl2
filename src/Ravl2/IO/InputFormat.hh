@@ -89,7 +89,7 @@ namespace Ravl2
     //! @brief Test if we can load this type.
     //! @param ctx - The context to see if we can load.
     //! @return optional, if format is unknown, return nullopt, otherwise return data the format can use to load the file.
-    [[nodiscard]] virtual std::optional<StreamInputPlan> probe(const ProbeInputContext &ctx) const = 0;
+    [[nodiscard]] virtual std::optional<StreamInputPlan> probe(const ProbeInputContext &ctx) = 0;
 
     //! Get the priority of the format.
     [[nodiscard]] int priority() const noexcept
@@ -120,7 +120,7 @@ namespace Ravl2
     //! @brief Test if we can load this type.
     //! @param ctx - The context to see if we can load.
     //! @return optional, if format is unknown, return nullopt, otherwise return data the format can use to load the file.
-    [[nodiscard]] std::optional<StreamInputPlan> probe(const ProbeInputContext &ctx) const final
+    [[nodiscard]] std::optional<StreamInputPlan> probe(const ProbeInputContext &ctx) final
     {
       return m_probe(ctx);
     }

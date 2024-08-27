@@ -91,7 +91,7 @@ namespace Ravl2
     }
 
     //! Test if we can save this type.
-    [[nodiscard]] virtual std::optional<StreamOutputPlan> probe(const ProbeOutputContext &ctx) const = 0;
+    [[nodiscard]] virtual std::optional<StreamOutputPlan> probe(const ProbeOutputContext &ctx) = 0;
 
   private:
     std::string m_name;
@@ -115,7 +115,7 @@ namespace Ravl2
     {}
 
     //! Test if we can save this type.
-    [[nodiscard]] std::optional<StreamOutputPlan> probe(const ProbeOutputContext &ctx) const override
+    [[nodiscard]] std::optional<StreamOutputPlan> probe(const ProbeOutputContext &ctx) override
     {
       return m_callback(ctx);
     }

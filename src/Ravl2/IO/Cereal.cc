@@ -7,9 +7,16 @@
 
 namespace Ravl2
 {
+  //! Make sure these arn't instantiated in every translation unit.
+  template class CerealSaveFormat<cereal::BinaryOutputArchive>;
+  template class CerealLoadFormat<cereal::BinaryInputArchive>;
+  template class CerealSaveFormat<cereal::JSONOutputArchive>;
+  template class CerealLoadFormat<cereal::JSONInputArchive>;
+
   namespace
   {
-    [[maybe_unused]] bool regFormat1 = outputFormatMap().add(std::make_unique<CerealSaveFormat<IndexRangeSet<2>, cereal::BinaryOutputArchive>>());
-    [[maybe_unused]] bool regFormat2 = InputFormatMap().add(std::make_unique<CerealLoadFormat<IndexRangeSet<2>, cereal::BinaryInputArchive>>());
+    [[maybe_unused]] bool regFormat = registerCerealFormats<IndexRangeSet<2>>();
+
+
   }// namespace
 }// namespace Ravl2
