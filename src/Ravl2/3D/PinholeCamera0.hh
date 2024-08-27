@@ -171,16 +171,16 @@ namespace Ravl2
       x = xt::linalg::dot(xt::transpose(m_R), Rx);
     }
 
-    //: origin of the camera in world co-ordinates
-    //  Computed as -R.T() * t.
-    void origin(Vector<RealT, 3> &org) const
+    //! origin of the camera in world co-ordinates.
+    //!  Computed as -R.T() * t.
+    [[nodiscard]] Point<RealT, 3> origin() const
     {
       //TMul(m_R,m_t,org);
-      org = xt::linalg::dot(-xt::transpose(m_R), m_t);
+      return Point<RealT, 3>(xt::linalg::dot(-xt::transpose(m_R), m_t));
     }
 
-    //: Look direction for the camera in the world co-ordinate frame
-    // Returns camera z-axis in world co-ordinate frame
+    //! Look direction for the camera in the world co-ordinate frame
+    //! Returns camera z-axis in world co-ordinate frame
     void Direction(Vector<RealT, 3> &dir) const
     {
       dir[0] = m_R(2, 0);
@@ -188,13 +188,20 @@ namespace Ravl2
       dir[2] = m_R(2, 2);
     }
 
-    //: Return an undistorted image point for a simple pinhole model
+    //! Look direction for the camera in the world co-ordinate frame
+    //! Returns camera z-axis in world co-ordinate frame
+    [[nodiscard]] Vector<RealT, 3> direction() const
+    {
+      return toVector<RealT>(m_R(2, 0), m_R(2, 1), m_R(2, 2));
+    }
+
+    //! Return an undistorted image point for a simple pinhole model
     [[nodiscard]] Vector<RealT, 2> undistort(const Vector<RealT, 2> &z) const
     {
       return z;
     }
 
-    //: Transform from a simple pinhole model point to a distorted image point
+    //! Transform from a simple pinhole model point to a distorted image point
     [[nodiscard]] Vector<RealT, 2> distort(const Vector<RealT, 2> &z) const
     {
       return z;
@@ -222,6 +229,15 @@ namespace Ravl2
     Vector<RealT, 3> m_t;
     IndexRange<2> m_frame;
   };
+
+  //! Unproject a 2D image point to a 3D point in space
+  template<typename RealT,typename CameraT>
+  Point<RealT,3> unproject(const CameraT &camera, const Vector<RealT,2> &z, RealT depth)
+  {
+    Vector<RealT,3> dir;
+    camera.projectInverseDirection(dir,z);
+    return camera.origin() + depth*dir/xt::norm(dir);
+  }
 
   extern template class PinholeCamera0<float>;
 
