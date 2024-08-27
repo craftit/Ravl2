@@ -23,7 +23,7 @@ namespace Ravl2
   {
   public:
     PinholeCameraArray()
-    {}
+    = default;
     // default constructor
 
     PinholeCameraArray(unsigned size, unsigned distortion);
@@ -43,7 +43,7 @@ namespace Ravl2
     }
 
     //: Return the number of cameras in the array
-    size_t size() const
+    [[nodiscard]] size_t size() const
     {
       return m_cameras.size();
     }
@@ -64,7 +64,7 @@ namespace Ravl2
     // i.e 0 = PinholeCamera0C, 1 = PinholeCamera1C etc.
     // If you need to access the camera parameters you can construct a handle from the base handle as follows
     // PinholeCamera1C c(dynamic_cast<PinholeCameraBody1C&>(camera.Body()));
-    unsigned DistortionModel() const
+    [[nodiscard]] unsigned DistortionModel() const
     {
       return m_distortion;
     }
@@ -80,11 +80,11 @@ namespace Ravl2
       std::tuple<unsigned, Vector<RealT, 2>> imgPt1 = points[0];
       std::tuple<unsigned, Vector<RealT, 2>> imgPt2 = points[1];
       Vector<RealT, 3> orig1, orig2;
-      m_cameras[imgPt1.template data<0>()].Origin(orig1);
-      m_cameras[imgPt2.template data<0>()].Origin(orig2);
+      m_cameras[imgPt1.template data<0>()].origin(orig1);
+      m_cameras[imgPt2.template data<0>()].origin(orig2);
       Vector<RealT, 3> dir1, dir2;
-      m_cameras[imgPt1.template data<0>()].ProjectInverseDirection(dir1, imgPt1.template data<1>());
-      m_cameras[imgPt2.template data<0>()].ProjectInverseDirection(dir2, imgPt2.template data<1>());
+      m_cameras[imgPt1.template data<0>()].inverseProjectDirection(dir1, imgPt1.template data<1>());
+      m_cameras[imgPt2.template data<0>()].inverseProjectDirection(dir2, imgPt2.template data<1>());
       dir1.MakeUnit();
       dir2.MakeUnit();
       double dN1N2 = dir1.Dot(dir2);
@@ -110,13 +110,13 @@ namespace Ravl2
           std::tuple<unsigned, Vector<RealT, 2>> imgPt1a = points[iCam];
           // Get the jacobian
           Matrix<RealT, 2, 3> Jz;
-          m_cameras[imgPt1a.template data<0>()].ProjectJacobian(Jz, pt3D);
+          m_cameras[imgPt1a.template data<0>()].projectJacobian(Jz, pt3D);
           int i, j;
           for(i = 0; i < 2; i++)
             for(j = 0; j < 3; j++) J[2 * iCam + i][j] = Jz[i][j];
           // Get the residual
           Vector<RealT, 2> imgPt;
-          m_cameras[imgPt1a.template data<0>()].Project(imgPt, pt3D);
+          m_cameras[imgPt1a.template data<0>()].project(imgPt, pt3D);
           Z[2 * iCam] = imgPt[0] - imgPt1a.template data<1>()[0];
           Z[2 * iCam + 1] = imgPt[1] - imgPt1a.template data<1>()[1];
         }
@@ -135,7 +135,7 @@ namespace Ravl2
     // Returns false if <2 points or singular
 
   protected:
-    unsigned m_distortion;
+    unsigned m_distortion = 0;
     std::vector<PinholeCameraT> m_cameras;// The reference counted container
   };
 

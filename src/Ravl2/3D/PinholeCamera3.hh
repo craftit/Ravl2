@@ -50,10 +50,10 @@ namespace Ravl2
     };
 
   public:
-    //: Project 3D point in space to 2D image point
+    //: project 3D point in space to 2D image point
     //  Can result in a divide-by-zero for degenerate points.
-    //  See ProjectCheck if this is to be avoided.
-    void Project(Vector<RealT, 2> &z, const Vector<RealT, 3> &x) const
+    //  See projectCheck if this is to be avoided.
+    void project(Vector<RealT, 2> &z, const Vector<RealT, 3> &x) const
     {
       Vector<RealT, 3> Rx = this->m_R * x + this->m_t;
       Vector<RealT, 2> zd = Distort0(toVector<RealT>(Rx[0] / Rx[2], Rx[1] / Rx[2]));
@@ -61,10 +61,10 @@ namespace Ravl2
       z[1] = this->m_cy + this->m_fy * zd[1];
     }
 
-    //: Project 3D point in space to 2D image point
-    // The same as Project(...) but checks that the point
+    //: project 3D point in space to 2D image point
+    // The same as project(...) but checks that the point
     // is not degenerate.
-    bool ProjectCheck(Vector<RealT, 2> &z, const Vector<RealT, 3> &x) const
+    bool projectCheck(Vector<RealT, 2> &z, const Vector<RealT, 3> &x) const
     {
       // Distortion-free projection
       Vector<RealT, 3> Rx = (this->m_R * x) + this->m_t;
@@ -77,9 +77,9 @@ namespace Ravl2
     }
 
     //:Inverse projection up to a scale factor
-    // Origin + lambda*ProjectInverseDirection is the camera ray
+    // origin + lambda*projectInverseDirection is the camera ray
     // corresponding to image point z.
-    void ProjectInverseDirection(Vector<RealT, 3> &x, const Vector<RealT, 2> &z) const
+    void projectInverseDirection(Vector<RealT, 3> &x, const Vector<RealT, 2> &z) const
     {
       Vector<RealT, 2> zd;
       zd[0] = (z[0] - this->m_cx) / this->m_fx;
@@ -94,7 +94,7 @@ namespace Ravl2
     }
 
     //: Transform from a simple pinhole model point to a distorted image point
-    Vector<RealT, 2> Distort(const Vector<RealT, 2> &z) const
+    Vector<RealT, 2> distort(const Vector<RealT, 2> &z) const
     {
       RealT dx = (z[0] - this->m_cx) / this->m_fx;
       RealT dy = (z[1] - this->m_cy) / this->m_fy;
@@ -106,7 +106,7 @@ namespace Ravl2
     }
 
     //: Return an undistorted image point for a PinholeCamera0C model
-    Vector<RealT, 2> Undistort(const Vector<RealT, 2> &z) const
+    Vector<RealT, 2> undistort(const Vector<RealT, 2> &z) const
     {
       Vector<RealT, 2> zd;
       zd[0] = (z[0] - this->m_cx) / this->m_fx;

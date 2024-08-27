@@ -119,23 +119,23 @@ namespace Ravl2
     }
 
   public:
-    //: Project 3D point in space to 2D image point
+    //: project 3D point in space to 2D image point
     //  Projects according to:<br>
     //    z[0] = cx + fx*( (R*x + t)[0] / (R*x + t)[2] )<br>
     //    z[1] = cy + fy*( (R*x + t)[1] / (R*x + t)[2] )<br>
     //  Can result in a divide-by-zero for degenerate points.
-    //  See ProjectCheck if this is to be avoided.
-    void Project(Vector<RealT, 2> &z, const Vector<RealT, 3> &x) const
+    //  See projectCheck if this is to be avoided.
+    void project(Vector<RealT, 2> &z, const Vector<RealT, 3> &x) const
     {
       Vector<RealT, 3> Rx = (m_R * x) + m_t;
       z[0] = m_cx + m_fx * Rx[0] / Rx[2];
       z[1] = m_cy + m_fy * Rx[1] / Rx[2];
     }
 
-    //: Project 3D point in space to 2D image point
-    // The same as Project(...) but checks that the point
+    //: project 3D point in space to 2D image point
+    // The same as project(...) but checks that the point
     // is not degenerate.
-    bool ProjectCheck(Vector<RealT, 2> &z, const Vector<RealT, 3> &x) const
+    bool projectCheck(Vector<RealT, 2> &z, const Vector<RealT, 3> &x) const
     {
       Vector<RealT, 3> Rx = (m_R * x) + m_t;
       if(isNearZero(Rx[2], RealT(1e-3)))
@@ -146,7 +146,7 @@ namespace Ravl2
     }
 
     //:The Jacobian matrix of the projection function
-    void ProjectJacobian(Matrix<RealT, 2, 3> &Jz, const Vector<RealT, 3> &x) const
+    void projectJacobian(Matrix<RealT, 2, 3> &Jz, const Vector<RealT, 3> &x) const
     {
       Vector<RealT, 3> Rx = (m_R * x) + m_t;
       RealT r_Rx2_2 = 1 / (Rx[2] * Rx[2]);
@@ -159,9 +159,9 @@ namespace Ravl2
     }
 
     //:Inverse projection up to a scale factor
-    // Origin + lambda*ProjectInverseDirection is the camera ray
+    // origin + lambda*projectInverseDirection is the camera ray
     // corresponding to image point z.
-    void ProjectInverseDirection(Vector<RealT, 3> &x, const Vector<RealT, 2> &z) const
+    void projectInverseDirection(Vector<RealT, 3> &x, const Vector<RealT, 2> &z) const
     {
       Vector<RealT, 3> Rx;
       Rx[0] = (z[0] - m_cx) / m_fx;
@@ -171,16 +171,16 @@ namespace Ravl2
       x = xt::linalg::dot(xt::transpose(m_R), Rx);
     }
 
-    //: Origin of the camera in world co-ordinates
+    //: origin of the camera in world co-ordinates
     //  Computed as -R.T() * t.
-    void Origin(Vector<RealT, 3> &org) const
+    void origin(Vector<RealT, 3> &org) const
     {
       //TMul(m_R,m_t,org);
       org = xt::linalg::dot(-xt::transpose(m_R), m_t);
     }
 
     //: Look direction for the camera in the world co-ordinate frame
-    // Returns camera z-axis in world coordinate frame
+    // Returns camera z-axis in world co-ordinate frame
     void Direction(Vector<RealT, 3> &dir) const
     {
       dir[0] = m_R(2, 0);
@@ -189,13 +189,13 @@ namespace Ravl2
     }
 
     //: Return an undistorted image point for a simple pinhole model
-    [[nodiscard]] Vector<RealT, 2> Undistort(const Vector<RealT, 2> &z) const
+    [[nodiscard]] Vector<RealT, 2> undistort(const Vector<RealT, 2> &z) const
     {
       return z;
     }
 
     //: Transform from a simple pinhole model point to a distorted image point
-    [[nodiscard]] Vector<RealT, 2> Distort(const Vector<RealT, 2> &z) const
+    [[nodiscard]] Vector<RealT, 2> distort(const Vector<RealT, 2> &z) const
     {
       return z;
     }
