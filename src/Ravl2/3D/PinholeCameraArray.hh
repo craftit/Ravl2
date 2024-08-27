@@ -79,9 +79,8 @@ namespace Ravl2
       // Triangulate the first 2 points
       std::tuple<unsigned, Vector<RealT, 2>> imgPt1 = points[0];
       std::tuple<unsigned, Vector<RealT, 2>> imgPt2 = points[1];
-      Vector<RealT, 3> orig1, orig2;
-      m_cameras[imgPt1.template data<0>()].origin(orig1);
-      m_cameras[imgPt2.template data<0>()].origin(orig2);
+      auto orig1 = m_cameras[imgPt1.template data<0>()].origin();
+      auto orig2 = m_cameras[imgPt2.template data<0>()].origin();
       Vector<RealT, 3> dir1, dir2;
       m_cameras[imgPt1.template data<0>()].inverseProjectDirection(dir1, imgPt1.template data<1>());
       m_cameras[imgPt2.template data<0>()].inverseProjectDirection(dir2, imgPt2.template data<1>());
