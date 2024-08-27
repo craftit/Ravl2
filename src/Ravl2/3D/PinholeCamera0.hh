@@ -11,6 +11,7 @@
 
 #include "Ravl2/Types.hh"
 #include "Ravl2/Geometry/Geometry.hh"
+#include "Ravl2/Geometry/LinePV.hh"
 #include "Ravl2/IndexRange.hh"
 
 namespace Ravl2
@@ -247,7 +248,19 @@ namespace Ravl2
     camera.projectInverseDirection(dir,z);
     return camera.origin() + depth*dir/xt::norm(dir);
   }
-
+  
+  //! Project a ray from a pixel into the world
+  //! The ray is defined by the camera origin and the direction
+  //! of the ray in world co-ordinates.
+  template<typename RealT,typename CameraT>
+  LinePV<RealT,3> projectRay(const CameraT &camera, const Point<RealT,2> &z)
+  {
+    Vector<RealT,3> dir;
+    camera.projectInverseDirection(dir,z);
+    return LinePV<RealT,3>(camera.origin(),dir);
+  }
+  
+  
   extern template class PinholeCamera0<float>;
 
 };// namespace Ravl2

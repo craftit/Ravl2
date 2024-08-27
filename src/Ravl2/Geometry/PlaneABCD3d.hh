@@ -97,7 +97,7 @@ namespace Ravl2
 
     //! @brief Returns the point which is the intersection of this plane with the line 'l'.
     //! If the intersection does not exist the function throw an ExceptionNumericalC
-    [[nodiscard]] Point<RealT, 3> Intersection(const LinePV3dC<RealT> &l) const
+    [[nodiscard]] Point<RealT, 3> Intersection(const LinePV<RealT,3> &l) const
     {
       RealT nu = xt::linalg::dot(this->mNormal, l.Direction())();
       if(isNearZero(nu))
