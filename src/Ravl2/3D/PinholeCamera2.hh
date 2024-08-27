@@ -53,34 +53,34 @@ namespace Ravl2
     };
 
     //: Effective pixel size
-    const RealT &SizeX() const
+    const RealT &sizeX() const
     {
       return this->m_sizex;
     };
 
     //: Effective pixel size
-    const RealT &SizeY() const
+    const RealT &sizeY() const
     {
       return this->m_sizey;
     };
 
   public:
-    //: Project 3D point in space to 2D image point
+    //: project 3D point in space to 2D image point
     //  Can result in a divide-by-zero for degenerate points.
-    //  See ProjectCheck if this is to be avoided.
-    void Project(Vector<RealT, 2> &z, const Vector<RealT, 3> &x) const
+    //  See projectCheck if this is to be avoided.
+    void project(Vector<RealT, 2> &z, const Vector<RealT, 3> &x) const
     {
       // Distortion-free projection
       Vector<RealT, 3> Rx = (this->m_R * x) + this->m_t;
       RealT dx = this->m_fx * Rx[0] / Rx[2];
       RealT dy = this->m_fy * Rx[1] / Rx[2];
-      z = Distort(toVector<RealT>(this->m_cx + dx, this->m_cy + dy));
+      z = distort(toVector<RealT>(this->m_cx + dx, this->m_cy + dy));
     }
 
-    //: Project 3D point in space to 2D image point
-    // The same as Project(...) but checks that the point
+    //: project 3D point in space to 2D image point
+    // The same as project(...) but checks that the point
     // is not degenerate.
-    bool ProjectCheck(Vector<RealT, 2> &z, const Vector<RealT, 3> &x) const
+    bool projectCheck(Vector<RealT, 2> &z, const Vector<RealT, 3> &x) const
     {
       // Distortion-free projection
       Vector<RealT, 3> Rx = (this->m_R * x) + this->m_t;
@@ -88,17 +88,17 @@ namespace Ravl2
         return false;
       RealT dx = this->m_fx * Rx[0] / Rx[2];
       RealT dy = this->m_fy * Rx[1] / Rx[2];
-      z = Distort(toVector<RealT>(this->m_cx + dx, this->m_cy + dy));
+      z = distort(toVector<RealT>(this->m_cx + dx, this->m_cy + dy));
       return true;
     }
 
     //:Inverse projection up to a scale factor
-    // Origin + lambda*ProjectInverseDirection is the camera ray
+    // origin + lambda*projectInverseDirection is the camera ray
     // corresponding to image point z.
-    void ProjectInverseDirection(Vector<RealT, 3> &x, const Vector<RealT, 2> &z) const
+    void projectInverseDirection(Vector<RealT, 3> &x, const Vector<RealT, 2> &z) const
     {
       Vector<RealT, 3> Rx;
-      Vector<RealT, 2> uz = Undistort(z);
+      Vector<RealT, 2> uz = undistort(z);
       Rx[0] = (uz[0] - this->m_cx) / this->m_fx;
       Rx[1] = (uz[1] - this->m_cy) / this->m_fy;
       Rx[2] = 1.0;
@@ -107,7 +107,7 @@ namespace Ravl2
     }
 
     //: Return an undistorted image point for a PinholeCamera0C model
-    Vector<RealT, 2> Undistort(const Vector<RealT, 2> &z) const
+    Vector<RealT, 2> undistort(const Vector<RealT, 2> &z) const
     {
       Vector<RealT, 2> ret = z;
       if(this->m_k3 != 0 || this->m_k5 != 0) {
@@ -122,7 +122,7 @@ namespace Ravl2
     }
 
     //: Transform from a simple pinhole model point to a distorted image point
-    Vector<RealT, 2> Distort(const Vector<RealT, 2> &z) const
+    Vector<RealT, 2> distort(const Vector<RealT, 2> &z) const
     {
       Vector<RealT, 2> ret = z;
       // NOTE: do not undistort a point greater than one image width/height outside the image as this may not converge

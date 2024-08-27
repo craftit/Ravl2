@@ -34,25 +34,25 @@ namespace Ravl2
     // This should be provided in derived classes.
     virtual PinholeCamera &Copy() const = 0;
 
-    virtual void Project(Vector<RealT, 2> &z, const Vector<RealT, 3> &x) const = 0;
-    //: Project a 3D point to a 2D image point
+    virtual void project(Vector<RealT, 2> &z, const Vector<RealT, 3> &x) const = 0;
+    //: project a 3D point to a 2D image point
     // This should be provided in derived classes.
 
     virtual bool ProjectCheck(Vector<RealT, 2> &z, const Vector<RealT, 3> &x) const = 0;
-    //: Project 3D point in space to 2D image point checking for degeneracy
+    //: project 3D point in space to 2D image point checking for degeneracy
     // This should be provided in derived classes.
 
-    virtual void ProjectInverseDirection(Vector<RealT, 3> &x, const Vector<RealT, 2> &z) const = 0;
+    virtual void inverseProjectDirection(Vector<RealT, 3> &x, const Vector<RealT, 2> &z) const = 0;
     //:Inverse projection up to a scale factor
-    // Origin + lambda*x is the camera ray for image point z.
+    // origin + lambda*x is the camera ray for image point z.
     // This should be provided in derived classes.
 
-    virtual void ProjectJacobian(Matrix<RealT, 2, 3> &Jz, const Vector<RealT, 3> &x) const = 0;
+    virtual void projectJacobian(Matrix<RealT, 2, 3> &Jz, const Vector<RealT, 3> &x) const = 0;
     //:The Jacobian matrix of the projection funtion
     // This should be provided in derived classes.
 
-    virtual void Origin(Vector<RealT, 3> &org) const = 0;
-    //: Origin of the camera in world co-ordinates
+    virtual void origin(Vector<RealT, 3> &org) const = 0;
+    //: origin of the camera in world co-ordinates
     // This should be provided in derived classes.
 
     virtual void Direction(Vector<RealT, 3> &dit) const = 0;
@@ -67,11 +67,11 @@ namespace Ravl2
     //: Set the image frame for the camera
     // This should be provided in derived classes.
 
-    virtual Vector<RealT, 2> Undistort(const Vector<RealT, 2> &z) const = 0;
+    virtual Vector<RealT, 2> undistort(const Vector<RealT, 2> &z) const = 0;
     //: Transform from a camera point to a point in a simple pinhole model
     // This should be provided in derived classes.
 
-    virtual Vector<RealT, 2> Distort(const Vector<RealT, 2> &z) const = 0;
+    virtual Vector<RealT, 2> distort(const Vector<RealT, 2> &z) const = 0;
     //: Transform from a simple pinhole model point to a distorted image point
     // This should be provided in derived classes.
 

@@ -91,7 +91,7 @@ namespace Ravl2
     template <class Archive>
     constexpr void serialize(Archive &ar)
     {
-      ar(mNormal, mD);
+      ar(cereal::make_nvp("normal", mNormal), cereal::make_nvp("d", mD));
     }
 
   protected:
