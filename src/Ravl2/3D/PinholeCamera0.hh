@@ -35,12 +35,15 @@ namespace Ravl2
     {}
 
     //! Construct a default camera with a given frame
+    //! @param frame - the image frame for the camera
+    //! @param f - the focal length of the camera
+    //! The camera is placed at the centre of the frame with the given focal length.
     explicit PinholeCamera0(const IndexRange<2> &frame, float f)
-        : m_cx(frame.range(0).min()+frame.range(0).size()/RealT(2.0)),
-	  m_cy(frame.range(1).min()+frame.range(1).size()/RealT(2.0)),
-	  m_frame(frame),
-	  m_fx(f),
-	  m_fy(f)
+      : m_cx(frame.range(0).min()+frame.range(0).size()/RealT(2.0)),
+	m_cy(frame.range(1).min()+frame.range(1).size()/RealT(2.0)),
+	m_fx(f),
+	m_fy(f),
+  	m_frame(frame)
     {}
 
   public:

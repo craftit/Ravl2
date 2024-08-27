@@ -18,8 +18,8 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 project(
   Ravl2
   VERSION 0.0.1
-  DESCRIPTION ""
-  HOMEPAGE_URL "%%myurl%%"
+  DESCRIPTION "Recognition and Vision Library 2"
+  HOMEPAGE_URL "https://github.com/craftit/Ravl2"
   LANGUAGES CXX C)
 
 include(cmake/PreventInSourceBuilds.cmake)
