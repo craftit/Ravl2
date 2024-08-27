@@ -2,6 +2,11 @@
 
 This version of Ravl2 is work in progress, implementations maybe incomplete and may change significantly.
 
+This code is an updated version of [University of Surrey's Center for Vision Speech and Signal Processing](https://www.surrey.ac.uk/centre-vision-speech-signal-processing)'s 
+open source computer vision library [RAVL library](https://www.surrey.ac.uk/centre-vision-speech-signal-processing/resources/open-source-c-library)
+
+The [original library can be found on Source Forge](https://sourceforge.net/projects/ravl/)
+
 There are still also some files not fully ported, and parts of the cmake
 templates that are still generic.
 
