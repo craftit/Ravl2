@@ -7,10 +7,11 @@
 /////////////////////////////////////////////////////////////
 
 #include "Ravl2/Geometry/PlanePVV3d.hh"
-#include "Ravl2/Geometry/LinePV3d.hh"
-#include "Ravl2/Geometry/PlaneABCD3d.hh"
 
 namespace Ravl2
 {
-
+  
+  template class PlanePVV3dC<float>;
+  template class PlanePVV3dC<double>;
+  
 }// namespace Ravl2

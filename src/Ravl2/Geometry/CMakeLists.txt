@@ -29,12 +29,13 @@ add_library (Ravl2Geometry
         FitConic.hh
         Ellipse2d.cc Ellipse2d.hh
         VectorOffset.cc VectorOffset.hh
-        FitVectorOffset.hh
+        FitVectorOffset.hh FitVectorOffset.cc
         Quaternion.cc Quaternion.hh
         Isometry3.cc Isometry3.hh
         LinePV.cc LinePV.hh
         PlaneABCD3d.cc PlaneABCD3d.hh
         PlanePVV3d.cc PlanePVV3d.hh
+
 )
 
 add_library(ravl2::Ravl2Geometry ALIAS Ravl2Geometry)

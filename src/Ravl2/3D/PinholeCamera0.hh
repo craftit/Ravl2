@@ -244,7 +244,7 @@ namespace Ravl2
 
   //! Unproject a 2D image point to a 3D point in space
   template<typename RealT,typename CameraT>
-  Point<RealT,3> unproject(const CameraT &camera, const Vector<RealT,2> &z, RealT depth)
+  Point<RealT,3> unproject(const CameraT &camera, const Point<RealT,2> &z, RealT depth)
   {
     Vector<RealT,3> dir;
     camera.projectInverseDirection(dir,z);
