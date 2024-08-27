@@ -33,6 +33,15 @@ namespace Ravl2
         : m_cx(cx), m_cy(cy), m_fx(fx), m_fy(fy), m_R(R), m_t(t), m_frame(frame)
     {}
 
+    //! Construct a default camera with a given frame
+    explicit PinholeCamera0(const IndexRange<2> &frame, float f)
+        : m_cx(frame.range(0).min()+frame.range(0).size()/RealT(2.0)),
+	  m_cy(frame.range(1).min()+frame.range(1).size()/RealT(2.0)),
+	  m_frame(frame),
+	  m_fx(f),
+	  m_fy(f)
+    {}
+
   public:
     //: centre of projection, x co-ordinate
     [[nodiscard]] RealT &cx()
