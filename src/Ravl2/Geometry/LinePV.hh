@@ -71,7 +71,7 @@ namespace Ravl2
       return mPoint + mDirection * lambda;
     }
 
-    //: Return the paramiter of the closest point on the line to 'pnt'.
+    //: Return the parameter of the closest point on the line to 'pnt'.
     // Use at() to get to the corresponding point on the line.
     [[nodiscard]] RealT ParClosest(const Point<RealT, N> &pnt) const
     {
@@ -79,7 +79,7 @@ namespace Ravl2
     }
 
     //: Returns the direction vector of this line.
-    inline const Vector<RealT, N> &lineDirection() const
+    [[nodiscard]] inline const Vector<RealT, N> &lineDirection() const
     {
       return mDirection;
     }
@@ -117,6 +117,13 @@ namespace Ravl2
     [[nodiscard]] RealT Distance(const Point<RealT, N> &p) const
     {
       return RealT(norm_l2(cross(Direction(), (FirstPoint() - p)) / norm_l2(Direction()))());
+    }
+
+    //! IO Handling
+    template <class Archive>
+    void serialize(Archive &archive)
+    {
+      archive(cereal::make_nvp("point", mPoint), cereal::make_nvp("direction", mDirection));
     }
 
   protected:

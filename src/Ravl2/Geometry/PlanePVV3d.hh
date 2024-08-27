@@ -16,9 +16,7 @@
 namespace Ravl2
 {
 
-  //! Plane in 3D space
-  //! The PlanePVV3dC class represents the plane in 3-dimensional Euclidean
-  //! space. The plane is represented by one point and 2 vectors.
+  //! @brief Plane in 3D space, represented by one point and two vectors.
 
   template <typename RealT>
   class PlanePVV3dC
@@ -55,43 +53,43 @@ namespace Ravl2
     //    }
     //    // Access to the point of the constant object.
 
-    // Access to the first vector of the constant object.
+    //! Access to the first vector of the constant object.
     inline const Vector<RealT, 3> &Vector1() const
     {
       return mVector1;
     }
 
-    // Access to the second vector of the constant object.
+    //! Access to the second vector of the constant object.
     inline const Vector<RealT, 3> &Vector2() const
     {
       return mVector2;
     }
 
-    // Access to the point.
+    //! Access to the point.
     inline Point<RealT, 3> &origin()
     {
       return mOrigin;
     }
 
-    // Access to the first vector.
+    //! Access to the first vector.
     inline Vector<RealT, 3> &Vector1()
     {
       return mVector1;
     }
 
-    // Access to the second vector.
+    //! Access to the second vector.
     inline Vector<RealT, 3> &Vector2()
     {
       return mVector2;
     }
 
-    // Returns the normal of the plane.
+    //! Returns the normal of the plane.
     [[nodiscard]] Vector<RealT, 3> Normal() const
     {
       return cross(mVector1, mVector2);
     }
 
-    // Normalizes the vectors to be unit.
+    //! Normalizes the vectors to be unit.
     inline PlanePVV3dC &UnitVectors()
     {
       mVector1.Unit();
@@ -105,7 +103,7 @@ namespace Ravl2
       return PlaneABCD3dC(Normal(), this->mOrigin);
     }
 
-    // Returns the point of intersection of this plane with the line 'l'.
+    //! Returns the point of intersection of this plane with the line 'l'.
     [[nodiscard]] Point<RealT, 3> Intersection(const LinePV3dC<RealT> &l) const
     {
       return PlaneABCD3d().Intersection(l);
@@ -123,8 +121,8 @@ namespace Ravl2
     }
 
     //! Returns the coordinates (t1,t2) of the point projected onto the plane.
-    // The coordinate system is determined by the point of
-    // the plane and its two vectors.
+    //! The coordinate system is determined by the point of
+    //! the plane and its two vectors.
     [[nodiscard]] Point<RealT, 2> Projection(const Point<RealT, 3> &pointOnPlane) const
     {
       Matrix<RealT, 3, 2> a;
@@ -141,8 +139,8 @@ namespace Ravl2
     }
 
     //! Returns the coordinates (t1,t2) of the point of intersection
-    // of this plane with the line 'l'. The coordinate system of the returned
-    // point is determined by the point of the plane and its two vectors.
+    //! of this plane with the line 'l'. The coordinate system of the returned
+    //! point is determined by the point of the plane and its two vectors.
     [[nodiscard]] Point<RealT, 2> ProjectedIntersection(const LinePV3dC<RealT> &l) const
     {
       return Projection(Intersection(l));
@@ -158,6 +156,15 @@ namespace Ravl2
     inline Point<RealT, 3> at(const Point<RealT, 2> &par) const
     {
       return mOrigin + mVector1 * par[0] + mVector2 * par[1];
+    }
+
+    //! IO Handling
+    template <class Archive>
+    void serialize(Archive &archive)
+    {
+      archive(cereal::make_nvp("origin", mOrigin),
+            cereal::make_nvp("vector1", mVector1),
+            cereal::make_nvp("vector2", mVector2));
     }
 
   private:
