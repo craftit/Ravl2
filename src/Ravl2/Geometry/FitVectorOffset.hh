@@ -52,5 +52,7 @@ namespace Ravl2
     plane = VectorOffset<RealT, N>(normal, -d);
     return true;
   }
+  
+  extern template bool fit(VectorOffset<float, 3> &plane, const std::vector<Point<float, 3>> &points);
 
 }// namespace Ravl2

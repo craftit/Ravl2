@@ -46,13 +46,7 @@ namespace Ravl2
     {
       return PlanePVV3dC<RealT>(p1, p2 - p1, p3 - p1);
     }
-
-    //    inline const Point<RealT, 3> &Point() const
-    //    {
-    //      return mOrigin;
-    //    }
-    //    // Access to the point of the constant object.
-
+    
     //! Access to the first vector of the constant object.
     inline const Vector<RealT, 3> &Vector1() const
     {
@@ -90,10 +84,10 @@ namespace Ravl2
     }
 
     //! Normalizes the vectors to be unit.
-    inline PlanePVV3dC &UnitVectors()
+    inline PlanePVV3dC &makeUnitVectors()
     {
-      mVector1.Unit();
-      mVector2.Unit();
+      mVector1 /= xt::norm_l2(mVector1);
+      mVector2 /= xt::norm_l2(mVector2);
       return *this;
     }
 
@@ -193,9 +187,13 @@ namespace Ravl2
     return (inS);
   }
 
-  //: Least squares fit of a plane to a set of points in 3d
-  // At least 3 points are needed.
+  //! Least squares fit of a plane to a set of points in 3d
+  //! At least 3 points are needed.
   template <typename RealT>
   bool FitPlane(PlanePVV3dC<RealT> &plane, const std::vector<Point<RealT, 3>> &points);
 
+  //! Instantiate the template for float and double.
+  extern template class PlanePVV3dC<float>;
+  extern template class PlanePVV3dC<double>;
+  
 }// namespace Ravl2

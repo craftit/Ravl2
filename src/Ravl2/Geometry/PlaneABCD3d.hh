@@ -13,7 +13,8 @@
 #include "Ravl2/Types.hh"
 #include "Ravl2/Geometry/Geometry.hh"
 #include "Ravl2/Geometry/VectorOffset.hh"
-#include "LinePV3d.hh"
+#include "Ravl2/Geometry/LinePV3d.hh"
+#include "Ravl2/Geometry/FitVectorOffset.hh"
 
 namespace Ravl2
 {
