@@ -50,41 +50,41 @@ namespace Ravl2
     };
 
   public:
-    //: project 3D point in space to 2D image point
-    //  Can result in a divide-by-zero for degenerate points.
-    //  See projectCheck if this is to be avoided.
+    //! project 3D point in space to 2D image point
+    //!  Can result in a divide-by-zero for degenerate points.
+    //!  See projectCheck if this is to be avoided.
     void project(Vector<RealT, 2> &z, const Vector<RealT, 3> &x) const
     {
       Vector<RealT, 3> Rx = this->m_R * x + this->m_t;
-      Vector<RealT, 2> zd = Distort0(toVector<RealT>(Rx[0] / Rx[2], Rx[1] / Rx[2]));
+      Vector<RealT, 2> zd = distort0(toVector<RealT>(Rx[0] / Rx[2], Rx[1] / Rx[2]));
       z[0] = this->m_cx + this->m_fx * zd[0];
       z[1] = this->m_cy + this->m_fy * zd[1];
     }
 
-    //: project 3D point in space to 2D image point
-    // The same as project(...) but checks that the point
-    // is not degenerate.
+    //! project 3D point in space to 2D image point
+    //! The same as project(...) but checks that the point
+    //! is not degenerate.
     bool projectCheck(Vector<RealT, 2> &z, const Vector<RealT, 3> &x) const
     {
       // Distortion-free projection
       Vector<RealT, 3> Rx = (this->m_R * x) + this->m_t;
       if(isNearZero(Rx[2], RealT(1E-3)))
         return false;
-      Vector<RealT, 2> zd = Distort0(toVector<RealT>(Rx[0] / Rx[2], Rx[1] / Rx[2]));
+      Vector<RealT, 2> zd = distort0(toVector<RealT>(Rx[0] / Rx[2], Rx[1] / Rx[2]));
       z[0] = this->m_cx + this->m_fx * zd[0];
       z[1] = this->m_cy + this->m_fy * zd[1];
       return true;
     }
 
-    //:Inverse projection up to a scale factor
-    // origin + lambda*projectInverseDirection is the camera ray
-    // corresponding to image point z.
+    //! Inverse projection up to a scale factor.
+    //! origin + lambda*projectInverseDirection is the camera ray
+    //! corresponding to image point z.
     void projectInverseDirection(Vector<RealT, 3> &x, const Vector<RealT, 2> &z) const
     {
       Vector<RealT, 2> zd;
       zd[0] = (z[0] - this->m_cx) / this->m_fx;
       zd[1] = (z[1] - this->m_cy) / this->m_fy;
-      Vector<RealT, 2> uz = Undistort0(zd);
+      Vector<RealT, 2> uz = undistort0(zd);
       Vector<RealT, 3> Rx;
       Rx[0] = uz[0];
       Rx[1] = uz[1];
@@ -93,25 +93,25 @@ namespace Ravl2
       x = xt::linalg::dot(xt::transpose(this->m_R), Rx);
     }
 
-    //: Transform from a simple pinhole model point to a distorted image point
+    //! Transform from a simple pinhole model point to a distorted image point
     Vector<RealT, 2> distort(const Vector<RealT, 2> &z) const
     {
       RealT dx = (z[0] - this->m_cx) / this->m_fx;
       RealT dy = (z[1] - this->m_cy) / this->m_fy;
-      Vector<RealT, 2> zd = Distort0(toVector<RealT>(dx, dy));
+      Vector<RealT, 2> zd = distort0(toVector<RealT>(dx, dy));
       Vector<RealT, 2> ret;
       ret[0] = this->m_cx + this->m_fx * zd[0];
       ret[1] = this->m_cy + this->m_fy * zd[1];
       return ret;
     }
 
-    //: Return an undistorted image point for a PinholeCamera0C model
+    //! Return an undistorted image point for a PinholeCamera0C model
     Vector<RealT, 2> undistort(const Vector<RealT, 2> &z) const
     {
       Vector<RealT, 2> zd;
       zd[0] = (z[0] - this->m_cx) / this->m_fx;
       zd[1] = (z[1] - this->m_cy) / this->m_fy;
-      Vector<RealT, 2> uz = Undistort0(zd);
+      Vector<RealT, 2> uz = undistort0(zd);
       Vector<RealT, 2> ret;
       ret[0] = this->m_cx + this->m_fx * uz[0];
       ret[1] = this->m_cy + this->m_fy * uz[1];
@@ -129,7 +129,7 @@ namespace Ravl2
 
   protected:
     //: Apply radial distortion
-    Vector<RealT, 2> Distort0(const Vector<RealT, 2> &z) const
+    Vector<RealT, 2> distort0(const Vector<RealT, 2> &z) const
     {
       Vector<RealT, 2> ret = z;
       if(!isNearZero(this->m_k1) || !isNearZero(this->m_k2)) {
@@ -144,7 +144,7 @@ namespace Ravl2
     }
 
     //: Remove radial distortion
-    Vector<RealT, 2> Undistort0(const Vector<RealT, 2> &z) const
+    Vector<RealT, 2> undistort0(const Vector<RealT, 2> &z) const
     {
       Vector<RealT, 2> ret = z;
       // NOTE: do not undistort a point greater than one image width/height outside the image as this may not converge

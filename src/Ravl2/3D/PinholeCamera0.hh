@@ -119,12 +119,12 @@ namespace Ravl2
     }
 
   public:
-    //: project 3D point in space to 2D image point
-    //  Projects according to:<br>
-    //    z[0] = cx + fx*( (R*x + t)[0] / (R*x + t)[2] )<br>
-    //    z[1] = cy + fy*( (R*x + t)[1] / (R*x + t)[2] )<br>
-    //  Can result in a divide-by-zero for degenerate points.
-    //  See projectCheck if this is to be avoided.
+    //! project 3D point in space to 2D image point
+    //!  Projects according to:<br>
+    //!    z[0] = cx + fx*( (R*x + t)[0] / (R*x + t)[2] )<br>
+    //!    z[1] = cy + fy*( (R*x + t)[1] / (R*x + t)[2] )<br>
+    //!  Can result in a divide-by-zero for degenerate points.
+    //!  See projectCheck if this is to be avoided.
     void project(Vector<RealT, 2> &z, const Vector<RealT, 3> &x) const
     {
       Vector<RealT, 3> Rx = (m_R * x) + m_t;
@@ -145,7 +145,7 @@ namespace Ravl2
       return true;
     }
 
-    //:The Jacobian matrix of the projection function
+    //! The Jacobian matrix of the projection function.
     void projectJacobian(Matrix<RealT, 2, 3> &Jz, const Vector<RealT, 3> &x) const
     {
       Vector<RealT, 3> Rx = (m_R * x) + m_t;
@@ -158,9 +158,9 @@ namespace Ravl2
       Jz(1, 2) = m_fy * (m_R(1, 2) * Rx[2] - m_R(2, 2) * Rx[1]) * r_Rx2_2;
     }
 
-    //:Inverse projection up to a scale factor
-    // origin + lambda*projectInverseDirection is the camera ray
-    // corresponding to image point z.
+    //! Inverse projection up to a scale factor.
+    //! origin + lambda*projectInverseDirection is the camera ray
+    //! corresponding to image point z.
     void projectInverseDirection(Vector<RealT, 3> &x, const Vector<RealT, 2> &z) const
     {
       Vector<RealT, 3> Rx;

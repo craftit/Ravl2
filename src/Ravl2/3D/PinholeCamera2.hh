@@ -53,13 +53,13 @@ namespace Ravl2
     };
 
     //: Effective pixel size
-    const RealT &SizeX() const
+    const RealT &sizeX() const
     {
       return this->m_sizex;
     };
 
     //: Effective pixel size
-    const RealT &SizeY() const
+    const RealT &sizeY() const
     {
       return this->m_sizey;
     };
