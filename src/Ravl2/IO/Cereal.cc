@@ -12,6 +12,13 @@
 
 namespace Ravl2
 {
+  //! Enable cerial IO
+  bool initCerealIO()
+  {
+    return true;
+
+  }
+
   CerealArchiveHeader::CerealArchiveHeader(std::string theTypeName)
     : m_magic(m_magicNumber),
       fileFormatVersion(1),
@@ -33,7 +40,6 @@ namespace Ravl2
   namespace
   {
     [[maybe_unused]] bool regFormat = registerCerealFormats<IndexRangeSet<2>>();
-
 
   }// namespace
 }// namespace Ravl2

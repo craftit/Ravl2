@@ -93,6 +93,12 @@ namespace Ravl2
     //! Test if we can save this type.
     [[nodiscard]] virtual std::optional<StreamOutputPlan> probe(const ProbeOutputContext &ctx) = 0;
 
+  protected:
+    //! Set the priority of the format.
+    void setPriority(int priority)
+    {
+      m_priority = priority;
+    }
   private:
     std::string m_name;
     std::string m_extension;//!< Extension of the file, maybe a comma separated list.

@@ -16,7 +16,10 @@
 
 namespace Ravl2
 {
+  //! Enable cerial IO
+  bool initCerealIO();
 
+  //! @brief Header for a cereal archive.
   struct CerealArchiveHeader {
     constexpr static uint32_t m_magicNumber = 0xABBA2024;
     CerealArchiveHeader() = default;
@@ -73,16 +76,21 @@ namespace Ravl2
 
     std::streampos write(const ObjectT &obj, std::streampos pos) override
     {
+      // We can't seek in a JSON or XML stream.
+      if constexpr(std::is_same_v<ArchiveT, cereal::BinaryOutputArchive>) {
+	if(pos != std::numeric_limits<std::streampos>::max()) {
+	  m_stream->seekp(pos);
+	}
+	if(pos == 0) {
+	  m_first = true;
+	}
+      }
       if(m_first) {
 	// Write the header.
-	m_stream->seekp(0);
 	m_archive(CerealArchiveHeader(typeName(typeid(ObjectT))));
 	m_first = false;
 	// Update the start position.
 	this->mStart = m_stream->tellp();
-      }
-      if(pos != std::numeric_limits<std::streampos>::max()) {
-	m_stream->seekp(pos);
       }
       m_archive(obj);
       auto at = m_stream->tellp();
@@ -116,8 +124,18 @@ namespace Ravl2
     {
       if(m_stream->eof())
         return std::nullopt;
-      m_stream->seekg(pos);
-      CerealArchiveHeader header;
+      if constexpr(std::is_same_v<ArchiveT, cereal::BinaryInputArchive>) {
+	if(pos != std::numeric_limits<std::streampos>::max())
+	  m_stream->seekg(pos);
+	if(pos == 0) {
+	  m_isFirst = true;
+	}
+      }
+      if(m_isFirst) {
+	// At pos 0, read the header.
+	m_archive(m_header);
+	m_isFirst = false;
+      }
       ObjectT obj;
       m_archive(obj);
       pos = m_stream->tellg();
@@ -125,7 +143,9 @@ namespace Ravl2
     }
 
   private:
+    bool m_isFirst = true;
     ArchiveT m_archive;
+    CerealArchiveHeader m_header;
     std::shared_ptr<std::istream> m_stream;
   };
 
@@ -155,7 +175,15 @@ namespace Ravl2
     {
       static std::shared_ptr<CerealSaveFormat<ArchiveT> > format = []()
       {
-	auto ret = std::make_shared<CerealSaveFormat<ArchiveT>>();
+	std::string defaultExt = []() {
+	  if constexpr(std::is_same_v<ArchiveT, cereal::BinaryOutputArchive>) {
+	    return "xbs";
+	  } else if constexpr(std::is_same_v<ArchiveT, cereal::JSONOutputArchive>) {
+	    return "json";
+	  }
+	  return "bin";
+	}();
+	auto ret = std::make_shared<CerealSaveFormat<ArchiveT>>(defaultExt);
 	outputFormatMap().add(ret);
 	return ret;
       }();
@@ -199,7 +227,7 @@ namespace Ravl2
   class CerealLoadFormat : public InputFormat
   {
   public:
-    explicit CerealLoadFormat(std::string ext = "bin")
+    explicit CerealLoadFormat(std::string ext = "xbs")
       : InputFormat(fmt::format("Cereal-{}", typeName(typeid(ArchiveT))), ext, "file")
     {}
 
@@ -218,6 +246,14 @@ namespace Ravl2
     static bool registerType()
     {
       static std::shared_ptr<CerealLoadFormat<ArchiveT> > format = []() {
+	std::string defaultExt = []() {
+	  if constexpr(std::is_same_v<ArchiveT, cereal::BinaryInputArchive>) {
+	    return "xbs";
+	  } else if constexpr(std::is_same_v<ArchiveT, cereal::JSONInputArchive>) {
+	    return "json";
+	  }
+	  return "bin";
+	}();
 	auto ret = std::make_shared<CerealLoadFormat<ArchiveT>>();
 	inputFormatMap().add(ret);
 	return ret;
@@ -272,7 +308,7 @@ namespace Ravl2
     std::unordered_map<std::string,std::function<std::shared_ptr<StreamInputBase>(const ProbeInputContext &ctx)> > m_streamInputFactory;
   };
 
-  //! Make sure these arn't instantiated in every translation unit.
+  //! Make sure these aren't instantiated in every translation unit.
   extern template class CerealSaveFormat<cereal::BinaryOutputArchive>;
   extern template class CerealLoadFormat<cereal::BinaryInputArchive>;
   extern template class CerealSaveFormat<cereal::JSONOutputArchive>;
