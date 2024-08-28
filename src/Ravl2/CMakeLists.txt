@@ -80,7 +80,8 @@ endif()
 target_link_libraries(Ravl2Core PUBLIC ${OpenCV_LIBS} cereal::cereal fmt::fmt xtensor xtensor-blas spdlog::spdlog BLAS::BLAS LAPACK::LAPACK)
 
 target_include_directories(Ravl2Core ${WARNING_GUARD} PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src>
-        $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/include>)
+        $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/include>
+        $<BUILD_INTERFACE:${CMAKE_BINARY_DIR}/include>)
 
 message(STATUS "RAVL2 Binary     : ${PROJECT_BINARY_DIR}")
 message(STATUS "RAVL2 Installing : ${CMAKE_INSTALL_PREFIX}")
