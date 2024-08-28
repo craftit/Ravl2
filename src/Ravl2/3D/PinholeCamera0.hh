@@ -39,8 +39,8 @@ namespace Ravl2
     //! @param f - the focal length of the camera
     //! The camera is placed at the centre of the frame with the given focal length.
     explicit PinholeCamera0(const IndexRange<2> &frame, float f)
-      : m_cx(frame.range(0).min()+frame.range(0).size()/RealT(2.0)),
-	m_cy(frame.range(1).min()+frame.range(1).size()/RealT(2.0)),
+      : m_cx(RealT(frame.range(0).min())+RealT(frame.range(0).size())/RealT(2.0)),
+	m_cy(RealT(frame.range(1).min())+RealT(frame.range(1).size())/RealT(2.0)),
 	m_fx(f),
 	m_fy(f),
   	m_frame(frame)
@@ -249,9 +249,17 @@ namespace Ravl2
   {
     Vector<RealT,3> dir;
     camera.projectInverseDirection(dir,z);
-    return camera.origin() + depth*dir/xt::norm(dir);
+    return camera.origin() + (depth*dir);
   }
-  
+
+  template<typename RealT,typename CameraT>
+  Point<RealT,2> project(const CameraT &camera, const Point<RealT,3> &pnt)
+  {
+    Point<RealT,2> z;
+    camera.project(z,pnt);
+    return z;
+  }
+
   //! Project a ray from a pixel into the world
   //! The ray is defined by the camera origin and the direction
   //! of the ray in world co-ordinates.

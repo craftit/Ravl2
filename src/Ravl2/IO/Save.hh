@@ -26,7 +26,7 @@ namespace Ravl2
   [[nodiscard]] std::optional<StreamOutputPlan> openOutput(const std::string &url, const std::type_info &type, const nlohmann::json &formatHint);
 
   //! Default save format hint.
-  [[nodiscard]] const nlohmann::json &defaultSaveFormatHint();
+  [[nodiscard]] const nlohmann::json &defaultSaveFormatHint(bool verbose = false);
 
   //! @brief Save an object to a file.
   //! @param object - The object to save.

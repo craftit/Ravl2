@@ -9,7 +9,5 @@
 
 namespace Ravl2
 {
-
   template class PinholeCamera0<float>;
-
 };

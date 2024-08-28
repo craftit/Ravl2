@@ -25,8 +25,10 @@ namespace Ravl2
     PinholeCamera3() = default;
 
     //! construct from an undistorted pinhole camera
-    explicit PinholeCamera3(const PinholeCamera0<RealT> &c0)
-        : PinholeCamera0<RealT>(c0)
+    explicit PinholeCamera3(const PinholeCamera0<RealT> &c0, RealT k1 = 0, RealT k2 = 0)
+        : PinholeCamera0<RealT>(c0),
+          m_k1(k1),
+          m_k2(k2)
     {}
 
     //! data constructor

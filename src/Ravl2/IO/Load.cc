@@ -5,9 +5,13 @@
 namespace Ravl2
 {
 
-  const nlohmann::json &defaultLoadFormatHint()
+  const nlohmann::json &defaultLoadFormatHint(bool verbose)
   {
     static nlohmann::json hint;
+    static nlohmann::json hint2 = {{"verbose", true}};
+    if(verbose) {
+      return hint2;
+    }
     return hint;
   }
 

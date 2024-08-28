@@ -22,7 +22,7 @@ namespace Ravl2
   [[nodiscard]] std::optional<StreamInputPlan> openInput(const std::string &url, const std::type_info &type, const nlohmann::json &formatHint);
 
   //! Default load format hint.
-  [[nodiscard]] const nlohmann::json &defaultLoadFormatHint();
+  [[nodiscard]] const nlohmann::json &defaultLoadFormatHint(bool verbose = false);
 
   //! @brief Load a file into an object.
   //! The file is loaded using the cereal library.

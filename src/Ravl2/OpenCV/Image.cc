@@ -40,6 +40,26 @@ namespace Ravl2
                                std::shared_ptr<PixelBGR8[]>(dataPtr, [val = cv::Mat(m)]([[maybe_unused]] PixelBGR8 *delPtr) { assert(static_cast<void *>(delPtr) == val.data); }));
   }
 
+  //! Make to Array for  Array<PixelBGRA8, N>
+  template <>
+  Array<PixelBGRA8, 2> toArray(const cv::Mat &m)
+  {
+    if(m.type() != CV_8UC4) {
+      SPDLOG_INFO("m.type() = {}", m.type());
+      throw std::runtime_error("fromCvMat: cv::Mat has wrong data type");
+    }
+    IndexRange<2> indexRange;
+    std::array<int, 2> strides {};
+    for(unsigned i = 0; i < 2; ++i) {
+      indexRange[i] = IndexRange<1>(0, m.size[int(i)] - 1);
+      strides[i] = int(m.step[int(i)] / sizeof(PixelBGR8));
+    }
+    auto dataPtr = reinterpret_cast<PixelBGRA8 *>(m.data);
+    return Array<PixelBGRA8, 2>(dataPtr, indexRange, strides,
+                               std::shared_ptr<PixelBGRA8[]>(dataPtr, [val = cv::Mat(m)]([[maybe_unused]] PixelBGRA8 *delPtr) { assert(static_cast<void *>(delPtr) == val.data); }));
+  }
+
+
   template <>
   cv::Mat toCvMat(const Array<PixelBGR8, 2> &m)
   {

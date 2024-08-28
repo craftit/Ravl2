@@ -202,7 +202,7 @@ namespace Ravl2
 	return ret;
       }();
       return format->template registerObjectType<ObjectT>();
-    };
+    }
 
       //! Test if we can save this type.
     [[nodiscard]] std::optional<StreamOutputPlan> probe(const ProbeOutputContext &ctx) final

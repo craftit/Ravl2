@@ -25,6 +25,28 @@ namespace Ravl2
   }
   namespace
   {
+    std::string cvMatType2str(int type) {
+      std::string r;
+
+      uchar depth = uchar(type & CV_MAT_DEPTH_MASK);
+      uchar chans = uchar(1 + (type >> CV_CN_SHIFT));
+
+      switch ( depth ) {
+        case CV_8U:  r = "8U"; break;
+        case CV_8S:  r = "8S"; break;
+        case CV_16U: r = "16U"; break;
+        case CV_16S: r = "16S"; break;
+        case CV_32S: r = "32S"; break;
+        case CV_32F: r = "32F"; break;
+        case CV_64F: r = "64F"; break;
+        default:     r = "User"; break;
+      }
+
+      r += "C";
+      r += char(chans+'0');
+
+      return r;
+    }
 
     //! Loading images.
 
@@ -71,12 +93,17 @@ namespace Ravl2
       // Apply some heuristics to determine the type of the image we want to load.
       // Ideally this would be delt with in the type converter, but opencv gives
       // us no information about the colour space of the image.
-      cv::ImreadModes readMode = cv::IMREAD_UNCHANGED;
-      if(ctx.m_targetType == typeid(Array<uint8_t, 2>) || ctx.m_targetType == typeid(Array<int8_t, 2>)
-         || ctx.m_targetType == typeid(Array<uint16_t, 2>) || ctx.m_targetType == typeid(Array<int16_t, 2>)
-         || ctx.m_targetType == typeid(Array<int32_t, 2>) || ctx.m_targetType == typeid(Array<float, 2>)
-         || ctx.m_targetType == typeid(Array<double, 2>)) {
+      int readMode = cv::IMREAD_UNCHANGED;
+      if(ctx.m_targetType == typeid(Array<uint8_t, 2>) ) {
         readMode = cv::IMREAD_GRAYSCALE;
+      } else if(ctx.m_targetType == typeid(Array<uint16_t, 2>) || ctx.m_targetType == typeid(Array<int16_t, 2>)
+         || ctx.m_targetType == typeid(Array<int8_t, 2>)
+         || ctx.m_targetType == typeid(Array<int32_t, 2>)
+         || ctx.m_targetType == typeid(Array<float, 2>) || ctx.m_targetType == typeid(Array<double, 2>)) {
+        readMode = cv::IMREAD_GRAYSCALE + cv::IMREAD_ANYDEPTH;
+      } else if(ctx.m_targetType == typeid(Array<PixelBGR8, 2>) || ctx.m_targetType == typeid(Array<PixelRGB8, 2>)
+                || ctx.m_targetType == typeid(Array<PixelRGBA8, 2>) || ctx.m_targetType == typeid(Array<PixelBGRA8, 2>)) {
+        readMode = cv::IMREAD_COLOR;
       }
 
       // The best we can do is loaded it directly and look for a conversion.
@@ -86,6 +113,14 @@ namespace Ravl2
           SPDLOG_INFO("Failed to load image: {}", ctx.m_filename);
         }
         return std::nullopt;
+      }
+      int depth = CV_MAT_DEPTH(img.type());
+      int channels = CV_MAT_CN(img.type());
+      int baseType = CV_MAT_TYPE(img.type());
+
+
+      if(ctx.m_verbose) {
+        SPDLOG_INFO("Got opencv image type: {} for {} ", cvMatType2str(img.type()), ctx.m_filename);
       }
 
       switch(img.type()) {
@@ -113,12 +148,11 @@ namespace Ravl2
         case CV_8UC3: {
           return makePlan<PixelBGR8>(img, ctx);
         }
+        case CV_8UC4: {
+          return makePlan<PixelBGRA8>(img, ctx);
+        }
         default: break;
       }
-
-      int depth = CV_MAT_DEPTH(img.type());
-      int channels = CV_MAT_CN(img.type());
-      int baseType = CV_MAT_TYPE(img.type());
 
       SPDLOG_WARN("Don't know how to convert OpenCV image type: {}.  Depth:{} Channels:{} baseType:{}", img.type(), depth, channels, baseType);
       return std::nullopt;

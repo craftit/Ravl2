@@ -49,6 +49,10 @@ namespace Ravl2
   template <>
   Array<PixelBGR8, 2> toArray(const cv::Mat &m);
 
+  //! Make to Array for  Array<PixelBGRA8, N>
+  template <>
+  Array<PixelBGRA8, 2> toArray(const cv::Mat &m);
+
   //! Make to cv::Mat for  Array<PixelBGR8, N>
   template <>
   cv::Mat toCvMat(const Array<PixelBGR8, 2> &m);
