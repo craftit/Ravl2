@@ -60,7 +60,7 @@ namespace Ravl2
         ctx.m_data.resize(size_t(numRead));
       }
       if(verbose) {
-        SPDLOG_INFO("Read {} bytes from file", ctx.m_data.size());
+        SPDLOG_INFO("Read {} bytes of from file", ctx.m_data.size());
       }
       tmpStrm->seekg(0);
       ctx.mStream = std::move(tmpStrm);

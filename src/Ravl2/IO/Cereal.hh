@@ -70,8 +70,8 @@ namespace Ravl2
   {
   public:
     explicit StreamOutputCerealArchive(std::shared_ptr<std::ostream> stream)
-    : m_archive(*stream),
-      m_stream(std::move(stream))
+    : m_stream(std::move(stream)),
+      m_archive(*m_stream)
     {}
 
     std::streampos write(const ObjectT &obj, std::streampos pos) override
@@ -87,23 +87,33 @@ namespace Ravl2
       }
       if(m_first) {
 	// Write the header.
-	m_archive(CerealArchiveHeader(typeName(typeid(ObjectT))));
+	m_archive(cereal::make_nvp("header",CerealArchiveHeader(typeName(typeid(ObjectT)))));
 	m_first = false;
-	// Update the start position.
-	this->mStart = m_stream->tellp();
+	if constexpr(std::is_same_v<ArchiveT, cereal::BinaryOutputArchive>) {
+	  // Update the start position.
+	  this->mStart = m_stream->tellp();
+	}
       }
-      m_archive(obj);
-      auto at = m_stream->tellp();
-      if(at > this->mEnd) {
-	this->mEnd = at;
+      if(pos == std::numeric_limits<std::streampos>::max()) {
+	pos = this->mEnd;
       }
-      return at;
+      m_archive(cereal::make_nvp(fmt::format("body{}",size_t(pos)),obj));
+      if constexpr(std::is_same_v<ArchiveT, cereal::BinaryInputArchive>) {
+	auto at = m_stream->tellp();
+	if(at > this->mEnd) {
+	  this->mEnd = at;
+	}
+	return at;
+      } else {
+	this->mEnd += 1;
+	return pos + std::streampos(1);
+      }
     }
 
   private:
     bool m_first = true;
+    std::shared_ptr<std::ostream> m_stream; //!< The stream to write to, must be before m_archive to ensure it is destroyed after.
     ArchiveT m_archive;
-    std::shared_ptr<std::ostream> m_stream;
   };
 
   //! @brief Archive that uses cereal to write objects to a stream.
@@ -133,12 +143,16 @@ namespace Ravl2
       }
       if(m_isFirst) {
 	// At pos 0, read the header.
-	m_archive(m_header);
+	m_archive(cereal::make_nvp("header",m_header));
 	m_isFirst = false;
       }
       ObjectT obj;
-      m_archive(obj);
-      pos = m_stream->tellg();
+      m_archive(cereal::make_nvp(fmt::format("body{}",size_t(pos)),obj));
+      if constexpr(std::is_same_v<ArchiveT, cereal::BinaryInputArchive>) {
+	pos = m_stream->tellg();
+      } else {
+	pos += 1;
+      }
       return obj;
     }
 
