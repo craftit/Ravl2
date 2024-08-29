@@ -7,11 +7,16 @@
 /////////////////////////////////////////////////////////////////////
 //! author="Charles Galambos"
 
+#include <cereal/types/vector.hpp>
 #include "Ravl2/3D/TriMesh.hh"
+#include "Ravl2/IO/Cereal.hh"
 
 namespace Ravl2
 {
 
   template class TriMesh<float>;
 
+  namespace {
+    [[maybe_unused]] bool g_reg = registerCerealFormats<TriMesh<float> >();
+  }
 }

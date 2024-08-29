@@ -13,6 +13,7 @@
 #include "Ravl2/3D/Vertex.hh"
 #include "Ravl2/Assert.hh"
 #include "Ravl2/Types.hh"
+#include "Ravl2/Pixel/Pixel.hh"
 #include "Ravl2/Geometry/Geometry.hh"
 
 namespace Ravl2
@@ -22,7 +23,7 @@ namespace Ravl2
   // triset goes out of scope the behaviour of a tri from
   // it is undefined.
 
-  template <typename RealT>
+  template <typename RealT,typename PixelT = PixelRGB8>
   class Tri
   {
   public:
@@ -112,7 +113,7 @@ namespace Ravl2
     { return vertices[n]->Normal(); }
     //: Access normal for a vertex.
     
-    [[nodiscard]] const Vector<RealT,3> Normal(unsigned n) const
+    [[nodiscard]] Vector<RealT,3> Normal(unsigned n) const
     { return vertices[n]->Normal(); }
     //: Access normal for a vertex.
 
@@ -179,15 +180,15 @@ namespace Ravl2
     { return texture; }
     //: Access texture co-ordinates.
     
-    [[nodiscard]] Vector<uint8_t,3> &Colour()
+    [[nodiscard]] PixelT &Colour()
     { return colour; }
     //: Colour of face.
     
-    void SetColour(const Vector<uint8_t,3> &col)
+    void SetColour(const PixelT &col)
     { colour = col; }
     //: Set colour of face.
     
-    [[nodiscard]] const Vector<uint8_t,3> &Colour() const
+    [[nodiscard]] const auto &Colour() const
     { return colour; }
     //: Colour of face.
 
@@ -205,7 +206,7 @@ namespace Ravl2
     std::array<Vertex<RealT> *,3> vertices;
     std::array<Vector<RealT,2>,3> texture;
     Vector<RealT,3> normal {0,0,0} ;
-    Vector<uint8_t,3> colour { 196, 196, 196 };
+    PixelT colour { 196, 196, 196 };
     uint8_t textureID = 0;
   };
 

@@ -10,6 +10,8 @@
 #include <any>
 #include <nlohmann/json.hpp>
 #include "Ravl2/IO/StreamInput.hh"
+#include <cereal/cereal.hpp>
+#include "Ravl2/Concepts.hh"
 
 namespace Ravl2
 {
@@ -35,6 +37,7 @@ namespace Ravl2
   //!  - "verbose" - If true, print verbose output.
 
   template <typename ObjectT>
+   requires (!CerealArchive<ObjectT>)
   bool load(ObjectT &object, const std::string &url, const nlohmann::json &formatHint = defaultLoadFormatHint())
   {
     auto container = openInput(url, typeid(ObjectT), formatHint);

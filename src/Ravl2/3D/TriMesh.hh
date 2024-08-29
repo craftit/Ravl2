@@ -114,7 +114,7 @@ namespace Ravl2
     bool GenerateTextureCoords();
 
     template <class Archive>
-    void save(Archive &archive)
+    void save(Archive &archive) const
     {
       archive(CEREAL_NVP(vertices),
               CEREAL_NVP(faces),

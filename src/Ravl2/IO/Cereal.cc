@@ -4,6 +4,7 @@
 
 #include "Ravl2/IO/Cereal.hh"
 #include "Ravl2/IndexRangeSet.hh"
+#include "Ravl2/Array.hh"
 
 // This file will be generated automatically when you run the CMake configuration step.
 // It creates a namespace called `Ravl2`.
@@ -39,7 +40,10 @@ namespace Ravl2
 
   namespace
   {
-    [[maybe_unused]] bool regFormat = registerCerealFormats<IndexRangeSet<2>>();
-
+    [[maybe_unused]] bool regFormat1 = registerCerealFormats<IndexRangeSet<2>>();
+    [[maybe_unused]] bool regFormat2 = registerCerealFormats<Array<uint8_t,2>>();
+    [[maybe_unused]] bool regFormat3= registerCerealFormats<Array<float,2>>();
+    [[maybe_unused]] bool regFormat4 = registerCerealFormats<Array<int,2>>();
+    [[maybe_unused]] bool regFormat5 = registerCerealFormats<Array<uint32_t,2>>();
   }// namespace
 }// namespace Ravl2
