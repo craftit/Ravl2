@@ -140,7 +140,7 @@ namespace Ravl2
     //!  See projectCheck if this is to be avoided.
     void project(Vector<RealT, 2> &z, const Vector<RealT, 3> &x) const
     {
-      Vector<RealT, 3> Rx = (m_R * x) + m_t;
+      Vector<RealT, 3> Rx = xt::linalg::dot(m_R,x) + m_t;
       z[0] = m_cx + m_fx * Rx[0] / Rx[2];
       z[1] = m_cy + m_fy * Rx[1] / Rx[2];
     }
@@ -150,7 +150,7 @@ namespace Ravl2
     // is not degenerate.
     bool projectCheck(Vector<RealT, 2> &z, const Vector<RealT, 3> &x) const
     {
-      Vector<RealT, 3> Rx = (m_R * x) + m_t;
+      Vector<RealT, 3> Rx =  xt::linalg::dot(m_R,x) + m_t;
       if(isNearZero(Rx[2], RealT(1e-3)))
         return false;
       z[0] = m_cx + m_fx * Rx[0] / Rx[2];
