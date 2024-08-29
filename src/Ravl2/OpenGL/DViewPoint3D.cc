@@ -6,10 +6,10 @@
 // file-header-ends-here
 ////////////////////////////////////////////
 
-#include "Ravl2/GUI/DViewPoint3D.hh"
-#include "Ravl2/GUI/Canvas3D.hh"
 #include <GL/gl.h>
 #include <GL/glu.h>
+#include "Ravl2/OpenGL/DViewPoint3D.hh"
+#include "Ravl2/OpenGL/Canvas3D.hh"
 
 #define DODEBUG 0
 #if DODEBUG

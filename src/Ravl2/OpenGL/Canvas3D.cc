@@ -6,32 +6,21 @@
 // file-header-ends-here
 /////////////////////////////////////////////////////
 
-#include "Ravl2/GUI/Canvas3D.hh"
-#include "Ravl2/GUI/ReadBack.hh"
-#include "Ravl2/Array.hh"
-#include "Ravl2/Image/Reflect.hh"
-#include "Ravl2/Image/ByteRGBValue.hh"
-#include "Ravl2/Threads/SemaphoreRC.hh"
-#include "Ravl2/CallMethodRefs.hh"
-#include <string.h>
-
-//#include "Ravl2/StdError.hh"
-#if !RAVL_USE_GTKGLEXT
-#include "Ravl2/GUI/gdkgl.h"
-#include "Ravl2/GUI/gtkglarea.h"
-#endif
-
-#include "Ravl2/GUI/Manager.hh"
-#include "Ravl2/FMatrix.hh"
-#include "Ravl2/GUI/GLContext.hh"
-
-#include <gtk/gtk.h>
+#include <string>
 #include <GL/gl.h>
+
+#include "Ravl2/OpenGL/Canvas3D.hh"
+#include "Ravl2/Array.hh"
+//#include "Ravl2/Image/Reflect.hh"
+//#include "Ravl2/Image/ByteRGBValue.hh"
+//#include "Ravl2/Threads/SemaphoreRC.hh"
+//#include "Ravl2/CallMethodRefs.hh"
+
+#include "Ravl2/OpenGL/GLContext.hh"
+
 
 #if RAVL_USE_GTKGLEXT
 #include <GL/glu.h>
-#include <gtk/gtkgl.h>
-#include <gdk/gdkgl.h>
 #endif
 
 #ifndef VISUAL_CPP

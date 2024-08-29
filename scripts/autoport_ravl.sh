@@ -184,6 +184,8 @@ s/MatrixC/Tensor<RealT,2>/g
 
 # Deal with images
 s/ImageC<\([^>]*\)>/Array<\1,2>/g
+s/RealRGBValueC/PixelRGB32F/g
+s/ByteRGBValueC/PixelRGB8/g
 
 # Header files
 # Change Ravl/Index2d.hh to Ravl2/Index.hh

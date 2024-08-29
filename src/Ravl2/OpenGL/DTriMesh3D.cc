@@ -17,7 +17,6 @@
 #define ONDEBUG(x)
 #endif
 
-#define USEMESHCOLOUR 1
 
 namespace Ravl2 {
 
@@ -67,105 +66,104 @@ namespace Ravl2 {
   //: Render object.
   bool DTriMesh3DBodyC::GUIRender(Canvas3DC &canvas) const
   {
-    if (!model.IsValid())
+    if(!model.IsValid())
       return true; // Don't do anything.
 
     // Setup materials and colours as appropriate
-    if (canvas.GetLightingMode()) {
-      GLfloat ambient[]  = {0.2,0.2,0.2,1.0};
-      GLfloat diffuse[]  = {0.9,0.9,0.9,1.0};
-      glMaterialfv(GL_FRONT_AND_BACK,GL_AMBIENT,ambient);
-      glMaterialfv(GL_FRONT_AND_BACK,GL_DIFFUSE,diffuse);
+    if(canvas.GetLightingMode()) {
+      GLfloat ambient[] = {0.2, 0.2, 0.2, 1.0};
+      GLfloat diffuse[] = {0.9, 0.9, 0.9, 1.0};
+      glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, ambient);
+      glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, diffuse);
     } else {
-      glColor3f(1.0,1.0,1.0);
+      glColor3f(1.0, 1.0, 1.0);
     }
     // Render
     Canvas3DRenderMode eMode = canvas.GetRenderMode();
     std::vector<Vertex<RealT>> verts = model.Vertices();
 
-#if USEMESHCOLOUR
-    glEnable(GL_COLOR_MATERIAL);
-    glColorMaterial(GL_FRONT_AND_BACK,GL_AMBIENT_AND_DIFFUSE);
-#endif
-
-    switch(eMode) {
-    case C3D_SMOOTH:
-    case C3D_POINT:
-    case C3D_WIRE:
-      glEnableClientState(GL_NORMAL_ARRAY);
-      glNormalPointer(GL_DOUBLE,sizeof(Vertex<RealT>),(void *)&(verts[0].Normal()));
-    case C3D_FLAT:
-      glEnableClientState(GL_VERTEX_ARRAY);
-      glVertexPointer(3,GL_DOUBLE,sizeof(Vertex<RealT>),(void *)&(verts[0].Position()));
-      break;
+    if(mUseMeshColour) {
+      glEnable(GL_COLOR_MATERIAL);
+      glColorMaterial(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE);
     }
 
-    switch(eMode)
-      {
+    switch(eMode) {
+      case C3D_SMOOTH:
+      case C3D_POINT:
+      case C3D_WIRE:glEnableClientState(GL_NORMAL_ARRAY);
+	glNormalPointer(GL_DOUBLE, sizeof(Vertex<RealT>), (void *)&(verts[0].Normal()));
+      case C3D_FLAT:glEnableClientState(GL_VERTEX_ARRAY);
+	glVertexPointer(3, GL_DOUBLE, sizeof(Vertex<RealT>), (void *)&(verts[0].Position()));
+	break;
+    }
+
+    switch(eMode) {
       case C3D_POINT: {
 	// Draw individual points
-	glDrawArrays(GL_POINTS,0,verts.size());
-      } break;
+	glDrawArrays(GL_POINTS, 0, verts.size());
+      }
+	break;
       case C3D_WIRE: {
-	for(SArray1dIterC<Tri<RealT>> it(model.Faces());it;it++) {
+	for(SArray1dIterC <Tri<RealT>> it(model.Faces()); it; it++) {
 	  glBegin(GL_LINE);
-	  glArrayElement(model.Index(*it,0));
-	  glArrayElement(model.Index(*it,1));
-	  glArrayElement(model.Index(*it,2));
+	  glArrayElement(model.Index(*it, 0));
+	  glArrayElement(model.Index(*it, 1));
+	  glArrayElement(model.Index(*it, 2));
 	  glEnd();
 	}
-      } break;
+      }
+	break;
       case C3D_FLAT: {
 	ONDEBUG(std::cerr << "flat render. \n");
 	IntT eGLShadeModel;
-	glGetIntegerv(GL_SHADE_MODEL,&eGLShadeModel);
+	glGetIntegerv(GL_SHADE_MODEL, &eGLShadeModel);
 	glShadeModel(GL_FLAT); // Flat shading
 	// Draw filled polygon
-	for(SArray1dIterC<Tri<RealT>> it(model.Faces());it;it++) {
-#if USEMESHCOLOUR
-	  glColor3ubv(&(it->Colour()[0]));
-#endif
+	for(SArray1dIterC <Tri<RealT>> it(model.Faces()); it; it++) {
+	  if(mUseMeshColour) {
+	    glColor3ubv(&(it->Colour()[0]));
+	  }
 	  GLNormal(it->FaceNormal());
 	  glBegin(GL_POLYGON);
-	  glArrayElement(model.Index(*it,0));
-	  glArrayElement(model.Index(*it,1));
-	  glArrayElement(model.Index(*it,2));
+	  glArrayElement(model.Index(*it, 0));
+	  glArrayElement(model.Index(*it, 1));
+	  glArrayElement(model.Index(*it, 2));
 	  glEnd();
 	}
 	glShadeModel((GLenum)eGLShadeModel); // Restore old shade model
-      } break;
+      }
+	break;
       case C3D_SMOOTH: {
 	ONDEBUG(std::cerr << "Smooth render. \n");
 	IntT eGLShadeModel;
-	glGetIntegerv(GL_SHADE_MODEL,&eGLShadeModel);
+	glGetIntegerv(GL_SHADE_MODEL, &eGLShadeModel);
 	glShadeModel(GL_SMOOTH); // Flat shading
 	// Draw filled polygon
-	for(SArray1dIterC<Tri<RealT>> it(model.Faces());it;it++) {
-#if USEMESHCOLOUR
-	  glColor3ubv(&(it->Colour()[0]));
-#endif
+	for(SArray1dIterC <Tri<RealT>> it(model.Faces()); it; it++) {
+	  if(mUseMeshColour) {
+	    glColor3ubv(&(it->Colour()[0]));
+	  }
 	  glBegin(GL_POLYGON);
-	  glArrayElement(model.Index(*it,0));
-	  glArrayElement(model.Index(*it,1));
-	  glArrayElement(model.Index(*it,2));
+	  glArrayElement(model.Index(*it, 0));
+	  glArrayElement(model.Index(*it, 1));
+	  glArrayElement(model.Index(*it, 2));
 	  glEnd();
 	}
 	glShadeModel((GLenum)eGLShadeModel); // Restore old shade model
-      } break;
-      };
+      }
+	break;
+    };
 
     switch(eMode) {
-    case C3D_SMOOTH:
-    case C3D_POINT:
-    case C3D_WIRE:
-      glDisableClientState(GL_NORMAL_ARRAY);
-    case C3D_FLAT:
-      glDisableClientState(GL_VERTEX_ARRAY);
-      break;
+      case C3D_SMOOTH:
+      case C3D_POINT:
+      case C3D_WIRE:glDisableClientState(GL_NORMAL_ARRAY);
+      case C3D_FLAT:glDisableClientState(GL_VERTEX_ARRAY);
+	break;
     }
-#if USEMESHCOLOUR
-    glDisable(GL_COLOR_MATERIAL);
-#endif
+    if(mUseMeshColour){
+      glDisable(GL_COLOR_MATERIAL);
+   }
     return true;
   }
 

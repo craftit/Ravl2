@@ -6,16 +6,14 @@
 // file-header-ends-here
 //! docentry="Ravl.API.Graphics.3D"
 
-#ifndef _RAVL_DSURFACE_POINT_VERTEX_ARRAY_HH_
-#define _RAVL_DSURFACE_POINT_VERTEX_ARRAY_HH_ 1
+#pragma once
 
-#include "Ravl2/GUI/DObject3D.hh"
+#include "Ravl2/OpenGL/DObject3D.hh"
 #include "Ravl2/3D/SurfacePoint3dArray.hh"
 #include "Ravl2/3D/Vertex.hh"
 
 namespace Ravl2
 {
-  using namespace Ravl2;
 
   //: Direct OpenGL render of vertex array, using current colour.
   void DSurfacePointVertexArray(const SurfacePoint3dArrayC<Vertex<RealT>>& s);
@@ -47,21 +45,6 @@ namespace Ravl2
     SurfacePoint3dArrayC<Vertex<RealT>> surface;
   };
 
-  //: Rendering class for vertex array, using current OpenGL colour
-  //  Does not set the colour, so will use current OpenGL colour
-
-  class DSurfacePointVertexArrayC : public DObject3DC
-  {
-  public:
-    DSurfacePointVertexArrayC()
-      {}
-    //: Default constructor, creates an invalid drawing object.
-
-    DSurfacePointVertexArrayC(const SurfacePoint3dArrayC<Vertex<RealT>>& s)
-      : DObject3DC(*new DSurfacePointVertexArrayBodyC(s))
-      {}
-    //: Construct drawing object from array of surface points.
-  };
 }
 
 

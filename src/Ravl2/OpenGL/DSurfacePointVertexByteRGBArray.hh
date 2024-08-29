@@ -6,26 +6,24 @@
 // file-header-ends-here
 //! docentry="Ravl.API.Graphics.3D"
 
-#ifndef _RAVL_DSURFACE_POINT_VERTEX_BYTE_RGB_ARRAY_HH_
-#define _RAVL_DSURFACE_POINT_VERTEX_BYTE_RGB_ARRAY_HH_ 1
+#pragma once
 
-#include "Ravl2/GUI/DObject3D.hh"
+#include "Ravl2/OpenGL/DObject3D.hh"
 #include "Ravl2/3D/SurfacePoint3dArray.hh"
 #include "Ravl2/3D/Vertex<RealT>olourByteRGB.hh"
 
 namespace Ravl2
 {
-  using namespace Ravl2;
 
   //: Direct OpenGL render of vertex array, using current colour.
-  void DSurfacePointVertexByteRGBArray(const SurfacePoint3dArrayC<Vertex<RealT>olourByteRGBC>& s);
+  void DSurfacePointVertexByteRGBArray(const SurfacePoint3dArrayC<VertexColourByteRGBC>& s);
 
   //: Rendering class for vertex array.
   //  Does not set the colour, so will use current OpenGL colour.
   class DSurfacePointVertexByteRGBArrayBodyC : public DObject3DBodyC
   {
   public:
-    DSurfacePointVertexByteRGBArrayBodyC(const SurfacePoint3dArrayC<Vertex<RealT>olourByteRGBC>& s)
+    DSurfacePointVertexByteRGBArrayBodyC(const SurfacePoint3dArrayC<VertexColourByteRGBC>& s)
       : surface(s)
       {}
     // constructor
@@ -47,21 +45,6 @@ namespace Ravl2
     SurfacePoint3dArrayC<Vertex<RealT>olourByteRGBC> surface;
   };
 
-  //: Rendering class for vertex array, using current OpenGL colour.
-  //  Does not set the colour, so will use current OpenGL colour.
-
-  class DSurfacePointVertexByteRGBArrayC : public DObject3DC
-  {
-  public:
-    DSurfacePointVertexByteRGBArrayC()
-      {}
-    //: Default constructor, creates an invalid handle.
-
-    DSurfacePointVertexByteRGBArrayC(const SurfacePoint3dArrayC<Vertex<RealT>olourByteRGBC>& s)
-      : DObject3DC(*new DSurfacePointVertexByteRGBArrayBodyC(s))
-      {}
-    //: Construct drawing object from array of coloured vertices.
-  };
 }
 
 

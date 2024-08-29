@@ -16,10 +16,13 @@
 namespace Ravl2 {
 
   //: Body of a  object set in a 3D world.
-  class DCube3DBodyC : public DObject3DBodyC
+  class DCube3DBodyC
+    : public DObject3DBodyC
   {
   public:
-    DCube3DBodyC(const Vector<RealT,3> &nDiag = Vector<RealT,3>(1, 1, 1), const RealRGBValueC &col = RealRGBValueC(1, 0, 0))
+    DCube3DBodyC(
+      const Vector<RealT,3> &nDiag = Vector<RealT,3>(1, 1, 1),
+      const RealRGBValueC &col = RealRGBValueC(1, 0, 0))
       : diag(nDiag),
       colour(col)
       {}

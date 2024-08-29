@@ -5,7 +5,7 @@
 // see http://www.gnu.org/copyleft/lesser.html
 // file-header-ends-here
 
-#include "Ravl2/GUI/DSurfacePointVertexByteRGBArray.hh"
+#include "Ravl2/OpenGL/DSurfacePointVertexByteRGBArray.hh"
 
 namespace Ravl2
 {

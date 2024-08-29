@@ -6,8 +6,8 @@
 // file-header-ends-here
 ////////////////////////////////////////
 
-#include "Ravl2/GUI/Util.hh"
-#include "Ravl2/GUI/Canvas3D.hh"
+#include "Ravl2/OpenGL/Util.hh"
+#include "Ravl2/OpenGL/Canvas3D.hh"
 
 namespace Ravl2 {
 

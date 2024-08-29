@@ -4,21 +4,21 @@
 // General Public License (LGPL). See the lgpl.licence file for details or
 // see http://www.gnu.org/copyleft/lesser.html
 // file-header-ends-here
-#ifndef RAVLGUI_DLIGHT3D_HEADER
-#define RAVLGUI_DLIGHT3D_HEADER 1
-///////////////////////////////////////////////////
 //! docentry="Ravl.API.Graphics.3D"
 //! author="Charles Galambos"
 //! date="18/06/1999"
 
-#include "Ravl2/GUI/DObject3D.hh"
+#pragma once
+
+#include "Ravl2/OpenGL/DObject3D.hh"
 
 namespace Ravl2 {
 
   //////////////////////////////////////////////
   //: Draw some lines.
 
-  class DLight3DBodyC : public DObject3DBodyC
+  class DLight3DBodyC
+    : public DObject3DBodyC
   {
   public:
     DLight3DBodyC(const RealRGBValueC &nCol, const Vector<RealT,3> &nPos, int nn)
@@ -66,4 +66,3 @@ namespace Ravl2 {
 }
 
 
-#endif

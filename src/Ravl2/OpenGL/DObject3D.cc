@@ -4,20 +4,12 @@
 // General Public License (LGPL). See the lgpl.licence file for details or
 // see http://www.gnu.org/copyleft/lesser.html
 // file-header-ends-here
-//////////////////////////////////////////////////////////
 
 #include "Ravl2/OpenGL/DObject3D.hh"
 
 namespace Ravl2
 {
 
-#if 0
-  //: Render object.
-  //bool DObject3DBodyC::GUIRender(Canvas3DC &c3d) {
-  //  std::cerr << "DObject3DBodyC::GUIRender  Error!!! Need to overload this.\n";
-  //  RavlAssert(0); // Abstract method.
-  //  return true;
-  //}
 
   //: Render, checking for display lists.
   bool DObject3DBodyC::GUIRenderDL(Canvas3DC &c3d) {
@@ -41,6 +33,7 @@ namespace Ravl2
     return ret;
   }
 
+#if 0
 
   /// DObjectSet3DBodyC ///////////////////////////////////////////////
   //: Default constructor.
@@ -104,15 +97,6 @@ namespace Ravl2
     return extent;
   }
 
-  std::ostream &operator<<(std::ostream &strm,const DObjectSet3DC &) {
-    RavlAssert(0);
-    return strm;
-  }
-
-  std::istream &operator>>(std::istream &strm,DObjectSet3DC &) {
-    RavlAssert(0);
-    return strm;
-  }
 
   //// DOpenGLBodyC ////////////////////////////////////////////////////////
   //: Render object.
@@ -124,15 +108,6 @@ namespace Ravl2
     return true;
   }
 
-  std::ostream &operator<<(std::ostream &strm,const DOpenGLC &) {
-    RavlAssert(0);
-    return strm;
-  }
-
-  std::istream &operator>>(std::istream &strm,DOpenGLC &) {
-    RavlAssert(0);
-    return strm;
-  }
 #endif
 }
 

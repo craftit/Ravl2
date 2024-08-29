@@ -10,20 +10,21 @@
 //! docentry="Ravl.API.Graphics.3D"
 //! author="James Smith"
 
-#include "Ravl2/GUI/Canvas3D.hh"
-#include "Ravl2/Vector2d.hh"
-#include "Ravl2/GUI/Table.hh"
-#include "Ravl2/GUI/Menu.hh"
-#include "Ravl2/GUI/MenuCheck.hh"
-#include "Ravl2/Threads/RWLock.hh"
-#include "Ravl2/GUI/Manager.hh"
+#include "Ravl2/OpenGL/Canvas3D.hh"
 
 namespace Ravl2 {
 
   class MouseEventC;
   class View3DC;
 
-  //: Body for 3D Viewer widget.
+  //: 3D Viewer widget.
+  // <p>This class enables you to manipulate a 3D object as you view it, using the mouse.  </p>
+  // <ul>
+  // <li> Button 1 rotates about horizontal and vertical axes </li>
+  // <li> Button 2 <i>should</i> translate in x and y directions, but the code needs fixing</li>
+  // <li> Button 3 provides a menu of rendering options <li>
+  // <li> The wheel <i>should</i> zoom in and out, but the code needs fixing</li>
+  // </ul>
 
   class View3DBodyC : public Canvas3DBodyC
   {
@@ -174,125 +175,6 @@ namespace Ravl2 {
     RWLockC viewLock;
   };
 
-
-  //: 3D Viewer widget.
-  // <p>This class enables you to manipulate a 3D object as you view it, using the mouse.  </p>
-  // <ul>
-  // <li> Button 1 rotates about horizontal and vertical axes </li>
-  // <li> Button 2 <i>should</i> translate in x and y directions, but the code needs fixing</li>
-  // <li> Button 3 provides a menu of rendering options <li>
-  // <li> The wheel <i>should</i> zoom in and out, but the code needs fixing</li>
-  // </ul>
-
-  class View3DC : public Canvas3DC
-  {
-  public:
-    View3DC()
-      {}
-    //: Default constructor.
-    // creates an invalid handle.
-    
-    View3DC(int width,int height,bool enableLighting = true,bool enableTexture = true)
-      : Canvas3DC(*new View3DBodyC(width,height,enableLighting,enableTexture))
-      {}
-    //: Constructor.
-
-    View3DC(View3DBodyC &bod)
-      : Canvas3DC(bod)
-      {}
-    //: Body constructor.
-
-    // *********************  GUI only intefrace  ******************************
-    bool GUIInitGL()
-      { return Body().GUIInitGL(); }
-    //: Sets up GL context
-
-    bool GUIAdd(const DObject3DC &r, IntT id = 0)
-      { return Body().GUIAdd(r, id); }
-    //: Add object to scene (only from gui thread)
-    // If ID!=0, the object is assigned this id number, and
-    // can be accessed using it.
-
-    void GUISceneComplete()
-      { Body().GUISceneComplete(); }
-    //: Make the scene complete. GUI only
-    // If more objects are add() after this, a new scene will be started
-
-    bool GUIAdjustView()
-      { return Body().GUIAdjustView(); }
-    //:Automatically adjust view point
-
-    void GUIFit()
-      { Body().GUIFit(); }
-    //: Auto fit output.
-
-    void GUICenter()
-      { Body().GUICenter(); }
-    //: Auto center output.
-
-    void GUIResetRotation()
-      { Body().GUIResetRotation(); }
-    //: reset rotations.
-
-
-    // ********************* General interface *********************************
-    bool add(const DObject3DC &r, IntT id = 0)
-      { return Body().add(r, id); }
-    //: Add object to scene
-    // If ID!=0, the object is assigned this id number, and
-    // can be accessed using it.
-
-    void SceneComplete()
-      { Manager.Queue(Trigger(*this, &View3DC::GUISceneComplete)); }
-    //: Make the scene complete.
-    // If more objects are add() after this, a new scene will be started
-
-
-
-    // ****************  not checked unsorted functions  ***********************
-    //bool GUINewFrame(void)
-    //{ return Body().GUINewFrame(); }
-    //: Sets up for a new frame
-
-    bool GUISetCamera(void)
-    { return Body().GUISetCamera(); }
-    //: Rotates the camera
-
-    //void GUIDoAuto()
-    //  { return Body().GUIDoAuto(); }
-    //: Fit and centre output if auto is enabled
-
-    DObjectSet3DC &Scene()
-      { return Body().Scene(); }
-    //: Access current scene. (not thread safe!)
-
-    void GUIRefresh()
-    { Body().GUIRefresh(); }
-    //: Auto center output.
-
-    Signal1C<Vector<RealT,2>> &SigRotationTx(void) {return Body().SigRotationTx();}
-    //: Access to rotation send signal
-  
-    Signal1C<Vector<RealT,2>> &SigRotationRx(void) {return Body().SigRotationRx();}
-    //: Access to rotation receive signal
-
-    bool Master(bool bMaster) {return Body().Master(bMaster);}
-    //: Enable or disable camera mastering
-
-    bool Slave(bool bSlave) {return Body().Slave(bSlave);}
-    //: Enable or disable camera slaving
-
-  protected:
-    View3DBodyC &Body()
-      { return static_cast<View3DBodyC &>(Canvas3DC::Body()); }
-    //: Access body.
-
-    const View3DBodyC &Body() const
-      { return static_cast<const View3DBodyC &>(Canvas3DC::Body()); }
-    //: Access body.
-
-//    friend class View3DBodyC;
-  };
 
 }
 

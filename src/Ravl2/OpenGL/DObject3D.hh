@@ -15,80 +15,84 @@
 #include "Ravl2/Types.hh"
 #include "Ravl2/Assert.hh"
 
-
 namespace Ravl2
 {
-#if 0
   class Canvas3DC;
 
   //: Body of a basic display object in a 3D world.
   class DObject3DBodyC
-
   {
   public:
-    using RealT = float;
-
-    DObject3DBodyC()
-      : id(-1)
-    {}
     //: Default constructor.
+    DObject3DBodyC() = default;
 
-    virtual ~DObject3DBodyC();
     //: Destructor.
     // Make sure display list is free'd
+    virtual ~DObject3DBodyC() = default;
 
-    virtual bool GUIRender(Canvas3DC &c3d) const = 0;
     //: Render object. Make sure you called Canvas3DC::GUIBeginGL just before
+    virtual bool GUIRender(Canvas3DC &c3d) const = 0;
 
-    virtual Vector<RealT,3> GUICenter() const = 0;
-    //  { return Vector<RealT,3>(0,0,0); }
     //: Get center of object.
     // defaults to 0,0,0
+    virtual Vector<float,3> GUICenter() const = 0;
+    //  { return Vector<RealT,3>(0,0,0); }
 
-    virtual RealT GUIExtent() const = 0;
-    //  { return 1; }
     //: Get extent of object.
     // defaults to 1
+    virtual float GUIExtent() const = 0;
+    //  { return 1; }
 
-    bool GUIRenderDL(Canvas3DC &c3d);
     //: Render, checking for display lists.
+    bool GUIRenderDL(Canvas3DC &c3d);
 
-    static inline
-    void GLColour(const RealRGBValueC &colour)
-      { glColor3d(colour.Red(), colour.Green(), colour.Blue()); }
     //: Set current colour.
+    template<typename PixelT>
+    static inline
+    void GLColour(const PixelT &colour)
+    { glColor3f(get<ImageChannel::Red,float>(colour),
+		get<ImageChannel::Green,float>(colour),
+		get<ImageChannel::Blue,float>(colour));
+    }
+
+
+    //: Set a vertex.
+    static inline
+    void GLVertex(const Point<float,3> &v)
+      { glVertex3f(v[0], v[1], v[2]); }
+
+    //: Set a vertex.
+    static inline
+    void GLVertex(const Point<double,3> &v)
+    { glVertex3d(v[0], v[1], v[2]); }
 
     static inline
-    void GLVertex(const Point<RealT,3> &v)
-      { glVertex3d(v[0], v[1], v.Z()); }
+    void GLNormal(const Vector<float,3> &v)
+    { glNormal3f(v[0], v[1], v[2]); }
     //: Set a vertex.
 
     static inline
-    void GLNormal(const Vector<RealT,3> &v)
-      { glNormal3d(v[0], v[1], v.Z()); }
-    //: Set a vertex.
-
-    static inline
-    void GLTexCoord(const Point<RealT,2> &p)
-      { glTexCoord2d(p[1], p[0]); }
+    void GLTexCoord(const Point<float,2> &p)
+    { glTexCoord2f(p[1], p[0]); }
     //: Set a texture coordinate
 
     void EnableDisplayList()
-      { id = -2; }
+    { id = -2; }
     //: Enable generation of a display list.
 
-    IntT DisplayListID() const
+    int DisplayListID() const
       { return id; }
     //: Access display list ID.
 
-    IntT &DisplayListID()
+    int &DisplayListID()
       { return id; }
     //: Access display list ID.
 
   protected:
-    IntT id; // Display list id. -1=None. -2=To be generated...
+    int id = -1; // Display list id. -1=None. -2=To be generated...
   };
 
+#if 0
 
   ////////////////////////////////////
   //: Body for OpenGL code invocation class.
@@ -122,24 +126,6 @@ namespace Ravl2
     Vector<RealT,3> center;
     RealT extent;
   };
-
-  //: OpenGL code invocation class.
-  class DOpenGLC : public DObject3DC
-  {
-  public:
-    DOpenGLC()
-    {}
-    //: Default constructor.
-    // NB. Creates an invalid handle.
-
-    DOpenGLC(const TriggerC &se,
-             const Vector<RealT,3> &ncenter = Vector<RealT,3>(0,0,0), RealT nextent = 1)
-      : DObject3DC(*new DOpenGLBodyC(se, ncenter, nextent))
-    {}
-    //: Constructor.
-  };
-
-
 
   ////////////////////////////////////
 

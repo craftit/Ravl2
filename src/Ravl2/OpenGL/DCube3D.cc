@@ -6,10 +6,11 @@
 // file-header-ends-here
 ////////////////////////////////////////////
 
-#include "Ravl2/GUI/DCube3D.hh"
 #include <GL/gl.h>
+#include "Ravl2/OpenGL/DCube3D.hh"
 
-namespace Ravl2 {
+namespace Ravl2
+{
 
   //: Render object.
   bool DCube3DBodyC::GUIRender(Canvas3DC &c3d) const

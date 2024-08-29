@@ -1,5 +1,5 @@
 
-#include "Ravl2/GUI/GLContext.hh"
+#include "Ravl2/OpenGL/GLContext.hh"
 
 //#include "Ravl2/StdError.hh"
 #if !RAVL_USE_GTKGLEXT

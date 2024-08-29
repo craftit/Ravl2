@@ -4,21 +4,19 @@
 // General Public License (LGPL). See the lgpl.licence file for details or
 // see http://www.gnu.org/copyleft/lesser.html
 // file-header-ends-here
-#ifndef RAVL_DTEXTRIMESH3D_HEADER
-#define RAVL_DTEXTRIMESH3D_HEADER 1
-///////////////////////////////////////////////////
 //! docentry="Ravl.API.Graphics.3D"
 //! author="James Smith"
 //! date="2/4/2001"
 //! example=exDTexTriMesh3d.cc
 
-#include "Ravl2/GUI/DTriMesh3D.hh"
-#include "Ravl2/GUI/GLContext.hh"
+#pragma once
+
+#include "Ravl2/OpenGL/DTriMesh3D.hh"
+#include "Ravl2/OpenGL/GLContext.hh"
 #include "Ravl2/3D/TexTriMesh.hh"
 
-namespace Ravl2 {
-  
-  using namespace Ravl2;
+namespace Ravl2
+{
 
   //: Draw a TexTriMesh
   class DTexTriMesh3DBodyC : public DTriMesh3DBodyC
@@ -39,22 +37,5 @@ namespace Ravl2 {
     mutable GLContextC m_glContext; // Used for freeing textures.
   };
   
-  //: Draw a TexTriMesh
-  class DTexTriMesh3DC : public DTriMesh3DC
-  {
-  public:
-    DTexTriMesh3DC()
-      {}
-    //: Default constructor.
-    // creat an invalid handle.
 
-    DTexTriMesh3DC(const TexTriMeshC &oTexTriMesh)
-      : DTriMesh3DC(*new DTexTriMesh3DBodyC(oTexTriMesh))
-      {}
-    //: Constructor.
-  };
-
-  std::ostream &operator<<(std::ostream &strm,const DTexTriMesh3DC &);
-  std::istream &operator>>(std::istream &strm,DTexTriMesh3DC &);
 }
-#endif

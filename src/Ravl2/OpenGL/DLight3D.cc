@@ -6,7 +6,7 @@
 // file-header-ends-here
 ///////////////////////////////////////////////////
 
-#include "Ravl2/GUI/DLight3D.hh"
+#include "Ravl2/OpenGL/DLight3D.hh"
 
 namespace Ravl2 {
 

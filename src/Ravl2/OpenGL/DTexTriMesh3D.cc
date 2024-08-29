@@ -6,9 +6,8 @@
 // file-header-ends-here
 //////////////////////////////////////////
 
-#include "Ravl2/GUI/DTexTriMesh3D.hh"
-#include "Ravl2/GUI/Canvas3D.hh"
-#include "Ravl2/SArray1dIter2.hh"
+#include "Ravl2/OpenGL/DTexTriMesh3D.hh"
+#include "Ravl2/OpenGL/Canvas3D.hh"
 #include "Ravl2/Image/WarpScale.hh"
 #include "GL/gl.h"
 
@@ -251,14 +250,5 @@ namespace Ravl2 {
     return true;
   }
 
-  std::ostream &operator<<(std::ostream &strm,const DTexTriMesh3DC &) {
-    RavlAssert(0);
-    return strm;
-  }
-
-  std::istream &operator>>(std::istream &strm,DTexTriMesh3DC &) {
-    RavlAssert(0);
-    return strm;
-  }
 }
 

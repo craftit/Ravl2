@@ -4,23 +4,22 @@
 // General Public License (LGPL). See the lgpl.licence file for details or
 // see http://www.gnu.org/copyleft/lesser.html
 // file-header-ends-here
-#ifndef _D_PINHOLE_CAMERA_0_
-#define _D_PINHOLE_CAMERA_0_
-///////////////////////////////////////////////////
 //! docentry="Ravl.API.Graphics.3D"
 //! author="Joel Mitchelson"
 //! date="31/1/2002"
 
-#include "Ravl2/GUI/DObject3D.hh"
-#include "Ravl2/IndexRange2d.hh"
+#pragma once
+
+#include "Ravl2/OpenGL/DObject3D.hh"
+#include "Ravl2/IndexRange.hh"
 #include "Ravl2/3D/PinholeCamera0.hh"
 
 namespace Ravl2
 {
-  using namespace Ravl2;
 
   //: Use PinholeCamera0C class to set OpenGL viewpoint
-  class DPinholeCamera03DBodyC : public DObject3DBodyC
+  class DPinholeCamera03DBodyC
+    : public DObject3DBodyC
   {
   public:
     DPinholeCamera03DBodyC(const PinholeCamera0C& _camera,
@@ -48,21 +47,6 @@ namespace Ravl2
     IndexRange<2> canvas_region;
   };
 
-  //: Use PinholeCamera0C class to set OpenGL viewpoint
-  class DPinholeCamera03DC : public DObject3DC
-  {
-  public:
-    DPinholeCamera03DC()
-      {}
-    //: Default constructor, creates an invalid handle.
-
-    DPinholeCamera03DC(const PinholeCamera0C& camera,
-                       const IndexRange<2>& canvas_region)
-      : DObject3DC(*new DPinholeCamera03DBodyC(camera, canvas_region))
-      {}
-    //: Constructor.
-  };
 
 }
 
-#endif

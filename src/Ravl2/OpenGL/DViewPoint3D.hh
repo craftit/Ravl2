@@ -4,16 +4,13 @@
 // General Public License (LGPL). See the lgpl.licence file for details or
 // see http://www.gnu.org/copyleft/lesser.html
 // file-header-ends-here
-#ifndef RAVLGUI_DVIEWPOINT3D_HEADER
-#define RAVLGUI_DVIEWPOINT3D_HEADER 1
-////////////////////////////////////////////
 //! docentry="Ravl.API.Graphics.3D"
 //! author="Charles Galambos"
 //! date="12/04/99"
 
-#include "Ravl2/GUI/DObject3D.hh"
-#include "Ravl2/Vector3d.hh"
-#include "Ravl2/Point3d.hh"
+#pragma once
+
+#include "Ravl2/OpenGL/DObject3D.hh"
 
 namespace Ravl2 {
 
@@ -83,4 +80,3 @@ namespace Ravl2 {
 
 }
 
-#endif

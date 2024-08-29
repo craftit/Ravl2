@@ -27,6 +27,8 @@ function(RAVL2_setup_dependencies)
   find_package(CLI11 QUIET)
   find_package(nlohmann_json QUIET)
   find_package(cereal QUIET)
+  find_package(OpenGL QUIET)
+
 
   # Optional dependencies, we won't build them if they're not found
 

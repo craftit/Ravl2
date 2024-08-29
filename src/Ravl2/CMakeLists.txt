@@ -17,7 +17,11 @@ add_subdirectory(Math)
 add_subdirectory(Image)
 add_subdirectory(3D)
 add_subdirectory(OpenCV)
-add_subdirectory(OpenGL)
+
+# If OpenGL is found, add the OpenGL subdirectory
+if(TARGET OpenGL::GL)
+    add_subdirectory(OpenGL)
+endif()
 
 # If dlib is found, add the dlib subdirectory
 if(TARGET dlib::dlib)

@@ -38,32 +38,14 @@ namespace Ravl2 {
   protected:
     TriMeshC model;
 
+    bool mUseMeshColour = true;
+
     void ComputeInfo() const;
     //: Comput center and extent of mesh.
 
     mutable bool doneInfo;
     mutable Vector<RealT,3> center;
     mutable RealT extent;
-  };
-
-  //: Draw a TriMesh
-  class DTriMesh3DC : public DObject3DC
-  {
-  public:
-    DTriMesh3DC()
-      {}
-    //: Default constructor.
-    // creat an invalid handle.
-
-    DTriMesh3DC(const TriMeshC &oTriMesh)
-      : DObject3DC(*new DTriMesh3DBodyC(oTriMesh))
-      {}
-    //: Constructor.
-  protected:
-    DTriMesh3DC(DTriMesh3DBodyC &bod)
-      : DObject3DC(bod)
-      {}
-    //: Body constructor.
   };
 
 }

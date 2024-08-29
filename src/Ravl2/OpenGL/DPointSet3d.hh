@@ -4,20 +4,18 @@
 // General Public License (LGPL). See the lgpl.licence file for details or
 // see http://www.gnu.org/copyleft/lesser.html
 // file-header-ends-here
-#ifndef RAVLGUI_DPOINTSET3D_HEADER
-#define RAVLGUI_DPOINTSET3D_HEADER 1
-///////////////////////////////////////////////////
 //! docentry="Ravl.API.Graphics.3D"
 //! author="Joel Mitchelson"
 //! date="31/1/2002"
 
-#include "Ravl2/GUI/DObject3D.hh"
-#include "Ravl2/PointSet3d.hh"
+#include "Ravl2/OpenGL/DObject3D.hh"
+#include "Ravl2/Geometry/PointSet.hh"
 
 namespace Ravl2
 {
 
-  //: Body to draw a Point Set
+  //: Draw a Point Set
+
   class DPointSet3dBodyC : public DObject3DBodyC
   {
   public:
@@ -41,20 +39,5 @@ namespace Ravl2
     PointSet3dC pointSet;
   };
 
-
-  //: Draw a Point Set
-  class DPointSet3dC : public DObject3DC
-  {
-  public:
-    DPointSet3dC()
-      {}
-    //: Default constructor, creates an invalid handle.
-
-    DPointSet3dC(const PointSet3dC& oPointSet)
-      : DObject3DC(*new DPointSet3dBodyC(oPointSet))
-      {}
-    //: Constructor.
-  };
 }
 
-#endif

@@ -5,7 +5,7 @@
 // see http://www.gnu.org/copyleft/lesser.html
 // file-header-ends-here
 
-#include "Ravl2/GUI/DPinholeCamera03D.hh"
+#include "Ravl2/OpenGL/DPinholeCamera03D.hh"
 
 namespace Ravl2
 {

@@ -5,9 +5,9 @@
 // see http://www.gnu.org/copyleft/lesser.html
 // file-header-ends-here
 
-#include "Ravl2/GUI/DPointSet3d.hh"
-#include "Ravl2/GUI/Canvas3D.hh"
-#include "GL/gl.h"
+#include <GL/gl.h>
+#include "Ravl2/OpenGL/DPointSet3d.hh"
+#include "Ravl2/OpenGL/Canvas3D.hh"
 
 #define DODEBUG 0
 #if DODEBUG
