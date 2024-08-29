@@ -228,6 +228,7 @@ s/\[3\]\[3\]/(3,3)/g
 s/namespace RavlN/namespace Ravl2/g
 s/RavlImageN/Ravl2/g
 s/Ravl3DN/Ravl2/g
+s/RavlGUIN/Ravl2/g
 
 # Convert SysLog to spdlog.
 # In text RavlDebug(x), RavlWarning(x), RavlInfo(x), RavlError(x), -> SPDLOG_TRACE(x), SYSLOG_WARN(x), SPDLOG_INFO(x), SPDLOG_ERROR(x),

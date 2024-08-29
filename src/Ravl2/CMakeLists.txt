@@ -17,6 +17,7 @@ add_subdirectory(Math)
 add_subdirectory(Image)
 add_subdirectory(3D)
 add_subdirectory(OpenCV)
+add_subdirectory(OpenGL)
 
 # If dlib is found, add the dlib subdirectory
 if(TARGET dlib::dlib)
