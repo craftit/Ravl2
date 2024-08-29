@@ -11,6 +11,7 @@ add_library (Ravl2x3D
   Vertex.cc Vertex.hh
   Tri.cc Tri.hh
   TriMesh.cc TriMesh.hh
+  TexTriMesh.cc TexTriMesh.hh
   MeshShapes.cc MeshShapes.hh
 )
 

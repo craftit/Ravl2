@@ -190,7 +190,17 @@ namespace Ravl2
     [[nodiscard]] const Vector<uint8_t,3> &Colour() const
     { return colour; }
     //: Colour of face.
-    
+
+    template <class Archive>
+    void serialize(Archive &archive)
+    {
+      // We can't save vertices directly, so we save the indices of the vertices elsewhere
+      archive(cereal::make_nvp("texture", texture),
+              cereal::make_nvp("normal", normal),
+              cereal::make_nvp("colour", colour),
+              cereal::make_nvp("textureID", textureID));
+    }
+
   protected:
     std::array<Vertex<RealT> *,3> vertices;
     std::array<Vector<RealT,2>,3> texture;

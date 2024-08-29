@@ -111,7 +111,37 @@ namespace Ravl2
     TriMesh<RealT> operator+ (const TriMesh<RealT> &t2) const;
 
     //: Automatically generate texture coordinates.
-    bool GenerateTextureCoords(void);
+    bool GenerateTextureCoords();
+
+    template <class Archive>
+    void save(Archive &archive)
+    {
+      archive(CEREAL_NVP(vertices),
+              CEREAL_NVP(faces),
+              CEREAL_NVP(haveTexture));
+      auto faceIndices = FaceIndices();
+      archive(CEREAL_NVP(faceIndices));
+    }
+
+    template <class Archive>
+    void load(Archive &archive)
+    {
+      archive(CEREAL_NVP(vertices),
+           CEREAL_NVP(faces),
+           CEREAL_NVP(haveTexture));
+      std::vector<unsigned> faceIndices;
+      archive(CEREAL_NVP(faceIndices));
+      for(size_t i = 0;i < faces.size();i++) {
+        auto &face = faces[i];
+        auto &index = faceIndices[i*3];
+        face.VertexPtr(0) = &(vertices[index]);
+        index = faceIndices[i*3+1];
+        face.VertexPtr(1) = &(vertices[index]);
+        index = faceIndices[i*3+2];
+        face.VertexPtr(2) = &(vertices[index]);
+      }
+
+    }
 
   protected:
     std::vector<Vertex<RealT>> vertices; //!< Array of vertex positions.
