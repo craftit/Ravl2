@@ -11,6 +11,31 @@
 namespace Ravl2
 {
 
+  //! Generate a rotation matrix for a 2D rotation
+  template <typename RealT>
+  [[nodiscard]] constexpr Matrix<RealT, 2, 2> rotationMatrix2(RealT angle)
+  {
+    RealT c = std::cos(angle);
+    RealT s = std::sin(angle);
+    return Matrix<RealT, 2, 2> {{c, -s}, {s, c}};
+  }
+
+  //! Generate a rotation matrix for a 3D rotation
+  template <typename RealT>
+  [[nodiscard]] constexpr Matrix<RealT, 3, 3> rotationMatrix3(const Vector<RealT, 3> &axis, RealT angle)
+  {
+    RealT c = std::cos(angle);
+    RealT s = std::sin(angle);
+    RealT t = 1 - c;
+    RealT x = axis(0);
+    RealT y = axis(1);
+    RealT z = axis(2);
+    return Matrix<RealT, 3, 3> {
+      {t * x * x + c, t * x * y - s * z, t * x * z + s * y},
+      {t * x * y + s * z, t * y * y + c, t * y * z - s * x},
+      {t * x * z - s * y, t * y * z + s * x, t * z * z + c}};
+  }
+
   //! Transform a Range by a point transform to a PointSet
 
   template <typename RealT, typename TransformT, unsigned N>
