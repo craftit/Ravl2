@@ -20,7 +20,7 @@ namespace Ravl2
   //! This performs a scanline conversion of the polygon
 
   template <class RealT>
-  class Polygon2dIterC
+  class PolygonRasterIter
   {
     class EdgeC
     {
@@ -64,10 +64,10 @@ namespace Ravl2
 
   public:
     //! Default constructor does not create a valid iterator!
-    inline Polygon2dIterC() : m_valid(false) {}
+    inline PolygonRasterIter() : m_valid(false) {}
 
     //! Construct from a polygon
-    [[maybe_unused]] inline explicit Polygon2dIterC(const Polygon<RealT> &polygon)
+    [[maybe_unused]] inline explicit PolygonRasterIter(const Polygon<RealT> &polygon)
         : m_polygon(polygon)
     {
       first();

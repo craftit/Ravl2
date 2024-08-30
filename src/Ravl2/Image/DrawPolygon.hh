@@ -10,7 +10,7 @@
 #include "Ravl2/Array.hh"
 #include "Ravl2/Image/DrawLine.hh"
 #include "Ravl2/Geometry/Polygon.hh"
-#include "Ravl2/Geometry/Polygon2dIter.hh"
+#include "Ravl2/Geometry/PolygonRasterIter.hh"
 
 namespace Ravl2
 {
@@ -24,7 +24,7 @@ namespace Ravl2
   void DrawFilledPolygon(ArrayT &dat, const DataT &value, const Polygon<CoordT> &poly)
   {
     // Draw one-colour polygon
-    for(Polygon2dIterC<CoordT> it(poly); it.valid(); ++it) {
+    for(PolygonRasterIter<CoordT> it(poly); it.valid(); ++it) {
       fill(clip(dat[it.row()], it.rowIndexRange()), value);
     }
   }
@@ -63,7 +63,7 @@ namespace Ravl2
       return;
     auto valuesEnd = values.end();
     // Draw shaded polygon
-    for(Polygon2dIterC<CoordT> it(dat, poly); it; it++) {
+    for(PolygonRasterIter<CoordT> it(dat, poly); it; it++) {
       auto pnt = toPoint<float>(it.index());
       // Calculate barycentric coords
       auto coord = poly.BarycentricCoordinate(pnt);

@@ -8,7 +8,7 @@
 //! date="08/02/1999"
 #pragma once
 
-#include "Ravl2/Geometry/Polygon2dIter.hh"
+#include "Ravl2/Geometry/PolygonRasterIter.hh"
 #include "Ravl2/Array.hh"
 
 namespace Ravl2
@@ -91,7 +91,7 @@ namespace Ravl2
     // Returns true if we're now at a valid scanline.
   private:
     Array<DataT, 2> m_array;
-    Polygon2dIterC m_polygonIter;
+    PolygonRasterIter m_polygonIter;
     ArrayIter<DataT, 1> m_arrayIter;
     IndexRange<1> m_rowRange;
     IndexRange<1> m_colRange;
@@ -103,7 +103,7 @@ namespace Ravl2
         m_rowRange(array.range(0)),
         m_colRange(array.range(1))
   {
-    m_polygonIter = Polygon2dIterC(polygon);
+    m_polygonIter = PolygonRasterIter(polygon);
     First();
   }
 

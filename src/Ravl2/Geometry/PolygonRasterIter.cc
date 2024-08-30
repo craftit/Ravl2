@@ -5,14 +5,14 @@
 // see http://www.gnu.org/copyleft/lesser.html
 // file-header-ends-here
 
-#include "Ravl2/Geometry/Polygon2dIter.hh"
+#include "Ravl2/Geometry/PolygonRasterIter.hh"
 #include "Ravl2/Math.hh"
 
 namespace Ravl2
 {
 
   template <typename RealT>
-  void Polygon2dIterC<RealT>::first()
+  void PolygonRasterIter<RealT>::first()
   {
     m_iel = IELC();
     m_ael = AELC();
@@ -32,7 +32,7 @@ namespace Ravl2
   }
 
   template <typename RealT>
-  bool Polygon2dIterC<RealT>::next()
+  bool PolygonRasterIter<RealT>::next()
   {
     if((m_valid = m_ael.Next(m_indexRange, m_row)))
       return true;
@@ -49,7 +49,7 @@ namespace Ravl2
   }
 
   template <typename RealT>
-  Polygon2dIterC<RealT>::EdgeC::EdgeC(const Point<RealT, 2> &p1, const Point<RealT, 2> &p2)
+  PolygonRasterIter<RealT>::EdgeC::EdgeC(const Point<RealT, 2> &p1, const Point<RealT, 2> &p2)
   {
     if(p2[0] == p1[0]) {//horizontal line
       m_a = RealT(0.0); //to avoid dividing by 0
@@ -69,7 +69,7 @@ namespace Ravl2
 
   /* add edge at appropriate place in IEL */
   template <typename RealT>
-  void Polygon2dIterC<RealT>::IELC::add(const Polygon2dIterC<RealT>::EdgeC &e)
+  void PolygonRasterIter<RealT>::IELC::add(const PolygonRasterIter<RealT>::EdgeC &e)
   {
     m_minRow = std::min(e.MinRow(), m_minRow);
     m_maxRow = std::max(e.MaxRow(), m_maxRow);
@@ -83,7 +83,7 @@ namespace Ravl2
 
   /* next edge with miny() = y from IEL */
   template <typename RealT>
-  bool Polygon2dIterC<RealT>::IELC::Next(const int &row, EdgeC &e)
+  bool PolygonRasterIter<RealT>::IELC::Next(const int &row, EdgeC &e)
   {
     if(this->empty()) return false;
     if(this->back().MinRow() == row) {
@@ -95,7 +95,7 @@ namespace Ravl2
   }
 
   template <typename RealT>
-  void Polygon2dIterC<RealT>::AELC::add(const Polygon2dIterC<RealT>::EdgeC &e, int row)
+  void PolygonRasterIter<RealT>::AELC::add(const PolygonRasterIter<RealT>::EdgeC &e, int row)
   {
     //find right spot to add it at
     RealT x = e.xof(RealT(row) + RealT(0.5));
@@ -110,7 +110,7 @@ namespace Ravl2
 
   /* delete edges with max y = y */
   template <typename RealT>
-  void Polygon2dIterC<RealT>::AELC::DeleteEdges(const int &row)
+  void PolygonRasterIter<RealT>::AELC::DeleteEdges(const int &row)
   {
     const auto end = this->begin();
     auto it = this->end();
@@ -128,7 +128,7 @@ namespace Ravl2
   }
 
   template <typename RealT>
-  bool Polygon2dIterC<RealT>::AELC::First(IndexRange<1> &indexRange, const int row)
+  bool PolygonRasterIter<RealT>::AELC::First(IndexRange<1> &indexRange, const int row)
   {
     m_sortedEdges.clear();
     // use list insertion sort to put in ascending order
@@ -152,7 +152,7 @@ namespace Ravl2
   }
 
   template <typename RealT>
-  bool Polygon2dIterC<RealT>::AELC::Next(IndexRange<1> &indexRange, [[maybe_unused]] const int row)
+  bool PolygonRasterIter<RealT>::AELC::Next(IndexRange<1> &indexRange, [[maybe_unused]] const int row)
   {
     do {
       if(m_sortedEdges.empty())
@@ -166,6 +166,6 @@ namespace Ravl2
     return true;
   }
 
-  template class Polygon2dIterC<float>;
-  template class Polygon2dIterC<double>;
+  template class PolygonRasterIter<float>;
+  template class PolygonRasterIter<double>;
 }// namespace Ravl2

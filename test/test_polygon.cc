@@ -6,8 +6,7 @@
 #include "Ravl2/Array.hh"
 #include "Ravl2/Image/DrawPolygon.hh"
 #include "Ravl2/Geometry/Polygon.hh"
-#include "Ravl2/Geometry/Polygon2dIter.hh"
-
+#include "Ravl2/Geometry/PolygonRasterIter.hh"
 
 // If true render the polygon to an image for debugging
 #define DODISPLAY 0
@@ -42,7 +41,7 @@ TEST_CASE("Polygon2dIter")
     polygon.push_back(Point<float, 2>({10, 10}));
     polygon.push_back(Point<float, 2>({10, 0}));
     unsigned int i = 0;
-    for(Polygon2dIterC<float> it(polygon); it; ++it, ++i) {
+    for(PolygonRasterIter<float> it(polygon); it; ++it, ++i) {
 //SPDLOG_INFO("{} {}", it[0], it.RowIndexRange());
       EXPECT_TRUE(range[0].contains(it.row()));
       EXPECT_TRUE(range[1].contains(it.rowIndexRange()));
