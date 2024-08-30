@@ -11,7 +11,7 @@
 
 #include <list>
 #include "Ravl2/Index.hh"
-#include "Ravl2/Geometry/Polygon2d.hh"
+#include "Ravl2/Geometry/Polygon.hh"
 #include "Ravl2/Geometry/Range.hh"
 
 namespace Ravl2
@@ -67,7 +67,7 @@ namespace Ravl2
     inline Polygon2dIterC() : m_valid(false) {}
 
     //! Construct from a polygon
-    [[maybe_unused]] inline explicit Polygon2dIterC(const Polygon2dC<RealT> &polygon)
+    [[maybe_unused]] inline explicit Polygon2dIterC(const Polygon<RealT> &polygon)
         : m_polygon(polygon)
     {
       first();
@@ -113,7 +113,7 @@ namespace Ravl2
     }
 
   private:
-    Polygon2dC<RealT> m_polygon;
+    Polygon<RealT> m_polygon;
     int m_row = 0;
     IndexRange<1> m_indexRange;
     bool m_valid = false;

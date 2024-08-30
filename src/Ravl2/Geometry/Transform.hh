@@ -6,7 +6,7 @@
 #pragma once
 
 #include "Ravl2/Geometry/Range.hh"
-#include "Ravl2/Geometry/Polygon2d.hh"
+#include "Ravl2/Geometry/Polygon.hh"
 
 namespace Ravl2
 {

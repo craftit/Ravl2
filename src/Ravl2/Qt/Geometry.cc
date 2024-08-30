@@ -6,8 +6,8 @@
 
 namespace Ravl2
 {
-  template auto toQPolygon<int>(const Polygon2dC<int> &polygon);
-  template auto toQPolygon<float>(const Polygon2dC<float> &polygon);
-  template auto toQPolygon<double>(const Polygon2dC<double> &polygon);
+  template auto toQPolygon<int>(const Polygon<int> &polygon);
+  template auto toQPolygon<float>(const Polygon<float> &polygon);
+  template auto toQPolygon<double>(const Polygon<double> &polygon);
 
 }// namespace Ravl2

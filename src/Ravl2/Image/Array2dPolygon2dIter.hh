@@ -19,7 +19,7 @@ namespace Ravl2
   class Array2dPolygon2dIterC
   {
   public:
-    Array2dPolygon2dIterC(const Array<DataT, 2> &array, const Polygon2dC<float> &polygon);
+    Array2dPolygon2dIterC(const Array<DataT, 2> &array, const Polygon<float> &polygon);
     //: Constructor.
 
     void First();
@@ -98,7 +98,7 @@ namespace Ravl2
   };
 
   template <class DataT>
-  Array2dPolygon2dIterC<DataT>::Array2dPolygon2dIterC(const Array<DataT, 2> &array, const Polygon2dC &polygon)
+  Array2dPolygon2dIterC<DataT>::Array2dPolygon2dIterC(const Array<DataT, 2> &array, const Polygon &polygon)
       : m_array(array),
         m_rowRange(array.range(0)),
         m_colRange(array.range(1))

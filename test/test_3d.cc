@@ -5,7 +5,7 @@
 #include "Ravl2/3D/TriMesh.hh"
 #include "Ravl2/3D/MeshShapes.hh"
 #include "Ravl2/Geometry/Range.hh"
-#include "Ravl2/Geometry/Polygon2d.hh"
+#include "Ravl2/Geometry/Polygon.hh"
 #include "Ravl2/Image/DrawPolygon.hh"
 #include "Ravl2/Array.hh"
 
@@ -51,7 +51,7 @@ bool testTexCoords(const Ravl2::TriMesh<float> &mesh)
   Range<float,2> texRect({0,0},{1,1});
 
   for(auto it : mesh.Faces()) {
-    Polygon2dC<float> poly;
+    Polygon<float> poly;
     // Check texture coordinates are legal.
     if(!texRect.contains(it.TextureCoord(0)))
       return false;

@@ -33,7 +33,7 @@ namespace Ravl2
       return;
     }
     RealT step = 2 * std::numbers::pi_v<RealT> / (major + minor);
-    Polygon2dC<RealT> poly;
+    Polygon<RealT> poly;
     for(RealT a = 0; a < 2 * std::numbers::pi_v<RealT>; a += step)
       poly.push_back(ellipse.point(a));
     DrawPolygon(image, value, poly);
@@ -58,7 +58,7 @@ namespace Ravl2
       return;
     }
     RealT step = 2 * std::numbers::pi_v<RealT> / (maj + min);
-    Polygon2dC<RealT> poly;
+    Polygon<RealT> poly;
     for(RealT a = 0; a < 2 * std::numbers::pi_v<RealT>; a += step)
       poly.push_back(ellipse.Point(a));
     DrawFilledPolygon(image, value, poly, fill);

@@ -11,7 +11,7 @@
 #include <spdlog/spdlog.h>
 #include "Ravl2/Image/Segmentation/Boundary.hh"
 #include "Ravl2/Assert.hh"
-#include "Ravl2/Geometry/Polygon2d.hh"
+#include "Ravl2/Geometry/Polygon.hh"
 
 #define DODEBUG 0
 #if DODEBUG
