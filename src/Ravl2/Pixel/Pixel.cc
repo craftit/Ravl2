@@ -4,6 +4,7 @@
 
 #include "Ravl2/Pixel/Pixel.hh"
 #include "Ravl2/Pixel/Colour.hh"
+#include "Ravl2/IO/Cereal.hh"
 
 namespace Ravl2
 {
@@ -97,5 +98,38 @@ namespace Ravl2
   template class Pixel<uint8_t, ImageChannel::Blue, ImageChannel::Green, ImageChannel::Red, ImageChannel::Alpha>;
   template class Pixel<uint8_t, ImageChannel::Luminance, ImageChannel::ChrominanceU, ImageChannel::ChrominanceV>;
   template class Pixel<float, ImageChannel::Luminance, ImageChannel::ChrominanceU, ImageChannel::ChrominanceV>;
+
+
+  // Also about arrays based on the pixel types
+  template class Array<PixelY8,2>;
+  template class Array<PixelY16,2>;
+  template class Array<PixelD16,2>;
+  template class Array<PixelD32F,2>;
+  template class Array<PixelRGB8,2>;
+  template class Array<PixelRGBA8,2>;
+  template class Array<PixelRGB16,2>;
+  template class Array<PixelRGBA16,2>;
+  template class Array<PixelRGB32F,2>;
+  template class Array<PixelRGBA32F,2>;
+  template class Array<PixelBGR8,2>;
+  template class Array<PixelBGRA8,2>;
+  template class Array<PixelYUV8,2>;
+  template class Array<PixelYUV32F,2>;
+
+  namespace {
+    [[maybe_unused]] bool g_reg1 = registerCerealFormats<Array<PixelRGB8,2>>();
+    [[maybe_unused]] bool g_reg2 = registerCerealFormats<Array<PixelRGBA8,2>>();
+    [[maybe_unused]] bool g_reg3 = registerCerealFormats<Array<PixelRGB16,2>>();
+    [[maybe_unused]] bool g_reg4 = registerCerealFormats<Array<PixelRGBA16,2>>();
+    [[maybe_unused]] bool g_reg5 = registerCerealFormats<Array<PixelY8,2>>();
+    [[maybe_unused]] bool g_reg6 = registerCerealFormats<Array<PixelY16,2>>();
+    [[maybe_unused]] bool g_reg7 = registerCerealFormats<Array<PixelYUV8,2>>();
+    [[maybe_unused]] bool g_reg8 = registerCerealFormats<Array<PixelD32F,2>>();
+    [[maybe_unused]] bool g_reg9 = registerCerealFormats<Array<PixelD16,2>>();
+    [[maybe_unused]] bool g_reg10 = registerCerealFormats<Array<PixelRGB32F,2>>();
+    [[maybe_unused]] bool g_reg11 = registerCerealFormats<Array<PixelRGBA32F,2>>();
+    [[maybe_unused]] bool g_reg14 = registerCerealFormats<Array<PixelYUV32F,2>>();
+    [[maybe_unused]] bool g_reg15 = registerCerealFormats<Array<PixelY32F,2>>();
+  }
 
 }// namespace Ravl2

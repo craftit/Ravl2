@@ -11,7 +11,7 @@
 #include "Ravl2/Qt/Index.hh"
 #include "Ravl2/Geometry/Geometry.hh"
 #include "Ravl2/Geometry/Range.hh"
-#include "Ravl2/Geometry/Polygon2d.hh"
+#include "Ravl2/Geometry/Polygon.hh"
 #include "Ravl2/Geometry/LinePP2d.hh"
 
 namespace Ravl2
@@ -55,7 +55,7 @@ namespace Ravl2
   template <typename RealT = float>
   inline constexpr auto toPolygon(const QPolygonF &polygon)
   {
-    Polygon2dC<RealT> result;
+    Polygon<RealT> result;
     for(const auto &point : polygon) {
       result.push_back(toPoint<RealT>(point));
     }
@@ -66,7 +66,7 @@ namespace Ravl2
   template <typename IndexT = int>
   inline constexpr auto toPolygon(const QPolygon &polygon)
   {
-    Polygon2dC<IndexT> result;
+    Polygon<IndexT> result;
     for(const auto &point : polygon) {
       result.push_back(toPoint(point));
     }
@@ -76,7 +76,7 @@ namespace Ravl2
   //! Convert an integer Polygon to a QPolygon
   template <typename IndexT>
     requires std::is_integral<IndexT>::value
-  inline auto toQPolygon(const Polygon2dC<IndexT> &polygon)
+  inline auto toQPolygon(const Polygon<IndexT> &polygon)
   {
     QPolygon result;
     for(const auto &point : polygon) {
@@ -88,7 +88,7 @@ namespace Ravl2
   //! Convert a real Polygon to a QPolygonF
   template <typename RealT>
     requires std::is_floating_point<RealT>::value
-  inline auto toQPolygon(const Polygon2dC<RealT> &polygon)
+  inline auto toQPolygon(const Polygon<RealT> &polygon)
   {
     QPolygonF result;
     for(const auto &point : polygon) {
@@ -98,8 +98,8 @@ namespace Ravl2
   }
 
   // Declare some common instantiations
-  extern template auto toQPolygon<int>(const Polygon2dC<int> &polygon);
-  extern template auto toQPolygon<float>(const Polygon2dC<float> &polygon);
-  extern template auto toQPolygon<double>(const Polygon2dC<double> &polygon);
+  extern template auto toQPolygon<int>(const Polygon<int> &polygon);
+  extern template auto toQPolygon<float>(const Polygon<float> &polygon);
+  extern template auto toQPolygon<double>(const Polygon<double> &polygon);
 
 }// namespace Ravl2

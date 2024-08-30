@@ -256,7 +256,7 @@ namespace Ravl2
   PointSet2dC operator*(const Projection2dC &trans,const PointSet2dC &points);
   //: Apply a projective transform to a point set
   
-  Polygon2dC operator*(const Projection2dC &trans,const Polygon2dC &points);
+  Polygon operator*(const Projection2dC &trans,const Polygon &points);
   //: Apply a projective transform to a polygon
 
 #endif

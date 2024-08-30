@@ -17,7 +17,7 @@ namespace Ravl2
   //  template<class DataT> class PairC;
   //  class Point2dC;
   //  class PointSet2dC;
-  //  class Polygon2dC;
+  //  class Polygon;
   //
   //! userlevel=Normal
   //: 2-D affine transformation
@@ -175,7 +175,7 @@ namespace Ravl2
   //  PointSet2dC operator*(const FAffineC<2> &trans,const PointSet2dC &points);
   //  //: Apply a affine transform to a point set
   //
-  //  Polygon2dC operator*(const FAffineC<2> &trans,const Polygon2dC &points);
+  //  Polygon operator*(const FAffineC<2> &trans,const Polygon &points);
   //  //: Apply a affine transform to a polygon
   //
   //  SArray1dC<Point2dC> operator*(const FAffineC<2> &trans,const SArray1dC<Point2dC> &points);

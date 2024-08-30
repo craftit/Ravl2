@@ -82,7 +82,7 @@ s/\.Range2()/\.range(1)/g
 s/\.Max()/\.max()/g
 s/\.Min()/\.min()/g
 s/\.Frame()/\.range()/g
-
+s/ Swap(/ std::swap(/g
 s/\.V()//g
 s/Index2dC/Index<2>/g
 s/IndexRange2dC/IndexRange<2>/g
@@ -184,6 +184,8 @@ s/MatrixC/Tensor<RealT,2>/g
 
 # Deal with images
 s/ImageC<\([^>]*\)>/Array<\1,2>/g
+s/RealRGBValueC/PixelRGB32F/g
+s/ByteRGBValueC/PixelRGB8/g
 
 # Header files
 # Change Ravl/Index2d.hh to Ravl2/Index.hh
@@ -226,7 +228,9 @@ s/\[3\]\[3\]/(3,3)/g
 /^\s*using namespace RavlN;/d
 /^\s*using namespace RavlImageN;/d
 s/namespace RavlN/namespace Ravl2/g
-s/namespace RavlImageN/namespace Ravl2/g
+s/RavlImageN/Ravl2/g
+s/Ravl3DN/Ravl2/g
+s/RavlGUIN/Ravl2/g
 
 # Convert SysLog to spdlog.
 # In text RavlDebug(x), RavlWarning(x), RavlInfo(x), RavlError(x), -> SPDLOG_TRACE(x), SYSLOG_WARN(x), SPDLOG_INFO(x), SPDLOG_ERROR(x),
@@ -256,6 +260,10 @@ s/ByteT/uint8_t/g
 s/UByteT/uint8_t/g
 s/FontC/BitmapFont/g
 
+s/VertexC/Vertex<RealT>/g
+s/TriC/Tri<RealT>/g
+s/RigidTransform3dC/Isometry3<RealT>/g
+s/Index3dC/Index<3>/g
 
 EOF
 

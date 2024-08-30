@@ -17,8 +17,8 @@ add_library (Ravl2Geometry
         LinePP2d.hh LinePP2d.cc
         LineABC2d.cc LineABC2d.hh
         Line2dIter.hh Line2dIter.cc
-        Polygon2d.cc Polygon2d.hh
-        Polygon2dIter.cc Polygon2dIter.hh
+        Polygon.cc Polygon.hh
+        PolygonRasterIter.cc PolygonRasterIter.hh
         PolyLine.hh PolyLine.cc
         Range.hh Range.cc
         Projection.cc Projection.hh

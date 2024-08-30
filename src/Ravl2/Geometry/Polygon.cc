@@ -5,7 +5,7 @@
 // see http://www.gnu.org/copyleft/lesser.html
 // file-header-ends-here
 
-#include "Ravl2/Geometry/Polygon2d.hh"
+#include "Ravl2/Geometry/Polygon.hh"
 #include "Ravl2/Geometry/Moments2.hh"
 #include "Ravl2/Geometry/LinePP.hh"
 
@@ -13,7 +13,7 @@ namespace Ravl2
 {
 
   template <typename RealT>
-  Polygon2dC<RealT>::Polygon2dC(const Range<RealT, 2> &range, BoundaryOrientationT orientation)
+  Polygon<RealT>::Polygon(const Range<RealT, 2> &range, BoundaryOrientationT orientation)
   {
     this->reserve(4);
     if(orientation == BoundaryOrientationT::INSIDE_LEFT) {
@@ -32,7 +32,7 @@ namespace Ravl2
   }
 
   template <typename RealT>
-  RealT Polygon2dC<RealT>::area() const
+  RealT Polygon<RealT>::area() const
   {
     RealT sum = 0.0;
     if(!this->empty()) {
@@ -46,7 +46,7 @@ namespace Ravl2
   }
 
   template <typename RealT>
-  [[nodiscard]] bool Polygon2dC<RealT>::isConvex(BoundaryOrientationT orientation) const
+  [[nodiscard]] bool Polygon<RealT>::isConvex(BoundaryOrientationT orientation) const
   {
     if(this->size() < 3)
       return false;
@@ -64,7 +64,7 @@ namespace Ravl2
   }
 
   template <typename RealT>
-  Point<RealT, 2> Polygon2dC<RealT>::Centroid() const
+  Point<RealT, 2> Polygon<RealT>::Centroid() const
   {
     RealT x = 0.0;
     RealT y = 0.0;
@@ -81,7 +81,7 @@ namespace Ravl2
   }
 
   template <typename RealT>
-  Moments2<RealT> moments(const Polygon2dC<RealT> &poly)
+  Moments2<RealT> moments(const Polygon<RealT> &poly)
   {
     RealT m00 = 0.0;
     RealT m10 = 0.0;
@@ -120,7 +120,7 @@ namespace Ravl2
   }
 
   template <typename RealT>
-  bool Polygon2dC<RealT>::contains(const Point<RealT, 2> &p) const
+  bool Polygon<RealT>::contains(const Point<RealT, 2> &p) const
   {
 
     RealT tolerance = 0;//std::numeric_limits<RealT>::epsilon();
@@ -192,11 +192,11 @@ namespace Ravl2
   }
 
   template <typename RealT>
-  Polygon2dC<RealT> Polygon2dC<RealT>::ClipByConvex(const Polygon2dC &oth, BoundaryOrientationT othOrientation) const
+  Polygon<RealT> Polygon<RealT>::ClipByConvex(const Polygon &oth, BoundaryOrientationT othOrientation) const
   {
     if(oth.size() < 3)
-      return Polygon2dC();
-    Polygon2dC ret = *this;// FixMe:- This makes a poinless copy of the polygon.
+      return Polygon();
+    Polygon ret = *this;// FixMe:- This makes a poinless copy of the polygon.
     auto pLast = oth.back();
     for(auto ptr : oth) {
       ret = ret.ClipByLine(LinePP2dC<RealT>(pLast, ptr), othOrientation);
@@ -207,16 +207,16 @@ namespace Ravl2
 
   //! Add a point checking it isn't a duplicate of the last one.
   template <typename RealT>
-  void Polygon2dC<RealT>::addBack(const Point<RealT, 2> &pnt)
+  void Polygon<RealT>::addBack(const Point<RealT, 2> &pnt)
   {
     if(this->empty() || squaredEuclidDistance(pnt, this->back()) > std::numeric_limits<RealT>::epsilon())
       this->push_back(pnt);
   }
 
   template <typename RealT>
-  Polygon2dC<RealT> Polygon2dC<RealT>::ClipByLine(const LinePP2dC<RealT> &line, BoundaryOrientationT lineOrientation) const
+  Polygon<RealT> Polygon<RealT>::ClipByLine(const LinePP2dC<RealT> &line, BoundaryOrientationT lineOrientation) const
   {
-    Polygon2dC ret;
+    Polygon ret;
     if(this->size() < 3)// Empty polygon to start with ?
       return ret;
     ret.reserve(this->size() + 1);// Worst case we cut off a spike and add a point.
@@ -260,10 +260,10 @@ namespace Ravl2
   }
 
   template <typename RealT>
-  Polygon2dC<RealT> Polygon2dC<RealT>::ClipByAxis(RealT threshold, unsigned axis, bool isGreater) const
+  Polygon<RealT> Polygon<RealT>::ClipByAxis(RealT threshold, unsigned axis, bool isGreater) const
   {
     RavlAssert(axis < 2);
-    Polygon2dC ret;
+    Polygon ret;
     // Empty polygon to start with ?
     if(this->empty())
       return ret;
@@ -309,9 +309,9 @@ namespace Ravl2
   }
 
   template <typename RealT>
-  Polygon2dC<RealT> Polygon2dC<RealT>::ClipByRange(const Range<RealT, 2> &rng) const
+  Polygon<RealT> Polygon<RealT>::ClipByRange(const Range<RealT, 2> &rng) const
   {
-    Polygon2dC ret = this->ClipByAxis(rng.min(0), 0, 1);
+    Polygon ret = this->ClipByAxis(rng.min(0), 0, 1);
     ret = ret.ClipByAxis(rng.max(1), 1, 0);
     ret = ret.ClipByAxis(rng.max(0), 0, 0);
     ret = ret.ClipByAxis(rng.min(1), 1, 1);
@@ -319,7 +319,7 @@ namespace Ravl2
   }
 
   template <typename RealT>
-  bool Polygon2dC<RealT>::IsSelfIntersecting() const
+  bool Polygon<RealT>::IsSelfIntersecting() const
   {
     auto ft = this->begin();
     if(ft == this->end())
@@ -356,7 +356,7 @@ namespace Ravl2
   }
 
   template <typename RealT>
-  RealT Polygon2dC<RealT>::Perimeter() const
+  RealT Polygon<RealT>::Perimeter() const
   {
     RealT perimeter = 0.0;
     if(!this->empty()) {
@@ -370,28 +370,28 @@ namespace Ravl2
   }
 
   template <typename RealT>
-  RealT Polygon2dC<RealT>::Overlap(const Polygon2dC &poly) const
+  RealT Polygon<RealT>::Overlap(const Polygon &poly) const
   {
     if(this->empty() || poly.empty())
       return 0;
     RealT thisArea = area();
-    Polygon2dC overlap = ClipByConvex(poly);
+    Polygon overlap = ClipByConvex(poly);
     return overlap.area() / thisArea;
   }
 
   template <typename RealT>
-  RealT Polygon2dC<RealT>::CommonOverlap(const Polygon2dC &poly) const
+  RealT Polygon<RealT>::CommonOverlap(const Polygon &poly) const
   {
     if(this->empty() || poly.empty())
       return 0;
     RealT polyArea = poly.area();
     RealT thisArea = area();
-    Polygon2dC overlap = ClipByConvex(poly);
+    Polygon overlap = ClipByConvex(poly);
     return overlap.area() / std::max(thisArea, polyArea);
   }
 
   //! Let the compiler know that we will use these classes with the following types
-  template class Polygon2dC<float>;
-  template class Polygon2dC<double>;
+  template class Polygon<float>;
+  template class Polygon<double>;
 
 }// namespace Ravl2

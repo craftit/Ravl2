@@ -2,6 +2,12 @@
 #include "checks.hh"
 
 #include "Ravl2/3D/PinholeCamera0.hh"
+#include "Ravl2/3D/TriMesh.hh"
+#include "Ravl2/3D/MeshShapes.hh"
+#include "Ravl2/Geometry/Range.hh"
+#include "Ravl2/Geometry/Polygon.hh"
+#include "Ravl2/Image/DrawPolygon.hh"
+#include "Ravl2/Array.hh"
 
 TEST_CASE("PinholeCamera0")
 {
@@ -31,4 +37,77 @@ TEST_CASE("PinholeCamera0")
     }
   }
 
+}
+
+// Display the texture coordinates of a mesh.
+
+bool testTexCoords(const Ravl2::TriMesh<float> &mesh)
+{
+  using namespace Ravl2;
+
+  Ravl2::Array<uint8_t,2> img({512,512});
+  fill(img,0);
+
+  Range<float,2> texRect({0,0},{1,1});
+
+  for(auto it : mesh.Faces()) {
+    Polygon<float> poly;
+    // Check texture coordinates are legal.
+    if(!texRect.contains(it.TextureCoord(0)))
+      return false;
+    if(!texRect.contains(it.TextureCoord(1)))
+      return false;
+    if(!texRect.contains(it.TextureCoord(2)))
+      return false;
+    // Check area.
+    poly.push_back(it.TextureCoord(0)*512);
+    poly.push_back(it.TextureCoord(1)*512);
+    poly.push_back(it.TextureCoord(2)*512);
+
+    if(poly.area() == 0) {
+      SPDLOG_WARN("Warning: Texture map for tri has zero area. ");
+      return false;
+    }
+
+    // For visual check.
+    Ravl2::DrawPolygon(img,uint8_t(255),poly);
+
+  }
+#if 0
+  // Enable to display mapping for faces onto the texture.
+  static int testCount =0;
+  save(std::string("@X:Tex") + std::string(testCount++),img);
+#endif
+  return true;
+}
+
+
+
+TEST_CASE("TriMesh")
+{
+  using namespace Ravl2;
+
+  SECTION("MeshPlane")
+  {
+    TriMesh<float> mesh = createTriMeshPlane(1.0);
+
+    auto ns = mesh.Vertices()[0].Normal()[2];
+    mesh.UpdateVertexNormals();
+    // Check the normals are consistant
+    CHECK(sign(ns) == sign(mesh.Vertices()[0].Normal()[2]));
+    CHECK(testTexCoords(mesh));
+
+  }
+
+  SECTION("MeshCub")
+  {
+    TriMesh<float> mesh = createTriMeshCube(1.0);
+    CHECK(testTexCoords(mesh));
+  }
+
+  SECTION("Sphere")
+  {
+    TriMesh<float> mesh = createTriMeshSphere(3,8,1.0);
+    CHECK(testTexCoords(mesh));
+  }
 }

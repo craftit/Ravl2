@@ -9,8 +9,8 @@
 
 #include "Ravl2/Array.hh"
 #include "Ravl2/Image/DrawLine.hh"
-#include "Ravl2/Geometry/Polygon2d.hh"
-#include "Ravl2/Geometry/Polygon2dIter.hh"
+#include "Ravl2/Geometry/Polygon.hh"
+#include "Ravl2/Geometry/PolygonRasterIter.hh"
 
 namespace Ravl2
 {
@@ -21,10 +21,10 @@ namespace Ravl2
   //! @param poly The polygon to draw
   template <typename ArrayT, typename CoordT = float, typename DataT = typename ArrayT::value_type>
     requires WindowedArray<ArrayT, DataT, 2>
-  void DrawFilledPolygon(ArrayT &dat, const DataT &value, const Polygon2dC<CoordT> &poly)
+  void DrawFilledPolygon(ArrayT &dat, const DataT &value, const Polygon<CoordT> &poly)
   {
     // Draw one-colour polygon
-    for(Polygon2dIterC<CoordT> it(poly); it.valid(); ++it) {
+    for(PolygonRasterIter<CoordT> it(poly); it.valid(); ++it) {
       fill(clip(dat[it.row()], it.rowIndexRange()), value);
     }
   }
@@ -36,7 +36,7 @@ namespace Ravl2
 
   template <typename ArrayT, typename CoordT = float, typename DataT = typename ArrayT::value_type>
     requires WindowedArray<ArrayT, DataT, 2>
-  void DrawPolygon(ArrayT &dat, const DataT &value, const Polygon2dC<CoordT> &poly)
+  void DrawPolygon(ArrayT &dat, const DataT &value, const Polygon<CoordT> &poly)
   {
     // Draw individual lines
     auto end = poly.end();
@@ -55,7 +55,7 @@ namespace Ravl2
 
   template <typename ArrayT, typename CoordT = float, typename DataT = typename ArrayT::value_type>
     requires WindowedArray<ArrayT, DataT, 2>
-  void DrawShadedPolygon(ArrayT &dat, const std::vector<DataT> &values, const Polygon2dC<CoordT> &poly)
+  void DrawShadedPolygon(ArrayT &dat, const std::vector<DataT> &values, const Polygon<CoordT> &poly)
   {
     if(values.size() != poly.size())
       throw std::runtime_error("DrawPolygon: values.size() != poly.size()");
@@ -63,7 +63,7 @@ namespace Ravl2
       return;
     auto valuesEnd = values.end();
     // Draw shaded polygon
-    for(Polygon2dIterC<CoordT> it(dat, poly); it; it++) {
+    for(PolygonRasterIter<CoordT> it(dat, poly); it; it++) {
       auto pnt = toPoint<float>(it.index());
       // Calculate barycentric coords
       auto coord = poly.BarycentricCoordinate(pnt);
@@ -89,7 +89,7 @@ namespace Ravl2
 
   template <typename ArrayT, typename CoordT = float, typename DataT = typename ArrayT::value_type>
     requires WindowedArray<ArrayT, DataT, 2>
-  void DrawPolygon(ArrayT &dat, const std::vector<DataT> &values, const Polygon2dC<CoordT> &poly)
+  void DrawPolygon(ArrayT &dat, const std::vector<DataT> &values, const Polygon<CoordT> &poly)
   {
     if(values.size() != poly.size())
       throw std::runtime_error("DrawPolygon: values.size() != poly.size()");
