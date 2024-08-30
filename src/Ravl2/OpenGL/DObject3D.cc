@@ -13,23 +13,24 @@ namespace Ravl2
 
   //: Render, checking for display lists.
   bool DObject3DBodyC::GUIRenderDL(Canvas3DC &c3d) {
-    bool ret = true;
+    bool ret = false;
     //cerr << "Calling Genlist. " << id << "\n";
-    if(id >= 0) {
-      //cerr << "Calling Genlist. " << id << "\n";
-      glCallList(id);
-    }
-    else if(id == -2)
-    { // Generate display list.
-      id = glGenLists(1);
-      //cerr << "New Genlist. " << id << "\n";
-      glNewList(id, GL_COMPILE);
+    if(m_useDisplayList) {
+      if(id < std::numeric_limits<GLuint>::max()) {
+        //cerr << "Calling Genlist. " << id << "\n";
+        glCallList(id);
+      } else {// Generate display list.
+        id = glGenLists(1);
+        //cerr << "New Genlist. " << id << "\n";
+        glNewList(id, GL_COMPILE);
+        ret = GUIRender(c3d);
+        glEndList();
+        glCallList(id);
+      }
+    } else {
       ret = GUIRender(c3d);
-      glEndList();
-      glCallList(id);
     }
-    else  // Don't use a display list...
-      ret = GUIRender(c3d);
+    // Don't use a display list...
     return ret;
   }
 

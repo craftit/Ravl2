@@ -77,20 +77,20 @@ namespace Ravl2
     //: Set a texture coordinate
 
     void EnableDisplayList()
-    { id = -2; }
+    { m_useDisplayList = true; }
     //: Enable generation of a display list.
 
-    int DisplayListID() const
+    auto DisplayListID() const
       { return id; }
     //: Access display list ID.
 
-    int &DisplayListID()
+    auto &DisplayListID()
       { return id; }
     //: Access display list ID.
 
   protected:
-
-    GLuint id = -1; // Display list id. -1=None. -2=To be generated...
+    bool m_useDisplayList = false;
+    GLuint id = std::numeric_limits<GLuint>::max(); // Display list id. -1=None. -2=To be generated...
   };
 
 #if 0
