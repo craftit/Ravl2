@@ -19,7 +19,7 @@ namespace Ravl2
 {
   class Canvas3DC;
 
-  //: Body of a basic display object in a 3D world.
+  //! Display object base class in a 3D world.
   class DObject3DBodyC
   {
   public:
@@ -35,7 +35,7 @@ namespace Ravl2
 
     //: Get center of object.
     // defaults to 0,0,0
-    virtual Vector<float,3> GUICenter() const = 0;
+    [[nodiscard]] virtual Vector<float,3> GUICenter() const = 0;
     //  { return Vector<RealT,3>(0,0,0); }
 
     //: Get extent of object.
@@ -89,7 +89,8 @@ namespace Ravl2
     //: Access display list ID.
 
   protected:
-    int id = -1; // Display list id. -1=None. -2=To be generated...
+
+    GLuint id = -1; // Display list id. -1=None. -2=To be generated...
   };
 
 #if 0
