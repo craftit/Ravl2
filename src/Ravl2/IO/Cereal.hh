@@ -4,6 +4,11 @@
 
 #pragma once
 
+#ifndef CEREAL_THREAD_SAFE
+#message "CEREAL_THREAD_SAFE not defined. Defining it."
+#define CEREAL_THREAD_SAFE 1
+#endif
+
 #include <cereal/archives/binary.hpp>
 #include <cereal/archives/json.hpp>
 #include <cereal/types/string.hpp>

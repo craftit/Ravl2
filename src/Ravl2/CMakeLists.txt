@@ -81,6 +81,8 @@ if (APPLE)
     target_link_libraries(Ravl2Core PUBLIC "-framework Accelerate")
 endif()
 
+# We need to define CEREAL_THREAD_SAFE 1 for cereal to be thread safe
+target_compile_definitions(Ravl2Core PUBLIC CEREAL_THREAD_SAFE=1)
 
 target_link_libraries(Ravl2Core PUBLIC ${OpenCV_LIBS} cereal::cereal fmt::fmt xtensor xtensor-blas spdlog::spdlog BLAS::BLAS LAPACK::LAPACK)
 

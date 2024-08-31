@@ -4,6 +4,10 @@
 
 #pragma once
 
+#ifndef CEREAL_THREAD_SAFE
+#define CEREAL_THREAD_SAFE 1
+#endif
+
 #include <span>
 #include <fmt/ostream.h>
 #include <cereal/cereal.hpp>
