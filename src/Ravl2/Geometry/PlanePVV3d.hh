@@ -36,7 +36,10 @@ namespace Ravl2
           mVector1(v1),
           mVector2(v2)
     {}
-
+    
+    //! Assignment operator.
+    PlanePVV3dC &operator=(const PlanePVV3dC &plane) = default;
+    
     //! Creates the plane determined by three points 'p1', 'p2', and 'p3'.
     //! The first vector is equal to p2-p1, the second one to p3-p1.
     static PlanePVV3dC<RealT> fromPoints(
