@@ -324,13 +324,20 @@ namespace Ravl2
   extern template class CerealSaveFormat<cereal::JSONOutputArchive>;
   extern template class CerealLoadFormat<cereal::JSONInputArchive>;
 
-  //! @brief Register a type with the cereal formats.
+  //! @brief Register a type with the binary cereal formats.
   template<typename ObjectT>
   bool registerCerealFormats()
   {
     bool ret = CerealSaveFormat<cereal::BinaryOutputArchive>::template registerType<ObjectT>();
     ret &= CerealLoadFormat<cereal::BinaryInputArchive>::template registerType<ObjectT>();
-    ret &= CerealSaveFormat<cereal::JSONOutputArchive>::template registerType<ObjectT>();
+    return ret;
+  }
+
+  //! @brief Register a type with the cereal json formats.
+  template<typename ObjectT>
+  bool registerCerealJSONFormats()
+  {
+    bool ret = CerealSaveFormat<cereal::JSONOutputArchive>::template registerType<ObjectT>();
     ret &= CerealLoadFormat<cereal::JSONInputArchive>::template registerType<ObjectT>();
     return ret;
   }

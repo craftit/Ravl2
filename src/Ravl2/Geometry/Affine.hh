@@ -114,7 +114,7 @@ namespace Ravl2
   constexpr Affine<DataT, N> Affine<DataT, N>::inverse(void) const
   {
     Affine<DataT, N> ret;
-    ret.mSR = xt::linalg::inv(mSR);
+    ret.mSR = xt::linalg::pinv(mSR);
     ret.mT = xt::linalg::dot(ret.mSR, mT) * -1;
     return ret;
   }
