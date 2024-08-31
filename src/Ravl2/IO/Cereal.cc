@@ -23,10 +23,7 @@ namespace Ravl2
   CerealArchiveHeader::CerealArchiveHeader(std::string theTypeName)
     : m_magic(m_magicNumber),
       fileFormatVersion(1),
-      majorVersion(Ravl2::cmake::project_version_major),
-      minorVersion(Ravl2::cmake::project_version_minor),
-      patchVersion(Ravl2::cmake::project_version_patch),
-      tweakVersion(Ravl2::cmake::project_version_tweak),
+      libVersion(Ravl2::cmake::project_version),
       gitHash(Ravl2::cmake::git_sha),
       typeName(std::move(theTypeName))
   {}

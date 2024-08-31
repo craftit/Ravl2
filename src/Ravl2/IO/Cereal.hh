@@ -31,10 +31,7 @@ namespace Ravl2
     explicit CerealArchiveHeader(std::string theTypeName);
     uint32_t m_magic = 0;
     uint16_t fileFormatVersion = 0;
-    uint16_t majorVersion = 0;
-    uint16_t minorVersion = 0;
-    uint16_t patchVersion = 0;
-    uint16_t tweakVersion = 0;
+    std::string libVersion;
     std::string gitHash;
     std::string typeName;
 
@@ -43,10 +40,7 @@ namespace Ravl2
     {
       archive(cereal::make_nvp("magic", m_magic),
 	      cereal::make_nvp("formatVersion", fileFormatVersion),
-	      cereal::make_nvp("majorVersion", majorVersion),
-	      cereal::make_nvp("minorVersion", minorVersion),
-	      cereal::make_nvp("patchVersion", patchVersion),
-	      cereal::make_nvp("tweakVersion", tweakVersion),
+	      cereal::make_nvp("version", libVersion),
 	      cereal::make_nvp("gitHash", gitHash),
 	      cereal::make_nvp("typeName", typeName));
     }
@@ -59,10 +53,7 @@ namespace Ravl2
 	throw std::runtime_error("Magic number mismatch in stream.");
       }
       archive(cereal::make_nvp("formatVersion", fileFormatVersion),
-	      cereal::make_nvp("majorVersion", majorVersion),
-	      cereal::make_nvp("minorVersion", minorVersion),
-	      cereal::make_nvp("patchVersion", patchVersion),
-	      cereal::make_nvp("tweakVersion", tweakVersion),
+	      cereal::make_nvp("version", libVersion),
 	      cereal::make_nvp("gitHash", gitHash),
 	      cereal::make_nvp("typeName", typeName));
     }
