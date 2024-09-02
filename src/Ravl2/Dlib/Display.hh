@@ -8,10 +8,10 @@
 namespace Ravl2
 {
 
-  //! Enable DLib display file format. NOT IMPLEMENTED
+  //! Enable DLib display file format.
   //! Displaying images.
-  //!   This also supports displaying images via saving a file formated as follows: 'display://WindowName' filename.
+  //!   This also supports displaying images via saving a file formated as follows: 'dlib://WindowName' filename.
   //!   If an image is save this way, the program will wait for a key press before exiting
-  // void initDLibDisplay();
+  void initDLibDisplay();
 
 }// namespace Ravl2

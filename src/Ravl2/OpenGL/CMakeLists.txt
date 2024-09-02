@@ -5,12 +5,13 @@ find_package(OpenGL REQUIRED)
 
 add_library (Ravl2OpenGL
   DObject3D.cc DObject3D.hh
+  GLWindow.cc GLWindow.hh
 )
 
 add_library(ravl2::Ravl2OpenGL ALIAS Ravl2OpenGL)
 
 target_link_libraries(Ravl2OpenGL PRIVATE RAVL2_options RAVL2_warnings)
-target_link_libraries(Ravl2OpenGL PUBLIC Ravl2x3D ${OPENGL_LIBRARIES} )
+target_link_libraries(Ravl2OpenGL PUBLIC Ravl2x3D ${OPENGL_LIBRARIES} glfw )
 
 target_include_directories(Ravl2OpenGL ${WARNING_GUARD} PUBLIC
         $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src>
@@ -32,4 +33,7 @@ if(NOT BUILD_SHARED_LIBS)
     target_compile_definitions(Ravl2OpenGL PUBLIC SAMPLE_LIBRARY_STATIC_DEFINE)
 endif()
 
+
+add_executable(viewer3d viewer3d.cc)
+target_link_libraries (viewer3d PUBLIC Ravl2Image Ravl2OpenGL CLI11::CLI11)
 

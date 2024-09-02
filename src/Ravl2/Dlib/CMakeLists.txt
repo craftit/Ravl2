@@ -7,8 +7,7 @@ add_library (Ravl2Dlib
         Image.hh Image.cc
         Display.cc Display.hh
         DisplayWindow.cc DisplayWindow.hh
-        ImageIO.cc
-        ImageIO.hh
+        ImageIO.cc ImageIO.hh
 )
 
 add_library(ravl2::Ravl2Dlib ALIAS Ravl2Dlib)

@@ -29,10 +29,10 @@ function(RAVL2_setup_dependencies)
   find_package(cereal QUIET)
   find_package(OpenGL QUIET)
 
-
   # Optional dependencies, we won't build them if they're not found
 
   find_package(dlib QUIET)
+  find_package(glfw3 QUIET)
 
   find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Widgets)
   find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS  Core Gui Widgets)

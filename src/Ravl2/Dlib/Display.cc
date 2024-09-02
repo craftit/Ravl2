@@ -11,6 +11,7 @@
 #include "Ravl2/Dlib/DisplayWindow.hh"
 #include "Ravl2/IO/OutputFormat.hh"
 #include "Ravl2/IO/TypeConverter.hh"
+#include "Ravl2/Array.hh"
 
 namespace Ravl2
 {
@@ -31,15 +32,18 @@ namespace Ravl2
     return win->second;
   }
 
-
-#if 0
+  namespace
+  {
   void registerDLibAtExitWait()
   {
     // Wait for a key press before closing the window/program
     [[maybe_unused]] static int reg = []()
     {
       SPDLOG_INFO("Registering OpenCV wait for key press");
-      if(std::atexit([]() { cv::waitKey(0); }) != 0)
+      if(std::atexit([]() {
+        SPDLOG_INFO("Waiting for key press");
+        std::getchar();
+         }) != 0)
       {
         SPDLOG_WARN("Failed to register OpenCV wait for key press");
       }
@@ -47,30 +51,29 @@ namespace Ravl2
     }();
   }
 
-  namespace
-  {
 
     [[maybe_unused]] bool g_dispFmt1 = outputFormatMap().add(std::make_shared<OutputFormatCall>("OpenCV", "", "dlib", -1, [](const ProbeOutputContext &ctx) -> std::optional<StreamOutputPlan> {
-      auto convChain = typeConverterMap().find(typeid(cv::Mat), ctx.m_sourceType);
-      if(!convChain.has_value() && ctx.m_sourceType != typeid(cv::Mat)) {
+      auto convChain = typeConverterMap().find(typeid(Ravl2::Array<uint8_t,2>), ctx.m_sourceType);
+      if(!convChain.has_value() && ctx.m_sourceType != typeid(Ravl2::Array<uint8_t,2>)) {
         return std::nullopt;
       }
-      auto strm = std::make_shared<StreamOutputCall<dlib::array2d<uint8_t>>>([filename = ctx.m_filename](const dlib::array2d<uint8_t> &img, std::streampos pos) -> std::streampos {
+      auto strm = std::make_shared<StreamOutputCall<Ravl2::Array<uint8_t,2>>>([filename = ctx.m_filename](const Ravl2::Array<uint8_t,2> &img, std::streampos pos) -> std::streampos {
         (void)pos;
-        //registerAtExitWait();
-        getDLibDisplayWindow("OpenCV").queue([img](DLibIO::DisplayWindow &win) {
+        registerDLibAtExitWait();
+        getDLibDisplayWindow(filename)->queue([img](DLibIO::DisplayWindow &win) {
           win.display(img);
         });
         return 0;
       });
-      if(ctx.m_sourceType == typeid(cv::Mat)) {
+      if(ctx.m_sourceType == typeid(Ravl2::Array<uint8_t,2>)) {
         return StreamOutputPlan {.mStream=strm, .mConversion={}, .mCost=1.0f};
       }
       return StreamOutputPlan {.mStream=strm, .mConversion=convChain.value(), .mCost=convChain.value().conversionLoss()};
     }));
 
   }// namespace
-#endif
+
+
 
 
 }// namespace Ravl2
