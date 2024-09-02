@@ -58,7 +58,7 @@ namespace Ravl2
     constexpr const PointSet<RealT, N> &operator*=(const transform &trans)
     {
       for(auto &it : *this)
-        *it = trans(*it);
+        it = trans(it);
       return *this;
     }
 
@@ -211,6 +211,7 @@ namespace Ravl2
   }
 
   extern template class PointSet<float, 2>;
+  extern template class PointSet<float, 3>;
 
 }// namespace Ravl2
 

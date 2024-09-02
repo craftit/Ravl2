@@ -11,10 +11,11 @@
 namespace Ravl2
 {
 
-  template <typename ArrayT, typename DataT = typename ArrayT::value_type>
-    requires WindowedArray<ArrayT, DataT, 2>
-  void DrawCross(ArrayT &dat, const DataT &value, const Index<2> &at, int pixelSize = 3)
+  template <typename ArrayT, typename DataT, typename PixelT = typename ArrayT::value_type>
+    requires WindowedArray<ArrayT, PixelT, 2> && std::is_convertible_v<DataT, PixelT>
+  void DrawCross(ArrayT &dat, const DataT &rawValue, const Index<2> &at, int pixelSize = 3)
   {
+    PixelT value = PixelT(rawValue);
     // Cross entirely in the image ?
     if(dat.range().contains(IndexRange<2>(at, at).expand(pixelSize))) {
       // Its completely inside, we can just change the pixels.

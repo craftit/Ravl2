@@ -34,15 +34,15 @@ namespace Ravl2
   //! @param value The value to draw
   //! @param poly The polygon to draw
 
-  template <typename ArrayT, typename CoordT = float, typename DataT = typename ArrayT::value_type>
-    requires WindowedArray<ArrayT, DataT, 2>
+  template <typename ArrayT, typename CoordT = float, typename DataT, typename PixelT = ArrayT::value_type>
+    requires WindowedArray<ArrayT, PixelT, 2> && std::is_convertible_v<DataT, PixelT>
   void DrawPolygon(ArrayT &dat, const DataT &value, const Polygon<CoordT> &poly)
   {
     // Draw individual lines
     auto end = poly.end();
     auto last = poly.back();
     for(auto it = poly.begin(); it != end; it++) {
-      DrawLine(dat, value, LinePP2dC<CoordT>(last, *it));
+      DrawLine(dat, PixelT(value), LinePP2dC<CoordT>(last, *it));
       last = *it;
     }
   }
