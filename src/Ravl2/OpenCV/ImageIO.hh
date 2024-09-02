@@ -17,4 +17,8 @@ namespace Ravl2
 
   void initOpenCVImageIO();
 
+
+  //! Wait for a key press
+  void waitKey(int delay = 0);
+
 }// namespace Ravl2

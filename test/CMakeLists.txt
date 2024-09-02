@@ -56,6 +56,7 @@ add_executable(tests
         test_RankedScoreArray.cc
         test_3d.cc
         test_io.cc
+        test_ThreadedQueue.cc
         checks.hh
 )
 target_link_libraries(

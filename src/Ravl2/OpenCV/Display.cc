@@ -16,6 +16,13 @@ namespace Ravl2
   void initOpenCVDisplay()
   {}
 
+
+  //! Wait for a key press
+  void waitKey(int delay)
+  {
+    cv::waitKey(delay);
+  }
+
   void registerAtExitWait()
   {
     // Wait for a key press before closing the window/program
@@ -41,8 +48,8 @@ namespace Ravl2
       }
       auto strm = std::make_shared<StreamOutputCall<cv::Mat>>([filename = ctx.m_filename](const cv::Mat &img, std::streampos pos) -> std::streampos {
         (void)pos;
-        cv::imshow(filename, img);
         registerAtExitWait();
+        cv::imshow(filename, img);
         cv::pollKey();
         return 0;
       });
@@ -53,5 +60,7 @@ namespace Ravl2
     }));
 
   }// namespace
+
+
 
 }// namespace Ravl2

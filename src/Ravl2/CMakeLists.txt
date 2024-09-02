@@ -57,7 +57,7 @@ add_library(Ravl2Core
     ConfigJson.cc ConfigJson.hh
     Pixel/Pixel.cc Pixel/Pixel.hh
     Pixel/Colour.cc Pixel/Colour.hh
-        IO/InputSequence.cc IO/InputSequence.hh
+    IO/InputSequence.cc IO/InputSequence.hh
     IO/OutputFormat.cc IO/OutputFormat.hh
     IO/TypeConverter.cc IO/TypeConverter.hh
     IO/Load.cc IO/Load.hh
@@ -66,10 +66,9 @@ add_library(Ravl2Core
     IO/Cereal.cc IO/Cereal.hh
     IO/StreamInput.hh IO/StreamInput.cc
     IO/StreamOutput.cc IO/StreamOutput.hh
-        IO/InputStreamContainer.cc
-        IO/InputStreamContainer.hh
-        IO/OutputSequence.hh
-        IO/OutputSequence.cc
+    IO/InputStreamContainer.cc IO/InputStreamContainer.hh
+    IO/OutputSequence.hh IO/OutputSequence.cc
+    ThreadedQueue.cc ThreadedQueue.hh
 )
 
 add_library(ravl2::Ravl2Core ALIAS Ravl2Core)
