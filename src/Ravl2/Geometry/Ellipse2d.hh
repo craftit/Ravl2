@@ -95,7 +95,10 @@ namespace Ravl2
     //! Is point on the curve ?
     [[nodiscard]] constexpr bool IsOnCurve(const Point<RealT, 2> &pnt, RealT tolerance = std::numeric_limits<RealT>::epsilon()) const
     {
-      Point<RealT, 2> mp = inverse(p)(pnt);
+      auto invOpt = inverse(p);
+      if(!invOpt)
+        return false;
+      Point<RealT, 2> mp = (*invOpt)(pnt);
       RealT d = sumOfSqr(mp) - 1;
       return isNearZero(d, tolerance);
     }
@@ -103,7 +106,7 @@ namespace Ravl2
     //! Compute the residue from
     [[nodiscard]] constexpr RealT residue(const Point<RealT, 2> &pnt) const
     {
-      Point<RealT, 2> mp = inverse(p)(pnt);
+      Point<RealT, 2> mp = (*inverse(p))(pnt);
       return sumOfSqr(mp) - 1;
     }
 
