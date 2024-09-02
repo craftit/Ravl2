@@ -7,7 +7,7 @@
 #include <cstdlib>
 #include <spdlog/spdlog.h>
 #include <optional>
-#include "Ravl2/Dlib/Display.hh"
+#include "Ravl2/Dlib/Image.hh"
 #include "Ravl2/Dlib/DisplayWindow.hh"
 #include "Ravl2/IO/OutputFormat.hh"
 #include "Ravl2/IO/TypeConverter.hh"
@@ -54,15 +54,21 @@ namespace Ravl2
 
     [[maybe_unused]] bool g_dispFmt1 = outputFormatMap().add(std::make_shared<OutputFormatCall>("OpenCV", "", "dlib", -1, [](const ProbeOutputContext &ctx) -> std::optional<StreamOutputPlan> {
       auto convChain = typeConverterMap().find(typeid(Ravl2::Array<uint8_t,2>), ctx.m_sourceType);
+      if(ctx.m_protocol != "dlib") {
+        return std::nullopt;
+      }
       if(!convChain.has_value() && ctx.m_sourceType != typeid(Ravl2::Array<uint8_t,2>)) {
         return std::nullopt;
       }
       auto strm = std::make_shared<StreamOutputCall<Ravl2::Array<uint8_t,2>>>([filename = ctx.m_filename](const Ravl2::Array<uint8_t,2> &img, std::streampos pos) -> std::streampos {
         (void)pos;
-        registerDLibAtExitWait();
         getDLibDisplayWindow(filename)->queue([img](DLibIO::DisplayWindow &win) {
-          win.display(img);
+          using namespace Ravl2::DLibIO;
+          //DLibArray dimg(img);
+          //win.display(dimg);
+          win.display(toDlib(img));
         });
+        registerDLibAtExitWait();
         return 0;
       });
       if(ctx.m_sourceType == typeid(Ravl2::Array<uint8_t,2>)) {

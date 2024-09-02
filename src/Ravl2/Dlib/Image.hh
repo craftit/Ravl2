@@ -170,9 +170,9 @@ namespace Ravl2
       {}
 
       //! Provide the dlib array2d interface
-      int nc() const { return num_columns(*this); }
+      int nc() const { return this->range(1).size(); }
 
-      int nr() const { return num_rows(*this); }
+      int nr() const { return this->range(0).size(); }
 
       void set_size(int rows, int cols) { set_image_size(*this, rows, cols); }
 
