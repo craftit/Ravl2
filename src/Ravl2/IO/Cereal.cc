@@ -29,7 +29,7 @@ namespace Ravl2
   {}
 
 
-  //! Make sure these arn't instantiated in every translation unit.
+  //! Make sure these aren't instantiated in every translation unit.
   template class CerealSaveFormat<cereal::BinaryOutputArchive>;
   template class CerealLoadFormat<cereal::BinaryInputArchive>;
   template class CerealSaveFormat<cereal::JSONOutputArchive>;
