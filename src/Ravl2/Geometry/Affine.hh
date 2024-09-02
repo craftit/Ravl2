@@ -8,6 +8,7 @@
 #pragma once
 
 #include "Ravl2/Geometry/Geometry.hh"
+#include "Ravl2/Math/LinearAlgebra.hh"
 
 namespace Ravl2
 {
@@ -44,7 +45,7 @@ namespace Ravl2
     inline constexpr void translate(const Vector<DataT, N> &T);
 
     //! Generate an inverse transformation.
-    [[nodiscard]] constexpr Affine<DataT, N> inverse() const;
+    [[nodiscard]] constexpr std::optional<Affine<DataT, N> > inverse() const;
 
     //! Get Scale/Rotate matrix.
     [[nodiscard]] constexpr Matrix<DataT, N, N> &SRMatrix() { return mSR; }
@@ -111,10 +112,14 @@ namespace Ravl2
   }
 
   template <typename DataT, unsigned N>
-  constexpr Affine<DataT, N> Affine<DataT, N>::inverse(void) const
+  constexpr std::optional<Affine<DataT, N> > Affine<DataT, N>::inverse(void) const
   {
     Affine<DataT, N> ret;
-    ret.mSR = xt::linalg::pinv(mSR);
+    auto inv = Ravl2::inverse(mSR);
+    if(!inv.has_value()) {
+      return std::nullopt;
+    }
+    ret.mSR = inv.value();
     ret.mT = xt::linalg::dot(ret.mSR, mT) * -1;
     return ret;
   }
@@ -156,7 +161,7 @@ namespace Ravl2
 
   //! @brief Computer inverse of affine transformation.
   template <typename DataT, unsigned N>
-  constexpr Affine<DataT, N> inverse(const Affine<DataT, N> &aff)
+  constexpr auto inverse(const Affine<DataT, N> &aff)
   {
     return aff.inverse();
   }
