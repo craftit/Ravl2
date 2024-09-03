@@ -9,10 +9,10 @@
 
 #pragma once
 
+#include "Ravl2/Types.hh"
 #include "Ravl2/Array.hh"
-#include "Ravl2/Array2dSqr2Iter2.hh"
+#include "Ravl2/Image/Array2Sqr2Iter2.hh"
 #include "Ravl2/Image/DrawFrame.hh"
-#include "Ravl2/TFVector.hh"
 
 namespace Ravl2
 {
@@ -22,11 +22,11 @@ namespace Ravl2
   // The class builds the table with a single pass over the input image. Once
   // this is done the sum of any area can be computed by looking up the corners
   // of the rectangle. <br>
-  // Note this class is more prone to overflow problems than normal SummedAreaTables's so
+  // Note this class is more prone to overflow problems than normal SummedAreaTable's so
   // care must be taken when selecting types to use for the template.
 
   template <class DataT>
-  class SummedAreaTable2C : public Array<Vector<DataT, 2, 2>>
+  class SummedAreaTable2C : public Array<Vector<DataT, 2>, 2>
   {
   public:
     SummedAreaTable2C()
@@ -212,3 +212,4 @@ namespace Ravl2
   //: Read from text stream.
 
 }// namespace Ravl2
+

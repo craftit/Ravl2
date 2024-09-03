@@ -133,21 +133,42 @@ namespace Ravl2
     }
 
     //! Index access
+    //! This access isn't range checked, it is up to the user to ensure the index is valid.
     [[nodiscard]] constexpr DataT &operator[](int i) const
     {
       return mPtr[i];
     }
 
     //! Index access
-    constexpr inline auto &operator()(int i)
+    //! This access isn't range checked, it is up to the user to ensure the index is valid.
+    template<IndexType IndexT>
+    [[nodiscard]] constexpr DataT &operator()(IndexT i) const
     {
-      return mPtr[i];
+      return mPtr[int(i)];
     }
 
     //! Index access
-    constexpr inline const auto &operator()(int i) const
+    //! This access isn't range checked, it is up to the user to ensure the index is valid.
+    template<IndexType IndexT>
+    [[nodiscard]] constexpr inline const auto &operator()(IndexT i) const
     {
-      return mPtr[i];
+      return mPtr[int(i)];
+    }
+
+    //! Access relative element
+    //! This access isn't range checked, it is up to the user to ensure the index is valid.
+    template<IndexType IndexT>
+    [[nodiscard]] constexpr inline const auto &at(IndexT i) const
+    {
+      return mPtr[int(i)];
+    }
+
+    //! Access relative element
+    //! This access isn't range checked, it is up to the user to ensure the index is valid.
+    template<IndexType IndexT>
+    [[nodiscard]] constexpr inline auto &at(IndexT i)
+    {
+      return mPtr[int(i)];
     }
 
     //! Access element point
@@ -465,16 +486,18 @@ namespace Ravl2
     }
 
     //! Access next dimension of array.
-    [[nodiscard]] constexpr DataT &operator()(int i)
+    template <IndexType IndexT>
+    [[nodiscard]] constexpr DataT &operator()(IndexT i)
     {
-      assert(m_range.contains(i));
+      assert(m_range.contains(int(i)));
       return m_data[i];
     }
 
     //! Access next dimension of array.
-    [[nodiscard]] constexpr const DataT &operator()(int i) const
+    template <IndexType IndexT>
+    [[nodiscard]] constexpr const DataT &operator()(IndexT i) const
     {
-      assert(m_range.contains(i));
+      assert(m_range.contains(int(i)));
       return m_data[i];
     }
 

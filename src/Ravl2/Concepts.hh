@@ -5,6 +5,7 @@
 #pragma once
 
 #include <concepts>
+#include <cereal/cereal.hpp>
 
 namespace Ravl2
 {
@@ -16,6 +17,11 @@ namespace Ravl2
 
   template <typename DataT, unsigned N>
   class ArrayAccess;
+
+  //! Define types that can be used as an index
+  template <typename DataT>
+  concept IndexType = requires(DataT data)
+  { std::is_convertible_v<DataT, int>; };
 
   //! SimpleArray concept,  0 based array with a size() method
   //! Where

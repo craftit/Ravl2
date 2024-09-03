@@ -4,6 +4,7 @@
 
 #include "checks.hh"
 #include "Ravl2/Image/WarpScale.hh"
+#include "Ravl2/Image/SummedAreaTable.hh"
 #include "Ravl2/ArrayIterZip.hh"
 
 TEST_CASE("WarpScale")
@@ -50,3 +51,37 @@ TEST_CASE("WarpScale")
     }
   }
 }
+
+TEST_CASE("SummedAreaTable")
+{
+  using namespace Ravl2;
+  Array<int,2> img({5,5}, 1);
+  SummedAreaTableC<unsigned> tab = SummedAreaTableC<unsigned>::BuildTable(img);
+  SPDLOG_INFO("Table: {}", tab);
+#if 0
+  CHECK(tab.Sum(img.range()) == 25);
+  IndexRange<2> srect(img.range());
+  srect = srect.shrink(1);
+  CHECK(tab.Sum(srect) == 9);
+
+  // Build a more interesting image.
+  int sum = 1;
+  for(auto &it : img)
+    it = sum++;
+  tab = SummedAreaTableC<unsigned>::BuildTable(img);
+  //cerr << img << "\n";
+  //cerr << tab << "\n";
+  IndexRange<2> rec2(0,1,0,1);
+  //cerr <<"Sum=" << tab.Sum(rec2) << "\n";
+  if(tab.Sum(rec2) != 16) return __LINE__;
+
+  IndexRange<2> rec3(0,1,1,2);
+  //cerr <<"Sum=" << tab.Sum(rec3) << "\n";
+  if(tab.Sum(rec3) != 20) return __LINE__;
+
+  IndexRange<2> rec4(1,2,1,2);
+  //cerr <<"Sum=" << tab.Sum(rec4) << "\n";
+  if(tab.Sum(rec4) != 40) return __LINE__;
+#endif
+}
+
