@@ -359,3 +359,7 @@ TEST_CASE("DiscreteCosineTransform (forwardDCT)")
   }
 }
 
+TEST_CASE("WarpSubSample")
+{
+
+}

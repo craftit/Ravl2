@@ -9,7 +9,6 @@
 
 #include "Ravl2/Array.hh"
 #include "Ravl2/Array2dSqr3Iter.hh"
-#include "Ravl2/Traits.hh"
 
 namespace Ravl2
 {

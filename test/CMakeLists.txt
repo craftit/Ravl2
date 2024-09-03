@@ -57,7 +57,9 @@ add_executable(tests
         test_3d.cc
         test_io.cc
         test_ThreadedQueue.cc
+        test_warpScale.cc
         checks.hh
+        test_warpScale.cc
 )
 target_link_libraries(
   tests

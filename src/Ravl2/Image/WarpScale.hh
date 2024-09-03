@@ -244,10 +244,10 @@ namespace Ravl2
 
     const IndexRange<2> &imgFrame = img.range();
     IndexRange<2> rng(
-      IndexRange<1>(int_ceil(imgFrame[0].min() / scale[0]),
-                    int_floor((imgFrame[0].max() - 0) / scale[0])),
-      IndexRange<1>(int_ceil(imgFrame[1].min() / scale[1]),
-                    int_floor((imgFrame[1].max() - 0) / scale[1])));
+      IndexRange<1>(int_ceil(float(imgFrame[0].min()) / scale[0]),
+                    int_floor(float(imgFrame[0].max() - 0) / scale[0])),
+      IndexRange<1>(int_ceil(float(imgFrame[1].min()) / scale[1]),
+                    int_floor(float(imgFrame[1].max() - 0) / scale[1])));
 
     if(!result.range().contains(rng)) {
       //! Can we resize the result?
@@ -260,13 +260,13 @@ namespace Ravl2
     }
 
     //cout << "res frame:" << result.range() << std::endl;
-    const Point2f origin(result.range().min(0) * scale[0], result.range().min(1) * scale[1]);
+    const auto origin = toPoint<float>(float(result.range().min(0)) * scale[0], float(result.range().min(1)) * scale[1]);
     //cout << "origin:" << origin << std::endl;
 
-    const int resRows = int(result.Rows());
-    const int resCols = int(result.Cols());
+    const auto resRows = size_t(result.range(0).size());
+    const auto resCols = size_t(result.range(1).size());
 
-    const RealAccumT norm = RealAccumT(1.0) / (scale[0] * scale[1]);
+    const RealAccumT norm = RealAccumT(1.0) / RealAccumT(scale[0] * scale[1]);
 
     std::vector<RealAccumT> bufferRow(resCols);
     std::vector<RealAccumT> bufferRes(resCols);
@@ -276,49 +276,49 @@ namespace Ravl2
     int srcRowI = int_floor(srcRowR);
     RealAccumT u = srcRowR - srcRowI;
 
-    detail::WS_prepareRow(img, srcRowI, origin[1], scale[1], bufferRow.data(), resCols);
+    detail::WS_prepareRow(img, srcRowI, double(origin[1]), double(scale[1]), bufferRow.data(), int(resCols));
     //if(!CheckRow(buffer, resCols, scale[1])) return false;
 
-    for(int j = 0; j < resRows; j++) {
+    for(size_t j = 0; j < resRows; j++) {
       //cerr << "j:" << j << endl;
       //first partial row
       double onemu = 1. - u;
-      for(int i = 0; i < resCols; i++) {
+      for(size_t i = 0; i < resCols; i++) {
         bufferRes[i] = bufferRow[i] * onemu;
       }
 
       //all full rows
-      const double srcLastRowR = srcRowR + scale[0];
+      const double srcLastRowR = srcRowR + double(scale[0]);
       const int srcLastRowI = int_floor(srcLastRowR);
       //cerr << "srcRowI:" << srcRowI << endl;
       //cerr << "srcLastRowI:" << srcLastRowI << endl;
       for(srcRowI++; srcRowI < srcLastRowI; srcRowI++) {
         //cerr << "srcRowI:" << srcRowI << endl;
-        detail::WS_prepareRowAdd(img, srcRowI, origin[1], scale[1], bufferRes.data(), resCols);
+        detail::WS_prepareRowAdd(img, srcRowI, double(origin[1]), double(scale[1]), bufferRes.data(), int(resCols));
       }
 
       //last partial pixel
       u = srcLastRowR - srcLastRowI;
       //cerr << "u:" << u << endl;
       if(u > 1e-5) {
-        detail::WS_prepareRow(img, srcRowI, origin[1], scale[1], bufferRow.data(), resCols);
+        detail::WS_prepareRow(img, srcRowI, double(origin[1]), double(scale[1]), bufferRow.data(), int(resCols));
         //if(!CheckRow(buffer, resCols, scale[1])) return false;
-        for(int i = 0; i < resCols; i++) {
+        for(size_t i = 0; i < resCols; i++) {
           bufferRes[i] += bufferRow[i] * u;
         }
       } else {
         //check if we need buffer for next iteration
         if(j + 1 < resRows) {
           //cerr << "u srcRowI:" << srcRowI << endl;
-          detail::WS_prepareRow(img, srcRowI, origin[1], scale[1], bufferRow.data(), resCols);
+          detail::WS_prepareRow(img, srcRowI, double(origin[1]), double(scale[1]), bufferRow.data(), int(resCols));
           //if(!CheckRow(buffer, resCols, scale[1])) return false;
         }
       }
       //if(!CheckRow(resRowPtr, resCols, scale[1]*scale[0])) return false;
 
       //copy and scale result
-      OutT *resRowPtr = &(result[j + result.min(0)][result.min(1)]);
-      for(int i = 0; i < resCols; i++) {
+      OutT *resRowPtr = &(result[int(j) + result.range(0).min()][result.range(1).min()]);
+      for(size_t i = 0; i < resCols; i++) {
         resRowPtr[i] = OutT(bufferRes[i] * norm);
       }
 

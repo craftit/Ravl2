@@ -31,6 +31,7 @@ add_library (Ravl2Image
         WarpProjective.hh
         Warp.cc
         Warp.hh
+        SubSample.cc
         #        MatchNormalisedCorrelation.cc MatchNormalisedCorrelation.hh
 )
 
