@@ -247,14 +247,14 @@ namespace Ravl2
     if(result.range().empty()) {
       const IndexRange<2> &imgFrame = img.range();
       IndexRange<2> rng(
-      IndexRange<1>(int_ceil(imgFrame[0].min() / scale[0]),
-      int_floor((imgFrame[0].max() - 0) / scale[0])),
-      IndexRange<1>(int_ceil(imgFrame[1].min() / scale[1]),
+      IndexRange<1>(int_ceil(RealT(imgFrame[0].min()) / scale[0]),
+      int_floor(RealT(imgFrame[0].max() - 0) / scale[0])),
+      IndexRange<1>(int_ceil(RealT(imgFrame[1].min()) / scale[1]),
 		    int_floor(RealT(imgFrame[1].max() - 0) / scale[1])));
       result = Array<OutT, 2>(rng);
     }
     //cout << "res frame:" << result.range() << std::endl;
-    Point2f origin = toPoint<float>(result.range().min(0) * scale[0], result.range().min(1) * scale[1]);
+    Point2f origin = toPoint<float>(RealT(result.range().min(0)) * scale[0], RealT(result.range().min(1)) * scale[1]);
     //cout << "origin:" << origin << std::endl;
 
     // Reference implementation

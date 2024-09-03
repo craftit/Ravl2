@@ -4,7 +4,6 @@ include(GenerateExportHeader)
 add_library (Ravl2Image
         EdgeSobel.hh EdgeSobel.cc
         BilinearInterpolation.cc BilinearInterpolation.hh
-        ImagePyramidC.hh
         Array2Sqr2Iter.hh
         Array2Sqr2Iter2.hh
         DrawFrame.hh
@@ -19,7 +18,6 @@ add_library (Ravl2Image
         CornerDetectorSusan.cc CornerDetectorSusan.hh
         PeakDetector.cc PeakDetector.hh
         Matching.cc Matching.hh
-        ImagePyramidC.cc ImagePyramidC.hh
         ImagePyramid.cc ImagePyramid.hh
         WarpScale.cc WarpScale.hh
         ImageExtend.cc ImageExtend.hh

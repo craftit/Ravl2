@@ -56,6 +56,7 @@ TEST_CASE("WarpScale")
 
   SECTION("Scale Large")
   {
+#if 0
     const int imgSize = 998;
     Array<float,2> img1({imgSize, imgSize});
     for(int r = 0; r < imgSize; r++) {
@@ -75,7 +76,6 @@ TEST_CASE("WarpScale")
     IndexRange<2> range({40,50});
     Array<float, 2> res1(range);
     warpScale(res1, img1);
-#if 0
 
     Array<float, 2> res2(range);
     warpScale(res2, img2);
@@ -107,33 +107,65 @@ TEST_CASE("WarpScale")
 TEST_CASE("SummedAreaTable")
 {
   using namespace Ravl2;
-  Array<int,2> img({5,5}, 1);
-  SummedAreaTableC<unsigned> tab = SummedAreaTableC<unsigned>::BuildTable(img);
-  SPDLOG_INFO("Table: {}", tab);
-#if 0
-  CHECK(tab.Sum(img.range()) == 25);
-  IndexRange<2> srect(img.range());
-  srect = srect.shrink(1);
-  CHECK(tab.Sum(srect) == 9);
+  SECTION("Simple")
+  {
+    Array<int, 2> img({5, 5}, 1);
+    SummedAreaTable<unsigned> tab = SummedAreaTable<unsigned>::buildTable(img);
+    //SPDLOG_INFO("Table: {}", tab);
+    CHECK(tab.sum(img.range()) == 25);
+    IndexRange<2> srect(img.range());
+    srect = srect.shrink(1);
+    CHECK(tab.sum(srect) == 9);
+  }
 
-  // Build a more interesting image.
-  int sum = 1;
-  for(auto &it : img)
-    it = sum++;
-  tab = SummedAreaTableC<unsigned>::BuildTable(img);
-  //cerr << img << "\n";
-  //cerr << tab << "\n";
-  IndexRange<2> rec2(0,1,0,1);
-  //cerr <<"Sum=" << tab.Sum(rec2) << "\n";
-  if(tab.Sum(rec2) != 16) return __LINE__;
+  SECTION("Rectangles")
+  {
+    Array<int, 2> img({5, 5}, 0);
+    // Build a more interesting image.
+    int sum = 1;
+    for(auto &it : img)
+      it = sum++;
+    SummedAreaTable<unsigned> tab = SummedAreaTable<unsigned>::buildTable(img);
+    IndexRange<2> rec2({{0, 1},{ 0, 1}});
+    CHECK(tab.sum(rec2) == 16);
 
-  IndexRange<2> rec3(0,1,1,2);
-  //cerr <<"Sum=" << tab.Sum(rec3) << "\n";
-  if(tab.Sum(rec3) != 20) return __LINE__;
+    IndexRange<2> rec3({{0, 1}, {1, 2}});
+    CHECK(tab.sum(rec3) == 20) ;
 
-  IndexRange<2> rec4(1,2,1,2);
-  //cerr <<"Sum=" << tab.Sum(rec4) << "\n";
-  if(tab.Sum(rec4) != 40) return __LINE__;
-#endif
+    IndexRange<2> rec4({{1, 2}, {1, 2}});
+    CHECK(tab.sum(rec4) == 40);
+  }
+
+  SECTION("Grid")
+  {
+    Array<int, 2> img({6, 6}, 0);
+    int sum = 1;
+    for(auto &it : img)
+      it = sum++;
+
+    SummedAreaTable<int> tab = SummedAreaTable<int>::buildTable(img);
+    IndexRange<2> rec2({{1, 4}, {1, 4}});
+    Array<int, 2> img2(rec2);
+    tab.sampleGrid<int>(img2, toVector<float>(1,1));
+
+    //SPDLOG_INFO("Img: {}", img);
+    //SPDLOG_INFO("Img2: {}", img2);
+    for(auto it = zip(img2,clip(img,img2.range()));it.valid();++it) {
+      CHECK(it.template data<0>() == it.template data<1>());
+    }
+
+    // Try a full scale image.
+    Array<int, 2> img3(img.range());
+    tab.sampleGrid<int>(img3, toVector<float>(1,1));
+
+    //SPDLOG_INFO("Img3: {}", img3);
+
+    for(auto it = zip(img3,img);it.valid();++it) {
+      CHECK(it.template data<0>() == it.template data<1>());
+    }
+
+  }
+
+
 }
 

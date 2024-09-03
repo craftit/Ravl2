@@ -12,7 +12,9 @@
 #include "Ravl2/Array.hh"
 #include "Ravl2/Assert.hh"
 #include "Ravl2/Image/Array2Sqr2Iter2.hh"
+#include "Ravl2/Geometry/Range.hh"
 #include "Ravl2/Image/DrawFrame.hh"
+#include "Ravl2/Image/BilinearInterpolation.hh"
 
 namespace Ravl2
 {
@@ -24,31 +26,29 @@ namespace Ravl2
   //! of the rectangle.
 
   template <class DataT>
-  class SummedAreaTableC : public Array<DataT, 2>
+  class SummedAreaTable : public Array<DataT, 2>
   {
   public:
     //! Default constructor.
-    SummedAreaTableC() = default;
+    SummedAreaTable() = default;
 
   private:
     //! Constructor
-    SummedAreaTableC(Array<DataT, 2> &&arr, IndexRange<2> newClipRange)
+    SummedAreaTable(Array<DataT, 2> &&arr, IndexRange<2> newClipRange)
       : Array<DataT, 2>(std::move(arr)) ,
-        clipRange(newClipRange)
+          mClipRange(newClipRange)
     {}
   public:
 
     //! Build table form an array of values.
     template <class InT>
-    static SummedAreaTableC<DataT> BuildTable(const Array<InT, 2> &in)
+    static SummedAreaTable<DataT> buildTable(const Array<InT, 2> &in)
     {
-      IndexRange<2> rng(in.range());
-      rng.min(1)--;
-      rng.min(0)--;
-      SummedAreaTableC<DataT> ret(Array<DataT, 2>(rng),in.range());
+      IndexRange<2> rng(in.range().expand(1));
+      SummedAreaTable<DataT> ret(Array<DataT, 2>(rng),in.range());
       DataT zero {};
       DrawFrame(ret, zero, rng);// We only really need the top row and left column cleared.
-      Array<DataT, 2> work(ret, in.range());
+      auto work = clip(ret,in.range());
       Array2dSqr2Iter2C<DataT, InT> it(work, in);
       // First pixel.
       it.DataTL1() = DataT(it.DataTL2());
@@ -71,13 +71,25 @@ namespace Ravl2
           it.DataBR1() = it.DataTR1() + rowSum;
         } while(it.next());
       }
+      // Copy the last column with a copy of the last element of each row.
+      rowSum = ret[ret.range().min(0)][ret.range().max(1)];
+      for(int i = ret.range().min(0)+1; i < ret.range().max(0); i++) {
+        rowSum += DataT(in[i][in.range().max(1)]);
+        ret[i][ret.range().max(1)] = ret[i-1][ret.range().max(1)] + rowSum;
+      }
+      // Fill in final row.
+      rowSum = ret[ret.range().max(0)][ret.range().min(1)];
+      for(int i = ret.range().min(1)+1; i < ret.range().max(1); i++) {
+        rowSum += DataT(in[in.range().max(0)][i]);
+        ret[ret.range().max(0)][i] = ret[ret.range().max(0)][i-1] + rowSum;
+      }
       return ret;
     }
 
     //! Calculate the sum of the pixel's in the rectangle 'range'.
-    DataT Sum(IndexRange<2> range) const
+    DataT sum(IndexRange<2> range) const
     {
-      range.clipBy(clipRange);
+      range.clipBy(mClipRange);
       if(range.area() == 0)
         return (*this)[this->range().min()];// Return 0.
       // Could speed this up by separating out row accesses ?
@@ -88,9 +100,48 @@ namespace Ravl2
       return (*this)(bottom,right) - (*this)(top,right) - (*this)(bottom,left) + (*this)(top,left);
     }
 
+    //! Sample a grid of rectangles, pu the result in out
+    //! @param out The array to put the result in.
+    //! @param scale This is the scale factor to apply to the output.
+    //! @param offset This is the point adds an offset in the input space to the sampled pixels.
+    template<typename AccumT>
+    Array<DataT, 2> &sampleGrid(Array<DataT, 2> &out, const Vector<float,2> scale,Point<float,2> offset = toPoint<float>(0,0)) const
+    {
+      // Check it fits within the table.
+      Range<float,2> outRng = toRange<float>(out.range()).shrinkMax(1) ;
+      Range<float,2> rng = Range<float,2>(outRng.min() * scale + offset, outRng.max() * scale + offset);
+
+      auto indexBounds = rng.toIndexRange();
+      if(!mClipRange.contains(indexBounds)) {
+        SPDLOG_WARN("SampleGrid: Out of bounds: {} Rng:{} Bounds:{} Array:{} ", indexBounds, rng, mClipRange,this->range());
+        throw std::out_of_range("SampleGrid: Out of bounds");
+      }
+      // Is it worth caching the last row of interpolated values ?
+      for(auto it = out.begin();it.valid();) {
+        Point<float,2> pnt = offset + toPoint<float>(it.index()) * scale;
+        auto last0 = interpolateBilinear(*this,pnt + toVector<float>(-scale[0],-1));
+        auto last1 = interpolateBilinear(*this,pnt + toVector<float>(0,-1));
+        do {
+          auto val0 = interpolateBilinear(*this,pnt + toVector<float>(-scale[0],0));
+          auto val1 = interpolateBilinear(*this,pnt );
+          if constexpr(std::is_same_v<DataT, decltype(val0)> ) {
+            *it = val1 - val0 - last1 + last0;
+          } else if constexpr(std::is_floating_point_v<decltype(val0)> && std::is_integral_v<DataT>)  {
+            *it = DataT(int_round(val1 - val0 - last1 + last0));
+          } else {
+            *it = DataT(val1 - val0 - last1 + last0);
+          }
+          last0 = val0;
+          last1 = val1;
+          pnt[1] += scale[1];
+        } while(it.next());
+      }
+      return out;
+    }
+
     //! Calculate the difference between two halfs of the rectangle split vertically.
-    // This mid-point is an absolute row location and should be within the rectangle.
-    DataT VerticalDifference2(IndexRange<2> range, int mid) const
+    //! This mid-point is an absolute row location and should be within the rectangle.
+    DataT verticalDifference2(IndexRange<2> range, int mid) const
     {
       auto top = range.range(0).min();
       auto left = range.range(1).min();
@@ -105,8 +156,8 @@ namespace Ravl2
     }
 
     //! Calculate the difference between two halves of the rectangle split horizontally.
-    // This mid-point is an absolute column location and should be within the rectangle.
-    DataT HorizontalDifference2(IndexRange<2> range, int mid) const
+    //! This mid-point is an absolute column location and should be within the rectangle.
+    DataT horizontalDifference2(IndexRange<2> range, int mid) const
     {
       auto top = range.range(0).min();
       auto left = range.range(1).min();
@@ -121,31 +172,31 @@ namespace Ravl2
     }
 
     //! Calculate the difference between two halves of the rectangle split vertically.
-    // This mid-point is an absolute row location and should be within the rectangle.
-    DataT VerticalDifference3(const IndexRange<2> &range, const IndexRange<1> &rng) const
+    //! This mid-point is an absolute row location and should be within the rectangle.
+    DataT verticalDifference3(const IndexRange<2> &range, const IndexRange<1> &rng) const
     {
       RavlAssert(range.range(1).contains(rng));
       IndexRange<2> rng2(range.range(0), rng);
-      return Sum(range) - Sum(rng2);
+      return sum(range) - sum(rng2);
     }
 
     //! Calculate the difference between two rectangles one lying inside the other in the horizontal dimension.
-    // This mid-point is an absolute column location and should be within the rectangle.
-    DataT HorizontalDifference3(const IndexRange<2> &range, const IndexRange<1> &rng) const
+    //! This mid-point is an absolute column location and should be within the rectangle.
+    DataT horizontalDifference3(const IndexRange<2> &range, const IndexRange<1> &rng) const
     {
       RavlAssert(range.range(0).contains(rng));
       IndexRange<2> rng2(rng, range.range(1));
-      return Sum(range) - Sum(rng2);
+      return sum(range) - sum(rng2);
     }
 
     //! Return range of value positions.
     [[nodiscard]] const IndexRange<2> &ClipRange() const
     {
-      return clipRange;
+      return mClipRange;
     }
 
   protected:
-    IndexRange<2> clipRange;
+    IndexRange<2> mClipRange;
   };
 
 }// namespace Ravl2
@@ -153,6 +204,6 @@ namespace Ravl2
 namespace fmt
 {
   template <typename DataT>
-  struct formatter<Ravl2::SummedAreaTableC<DataT>> : ostream_formatter {
+  struct formatter<Ravl2::SummedAreaTable<DataT>> : ostream_formatter {
   };
 }// namespace fmt

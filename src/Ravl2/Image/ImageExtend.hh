@@ -112,6 +112,39 @@ namespace Ravl2
     }
   }
 
+  //! @brief  This
+
+  template <class DataT>
+  void mirrorEdges(Array<DataT, 2> &result,unsigned n)
+  {
+    const IndexRange<2> rect = result.range().shrink(int(n));
+    // Take care of border
+    // Extend rows first.
+    for(int r = rect.min(0); r <= rect.max(0); r++) {
+      DataT *org1 = &(result[r][rect.min(1)]);
+      DataT *org2 = &(result[r][rect.max(1)]);
+      DataT *at1 = org1 - 1;
+      DataT *at2 = org2 + 1;
+      org1++;
+      org2--;
+      DataT *end2 = &(at2[n]);
+      for(; at2 < end2; at1--, at2++, org1++, org2--) {
+        *at1 = *org1;
+        *at2 = *org2;
+      }
+    }
+    // Take care of top and bottom of image.
+    int ra1 = rect.min(0);
+    int ra2 = ra1 - 1;
+    int rb1 = rect.max(0);
+    int rb2 = rb1 + 1;
+    for(ra1++, rb1--; rb2 <= rect.max(0); ra1++, ra2--, rb1--, rb2++) {
+      copy(result[ra2], result[ra1]);
+      copy(result[rb2], result[rb1]);
+    }
+  }
+
+
   //! @brief  Extend an image by n pixels in all directions by mirroring the border region
   //! If 'result' image is large enough it will be used for results, otherwise it will
   //! be replaced with an image of a suitable size.
@@ -127,30 +160,31 @@ namespace Ravl2
     resizeArray(result, rect);
     // Copy centre of image
     copy(clip(result, image.range()), image);
-    // Take care of border
-    // Extend rows first.
-    for(int r = image.range().min(0); r <= image.range().max(0); r++) {
-      DataT *org1 = &(result[r][image.range().min(1)]);
-      DataT *org2 = &(result[r][image.range().max(1)]);
-      DataT *at1 = org1 - 1;
-      DataT *at2 = org2 + 1;
-      org1++;
-      org2--;
-      DataT *end2 = &(at2[n]);
-      for(; at2 < end2; at1--, at2++, org1++, org2--) {
-        *at1 = *org1;
-        *at2 = *org2;
-      }
-    }
-    // Take care of top and bottom of image.
-    int ra1 = image.range(0).min();
-    int ra2 = ra1 - 1;
-    int rb1 = image.range(0).max();
-    int rb2 = rb1 + 1;
-    for(ra1++, rb1--; rb2 <= rect.max(0); ra1++, ra2--, rb1--, rb2++) {
-      copy(result[ra2], result[ra1]);
-      copy(result[rb2], result[rb1]);
-    }
+    mirrorEdges(result, n);
+//    // Take care of border
+//    // Extend rows first.
+//    for(int r = image.range().min(0); r <= image.range().max(0); r++) {
+//      DataT *org1 = &(result[r][image.range().min(1)]);
+//      DataT *org2 = &(result[r][image.range().max(1)]);
+//      DataT *at1 = org1 - 1;
+//      DataT *at2 = org2 + 1;
+//      org1++;
+//      org2--;
+//      DataT *end2 = &(at2[n]);
+//      for(; at2 < end2; at1--, at2++, org1++, org2--) {
+//        *at1 = *org1;
+//        *at2 = *org2;
+//      }
+//    }
+//    // Take care of top and bottom of image.
+//    int ra1 = image.range(0).min();
+//    int ra2 = ra1 - 1;
+//    int rb1 = image.range(0).max();
+//    int rb2 = rb1 + 1;
+//    for(ra1++, rb1--; rb2 <= rect.max(0); ra1++, ra2--, rb1--, rb2++) {
+//      copy(result[ra2], result[ra1]);
+//      copy(result[rb2], result[rb1]);
+//    }
   }
 
   // Instantiate the most common types.

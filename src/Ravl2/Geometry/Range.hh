@@ -299,15 +299,12 @@ namespace Ravl2
   template <typename RealT>
   IndexRange<2> operator*(const Range<RealT, 1> &realRange, const IndexRange<2> &indexRange);
 
-  //: Read range from input stream.
-  // Read information from the intput stream 's' and sets the real range
-  // according obtained data.
-  template <typename RealT>
-  std::istream &operator>>(std::istream &s, Range<RealT, 1> &r);
 
   //: Saves the index range 'r' into the output stream 's'.
   template <typename RealT>
-  std::ostream &operator<<(std::ostream &s, const Range<RealT, 1> &r);
+  std::ostream &operator<<(std::ostream &s, const Range<RealT, 1> &r) {
+    return s << "(" <<  r.min() << " " << r.max() << ")";
+  }
 
   template <typename RealT>
   inline constexpr const Range<RealT, 1> &Range<RealT, 1>::operator+=(RealT i)
@@ -709,10 +706,14 @@ namespace Ravl2
   // Multiplying by a real range of 0-1,0-1 is a unit transform.
 
   template <typename RealT, unsigned N>
-  std::ostream &operator<<(std::ostream &s, const Range<RealT, N> &ir);
+  std::ostream &operator<<(std::ostream &strm, const Range<RealT, N> &rng)
+  {
+    for(unsigned i = 0; i < N; i++) {
+      strm << "(" << rng[i].min() << "," << rng[i].max() << ")";
+    }
+    return strm;
+  }
 
-  template <typename RealT, unsigned N>
-  std::istream &operator>>(std::istream &s, Range<RealT, N> &ir);
 
   ///////////////////////////////////////////////////////
 
@@ -819,3 +820,10 @@ namespace Ravl2
   extern template class Range<float, 2>;
 
 }// namespace Ravl2
+
+namespace fmt
+{
+  template <typename RealT,unsigned N>
+  struct formatter<Ravl2::Range<RealT,N>> : ostream_formatter {
+  };
+}// namespace fmt
