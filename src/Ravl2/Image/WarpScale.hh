@@ -15,115 +15,7 @@
 namespace Ravl2
 {
 
-  //! Rescale an image by sampling points with bilinear interpolation.
-  //! This is good for up scaling images, but may cause aliasing when downscaling.
-  //! @param: img - input image
-  //! @param: scale - output image size is input size <i>divided</i> by <code>scale</code>
-  //! @param: result - output image
-  //! If <code>result</code> is empty, the correct size is computed.
 
-  template <class InT, class OutT, typename RealT = float>
-  bool warpScaleBilinear(const Array<InT, 2> &img,
-                         const Vector2f &scale,// Distance between samples in the input image.
-                         Array<OutT, 2> &result// Output of scaling. The image must be of the appropriate size
-  )
-  {
-    //call subsampling function
-    //cout << "WarpScaleBilinear scale:" << scale << std::endl;
-    if(scale[0] >= 1.0f && scale[1] >= 1.0f)
-      return WarpSubsample(img, scale, result);
-
-    //cout << "src frame:" << img.range() << std::endl;
-    if(result.range().empty()) {
-      const IndexRange<2> &imgFrame = img.range();
-      IndexRange<2> rng(
-        IndexRange<1>(int_ceil(imgFrame[0].min() / scale[0]),
-                      int_floor((imgFrame[0].max() - 0) / scale[0])),
-        IndexRange<1>(int_ceil(imgFrame[1].min() / scale[1]),
-                      int_floor((imgFrame[1].max() - 0) / scale[1])));
-      result = Array<OutT, 2>(rng);
-    }
-    //cout << "res frame:" << result.range() << std::endl;
-    Point2f origin(result.range().min(0) * scale[0], result.range().min(1) * scale[1]);
-    //cout << "origin:" << origin << std::endl;
-
-    // Reference implementation
-    //    Point2f rowStart = origin;
-    //    for(Array2dIterC<OutT> it(result);it;) {
-    //      Point2f pnt = rowStart;
-    //      do {
-    //        BilinearInterpolation(img,pnt,*it);
-    //        pnt[1] += scale[1];
-    //      } while(it.next_col()); // True while in same row.
-    //      rowStart[0] += scale[0];
-    //    }
-    Point2f rowStart = origin;
-    for(auto it = result.begin(); it.valid();) {
-      Point2f pnt = rowStart;
-
-      int fx = int_floor(pnt[0]);// Row
-      int fxp1 = fx + 1;
-      if(fxp1 >= img.range().size(0)) fxp1 = fx;
-      RealT u = pnt[0] - RealT(fx);
-      if(u < RealT(1e-5)) {
-        do {
-          int fy = int_floor(pnt[1]);// Col
-          RealT t = pnt[1] - RealT(fy);
-          if(t < RealT(1e-5)) {
-            const InT *pixel1 = &(img)[fx][fy];
-            *it = OutT(pixel1[0]);
-            pnt[1] += scale[1];
-          } else {
-            RealT onemt = (1.0f - t);
-
-            //printf("x:%g  y:%g  fx:%i  fy:%i\n", pnt[0], pnt[1], fx, fy);
-            const InT *pixel1 = &(img)[fx][fy];
-            *it = OutT((pixel1[0] * onemt) + (pixel1[1] * t));
-            pnt[1] += scale[1];
-          }
-        } while(it.next());// True while in same row.
-      } else {
-        RealT onemu = (RealT(1.0) - u);
-        do {
-          int fy = int_floor(pnt[1]);// Col
-          RealT t = pnt[1] - RealT(fy);
-          if(t < RealT(1e-5)) {
-            const InT *pixel1 = &(img)[fx][fy];
-            const InT *pixel2 = &(img)[fxp1][fy];
-            *it = OutT((pixel1[0] * onemu) + (pixel2[0] * u));
-            pnt[1] += scale[1];
-          } else {
-            RealT onemt = (1.0f - t);
-
-            //printf("x:%g  y:%g  fx:%i  fy:%i\n", pnt[0], pnt[1], fx, fy);
-            const InT *pixel1 = &(img)[fx][fy];
-            const InT *pixel2 = &(img)[fxp1][fy];
-            *it = OutT((pixel1[0] * (onemt * onemu)) + (pixel1[1] * (t * onemu)) + (pixel2[0] * (onemt * u)) + (pixel2[1] * (t * u)));
-            pnt[1] += scale[1];
-          }
-        } while(it.next());// True while in same row.
-      }
-
-      rowStart[0] += scale[0];
-    }
-    return true;
-  }
-
-  //! Rescale an image
-  //! @param: img - input image
-  //! @param: result - output image
-  //! This version computes the scaling factor from the input and output image sizes
-
-  template <class InT, class OutT>
-  bool warpScaleBilinear(const Array<InT, 2> &img, Array<OutT, 2> &result)
-  {
-    if(result.range().empty()) return false;
-    // Distance between samples in the input image.
-    Vector2f scale({float(img.range().size(0)) / float(result.Rows()),
-                    float(img.range().size(1)) / float(result.Cols())});
-
-    return warpScaleBilinear(img, scale, result);
-  }
 
   namespace detail
   {
@@ -232,9 +124,8 @@ namespace Ravl2
             typename Array2T = Array1T, typename OutT = Array2T::value_type, unsigned N = Array1T::dimensions,
             typename RealAccumT = double>
     requires WindowedArray<Array1T, InT, N> && WindowedArray<Array1T, OutT, N> && (N >= 2)
-  void warpSubsample(const Array1T &img,
-                     Vector2f scale,
-                     Array2T &result)
+    void
+    warpSubsample(Array2T &result, const Array1T &img, Vector2f scale)
   {
     // We can't do super-sampling
     if(scale[0] < 1.0f || scale[1] < 1.0f) {
@@ -255,6 +146,9 @@ namespace Ravl2
         SPDLOG_WARN("Resulting image is too large");
         throw std::runtime_error("Resulting image is too large");
       } else {
+	if(!result.range().empty()) {
+	  SPDLOG_WARN("Resulting incompatible image size: {} vs {}", result.range(), rng);
+	}
         result = Array<OutT, 2>(rng);
       }
     }
@@ -326,5 +220,121 @@ namespace Ravl2
       srcRowI = srcLastRowI;
     }
   }
+
+
+  //! Rescale an image by sampling points with bi-linear interpolation.
+  //! This is good for up scaling images, it will use sub-sampling if the scale is less than 1.
+  //! If the scale is greater than 1 in one dimension and less than 1 in the other, it
+  //! falls back to bi-linear interpolation.
+  //! @param: result - output image
+  //! @param: img - input image
+  //! @param: scale - output image size is input size <i>divided</i> by <code>scale</code>
+  //! If <code>result</code> is empty, the correct size is computed.
+
+  template <class InT, class OutT, typename RealT = float>
+  bool
+  warpScaleBilinear(Array<OutT, 2> &result, const Array<InT, 2> &img, Vector2f scale)
+  {
+    //call subsampling function
+    //cout << "WarpScaleBilinear scale:" << scale << std::endl;
+    if(scale[0] >= 1.0f && scale[1] >= 1.0f) {
+      warpSubsample(result, img, scale);
+      return true;
+    }
+    //warpSubsample(Array2T &result, const Array1T &img, Vector2f scale)
+
+    //cout << "src frame:" << img.range() << std::endl;
+    if(result.range().empty()) {
+      const IndexRange<2> &imgFrame = img.range();
+      IndexRange<2> rng(
+      IndexRange<1>(int_ceil(imgFrame[0].min() / scale[0]),
+      int_floor((imgFrame[0].max() - 0) / scale[0])),
+      IndexRange<1>(int_ceil(imgFrame[1].min() / scale[1]),
+		    int_floor(RealT(imgFrame[1].max() - 0) / scale[1])));
+      result = Array<OutT, 2>(rng);
+    }
+    //cout << "res frame:" << result.range() << std::endl;
+    Point2f origin = toPoint<float>(result.range().min(0) * scale[0], result.range().min(1) * scale[1]);
+    //cout << "origin:" << origin << std::endl;
+
+    // Reference implementation
+    //    Point2f rowStart = origin;
+    //    for(Array2dIterC<OutT> it(result);it;) {
+    //      Point2f pnt = rowStart;
+    //      do {
+    //        BilinearInterpolation(img,pnt,*it);
+    //        pnt[1] += scale[1];
+    //      } while(it.next_col()); // True while in same row.
+    //      rowStart[0] += scale[0];
+    //    }
+    Point2f rowStart = origin;
+    for(auto it = result.begin(); it.valid();) {
+      Point2f pnt = rowStart;
+
+      int fx = int_floor(pnt[0]);// Row
+      int fxp1 = fx + 1;
+      if(fxp1 >= img.range().size(0)) fxp1 = fx;
+      RealT u = pnt[0] - RealT(fx);
+      if(u < RealT(1e-5)) {
+	do {
+	  int fy = int_floor(pnt[1]);// Col
+	  RealT t = pnt[1] - RealT(fy);
+	  if(t < RealT(1e-5)) {
+	    const InT *pixel1 = &(img)[fx][fy];
+	    *it = OutT(pixel1[0]);
+	    pnt[1] += scale[1];
+	  } else {
+	    RealT onemt = (1.0f - t);
+
+	    //printf("x:%g  y:%g  fx:%i  fy:%i\n", pnt[0], pnt[1], fx, fy);
+	    const InT *pixel1 = &(img)[fx][fy];
+	    *it = OutT((pixel1[0] * onemt) + (pixel1[1] * t));
+	    pnt[1] += scale[1];
+	  }
+	} while(it.next());// True while in same row.
+      } else {
+	RealT onemu = (RealT(1.0) - u);
+	do {
+	  int fy = int_floor(pnt[1]);// Col
+	  RealT t = pnt[1] - RealT(fy);
+	  if(t < RealT(1e-5)) {
+	    const InT *pixel1 = &(img)[fx][fy];
+	    const InT *pixel2 = &(img)[fxp1][fy];
+	    *it = OutT((pixel1[0] * onemu) + (pixel2[0] * u));
+	    pnt[1] += scale[1];
+	  } else {
+	    RealT onemt = (1.0f - t);
+
+	    //printf("x:%g  y:%g  fx:%i  fy:%i\n", pnt[0], pnt[1], fx, fy);
+	    const InT *pixel1 = &(img)[fx][fy];
+	    const InT *pixel2 = &(img)[fxp1][fy];
+	    *it = OutT((pixel1[0] * (onemt * onemu)) + (pixel1[1] * (t * onemu)) + (pixel2[0] * (onemt * u)) + (pixel2[1] * (t * u)));
+	    pnt[1] += scale[1];
+	  }
+	} while(it.next());// True while in same row.
+      }
+
+      rowStart[0] += scale[0];
+    }
+    return true;
+  }
+
+  //! Rescale an image
+  //! @param: img - input image
+  //! @param: result - output image
+  //! This version computes the scaling factor from the input and output image sizes
+
+  template <class InT, class OutT>
+  bool
+  warpScale(Array<OutT, 2> &result, const Array<InT, 2> &img)
+  {
+    if(result.range().empty()) return false;
+    // Distance between samples in the input image.
+    Vector2f scale({float(img.range(0).size()) / float(result.range(0).size()),
+		    float(img.range(1).size()) / float(result.range(1).size())});
+    // This wil call warpSubsample if needed.
+    return warpScaleBilinear(result, img,scale);
+  }
+
 
 }// namespace Ravl2
