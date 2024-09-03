@@ -25,7 +25,7 @@ namespace Ravl2
   // Note this class is more prone to overflow problems than normal SummedAreaTable's so
   // care must be taken when selecting types to use for the template.
 
-  template <class DataT>
+  template <class DataT, class RealT = DataT>
   class SummedAreaTable2C : public Array<Vector<DataT, 2>, 2>
   {
   public:
@@ -62,10 +62,10 @@ namespace Ravl2
       if(this->Frame() != rng) {
         Vector<DataT, 2> zero;
         SetZero(zero);
-        (*this).Array<Vector<DataT, 2, 2>>::operator=(Array<Vector<DataT, 2, 2>>(rng));
+        (*this).Array<Vector<DataT, 2>, 2>::operator=(Array<Vector<DataT, 2>, 2>(rng));
         DrawFrame((*this), zero, rng);// We only really need the top row and left column cleared.
       }
-      Array<Vector<DataT, 2, 2>> work((*this), in.range());
+      Array<Vector<DataT, 2>, 2> work((*this), in.range());
       Array2dSqr2Iter2C<Vector<DataT, 2>, InT> it(work, in);
       // First pixel.
       it.DataTL1() = SumAndSqr(it.DataTL2());

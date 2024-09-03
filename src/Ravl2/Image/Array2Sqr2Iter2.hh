@@ -13,7 +13,8 @@
 namespace Ravl2
 {
 
-  //! Iterator which slides a 2x2 window over two arrays.
+  //! @brief Iterator which slides a 2x2 window over two arrays.
+  //! This is for backward compatibility with Ravl code.  New code supports relative access from normal iterators. with at(-1,0) etc.
   //! The square can be accessed with DataBL,DataBR,DataUL and DataUR
   //! which access the following array elements. <p>
   //!  TL TR <br>

@@ -241,13 +241,13 @@ namespace Ravl2
       SPDLOG_WARN("WarpSubsample: scale must be >= 1.0");
       throw std::runtime_error("WarpSubsample: scale must be >= 1.0");
     }
-
+    using RealT = double;
     const IndexRange<2> &imgFrame = img.range();
     IndexRange<2> rng(
-      IndexRange<1>(int_ceil(float(imgFrame[0].min()) / scale[0]),
-                    int_floor(float(imgFrame[0].max() - 0) / scale[0])),
-      IndexRange<1>(int_ceil(float(imgFrame[1].min()) / scale[1]),
-                    int_floor(float(imgFrame[1].max() - 0) / scale[1])));
+      IndexRange<1>(int_ceil(RealT(imgFrame[0].min()) / RealT(scale[0])),
+                    int_floor(RealT(imgFrame[0].max() - 0) / RealT(scale[0]))),
+      IndexRange<1>(int_ceil(RealT(imgFrame[1].min()) / RealT(scale[1])),
+                    int_floor(RealT(imgFrame[1].max() - 0) / RealT(scale[1]))));
 
     if(!result.range().contains(rng)) {
       //! Can we resize the result?
@@ -260,7 +260,7 @@ namespace Ravl2
     }
 
     //cout << "res frame:" << result.range() << std::endl;
-    const auto origin = toPoint<float>(float(result.range().min(0)) * scale[0], float(result.range().min(1)) * scale[1]);
+    const auto origin = toPoint<RealT>(RealT(result.range().min(0)) * RealT(scale[0]), RealT(result.range().min(1)) * RealT(scale[1]));
     //cout << "origin:" << origin << std::endl;
 
     const auto resRows = size_t(result.range(0).size());
@@ -276,7 +276,7 @@ namespace Ravl2
     int srcRowI = int_floor(srcRowR);
     RealAccumT u = srcRowR - srcRowI;
 
-    detail::WS_prepareRow(img, srcRowI, double(origin[1]), double(scale[1]), bufferRow.data(), int(resCols));
+    detail::WS_prepareRow(img, srcRowI, RealT(origin[1]), RealT(scale[1]), bufferRow.data(), int(resCols));
     //if(!CheckRow(buffer, resCols, scale[1])) return false;
 
     for(size_t j = 0; j < resRows; j++) {

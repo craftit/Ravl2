@@ -10,23 +10,67 @@
 TEST_CASE("WarpScale")
 {
   using namespace Ravl2;
-  const int imgSize = 1000;
-  Array<float,2> img1({imgSize, imgSize});
-  for(int r = 0; r < imgSize; r++) {
-    for(int c = 0; c < imgSize; c++) {
-      img1[r][c] = float(c);
-    }
-  }
 
-  Array<float,2> img2({imgSize, imgSize});
-  for(int r = 0; r < imgSize; r++) {
-    for(int c = 0; c < imgSize; c++) {
-      img2[r][c] = float(imgSize - c);
-    }
-  }
-
-  SECTION("Scale 1")
+  SECTION("Scale Small")
   {
+    const int imgSize0 = 10;
+    const int imgSize1 = 11;
+    Array<float,2> img1({imgSize0, imgSize1});
+    for(int r = 0; r < imgSize0; r++) {
+      for(int c = 0; c < imgSize1; c++) {
+        img1[r][c] = float(c);
+      }
+    }
+
+    Array<float,2> img2({imgSize0, imgSize1});
+    for(int r = 0; r < imgSize0; r++) {
+      for(int c = 0; c < imgSize1; c++) {
+        img2[r][c] = float(imgSize1 - c);
+      }
+    }
+
+    Vector<float, 2> scale = toVector < float > (1.1, 2.12);
+    Array<float, 2> res1;
+    warpSubsample(img1, scale, res1);
+
+    //SPDLOG_INFO("Image1: {}", res1);
+
+    Array<float, 2> res2;
+    warpSubsample(img2, scale, res2);
+    //SPDLOG_INFO("Image2: {}", res2);
+    //create image
+
+    float sum = res1[0][0] + res2[0][0];
+    SPDLOG_INFO("Sum: {}", sum);
+
+    for(auto it = zip(res1, res2); it.valid(); ++it) {
+      float s1 = it.template data<0>() + it.template data<1>();
+      float dif = s1 - sum;
+      float limit = (s1 + sum) * 5e-6f;
+      if(std::abs(dif) >= limit) {
+        SPDLOG_INFO("err: {} {}  @ {}", dif, s1, it.index());
+      }
+      CHECK(std::abs(dif) < limit);
+    }
+  }
+
+  SECTION("Scale Large")
+  {
+    const int imgSize = 998;
+    Array<float,2> img1({imgSize, imgSize});
+    for(int r = 0; r < imgSize; r++) {
+      for(int c = 0; c < imgSize; c++) {
+        img1[r][c] = float(c);
+      }
+    }
+
+    Array<float,2> img2({imgSize, imgSize});
+    for(int r = 0; r < imgSize; r++) {
+      for(int c = 0; c < imgSize; c++) {
+        img2[r][c] = float(imgSize - c);
+      }
+    }
+
     Vector<float, 2> scale = toVector < float > (1.1, 2.12);
     Array<float, 2> res1;
     warpSubsample(img1, scale, res1);
@@ -39,6 +83,11 @@ TEST_CASE("WarpScale")
     SPDLOG_INFO("Fr2: {}", res2.range());
     float sum = res1[0][0] + res2[0][0];
     SPDLOG_INFO("Sum: {}", sum);
+    SPDLOG_INFO("Max: {} {} ",res1[res1.range().max()], res2[res2.range().max()]);
+    SPDLOG_INFO("Max: {} {} ",res1[res1.range().max()+toIndex(-1,0)], res2[res2.range().max()+toIndex(-1,0)]);
+    SPDLOG_INFO("Max: {} {} ",res1[res1.range().max()+toIndex(-2,0)], res2[res2.range().max()+toIndex(-2,0)]);
+    SPDLOG_INFO("Max: {} {} ",res1[res1.range().max()+toIndex(0,-1)], res2[res2.range().max()+toIndex(0,-1)]);
+
 
     for(auto it = zip(res1, res2); it.valid(); ++it) {
       float s1 = it.template data<0>() + it.template data<1>();
