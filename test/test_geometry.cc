@@ -19,6 +19,7 @@
 #include "Ravl2/Geometry/VectorOffset.hh"
 #include "Ravl2/Geometry/FitVectorOffset.hh"
 #include "Ravl2/Geometry/PlanePVV3d.hh"
+#include "Ravl2/Math/FastFourierTransform.hh"
 
 #define CHECK_EQ(a,b) CHECK((a) == (b))
 #define CHECK_NE(a,b) CHECK_FALSE((a) == (b))
@@ -187,6 +188,16 @@ TEST_CASE("Affine")
     CHECK(euclidDistance(pnt, toPoint<float>(-40, 20)) < 0.001f);
     Point<float, 2> q = toPoint<float>(5, 4);
     CHECK(Ravl2::euclidDistance(a2(a1)(q), a2(a1(q))) < 0.001f);
+  }
+  SECTION( "Inverse. ")
+  {
+    Affine<float, 2>
+      a1 = affineFromScaleAngleTranslation(toVector<float>(2, 2), std::numbers::pi_v<float> / 2, toVector<float>(1, 2));
+    auto a2 = a1.inverse();
+    CHECK(a2.has_value());
+    Point<float, 2> p = toPoint<float>(3, 4);
+    Point<float, 2> pnt = a1(a2.value()(p));
+    CHECK(euclidDistance(pnt, p) < 0.001f);
   }
   SECTION( "Cereal. ")
   {

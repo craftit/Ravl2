@@ -7,6 +7,7 @@
 #include <catch2/catch_test_macros.hpp>
 #include <spdlog/spdlog.h>
 #include "Ravl2/Assert.hh"
+#include "Ravl2/Math.hh"
 
 #define CHECK_EQ(a, b) CHECK((a) == (b))
 #define CHECK_NE(a, b) CHECK_FALSE((a) == (b))
