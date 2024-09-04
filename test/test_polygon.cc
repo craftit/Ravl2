@@ -88,7 +88,7 @@ TEST_CASE("Polygon2d")
       poly.push_back(toPoint<float>(0, 20));
       poly.push_back(toPoint<float>(-10, 0));
 
-      CHECK(!poly.IsSelfIntersecting());
+      CHECK(!poly.isSelfIntersecting());
       CHECK(poly.isConvex());
     }
 
@@ -98,12 +98,45 @@ TEST_CASE("Polygon2d")
       poly.push_back(toPoint<float>(10, 10));
       poly.push_back(toPoint<float>(10, 0));
       poly.push_back(toPoint<float>(0, 10));
-      CHECK(poly.IsSelfIntersecting() == true);
+      CHECK(poly.isSelfIntersecting() == true);
       CHECK(!poly.isConvex());
     }
   }
 
-  SECTION("Overlap")
+  SECTION("Contains")
+  {
+    Polygon<float> poly;
+    poly.push_back(toPoint<float>(10, 0));
+    poly.push_back(toPoint<float>(10, 10));
+    poly.push_back(toPoint<float>(0, 10));
+    poly.push_back(toPoint<float>(0, 0));
+
+    CHECK(poly.isConvex());
+    CHECK(poly.area() > 0);
+    auto center = poly.centroid();
+    CHECK(poly.contains(center));
+    CHECK(!poly.contains(toPoint<float>(20,20)));
+    CHECK(!poly.contains(toPoint<float>(5,20)));
+    CHECK(!poly.contains(toPoint<float>(20,5)));
+    CHECK(!poly.contains(toPoint<float>(-5,5)));
+    CHECK(!poly.contains(toPoint<float>(-5,-5)));
+
+
+    // Poly contains uses boundary counting, so orientation doesn't matter.
+    auto rPoly = poly.reverse();
+    CHECK(rPoly.size() == poly.size());
+    EXPECT_FLOAT_EQ(rPoly.area(),-poly.area());
+    CHECK(rPoly.contains(center));
+    CHECK(!rPoly.contains(toPoint<float>(20,20)));
+    CHECK(!rPoly.contains(toPoint<float>(5,20)));
+    CHECK(!rPoly.contains(toPoint<float>(20,5)));
+    CHECK(!rPoly.contains(toPoint<float>(-5,5)));
+    CHECK(!rPoly.contains(toPoint<float>(-5,-5)));
+
+
+  }
+
+  SECTION("overlap")
   {
     Polygon<float> poly;
     poly.push_back(toPoint<float>(10, 0));
@@ -114,16 +147,17 @@ TEST_CASE("Polygon2d")
     CHECK(poly.isConvex());
     CHECK(poly.area() > 0);
 
-    auto score = poly.Overlap(poly);
+
+    auto score = poly.overlap(poly);
     CHECK(std::abs(score - 1.0f) < 0.000001f);
 
     Polygon poly2 = poly;
     poly2 += toPoint<float>(100, 100);
 
-    score = poly.Overlap(poly2);
+    score = poly.overlap(poly2);
     CHECK(std::abs(score) < 0.000001f);
 
-    score = poly2.Overlap(poly);
+    score = poly2.overlap(poly);
     CHECK(std::abs(score) < 0.000001f);
   }
 
@@ -160,7 +194,7 @@ TEST_CASE("Clip Polygon")
 
   SECTION("Self Clipping")
   {
-    auto selfClip = poly.ClipByConvex(poly);
+    auto selfClip = poly.clipByConvex(poly);
 
     CHECK(selfClip.size() == poly.size());
     CHECK(isNearZero(selfClip.area() - poly.area()));
@@ -168,12 +202,12 @@ TEST_CASE("Clip Polygon")
 
   SECTION("Clip Axis")
   {
-    Polygon resultPoly = poly.ClipByAxis(0, 1, true);
+    Polygon resultPoly = poly.clipByAxis(0, 1, true);
     SPDLOG_TRACE("clipByAxis all: {}", resultPoly);
     CHECK(resultPoly.size() == poly.size());
     CHECK(isNearZero(resultPoly.area() - poly.area()));
 
-    resultPoly = poly.ClipByAxis(-0.1f, 1, false);
+    resultPoly = poly.clipByAxis(-0.1f, 1, false);
     SPDLOG_TRACE("none: {}", resultPoly);
     CHECK(resultPoly.empty());
 
@@ -196,11 +230,11 @@ TEST_CASE("Clip Polygon")
 
           // Check axis version
           {
-            auto resultPoly1 = poly2.ClipByAxis(threshold, axis, false);
+            auto resultPoly1 = poly2.clipByAxis(threshold, axis, false);
             if(!resultPoly1.empty()) {
               CHECK(resultPoly1.isConvex());
             }
-            auto resultPoly2 = poly2.ClipByAxis(threshold, axis, true);
+            auto resultPoly2 = poly2.clipByAxis(threshold, axis, true);
             if(!resultPoly2.empty()) {
               CHECK(resultPoly2.isConvex());
             }
@@ -210,11 +244,11 @@ TEST_CASE("Clip Polygon")
           // Check line.
           {
             auto axisLine = LinePP2dC<float>::fromStartAndDirection(toPoint<float>(threshold, threshold), toVector<float>(axis == 1 ? 1 : 0, axis == 0 ? 1 : 0));
-            auto resultPoly1 = poly2.ClipByLine(axisLine, BoundaryOrientationT::INSIDE_RIGHT);
+            auto resultPoly1 = poly2.clipByLine(axisLine, BoundaryOrientationT::INSIDE_RIGHT);
             if(!resultPoly1.empty()) {
               CHECK(resultPoly1.isConvex());
             }
-            auto resultPoly2 = poly2.ClipByLine(axisLine, BoundaryOrientationT::INSIDE_LEFT);
+            auto resultPoly2 = poly2.clipByLine(axisLine, BoundaryOrientationT::INSIDE_LEFT);
             if(!resultPoly2.empty()) {
               CHECK(resultPoly2.isConvex());
             }
@@ -268,8 +302,8 @@ TEST_CASE("Clip Polygon")
     CHECK(isNearZero(range1Poly.area() - 100));
     CHECK(range1Poly.isConvex());
 
-    Polygon clippedConvex = poly.ClipByConvex(range1Poly);
-    Polygon clippedRange = poly.ClipByRange(range1);
+    Polygon clippedConvex = poly.clipByConvex(range1Poly);
+    Polygon clippedRange = poly.clipByRange(range1);
 
     CHECK(clippedConvex.size() > 0);
     CHECK(clippedRange.size() > 0);
@@ -313,17 +347,17 @@ TEST_CASE("Clip Polygon")
     score = clippedRange.area();
     CHECK(std::abs(score - 100) < 1e-6f);
 
-    score = clippedConvex.Overlap(clippedRange);
+    score = clippedConvex.overlap(clippedRange);
     CHECK(std::abs(score - 1) < 1e-6f);
 
-    score = clippedConvex.CommonOverlap(clippedRange);
+    score = clippedConvex.commonOverlap(clippedRange);
     CHECK(std::abs(score - 1) < 1e-6f);
 
     // Clipping by two different routes should give the same result..
-    clippedConvex = poly.ClipByConvex(Polygon(range2));
-    clippedRange = poly.ClipByRange(range2);
+    clippedConvex = poly.clipByConvex(Polygon(range2));
+    clippedRange = poly.clipByRange(range2);
 
-    score = clippedConvex.Overlap(clippedRange);
+    score = clippedConvex.overlap(clippedRange);
     CHECK(std::abs(score - 1) < 1e-6f);
   }
 #endif

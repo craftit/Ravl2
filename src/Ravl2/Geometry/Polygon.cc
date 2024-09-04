@@ -64,7 +64,7 @@ namespace Ravl2
   }
 
   template <typename RealT>
-  Point<RealT, 2> Polygon<RealT>::Centroid() const
+  Point<RealT, 2> Polygon<RealT>::centroid() const
   {
     RealT x = 0.0;
     RealT y = 0.0;
@@ -192,14 +192,14 @@ namespace Ravl2
   }
 
   template <typename RealT>
-  Polygon<RealT> Polygon<RealT>::ClipByConvex(const Polygon &oth, BoundaryOrientationT othOrientation) const
+  Polygon<RealT> Polygon<RealT>::clipByConvex(const Polygon &oth, BoundaryOrientationT othOrientation) const
   {
     if(oth.size() < 3)
       return Polygon();
     Polygon ret = *this;// FixMe:- This makes a poinless copy of the polygon.
     auto pLast = oth.back();
     for(auto ptr : oth) {
-      ret = ret.ClipByLine(LinePP2dC<RealT>(pLast, ptr), othOrientation);
+      ret = ret.clipByLine(LinePP2dC<RealT>(pLast, ptr), othOrientation);
       pLast = ptr;
     }
     return ret;
@@ -214,7 +214,7 @@ namespace Ravl2
   }
 
   template <typename RealT>
-  Polygon<RealT> Polygon<RealT>::ClipByLine(const LinePP2dC<RealT> &line, BoundaryOrientationT lineOrientation) const
+  Polygon<RealT> Polygon<RealT>::clipByLine(const LinePP2dC<RealT> &line, BoundaryOrientationT lineOrientation) const
   {
     Polygon ret;
     if(this->size() < 3)// Empty polygon to start with ?
@@ -260,7 +260,7 @@ namespace Ravl2
   }
 
   template <typename RealT>
-  Polygon<RealT> Polygon<RealT>::ClipByAxis(RealT threshold, unsigned axis, bool isGreater) const
+  Polygon<RealT> Polygon<RealT>::clipByAxis(RealT threshold, unsigned axis, bool isGreater) const
   {
     RavlAssert(axis < 2);
     Polygon ret;
@@ -309,17 +309,17 @@ namespace Ravl2
   }
 
   template <typename RealT>
-  Polygon<RealT> Polygon<RealT>::ClipByRange(const Range<RealT, 2> &rng) const
+  Polygon<RealT> Polygon<RealT>::clipByRange(const Range<RealT, 2> &rng) const
   {
-    Polygon ret = this->ClipByAxis(rng.min(0), 0, 1);
-    ret = ret.ClipByAxis(rng.max(1), 1, 0);
-    ret = ret.ClipByAxis(rng.max(0), 0, 0);
-    ret = ret.ClipByAxis(rng.min(1), 1, 1);
+    Polygon ret = this->clipByAxis(rng.min(0), 0, 1);
+    ret = ret.clipByAxis(rng.max(1), 1, 0);
+    ret = ret.clipByAxis(rng.max(0), 0, 0);
+    ret = ret.clipByAxis(rng.min(1), 1, 1);
     return ret;
   }
 
   template <typename RealT>
-  bool Polygon<RealT>::IsSelfIntersecting() const
+  bool Polygon<RealT>::isSelfIntersecting() const
   {
     auto ft = this->begin();
     if(ft == this->end())
@@ -370,23 +370,23 @@ namespace Ravl2
   }
 
   template <typename RealT>
-  RealT Polygon<RealT>::Overlap(const Polygon &poly) const
+  RealT Polygon<RealT>::overlap(const Polygon &poly) const
   {
     if(this->empty() || poly.empty())
       return 0;
     RealT thisArea = area();
-    Polygon overlap = ClipByConvex(poly);
+    Polygon overlap = clipByConvex(poly);
     return overlap.area() / thisArea;
   }
 
   template <typename RealT>
-  RealT Polygon<RealT>::CommonOverlap(const Polygon &poly) const
+  RealT Polygon<RealT>::commonOverlap(const Polygon &poly) const
   {
     if(this->empty() || poly.empty())
       return 0;
     RealT polyArea = poly.area();
     RealT thisArea = area();
-    Polygon overlap = ClipByConvex(poly);
+    Polygon overlap = clipByConvex(poly);
     return overlap.area() / std::max(thisArea, polyArea);
   }
 

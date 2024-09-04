@@ -69,24 +69,24 @@ namespace Ravl2
     //! Note that this only works if the other polygon is convex.
     //! Ref.: -  Foley. van Dam. Feiner. Hughes: Computer Graphics Principles and Practice
     //!         Addison Wesley Publishing Company, 1996, pp. 123-129
-    [[nodiscard]] Polygon<RealT> ClipByConvex(const Polygon<RealT> &oth, BoundaryOrientationT othOrientation = BoundaryOrientationT::INSIDE_LEFT) const;
+    [[nodiscard]] Polygon<RealT> clipByConvex(const Polygon<RealT> &oth, BoundaryOrientationT othOrientation = BoundaryOrientationT::INSIDE_LEFT) const;
 
     //! @brief Clips this polygon by the line
     //! @param: line - a line
     //! @return: the clipped polygon so that only the part on the right side of the
-    [[nodiscard]] Polygon<RealT> ClipByLine(const LinePP2dC<RealT> &line, BoundaryOrientationT lineOrientation = BoundaryOrientationT::INSIDE_LEFT) const;
+    [[nodiscard]] Polygon<RealT> clipByLine(const LinePP2dC<RealT> &line, BoundaryOrientationT lineOrientation = BoundaryOrientationT::INSIDE_LEFT) const;
 
     //! @brief Clips this polygon by the specified axis line through the given point
     //! @param: threshold - the threshold for the specified axis
     //! @param: axis - we will clip by point[axis]
     //! @param: isGreater - determines which side of the axis is accepted
     //! @return: the remains of the polygon after clipping, maybe empty
-    [[nodiscard]] Polygon<RealT> ClipByAxis(RealT threshold, unsigned axis, bool isGreater) const;
+    [[nodiscard]] Polygon<RealT> clipByAxis(RealT threshold, unsigned axis, bool isGreater) const;
 
     //! @brief Clip polygon so it lies entirely within 'range'
     //! If adjacent points on the polygon map to the same place,
     //! one of the points will be removed.
-    [[nodiscard]] Polygon<RealT> ClipByRange(const Range<RealT, 2> &range) const;
+    [[nodiscard]] Polygon<RealT> clipByRange(const Range<RealT, 2> &range) const;
 
     //! Returns true iff the point 'p' is an internal point of this polygon.
     [[nodiscard]] bool contains(const Point<RealT, 2> &p) const;
@@ -97,20 +97,20 @@ namespace Ravl2
     //! Returns the centroid of this polygon.
     //! This computes the centroid of the area covered by the polygon
     [[nodiscard]]
-    Point<RealT, 2> Centroid() const;
+    Point<RealT, 2> centroid() const;
 
     //! Returns true if the polygon is self intersecting, ie do any sides cross
-    [[nodiscard]] bool IsSelfIntersecting() const;
+    [[nodiscard]] bool isSelfIntersecting() const;
 
     //! @brief Measure the fraction of the polygons overlapping as a fraction of the area of 'poly'
     //! This requires that the polygons are convex.
     //! @return: 0= Not overlapping 1=This polygon is completely covered by 'poly'.
-    [[nodiscard]] RealT Overlap(const Polygon<RealT> &poly) const;
+    [[nodiscard]] RealT overlap(const Polygon &poly) const;
 
     //! @brief Measure the fraction of the polygons overlapping as a fraction of the larger of the two polygons.
     //! This requires that the polygons are convex.
     //! @return: 0= Not overlapping 1=If the two polygons are identical.
-    [[nodiscard]] RealT CommonOverlap(const Polygon<RealT> &poly) const;
+    [[nodiscard]] RealT commonOverlap(const Polygon<RealT> &poly) const;
 
     //! @brief Generate an approximation to the given polygon within the given Euclidean distance limit.
     //! The approximation is computed by finding the furthest point from the start, and then
