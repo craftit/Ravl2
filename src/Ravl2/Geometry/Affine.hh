@@ -112,7 +112,7 @@ namespace Ravl2
   }
 
   template <typename DataT, unsigned N>
-  constexpr std::optional<Affine<DataT, N> > Affine<DataT, N>::inverse(void) const
+  constexpr std::optional<Affine<DataT, N> > Affine<DataT, N>::inverse() const
   {
     Affine<DataT, N> ret;
     auto inv = Ravl2::inverse(mSR);
@@ -161,7 +161,7 @@ namespace Ravl2
 
   //! @brief Computer inverse of affine transformation.
   template <typename DataT, unsigned N>
-  constexpr auto inverse(const Affine<DataT, N> &aff)
+  constexpr std::optional<Affine<DataT, N> > inverse(const Affine<DataT, N> &aff)
   {
     return aff.inverse();
   }
