@@ -17,7 +17,6 @@ namespace Ravl2
   bool initCerealIO()
   {
     return true;
-
   }
 
   CerealArchiveHeader::CerealArchiveHeader(std::string theTypeName)
@@ -39,7 +38,7 @@ namespace Ravl2
   {
     [[maybe_unused]] bool regFormat1 = registerCerealFormats<IndexRangeSet<2>>();
     [[maybe_unused]] bool regFormat2 = registerCerealFormats<Array<uint8_t,2>>();
-    [[maybe_unused]] bool regFormat3= registerCerealFormats<Array<float,2>>();
+    [[maybe_unused]] bool regFormat3 = registerCerealFormats<Array<float,2>>();
     [[maybe_unused]] bool regFormat4 = registerCerealFormats<Array<int,2>>();
     [[maybe_unused]] bool regFormat5 = registerCerealFormats<Array<uint32_t,2>>();
   }// namespace

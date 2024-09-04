@@ -180,9 +180,8 @@ namespace Ravl2
       return true;
     }
 
-    template<typename ObjectT>
-    static bool registerType()
-    {
+    //! Provide a format for the archive.s
+    static std::shared_ptr<CerealSaveFormat<ArchiveT> > &format() {
       static std::shared_ptr<CerealSaveFormat<ArchiveT> > format = []()
       {
 	std::string defaultExt = []() {
@@ -194,10 +193,18 @@ namespace Ravl2
 	  return "bin";
 	}();
 	auto ret = std::make_shared<CerealSaveFormat<ArchiveT>>(defaultExt);
+	SPDLOG_TRACE("Registering CerealSaveFormat '{}' with default extension '{}'", typeName(typeid(CerealSaveFormat<ArchiveT>)),defaultExt);
 	outputFormatMap().add(ret);
 	return ret;
       }();
-      return format->template registerObjectType<ObjectT>();
+      return format;
+    }
+
+    //! Register a type with the format.
+    template<typename ObjectT>
+    static bool registerType()
+    {
+      return format()->template registerObjectType<ObjectT>();
     }
 
       //! Test if we can save this type.
@@ -241,6 +248,7 @@ namespace Ravl2
       : InputFormat(fmt::format("Cereal-{}", typeName(typeid(ArchiveT))), ext, "file")
     {}
 
+    //! Register a type with the format.
     template<typename ObjectT>
     bool registerObjectType()
     {
@@ -252,8 +260,8 @@ namespace Ravl2
       return true;
     }
 
-    template<typename ObjectT>
-    static bool registerType()
+    //! Provide one instance of the format.
+    static std::shared_ptr<CerealLoadFormat<ArchiveT> > &format()
     {
       static std::shared_ptr<CerealLoadFormat<ArchiveT> > format = []() {
 	std::string defaultExt = []() {
@@ -264,13 +272,22 @@ namespace Ravl2
 	  }
 	  return "bin";
 	}();
-	auto ret = std::make_shared<CerealLoadFormat<ArchiveT>>();
+	SPDLOG_TRACE("Registering CerealLoadFormat '{}' with default extension '{}'", typeName(typeid(CerealLoadFormat<ArchiveT>)),defaultExt);
+	auto ret = std::make_shared<CerealLoadFormat<ArchiveT>>(defaultExt);
 	inputFormatMap().add(ret);
 	return ret;
       }();
-      return format->template registerObjectType<ObjectT>();
+      return format;
     }
 
+    //! Register a type with the format.
+    template<typename ObjectT>
+    static bool registerType()
+    {
+      return format()->template registerObjectType<ObjectT>();
+    }
+
+    //! See if we know how to read the stream.
     [[nodiscard]] std::optional<StreamInputPlan> probe(const ProbeInputContext &ctx) final
     {
       if(ctx.m_data.size() < 4) {
@@ -299,7 +316,8 @@ namespace Ravl2
       std::shared_lock lock(m_mutex);
       auto it = m_streamInputFactory.find(header.typeName);
       if(it == m_streamInputFactory.end()) {
-	SPDLOG_WARN("Unknown object type {}", header.typeName);
+	SPDLOG_INFO("Unknown object type '{}' in format '{}' Archive:{} ", header.typeName, typeName(typeid(*this)),static_cast<void*>(this));
+	return std::nullopt;
       }
       auto newStream = it->second(ctx);
       if(ctx.m_targetType ==newStream->type()) {
