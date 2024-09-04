@@ -59,11 +59,11 @@ namespace Ravl2
       m_b = p1[1] - m_a * p1[0];
     }
     if(p1[0] < p2[0]) {
-      m_minRow = int_ceil(p1[0]);
-      m_maxRow = int_ceil(p2[0]);
+      m_minRow = intCeil(p1[0]);
+      m_maxRow = intCeil(p2[0]);
     } else {
-      m_minRow = int_ceil(p2[0]);
-      m_maxRow = int_ceil(p1[0]);
+      m_minRow = intCeil(p2[0]);
+      m_maxRow = intCeil(p1[0]);
     }
   }
 
@@ -157,9 +157,9 @@ namespace Ravl2
     do {
       if(m_sortedEdges.empty())
         return false;
-      int newMin = int_ceil(m_sortedEdges.front());
+      int newMin = intCeil(m_sortedEdges.front());
       m_sortedEdges.pop_front();
-      int newMax = int_ceil(m_sortedEdges.front() - RealT(1.0));
+      int newMax = intCeil(m_sortedEdges.front() - RealT(1.0));
       indexRange = IndexRange<1>(newMin, newMax);
       m_sortedEdges.pop_front();
     } while(indexRange.size() <= 0);// don't include empty sections

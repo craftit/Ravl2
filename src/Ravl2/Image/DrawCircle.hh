@@ -57,7 +57,7 @@ namespace Ravl2
   void DrawFilledCircle(ArrayT &dat, const DataT &value, const Point<CoordT, 2> &center, CoordT radius)
   {
     if(radius <= 1.0f) {// Very small ?
-      Index<2> at({int_round(center[0]), int_round(center[1])});
+      Index<2> at({intRound(center[0]), intRound(center[1])});
       if(dat.range().contains(at))
         dat[at] = value;
       return;

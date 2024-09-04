@@ -101,7 +101,7 @@ TEST_CASE("Moments")
       cereal::JSONOutputArchive oarchive(ss);
       oarchive(moments);
     }
-    SPDLOG_INFO("Json: {}", ss.str());
+    SPDLOG_TRACE("Json: {}", ss.str());
     {
       cereal::JSONInputArchive iarchive(ss);
       Moments2<double> moments2;
@@ -128,7 +128,7 @@ TEST_CASE("Vector and Matrix")
       //serialize(oarchive, p1);
       oarchive(p1);
     }
-    SPDLOG_INFO("Point<float,2>: {}", ss.str());
+    SPDLOG_TRACE("Point<float,2>: {}", ss.str());
     {
       cereal::JSONInputArchive iarchive(ss);
       Point<float,2> p2;
@@ -252,7 +252,7 @@ TEST_CASE("Circle")
   {
     Circle2dC<float> circle2;
     EXPECT_TRUE(circle2.Fit(pnts[0], pnts[1], pnts[2]));
-    SPDLOG_INFO("Center={} Radius={}", circle2.Centre(), circle2.Radius());
+    SPDLOG_TRACE("Center={} Radius={}", circle2.Centre(), circle2.Radius());
     float sqrMag = xt::sum(xt::square(Point<float, 2>(circle2.Centre() - Point<float, 2>({1, 2}))))[0];
     CHECK(sqrMag < 0.01f);
     CHECK(std::abs(circle2.Radius() - 2) < 0.01f);
@@ -263,7 +263,7 @@ TEST_CASE("Circle")
     Circle2dC<float> circle;
     auto residual = Ravl2::fit(circle, pnts);
     CHECK(residual.has_value());
-    SPDLOG_INFO("Center={} Radius={} Residual={}", circle.Centre(), circle.Radius(), residual.value());
+    SPDLOG_TRACE("Center={} Radius={} Residual={}", circle.Centre(), circle.Radius(), residual.value());
     CHECK(sumOfSqr(Point<float, 2>(circle.Centre() - toPoint<float>(1, 2))) < 0.01f);
     CHECK(std::abs(circle.Radius() - 2) < 0.01f);
   }
@@ -282,12 +282,12 @@ TEST_CASE("Conic")
   Ravl2::Conic2dC<float> conic {};
   auto residual = fit(conic, pnts);
   CHECK(residual.has_value());
-  SPDLOG_INFO("Conic: {}", conic);
+  SPDLOG_TRACE("Conic: {}", conic);
   //=-0.264764 -0.132382 -0.066191 1.05906 0.463337 -0.794292
   Ravl2::Conic2dC<float> conic2(-0.264764f, -0.132382f, -0.066191f, 1.05906f, 0.463337f, -0.794292f);
 
   for(auto p : pnts) {
-    SPDLOG_INFO("Point {} is on curve: {} 2:{} ", p, conic.Residue(p), conic2.Residue(p));
+    //SPDLOG_INFO("Point {} is on curve: {} 2:{} ", p, conic.Residue(p), conic2.Residue(p));
     CHECK(conic.IsOnCurve(p,1e-4f));
     CHECK(conic2.IsOnCurve(p,1e-4f));
   }
@@ -311,14 +311,14 @@ TEST_CASE("Ellipse")
     auto residual = fit(conic, pnts);
     //auto residual = fitEllipse(conic, pnts);
     CHECK(residual.has_value());
-    SPDLOG_INFO("Ellipse: {}", conic);
+    //SPDLOG_INFO("Ellipse: {}", conic);
 
     auto optEllipse = toEllipse(conic);
     REQUIRE(optEllipse.has_value());
 
     auto ellipse = optEllipse.value();
     for(auto p : pnts) {
-      SPDLOG_INFO("Point {} is on curve: {} ", p, ellipse.residue(p));
+      //SPDLOG_INFO("Point {} is on curve: {} ", p, ellipse.residue(p));
       CHECK(ellipse.IsOnCurve(p, 1e-4f));
     }
 #endif
@@ -326,17 +326,16 @@ TEST_CASE("Ellipse")
   SECTION("Mean Covariance")
   {
     using RealT = float;
-    SPDLOG_INFO("Mean Covariance");
     Matrix<RealT,2,2> covar({{4,0},
       {0,1}});
     Vector<RealT,2> mean = toVector<RealT>(50,50);
 
     Ellipse2dC<RealT> ellipse = EllipseMeanCovariance(covar,mean,1.0f);
-    SPDLOG_INFO("Ellipse: {}", ellipse);
+    //SPDLOG_INFO("Ellipse: {}", ellipse);
     Point<RealT,2> centre;
     RealT min,maj,ang;
     ellipse.EllipseParameters(centre,maj,min,ang);
-    SPDLOG_INFO("Parameters={} {} {} {} ", centre, maj, min, ang);
+    //SPDLOG_INFO("Parameters={} {} {} {} ", centre, maj, min, ang);
 
     CHECK((std::abs(maj - RealT(2))) < 0.0000001f);
     CHECK(std::abs(min - 1) < 0.0000001f);

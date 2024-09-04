@@ -97,6 +97,7 @@ namespace Ravl2
   //! Some traits for channels with a pixel type
   template <typename DataT, ImageChannel channel>
   struct PixelTypeTraits {
+    using value_type = DataT;
     static constexpr bool isNormalized = PixelChannelTraits<channel>::isNormalized;
     static constexpr DataT min = (std::is_integral_v<DataT> ? 0 : DataT(0));
     static constexpr DataT max = (std::is_integral_v<DataT> ? std::numeric_limits<DataT>::max() : DataT(1));
@@ -108,6 +109,7 @@ namespace Ravl2
   template <typename DataT, ImageChannel channel>
     requires(std::is_floating_point_v<DataT> && (channel == ImageChannel::ChrominanceU || channel == ImageChannel::ChrominanceV))
   struct PixelTypeTraits<DataT, channel> {
+    using value_type = DataT;
     static constexpr bool isNormalized = PixelChannelTraits<channel>::isNormalized;
     static constexpr DataT min = DataT(-0.5);
     static constexpr DataT max = DataT(0.5);
@@ -119,10 +121,11 @@ namespace Ravl2
   template <typename DataT, ImageChannel channel>
     requires std::is_signed_v<DataT> && std::is_integral_v<DataT>
   struct PixelTypeTraits<DataT, channel> {
+    using value_type = DataT;
     static constexpr bool isNormalized = PixelChannelTraits<channel>::isNormalized;
-    static constexpr int min = 0;
-    static constexpr int max = std::numeric_limits<DataT>::max();
-    static constexpr int offset = 0;
+    static constexpr DataT min = 0;
+    static constexpr DataT max = std::numeric_limits<DataT>::max();
+    static constexpr DataT offset = 0;
     static constexpr DataT defaultValue = 0;
   };
 
@@ -130,10 +133,11 @@ namespace Ravl2
   template <typename DataT, ImageChannel channel>
     requires(std::is_integral_v<DataT> && std::is_unsigned_v<DataT> && (channel == ImageChannel::ChrominanceU || channel == ImageChannel::ChrominanceV))
   struct PixelTypeTraits<DataT, channel> {
+    using value_type = DataT;
     static constexpr bool isNormalized = PixelChannelTraits<channel>::isNormalized;
-    static constexpr int min = std::numeric_limits<DataT>::min();
-    static constexpr int max = std::numeric_limits<DataT>::max();
-    static constexpr int offset = std::numeric_limits<DataT>::max() / 2;
+    static constexpr DataT min = std::numeric_limits<DataT>::min();
+    static constexpr DataT max = std::numeric_limits<DataT>::max();
+    static constexpr DataT offset = std::numeric_limits<DataT>::max() / 2;
     static constexpr DataT defaultValue = offset;
   };
 
@@ -150,8 +154,12 @@ namespace Ravl2
       if constexpr(std::is_floating_point_v<CompT>) {
         return raw;
       }
+      if constexpr(std::is_floating_point_v<PixelValueTypeT> && std::is_integral_v<CompT>) {
+        // If we're converting to an integer type then we need to clamp the value.
+        return intRound< decltype(raw),CompT>(std::clamp( raw, PixelValueTypeT(PixelTypeTraits<CompT, channel>::min), PixelValueTypeT(PixelTypeTraits<CompT, channel>::max)));
+      }
       // If we're converting to an integer type then we need to clamp the value.
-      return CompT(std::clamp(int_round(raw), int(PixelTypeTraits<CompT, channel>::min), int(PixelTypeTraits<CompT, channel>::max)));
+      return CompT(std::clamp(raw, decltype(raw)(PixelTypeTraits<CompT, channel>::min), decltype(raw)(PixelTypeTraits<CompT, channel>::max)));
     }
     // If the channel is not normalized then we can just return the value.
     return CompT(pixel);

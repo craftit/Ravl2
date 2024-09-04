@@ -169,18 +169,18 @@ TEST_CASE("Clip Polygon")
   SECTION("Clip Axis")
   {
     Polygon resultPoly = poly.ClipByAxis(0, 1, true);
-    SPDLOG_INFO("clipByAxis all: {}", resultPoly);
+    SPDLOG_TRACE("clipByAxis all: {}", resultPoly);
     CHECK(resultPoly.size() == poly.size());
     CHECK(isNearZero(resultPoly.area() - poly.area()));
 
     resultPoly = poly.ClipByAxis(-0.1f, 1, false);
-    SPDLOG_INFO("none: {}", resultPoly);
+    SPDLOG_TRACE("none: {}", resultPoly);
     CHECK(resultPoly.empty());
 
     Range<float,1> scanRange(-11, 21);
     const float step = 0.1f;
-    const int numDivisions = int_round(scanRange.size() / step);
-    int testNum = 0;
+    const int numDivisions = intRound(scanRange.size() / step);
+    [[maybe_unused]] int testNum = 0;
     for(unsigned axis = 0; axis < 2; ++axis) {
       // Try different starting points.
       for(size_t startAt = 0; startAt < poly.size(); startAt++) {
@@ -251,7 +251,7 @@ TEST_CASE("Clip Polygon")
         }
       }
     }
-    SPDLOG_INFO("Tested {} cases", testNum);
+    SPDLOG_TRACE("Tested {} cases", testNum);
   }
 
 #if 1

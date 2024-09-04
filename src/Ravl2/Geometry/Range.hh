@@ -279,7 +279,7 @@ namespace Ravl2
     //! Get the smallest integer range containing the real range.
     [[nodiscard]] constexpr IndexRange<1> toIndexRange() const
     {
-      return IndexRange<1>(int_floor(mMin), int_ceil(mMax));
+      return IndexRange<1>(intFloor(mMin), intCeil(mMax));
     }
 
   private:
@@ -786,7 +786,7 @@ namespace Ravl2
   template <typename RealT>
   inline constexpr IndexRange<1> toIndexRange(Range<RealT, 1> ir)
   {
-    return IndexRange<1>(int_floor(ir.min()), int_ceil(ir.max()));
+    return IndexRange<1>(intFloor(ir.min()), intCeil(ir.max()));
   }
 
   //! Serialization support

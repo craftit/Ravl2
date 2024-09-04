@@ -20,23 +20,23 @@
 
 TEST_CASE("Math")
 {
-  // Check the int_floor
-  CHECK_EQ(Ravl2::int_floor(1.0),1);
-  CHECK_EQ(Ravl2::int_floor(0.1),0);
-  CHECK_EQ(Ravl2::int_floor(0.9),0);
-  CHECK_EQ(Ravl2::int_floor(-0.1),-1);
-  CHECK_EQ(Ravl2::int_floor(0.0),0);
-  CHECK_EQ(Ravl2::int_floor(-0.0),0);
-  CHECK_EQ(Ravl2::int_floor(-1.0),-1);
-  CHECK_EQ(Ravl2::int_floor(-2.0),-2);
+  // Check the intFloor
+  CHECK_EQ(Ravl2::intFloor(1.0),1);
+  CHECK_EQ(Ravl2::intFloor(0.1),0);
+  CHECK_EQ(Ravl2::intFloor(0.9),0);
+  CHECK_EQ(Ravl2::intFloor(-0.1),-1);
+  CHECK_EQ(Ravl2::intFloor(0.0),0);
+  CHECK_EQ(Ravl2::intFloor(-0.0),0);
+  CHECK_EQ(Ravl2::intFloor(-1.0),-1);
+  CHECK_EQ(Ravl2::intFloor(-2.0),-2);
 
-  // Check the int_round
-  CHECK_EQ(Ravl2::int_round(0.1),0);
-  CHECK_EQ(Ravl2::int_round(0.9),1);
-  CHECK_EQ(Ravl2::int_round(-0.1),0);
-  CHECK_EQ(Ravl2::int_round(0.0),0);
-  CHECK_EQ(Ravl2::int_round(-0.0),0);
-  CHECK_EQ(Ravl2::int_round(-0.9),-1);
+  // Check the intRound
+  CHECK_EQ(Ravl2::intRound(0.1),0);
+  CHECK_EQ(Ravl2::intRound(0.9),1);
+  CHECK_EQ(Ravl2::intRound(-0.1),0);
+  CHECK_EQ(Ravl2::intRound(0.0),0);
+  CHECK_EQ(Ravl2::intRound(-0.0),0);
+  CHECK_EQ(Ravl2::intRound(-0.9),-1);
 
   // Check the sign
   CHECK_EQ(Ravl2::sign(1),1);

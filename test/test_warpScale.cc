@@ -41,14 +41,14 @@ TEST_CASE("WarpScale")
     //create image
 
     float sum = res1[0][0] + res2[0][0];
-    SPDLOG_INFO("Sum: {}", sum);
+    SPDLOG_TRACE("Sum: {}", sum);
 
     for(auto it = zip(res1, res2); it.valid(); ++it) {
       float s1 = it.template data<0>() + it.template data<1>();
       float dif = s1 - sum;
       float limit = (s1 + sum) * 5e-6f;
       if(std::abs(dif) >= limit) {
-        SPDLOG_INFO("err: {} {}  @ {}", dif, s1, it.index());
+        SPDLOG_ERROR("err: {} {}  @ {}", dif, s1, it.index());
       }
       CHECK(std::abs(dif) < limit);
     }

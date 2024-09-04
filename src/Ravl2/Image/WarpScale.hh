@@ -30,7 +30,7 @@ namespace Ravl2
       //cerr << "srcColR:" << srcColR << endl;
       //cerr << "scaleColR:" << scaleColR << endl;
       //cerr << "resCols:" << resCols << endl;
-      int srcColI = int_floor(srcColR);
+      int srcColI = intFloor(srcColR);
       double t = srcColR - srcColI;
 
       const InT *srcPtr = &(img)[srcRowI][srcColI];
@@ -46,7 +46,7 @@ namespace Ravl2
 
         //all full pixels
         const double srcLastColR = srcColR + scaleColR;
-        const int srcLastColI = int_floor(srcLastColR);
+        const int srcLastColI = intFloor(srcLastColR);
         for(srcColI++; srcColI < srcLastColI; srcColI++) {
           resPixel += OutT(*srcPtr);
           srcPtr++;
@@ -76,7 +76,7 @@ namespace Ravl2
     WS_prepareRowAdd(const Array<InT, 2> &img, int srcRowI, double srcColR, double scaleColR,
                      OutT *resPtr, int resCols)
     {
-      int srcColI = int_floor(srcColR);
+      int srcColI = intFloor(srcColR);
       double t = srcColR - srcColI;
 
       const InT *srcPtr = &(img)[srcRowI][srcColI];
@@ -90,7 +90,7 @@ namespace Ravl2
 
         //all full pixels
         const double srcLastColR = srcColR + scaleColR;
-        const int srcLastColI = int_floor(srcLastColR);
+        const int srcLastColI = intFloor(srcLastColR);
         for(srcColI++; srcColI < srcLastColI; srcColI++) {
           resPixel += OutT(*srcPtr);
           srcPtr++;
@@ -135,10 +135,10 @@ namespace Ravl2
     using RealT = double;
     const IndexRange<2> &imgFrame = img.range();
     IndexRange<2> rng(
-      IndexRange<1>(int_ceil(RealT(imgFrame[0].min()) / RealT(scale[0])),
-                    int_floor(RealT(imgFrame[0].max() - 0) / RealT(scale[0]))),
-      IndexRange<1>(int_ceil(RealT(imgFrame[1].min()) / RealT(scale[1])),
-                    int_floor(RealT(imgFrame[1].max() - 0) / RealT(scale[1]))));
+      IndexRange<1>(intCeil(RealT(imgFrame[0].min()) / RealT(scale[0])),
+                    intFloor(RealT(imgFrame[0].max() - 0) / RealT(scale[0]))),
+      IndexRange<1>(intCeil(RealT(imgFrame[1].min()) / RealT(scale[1])),
+                    intFloor(RealT(imgFrame[1].max() - 0) / RealT(scale[1]))));
 
     if(!result.range().contains(rng)) {
       //! Can we resize the result?
@@ -167,7 +167,7 @@ namespace Ravl2
 
     //prepare row buffer
     RealAccumT srcRowR = RealAccumT(origin[0]);
-    int srcRowI = int_floor(srcRowR);
+    int srcRowI = intFloor(srcRowR);
     RealAccumT u = srcRowR - srcRowI;
 
     detail::WS_prepareRow(img, srcRowI, RealT(origin[1]), RealT(scale[1]), bufferRow.data(), int(resCols));
@@ -183,7 +183,7 @@ namespace Ravl2
 
       //all full rows
       const double srcLastRowR = srcRowR + double(scale[0]);
-      const int srcLastRowI = int_floor(srcLastRowR);
+      const int srcLastRowI = intFloor(srcLastRowR);
       //cerr << "srcRowI:" << srcRowI << endl;
       //cerr << "srcLastRowI:" << srcLastRowI << endl;
       for(srcRowI++; srcRowI < srcLastRowI; srcRowI++) {
@@ -247,10 +247,10 @@ namespace Ravl2
     if(result.range().empty()) {
       const IndexRange<2> &imgFrame = img.range();
       IndexRange<2> rng(
-      IndexRange<1>(int_ceil(RealT(imgFrame[0].min()) / scale[0]),
-      int_floor(RealT(imgFrame[0].max() - 0) / scale[0])),
-      IndexRange<1>(int_ceil(RealT(imgFrame[1].min()) / scale[1]),
-		    int_floor(RealT(imgFrame[1].max() - 0) / scale[1])));
+      IndexRange<1>(intCeil(RealT(imgFrame[0].min()) / scale[0]),
+                      intFloor(RealT(imgFrame[0].max() - 0) / scale[0])),
+      IndexRange<1>(intCeil(RealT(imgFrame[1].min()) / scale[1]),
+                      intFloor(RealT(imgFrame[1].max() - 0) / scale[1])));
       result = Array<OutT, 2>(rng);
     }
     //cout << "res frame:" << result.range() << std::endl;
@@ -271,13 +271,13 @@ namespace Ravl2
     for(auto it = result.begin(); it.valid();) {
       Point2f pnt = rowStart;
 
-      int fx = int_floor(pnt[0]);// Row
+      int fx = intFloor(pnt[0]);// Row
       int fxp1 = fx + 1;
       if(fxp1 >= img.range().size(0)) fxp1 = fx;
       RealT u = pnt[0] - RealT(fx);
       if(u < RealT(1e-5)) {
 	do {
-	  int fy = int_floor(pnt[1]);// Col
+	  int fy = intFloor(pnt[1]);// Col
 	  RealT t = pnt[1] - RealT(fy);
 	  if(t < RealT(1e-5)) {
 	    const InT *pixel1 = &(img)[fx][fy];
@@ -295,7 +295,7 @@ namespace Ravl2
       } else {
 	RealT onemu = (RealT(1.0) - u);
 	do {
-	  int fy = int_floor(pnt[1]);// Col
+	  int fy = intFloor(pnt[1]);// Col
 	  RealT t = pnt[1] - RealT(fy);
 	  if(t < RealT(1e-5)) {
 	    const InT *pixel1 = &(img)[fx][fy];

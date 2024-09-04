@@ -149,7 +149,7 @@ TEST_CASE("CrackCode properties")
     // Setup a square in the middle of the image.
     auto rng = img.range().shrink(2);
     Ravl2::fill(clip(img,rng),10);
-    SPDLOG_INFO("Image: {}", img);
+    SPDLOG_TRACE("Image: {}", img);
 
     auto bounds = Boundary::traceBoundary(img, 10);
 
@@ -282,7 +282,7 @@ TEST_CASE("Boundary Moments")
     }
 
     auto moments = moments2<int>(bnds);
-    SPDLOG_INFO("1 Simple: {}  Moments: {}  ", momentsSimple, moments);
+    //SPDLOG_INFO("1 Simple: {}  Moments: {}  ", momentsSimple, moments);
 
     CHECK(momentsSimple == moments);
   }
@@ -301,7 +301,7 @@ TEST_CASE("Boundary Moments")
     }
 
     auto moments = moments2<int>(bnds);
-    SPDLOG_INFO("1a Simple: {}  Moments: {}  ", momentsSimple, moments);
+    //SPDLOG_INFO("1a Simple: {}  Moments: {}  ", momentsSimple, moments);
 
     CHECK(momentsSimple == moments);
   }
@@ -320,7 +320,7 @@ TEST_CASE("Boundary Moments")
     }
 
     auto moments = moments2<int>(bnds);
-    SPDLOG_INFO("1b Simple: {}  Moments: {}  ", momentsSimple, moments);
+    //SPDLOG_INFO("1b Simple: {}  Moments: {}  ", momentsSimple, moments);
     CHECK(momentsSimple == moments);
 
   }
@@ -349,7 +349,7 @@ TEST_CASE("Boundary Moments")
     }
 
     auto moments = moments2<int>(bnds);
-    SPDLOG_INFO("2 Simple: {}  Moments: {}  ", momentsSimple, moments);
+    //SPDLOG_INFO("2 Simple: {}  Moments: {}  ", momentsSimple, moments);
     CHECK(momentsSimple == moments);
   }
 
@@ -375,7 +375,7 @@ TEST_CASE("Boundary Moments")
     }
 
     auto moments = moments2<int>(bnds);
-    SPDLOG_INFO("3 Simple: {}  Moments: {}  ", momentsSimple, moments);
+    //SPDLOG_INFO("3 Simple: {}  Moments: {}  ", momentsSimple, moments);
     CHECK(momentsSimple == moments);
   }
 

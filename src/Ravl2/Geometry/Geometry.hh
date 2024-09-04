@@ -197,7 +197,7 @@ namespace Ravl2
   {
     Index<N> ret;
     for(unsigned i = 0; i < N; i++) {
-      ret[i] = int_round(pnt[i]);
+      ret[i] = intRound(pnt[i]);
     }
     return ret;
   }
@@ -252,6 +252,18 @@ namespace Ravl2
   constexpr inline Vector<RealT, N> toVector(DataT... data)
   {
     return Vector<RealT, N>({RealT(data)...});
+  }
+
+  //! Convert a parameter list of RealT to a point
+  template <typename RealT, typename SourceT, size_t N>
+    requires(std::is_convertible_v<SourceT, RealT>)
+  constexpr Point<RealT, N> toVector(const Point<SourceT, N> &pnt)
+  {
+    Vector<RealT, N> ret;
+    for(unsigned i = 0; i < N; i++) {
+      ret[i] = RealT(pnt[i]);
+    }
+    return ret;
   }
 
   //! Linear interpolation between two points

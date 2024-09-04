@@ -104,13 +104,15 @@ namespace Ravl2
     //! @param out The array to put the result in.
     //! @param scale This is the scale factor to apply to the output.
     //! @param offset This is the point adds an offset in the input space to the sampled pixels.
-    template<typename AccumT>
-    Array<DataT, 2> &sampleGrid(Array<DataT, 2> &out, const Vector<float,2> scale,Point<float,2> offset = toPoint<float>(0,0)) const
+    template<typename AccumT,typename CoordT = double>
+    Array<DataT, 2> &sampleGrid(Array<DataT, 2> &out, const Vector<float,2> pixelScale,Point<float,2> pixelOffset = toPoint<float>(0,0)) const
     {
       // Check it fits within the table.
-      Range<float,2> outRng = toRange<float>(out.range()).shrinkMax(1) ;
-      Range<float,2> rng = Range<float,2>(outRng.min() * scale + offset, outRng.max() * scale + offset);
-
+      auto scale = toVector<CoordT>(pixelScale);
+      auto offset = toPoint<CoordT>(pixelOffset);
+      Range<CoordT,2> outRng = toRange<CoordT>(out.range()).shrinkMax(1) ;
+      Range<CoordT,2> rng = Range<CoordT,2>(outRng.min() * scale + offset, outRng.max() * scale + offset);
+      auto areaNorm = 1/(scale[0] * scale[1]);
       auto indexBounds = rng.toIndexRange();
       if(!mClipRange.contains(indexBounds)) {
         SPDLOG_WARN("SampleGrid: Out of bounds: {} Rng:{} Bounds:{} Array:{} ", indexBounds, rng, mClipRange,this->range());
@@ -118,18 +120,16 @@ namespace Ravl2
       }
       // Is it worth caching the last row of interpolated values ?
       for(auto it = out.begin();it.valid();) {
-        Point<float,2> pnt = offset + toPoint<float>(it.index()) * scale;
-        auto last0 = interpolateBilinear(*this,pnt + toVector<float>(-scale[0],-1));
-        auto last1 = interpolateBilinear(*this,pnt + toVector<float>(0,-1));
+        Point<CoordT,2> pnt = offset + toPoint<CoordT>(it.index()) * scale;
+        auto last0 = interpolateBilinear<CoordT>(*this,pnt + toVector<CoordT>(-scale[0],-1));
+        auto last1 = interpolateBilinear<CoordT>(*this,pnt + toVector<CoordT>(0,-1));
         do {
-          auto val0 = interpolateBilinear(*this,pnt + toVector<float>(-scale[0],0));
-          auto val1 = interpolateBilinear(*this,pnt );
-          if constexpr(std::is_same_v<DataT, decltype(val0)> ) {
-            *it = val1 - val0 - last1 + last0;
-          } else if constexpr(std::is_floating_point_v<decltype(val0)> && std::is_integral_v<DataT>)  {
-            *it = DataT(int_round(val1 - val0 - last1 + last0));
+          auto val0 = interpolateBilinear<CoordT>(*this,pnt + toVector<CoordT>(-scale[0],0));
+          auto val1 = interpolateBilinear<CoordT>(*this,pnt );
+          if constexpr(std::is_integral_v<DataT>)  {
+            *it = DataT(intRound((val1 - val0 - last1 + last0) * areaNorm));
           } else {
-            *it = DataT(val1 - val0 - last1 + last0);
+            *it = DataT((val1 - val0 - last1 + last0) * areaNorm);
           }
           last0 = val0;
           last1 = val1;

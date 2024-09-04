@@ -43,9 +43,9 @@ TEST_CASE("Line2dIter")
   CHECK (c <= 19);
   RealT x = 0;
   RealT step = 0.1f;
-  int countTo = int_round((std::numbers::pi_v<RealT> * 2)/step);
+  int countTo = intRound((std::numbers::pi_v<RealT> * 2) / step);
   for (int i = 0; i < countTo; ++i) {
-    end = Index<2>(int_round(std::sin(x) * 10.0f), int_round(std::cos(x) * 10.0f));
+    end = Index<2>(intRound(std::sin(x) * 10.0f), intRound(std::cos(x) * 10.0f));
     c = 0;
     for (Line2dIterC it(start, end); it.valid() && c < 20; it++, c++) {
       CHECK(rng.contains(it.Data()));
@@ -187,7 +187,7 @@ TEST_CASE("Fit LineABC")
 
   RealT a = 0;
   RealT step = (twoPi/100);
-  const auto iterCount = size_t(int_round(twoPi/step));
+  const auto iterCount = size_t(intRound(twoPi / step));
   for(size_t j = 0;j < iterCount;++j) {
     points.clear();
     RealT offx = random50(rng);

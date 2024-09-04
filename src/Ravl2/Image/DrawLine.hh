@@ -49,7 +49,6 @@ namespace Ravl2
       }
       return;
     }
-    SPDLOG_INFO("DrawLine: Line not completely inside image");
     DrawLine(Dat, Value, LinePP2dC<float>(toPoint<float>(From), toPoint<float>(To)));
   }
 

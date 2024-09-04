@@ -40,7 +40,7 @@ TEST_CASE("FloodRegion")
       CHECK(img[it.rightPixel()] == 99);
     }
     CHECK(boundary.boundingBox() == rng);
-    SPDLOG_INFO("Boundary: {}  ({})", boundary.size(), size_t((rng.range(0).size() + rng.range(1).size()) * 2));
+    SPDLOG_TRACE("Boundary: {}  ({})", boundary.size(), size_t((rng.range(0).size() + rng.range(1).size()) * 2));
     CHECK(boundary.size() == size_t((rng.range(0).size() + rng.range(1).size()) * 2));
     CHECK(boundary.area() == rng.area());
   }
@@ -88,8 +88,8 @@ TEST_CASE("SegmentExtrema")
 
     REQUIRE(!boundaries.empty());
     CHECK(boundaries.size() == 1);
-    for (auto &boundary: boundaries) {
-      SPDLOG_INFO("Boundary: {} -> {}", boundary.boundingBox(), boundary);
+    for ([[maybe_unused]] auto &boundary: boundaries) {
+      SPDLOG_TRACE("Boundary: {} -> {}", boundary.boundingBox(), boundary);
     }
 
     {
@@ -119,7 +119,7 @@ TEST_CASE("SegmentExtrema")
 
     SegmentExtremaC<ByteT> segExt(5);
     std::vector<Boundary> bnd = segExt.apply(img);
-    SPDLOG_INFO("Bounds: {}", bnd.size());
+    SPDLOG_TRACE("Bounds: {}", bnd.size());
     CHECK(bnd.size() == 2);
 
 #if DODEBUG
