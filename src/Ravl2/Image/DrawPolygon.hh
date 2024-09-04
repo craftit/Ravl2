@@ -7,6 +7,8 @@
 //! author="James Smith"
 //! date="27/10/2002"
 
+#pragma once
+
 #include "Ravl2/Array.hh"
 #include "Ravl2/Image/DrawLine.hh"
 #include "Ravl2/Geometry/Polygon.hh"
