@@ -316,7 +316,7 @@ namespace Ravl2
       std::shared_lock lock(m_mutex);
       auto it = m_streamInputFactory.find(header.typeName);
       if(it == m_streamInputFactory.end()) {
-	SPDLOG_INFO("Unknown object type '{}' in format '{}' Archive:{} ", header.typeName, typeName(typeid(*this)),static_cast<void*>(this));
+	SPDLOG_WARN("Unknown object type '{}' in format '{}' Archive:{} ", header.typeName, typeName(typeid(*this)),static_cast<void*>(this));
 	return std::nullopt;
       }
       auto newStream = it->second(ctx);
