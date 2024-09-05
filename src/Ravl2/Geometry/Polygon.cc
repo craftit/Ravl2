@@ -142,7 +142,7 @@ namespace Ravl2
       }
     }
 
-    // Take my testline arbitrarily as parallel to y=0. Assumption is that
+    // Take my test-line arbitrarily as parallel to y=0. Assumption is that
     // Point<RealT,2>(p[0]+100...) provides enough accuracy for the calculation
     // - not envisaged that this is a real problem
     Point<RealT, 2> secondPoint = toPoint<RealT>(p[0] + 100, p[1]);
@@ -173,8 +173,8 @@ namespace Ravl2
                 && testLine.ParIntersection(l2) > 0) {
         count++;
 
-        // Examine the case where testline meets polygon at vertex "cusp"
-        // iff testline passes through a vertex and yet not into polygon
+        // Examine the case where test-line meets polygon at vertex "cusp"
+        // iff test-line passes through a vertex and yet not into polygon
         // at that vertex _and_ the vertex lies to the left of my test point
         // then we count that vertex twice
       } else if(intersect == 0 && p[0] <= l2.P1()[0]
