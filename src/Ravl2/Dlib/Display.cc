@@ -27,7 +27,7 @@ namespace Ravl2
     auto win = windows.find(name);
     if(win == windows.end())
     {
-      win = windows.emplace(name, std::make_shared<DLibIO::DisplayWindow>()).first;
+      win = windows.emplace(name, std::make_shared<DLibIO::DisplayWindow>(name)).first;
     }
     return win->second;
   }

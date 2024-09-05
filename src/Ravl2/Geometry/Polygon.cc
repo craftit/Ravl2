@@ -74,6 +74,7 @@ namespace Ravl2
         RealT temp = pLast[0] * ptr[1] - ptr[0] * pLast[1];
         x += (pLast[0] + ptr[0]) * temp;
         y += (pLast[1] + ptr[1]) * temp;
+        pLast = ptr;
       }
     }
     RealT scale = 1 / (6 * area());

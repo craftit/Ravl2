@@ -43,7 +43,7 @@ namespace Ravl2::DLibIO
   {
   public:
     //! Constructor, this will start the display thread
-    DisplayWindow();
+    explicit DisplayWindow(const std::string &name = "Display");
 
     //! Destructor
     ~DisplayWindow();

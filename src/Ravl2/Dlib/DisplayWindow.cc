@@ -8,9 +8,10 @@
 namespace Ravl2::DLibIO
 {
 
-  DisplayWindow::DisplayWindow()
+  DisplayWindow::DisplayWindow(const std::string &name)
       : m_queue(16)
   {
+    m_win.set_title(name);
     start();
   }
 
@@ -33,7 +34,7 @@ namespace Ravl2::DLibIO
   void
   DisplayWindow::run()
   {
-    SPDLOG_INFO("DisplayWindow: thread started");
+    SPDLOG_TRACE("DisplayWindow: thread started");
     while(!m_terminate)
     {
       std::function<void(DisplayWindow &win)> f;
@@ -41,7 +42,7 @@ namespace Ravl2::DLibIO
         f(*this);
       }
     }
-    SPDLOG_INFO("DisplayWindow: thread terminated");
+    SPDLOG_TRACE("DisplayWindow: thread terminated");
   }
 
 }
