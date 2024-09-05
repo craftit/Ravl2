@@ -13,9 +13,9 @@
 namespace Ravl2
 {
 
-  //! Test if position 'pos' is the largest value in a 3 by 3 area.
-  // Is is the users responsibility to ensure that all pixels around 'pos'
-  // are in the image.
+  //! @brief Test if position 'pos' is the largest value in a 3 by 3 area.
+  //! Is is the users responsibility to ensure that all pixels around 'pos'
+  //! are in the image.
   template <class DataT>
   inline bool PeakDetect3(const Array<DataT, 2> &img, const Index<2> &pos)
   {
@@ -31,10 +31,10 @@ namespace Ravl2
     return (rt[-1] < cent && rt[0] < cent && rt[1] < cent);
   }
 
-  //! Test if position 'pos' is the largest value in a 5 by 5 area.
-  // Is is the users responsibility to ensure that all pixels around 'pos'
-  // are in the image.  The corners of the area are not mask to bring
-  // the area checked closer to a circle.
+  //! @brief Test if position 'pos' is the largest value in a 5 by 5 area.
+  //! It is the users responsibility to ensure that all pixels around 'pos'
+  //! are in the image.  The corners of the area are not mask to bring
+  //! the area checked closer to a circle.
   template <class DataT>
   inline bool PeakDetect5(const Array<DataT, 2> &img, const Index<2> &pos)
   {
@@ -65,10 +65,10 @@ namespace Ravl2
     return true;
   }
 
-  //! Test if position 'pos' is the largest value in a 7 by 7 area.
-  // Is is the users responsibility to ensure that all pixels around 'pos'
-  // are in the image.  The corners of the area are not mask to bring
-  // the area checked closer to a circle.
+  //! @brief Test if position 'pos' is the largest value in a 7 by 7 area.
+  //! It is the users responsibility to ensure that all pixels around 'pos'
+  //! are in the image.  The corners of the area are not mask to bring
+  //! the area checked closer to a circle.
   template <class DataT>
   inline bool PeakDetect7(const Array<DataT, 2> &img, const Index<2> &pos)
   {
@@ -109,10 +109,10 @@ namespace Ravl2
     return true;
   }
 
-  //! Locate peak with sub-pixel precision.
-  // Fits a quadratic to the peak and works out the center. The position of the
-  // peak is returned. 'img' should contain values surrounding the center of
-  // the peak at 'pos'.
+  //! @brief Locate peak with sub-pixel precision.
+  //! Fits a quadratic to the peak and works out the center. The position of the
+  //! peak is returned. 'img' should contain values surrounding the center of
+  //! the peak at 'pos'.
 
   template <class DataT>
   Point2f LocatePeakSubPixel(const Array<DataT, 2> &img, const Index<2> &pos, float pof)
@@ -164,10 +164,10 @@ namespace Ravl2
     return indf + corr;
   }
 
-  //: Locate peak with sub-pixel precision.
-  // Fits a quadratic to the peak and works out the center. The position of the
-  // peak is returned. 'img' should contain values surrounding the center of
-  // the peak at 'pos'.
+  //! @brief Locate peak with sub-pixel precision.
+  //! Fits a quadratic to the peak and works out the center. The position of the
+  //! peak is returned. 'img' should contain values surrounding the center of
+  //! the peak at 'pos'.
   template <class DataT, typename RealT = float>
   Point2f LocatePeakSubPixel(const Array<DataT, 2> &img, const Index<2> &pos)
   {

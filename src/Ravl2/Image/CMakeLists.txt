@@ -17,6 +17,7 @@ add_library (Ravl2Image
         Corner.cc Corner.hh
         CornerDetectorSusan.cc CornerDetectorSusan.hh
         PeakDetector.cc PeakDetector.hh
+        MatchPatch.hh
         Matching.cc Matching.hh
         ImagePyramid.cc ImagePyramid.hh
         WarpScale.cc WarpScale.hh
@@ -26,9 +27,10 @@ add_library (Ravl2Image
         BitmapFont.cc BitmapFont.hh
         DrawText.cc DrawText.hh
         Warp.cc Warp.hh
+        SquareIter.cc SquareIter.hh
         SummedAreaTable.cc SummedAreaTable.hh
         SummedAreaTable2.hh
-        #        MatchNormalisedCorrelation.cc MatchNormalisedCorrelation.hh
+        #MatchNormalisedCorrelation.cc MatchNormalisedCorrelation.hh
 )
 
 add_library(ravl2::Ravl2Image ALIAS Ravl2Image)
