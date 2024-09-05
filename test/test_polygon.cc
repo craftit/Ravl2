@@ -5,7 +5,9 @@
 #include "checks.hh"
 #include "Ravl2/Array.hh"
 #include "Ravl2/Image/DrawPolygon.hh"
+#include "Ravl2/Image/DrawCross.hh"
 #include "Ravl2/Geometry/Polygon.hh"
+#include "Ravl2/IO/Save.hh"
 #include "Ravl2/Geometry/PolygonRasterIter.hh"
 
 // If true render the polygon to an image for debugging
@@ -132,9 +134,24 @@ TEST_CASE("Polygon2d")
     CHECK(!rPoly.contains(toPoint<float>(20,5)));
     CHECK(!rPoly.contains(toPoint<float>(-5,5)));
     CHECK(!rPoly.contains(toPoint<float>(-5,-5)));
+  }
 
+  SECTION("Contains 2")
+  {
+    Polygon<float> poly({Point2f ({396.887756f,  296.020416f}) ,{ 429.030609f,  538.367371f}, { 243.31633f,  538.877563f}, { 240.765305f,  297.040802f}});
+
+    Point2f pnt = {318.115112f,  385.001129f};
+
+    {
+      Array<uint8_t , 2> img({600,600}, 0);
+      DrawPolygon(img, 255, poly);
+      DrawCross(img, 128, toIndex(pnt),5);
+      save("dlib://poly", img);
+    }
+    CHECK(poly.contains(pnt));
 
   }
+
 
   SECTION("overlap")
   {
