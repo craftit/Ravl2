@@ -70,23 +70,6 @@ TEST_CASE("LinePP")
   using namespace Ravl2;
   using RealT = float;
 
-#if 0
-  Point<RealT,2> org = toPoint<RealT>(321,123);
-  for(int i = 0;i < 359;i++) {
-    RealT angle = ((RealT) i/180.0) * std::numbers::pi_v<RealT>;
-    Vector<RealT,2> vec = Angle2Vector2d(angle) * 4.3;
-    //cerr << "Vec=" << vec << "\n";
-    Point<RealT,2> end(org + vec);
-    Curve2dLineSegmentC line1(org,end);
-    //cerr << "End=" << line1.Closest(line1.EndPnt()) - line1.Start()  << "\n";
-    CHECK_FALSE(line1.Closest(line1.EndPnt()) - line1.Start() <= 0) return __LINE__;
-    
-    LinePP2dC linepp(org,end);
-    //cerr << "Angle=" << linepp.Angle() << " Angle2=" << angle << "\n";
-    CHECK_FALSE(i < 90)
-    CHECK_FALSE(std::abs(linepp.Angle() - angle) > 0.001) return __LINE__;
-  }
-#endif
   SECTION("Orientation and intersection")
   {
     LinePP2dC line1(toPoint<RealT>(0, 0), toPoint<RealT>(1, 1));

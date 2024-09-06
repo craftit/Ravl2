@@ -106,17 +106,6 @@ namespace Ravl2
   }
 
   template <typename RealT, unsigned N>
-  static constexpr RealT PCot(const Point<RealT, N> &oPointA, const Point<RealT, N> &oPointB, const Point<RealT, N> &oPointC)
-  {
-    auto oBA = oPointA - oPointB;
-    auto oBC = oPointC - oPointB;
-    RealT cp = std::abs(cross(oBC, oBA));
-    if(cp < 1e-6)
-      cp = 1e-6;
-    return (oBC.dot(oBA) / cp);
-  }
-
-  template <typename RealT, unsigned N>
   constexpr std::vector<RealT> PointSet<RealT, N>::BarycentricCoordinate(const Point<RealT, N> &point) const
   {
     // Create return array

@@ -94,16 +94,6 @@ namespace Ravl2
     Point<RealT, 2> p1 = this->front();
     if(size == 1) return p == p1;
 
-    // The point can lie on the boundary of the polygon.
-    {
-      auto pLast = this->back();
-      for(auto point : *this) {
-        if(LinePP2dC<RealT>(pLast, point).IsPointIn(p, tolerance))
-          return true;
-        pLast = point;
-      }
-    }
-
     // Take my test-line arbitrarily as parallel to y=0. Assumption is that
     // Point<RealT,2>(p[0]+100...) provides enough accuracy for the calculation
     // - not envisaged that this is a real problem
@@ -121,6 +111,13 @@ namespace Ravl2
     auto pLast = this->back();
     for(auto k : *this) {
       LinePP2dC l2(pLast, k);
+      // The point can lie on the boundary of the polygon.
+      // This creates lots of edge cases. To avoid this, if the point is on the boundary
+      // it is considered to be inside the polygon.
+      if(l2.IsPointIn(p, tolerance)) {
+        return true;
+      }
+
       RealT intersect = l2.ParIntersection(testLine);
 
       // If l2 and test line are collinear then either the point lies on an
@@ -149,6 +146,7 @@ namespace Ravl2
       //Vector<RealT,2> u2P = toVector<RealT>(testLine.P1()[1] - testLine.P2()[1],testLine.P2()[0] - testLine.P1()[0]);
       if(!std::isnan(intersect) && (intersect == 1))
         leftof = testLine.IsPointToLeft(l2.P1());
+      pLast = k;
     }
 
     return (count % 2) == 1;
