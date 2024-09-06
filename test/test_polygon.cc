@@ -9,6 +9,7 @@
 #include "Ravl2/Geometry/Polygon.hh"
 #include "Ravl2/IO/Save.hh"
 #include "Ravl2/Geometry/PolygonRasterIter.hh"
+#include "Ravl2/Geometry/Moments2.hh"
 
 // If true render the polygon to an image for debugging
 #define DODISPLAY 0
@@ -115,6 +116,10 @@ TEST_CASE("Polygon2d")
 
     CHECK(poly.isConvex());
     CHECK(poly.area() > 0);
+    EXPECT_FLOAT_EQ(poly.perimeter(),40.0f);
+    CHECK(euclidDistance(poly.centroid(),toPoint<float>(5,5)) < 1e-6f);
+
+
     auto center = poly.centroid();
     CHECK(poly.contains(center));
     CHECK(!poly.contains(toPoint<float>(20,20)));
@@ -151,6 +156,19 @@ TEST_CASE("Polygon2d")
     CHECK(poly.contains(pnt));
 
   }
+
+  SECTION("Moments")
+  {
+    Polygon<double> poly({Point2d ({396.887756,  296.020416}) ,{ 429.030609,  538.367371}, { 243.31633,  538.877563}, { 240.765305,  297.040802}});
+
+    auto val = moments(poly);
+    SPDLOG_TRACE("Moments: {} Centroid:{} ", val, val.centroid());
+    SPDLOG_TRACE("Centroid:{} ", poly.centroid());
+
+    CHECK(xt::sum(xt::abs(val.centroid() - poly.centroid()))() < 1e-6);
+
+  }
+
 
 
   SECTION("overlap")

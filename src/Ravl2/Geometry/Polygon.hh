@@ -92,7 +92,7 @@ namespace Ravl2
     [[nodiscard]] bool contains(const Point<RealT, 2> &p) const;
 
     //! Returns the perimeter length of this polygon.
-    [[nodiscard]] RealT Perimeter() const;
+    [[nodiscard]] RealT perimeter() const;
 
     //! Returns the centroid of this polygon.
     //! This computes the centroid of the area covered by the polygon

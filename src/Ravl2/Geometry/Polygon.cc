@@ -81,44 +81,6 @@ namespace Ravl2
     return toPoint<RealT>(x * scale, y * scale);
   }
 
-  template <typename RealT>
-  Moments2<RealT> moments(const Polygon<RealT> &poly)
-  {
-    RealT m00 = 0.0;
-    RealT m10 = 0.0;
-    RealT m01 = 0.0;
-    RealT m20 = 0.0;
-    RealT m11 = 0.0;
-    RealT m02 = 0.0;
-    if(!poly.empty()) {
-      const auto pLast = poly.last();
-
-      for(auto it : poly) {
-        Point<RealT, 2> p1 = pLast;
-        Point<RealT, 2> p2 = it;
-        RealT p1_10 = p1[0], p1_01 = p1[1];
-        RealT p2_10 = p2[0], p2_01 = p2[1];
-        m00 += p1_10 * p2_01 - p2_10 * p1_01;
-        RealT temp = p1_10 * p2_01 - p2_10 * p1_01;
-        m10 += (p1_10 + p2_10) * temp;
-        m01 += (p1_01 + p2_01) * temp;
-        m20 += (Sqr(p1_10) + p1_10 * p2_10 + sqr(p2_10)) * temp;
-        m02 += (Sqr(p1_01) + p1_01 * p2_01 + sqr(p2_01)) * temp;
-        m11 += (2.0 * p1_10 * p1_01 + p1_10 * p2_01 + p2_10 * p1_01 + 2.0 * p2_10 * p2_01) * temp;
-      }
-
-      m00 *= 0.5;
-      RealT oneOver6 = 1.0 / 6.0;
-      m10 *= oneOver6;
-      m01 *= oneOver6;
-      RealT oneOver12 = 1.0 / 12.0;
-      m20 *= oneOver12;
-      m02 *= oneOver12;
-      RealT oneOver24 = 1.0 / 24.0;
-      m11 *= oneOver24;
-    }
-    return Moments2d2C(m00, m10, m01, m20, m11, m02);
-  }
 
   template <typename RealT>
   bool Polygon<RealT>::contains(const Point<RealT, 2> &p) const
@@ -149,7 +111,7 @@ namespace Ravl2
     LinePP2dC testLine(p, secondPoint);
 
     // Just something useful for later, check whether the last point lies
-    // to the left or left of my testline
+    // to the left or left of my test-line
     bool leftof = testLine.IsPointToLeftOn(this->back());
 
     // For each edge (k,k+1) of this polygon count the intersection
@@ -161,7 +123,7 @@ namespace Ravl2
       LinePP2dC l2(pLast, k);
       RealT intersect = l2.ParIntersection(testLine);
 
-      // If l2 and testline are collinear then either the point lies on an
+      // If l2 and test line are collinear then either the point lies on an
       // edge (checked already) or it acts as a vertex. I really
       // should check for the case, or it could throw ParInterSection
       if(testLine.IsPointOn(l2.P1(), tolerance)
@@ -357,7 +319,7 @@ namespace Ravl2
   }
 
   template <typename RealT>
-  RealT Polygon<RealT>::Perimeter() const
+  RealT Polygon<RealT>::perimeter() const
   {
     RealT perimeter = 0.0;
     if(!this->empty()) {
@@ -390,6 +352,50 @@ namespace Ravl2
     Polygon overlap = clipByConvex(poly);
     return overlap.area() / std::max(thisArea, polyArea);
   }
+
+  template <typename RealT>
+  Moments2<RealT> moments(const Polygon<RealT> &poly)
+  {
+    RealT m00 = 0.0;
+    RealT m10 = 0.0;
+    RealT m01 = 0.0;
+    RealT m20 = 0.0;
+    RealT m11 = 0.0;
+    RealT m02 = 0.0;
+    if(!poly.empty()) {
+      auto p1 = poly.back();
+
+      for(auto p2 : poly) {
+        RealT p1_10 = p1[0];
+        RealT p1_01 = p1[1];
+        RealT p2_10 = p2[0];
+        RealT p2_01 = p2[1];
+        m00 += p1_10 * p2_01 - p2_10 * p1_01;
+        RealT temp = p1_10 * p2_01 - p2_10 * p1_01;
+        m10 += (p1_10 + p2_10) * temp;
+        m01 += (p1_01 + p2_01) * temp;
+        m20 += (sqr(p1_10) + p1_10 * p2_10 + sqr(p2_10)) * temp;
+        m02 += (sqr(p1_01) + p1_01 * p2_01 + sqr(p2_01)) * temp;
+        m11 += (2 * p1_10 * p1_01 + p1_10 * p2_01 + p2_10 * p1_01 + 2 * p2_10 * p2_01) * temp;
+        p1 = p2;
+      }
+
+      m00 *= RealT(0.5);
+      const RealT oneOver6 = RealT(1.0 / 6.0);
+      m10 *= oneOver6;
+      m01 *= oneOver6;
+      const RealT oneOver12 = RealT(1.0 / 12.0);
+      m20 *= oneOver12;
+      m02 *= oneOver12;
+      const RealT oneOver24 = RealT(1.0 / 24.0);
+      m11 *= oneOver24;
+    }
+    return Moments2<RealT>(m00, m10, m01, m20, m11, m02);
+  }
+
+  // Instantiate the template for the types we will use.
+  template Moments2<float> moments(const Polygon<float> &poly);
+  template Moments2<double> moments(const Polygon<double> &poly);
 
   //! Let the compiler know that we will use these classes with the following types
   template class Polygon<float>;
