@@ -173,7 +173,7 @@ namespace Ravl2
 
     //! Get homography
     //! This returns the projection normalised to make the projective scales both = 1
-    [[nodiscard]] constexpr Matrix<RealT, N + 1, N + 1> Homography() const
+    [[nodiscard]] constexpr Matrix<RealT, N + 1, N + 1> homography() const
     {
       Matrix<RealT, N + 1, N + 1> mat1 = xt::eye<RealT>(3);
       mat1(N, N) = iz;
@@ -188,7 +188,7 @@ namespace Ravl2
     //! @return: the affine approximation
     [[nodiscard]] constexpr Affine<RealT, N> AffineApproximation() const
     {
-      Matrix<RealT,3,3> htrans = Homography();
+      Matrix<RealT,3,3> htrans = homography();
       RealT t1 = htrans(0,2) / htrans(2,2);
       RealT t2 = htrans(1,2) / htrans(2,2);
       RealT h1 = htrans(0,0) / htrans(2,2)  - t1 * htrans(2,0);

@@ -147,12 +147,12 @@ TEST_CASE("Polygon2d")
 
     Point2f pnt = {318.115112f,  385.001129f};
 
-    {
-      Array<uint8_t , 2> img({600,600}, 0);
-      DrawPolygon(img, 255, poly);
-      DrawCross(img, 128, toIndex(pnt),5);
-      save("dlib://poly", img);
-    }
+//    {
+//      Array<uint8_t , 2> img({600,600}, 0);
+//      DrawPolygon(img, 255, poly);
+//      DrawCross(img, 128, toIndex(pnt),5);
+//      save("dlib://poly", img);
+//    }
     CHECK(poly.contains(pnt));
 
   }

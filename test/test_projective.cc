@@ -5,6 +5,7 @@
 #include <spdlog/spdlog.h>
 #include "checks.hh"
 #include "Ravl2/Geometry/Projection.hh"
+#include "Ravl2/Geometry/FitProjection.hh"
 #include "Ravl2/Geometry/Polygon.hh"
 
 TEST_CASE("Projective2")
@@ -15,7 +16,7 @@ TEST_CASE("Projective2")
 
   //SPDLOG_INFO("Projection: {}", proj);
   // Check homography
-  CHECK(sumOfSqr(proj.Homography() - xt::eye(3)) < 0.001);
+  CHECK(sumOfSqr(proj.homography() - xt::eye(3)) < 0.001);
 
   std::vector<Point<RealT,2>> ipnt;
   ipnt.push_back(toPoint<RealT>(1, 1));
@@ -45,4 +46,23 @@ TEST_CASE("Projective2")
   Point<RealT,2> result = proj3(toPoint<RealT>(1, 0));
   auto direct = affine(toPoint<RealT>(1, 0));
   CHECK(sumOfSqr(result - direct) < 0.001);
+}
+
+TEST_CASE("FitProjection")
+{
+  using namespace Ravl2;
+  using RealT = float;
+
+  PointSet<float,2> poly({Point2f ({396.887756f,  296.020416f}) ,{ 429.030609f,  538.367371f}, { 243.31633f,  538.877563f}, { 240.765305f,  297.040802f}});
+  PointSet<float,2> poly2({Point2f ({-1.0,-1.0  }) ,{ 1.0,  -1.0}, { 1.0,  1.0}, { -1.0,  1.0}});
+
+  Projection<RealT, 2> proj;
+  CHECK(fit<RealT>(proj, poly, poly2));
+
+  // Check that the points are transformed correctly.
+  for(size_t i = 0;i < poly.size(); i++) {
+    SPDLOG_TRACE("poly2: {} -> {} == {}",poly2[i], proj(poly2[i]), poly[i]);
+    CHECK(sumOfSqr(proj(poly2[i]) - poly[i]) < 0.001f);
+  }
+
 }

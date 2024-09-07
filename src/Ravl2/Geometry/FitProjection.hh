@@ -5,6 +5,7 @@
 #pragma once
 
 #include "Ravl2/Geometry/Projection.hh"
+#include "Ravl2/Math/LeastSquares.hh"
 
 namespace Ravl2
 {
@@ -24,15 +25,15 @@ namespace Ravl2
   //: Fit projection to a set of points.  4 or point correspondences are required
 
   template <class DataContainerT, typename RealT > // assumed to be a container of Point<RealT,2>
-  bool fitProjection(Matrix<RealT,3,3> &proj, const DataContainerT &from,const  DataContainerT &to)
+  bool fitProjection(Matrix<RealT,3,3> &proj, const  DataContainerT &to, const DataContainerT &from)
   {
     RavlAssert(from.size() == to.size());
-    unsigned neq = from.size();
+    auto neq = from.size();
     if(neq < 4) return false;
 
     // Normalise 'from' points.
-    auto [fromMean,fromScale] =  meanAndScale(from);
-    auto [toMean,toScale] =  meanAndScale(to);
+    auto [fromMean,fromScale] =  meanAndScale<RealT,2>(from);
+    auto [toMean,toScale] =  meanAndScale<RealT,2>(to);
 
     // Build matrix.
     typename MatrixT<RealT>::shape_type sh = {neq * 2, 9};
@@ -45,10 +46,11 @@ namespace Ravl2
     auto frEnd = from.end();
 
     for(;toIt != toEnd && frIt!=frEnd;++toIt,++frIt) {
-      const Point<RealT,2> x = normalisePoint(*frIt,fromMean,fromScale);
-      const Point<RealT,2> y = normalisePoint(*toIt,toMean,toScale);
+      const Point<RealT,2> x = normalisePoint<RealT,2>(*frIt,fromMean,fromScale);
+      const Point<RealT,2> y = normalisePoint<RealT,2>(*toIt,toMean,toScale);
 
-      auto row1 = A[i++];
+      //auto row1 = A[i++];
+      auto row1 = xt::view(A, i++, xt::all());
 
       RealT r = y[0];
       RealT c = y[1];
@@ -65,7 +67,8 @@ namespace Ravl2
       row1[7] = x[1] * c;
       row1[8] = c;
 
-      auto row2 = A[i++];
+      //auto row2 = A[i++];
+      auto row2 = xt::view(A, i++, xt::all());
 
       row2[0] = x[0];
       row2[1] = x[1];
@@ -85,25 +88,24 @@ namespace Ravl2
     if(!LeastSquaresEq0Mag1(A,v))
       return false;
     //cerr << "A=" << A << " V=" << v << "\n";
-    Matrix<RealT,3,3> mat(v[0],v[1],v[2],
-			  v[3],v[4],v[5],
-			  v[6],v[7],v[8]);
+    Matrix<RealT,3,3> mat({{v[0],v[1],v[2]},
+			   {v[3],v[4],v[5]},
+			   {v[6],v[7],v[8]}});
 
-    auto fromNorm = projectiveNormalisationMatrix(fromMean,fromScale);
-    auto toNorm = inverse(projectiveNormalisationMatrix(toMean,toScale));
-    proj =  toNorm * mat * fromNorm;
+    auto fromNorm = projectiveNormalisationMatrix<RealT,2>(fromMean,fromScale);
+    auto toNorm = inverse(projectiveNormalisationMatrix<RealT,2>(toMean,toScale));
+    proj =  xt::linalg::dot(xt::linalg::dot(toNorm.value(), mat),fromNorm);
     return true;
   }
 
 
   //: Fit a projective transform given to the mapping between original and newPos.
-  // Note: In the current version of the routine 'residual' isn't currently computed.
-  template <typename DataContainerT,typename RealT> // DataContainerT must be a container of Point<RealT,2>
-  bool fit(Projection<RealT,2> &proj, const DataContainerT &org,const DataContainerT &newPos)
+  template <typename RealT,typename DataContainer1T,typename DataContainer2T> // DataContainer1/2T must be a container of Point<RealT,2>
+  bool fit(Projection<RealT,2> &proj, const DataContainer2T &newPos, const DataContainer1T &org)
   {
 
     //for some containers it is slow to find size so cache it here
-    unsigned orgSize(org.size());
+    auto orgSize = org.size();
 
     RavlAssertMsg(orgSize == newPos.size(),"Projection2dC FitProjection(), Point arrays must have the same size.");
     // we need at least four points to fit a 2D homography
@@ -120,10 +122,10 @@ namespace Ravl2
 
       // Construct 8x8 matrix of linear equations
       Matrix<RealT,8,8> A = xt::zeros<RealT>({8,8});
-      VectorT<RealT> b(8);
+      VectorT<RealT> b = xt::zeros<RealT>({8});
 
       // distinguish between explicit and implicit forms of point observations
-      int i=0;
+      size_t i=0;
       auto it1 = org.begin();
       const auto it1end = org.end();
       auto it2 = newPos.begin();
@@ -133,32 +135,35 @@ namespace Ravl2
 	x1=(*it1)[0]; y1=(*it1)[1];
 	x2=(*it2)[0]; y2=(*it2)[1];
 
-	A[i*2][0] = x1*zh2; A[i*2][1] = y1*zh2; A[i*2][2] = zh1*zh2;
-	A[i*2][6] = -x1*x2; A[i*2][7] = -y1*x2;
+	A(i*2,0) = x1*zh2; A(i*2,1) = y1*zh2; A(i*2,2) = zh1*zh2;
+	A(i*2,6) = -x1*x2; A(i*2,7) = -y1*x2;
 	b[i*2] = zh1*x2;
-	A[i*2+1][3] = x1*zh2; A[i*2+1][4] = y1*zh2; A[i*2+1][5] = zh1*zh2;
-	A[i*2+1][6] = -x1*y2; A[i*2+1][7] = -y1*y2;
+	A(i*2+1,3) = x1*zh2; A(i*2+1,4) = y1*zh2; A(i*2+1,5) = zh1*zh2;
+	A(i*2+1,6) = -x1*y2; A(i*2+1,7) = -y1*y2;
 	b[i*2+1] = zh1*y2;
       }
 
       // solve for solution vector
-      if(!SolveIP(A,b)) {
-	//throw std::runtime_error("Dependent linear equations in Projection2dC FitProjection(). ");
+      try {
+	auto sb = xt::linalg::solve(A, b);
+	Matrix<RealT, 3, 3> P({{sb[0], sb[1], sb[2]},
+			       {sb[3], sb[4], sb[5]},
+			       {sb[6], sb[7], 1.0}}
+			     );
+	proj = Projection<RealT, 2>(P, zh1, zh2);
+      } catch (const std::exception &e) {
+	SPDLOG_WARN("FitProjection() failed to solve for homography: {}", e.what());
 	return false;
       }
-      Matrix<RealT,3,3> P(b[0], b[1], b[2],
-			  b[3], b[4], b[5],
-			  b[6], b[7], 1.0);
-      proj = Projection2dC (P,zh1,zh2);
       return true;
     }
 
-    Matrix<RealT,3,3> P(1.0,0.0,0.0,
-			0.0,1.0,0.0,
-			0.0,0.0,1.0);
-    if(!FitProjection(P,org,newPos))
+    Matrix<RealT,3,3> P({{1.0,0.0,0.0},
+			 {0.0,1.0,0.0},
+			 {0.0,0.0,1.0}});
+    if(!fitProjection(P,org,newPos))
       return false;
-    proj = Projection2dC (P,zh1,zh2);
+    proj = Projection<RealT,2> (P,zh1,zh2);
     return true;
   }
 
