@@ -60,6 +60,7 @@ add_executable(tests
         test_warpScale.cc
         checks.hh
         test_warpScale.cc
+        test_projective.cc
 )
 target_link_libraries(
   tests

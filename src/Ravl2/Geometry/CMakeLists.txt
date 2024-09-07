@@ -35,6 +35,8 @@ add_library (Ravl2Geometry
         LinePV.cc LinePV.hh
         PlaneABCD3d.cc PlaneABCD3d.hh
         PlanePVV3d.cc PlanePVV3d.hh
+        FitProjection.hh
+        FitProjection.cc
 
 )
 
