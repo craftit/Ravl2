@@ -20,33 +20,32 @@ namespace Ravl2
   class MatchNormalisedCorrelationC
   {
   public:
-    using ByteT = uint8_t;
     using RealT = float;
 
-    MatchNormalisedCorrelationC(const Array<ByteT, 2> &img);
-    //: 'img' is the image to search.
+    //! 'img' is the image to search.
+    MatchNormalisedCorrelationC(const Array<uint8_t, 2> &img);
 
+    //! Default constructor.
     MatchNormalisedCorrelationC();
-    //: Default constructor.
 
-    bool SetSearchImage(const Array<ByteT, 2> &img);
-    //: Setup search image.
+    //! Setup search image.
     // This precomputes some information about the image we're doing tracking in.
+    bool SetSearchImage(const Array<uint8_t, 2> &img);
 
-    bool Search(const Array<ByteT, 2> &templ,
-                const IndexRange<2> &searchArea,
-                RealT &score,
-                Index<2> &at) const;
-    //: The location in the image most likely to match the template.
+    //! The location in the image most likely to match the template.
     //!param: templ - Template to search.
     //!param: searchArea - Bounds within which to search. Top left of this rectangle is the top left of the template rectangle.
     //!param: score - Variable to hold the maximum correlation score.
     //!param: at - Position of maximum value.
     // Returns false if no likely match is found.
+    bool Search(const Array<uint8_t, 2> &templ,
+                const IndexRange<2> &searchArea,
+                RealT &score,
+                Index<2> &at) const;
 
   protected:
     RealT threshold;
-    Array<ByteT, 2> searchImg;
+    Array<uint8_t, 2> searchImg;
     SummedAreaTable2C<int> sums;// Sums for searchImg
   };
 }// namespace Ravl2

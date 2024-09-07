@@ -199,6 +199,11 @@ namespace Ravl2
     IndexRange<2> mClipRange;
   };
 
+
+  extern template class SummedAreaTable<int>;
+  extern template class SummedAreaTable<int64_t>;
+
+
 }// namespace Ravl2
 
 namespace fmt

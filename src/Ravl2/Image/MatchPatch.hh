@@ -4,10 +4,9 @@
 // General Public License (LGPL). See the lgpl.licence file for details or
 // see http://www.gnu.org/copyleft/lesser.html
 // file-header-ends-here
-#ifndef RAVLIMAGE_MATCHPATCH_HEADER
-#define RAVLIMAGE_MATCHPATCH_HEADER 1
-///////////////////////////////////////////////////////////////////////////////////////
 //! author="Charles Galambos"
+
+#pragma once
 
 #include "Ravl2/Image/PeakDetector.hh"
 #include "Ravl2/Image/SquareIter.hh"
@@ -60,4 +59,3 @@ namespace Ravl2
 
 }// namespace Ravl2
 
-#endif

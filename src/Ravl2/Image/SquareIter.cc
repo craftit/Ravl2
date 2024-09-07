@@ -4,7 +4,6 @@
 // General Public License (LGPL). See the lgpl.licence file for details or
 // see http://www.gnu.org/copyleft/lesser.html
 // file-header-ends-here
-////////////////////////////////////////////////////////
 //! author="Charles Galambos"
 
 #include "Ravl2/Image/SquareIter.hh"
@@ -17,7 +16,8 @@
 #define ONDEBUG(x)
 #endif
 
-namespace Ravl2 {
+namespace Ravl2
+{
   
   bool SquareIterC::Next() {
     ONDEBUG(std::cerr << "SquareIterC::Next(), State:" << state << "\n");

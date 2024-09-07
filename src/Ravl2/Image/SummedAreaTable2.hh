@@ -11,62 +11,59 @@
 
 #include "Ravl2/Types.hh"
 #include "Ravl2/Array.hh"
+#include "Ravl2/Assert.hh"
 #include "Ravl2/Image/Array2Sqr2Iter2.hh"
 #include "Ravl2/Image/DrawFrame.hh"
 
 namespace Ravl2
 {
 
-  //! Summed area and sum of squares table.
-  // This class allows the summing of any area in an image in constant time.
-  // The class builds the table with a single pass over the input image. Once
-  // this is done the sum of any area can be computed by looking up the corners
-  // of the rectangle. <br>
-  // Note this class is more prone to overflow problems than normal SummedAreaTable's so
-  // care must be taken when selecting types to use for the template.
+  //! @brief Summed area and sum of squares table.
+  //! This class allows the summing of any area in an image in constant time.
+  //! The class builds the table with a single pass over the input image. Once
+  //! this is done the sum of any area can be computed by looking up the corners
+  //! of the rectangle. <br>
+  //! Note this class is more prone to overflow problems than normal SummedAreaTable's so
+  //! care must be taken when selecting types to use for the template.
 
   template <class DataT, class RealT = DataT>
   class SummedAreaTable2C : public Array<Vector<DataT, 2>, 2>
   {
   public:
-    SummedAreaTable2C()
-    {}
     //: Default constructor
+    SummedAreaTable2C() = default;
 
     template <class InT>
-    SummedAreaTable2C(const Array<InT, 2> &in)
+    explicit SummedAreaTable2C(const Array<InT, 2> &in)
     {
-      BuildTable(in);
+      (*this) = BuildTable(in);
     }
 
   protected:
+    //: Default constructor
+    SummedAreaTable2C(IndexRange<2> rect, IndexRange<2> clipRect)
+      : Array<Vector<DataT, 2>, 2>(rect),
+        clipRange(clipRect)
+    {}
+
+    //: Create vector containing value and its square.
     template <class InT>
     inline static Vector<DataT, 2> SumAndSqr(const InT &data)
     {
-      Vector<DataT, 2> ret;
-      DataT val = static_cast<DataT>(data);
-      ret[0] = val;
-      ret[1] = sqr(val);
-      return ret;
+      auto val = static_cast<DataT>(data);
+      return { val, sqr(val)};
     }
-    //: Create vector containing value and its square.
 
   public:
+    //: Build table form an array of values.
     template <class InT>
-    void BuildTable(const Array<InT, 2> &in)
+    static SummedAreaTable2C<DataT> BuildTable(const Array<InT, 2> &in)
     {
-      clipRange = in.range();
-      IndexRange<2> rng(in.range());
-      rng.min(1)--;
-      rng.min(0)--;
-      if(this->Frame() != rng) {
-        Vector<DataT, 2> zero;
-        SetZero(zero);
-        (*this).Array<Vector<DataT, 2>, 2>::operator=(Array<Vector<DataT, 2>, 2>(rng));
-        DrawFrame((*this), zero, rng);// We only really need the top row and left column cleared.
-      }
-      Array<Vector<DataT, 2>, 2> work((*this), in.range());
-      Array2dSqr2Iter2C<Vector<DataT, 2>, InT> it(work, in);
+      SummedAreaTable2C<DataT> ret(in.range().expand(1), in.range());
+      Vector<DataT, 2> zero {};
+      DrawFrame(ret, zero, ret.range());// We only really need the top row and left column cleared.
+
+      Array2dSqr2Iter2C<Vector<DataT, 2>, InT> it(clip(ret,in.range()), in);
       // First pixel.
       it.DataTL1() = SumAndSqr(it.DataTL2());
       Vector<DataT, 2> rowSum = SumAndSqr(it.DataBL2());
@@ -78,7 +75,7 @@ namespace Ravl2
         it.DataBR1() = it.DataTR1() + rowSum;
       } while(it.next());
       // Do rest of image.
-      for(; it;) {
+      for(; it.valid();) {
         // Do beginning of row thing.
         rowSum = SumAndSqr(it.DataBL2());
         it.DataBL1() = it.DataTL1() + rowSum;
@@ -88,128 +85,146 @@ namespace Ravl2
           it.DataBR1() = it.DataTR1() + rowSum;
         } while(it.next());
       }
+      return ret;
     }
-    //: Build table form an array of values.
 
-    Vector<DataT, 2> Sum(IndexRange<2> range) const
-    {
-      range.clipBy(clipRange);
-      if(range.area() == 0)
-        return (*this)[this->Frame().min()];// Return 0.
-      range.min(1)--;
-      range.min(0)--;
-      // Could speed this up by seperating out row accesses ?
-      return (*this)[range.End()] - (*this)[range.TopRight()] - (*this)[range.BottomLeft()] + (*this)[range.TopLeft()];
-    }
     //: Calculate the sum and sum of squares of the pixel values in the rectangle 'range'.
-
-    RealT Sum1(IndexRange<2> range) const
+    [[nodiscard]] Vector<DataT, 2> Sum(IndexRange<2> range) const
     {
+      auto top = range.range(0).min();
+      auto left = range.range(1).min();
+      auto bottom = range.range(0).max();
+      auto right = range.range(1).max();
       range.clipBy(clipRange);
       if(range.area() == 0)
-        return (*this)[this->Frame().min()][0];// Return 0.
+        return (*this)[this->range().min()];// Return 0.
+      range.min(1)--;
+      range.min(0)--;
+      // Could speed this up by separating out row accesses ?
+      return (*this)(bottom,right) - (*this)(top,right) - (*this)(bottom,left) + (*this)(top,left);
+    }
+
+    //: Calculate the sum of the pixel's in the rectangle 'range'.
+    [[nodiscard]] RealT Sum1(IndexRange<2> range) const
+    {
+      auto top = range.range(0).min();
+      auto left = range.range(1).min();
+      auto bottom = range.range(0).max();
+      auto right = range.range(1).max();
+      range.clipBy(clipRange);
+      if(range.area() == 0)
+        return (*this)[this->range().min()][0];// Return 0.
       range.min(1)--;
       range.min(0)--;
       // Could speed this up by seperating out row accesses ?
-      return (*this)[range.End()][0] - (*this)[range.TopRight()][0] - (*this)[range.BottomLeft()][0] + (*this)[range.TopLeft()][0];
+      return (*this)(bottom,right)[0] - (*this)(top,right)[0] - (*this)(bottom,left)[0] + (*this)(top,left)[0];
     }
-    //: Calculate the sum of the pixel's in the rectangle 'range'.
 
-    RealT Variance(IndexRange<2> range) const
+    //: Calculate variance of the image in 'range'.
+    [[nodiscard]] RealT Variance(IndexRange<2> range) const
     {
       Vector<DataT, 2> sum = Sum(range);
-      RealT area = (RealT)range.area();
-      return ((RealT)sum[1] - sqr((RealT)sum[0]) / area) / (area - 1);
+      RealT area = RealT(range.area());
+      return (RealT(sum[1]) - sqr(RealT(sum[0])) / area) / (area - 1);
     }
-    //: Calculate variance of the image in 'range'.
 
+    //: Calculate mean, variance and area of the image in 'range'.
     int MeanVariance(IndexRange<2> range, RealT &mean, RealT &var) const
     {
       Vector<DataT, 2> sum = Sum(range);
       int area = range.area();
-      mean = (RealT)sum[0] / area;
-      var = ((RealT)sum[1] - sqr((RealT)sum[0]) / area) / (area - 1);
+      mean = RealT(sum[0]) / area;
+      var = (RealT(sum[1]) - sqr(RealT(sum[0])) / area) / (area - 1);
       return area;
     }
-    //: Calculate mean, variance and area of the image in 'range'.
 
-    Vector<DataT, 2> VerticalDifference2(IndexRange<2> range, int mid) const
-    {
-      // Could speed this up by separating out row accesses ?
-      return (*this)[range.TopLeft()]
-        + ((*this)[mid][range.max(1)] - (*this)[mid][range.min(1)]) * 2
-        - (*this)[range.BottomLeft()]
-        - (*this)[range.TopRight()]
-        + (*this)[range.End()];
-    }
-    //: Calculate the difference between two halfs of the rectangle split vertically.
+    //: Calculate the difference between two halves of the rectangle split vertically.
     // This mid point is an absolute row location and should be within the rectangle.
-
-    Vector<DataT, 2> HorizontalDifference2(IndexRange<2> range, int mid) const
+    [[nodiscard]] Vector<DataT, 2> VerticalDifference2(IndexRange<2> range, int mid) const
     {
-      // Could speed this up by seperating out row accesses ?
-      return (*this)[range.TopLeft()]
-        + ((*this)[range.max(0)][mid] - (*this)[range.min(0)][mid]) * 2
-        - (*this)[range.BottomLeft()]
-        + (*this)[range.TopRight()]
-        - (*this)[range.End()];
+      auto top = range.range(0).min();
+      auto left = range.range(1).min();
+      auto bottom = range.range(0).max();
+      auto right = range.range(1).max();
+      // Could speed this up by separating out row accesses ?
+      return (*this)(top,left)
+        + ((*this)[mid][range.max(1)] - (*this)[mid][range.min(1)]) * 2
+        - (*this)(bottom,left)
+        - (*this)(top,right)
+        + (*this)(bottom,right);
     }
-    //: Calculate the diffrence between two halfs of the rectangle split horizontally.
-    // This mid point is an absolute column location and should be within the rectangle.
 
-    Vector<DataT, 2> VerticalDifference3(const IndexRange<2> &range, const IndexRange<1> &rng) const
+    //: Calculate the difference between two halves of the rectangle split horizontally.
+    // This mid point is an absolute column location and should be within the rectangle.
+    [[nodiscard]] Vector<DataT, 2> HorizontalDifference2(IndexRange<2> range, int mid) const
+    {
+      auto top = range.range(0).min();
+      auto left = range.range(1).min();
+      auto bottom = range.range(0).max();
+      auto right = range.range(1).max();
+      // Could speed this up by seperating out row accesses ?
+      return (*this)(top,left)
+        + ((*this)[range.max(0)][mid] - (*this)[range.min(0)][mid]) * 2
+        - (*this)(bottom,left)
+        + (*this)(top,right)
+        - (*this)(bottom,right);
+    }
+
+    //: Calculate the difference between two halves of the rectangle split vertically.
+    // This mid-point is an absolute row location and should be within the rectangle.
+    [[nodiscard]] Vector<DataT, 2> VerticalDifference3(const IndexRange<2> &range, const IndexRange<1> &rng) const
     {
       RavlAssert(range.range(1).contains(rng));
       IndexRange<2> rng2(range.range(0), rng);
       return Sum(range) - Sum(rng2);
     }
-    //: Calculate the diffrence between two halfs of the rectangle split vertially.
-    // This mid point is an absolute row location and should be within the rectangle.
 
-    Vector<DataT, 2> HorizontalDifference3(const IndexRange<2> &range, const IndexRange<1> &rng) const
+    //: Calculate the difference between two rectangles one lying inside the other in the horizontal dimention.
+    // This mid-point is an absolute column location and should be within the rectangle.
+    [[nodiscard]] Vector<DataT, 2> HorizontalDifference3(const IndexRange<2> &range, const IndexRange<1> &rng) const
     {
       RavlAssert(range.range(0).contains(rng));
       IndexRange<2> rng2(rng, range.range(1));
       return Sum(range) - Sum(rng2);
     }
-    //: Calculate the diffrence between two rectangles one lying inside the other in the horizontal dimention.
-    // This mid point is an absolute column location and should be within the rectangle.
 
+    //: Set the clip range.
     void SetClipRange(IndexRange<2> &nClipRange)
     {
       clipRange = nClipRange;
     }
-    //: Set the clip range.
 
-    const IndexRange<2> &ClipRange() const
+    //: Return range of value positions.
+    [[nodiscard]] const IndexRange<2> &ClipRange() const
     {
       return clipRange;
     }
-    //: Return range of value positions.
 
   protected:
     IndexRange<2> clipRange;
   };
 
+  //: Write to text stream.
   template <class DataT>
   std::ostream &operator<<(std::ostream &strm, const SummedAreaTable2C<DataT> &data)
   {
-    strm << static_cast<const Array<Vector<DataT, 2, 2>> &>(data);
+    strm << static_cast<const Array<Vector<DataT, 2>,2> &>(data);
     return strm;
   }
-  //: Write to text stream.
 
+  //: Read from text stream.
   template <class DataT>
   std::istream &operator>>(std::istream &strm, SummedAreaTable2C<DataT> &data)
   {
-    strm >> static_cast<Array<Vector<DataT, 2, 2>> &>(data);
+    strm >> static_cast<Array<Vector<DataT, 2>, 2> &>(data);
     IndexRange<2> clipRange = data.range();
     clipRange.min(1)++;
     clipRange.min(0)++;
     data.SetClipRange(clipRange);
     return strm;
   }
-  //: Read from text stream.
+
+  extern template class SummedAreaTable2C<int64_t>;
 
 }// namespace Ravl2
 

@@ -4,7 +4,9 @@
 
 #include "Ravl2/Image/SummedAreaTable.hh"
 
-namespace
+namespace Ravl2
 {
+  template class SummedAreaTable<int>;
+  template class SummedAreaTable<int64_t>;
 
 }

@@ -30,9 +30,17 @@ namespace Ravl2
 
     //! Constructor from sum elements.
     constexpr Sums1d2C(unsigned nn, RealT nsum, RealT nsum2)
-        : mN(nn),
-          mSum(nsum),
-          mSum2(nsum2)
+      : mN(nn),
+	mSum(nsum),
+	mSum2(nsum2)
+    {}
+
+    //! Constructor from sum elements.
+    template<typename OtherT>
+    explicit constexpr Sums1d2C(const Sums1d2C<OtherT> &other)
+      : mN(other.size()),
+	mSum(RealT(other.sum())),
+	mSum2(RealT(other.sum2()))
     {}
 
     //! Create a Sums1d2C from mean variance.
@@ -120,27 +128,28 @@ namespace Ravl2
     }
 
     //! Compute the variance of the sample.
-    [[nodiscard]] constexpr RealT variance(SampleStatisticsT sampleStatistics) const
+    template<typename ResulT = RealT>
+    [[nodiscard]] constexpr ResulT variance(SampleStatisticsT sampleStatistics) const
     {
-      RealT rn = RealT(mN);
-      RealT sn = rn;
+      auto sn = mN;
       if(sampleStatistics == SampleStatisticsT::SAMPLE) sn--;
-      RealT var = (mSum2 - sqr(mSum) / rn) / sn;
+      ResulT var = ResulT((mSum2 * RealT(mN)) - sqr(mSum)) / ResulT(RealT(mN) * RealT(sn));
       if(var < 0) var = 0;
       return var;
     }
 
     //! Compute the standard deviation of the sample.
+    template<typename ResulT = RealT>
     [[nodiscard]] constexpr RealT stdDeviation(SampleStatisticsT sampleStatistics) const
     {
-      return std::sqrt(variance(sampleStatistics));
+      return std::sqrt(variance<ResulT>(sampleStatistics));
     }
 
     //! Compute the mean of the sample.
-    [[nodiscard]] constexpr RealT mean() const
+    template<typename ResulT = RealT>
+    [[nodiscard]] constexpr ResulT mean() const
     {
-      RealT rn = RealT(mN);
-      return mSum / rn;
+      return ResulT(mSum) / ResulT(mN);
     }
 
     //! Add value as part of a rolling average.
@@ -195,10 +204,10 @@ namespace Ravl2
   //! @param sums - The sums of the data.
   //! @param sampleStatistics - When true compute statistics as a sample of a random variable. (Normalise covariance by n-1 )
   //! @return MeanVariance
-  template <typename RealT>
-  [[nodiscard]] constexpr MeanVariance<RealT> toMeanVariance(const Sums1d2C<RealT> &sums, SampleStatisticsT sampleStatistics)
+  template <typename RealT,typename OtherT>
+  [[nodiscard]] constexpr MeanVariance<RealT> toMeanVariance(const Sums1d2C<OtherT> &sums, SampleStatisticsT sampleStatistics)
   {
-    return MeanVariance<RealT>(sums.count(), sums.mean(), sums.variance(sampleStatistics));
+    return MeanVariance<RealT>(sums.count(), sums.template mean<RealT>(), sums.template variance<RealT>(sampleStatistics));
   }
 
   //! Convert a MeanVariance to Sums1d2C.
