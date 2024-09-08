@@ -53,16 +53,40 @@ TEST_CASE("FitProjection")
   using namespace Ravl2;
   using RealT = float;
 
-  PointSet<float,2> poly({Point2f ({396.887756f,  296.020416f}) ,{ 429.030609f,  538.367371f}, { 243.31633f,  538.877563f}, { 240.765305f,  297.040802f}});
-  PointSet<float,2> poly2({Point2f ({-1.0,-1.0  }) ,{ 1.0,  -1.0}, { 1.0,  1.0}, { -1.0,  1.0}});
+  SECTION("Solve 4 points")
+  {
+    PointSet<float, 2> poly({Point2f({396.887756f, 296.020416f}), {429.030609f, 538.367371f}, {243.31633f, 538.877563f},
+			     {240.765305f, 297.040802f}}
+			   );
+    PointSet<float, 2> poly2({Point2f({-1.0, -1.0}), {1.0, -1.0}, {1.0, 1.0}, {-1.0, 1.0}});
 
-  Projection<RealT, 2> proj;
-  CHECK(fit<RealT>(proj, poly, poly2));
+    Projection<RealT, 2> proj;
+    CHECK(fit<RealT>(proj, poly, poly2));
 
-  // Check that the points are transformed correctly.
-  for(size_t i = 0;i < poly.size(); i++) {
-    SPDLOG_TRACE("poly2: {} -> {} == {}",poly2[i], proj(poly2[i]), poly[i]);
-    CHECK(sumOfSqr(proj(poly2[i]) - poly[i]) < 0.001f);
+    // Check that the points are transformed correctly.
+    for(size_t i = 0; i < poly.size(); i++) {
+      SPDLOG_TRACE("poly2: {} -> {} == {}", poly2[i], proj(poly2[i]), poly[i]);
+      CHECK(sumOfSqr(proj(poly2[i]) - poly[i]) < 0.001f);
+    }
+    SPDLOG_TRACE("Projection: {}  Center:{} ", proj, proj(toPoint<RealT>(0,0)));
+
   }
+  //0,0 -> 326.636932,  407.114777
+  SECTION("Least squares 5 points")
+  {
+    PointSet<float, 2> poly({Point2f({396.887756f, 296.020416f}), {429.030609f, 538.367371f}, {243.31633f, 538.877563f},
+			     {240.765305f, 297.040802f}, {326.636932f, 407.114777f}}
+			   );
+    PointSet<float, 2> poly2({Point2f({-1.0, -1.0}), {1.0, -1.0}, {1.0, 1.0}, {-1.0, 1.0},{0,0}});
+    Projection<RealT, 2> proj;
+    CHECK(fit<RealT>(proj, poly, poly2));
+
+    // Check that the points are transformed correctly.
+    for(size_t i = 0; i < poly.size(); i++) {
+      SPDLOG_TRACE("poly2: {} -> {} == {}", poly2[i], proj(poly2[i]), poly[i]);
+      CHECK(sumOfSqr(proj(poly2[i]) - poly[i]) < 0.001f);
+    }
+  }
+
 
 }

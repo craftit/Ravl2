@@ -16,7 +16,7 @@ namespace Ravl2
     for(unsigned i = 0; i < N; i++)
       normMat(i,i) = scale;
     for(unsigned i = 0; i < N; i++)
-      normMat(i,N-1) = -mean[i] * scale;
+      normMat(i,N) = -mean[i] * scale;
     normMat(N,N) = 1;
     return normMat;
   }
@@ -94,6 +94,10 @@ namespace Ravl2
 
     auto fromNorm = projectiveNormalisationMatrix<RealT,2>(fromMean,fromScale);
     auto toNorm = inverse(projectiveNormalisationMatrix<RealT,2>(toMean,toScale));
+    if(!toNorm.has_value()) {
+      SPDLOG_ERROR("Failed to invert normalisation matrix. {} from mean {} scale {} ",projectiveNormalisationMatrix<RealT,2>(toMean,toScale),toMean,toScale);
+      return false;
+    }
     proj =  xt::linalg::dot(xt::linalg::dot(toNorm.value(), mat),fromNorm);
     return true;
   }
@@ -161,7 +165,7 @@ namespace Ravl2
     Matrix<RealT,3,3> P({{1.0,0.0,0.0},
 			 {0.0,1.0,0.0},
 			 {0.0,0.0,1.0}});
-    if(!fitProjection(P,org,newPos))
+    if(!fitProjection(P,newPos,org))
       return false;
     proj = Projection<RealT,2> (P,zh1,zh2);
     return true;
