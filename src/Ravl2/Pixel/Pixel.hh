@@ -300,8 +300,8 @@ namespace Ravl2
   using PixelY8 = Pixel<uint8_t, ImageChannel::Luminance>;
   using PixelY16 = Pixel<uint16_t, ImageChannel::Luminance>;
   using PixelY32F = Pixel<uint16_t, ImageChannel::Luminance>;
-  using PixelD16 = Pixel<uint16_t, ImageChannel::Depth>;
-  using PixelD32F = Pixel<float, ImageChannel::Depth>;
+  using PixelZ16 = Pixel<uint16_t, ImageChannel::Depth>;
+  using PixelZ32F = Pixel<float, ImageChannel::Depth>;
   using PixelRGB8 = Pixel<uint8_t, ImageChannel::Red, ImageChannel::Green, ImageChannel::Blue>;
   using PixelRGBA8 = Pixel<uint8_t, ImageChannel::Red, ImageChannel::Green, ImageChannel::Blue, ImageChannel::Alpha>;
   using PixelRGB16 = Pixel<uint16_t, ImageChannel::Red, ImageChannel::Green, ImageChannel::Blue>;
@@ -326,8 +326,8 @@ namespace Ravl2
   // Also about arrays based on the pixel types
   extern template class Array<PixelY8,2>;
   extern template class Array<PixelY16,2>;
-  extern template class Array<PixelD16,2>;
-  extern template class Array<PixelD32F,2>;
+  extern template class Array<PixelZ16, 2>;
+  extern template class Array<PixelZ32F, 2>;
   extern template class Array<PixelRGB8,2>;
   extern template class Array<PixelRGBA8,2>;
   extern template class Array<PixelRGB16,2>;
