@@ -217,35 +217,6 @@ namespace Ravl2
     RealT oz = 1;
   };
 
-#if 0
-  Projection2dC FitProjection(const std::vector<Point<RealT,2>> &org,const std::vector<Point<RealT,2>> &newPos,RealT &residual);
-  //: Fit a projective transform given to the mapping between original and newPos.
-  // Note: In the current version of the routine 'residual' isn't currently computed.
-  
-  Projection2dC FitProjection(const std::vector<Point<RealT,2>> &org,const std::vector<Point<RealT,2>> &newPos);
-  //: Fit a projective transform given to the mapping between original and newPos.
-  
-  Projection2dC FitProjection(const std::vector<Point<RealT,2>> &org,const std::vector<Point<RealT,2>> &newPos,RealT &residual);
-  //: Fit a projective transform given to the mapping between original and newPos.
-  // Note: In the current version of the routine 'residual' isn't currently computed.
-
-  Projection2dC FitProjection(const std::vector<PairC<Point<RealT,2>> > &matchPairs, RealT &residual);
-  //: Fit a projective transform given an array of matched points.
-  
-  Projection2dC FitProjection(const std::vector<Point<RealT,2>> &org,const std::vector<Point<RealT,2>> &newPos);
-  //: Fit a projective transform given to the mapping between original and newPos.
-  
-  Projection2dC FitProjection(const std::vector<Point<RealT,2>> &org,const std::vector<Point<RealT,2>> &newPos,const std::vector<RealT> &weight);
-  //: Fit a projective transform given to the mapping between original and newPos with weighting for points.
-  
-  bool FitProjection(const std::vector<Point<RealT,2>> &from,const std::vector<Point<RealT,2>> &to,Matrix<RealT,3,3> &proj);
-  //: Fit a projective matrix.
-  
-  bool FitProjection(const std::vector<Point<RealT,2>> &from,const std::vector<Point<RealT,2>> &to,const std::vector<RealT> &weight,Matrix<RealT,3,3> &proj);
-  //: Fit a projective matrix with weighting for points.
-
-#endif
-
   //! Read from a stream.
   template <typename RealT, unsigned N>
   std::istream &operator>>(std::istream &s, Projection<RealT, N> &proj)
