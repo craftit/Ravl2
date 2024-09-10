@@ -103,8 +103,8 @@ namespace Ravl2
   // Also about arrays based on the pixel types
   template class Array<PixelY8,2>;
   template class Array<PixelY16,2>;
-  template class Array<PixelD16,2>;
-  template class Array<PixelD32F,2>;
+  template class Array<PixelZ16, 2>;
+  template class Array<PixelZ32F, 2>;
   template class Array<PixelRGB8,2>;
   template class Array<PixelRGBA8,2>;
   template class Array<PixelRGB16,2>;
@@ -124,8 +124,8 @@ namespace Ravl2
     [[maybe_unused]] bool g_reg5 = registerCerealFormats<Array<PixelY8,2>>();
     [[maybe_unused]] bool g_reg6 = registerCerealFormats<Array<PixelY16,2>>();
     [[maybe_unused]] bool g_reg7 = registerCerealFormats<Array<PixelYUV8,2>>();
-    [[maybe_unused]] bool g_reg8 = registerCerealFormats<Array<PixelD32F,2>>();
-    [[maybe_unused]] bool g_reg9 = registerCerealFormats<Array<PixelD16,2>>();
+    [[maybe_unused]] bool g_reg8 = registerCerealFormats<Array<PixelZ32F, 2>>();
+    [[maybe_unused]] bool g_reg9 = registerCerealFormats<Array<PixelZ16, 2>>();
     [[maybe_unused]] bool g_reg10 = registerCerealFormats<Array<PixelRGB32F,2>>();
     [[maybe_unused]] bool g_reg11 = registerCerealFormats<Array<PixelRGBA32F,2>>();
     [[maybe_unused]] bool g_reg14 = registerCerealFormats<Array<PixelYUV32F,2>>();

@@ -213,6 +213,6 @@ namespace Ravl2
   extern template void convert(Array<PixelBGRA8, 2> &dest, const Array<PixelRGBA8, 2> &src);
   extern template void convert(Array<PixelRGBA8, 2> &dest, const Array<PixelBGRA8, 2> &src);
 
-  extern template void convert(Array<PixelD32F, 2> &dest, const Array<PixelD16, 2> &src);
+  extern template void convert(Array<PixelZ32F, 2> &dest, const Array<PixelZ16, 2> &src);
 
 }// namespace Ravl2
