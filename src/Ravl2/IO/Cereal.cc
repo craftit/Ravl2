@@ -13,7 +13,7 @@
 
 namespace Ravl2
 {
-  //! Enable cerial IO
+  //! Enable cereal IO
   bool initCerealIO()
   {
     return true;
