@@ -16,6 +16,11 @@ namespace Ravl2
     return T(T(0) < val) - (val < T(0));
   }
 
+  //: Returns the value 'a' with a sign of 'b'.
+  template <typename RealT>
+  inline constexpr RealT sign(RealT a, RealT b)
+  { return (b >= 0) ? std::abs(a) : - std::abs(a); }
+
   //! Returns the value x rounded to the nearest integer.
   template <typename RealT, typename IntT = int>
    requires std::is_floating_point<RealT>::value

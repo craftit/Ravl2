@@ -60,6 +60,14 @@ namespace Ravl2
     return x->value();
   }
 
+  std::any ConfigNode::initNumber(
+    const std::string_view &name, const std::string_view &description, unsigned defaultValue, unsigned min, unsigned max)
+  {
+    auto x = setChild(std::string(name), std::string(description), defaultValue);
+    checkRange(x->value(), min, max);
+    return x->value();
+  }
+
   //! Initialise a number field
   std::any ConfigNode::initNumber(const std::string_view &name, const std::string_view &description, size_t defaultValue, size_t min, size_t max)
   {

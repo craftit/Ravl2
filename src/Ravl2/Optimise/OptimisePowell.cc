@@ -5,187 +5,165 @@
 // see http://www.gnu.org/copyleft/lesser.html
 // file-header-ends-here
 
-#include "Ravl2/PatternRec/OptimisePowell.hh"
-#include "Ravl2/StrStream.hh"
-#include "Ravl2/PatternRec/CostFunction1d.hh"
-#include "Ravl2/PatternRec/BracketMinimum.hh"
-#include "Ravl2/SArray1dIter5.hh"
+#include "Ravl2/Optimise/OptimisePowell.hh"
+#include "Ravl2/Optimise/BracketMinimum.hh"
 
 namespace Ravl2 {
 
-  OptimisePowellBodyC::OptimisePowellBodyC (unsigned iterations, RealT tolerance, bool useBracketMinimum,bool verbose)
-    : OptimiseBodyC("OptimisePowellBodyC"),
+  OptimisePowell::OptimisePowell (unsigned iterations, RealT tolerance, bool useBracketMinimum,bool verbose)
+    : Optimise(verbose),
      _iterations(iterations),
      _tolerance(tolerance),
      _brentIterations(_iterations),
      _brentTolerance(_tolerance),
      _brent(iterations,tolerance),
-     _useBracketMinimum(useBracketMinimum),
-     _verbose(verbose)
+     _useBracketMinimum(useBracketMinimum)
   {}
 
-  //: Factory constructor
-  OptimisePowellBodyC::OptimisePowellBodyC (const XMLFactoryContextC & factory)
-   : OptimiseBodyC(factory),
-     _iterations(factory.AttributeUInt("iterations",100)),
-     _tolerance(factory.AttributeReal("tolerance",1e-4)),
-     _brentIterations(factory.AttributeUInt("brentIterations",_iterations)),
-     _brentTolerance(factory.AttributeReal("brentTolerance",_tolerance)),
+  //! Construct from a configuration
+  OptimisePowell::OptimisePowell(Configuration &config)
+   : Optimise(config),
+     _iterations(config.getNumber<unsigned>("iterations","Limit on the number of optimisation iterations",100,1,10000)),
+     _tolerance(config.getNumber<RealT>("tolerance","Tolerance for stopping optimisation",1e-4,1e-10,10)),
+     _brentIterations(config.getNumber<unsigned>("brentIterations","Limit on the number of Brent iterations",_iterations,1,10000)),
+     _brentTolerance(config.getNumber<RealT>("brentTolerance","Tolerance for stopping Brent optimisation",_tolerance,1e-10,10)),
      _brent(_brentIterations,_brentTolerance),
-     _useBracketMinimum(factory.AttributeBool("useBracketMinimum",true)),
-     _verbose(factory.AttributeBool("verbose",true))
+     _useBracketMinimum(config.getBool("useBracketMinimum","Use bracket minimum in Brent",true))
   {}
 
-  OptimisePowellBodyC::OptimisePowellBodyC (std::istream &in)
-    :OptimiseBodyC("OptimisePowellBodyC",in)
+  //! Setup limits, returns min,max
+  std::tuple<OptimisePowell::RealT,OptimisePowell::RealT> OptimisePowell::SetupLimits(
+    const VectorT<RealT> &dir,
+    const VectorT<RealT> &P,
+    const CostDomain &domain)
   {
-    in >> _iterations;
-  }
-  
-  static void SetupLimits(const VectorT<RealT> &dir,const VectorT<RealT> &P,const CostC &domain,ParametersC &parameters1d) {
     // Find the domain limits along the direction vector.
     
-    RealT min = -RavlConstN::maxReal;
-    RealT max = RavlConstN::maxReal;
-    IntT steps = 0;
-    for(SArray1dIter5C<RealT,RealT,RealT,RealT,IntT> lit(dir,P,domain.MinX(),domain.MaxX(),domain.Steps());lit;lit++) {
-      if(lit.data<0>() == 0.0)
-        continue; // Avoid division by zero.
-      RealT maxv = (lit.data<2>() - lit.data<1>()) / lit.data<0>(); // Limit for MinX
-      RealT minv = (lit.Data4() - lit.data<1>()) / lit.data<0>(); // Limit for MaxX
+    RealT min = -std::numeric_limits<RealT>::min();
+    RealT max = std::numeric_limits<RealT>::max();
+    for(size_t i = 0;i < P.size();i++) {
+      if(dir[i] == 0.0)
+	continue; // Avoid division by zero.
+      RealT maxv = (domain.min()[i] - P[i]) / dir[i]; // Limit for MinX
+      RealT minv = (domain.max()[i] - P[i]) / dir[i]; // Limit for MaxX
       if(minv > maxv) // The direction vector could have a negative value, so invert if needed.
-        std::swap(minv,maxv);
+	std::swap(minv,maxv);
       if(max > maxv) // Pull down maximum if limited
-        max = maxv;
+	max = maxv;
       if(minv > min) // Pull up minimum if limited
-        min = minv;
-      steps += lit.Data5();
+	min = minv;
     }
-    steps /= domain.Steps().size();
-    if(steps < 3) steps = 3; // Check there;s actually some space to optimise in.
-    
+
     //Point in full space to evaluate is given by: _point + _direction * X[0];  Where X[0] is the paramiter we're optimising.
-    parameters1d.Setup(0,min,max,steps);
+    return std::make_tuple(min,max);
   }
-  
-  // ------------------------------------------------------------------------
-  // **********  OptimalX    ************************************************
-  // ------------------------------------------------------------------------
-  //
+
   // Powell optimiser. Keeps a set of orthogonal directions and searches along
   // each one in turn for the minimum. The final point is then used to create
   // a new direction which replaces one of the existing ones and the process is
   // repeated.
   //
-  VectorT<RealT> OptimisePowellBodyC::MinimalX (const CostC &domain, RealT startCost, RealT &minimumCost) const
+  //VectorT<RealT> OptimisePowell::MinimalX (const CostC &domain, RealT startCost, RealT &minimumCost) const
+  std::tuple<VectorT<OptimisePowell::RealT>,OptimisePowell::RealT> OptimisePowell::minimise (
+    const CostDomain &domain,
+    const std::function<RealT(const VectorT<RealT> &)> &func,
+    const VectorT<RealT> &start
+  ) const
+
   {
-    ParametersC parameters1d(1);
-    
-    VectorT<RealT> P = domain.StartX();
-    IntT numDim = P.size();
+    VectorT<RealT> P = start;
+    RealT minimumCost = func(P);
+    auto numDim = P.size();
     std::vector<VectorT<RealT>> Di(numDim);
-    
-    if(_verbose) {
-      SPDLOG_TRACE("MinimalX bracketMin={} Iterations={} Tolerance={} ",(int) _useBracketMinimum, _iterations,_tolerance);
+    if(mVerbose) {
+      SPDLOG_INFO("MinimalX bracketMin={} Iterations={} Tolerance={} ", _useBracketMinimum, _iterations,_tolerance);
     }
-    
-    // initialise directions to basis unit vectors
-    for (SArray1dIterC<VectorT<RealT>> it(Di); it; it++) {
-      *it = VectorT<RealT>(numDim);
-      it->Fill(0.0);
-      it.Data()[it.index()] = 1.0;
+    // Initialise directions to basis unit vectors
+    for(size_t i = 0;i < Di.size();i++) {
+      Di[i] = xt::zeros<RealT>({numDim});
+      Di[i][i] = 1.0;
     }
-    
-    int indexOfBiggest; // Index of biggest reduction in cost 
-    RealT valueOfBiggest;  // Value of cost function after biggest reduction
     VectorT<RealT> Plast;
     VectorT<RealT> Psameagain;
     VectorT<RealT> Pdiff;
-    minimumCost = startCost;
     RealT fP = minimumCost;              // Value of cost function at the start of the last iteration
+
     for (unsigned iter = 0; iter < _iterations; iter++) {
-      Plast = P.Copy();       // Save the current position.
-      indexOfBiggest = 0;
-      valueOfBiggest = 0.0;
-      for (SArray1dIterC<VectorT<RealT>> it(Di); it; it++) { // Go through direction vectors.
-        
-	SetupLimits(*it,P,domain,parameters1d);
-        
+      Plast = P;       // Save the current position.
+      size_t indexOfBiggest = 0; // Index of biggest reduction in cost
+      RealT valueOfBiggest = 0.0;// Value of cost function after biggest reduction
+      for (size_t id = 0;id < Di.size();++id) { // Go through direction vectors.
+	auto &it = Di[id];
+	auto [minP,maxP ] = SetupLimits(it,P,domain);
+
 	// Minimise along line.
-	
-        RealT fPlast = minimumCost;
-        CostFunction1dC cost1d(parameters1d, // Limits for parameters.
-                               domain,       // Cost function we're trying to minimise.
-                               P,            // Current best position.
-                               *it           // Direction we wish to optimise along.
-                               );
-        if (_useBracketMinimum) {
-          BracketMinimum(cost1d);
-          P = cost1d.Point(_brent.MinimalX(cost1d,minimumCost));
-        } else
-          P = cost1d.Point(_brent.MinimalX(cost1d,minimumCost,minimumCost));
-        RealT diff = fPlast - minimumCost; // Compute the size of the reduction in cost.
-        if (diff > valueOfBiggest) {
-          valueOfBiggest = diff;
-          indexOfBiggest = it.index();
-        }
-        
-        if(_verbose && (it.index() % 20) == 19)
-          std::cerr << "Iter " << iter << " D=" << it.index() << " Cost=" << minimumCost << "\n";
+	auto linearFunc = [&func,&P,&it](RealT x) {
+	  return func(P + it * x);
+	};
+	RealT startAt = 0.0;
+	RealT fPlast = minimumCost;
+	if(_useBracketMinimum) {
+	  auto [minB,maxB,midB] = bracketMinimum (minP,maxP,linearFunc);
+	  minP = minB;
+	  maxP = maxB;
+	  startAt = midB;
+	}
+	auto [bestVal,bestCost] = _brent.minimise(minP,maxP,startAt,minimumCost,linearFunc);
+	P += it * bestVal;
+	RealT diff = fPlast - bestCost; // Compute the size of the reduction in cost.
+	minimumCost = bestCost;
+	if (diff > valueOfBiggest) {
+	  valueOfBiggest = diff;
+	  indexOfBiggest = id;
+	}
+	if(mVerbose) {
+	  SPDLOG_INFO("Iter {} D={} Cost={} ", iter, id, minimumCost);
+	}
       }
+
       // Compute the reduction in the cost function.
       RealT fPdiff = fP-minimumCost;
-      
+
       // Check if we're stopped converging.
-      if (_tolerance > 0 && 2.0*std::abs(fPdiff) <= _tolerance*(std::abs(fP)+std::abs(minimumCost)))
-        break;
-      
-      
+      if (_tolerance > 0 && (2.0*std::abs(fPdiff) <= _tolerance*(std::abs(fP)+std::abs(minimumCost)))) {
+	break;
+      }
       // check if we should continue in the same direction
       Pdiff = P - Plast;      // How far did we move ?
       Psameagain = P + Pdiff; // Try the same again movement again.
-      RealT fPsameagain = domain.Cost(Psameagain); // Evaluate the new move.
-      // Include any cost befinit we get from brent along the new direction vector in the benifit
+      RealT fPsameagain = func(Psameagain); // Evaluate the new move.
+      // Include any cost benefit we get from brent along the new direction vector in the benefit
       fP = minimumCost;
-      
       // if it has still improved in the same direction
       if (fPsameagain <= fP) {
-        RealT t = 
-          2.0 * ((fP+fPsameagain)-2.0*minimumCost)*Sqr(fPdiff-valueOfBiggest)
-          - valueOfBiggest*Sqr(fP-fPsameagain);
-        
+        RealT t =
+          2.0 * ((fP+fPsameagain)-2.0*minimumCost)*sqr(fPdiff-valueOfBiggest)
+          - valueOfBiggest*sqr(fP-fPsameagain);
+
         if (t < 0.0) {
-          SetupLimits(Pdiff,P,domain,parameters1d); // Setup limits for new direction.
-          
-          CostFunction1dC cost1d(parameters1d,domain,P,Pdiff);
-          if (_useBracketMinimum) {
-            BracketMinimum(cost1d);
-            P = cost1d.Point(_brent.MinimalX(cost1d,minimumCost));
-          } else
-            P = cost1d.Point(_brent.MinimalX(cost1d,minimumCost,minimumCost));
-          Di[indexOfBiggest] = Di[numDim-1]; // Replace vector yielding largest cost
-          Di[numDim-1] = Pdiff.Copy();              // Put in new direction vector.
+	  auto [minP,maxP ] = SetupLimits(Pdiff,P,domain);
+	  auto linearFunc = [&func,&P,&Pdiff](RealT x) {
+	    return func(P + Pdiff * x);
+	  };
+	  RealT startAt = 0.0;
+	  if(_useBracketMinimum) {
+	    auto [minB,maxB,midB] = bracketMinimum (minP,maxP,linearFunc);
+	    minP = minB;
+	    maxP = maxB;
+	    startAt = midB;
+	  }
+	  auto [bestVal,bestCost] = _brent.minimise(minP,maxP,startAt,minimumCost,linearFunc);
+	  P += Pdiff * bestVal;
+	  //minimumCost = bestCost;
+	  Di[indexOfBiggest] = Di[numDim-1]; // Replace vector yielding largest cost
+	  Di[numDim-1] = Pdiff;              // Put in new direction vector.
         }
       }
-      if(_verbose)
-        SPDLOG_TRACE("Iter {} Cost={}  ",iter,minimumCost);
+      if(mVerbose) {
+	SPDLOG_INFO("Iter {} Cost={}  ", iter, minimumCost);
+      }
     }
-    return P;
+    return std::make_tuple(P,minimumCost);
   }
-  
-  const std::string OptimisePowellBodyC::GetInfo () const
-  {
-    Strstd::unique_ptr<std::ostream> stream;
-    stream << OptimiseBodyC::GetInfo () << "\n";
-    stream << "Powell optimization algorithm. Iterations = " << _iterations;
-    return stream.String();
-  }
-  
-  bool OptimisePowellBodyC::Save (std::ostream &out) const
-  {
-    OptimiseBodyC::Save (out);
-    out << _iterations << "\n";
-    return true;
-  }
-  
+
 }

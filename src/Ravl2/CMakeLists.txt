@@ -12,11 +12,13 @@ find_package(LAPACK REQUIRED)
 find_package(dlib QUIET)
 find_package(Qt5 QUIET)
 
+add_subdirectory(Optimise)
 add_subdirectory(Geometry)
 add_subdirectory(Math)
 add_subdirectory(Image)
 add_subdirectory(3D)
 add_subdirectory(OpenCV)
+
 
 # If OpenGL is found, add the OpenGL subdirectory
 if(TARGET OpenGL::GL)

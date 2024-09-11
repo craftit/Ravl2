@@ -58,6 +58,7 @@ add_executable(tests
         test_io.cc
         test_ThreadedQueue.cc
         test_warpScale.cc
+        test_optimise.cc
         checks.hh
         test_warpScale.cc
         test_projective.cc
@@ -73,6 +74,7 @@ target_link_libraries(
           ravl2::Ravl2ImageSegmentation
           ravl2::Ravl2x3D
           ravl2::Ravl2OpenCV
+          ravl2::Ravl2Optimise
           Catch2::Catch2WithMain)
 
 if(WIN32 AND BUILD_SHARED_LIBS)

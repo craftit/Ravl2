@@ -41,6 +41,9 @@ namespace Ravl2
     std::any initNumber(const std::string_view &name, const std::string_view &description, int defaultValue, int min, int max) override;
 
     //! Initialise a number field
+    std::any initNumber(const std::string_view &name, const std::string_view &description, unsigned defaultValue, unsigned min, unsigned max) override;
+
+    //! Initialise a number field
     std::any initNumber(const std::string_view &name, const std::string_view &description, float defaultValue, float min, float max) override;
 
     //! Initialise a number field

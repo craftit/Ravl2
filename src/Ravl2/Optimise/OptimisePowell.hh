@@ -4,115 +4,66 @@
 // General Public License (LGPL). See the lgpl.licence file for details or
 // see http://www.gnu.org/copyleft/lesser.html
 // file-header-ends-here
-#ifndef RAVL_OPTIMISEPOWELL_HH
-#define RAVL_OPTIMISEPOWELL_HH
-////////////////////////////////////////////////////////////////////////////
 //! author="Robert Crida"
 //! date="6/8/2003"
 //! example=testOptimise.cc
 //! docentry="Ravl.API.Pattern Recognition.Optimisation.Implementation"
 
-#include "Ravl2/PatternRec/Optimise.hh"
-#include "Ravl2/PatternRec/OptimiseBrent.hh"
+#pragma once
 
-namespace Ravl2 {
+#include "Ravl2/Optimise/Optimise.hh"
+#include "Ravl2/Optimise/OptimiseBrent.hh"
 
-  // --------------------------------------------------------------------------
-  // **********  OptimisePowellBodyC  *****************************************
-  // --------------------------------------------------------------------------
-  //: Powell's (roughly) quadratically convergent non-gradient optimiser
-  //: implementation class.
-  //
-  // This is the implementation class of the non-gradient Powell optimiser for the
-  // PatternRec toolbox. The OptimisePowellC handle class should be used.
-  
-  class OptimisePowellBodyC
-   : public OptimiseBodyC
+namespace Ravl2
+{
+
+  //! @brief Powell's (roughly) quadratically convergent non-gradient optimiser
+  //! Optimisation algorithm that does not use gradient but has roughly quadratic
+  //! convergence.
+
+  class OptimisePowell
+   : public Optimise
   {    
   public:
-    OptimisePowellBodyC (unsigned iterations, RealT tolerance, bool useBracketMinimum,bool verbose = false);
-    //: Constructor requires the number of iterations to use
-    
-    OptimisePowellBodyC (const XMLFactoryContextC & factory);
-    //: Factory constructor
+    //! Constructor requires the number of iterations to use
+    OptimisePowell (unsigned iterations, RealT tolerance, bool useBracketMinimum,bool verbose = false);
 
-    OptimisePowellBodyC (std::istream &in);
-    //: Constructs from stream
+    //! Construct from a configuration
+    explicit OptimisePowell(Configuration &config);
 
-    //ACCESSOR METHODS:
-    unsigned GetNumIterations(void) const {return this->_iterations;}
     //: Get iterations
+    [[nodiscard]] unsigned numIterations() const {return this->_iterations;}
 
-    RealT GetTolerance(void) const {return this->_tolerance;}
     //: Get tolerance
+    [[nodiscard]] RealT tolerance() const {return this->_tolerance;}
 
-    void SetVerbose(bool verbose)
-    { _verbose = verbose; }
-    //: Set the verbose flag
+    //! @brief Determines Xmin=arg min_{X} domain(X)
+    //! Powell optimiser. Keeps a set of orthogonal directions and searches along
+    //! each one in turn for the minimum. The final point is then used to create
+    //! a new direction which replaces one of the existing ones and the process is
+    //! repeated.
+    //! @param  domain      - the cost function that will be minimised
+    //! @param  func - The function to be minimised
+    //! @param  start - The starting point for the optimisation, if empty then the midpoint of the domain is used
+    //! @return  A tuple with the X value which gives the minimum cost, and the minimum cost value
+    //!
 
-  protected:
-    VectorT<RealT> MinimalX (const CostC &domain, RealT startCost, RealT &minimumCost) const;
-    //: Determines Xmin=arg min_{X} |f(X)-Yd|
-    
-    virtual const std::string GetInfo () const;
-    //: Prints information about the optimiser
-    
-    virtual bool Save (std::ostream &out) const;
-    //: Writes object to stream, can be loaded using constructor
-   
+    [[nodiscard]] std::tuple<VectorT<RealT>,RealT> minimise (
+      const CostDomain &domain,
+      const std::function<RealT(const VectorT<RealT> &)> &func,
+      const VectorT<RealT> &start
+    ) const final;
+
   private:
-    unsigned _iterations;
-    RealT _tolerance;
-    unsigned _brentIterations;
-    RealT _brentTolerance;
-    OptimiseBrentC _brent;
-    bool _useBracketMinimum;
-    bool _verbose; 
+
+    static std::tuple<RealT,RealT> SetupLimits(const VectorT<RealT> &dir,const VectorT<RealT> &P,const CostDomain &domain);
+
+      unsigned _iterations = 100;
+    RealT _tolerance = 1e-4;
+    unsigned _brentIterations = 100;
+    RealT _brentTolerance = 1e-4;
+    OptimiseBrent _brent;
+    bool _useBracketMinimum = true;
   };
   
-  //: Powell's (roughly) quadratically convergent non-gradient optimisation
-  //: algorithm
-  //
-  // Optimisation algorithm that does not use gradient but has roughly quadratic
-  // convergence.
-  
-  class OptimisePowellC: public OptimiseC
-  {
-  public:
-    OptimisePowellC (unsigned iterations, RealT tolerance = 1e-6, bool useBracketMinimum = true,bool verbose = false)
-      : OptimiseC(new OptimisePowellBodyC (iterations, tolerance, useBracketMinimum,verbose))
-    {}
-    //: Constructor
-    //! @param  iterations - maximum number of iterations to use
-
-    OptimisePowellC (const XMLFactoryContextC & factory)
-      : OptimiseC(new OptimisePowellBodyC (factory))
-    {}
-
-    //ACCESSOR METHODS:
-
-    unsigned GetNumIterations(void)
-    {return Body().GetNumIterations();}
-    //: Get iterations
-
-    RealT GetTolerance(void)
-    {return Body().GetTolerance();}
-    //: Get tolerance
-
-    void SetVerbose(bool verbose)
-    { return Body().SetVerbose(verbose); }
-    //: Set the verbose flag.
-
-  protected:
-    OptimisePowellBodyC &Body()
-    { return static_cast<OptimisePowellBodyC &>(OptimiseC::Body()); }
-    //: Access body.
-
-    const OptimisePowellBodyC &Body() const
-    { return static_cast<const OptimisePowellBodyC &>(OptimiseC::Body()); }
-    //: Access body.
-
-  };
 }
-
-#endif
