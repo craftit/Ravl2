@@ -15,7 +15,7 @@ namespace Ravl2
 
   //: 'img' is the image to search.
 
-  MatchNormalisedCorrelationC::MatchNormalisedCorrelationC(const Array<uint8_t, 2> &img)
+  MatchNormalisedCorrelation::MatchNormalisedCorrelation(const Array<uint8_t, 2> &img)
       : threshold(10)
   {
     SetSearchImage(img);
@@ -23,23 +23,23 @@ namespace Ravl2
 
   //: Default constructor.
 
-  MatchNormalisedCorrelationC::MatchNormalisedCorrelationC()
+  MatchNormalisedCorrelation::MatchNormalisedCorrelation()
       : threshold(10)
   {}
 
   //: Setup search image.
 
-  bool MatchNormalisedCorrelationC::SetSearchImage(const Array<uint8_t, 2> &img)
+  bool MatchNormalisedCorrelation::SetSearchImage(const Array<uint8_t, 2> &img)
   {
     searchImg = img;
-    sums.BuildTable(img);
+    sums = Ravl2::SummedAreaTable2C<int, int>::BuildTable(img);
     return true;
   }
 
-  int SumOfProducts(Array<uint8_t, 2> templ, const ArrayAccess<uint8_t, 2> &subImg)
+  int SumOfProducts(const Array<uint8_t, 2>& templ, const ArrayAccess<uint8_t, 2> &subImg)
   {
     int sumxy = 0;
-    // The following loop could probably be speeded up with some MMX code.
+    // The following loop could probably be speeder up with some MMX code.
     for(auto it2 = zip(templ,subImg); it2.valid(); ) {
       do {
 	sumxy += it2.data<0>() * it2.data<1>();
@@ -51,20 +51,20 @@ namespace Ravl2
   //: The location in the image most likely to match the template.
   // Returns false if no likely match is found.
 
-  bool MatchNormalisedCorrelationC::Search(const Array<uint8_t, 2> &templ,
-                                           const IndexRange<2> &searchArea,
-                                           RealT &score, Index<2> &at) const
+  bool MatchNormalisedCorrelation::Search(const Array<uint8_t, 2> &templ,
+					  const IndexRange<2> &searchArea,
+					  RealT &score, Index<2> &at) const
   {
     score = 0;
     Sums1d2C<int32_t> tsums;
     for(auto it : templ)
       tsums += it;
-    RealT tarea = RealT(tsums.size());
+    auto tarea = RealT(tsums.size());
     MeanVariance smv = toMeanVariance<float>(tsums,SampleStatisticsT::POPULATION);
     RealT tmean = smv.mean();
     RealT tvar = smv.variance();
     RealT z = std::sqrt(tvar) * tarea;
-    RealT tsum = RealT(tsums.sum());
+    auto tsum = RealT(tsums.sum());
 
     IndexRange<2> clippedSearchArea = searchArea;
     clippedSearchArea.clipBy(searchImg.range());

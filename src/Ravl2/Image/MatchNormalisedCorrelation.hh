@@ -17,16 +17,16 @@ namespace Ravl2
 
   //: Do a grid search for the position of the best match using normalised correlation.
 
-  class MatchNormalisedCorrelationC
+  class MatchNormalisedCorrelation
   {
   public:
     using RealT = float;
 
     //! 'img' is the image to search.
-    MatchNormalisedCorrelationC(const Array<uint8_t, 2> &img);
+    explicit MatchNormalisedCorrelation(const Array<uint8_t, 2> &img);
 
     //! Default constructor.
-    MatchNormalisedCorrelationC();
+    MatchNormalisedCorrelation();
 
     //! Setup search image.
     // This precomputes some information about the image we're doing tracking in.

@@ -16,7 +16,7 @@ namespace Ravl2
 {
 
   template <typename DataT, typename SumT, typename RealT = float>
-  SumT SearchMinAbsDifferenceCreep(const Array<DataT, 2> &patch, const Array<DataT, 2> &img, const Index<2> &start, Point<RealT, 2> &rat, SumT &rminScore, int searchSize = 50)
+  SumT searchMinAbsDifferenceCreep(const Array<DataT, 2> &patch, const Array<DataT, 2> &img, const Index<2> &start, Point<RealT, 2> &rat, SumT &rminScore, int searchSize = 50)
   {
     SumT minScore;
     IndexRange<2> sarea = IndexRange<2>(start,start).expand(searchSize + 8);

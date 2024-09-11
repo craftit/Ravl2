@@ -70,16 +70,18 @@ The code is organized into the following directories:
 - examples: Contains example code
 - scripts: Scripts for working with the project, notably autoport_ravl.sh for updating the code from the original Ravl library.
 - share: Resources used by the library. 
-- src: Contains the source code
+- src/Ravl2: Contains the source code
   - 3D: Contains 3D geometry code
   - DLib: Contains interoperability code with DLib.
   - Geometry: Affine transforms, and geometric constructions
-  - Math: Contains common math, linear algebra, and optimization code
-  - OpenCV: Interoperability with OpenCV
-  - Pixel: Pixel and colour space handling.
-  - Qt: Interoperability with Qt
   - Image: Contains image processing code
     - Segmentation: Image segmentation, boundaries, and region growing
+  - IO : Contains file handling code
+  - Math: Contains common math, linear algebra, statistics, and optimization code
+  - OpenCV: Interoperability with OpenCV
+  - OpenGL: Interoperability with OpenGL
+  - Pixel: Pixel and colour space handling.
+  - Qt: Interoperability with Qt
 - test: Contains unit tests
 - 
 
@@ -116,6 +118,8 @@ The output is the first argument(s).
  * view(x) - Return a view of x which can be used as a Ravl2 type, this view maybe reshaped without copying the data.
  * access(x) - Return a reference to the data in x.  Assigning to an access object has broadcast semantics.
  * clone(x) - Return a deep copy of x that maybe modified without affecting the original.
+ * inverse(x) - Return the inverse, usually a std:optional<...> transform or matrix of x
+ * fit(&x,y) - Fit a model x to data y
 
 ### Array<x> 
 
