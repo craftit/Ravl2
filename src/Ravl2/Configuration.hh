@@ -290,6 +290,9 @@ namespace Ravl2
     [[nodiscard]] virtual std::any initNumber(const std::string_view &name, const std::string_view &description, int defaultValue, int min, int max);
 
     //! Initialise a number field
+    [[nodiscard]] virtual std::any initNumber(const std::string_view &name, const std::string_view &description, unsigned defaultValue, unsigned min, unsigned max);
+
+    //! Initialise a number field
     [[nodiscard]] virtual std::any initNumber(const std::string_view &name, const std::string_view &description, size_t defaultValue, size_t min, size_t max);
 
     //! Initialise a number field

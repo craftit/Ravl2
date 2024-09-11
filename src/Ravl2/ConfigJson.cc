@@ -69,6 +69,33 @@ namespace Ravl2
   }
 
   std::any ConfigNodeJSON::initNumber(const std::string_view &name,
+				      const std::string_view &description,
+				      unsigned defaultValue,
+				      unsigned min,
+				      unsigned max)
+  {
+    std::string const tname(name);// jsoncpp doesn't support string_view.
+    // Just use the default value?
+    if(m_json.find(tname) == m_json.end()) {
+      m_json[tname] = defaultValue;
+      return ConfigNode::initNumber(name, description, defaultValue, min, max);
+    }
+    json const value = m_json[tname];
+    if(!value.is_number()) {
+      SPDLOG_ERROR("Expected a number for field {}.{}  got '{}'  ", rootPathString(), name, value.dump());
+      throw std::runtime_error("Expected a number in field.");
+    }
+    unsigned val = value.template get<unsigned>();
+    if(val < min || val > max) {
+      SPDLOG_ERROR("Number for field {}.{} out of range. {} <= ({}) <= {}  ", rootPathString(), name, min, val, max);
+      throw std::out_of_range("Out of range.");
+    }
+    auto x = setChild(std::string(name), std::string(description), val);
+    return x->value();
+  }
+
+
+  std::any ConfigNodeJSON::initNumber(const std::string_view &name,
                                       const std::string_view &description,
                                       float defaultValue,
                                       float min,
