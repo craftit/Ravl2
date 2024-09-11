@@ -5,6 +5,11 @@ include(cmake/CPM.cmake)
 # targets
 function(RAVL2_setup_dependencies)
 
+  # Sort out some blas/lapack stuff
+  #set(BLAS_LIBS /usr/lib/x86_64-linux-gnu/blas)
+  #set(BLA_VENDOR "Generic")
+  #set(BLA_PKGCONFIG_BLAS "blas")
+
   #if on apple and BLA_VENDOR is not set, set it to Apple
   if (APPLE AND NOT DEFINED BLA_VENDOR)
     if(APPLE)
