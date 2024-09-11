@@ -4,17 +4,14 @@
 // General Public License (LGPL). See the lgpl.licence file for details or
 // see http://www.gnu.org/copyleft/lesser.html
 // file-header-ends-here
-//! rcsid="$Id$"
-//! lib=Optimisation
-//! file="Ravl/PatternRec/Optimise/Parameters.cc"
 
-#include "Ravl/PatternRec/Parameters.hh"
-#include "Ravl/SArray1dIter5.hh"
-#include "Ravl/Random.hh"
-#include "Ravl/config.h"
+#include "Ravl2/PatternRec/Parameters.hh"
+#include "Ravl2/SArray1dIter5.hh"
+#include "Ravl2/Random.hh"
+#include "Ravl2/config.h"
 #include <stdlib.h>
-#include "Ravl/StdConst.hh"
-#include "Ravl/SysLog.hh"
+#include "Ravl2/StdConst.hh"
+#include <spdlog/spdlog.h>
 
 #define DODEBUG 0
 #if DODEBUG
@@ -23,36 +20,36 @@
 #define ONDEBUG(x)
 #endif
 
-namespace RavlN {
+namespace Ravl2 {
 
-  ParametersBodyC::ParametersBodyC (const VectorC &minP,
-				    const VectorC &maxP,
-				    const SArray1dC<IntT> &steps)
+  ParametersBodyC::ParametersBodyC (const VectorT<RealT> &minP,
+				    const VectorT<RealT> &maxP,
+				    const std::vector<IntT> &steps)
     : _minP(minP),
       _maxP(maxP),
-      _constP(steps.Size()),
+      _constP(steps.size()),
       _steps(steps),
-      _mask(steps.Size()),
+      _mask(steps.size()),
       m_cacheDirty(true)
   {
-    RavlAssertMsg (minP.Size() == maxP.Size() && minP.Size() == steps.Size(), "Error: all arguments for parameters must have same dimension");
-    _mask.Fill(1);
-    _constP.Fill(0);
+    RavlAssertMsg (minP.size() == maxP.size() && minP.size() == steps.size(), "Error: all arguments for parameters must have same dimension");
+    _mask.fill(1);
+    _constP.fill(0);
   }
   
-  ParametersBodyC::ParametersBodyC (const VectorC &minP,
-				    const VectorC &maxP,
-				    const SArray1dC<IntT> &steps,
-				    const SArray1dC<IntT> &mask)
+  ParametersBodyC::ParametersBodyC (const VectorT<RealT> &minP,
+				    const VectorT<RealT> &maxP,
+				    const std::vector<IntT> &steps,
+				    const std::vector<IntT> &mask)
     : _minP(minP),
       _maxP(maxP),
-      _constP(steps.Size()),
+      _constP(steps.size()),
       _steps(steps),
       _mask(mask),
       m_cacheDirty(true)
   {
-    RavlAssertMsg (minP.Size() == maxP.Size() && minP.Size() == steps.Size() && minP.Size() == mask.Size(), "Error: all arguments for parameters must have same dimension");
-    _constP.Fill(0);
+    RavlAssertMsg (minP.size() == maxP.size() && minP.size() == steps.size() && minP.size() == mask.size(), "Error: all arguments for parameters must have same dimension");
+    _constP.fill(0);
   }
   
   /////////////////////////////////////////
@@ -60,7 +57,7 @@ namespace RavlN {
   // This setup nparams with defaults settings of :
   // minP=0 maxP=1 Steps=1 mask=0 (constP = 0)
   
-  ParametersBodyC::ParametersBodyC (SizeT nparams,bool unlimited )
+  ParametersBodyC::ParametersBodyC (size_t nparams,bool unlimited )
     :_minP(nparams),
      _maxP(nparams),
      _constP(nparams),
@@ -69,17 +66,17 @@ namespace RavlN {
       m_cacheDirty(true)
   {
     if(!unlimited) {
-      _minP.Fill(0);
-      _maxP.Fill(1);
-      _mask.Fill(0);
+      _minP.fill(0);
+      _maxP.fill(1);
+      _mask.fill(0);
     } else {
-      _minP.Fill(-RavlConstN::maxReal);
-      _maxP.Fill(RavlConstN::maxReal);
-      _mask.Fill(1);
+      _minP.fill(-RavlConstN::maxReal);
+      _maxP.fill(RavlConstN::maxReal);
+      _mask.fill(1);
     }
-    _steps.Fill(1);
-    _constP.Fill(0);
-    ONDEBUG(RavlDebug("Setting up %u parameters. Unlimited=%d ",(unsigned) nparams.V(),(bool) unlimited));
+    _steps.fill(1);
+    _constP.fill(0);
+    ONDEBUG(SPDLOG_TRACE("Setting up {} parameters. Unlimited={} ",(unsigned) nparams,(bool) unlimited));
   }
   
   ParametersBodyC::ParametersBodyC (std::istream &in)
@@ -99,52 +96,52 @@ namespace RavlN {
   { return *(new ParametersBodyC (*this)); }
 
   //: Transformation between P and X
-  VectorC ParametersBodyC::TransP2X (const VectorC &P) const {
+  VectorT<RealT> ParametersBodyC::TransP2X (const VectorT<RealT> &P) const {
     if(m_cacheDirty) UpdateCache();
-    VectorC ret(m_maskMap.Size());
-    for(unsigned i = 0 ;i < m_maskMap.Size();i++)
+    VectorT<RealT> ret(m_maskMap.size());
+    for(unsigned i = 0 ;i < m_maskMap.size();i++)
       ret[i] = P[m_maskMap[i]];
     return ret;
     //return m_transP2X * P;
   }
 
   //: Transformation between X and P
-  VectorC ParametersBodyC::TransX2P (const VectorC &X) const {
+  VectorT<RealT> ParametersBodyC::TransX2P (const VectorT<RealT> &X) const {
     if(m_cacheDirty) UpdateCache();
     // Check if its the an identiy matrix.
-    if(m_sizeX == _mask.Size())
+    if(m_sizeX == _mask.size())
       return X;
-    VectorC ret = _constP.Copy();
-    for(unsigned i = 0 ;i < m_maskMap.Size();i++)
+    VectorT<RealT> ret = _constP.Copy();
+    for(unsigned i = 0 ;i < m_maskMap.size();i++)
       ret[m_maskMap[i]] = X[i];
     return ret;
   }
 
   //: Transformation between P and X
   // Equivelent of inMat * TransX2P ()
-  // TransX2P.Rows() = P.Size() Full parameter set. _mask.Size()
-  // TransX2P.Cols() = X.Size() Optimise set. m_sizeX
+  // TransX2P.range(0).size() = P.size() Full parameter set. _mask.size()
+  // TransX2P.range(1).size() = X.size() Optimise set. m_sizeX
 
-  MatrixC ParametersBodyC::TransP2X (const MatrixC &inMat) const {
+  Tensor<RealT,2> ParametersBodyC::TransP2X (const Tensor<RealT,2> &inMat) const {
     if(m_cacheDirty) UpdateCache();
     //return inMat * m_transX2P;
-    // RavlAssert(inMat.Cols() == m_transX2P.Rows());
-    RavlAssert(inMat.Cols() == _mask.Size());
+    // RavlAssert(inMat.range(1).size() == m_transX2P.range(0).size());
+    RavlAssert(inMat.range(1).size() == _mask.size());
     // Check if its the an identiy matrix.
-    if(m_sizeX == _mask.Size())
+    if(m_sizeX == _mask.size())
       return inMat;
     // Else pick out the columns required.
-    MatrixC ret(inMat.Rows(), m_sizeX);
+    Tensor<RealT,2> ret(inMat.range(0).size(), m_sizeX);
     for(unsigned i = 0;i < m_sizeX;i++) {
-      ret.SetColumn(i,const_cast<MatrixC &>(inMat).SliceColumn(m_maskMap[i]));
+      ret.SetColumn(i,const_cast<Tensor<RealT,2> &>(inMat).SliceColumn(m_maskMap[i]));
     }
     return ret;
   }
 
 
-  void ParametersBodyC::SetMask (const SArray1dC<IntT> &mask)
+  void ParametersBodyC::SetMask (const std::vector<IntT> &mask)
   {
-    if (mask.Size() != _mask.Size()) {
+    if (mask.size() != _mask.size()) {
       std::cerr << "Error: parameter mask must be same size!\n";
       exit(1);
     }
@@ -152,7 +149,7 @@ namespace RavlN {
     m_cacheDirty = true;
   }
   
-  void ParametersBodyC::SetConstP (const VectorC &constP)
+  void ParametersBodyC::SetConstP (const VectorT<RealT> &constP)
   { 
     _constP = constP.Copy(); 
     m_cacheDirty = true;
@@ -160,28 +157,28 @@ namespace RavlN {
   
   void ParametersBodyC::UpdateCache() const {
     m_sizeX = _mask.Sum();
-    m_maskMap = SArray1dC<unsigned>(m_sizeX);
+    m_maskMap = std::vector<unsigned>(m_sizeX);
     unsigned at = 0;
-    for(unsigned i = 0 ;i < _mask.Size();i++) {
+    for(unsigned i = 0 ;i < _mask.size();i++) {
       if(_mask[i] > 0)
         m_maskMap[at++] = i;
     }
-    RavlAssert(m_maskMap.Size() == at);
+    RavlAssert(m_maskMap.size() == at);
 
-    if(m_stepsP.Size() != m_sizeX)
-      m_stepsP = SArray1dC<IntT>(m_sizeX);
+    if(m_stepsP.size() != m_sizeX)
+      m_stepsP = std::vector<IntT>(m_sizeX);
     
-    if(m_constP.Size() != _mask.Size())
-      m_constP = VectorC(_mask.Size());
+    if(m_constP.size() != _mask.size())
+      m_constP = VectorT<RealT>(_mask.size());
     m_constP.Fill (0);
     
-    IndexC counter = 0;
+    int counter = 0;
     for (SArray1dIterC<IntT> it (_mask); it; it++) {
       if (*it == 1) {
-        m_stepsP[counter] = _steps[it.Index()];
+        m_stepsP[counter] = _steps[it.index()];
         counter++;
       } else {
-        m_constP[it.Index()] = _constP[it.Index()];
+        m_constP[it.index()] = _constP[it.index()];
       }
     }
     RavlAssert(counter == m_sizeX);
@@ -198,7 +195,7 @@ namespace RavlN {
   //////////////////////////////////
   //: Setup parameter p.
   
-  void ParametersBodyC::Setup(IndexC p,RealT min,RealT max,IntT steps,IntT mask)
+  void ParametersBodyC::Setup(int p,RealT min,RealT max,IntT steps,IntT mask)
   {
     _minP[p] = min;
     _maxP[p] = max;
@@ -210,7 +207,7 @@ namespace RavlN {
   //////////////////////////////////
   //: Setup parameter p, and constant value.
   
-  void ParametersBodyC::Setup(IndexC p,RealT min,RealT max,IntT steps,RealT constV,IntT mask) 
+  void ParametersBodyC::Setup(int p,RealT min,RealT max,IntT steps,RealT constV,IntT mask) 
   {
     _minP[p] = min;
     _maxP[p] = max;
@@ -230,15 +227,15 @@ namespace RavlN {
 
   //: Generate a random position in the parameter space.
   
-  VectorC ParametersBodyC::Random() {
-    VectorC ret(_minP.Size());
+  VectorT<RealT> ParametersBodyC::Random() {
+    VectorT<RealT> ret(_minP.size());
     for(SArray1dIter5C<RealT,RealT,RealT,RealT,IntT> it(ret,_minP,_maxP,_constP,_mask);it;it++) {
       if(it.Data5() == 0) { // Use constant value ?
-        it.Data1() = it.Data4();
+        it.data<0>() = it.Data4();
         continue;
       }
-      RealT diff = it.Data3() - it.Data2();
-      it.Data1() = it.Data2() + diff * Random1();
+      RealT diff = it.data<2>() - it.data<1>();
+      it.data<0>() = it.data<1>() + diff * Random1();
     }
     return ret;
   }

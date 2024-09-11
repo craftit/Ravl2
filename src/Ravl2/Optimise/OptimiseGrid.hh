@@ -8,17 +8,13 @@
 #define RAVL_OPTIMISEGRID_HH
 ////////////////////////////////////////////////////////////////////////////
 //! author="Kieron Messer"
-//! lib=Optimisation
 //! date="6/9/2003"
-//! userlevel=Normal
 //! example=testNumOptimise.cc
 //! docentry="Ravl.API.Pattern Recognition.Optimisation.Implementation"
-//! rcsid="$Id$"
-//! file="Ravl/PatternRec/Optimise/OptimiseGrid.hh"
 
-#include "Ravl/PatternRec/Optimise.hh"
+#include "Ravl2/PatternRec/Optimise.hh"
 
-namespace RavlN {
+namespace Ravl2 {
 
   // --------------------------------------------------------------------------
   // **********  OptimiseGridBodyC  **********************************
@@ -34,16 +30,16 @@ namespace RavlN {
   public:
     OptimiseGridBodyC ();
     //: Default constructor
-    //!param: numSamples - number of random samples to check
+    //! @param  numSamples - number of random samples to check
     
     OptimiseGridBodyC (std::istream &in);
     //: Constructs from stream
     
   protected:
-    VectorC MinimalX (const CostC &domain, RealT &minimumCost) const;
+    VectorT<RealT> MinimalX (const CostC &domain, RealT &minimumCost) const;
     //: Determines Xmin=arg min_{X} |f(X)-Yd|
     
-    virtual const StringC GetInfo () const;
+    virtual const std::string GetInfo () const;
     //: Prints information about the optimizer
     
     virtual bool Save (std::ostream &out) const;
@@ -60,7 +56,7 @@ namespace RavlN {
     OptimiseGridC ()
       :OptimiseC(*(new OptimiseGridBodyC ())) {}
     //: Constructor
-    //!param: numSamples - number of random samples to check
+    //! @param  numSamples - number of random samples to check
   };
   
 }

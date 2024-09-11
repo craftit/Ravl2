@@ -4,34 +4,31 @@
 // General Public License (LGPL). See the lgpl.licence file for details or
 // see http://www.gnu.org/copyleft/lesser.html
 // file-header-ends-here
-//! rcsid="$Id$"
-//! lib=Optimisation
-//! file="Ravl/PatternRec/Optimise/OptimiseParticleSwarm.cc"
 
-#include "Ravl/PatternRec/OptimiseParticleSwarm.hh"
-#include "Ravl/PatternRec/DataSet4.hh"
-#include "Ravl/PatternRec/DataSet4Iter.hh"
-#include "Ravl/PatternRec/SampleReal.hh"
-#include "Ravl/Random.hh"
-#include "Ravl/StrStream.hh"
-#include "Ravl/SobolSequence.hh"
-#include "Ravl/Plot/Plot2d.hh"
-#include "Ravl/SArray1dIter2.hh"
-#include "Ravl/SArray1dIter3.hh"
-#include "Ravl/OS/Date.hh"
-#include "Ravl/Threads/LaunchThread.hh"
-#include "Ravl/CallMethodPtrs.hh"
-#include "Ravl/Tuple4.hh"
+#include "Ravl2/PatternRec/OptimiseParticleSwarm.hh"
+#include "Ravl2/PatternRec/DataSet4.hh"
+#include "Ravl2/PatternRec/DataSet4Iter.hh"
+#include "Ravl2/PatternRec/SampleReal.hh"
+#include "Ravl2/Random.hh"
+#include "Ravl2/StrStream.hh"
+#include "Ravl2/SobolSequence.hh"
+#include "Ravl2/Plot/Plot2d.hh"
+#include "Ravl2/SArray1dIter2.hh"
+#include "Ravl2/SArray1dIter3.hh"
+#include "Ravl2/OS/Date.hh"
+#include "Ravl2/Threads/LaunchThread.hh"
+#include "Ravl2/CallMethodPtrs.hh"
+#include "Ravl2/Tuple4.hh"
 
-namespace RavlN {
+namespace Ravl2 {
 
-  OptimiseParticleSwarmBodyC::OptimiseParticleSwarmBodyC(UIntT numberOfParticles,
+  OptimiseParticleSwarmBodyC::OptimiseParticleSwarmBodyC(unsigned numberOfParticles,
                                                         RealT omega,
                                                         RealT phiP,
                                                         RealT phiG,
-                                                        UIntT numberOfIterations,
+                                                        unsigned numberOfIterations,
                                                         RealT terminationCriterion,
-                                                        UIntT numberOfThreads) :
+                                                        unsigned numberOfThreads) :
       OptimiseBodyC("OptimiseParticleSwarmBodyC"),
       m_numberOfParticles(numberOfParticles),
       m_omega(omega),
@@ -56,34 +53,34 @@ namespace RavlN {
     in >> m_numberOfParticles >> m_omega >> m_phiP >> m_phiG >> m_numberOfIterations >> m_terminationCriterion >> m_numberOfThreads;
   }
   
-  VectorC RandomVectorPSO(int dim, RealT scale)
+  VectorT<RealT> RandomVectorPSO(int dim, RealT scale)
   {
-    VectorC ret(dim);
+    VectorT<RealT> ret(dim);
     for (SArray1dIterC<RealT> it(ret); it; it++)
       *it = Random1() * scale;
     return ret;
   }
 
-  VectorC RandomVelocityPSO(const VectorC & min, const VectorC & max)
+  VectorT<RealT> RandomVelocityPSO(const VectorT<RealT> & min, const VectorT<RealT> & max)
   {
-    VectorC ret(min.Size());
+    VectorT<RealT> ret(min.size());
     for (SArray1dIter3C<RealT, RealT, RealT> it(ret, min, max); it; it++)
-      it.Data1() = ((Random1() * Abs(it.Data3() - it.Data2())) + it.Data2()) * 2.0;
+      it.data<0>() = ((Random1() * std::abs(it.data<2>() - it.data<1>())) + it.data<1>()) * 2.0;
     return ret;
   }
 
-  void BoundVectorPSO(const VectorC & min, const VectorC & max, VectorC & in)
+  void BoundVectorPSO(const VectorT<RealT> & min, const VectorT<RealT> & max, VectorT<RealT> & in)
   {
     for (SArray1dIter3C<RealT, RealT, RealT> it(min, max, in); it; it++) {
-      if (it.Data3() < it.Data1())
-        it.Data3() = it.Data1();
-      if (it.Data3() > it.Data2())
-        it.Data3() = it.Data2();
+      if (it.data<2>() < it.data<0>())
+        it.data<2>() = it.data<0>();
+      if (it.data<2>() > it.data<1>())
+        it.data<2>() = it.data<1>();
     }
   }
 
   // Very simple cost function
-  bool Cost(const CostC & domain, const VectorC & X, VectorC & V, UIntT index, Tuple4C<VectorC, VectorC, RealT, UIntT> * result)
+  bool Cost(const CostC & domain, const VectorT<RealT> & X, VectorT<RealT> & V, unsigned index, Tuple4C<VectorT<RealT>, VectorT<RealT>, RealT, unsigned> * result)
   {
     RealT score = domain.Cost(X);
     result->Data1() = X;
@@ -100,38 +97,38 @@ namespace RavlN {
   // Random optimizer with uniform density. Randomly samples the parameter
   // space to find the minimum cost position.
   
-  VectorC OptimiseParticleSwarmBodyC::MinimalX(const CostC &domain, RealT &minimumCost) const
+  VectorT<RealT> OptimiseParticleSwarmBodyC::MinimalX(const CostC &domain, RealT &minimumCost) const
   {
 
     /*
      * First lets make our random distribution.
      */
-    VectorC startX = domain.StartX();
-    UIntT dim = startX.Size();
+    VectorT<RealT> startX = domain.StartX();
+    unsigned dim = startX.size();
     SobolSequenceC sobol(dim);
     sobol.First();
-    sobol.Next(); // JUST WHILE TESTING!!!
-    VectorC diff = domain.MaxX() - domain.MinX();
+    sobol.next(); // JUST WHILE TESTING!!!
+    VectorT<RealT> diff = domain.MaxX() - domain.MinX();
     // Current position, best position, best cost, velocity
-    DataSet4C<SampleVectorC, SampleVectorC, SampleRealC, SampleVectorC> dset(m_numberOfParticles);
+    DataSet4C<SampleVectorT<RealT>, SampleVectorT<RealT>, SampleRealC, SampleVectorT<RealT>> dset(m_numberOfParticles);
     RealT bestGlobalCostSoFar = RavlConstN::maxReal;
-    VectorC bestGlobalXSoFar;
-    VectorC boundVelocityMax = diff;
-    VectorC boundVelocityMin = diff * -1.0;
+    VectorT<RealT> bestGlobalXSoFar;
+    VectorT<RealT> boundVelocityMax = diff;
+    VectorT<RealT> boundVelocityMin = diff * -1.0;
 
-    UIntT j = 0;
+    unsigned j = 0;
     for (;;) {
 
-      CollectionC<LaunchThreadC> threads(m_numberOfThreads);
-      SArray1dC<Tuple4C<VectorC, VectorC, RealT, UIntT> > results(m_numberOfThreads);
+      std::vector<LaunchThreadC> threads(m_numberOfThreads);
+      std::vector<Tuple4C<VectorT<RealT>, VectorT<RealT>, RealT, unsigned> > results(m_numberOfThreads);
 
-      for (UIntT i = 0; i < m_numberOfThreads; i++) {
+      for (unsigned i = 0; i < m_numberOfThreads; i++) {
 
         // Create initial position
-        VectorC X(sobol.Data());
+        VectorT<RealT> X(sobol.Data());
         X = (X * diff) + domain.MinX();
         // Make an initial velocity
-        VectorC V = RandomVelocityPSO(domain.MinX(), domain.MaxX());
+        VectorT<RealT> V = RandomVelocityPSO(domain.MinX(), domain.MaxX());
 
         TriggerC trig = Trigger(&Cost, domain, X, V, j, &results[i]);
         threads.Append(LaunchThreadC(trig));
@@ -143,20 +140,20 @@ namespace RavlN {
           break;
         }
         // unlikely this will happen
-        if (!sobol.Next()) {
-          RavlError("Run out of Sobol Samples...");
-          return VectorC();
+        if (!sobol.next()) {
+          SPDLOG_ERROR("Run out of Sobol Samples...");
+          return VectorT<RealT>();
         }
 
       } // end number of threads
 
       // Lets wait for all threads to finish
-      for (SArray1dIter2C<LaunchThreadC, Tuple4C<VectorC, VectorC, RealT, UIntT> > threadIt(threads.SArray1d(), results); threadIt; threadIt++) {
-        threadIt.Data1().WaitForExit();
-        dset.Append(threadIt.Data2().Data1(), threadIt.Data2().Data1(), threadIt.Data2().Data3(), threadIt.Data2().Data2()); // initially the particles initial and best position are the same
-        if (threadIt.Data2().Data3() < bestGlobalCostSoFar) {
-          bestGlobalCostSoFar = threadIt.Data2().Data3();
-          bestGlobalXSoFar = threadIt.Data2().Data1();
+      for (SArray1dIter2C<LaunchThreadC, Tuple4C<VectorT<RealT>, VectorT<RealT>, RealT, unsigned> > threadIt(threads.SArray1d(), results); threadIt; threadIt++) {
+        threadIt.data<0>().WaitForExit();
+        dset.Append(threadIt.data<1>().data<0>(), threadIt.data<1>().data<0>(), threadIt.data<1>().data<2>(), threadIt.data<1>().data<1>()); // initially the particles initial and best position are the same
+        if (threadIt.data<1>().data<2>() < bestGlobalCostSoFar) {
+          bestGlobalCostSoFar = threadIt.data<1>().data<2>();
+          bestGlobalXSoFar = threadIt.data<1>().data<0>();
         }
       }
 
@@ -166,7 +163,7 @@ namespace RavlN {
 
     }
 
-    RavlDebug("Initial best particle '%s' in population has cost %0.4f", StringOf(bestGlobalXSoFar).data(), bestGlobalCostSoFar);
+    SPDLOG_TRACE("Initial best particle '{}' in population has cost {:0.4f}", StringOf(bestGlobalXSoFar).data(), bestGlobalCostSoFar);
 
     // make a plot of the initial population
     Plot2dC::RefT plot = CreatePlot2d("PSO");
@@ -176,32 +173,32 @@ namespace RavlN {
       plot->Plot(dset.Sample1());
     }
 
-    for (UIntT i = 0; i < m_numberOfIterations; i++) {
+    for (unsigned i = 0; i < m_numberOfIterations; i++) {
 
-      DataSet4IterC<SampleVectorC, SampleVectorC, SampleRealC, SampleVectorC> it(dset);
-      UIntT p=0;
+      DataSet4IterC<SampleVectorT<RealT>, SampleVectorT<RealT>, SampleRealC, SampleVectorT<RealT>> it(dset);
+      unsigned p=0;
       for (;;) {
-        CollectionC<LaunchThreadC> threads(m_numberOfThreads);
-        SArray1dC<Tuple4C<VectorC, VectorC, RealT, UIntT> > results(m_numberOfThreads);
+        std::vector<LaunchThreadC> threads(m_numberOfThreads);
+        std::vector<Tuple4C<VectorT<RealT>, VectorT<RealT>, RealT, unsigned> > results(m_numberOfThreads);
 
-        for (UIntT j = 0; j < m_numberOfThreads; j++) {
+        for (unsigned j = 0; j < m_numberOfThreads; j++) {
 #if 0
           RealT rP = Random1();
           RealT rG = Random1();
-          VectorC currentVelocity = (it.Data4() * m_omega);
-          VectorC updateOnParticleBestPosition = (it.Data2() - it.Data1()) * rP * m_phiP;
-          VectorC updateOnGlobalBestPosition = (bestGlobalXSoFar - it.Data1()) * rG * m_phiG;
+          VectorT<RealT> currentVelocity = (it.Data4() * m_omega);
+          VectorT<RealT> updateOnParticleBestPosition = (it.data<1>() - it.data<0>()) * rP * m_phiP;
+          VectorT<RealT> updateOnGlobalBestPosition = (bestGlobalXSoFar - it.data<0>()) * rG * m_phiG;
 #else
-          VectorC randomParticleVec = RandomVectorPSO(dim, m_phiP);
-          VectorC randomGlobalVec = RandomVectorPSO(dim, m_phiG);
-          VectorC currentVelocity = (it.Data4() * m_omega);
-          VectorC updateOnParticleBestPosition = randomParticleVec * (it.Data2() - it.Data1());
-          VectorC updateOnGlobalBestPosition = randomGlobalVec * (bestGlobalXSoFar - it.Data1());
+          VectorT<RealT> randomParticleVec = RandomVectorPSO(dim, m_phiP);
+          VectorT<RealT> randomGlobalVec = RandomVectorPSO(dim, m_phiG);
+          VectorT<RealT> currentVelocity = (it.Data4() * m_omega);
+          VectorT<RealT> updateOnParticleBestPosition = randomParticleVec * (it.data<1>() - it.data<0>());
+          VectorT<RealT> updateOnGlobalBestPosition = randomGlobalVec * (bestGlobalXSoFar - it.data<0>());
 #endif
-          VectorC velocity = currentVelocity + updateOnParticleBestPosition + updateOnGlobalBestPosition;
+          VectorT<RealT> velocity = currentVelocity + updateOnParticleBestPosition + updateOnGlobalBestPosition;
           BoundVectorPSO(boundVelocityMin, boundVelocityMax, velocity);
 
-          VectorC particleNewPosition = it.Data1() + velocity;
+          VectorT<RealT> particleNewPosition = it.data<0>() + velocity;
           BoundVectorPSO(domain.MinX(), domain.MaxX(), particleNewPosition);
 
           TriggerC trig = Trigger(&Cost, domain, particleNewPosition, velocity, p, &results[j]);
@@ -210,26 +207,26 @@ namespace RavlN {
           // goto next particle. If reached end then break.
           p++;
           it++;
-          if (!it.IsElm()) {
+          if (!it.valid()) {
             break;
           }
 
-          //RavlDebug("New Position '%s' -> '%s' %0.2f", StringOf(it.Data1()).data(), StringOf(particleNewPosition).data(), newCost);
-          //RavlDebug("New Velocity '%s' -> '%s'", StringOf(it.Data4()).data(), StringOf(velocity).data());
+          //SPDLOG_TRACE("New Position '{}' -> '{}' {:0.2f}", StringOf(it.data<0>()).data(), StringOf(particleNewPosition).data(), newCost);
+          //SPDLOG_TRACE("New Velocity '{}' -> '{}'", StringOf(it.Data4()).data(), StringOf(velocity).data());
         }
 
         // Lets wait for all threads to finish
-        for (SArray1dIter2C<LaunchThreadC, Tuple4C<VectorC, VectorC, RealT, UIntT> > threadIt(threads.SArray1d(), results); threadIt; threadIt++) {
-          threadIt.Data1().WaitForExit();
+        for (SArray1dIter2C<LaunchThreadC, Tuple4C<VectorT<RealT>, VectorT<RealT>, RealT, unsigned> > threadIt(threads.SArray1d(), results); threadIt; threadIt++) {
+          threadIt.data<0>().WaitForExit();
 
           // make it easier to read
-          VectorC particleNewPosition = threadIt.Data2().Data1();
-          VectorC velocity = threadIt.Data2().Data2();
-          RealT newCost = threadIt.Data2().Data3();
-          UIntT p = threadIt.Data2().Data4(); // particle number
+          VectorT<RealT> particleNewPosition = threadIt.data<1>().data<0>();
+          VectorT<RealT> velocity = threadIt.data<1>().data<1>();
+          RealT newCost = threadIt.data<1>().data<2>();
+          unsigned p = threadIt.data<1>().Data4(); // particle number
 
           // Has particle beaten its own position
-          if (newCost < it.Data3()) {
+          if (newCost < it.data<2>()) {
             dset.Sample2()[p] = particleNewPosition;
             dset.Sample3()[p] = newCost;
           }
@@ -238,21 +235,21 @@ namespace RavlN {
           if (newCost < bestGlobalCostSoFar) {
             bestGlobalCostSoFar = newCost;
             bestGlobalXSoFar = particleNewPosition;
-            RavlDebug("New best particle '%s' in population has cost %0.12f at iter %d", StringOf(bestGlobalXSoFar).data(), bestGlobalCostSoFar, i);
+            SPDLOG_TRACE("New best particle '{}' in population has cost {:0.12f} at iter {}", StringOf(bestGlobalXSoFar).data(), bestGlobalCostSoFar, i);
           }
           // Update the position and velocity
-          dset.Sample1()[p] = threadIt.Data2().Data1();
-          dset.Sample4()[p] = threadIt.Data2().Data2();
+          dset.Sample1()[p] = threadIt.data<1>().data<0>();
+          dset.Sample4()[p] = threadIt.data<1>().data<1>();
         }
 
         // have we reached the end
-        if(!it.IsElm())
+        if(!it.valid())
           break;
 
       } // end an iteration
 
       if (bestGlobalCostSoFar < m_terminationCriterion) {
-        RavlDebug("Reached best solution, terminating early.");
+        SPDLOG_TRACE("Reached best solution, terminating early.");
         break;
       }
 
@@ -267,9 +264,9 @@ namespace RavlN {
 
   }
   
-  const StringC OptimiseParticleSwarmBodyC::GetInfo() const
+  const std::string OptimiseParticleSwarmBodyC::GetInfo() const
   {
-    StrOStreamC stream;
+    Strstd::unique_ptr<std::ostream> stream;
     stream << OptimiseBodyC::GetInfo() << "\n";
     stream << "Particle Swarm Optimisation with population " << m_numberOfParticles;
     return stream.String();

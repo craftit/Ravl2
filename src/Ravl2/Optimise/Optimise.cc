@@ -4,15 +4,13 @@
 // General Public License (LGPL). See the lgpl.licence file for details or
 // see http://www.gnu.org/copyleft/lesser.html
 // file-header-ends-here
-//! lib=Optimisation
-//! file="Ravl/PatternRec/Optimise/Optimise.cc"
 
-#include "Ravl/PatternRec/Optimise.hh"
-#include "Ravl/PatternRec/CostInvert.hh"
-#include "Ravl/VirtualConstructor.hh"
-#include "Ravl/BinStream.hh"
+#include "Ravl2/PatternRec/Optimise.hh"
+#include "Ravl2/PatternRec/CostInvert.hh"
+#include "Ravl2/VirtualConstructor.hh"
+#include "Ravl2/BinStream.hh"
 
-namespace RavlN {
+namespace Ravl2 {
 
   //: Constructor from xml factory.
 
@@ -21,11 +19,11 @@ namespace RavlN {
   {}
 
 
-  OptimiseBodyC::OptimiseBodyC (const StringC &name)
+  OptimiseBodyC::OptimiseBodyC (const std::string &name)
     :_name(name)
   {}
   
-  OptimiseBodyC::OptimiseBodyC (const StringC &name, std::istream &)
+  OptimiseBodyC::OptimiseBodyC (const std::string &name, std::istream &)
     : _name(name)
   {}
 
@@ -37,48 +35,48 @@ namespace RavlN {
   }
     
   //: Load from stream.
-  OptimiseBodyC::OptimiseBodyC (BinIStreamC &strm) 
+  OptimiseBodyC::OptimiseBodyC (Binstd::unique_ptr<std::istream> &strm) 
     :  RCBodyVC(strm)
   {
     strm >> _name;
   }
   
-  VectorC OptimiseBodyC::MinimalX (const CostC &domain, RealT &minimumCost) const
+  VectorT<RealT> OptimiseBodyC::MinimalX (const CostC &domain, RealT &minimumCost) const
   {
     RealT startCost = domain.Cost(domain.StartX());
     return MinimalX (domain,startCost,minimumCost);
   }
   
-  VectorC OptimiseBodyC::MinimalX (const CostC &domain, RealT startCost, RealT &minimumCost) const
+  VectorT<RealT> OptimiseBodyC::MinimalX (const CostC &domain, RealT startCost, RealT &minimumCost) const
   {
     return MinimalX (domain,minimumCost);
   }
   
-  VectorC OptimiseBodyC::MaximalX (const CostC &domain, RealT &maximumCost) const
+  VectorT<RealT> OptimiseBodyC::MaximalX (const CostC &domain, RealT &maximumCost) const
   {
     CostInvertC inverse (domain);
-    VectorC minimumX = MinimalX (inverse,maximumCost);
+    VectorT<RealT> minimumX = MinimalX (inverse,maximumCost);
     maximumCost = -maximumCost;
     return minimumX;
   }
   
-  VectorC OptimiseBodyC::MaximalX (const CostC &domain, RealT startCost, RealT &maximumCost) const
+  VectorT<RealT> OptimiseBodyC::MaximalX (const CostC &domain, RealT startCost, RealT &maximumCost) const
   {
     CostInvertC inverse (domain);
-    VectorC minimumX = MinimalX (inverse,startCost,maximumCost);
+    VectorT<RealT> minimumX = MinimalX (inverse,startCost,maximumCost);
     maximumCost = -maximumCost;
     return minimumX;
   }
   
-  const StringC OptimiseBodyC::GetInfo () const
+  const std::string OptimiseBodyC::GetInfo () const
   {
-    //StrOStreamC stream;
+    //Strstd::unique_ptr<std::ostream> stream;
     //stream << "Numerical Optimization Base Class Type: " << _name;
     //stream.String();
-    return StringC("Numerical Optimization Base Class Type: ") + _name;
+    return std::string("Numerical Optimization Base Class Type: ") + _name;
   }
   
-  const StringC OptimiseBodyC::GetName () const
+  const std::string OptimiseBodyC::GetName () const
   { return _name; }
   
   
@@ -92,7 +90,7 @@ namespace RavlN {
   
   //: Writes object to stream, can be loaded using constructor
   
-  bool OptimiseBodyC::Save(BinOStreamC &out) const 
+  bool OptimiseBodyC::Save(Binstd::unique_ptr<std::ostream> &out) const 
   { 
     if(!RCBodyVC::Save (out)) 
       return false;

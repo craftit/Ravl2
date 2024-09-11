@@ -4,13 +4,10 @@
 // General Public License (LGPL). See the lgpl.licence file for details or
 // see http://www.gnu.org/copyleft/lesser.html
 // file-header-ends-here
-#include "Ravl/PatternRec/CostInvert.hh"
-#include "Ravl/StrStream.hh"
-//! rcsid="$Id$"
-//! lib=Optimisation
-//! file="Ravl/PatternRec/Optimise/CostInvert.cc"
+#include "Ravl2/PatternRec/CostInvert.hh"
+#include "Ravl2/StrStream.hh"
 
-namespace RavlN {
+namespace Ravl2 {
 
   CostInvertBodyC::CostInvertBodyC (const CostC &cost)
     :CostBodyC(cost.GetParameters()),
@@ -24,12 +21,12 @@ namespace RavlN {
   {
   }
   
-  RealT CostInvertBodyC::Cost (const VectorC &X) const
+  RealT CostInvertBodyC::Cost (const VectorT<RealT> &X) const
   {
     return - _cost.Cost (X);
   }
   
-  MatrixC CostInvertBodyC::Jacobian (const VectorC &X) const
+  Tensor<RealT,2> CostInvertBodyC::Jacobian (const VectorT<RealT> &X) const
   {
     return _cost.Jacobian (X) * -1.0;
   }

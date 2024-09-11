@@ -4,15 +4,13 @@
 // General Public License (LGPL). See the lgpl.licence file for details or
 // see http://www.gnu.org/copyleft/lesser.html
 // file-header-ends-here
-//! lib=Optimisation
-//! file="Ravl/PatternRec/Optimise/CostFunction.cc"
 
-#include "Ravl/PatternRec/CostFunction.hh"
+#include "Ravl2/PatternRec/CostFunction.hh"
 
-namespace RavlN {
+namespace Ravl2 {
 
   CostFunctionBodyC::CostFunctionBodyC (const ParametersC &parameters,
-					const VectorC &Yd,
+					const VectorT<RealT> &Yd,
 					const FunctionC &function,
 					const DistanceC &metric)
     :CostBodyC(parameters),
@@ -20,7 +18,7 @@ namespace RavlN {
      _function(function),
      _metric(metric)
   {
-    RavlAssert (_Yd.Size() == _function.OutputSize());
+    RavlAssert (_Yd.size() == _function.OutputSize());
   }
   
   CostFunctionBodyC::CostFunctionBodyC (std::istream &in)
@@ -31,21 +29,21 @@ namespace RavlN {
     _metric = DistanceC (in);
   }
   
-  RealT CostFunctionBodyC::Cost (const VectorC &X) const
+  RealT CostFunctionBodyC::Cost (const VectorT<RealT> &X) const
   {
-    VectorC P = _parameters.TransX2P(X);
-    VectorC diff = _function.Apply (P) - _Yd;
+    VectorT<RealT> P = _parameters.TransX2P(X);
+    VectorT<RealT> diff = _function.Apply (P) - _Yd;
     return _metric.Magnitude (diff);
   }
   
-  MatrixC CostFunctionBodyC::Jacobian (const VectorC &X) const
+  Tensor<RealT,2> CostFunctionBodyC::Jacobian (const VectorT<RealT> &X) const
   {
-    VectorC P = _parameters.TransX2P(X);
-    VectorC diff = _function.Apply (P) - _Yd;
-    MatrixC dSdY = _metric.Jacobian (diff);
-    MatrixC dYdP = _function.Jacobian (P);
+    VectorT<RealT> P = _parameters.TransX2P(X);
+    VectorT<RealT> diff = _function.Apply (P) - _Yd;
+    Tensor<RealT,2> dSdY = _metric.Jacobian (diff);
+    Tensor<RealT,2> dYdP = _function.Jacobian (P);
     // This was:
-    //MatrixC dPdX = TransX2P();
+    //Tensor<RealT,2> dPdX = TransX2P();
     //return dSdY*dYdP*dPdX;
     return _parameters.TransP2X(dSdY*dYdP);
   }

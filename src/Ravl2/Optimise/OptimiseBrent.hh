@@ -8,17 +8,13 @@
 #define RAVL_OPTIMISEBRENT_HH
 ////////////////////////////////////////////////////////////////////////////
 //! author="Robert Crida"
-//! lib=Optimisation
 //! date="06/8/2003"
-//! userlevel=Normal
 //! example=testBrent.cc
-//! file="Ravl/PatternRec/Optimise/OptimiseBrent.hh"
 //! docentry="Ravl.API.Pattern Recognition.Optimisation.Implementation"
-//! rcsid="$Id$"
 
-#include "Ravl/PatternRec/Optimise.hh"
+#include "Ravl2/PatternRec/Optimise.hh"
 
-namespace RavlN {
+namespace Ravl2 {
 
   // --------------------------------------------------------------------------
   // **********  OptimiseBrentBodyC  ****************************************
@@ -31,21 +27,21 @@ namespace RavlN {
   
   class OptimiseBrentBodyC: public OptimiseBodyC
   {
-    UIntT _iterations;
+    unsigned _iterations;
     RealT _tolerance;
     
   public:
-    OptimiseBrentBodyC (UIntT iterations, RealT tolerance);
+    OptimiseBrentBodyC (unsigned iterations, RealT tolerance);
     //: Constructor requires the number of iterations to use
     
     OptimiseBrentBodyC (std::istream &in);
     //: Constructs from stream
     
   protected:
-    VectorC MinimalX (const CostC &domain, RealT startCost, RealT &minimumCost) const;
+    VectorT<RealT> MinimalX (const CostC &domain, RealT startCost, RealT &minimumCost) const;
     //: Determines Xmin=arg min_{X} |f(X)-Yd|
 
-    virtual const StringC GetInfo () const;
+    virtual const std::string GetInfo () const;
     //: Prints information about the optimiser
     
     virtual bool Save (std::ostream &out) const;
@@ -66,11 +62,11 @@ namespace RavlN {
     {}
     //: Default constructor makes invalid handle
 
-    OptimiseBrentC (UIntT iterations, RealT tolerance = 1e-6)
+    OptimiseBrentC (unsigned iterations, RealT tolerance = 1e-6)
       :OptimiseC(*(new OptimiseBrentBodyC (iterations, tolerance))) {}
     //: Constructor
-    //!param: iterations - maximum number of iterations to use
-    //!param: tolerance  - ending tolerance
+    //! @param  iterations - maximum number of iterations to use
+    //! @param  tolerance  - ending tolerance
   };
 }
 

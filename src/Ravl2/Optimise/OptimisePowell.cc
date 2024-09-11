@@ -4,18 +4,16 @@
 // General Public License (LGPL). See the lgpl.licence file for details or
 // see http://www.gnu.org/copyleft/lesser.html
 // file-header-ends-here
-//! lib=Optimisation
-//! file="Ravl/PatternRec/Optimise/OptimisePowell.cc"
 
-#include "Ravl/PatternRec/OptimisePowell.hh"
-#include "Ravl/StrStream.hh"
-#include "Ravl/PatternRec/CostFunction1d.hh"
-#include "Ravl/PatternRec/BracketMinimum.hh"
-#include "Ravl/SArray1dIter5.hh"
+#include "Ravl2/PatternRec/OptimisePowell.hh"
+#include "Ravl2/StrStream.hh"
+#include "Ravl2/PatternRec/CostFunction1d.hh"
+#include "Ravl2/PatternRec/BracketMinimum.hh"
+#include "Ravl2/SArray1dIter5.hh"
 
-namespace RavlN {
+namespace Ravl2 {
 
-  OptimisePowellBodyC::OptimisePowellBodyC (UIntT iterations, RealT tolerance, bool useBracketMinimum,bool verbose)
+  OptimisePowellBodyC::OptimisePowellBodyC (unsigned iterations, RealT tolerance, bool useBracketMinimum,bool verbose)
     : OptimiseBodyC("OptimisePowellBodyC"),
      _iterations(iterations),
      _tolerance(tolerance),
@@ -44,26 +42,26 @@ namespace RavlN {
     in >> _iterations;
   }
   
-  static void SetupLimits(const VectorC &dir,const VectorC &P,const CostC &domain,ParametersC &parameters1d) {
+  static void SetupLimits(const VectorT<RealT> &dir,const VectorT<RealT> &P,const CostC &domain,ParametersC &parameters1d) {
     // Find the domain limits along the direction vector.
     
     RealT min = -RavlConstN::maxReal;
     RealT max = RavlConstN::maxReal;
     IntT steps = 0;
     for(SArray1dIter5C<RealT,RealT,RealT,RealT,IntT> lit(dir,P,domain.MinX(),domain.MaxX(),domain.Steps());lit;lit++) {
-      if(lit.Data1() == 0.0)
+      if(lit.data<0>() == 0.0)
         continue; // Avoid division by zero.
-      RealT maxv = (lit.Data3() - lit.Data2()) / lit.Data1(); // Limit for MinX
-      RealT minv = (lit.Data4() - lit.Data2()) / lit.Data1(); // Limit for MaxX
+      RealT maxv = (lit.data<2>() - lit.data<1>()) / lit.data<0>(); // Limit for MinX
+      RealT minv = (lit.Data4() - lit.data<1>()) / lit.data<0>(); // Limit for MaxX
       if(minv > maxv) // The direction vector could have a negative value, so invert if needed.
-        Swap(minv,maxv);
+        std::swap(minv,maxv);
       if(max > maxv) // Pull down maximum if limited
         max = maxv;
       if(minv > min) // Pull up minimum if limited
         min = minv;
       steps += lit.Data5();
     }
-    steps /= domain.Steps().Size();
+    steps /= domain.Steps().size();
     if(steps < 3) steps = 3; // Check there;s actually some space to optimise in.
     
     //Point in full space to evaluate is given by: _point + _direction * X[0];  Where X[0] is the paramiter we're optimising.
@@ -79,37 +77,37 @@ namespace RavlN {
   // a new direction which replaces one of the existing ones and the process is
   // repeated.
   //
-  VectorC OptimisePowellBodyC::MinimalX (const CostC &domain, RealT startCost, RealT &minimumCost) const
+  VectorT<RealT> OptimisePowellBodyC::MinimalX (const CostC &domain, RealT startCost, RealT &minimumCost) const
   {
     ParametersC parameters1d(1);
     
-    VectorC P = domain.StartX();
-    IntT numDim = P.Size();
-    SArray1dC<VectorC> Di(numDim);
+    VectorT<RealT> P = domain.StartX();
+    IntT numDim = P.size();
+    std::vector<VectorT<RealT>> Di(numDim);
     
     if(_verbose) {
-      RavlDebug("MinimalX bracketMin=%d Iterations=%u Tolerance=%f ",(int) _useBracketMinimum, _iterations,_tolerance);
+      SPDLOG_TRACE("MinimalX bracketMin={} Iterations={} Tolerance={} ",(int) _useBracketMinimum, _iterations,_tolerance);
     }
     
     // initialise directions to basis unit vectors
-    for (SArray1dIterC<VectorC> it(Di); it; it++) {
-      *it = VectorC(numDim);
+    for (SArray1dIterC<VectorT<RealT>> it(Di); it; it++) {
+      *it = VectorT<RealT>(numDim);
       it->Fill(0.0);
-      it.Data()[it.Index()] = 1.0;
+      it.Data()[it.index()] = 1.0;
     }
     
-    IndexC indexOfBiggest; // Index of biggest reduction in cost 
+    int indexOfBiggest; // Index of biggest reduction in cost 
     RealT valueOfBiggest;  // Value of cost function after biggest reduction
-    VectorC Plast;
-    VectorC Psameagain;
-    VectorC Pdiff;
+    VectorT<RealT> Plast;
+    VectorT<RealT> Psameagain;
+    VectorT<RealT> Pdiff;
     minimumCost = startCost;
     RealT fP = minimumCost;              // Value of cost function at the start of the last iteration
-    for (UIntT iter = 0; iter < _iterations; iter++) {
+    for (unsigned iter = 0; iter < _iterations; iter++) {
       Plast = P.Copy();       // Save the current position.
       indexOfBiggest = 0;
       valueOfBiggest = 0.0;
-      for (SArray1dIterC<VectorC> it(Di); it; it++) { // Go through direction vectors.
+      for (SArray1dIterC<VectorT<RealT>> it(Di); it; it++) { // Go through direction vectors.
         
 	SetupLimits(*it,P,domain,parameters1d);
         
@@ -129,17 +127,17 @@ namespace RavlN {
         RealT diff = fPlast - minimumCost; // Compute the size of the reduction in cost.
         if (diff > valueOfBiggest) {
           valueOfBiggest = diff;
-          indexOfBiggest = it.Index();
+          indexOfBiggest = it.index();
         }
         
-        if(_verbose && (it.Index().V() % 20) == 19)
-          std::cerr << "Iter " << iter << " D=" << it.Index().V() << " Cost=" << minimumCost << "\n";
+        if(_verbose && (it.index() % 20) == 19)
+          std::cerr << "Iter " << iter << " D=" << it.index() << " Cost=" << minimumCost << "\n";
       }
       // Compute the reduction in the cost function.
       RealT fPdiff = fP-minimumCost;
       
       // Check if we're stopped converging.
-      if (_tolerance > 0 && 2.0*Abs(fPdiff) <= _tolerance*(Abs(fP)+Abs(minimumCost)))
+      if (_tolerance > 0 && 2.0*std::abs(fPdiff) <= _tolerance*(std::abs(fP)+std::abs(minimumCost)))
         break;
       
       
@@ -170,14 +168,14 @@ namespace RavlN {
         }
       }
       if(_verbose)
-        RavlDebug("Iter %u Cost=%f  ",iter,minimumCost);
+        SPDLOG_TRACE("Iter {} Cost={}  ",iter,minimumCost);
     }
     return P;
   }
   
-  const StringC OptimisePowellBodyC::GetInfo () const
+  const std::string OptimisePowellBodyC::GetInfo () const
   {
-    StrOStreamC stream;
+    Strstd::unique_ptr<std::ostream> stream;
     stream << OptimiseBodyC::GetInfo () << "\n";
     stream << "Powell optimization algorithm. Iterations = " << _iterations;
     return stream.String();

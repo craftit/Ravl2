@@ -4,12 +4,10 @@
 // General Public License (LGPL). See the lgpl.licence file for details or
 // see http://www.gnu.org/copyleft/lesser.html
 // file-header-ends-here
-//! lib=Optimisation
-//! file="Ravl/PatternRec/Optimise/OptimiseDescent.cc"
 
-#include "Ravl/PatternRec/OptimiseDescent.hh"
-#include "Ravl/StrStream.hh"
-#include "Ravl/XMLFactoryRegister.hh"
+#include "Ravl2/PatternRec/OptimiseDescent.hh"
+#include "Ravl2/StrStream.hh"
+#include "Ravl2/XMLFactoryRegister.hh"
 
 #define DODEBUG 0
 #if DODEBUG
@@ -18,7 +16,7 @@
 #define ONDEBUG(x)
 #endif
 
-namespace RavlN {
+namespace Ravl2 {
 
   //: Constructor from xml factory.
 
@@ -28,7 +26,7 @@ namespace RavlN {
      _tolerance(factory.AttributeReal("tolerance",1e-6))
   {}
 
-  OptimiseDescentBodyC::OptimiseDescentBodyC (UIntT iterations, RealT tolerance)
+  OptimiseDescentBodyC::OptimiseDescentBodyC (unsigned iterations, RealT tolerance)
     :OptimiseBodyC("OptimiseDescentBodyC"),
      _iterations(iterations),
      _tolerance(tolerance)
@@ -53,13 +51,13 @@ namespace RavlN {
   // quits when the change in cost becomes small or more than _iterations 
   // steps have been taken.
   //
-  VectorC OptimiseDescentBodyC::MinimalX (const CostC &domain, RealT &minimumCost) const
+  VectorT<RealT> OptimiseDescentBodyC::MinimalX (const CostC &domain, RealT &minimumCost) const
   {
     RavlAssertMsg(domain.GetParameters().IsValid(),"Cost function has no parameters setup.");
 
-    VectorC dYdX;                            // Jacobian or gradient at location
-    UIntT counter = 0;
-    VectorC iterX = domain.StartX();         // Copy start into temporary var;
+    VectorT<RealT> dYdX;                            // Jacobian or gradient at location
+    unsigned counter = 0;
+    VectorT<RealT> iterX = domain.StartX();         // Copy start into temporary var;
     RealT stepSize = 1;
     
 #if 0
@@ -67,7 +65,7 @@ namespace RavlN {
     std::cerr << "    X=" << iterX << "\n";
 #endif
     
-    UIntT maxSteps = 15;  // Allow quite a few steps on the first iteration to get the scale right.
+    unsigned maxSteps = 15;  // Allow quite a few steps on the first iteration to get the scale right.
     RealT currentCost = domain.Cost (iterX);      // Evaluate current cost
     
     do {
@@ -78,9 +76,9 @@ namespace RavlN {
       dYdX = domain.Jacobian(iterX).SliceRow(0); // Determine current Jacobian
       //dYdX /= dYdX.Modulus(); // Normalise to unit step.
       //cerr << "Jacobian=" << dYdX << "\n";
-      VectorC Xstep;
-      VectorC Xat = iterX;
-      for (UIntT i = 0; i < maxSteps; i++) {        
+      VectorT<RealT> Xstep;
+      VectorT<RealT> Xat = iterX;
+      for (unsigned i = 0; i < maxSteps; i++) {        
 	Xstep = domain.ClipX (Xat -(dYdX * stepSize));   // Step in dir of steepest descent
 	RealT stepCost = domain.Cost (Xstep);// Evaluate cost after step
 	if (stepCost < currentCost) {        // If cost is best so far
@@ -93,19 +91,19 @@ namespace RavlN {
       }
       
       // Check termination condition.
-      if(2.0*(startCost - currentCost) < _tolerance * Abs(currentCost + startCost))
+      if(2.0*(startCost - currentCost) < _tolerance * std::abs(currentCost + startCost))
         break;
       
       maxSteps = 4; // Only 4 after the first iteration.
     } while (counter++ < _iterations); 
-    ONDEBUG(cerr << "Terminated after " << counter << " iterations. MinCost=" << currentCost << "\n");
+    ONDEBUG(std::cerr << "Terminated after " << counter << " iterations. MinCost=" << currentCost << "\n");
     minimumCost = currentCost;
     return domain.ConvertX2P (iterX);            // Return final estimate
   }
   
-  const StringC OptimiseDescentBodyC::GetInfo () const
+  const std::string OptimiseDescentBodyC::GetInfo () const
   {
-    StrOStreamC stream;
+    Strstd::unique_ptr<std::ostream> stream;
     stream << OptimiseBodyC::GetInfo () << "\n";
     stream << "Gradient descent optimisation algorithm. Iterations = " << _iterations;
     return stream.String();

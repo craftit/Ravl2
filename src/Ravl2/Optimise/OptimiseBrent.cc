@@ -4,11 +4,9 @@
 // General Public License (LGPL). See the lgpl.licence file for details or
 // see http://www.gnu.org/copyleft/lesser.html
 // file-header-ends-here
-//! lib=Optimisation
-//! file="Ravl/PatternRec/Optimise/OptimiseBrent.cc"
 
-#include "Ravl/PatternRec/OptimiseBrent.hh"
-#include "Ravl/StrStream.hh"
+#include "Ravl2/PatternRec/OptimiseBrent.hh"
+#include "Ravl2/StrStream.hh"
 
 #define DODEBUG 0
 #if DODEBUG
@@ -17,9 +15,9 @@
 #define ONDEBUG(x)
 #endif
 
-namespace RavlN {
+namespace Ravl2 {
 
-  OptimiseBrentBodyC::OptimiseBrentBodyC (UIntT iterations, RealT tolerance)
+  OptimiseBrentBodyC::OptimiseBrentBodyC (unsigned iterations, RealT tolerance)
     :OptimiseBodyC("OptimiseBrentBodyC"),
      _iterations(iterations),
      _tolerance(tolerance)
@@ -40,15 +38,15 @@ namespace RavlN {
   // of Golden Section search when the quadratic is uncooperative and parabolic
   // interpolation when it is cooperative!
   //
-  VectorC OptimiseBrentBodyC::MinimalX (const CostC &domain, RealT startCost, RealT &minimumCost) const
+  VectorT<RealT> OptimiseBrentBodyC::MinimalX (const CostC &domain, RealT startCost, RealT &minimumCost) const
   {
     // Only works for cost functions of 1 dimension
     //RavlAssert();
 
     const RealT cgold = 0.3819660;
     const RealT smallVal = 1.0e-10;
-    VectorC iterX1(1);
-    VectorC iterX0(1);
+    VectorT<RealT> iterX1(1);
+    VectorT<RealT> iterX0(1);
 
     RealT d = 0,etemp,fx0,fx1,fx2,fx3,p,q,r,tol1,tol2,x3,x2,xm;
     RealT &x1 = iterX1[0];                  // Cunning trick to allow setting value in iterX directly
@@ -57,16 +55,16 @@ namespace RavlN {
 
     RealT a = domain.MinX()[0];
     RealT b = domain.MaxX()[0];
-    ONDEBUG(RavlDebug(" a=%f b=%f ",a,b));
+    ONDEBUG(SPDLOG_TRACE(" a={} b={} ",a,b));
 
     // Make sure min and max are the right way around.
-    if(a > b) Swap(a,b);
+    if(a > b) std::swap(a,b);
     
     x1 = x2 = x3 = domain.StartX()[0];                      // Initialisations...
     fx1 = fx2 = fx3 = startCost;
 
     // Main iteration loop
-    for (UIntT iter = 0; iter < _iterations; iter++) {
+    for (unsigned iter = 0; iter < _iterations; iter++) {
       xm = (a + b) * 0.5;
       tol1 = _tolerance * fabs(x1) + smallVal;
       tol2 = 2.0 * tol1;
@@ -130,9 +128,9 @@ namespace RavlN {
     return iterX1;
   }
   
-  const StringC OptimiseBrentBodyC::GetInfo () const
+  const std::string OptimiseBrentBodyC::GetInfo () const
   {
-    StrOStreamC stream;
+    Strstd::unique_ptr<std::ostream> stream;
     stream << OptimiseBodyC::GetInfo () << "\n";
     stream << "Brent optimization algorithm. Iterations = " << _iterations;
     return stream.String();

@@ -8,17 +8,14 @@
 #define RAVL_COSTFUNCTION_HH
 ////////////////////////////////////////////////////////////////////////////
 //! author="Robert Crida"
-//! lib=Optimisation
 //! date="22/4/1998"
-//! userlevel=Normal
 //! example=testCost.cc
-//! file="Ravl/PatternRec/Optimise/CostFunction.hh"
 //! docentry="Ravl.API.Pattern Recognition.Optimisation.Cost Functions"
 
-#include "Ravl/PatternRec/Cost.hh"
-#include "Ravl/PatternRec/Distance.hh"
+#include "Ravl2/PatternRec/Cost.hh"
+#include "Ravl2/PatternRec/Distance.hh"
 
-namespace RavlN {
+namespace Ravl2 {
 
   // --------------------------------------------------------------------------
   // **********  CostFunctionBodyC  *******************************************
@@ -33,29 +30,29 @@ namespace RavlN {
   {
   public:
     CostFunctionBodyC (const ParametersC &parameters,
-		       const VectorC &Yd, 
+		       const VectorT<RealT> &Yd, 
 		       const FunctionC &function,
 		       const DistanceC &metric);
     //: Constructor
-    //!param: parameters - describes which parameters to use for optimisation
-    //!param: Yd         - the desired output from the function
-    //!param: function   - the function to be optimised
-    //!param: metric     - a method for calculating the size of |f(X)-Yd|
+    //! @param  parameters - describes which parameters to use for optimisation
+    //! @param  Yd         - the desired output from the function
+    //! @param  function   - the function to be optimised
+    //! @param  metric     - a method for calculating the size of |f(X)-Yd|
     
     CostFunctionBodyC (std::istream &in);
     //: Contructs from stream
     
-    virtual RealT Cost (const VectorC &X) const;
+    virtual RealT Cost (const VectorT<RealT> &X) const;
     //: Evaluate cost function at X
     
-    virtual MatrixC Jacobian (const VectorC &X) const;
+    virtual Tensor<RealT,2> Jacobian (const VectorT<RealT> &X) const;
     //: Calculate Jacobian matrix at X
     
     virtual bool Save (std::ostream &out) const;
     //: Writes object to stream, can be loaded using constructor
     
   protected:
-    VectorC _Yd;
+    VectorT<RealT> _Yd;
     FunctionC _function;
     DistanceC _metric;
   };
@@ -73,15 +70,15 @@ namespace RavlN {
   {
   public:
     CostFunctionC (const ParametersC &parameters,
-		   const VectorC &Yd, 
+		   const VectorT<RealT> &Yd, 
 		   const FunctionC &function,
 		   const DistanceC &metric)
       :CostC(*(new CostFunctionBodyC (parameters,Yd,function,metric))) {}
     //: Constructor
-    //!param: parameters - describes which parameters to use for optimisation
-    //!param: Yd         - the desired output from the function
-    //!param: function   - the function to be optimised
-    //!param: metric     - a method for calculating the size of |f(X)-Yd|
+    //! @param  parameters - describes which parameters to use for optimisation
+    //! @param  Yd         - the desired output from the function
+    //! @param  function   - the function to be optimised
+    //! @param  metric     - a method for calculating the size of |f(X)-Yd|
   };
 
 }

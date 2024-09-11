@@ -8,17 +8,13 @@
 #define RAVL_COSTINVERT_HH
 ////////////////////////////////////////////////////////////////////////////
 //! author="Robert Crida"
-//! lib=Optimisation
 //! date="22/4/1998"
-//! userlevel=Normal
 //! example=testCost.cc
-//! file="Ravl/PatternRec/Optimise/CostInvert.hh"
 //! docentry="Ravl.API.Pattern Recognition.Optimisation.Cost Functions"
-//! rcsid="$Id$"
 
-#include "Ravl/PatternRec/Cost.hh"
+#include "Ravl2/PatternRec/Cost.hh"
 
-namespace RavlN {
+namespace Ravl2 {
   // --------------------------------------------------------------------------
   // **********  CostInvertBodyC  **********************************************
   // --------------------------------------------------------------------------
@@ -33,16 +29,16 @@ namespace RavlN {
   public:
     CostInvertBodyC (const CostC &cost);
     //: Constructor
-    //!param: cost - cost function that will be inverted
+    //! @param  cost - cost function that will be inverted
     
     CostInvertBodyC (std::istream &in);
     //: Contructs from stream
     
   protected:
-    virtual RealT Cost (const VectorC &X) const;
+    virtual RealT Cost (const VectorT<RealT> &X) const;
     //: Evaluate cost function at X
     
-    virtual MatrixC Jacobian (const VectorC &X) const;
+    virtual Tensor<RealT,2> Jacobian (const VectorT<RealT> &X) const;
     //: Calculate Jacobian matrix at X
     
     virtual bool Save (std::ostream &out) const;
@@ -63,7 +59,7 @@ namespace RavlN {
     CostInvertC (const CostC &cost)
       :CostC(*(new CostInvertBodyC (cost))) {}
     //: Constructor
-    //!param: cost - cost function that will be inverted
+    //! @param  cost - cost function that will be inverted
   };
 
 }

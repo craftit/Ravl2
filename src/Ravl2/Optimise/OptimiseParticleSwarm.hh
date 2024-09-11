@@ -8,17 +8,13 @@
 #define RAVL_OptimiseParticleSwarm_HH
 ////////////////////////////////////////////////////////////////////////////
 //! author="Kieron Messer"
-//! lib=Optimisation
 //! date="22/4/1998"
-//! userlevel=Normal
 //! example=testNumOptimise.cc
 //! docentry="Ravl.API.Pattern Recognition.Optimisation.Implementation"
-//! rcsid="$Id$"
-//! file="Ravl/PatternRec/Optimise/OptimiseParticleSwarm.hh"
 
-#include "Ravl/PatternRec/Optimise.hh"
+#include "Ravl2/PatternRec/Optimise.hh"
 
-namespace RavlN {
+namespace Ravl2 {
 
   // --------------------------------------------------------------------------
   // **********  OptimiseParticleSwarmBodyC  **********************************
@@ -30,36 +26,36 @@ namespace RavlN {
   {
 
   public:
-    OptimiseParticleSwarmBodyC(UIntT numberOfParticles,
+    OptimiseParticleSwarmBodyC(unsigned numberOfParticles,
         RealT omega,
         RealT phiPosition,
         RealT phiGlobal,
-        UIntT numberOfIterations,
+        unsigned numberOfIterations,
         RealT terminationCriterion,
-        UIntT numberOfThreads);
+        unsigned numberOfThreads);
     //: Default constructor
-    //!param: numSamples - number of random samples to check
+    //! @param  numSamples - number of random samples to check
     
     OptimiseParticleSwarmBodyC(std::istream &in);
     //: Constructs from stream
     
   protected:
-    VectorC MinimalX(const CostC &domain, RealT &minimumCost) const;
+    VectorT<RealT> MinimalX(const CostC &domain, RealT &minimumCost) const;
     //: Determines Xmin=arg min_{X} |f(X)-Yd|
     
-    virtual const StringC GetInfo() const;
+    virtual const std::string GetInfo() const;
     //: Prints information about the optimizer
     
     virtual bool Save(std::ostream &out) const;
     //: Writes object to stream, can be loaded using constructor
 
-    UIntT m_numberOfParticles;
+    unsigned m_numberOfParticles;
     RealT m_omega;
     RealT m_phiP;
     RealT m_phiG;
-    UIntT m_numberOfIterations;
+    unsigned m_numberOfIterations;
     RealT m_terminationCriterion;
-    UIntT m_numberOfThreads;
+    unsigned m_numberOfThreads;
 
   };
   
@@ -70,19 +66,19 @@ namespace RavlN {
   class OptimiseParticleSwarmC : public OptimiseC
   {
   public:
-    OptimiseParticleSwarmC(UIntT numberOfParticles,
+    OptimiseParticleSwarmC(unsigned numberOfParticles,
         RealT omega,
         RealT phiParticle,
         RealT phiGlobal,
-        UIntT numberOfIterations,
+        unsigned numberOfIterations,
         RealT terminationCriterion = 1e-6,
-        UIntT numberOfThreads = 1) :
+        unsigned numberOfThreads = 1) :
         OptimiseC(*(new OptimiseParticleSwarmBodyC(numberOfParticles, omega, phiParticle, phiGlobal, numberOfIterations, terminationCriterion, numberOfThreads)))
     {
     }
     //: Constructor
-    //!param: numberOfParticles The number of particles to start with
-    //!param: numberOfThreads The number of threads to use
+    //! @param  numberOfParticles The number of particles to start with
+    //! @param  numberOfThreads The number of threads to use
   };
 
 }

@@ -8,19 +8,14 @@
 #define RAVL_OPTIMISESOBOL_HH
 ////////////////////////////////////////////////////////////////////////////
 //! author="Robert Crida"
-//! lib=Optimisation
 //! date="22/4/1998"
-//! userlevel=Normal
 //! example=testNumOptimise.cc
 //! docentry="Ravl.API.Pattern Recognition.Optimisation.Implementation"
-//! rcsid="$Id$"
-//! file="Ravl/PatternRec/Optimise/OptimiseSobol.hh"
 
-#include "Ravl/PatternRec/Optimise.hh"
+#include "Ravl2/PatternRec/Optimise.hh"
 
-namespace RavlN {
+namespace Ravl2 {
 
-  //! userlevel=Develop
   //: Sobol distribution search optimiser implementation class.
   //
   // This is the implementation class of the sobol distribution search
@@ -29,28 +24,27 @@ namespace RavlN {
   
   class OptimiseSobolBodyC: public OptimiseBodyC
   {
-    UIntT _numSamples;
+    unsigned _numSamples;
 
   public:
-    OptimiseSobolBodyC (UIntT numSamples);
+    OptimiseSobolBodyC (unsigned numSamples);
     //: Default constructor
-    //!param: numSamples - number of samples to check
+    //! @param  numSamples - number of samples to check
     
     OptimiseSobolBodyC (std::istream &in);
     //: Constructs from stream
     
   protected:
-    VectorC MinimalX (const CostC &domain, RealT &minimumCost) const;
+    VectorT<RealT> MinimalX (const CostC &domain, RealT &minimumCost) const;
     //: Determines Xmin=arg min_{X} |f(X)-Yd|
     
-    virtual const StringC GetInfo () const;
+    virtual const std::string GetInfo () const;
     //: Prints information about the optimizer
     
     virtual bool Save (std::ostream &out) const;
     //: Writes object to stream, can be loaded using constructor
   };
 
-  //! userlevel=Normal
   //: Sobol distribution search optimisation.
   //
   // Class for performing a search using a sobol distribution.
@@ -58,10 +52,10 @@ namespace RavlN {
   class OptimiseSobolC: public OptimiseC
   {
   public:
-    OptimiseSobolC (UIntT numSamples)
+    OptimiseSobolC (unsigned numSamples)
       :OptimiseC(*(new OptimiseSobolBodyC (numSamples))) {}
     //: Constructor
-    //!param: numSamples - number of samples to check
+    //! @param  numSamples - number of samples to check
   };
   
 }

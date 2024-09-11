@@ -8,17 +8,13 @@
 #define RAVL_OPTIMISERANDOMUNIFORM_HH
 ////////////////////////////////////////////////////////////////////////////
 //! author="Robert Crida"
-//! lib=Optimisation
 //! date="22/4/1998"
-//! userlevel=Normal
 //! example=testNumOptimise.cc
 //! docentry="Ravl.API.Pattern Recognition.Optimisation.Implementation"
-//! rcsid="$Id$"
-//! file="Ravl/PatternRec/Optimise/OptimiseRandomUniform.hh"
 
-#include "Ravl/PatternRec/Optimise.hh"
+#include "Ravl2/PatternRec/Optimise.hh"
 
-namespace RavlN {
+namespace Ravl2 {
 
   // --------------------------------------------------------------------------
   // **********  OptimiseRandomUniformBodyC  **********************************
@@ -31,21 +27,21 @@ namespace RavlN {
   
   class OptimiseRandomUniformBodyC: public OptimiseBodyC
   {
-    UIntT _numSamples;
+    unsigned _numSamples;
 
   public:
-    OptimiseRandomUniformBodyC (UIntT numSamples);
+    OptimiseRandomUniformBodyC (unsigned numSamples);
     //: Default constructor
-    //!param: numSamples - number of random samples to check
+    //! @param  numSamples - number of random samples to check
     
     OptimiseRandomUniformBodyC (std::istream &in);
     //: Constructs from stream
     
   protected:
-    VectorC MinimalX (const CostC &domain, RealT &minimumCost) const;
+    VectorT<RealT> MinimalX (const CostC &domain, RealT &minimumCost) const;
     //: Determines Xmin=arg min_{X} |f(X)-Yd|
     
-    virtual const StringC GetInfo () const;
+    virtual const std::string GetInfo () const;
     //: Prints information about the optimizer
     
     virtual bool Save (std::ostream &out) const;
@@ -59,10 +55,10 @@ namespace RavlN {
   class OptimiseRandomUniformC: public OptimiseC
   {
   public:
-    OptimiseRandomUniformC (UIntT numSamples)
+    OptimiseRandomUniformC (unsigned numSamples)
       :OptimiseC(*(new OptimiseRandomUniformBodyC (numSamples))) {}
     //: Constructor
-    //!param: numSamples - number of random samples to check
+    //! @param  numSamples - number of random samples to check
   };
   
 }

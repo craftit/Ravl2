@@ -4,16 +4,13 @@
 // General Public License (LGPL). See the lgpl.licence file for details or
 // see http://www.gnu.org/copyleft/lesser.html
 // file-header-ends-here
-//! rcsid="$Id: OptimiseLevenbergMarquardt.cc 5398 2006-03-09 16:55:13Z craftit $"
-//! lib=Optimisation
-//! file="Ravl/PatternRec/Optimise/OptimiseLevenbergMarquardt.cc"
 
-#include "Ravl/PatternRec/OptimiseLevenbergMarquardt.hh"
-#include "Ravl/StrStream.hh"
-#include "Ravl/SArray1dIter5.hh"
-#include "Ravl/SArray1dIter2.hh"
-#include "Ravl/SArray1dIter3.hh"
-#include "Ravl/PatternRec/CostFunction1d.hh"
+#include "Ravl2/PatternRec/OptimiseLevenbergMarquardt.hh"
+#include "Ravl2/StrStream.hh"
+#include "Ravl2/SArray1dIter5.hh"
+#include "Ravl2/SArray1dIter2.hh"
+#include "Ravl2/SArray1dIter3.hh"
+#include "Ravl2/PatternRec/CostFunction1d.hh"
 
 
 #define DODEBUG 0
@@ -23,9 +20,9 @@
 #define ONDEBUG(x)
 #endif
 
-namespace RavlN {
+namespace Ravl2 {
 
-  OptimiseLevenbergMarquardtBodyC::OptimiseLevenbergMarquardtBodyC (UIntT iterations, RealT tolerance)
+  OptimiseLevenbergMarquardtBodyC::OptimiseLevenbergMarquardtBodyC (unsigned iterations, RealT tolerance)
     : OptimiseBodyC("OptimiseLevenbergMarquardtBodyC"),
       _iterations(iterations),
       _tolerance(tolerance)
@@ -38,75 +35,75 @@ namespace RavlN {
     in >> _iterations;
   }
   
-  VectorC OptimiseLevenbergMarquardtBodyC::MinimalX (const CostC &domain, RealT &minimumCost) const
+  VectorT<RealT> OptimiseLevenbergMarquardtBodyC::MinimalX (const CostC &domain, RealT &minimumCost) const
   {
     
-    VectorC mX = domain.StartX();              // Copy start into temporary var;
-    MatrixC mI = MatrixC::Identity(mX.Size());
+    VectorT<RealT> mX = domain.StartX();              // Copy start into temporary var;
+    Tensor<RealT,2> mI = Tensor<RealT,2>::Identity(mX.size());
     RealT currentCost = domain.Cost (mX);      // Evaluate current cost
     RealT lambda = 0.0001;
     
     //mX[6]=0;mX[7]=0; //affine
-    ONDEBUG(cerr << "Lambda=" << lambda << " Initial Cost=" << currentCost << "\n");
-    UIntT i = 0;
-    MatrixC mA;
-    VectorC mJ;
+    ONDEBUG(std::cerr << "Lambda=" << lambda << " Initial Cost=" << currentCost << "\n");
+    unsigned i = 0;
+    Tensor<RealT,2> mA;
+    VectorT<RealT> mJ;
     for(;i < _iterations;i++) {
-      ONDEBUG(cerr <<endl<<"---- iter ="<<i <<" _iterations= " <<_iterations<<endl);
+      ONDEBUG(std::cerr <<endl<<"---- iter ="<<i <<" _iterations= " <<_iterations<<endl);
          // mX[6]=0;mX[7]=0; //affine
       domain.EvaluateValueJacobianHessian(mX,currentCost,mJ,mA);
-      //VectorC mb = (mJ * currentCost *-2.0);
-      VectorC mb = mJ;
+      //VectorT<RealT> mb = (mJ * currentCost *-2.0);
+      VectorT<RealT> mb = mJ;
  
       RealT newCost = 0;
-      ONDEBUG(cerr << "--mX=" << mX << "\n");
-      ONDEBUG(cerr << "--mb=" << mb << "\n");
-      ONDEBUG(cerr << "--mA=" << mA << "\n");
-      UIntT j = 0;
+      ONDEBUG(std::cerr << "--mX=" << mX << "\n");
+      ONDEBUG(std::cerr << "--mb=" << mb << "\n");
+      ONDEBUG(std::cerr << "--mA=" << mA << "\n");
+      unsigned j = 0;
       for(;j < 16;j++) {
         //cout<<"mA= \n"<< mA<<endl;
         //cout<< "lambda"<<lambda<<endl;
-        //cout<< "MatrixC(mA + mI * lambda).Inverse()\n"<<MatrixC(mA + mI * lambda).Inverse()<<endl;
-        VectorC mdX = MatrixC(mA + mI * lambda).Inverse() * mb;
+        //cout<< "Tensor<RealT,2>(mA + mI * lambda).Inverse()\n"<<Tensor<RealT,2>(mA + mI * lambda).Inverse()<<endl;
+        VectorT<RealT> mdX = Tensor<RealT,2>(mA + mI * lambda).Inverse() * mb;
         
-        VectorC mnX = mX + mdX;
+        VectorT<RealT> mnX = mX + mdX;
           //  mnX[6]=0;mnX[7]=0; //affine
         newCost = domain.Cost (mnX);      // Evaluate current cost
-        ONDEBUG(cerr << "  mdX=" << mdX << "   Cost=" << newCost << "\n");
+        ONDEBUG(std::cerr << "  mdX=" << mdX << "   Cost=" << newCost << "\n");
         if(newCost < currentCost) {
           lambda /= 10;
           mX = mnX; // Store new estimate
           minimumCost = currentCost;
-          ONDEBUG(cerr << " Cost decreased! start new iteration "<<"\n"); 
+          ONDEBUG(std::cerr << " Cost decreased! start new iteration "<<"\n"); 
           break;
         }
         lambda *= 10;
-        ONDEBUG(cerr << " Lambda increased =" << lambda <<  "\n"); 
+        ONDEBUG(std::cerr << " Lambda increased =" << lambda <<  "\n"); 
       }
       if(j >= 16) {
         // Can't improve on current estimate.
-        ONDEBUG(cerr << " Lambda increased 16 times no improvement....start new iteration"<<  "\n"); 
+        ONDEBUG(std::cerr << " Lambda increased 16 times no improvement....start new iteration"<<  "\n"); 
         break;
       }
-      ONDEBUG(cerr << " Current Lambda=" << lambda << " Cost=" << newCost << "\n");
+      ONDEBUG(std::cerr << " Current Lambda=" << lambda << " Cost=" << newCost << "\n");
       
       // Check if we're stopped converging.
       RealT costdiff = currentCost - newCost;
-      if (2.0*Abs(costdiff) <= _tolerance*(Abs(currentCost)+Abs(newCost))) {
-        ONDEBUG(cerr << "CostDiff=" << costdiff << " Tolerance=" << _tolerance*(Abs(currentCost)+Abs(minimumCost)) << "\n");
+      if (2.0*std::abs(costdiff) <= _tolerance*(std::abs(currentCost)+std::abs(newCost))) {
+        ONDEBUG(std::cerr << "CostDiff=" << costdiff << " Tolerance=" << _tolerance*(std::abs(currentCost)+std::abs(minimumCost)) << "\n");
         break;
       }
       
       // Update cost for another go.
        currentCost = newCost;
      }
-    ONDEBUG(cerr << "Final Lambda=" << lambda << " Cost=" << minimumCost << " Iterations=" << i << "\n");
+    ONDEBUG(std::cerr << "Final Lambda=" << lambda << " Cost=" << minimumCost << " Iterations=" << i << "\n");
     return domain.ConvertX2P (mX);            // Return final estimate
   }
   
-  const StringC OptimiseLevenbergMarquardtBodyC::GetInfo () const
+  const std::string OptimiseLevenbergMarquardtBodyC::GetInfo () const
   {
-    StrOStreamC stream;
+    Strstd::unique_ptr<std::ostream> stream;
     stream << OptimiseBodyC::GetInfo () << "\n";
     stream << "Levenberg Marguardt gradient descent optimization algorithm. Iterations = " << _iterations;
     return stream.String();

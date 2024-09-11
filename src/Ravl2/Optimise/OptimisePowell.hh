@@ -8,17 +8,14 @@
 #define RAVL_OPTIMISEPOWELL_HH
 ////////////////////////////////////////////////////////////////////////////
 //! author="Robert Crida"
-//! lib=Optimisation
 //! date="6/8/2003"
-//! userlevel=Normal
 //! example=testOptimise.cc
-//! file="Ravl/PatternRec/Optimise/OptimisePowell.hh"
 //! docentry="Ravl.API.Pattern Recognition.Optimisation.Implementation"
 
-#include "Ravl/PatternRec/Optimise.hh"
-#include "Ravl/PatternRec/OptimiseBrent.hh"
+#include "Ravl2/PatternRec/Optimise.hh"
+#include "Ravl2/PatternRec/OptimiseBrent.hh"
 
-namespace RavlN {
+namespace Ravl2 {
 
   // --------------------------------------------------------------------------
   // **********  OptimisePowellBodyC  *****************************************
@@ -33,7 +30,7 @@ namespace RavlN {
    : public OptimiseBodyC
   {    
   public:
-    OptimisePowellBodyC (UIntT iterations, RealT tolerance, bool useBracketMinimum,bool verbose = false);
+    OptimisePowellBodyC (unsigned iterations, RealT tolerance, bool useBracketMinimum,bool verbose = false);
     //: Constructor requires the number of iterations to use
     
     OptimisePowellBodyC (const XMLFactoryContextC & factory);
@@ -43,7 +40,7 @@ namespace RavlN {
     //: Constructs from stream
 
     //ACCESSOR METHODS:
-    UIntT GetNumIterations(void) const {return this->_iterations;}
+    unsigned GetNumIterations(void) const {return this->_iterations;}
     //: Get iterations
 
     RealT GetTolerance(void) const {return this->_tolerance;}
@@ -54,19 +51,19 @@ namespace RavlN {
     //: Set the verbose flag
 
   protected:
-    VectorC MinimalX (const CostC &domain, RealT startCost, RealT &minimumCost) const;
+    VectorT<RealT> MinimalX (const CostC &domain, RealT startCost, RealT &minimumCost) const;
     //: Determines Xmin=arg min_{X} |f(X)-Yd|
     
-    virtual const StringC GetInfo () const;
+    virtual const std::string GetInfo () const;
     //: Prints information about the optimiser
     
     virtual bool Save (std::ostream &out) const;
     //: Writes object to stream, can be loaded using constructor
    
   private:
-    UIntT _iterations;
+    unsigned _iterations;
     RealT _tolerance;
-    UIntT _brentIterations;
+    unsigned _brentIterations;
     RealT _brentTolerance;
     OptimiseBrentC _brent;
     bool _useBracketMinimum;
@@ -82,11 +79,11 @@ namespace RavlN {
   class OptimisePowellC: public OptimiseC
   {
   public:
-    OptimisePowellC (UIntT iterations, RealT tolerance = 1e-6, bool useBracketMinimum = true,bool verbose = false)
+    OptimisePowellC (unsigned iterations, RealT tolerance = 1e-6, bool useBracketMinimum = true,bool verbose = false)
       : OptimiseC(new OptimisePowellBodyC (iterations, tolerance, useBracketMinimum,verbose))
     {}
     //: Constructor
-    //!param: iterations - maximum number of iterations to use
+    //! @param  iterations - maximum number of iterations to use
 
     OptimisePowellC (const XMLFactoryContextC & factory)
       : OptimiseC(new OptimisePowellBodyC (factory))
@@ -94,7 +91,7 @@ namespace RavlN {
 
     //ACCESSOR METHODS:
 
-    UIntT GetNumIterations(void)
+    unsigned GetNumIterations(void)
     {return Body().GetNumIterations();}
     //: Get iterations
 

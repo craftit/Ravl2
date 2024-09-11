@@ -8,17 +8,13 @@
 #define RAVL_BRACKETMINIMUM_HH
 ////////////////////////////////////////////////////////////////////////////
 //! author="Robert Crida"
-//! lib=Optimisation
 //! date="8/8/2003"
-//! userlevel=Normal
 //! example=testCost.cc
-//! file="Ravl/PatternRec/Optimise/BracketMinimum.hh"
 //! docentry="Ravl.API.Pattern Recognition.Optimisation.Cost Functions"
-//! rcsid="$Id$"
 
-#include "Ravl/PatternRec/CostFunction1d.hh"
+#include "Ravl2/PatternRec/CostFunction1d.hh"
 
-namespace RavlN {
+namespace Ravl2 {
 
   void BracketMinimum (CostFunction1dC &cost);
     //: Updates the cost function parameter range to bracket a minimum

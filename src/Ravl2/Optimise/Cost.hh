@@ -8,17 +8,14 @@
 #define RAVL_COST_HH
 ////////////////////////////////////////////////////////////////////////////
 //! author="Robert Crida"
-//! lib=Optimisation
 //! date="4/2/1998"
-//! userlevel=Normal
 //! example=testCost.cc
-//! file="Ravl/PatternRec/Optimise/Cost.hh"
 //! docentry="Ravl.API.Pattern Recognition.Optimisation.Cost Functions"
 
-#include "Ravl/PatternRec/Function1.hh"
-#include "Ravl/PatternRec/Parameters.hh"
+#include "Ravl2/PatternRec/Function1.hh"
+#include "Ravl2/PatternRec/Parameters.hh"
 
-namespace RavlN {
+namespace Ravl2 {
 
   // --------------------------------------------------------------------------
   // **********  CostBodyC  ***************************************************
@@ -40,7 +37,7 @@ namespace RavlN {
   public:
     CostBodyC (const ParametersC &parameters);
     //: Constructor
-    //!param: parameters - structure which describes X to P relationship
+    //! @param  parameters - structure which describes X to P relationship
     
     CostBodyC () {
       InputSize (0);
@@ -51,50 +48,50 @@ namespace RavlN {
     CostBodyC (std::istream &in);
     //: Contructs from stream with derived class name
     
-    const VectorC &ConstP () const
+    const VectorT<RealT> &ConstP () const
     { return _parameters.ConstP (); }
     //: Constant component of X vector
 
-    virtual RealT Cost (const VectorC &X) const=0;
+    virtual RealT Cost (const VectorT<RealT> &X) const=0;
     //: Determines cost of X
     
-    void SetMask (const SArray1dC<IntT> &mask);
+    void SetMask (const std::vector<IntT> &mask);
     //: Used to specify which elements are fixed
     
-    void SetConstP (const VectorC &constP)
+    void SetConstP (const VectorT<RealT> &constP)
     { _parameters.SetConstP (constP); }
     //: Used to specify the vector of fixed constant parameters
     
-    const VectorC &MinX () const
+    const VectorT<RealT> &MinX () const
     { return _parameters.MinX (); }
     //: Lower bound on variable parameters
     
-    const VectorC &MaxX () const
+    const VectorT<RealT> &MaxX () const
     { return _parameters.MaxX (); }
     //: Upper bound on variable parameters
     
-    const VectorC &StartX () const
+    const VectorT<RealT> &StartX () const
     { return _parameters.StartX (); }
     //: Returns the initial point for X as non-const part of constP
     
-    VectorC ConvertX2P (const VectorC &X) const
+    VectorT<RealT> ConvertX2P (const VectorT<RealT> &X) const
     { return _parameters.TransX2P(X); }
     //: Expands X to P using TransX2P * X + Const P
 
-    MatrixC ConvertP2X (const MatrixC &inMat) const
+    Tensor<RealT,2> ConvertP2X (const Tensor<RealT,2> &inMat) const
     { return _parameters.TransP2X(inMat); }
     //: Transformation between X and P
     // Equivelent of inMat * TransX2P ()
 
-    void ConvertX2P (const VectorC &X,VectorC &out) const
+    void ConvertX2P (const VectorT<RealT> &X,VectorT<RealT> &out) const
     { out = _parameters.TransX2P(X); }
     //: Expands X to P using TransX2P * X + Const P
     
-    const SArray1dC<IntT> &Steps () const
+    const std::vector<IntT> &Steps () const
     { return _parameters.Steps (); }
     //: Number of steps for each parameter
     
-    VectorC ClipX (const VectorC &X) const;
+    VectorT<RealT> ClipX (const VectorT<RealT> &X) const;
     //: Returns the input vector clipped by the parameter range
 
     
@@ -111,12 +108,12 @@ namespace RavlN {
   protected:
     ParametersC _parameters;
     
-    virtual VectorC Apply(const VectorC &data) const;
+    virtual VectorT<RealT> Apply(const VectorT<RealT> &data) const;
     //: Apply function to 'data'
     
   };
   
-  extern MatrixC numCostEmptyMatrix;
+  extern Tensor<RealT,2> numCostEmptyMatrix;
   
   // --------------------------------------------------------------------------
   // **********  CostC  ****************************************************
@@ -167,45 +164,45 @@ namespace RavlN {
     //: Body constructor.
 
     
-    inline RealT Cost (const VectorC &X) const
+    inline RealT Cost (const VectorT<RealT> &X) const
     { return Body().Cost (X); }
     //: Calculates the cost of the current vector X
     
-    inline void SetMask (const SArray1dC<IntT> &mask)
+    inline void SetMask (const std::vector<IntT> &mask)
     { Body().SetMask (mask); }
     //: Sets the mask of enables parameters
     
-    inline void SetConstP (const VectorC &constP)
+    inline void SetConstP (const VectorT<RealT> &constP)
     { Body().SetConstP (constP); }
     //: Sets the values for constant parameters.
     // The value of non-constant parameters will be used as a starting point
     
-    inline const VectorC &MinX () const
+    inline const VectorT<RealT> &MinX () const
     { return Body().MinX (); }
     //: Lower bound on optimisation vector X
     
-    inline const VectorC &MaxX () const
+    inline const VectorT<RealT> &MaxX () const
     { return Body().MaxX (); }
     //: Upper bound on optimisation vector X
     
-    inline const VectorC &StartX () const
+    inline const VectorT<RealT> &StartX () const
     { return Body().StartX (); }
     //: Initial X value obtained from SetConstP
     
-    inline VectorC ConvertX2P (const VectorC &X) const
+    inline VectorT<RealT> ConvertX2P (const VectorT<RealT> &X) const
     { return Body().ConvertX2P (X); }
     //: Converts an X vector to a full P vector
 
-    MatrixC ConvertP2X (const MatrixC &inMat) const
+    Tensor<RealT,2> ConvertP2X (const Tensor<RealT,2> &inMat) const
     { return Body().ConvertP2X(inMat); }
     //: Transformation between X and P
     // Equivelent of inMat * TransX2P ()
 
-    inline VectorC ClipX (const VectorC &X) const
+    inline VectorT<RealT> ClipX (const VectorT<RealT> &X) const
     { return Body().ClipX (X); }
     //: Returns the input vector clipped by the parameter range
     
-    inline const SArray1dC<IntT> &Steps () const
+    inline const std::vector<IntT> &Steps () const
     { return Body().Steps (); }
     //: Gets number of steps to use for each dimension
     

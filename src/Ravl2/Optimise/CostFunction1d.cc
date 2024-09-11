@@ -4,25 +4,22 @@
 // General Public License (LGPL). See the lgpl.licence file for details or
 // see http://www.gnu.org/copyleft/lesser.html
 // file-header-ends-here
-//! rcsid="$Id$"
-//! lib=Optimisation
-//! file="Ravl/PatternRec/Optimise/CostFunction1d.cc"
 
-#include "Ravl/PatternRec/CostFunction1d.hh"
-#include "Ravl/SArray1dIter3.hh"
+#include "Ravl2/PatternRec/CostFunction1d.hh"
+#include "Ravl2/SArray1dIter3.hh"
 
-namespace RavlN {
+namespace Ravl2 {
 
   CostFunction1dBodyC::CostFunction1dBodyC (const ParametersC parameters,
                                             const CostC &cost,
-                                            const VectorC &point,
-                                            const VectorC &direction)
+                                            const VectorT<RealT> &point,
+                                            const VectorT<RealT> &direction)
     : CostBodyC(parameters),
       _cost(cost),
       _point(point),
       _direction(direction)
   {
-    RavlAssert (_point.Size() == _direction.Size());
+    RavlAssert (_point.size() == _direction.size());
     RavlAssert (_cost.OutputSize() == 1);
   }
   
@@ -33,16 +30,16 @@ namespace RavlN {
     in >> _point >> _direction;
   }
   
-  RealT CostFunction1dBodyC::Cost (const VectorC &X) const
+  RealT CostFunction1dBodyC::Cost (const VectorT<RealT> &X) const
   {
     return _cost.Cost (Point(X));
   }
   
-  VectorC CostFunction1dBodyC::Point (const VectorC &X) const
+  VectorT<RealT> CostFunction1dBodyC::Point (const VectorT<RealT> &X) const
   {
-    VectorC ret(_point.Size());
+    VectorT<RealT> ret(_point.size());
     for(SArray1dIter3C<RealT,RealT,RealT> it(ret,_point,_direction);it;it++)
-      it.Data1() = it.Data2() + it.Data3() * X[0];
+      it.data<0>() = it.data<1>() + it.data<2>() * X[0];
     return ret;
     //return _point + _direction * X[0];
   }
@@ -57,7 +54,7 @@ namespace RavlN {
 
   //: Apply function to 'data'
   
-  RealT CostFunction1dBodyC::Apply1(const VectorC &X) const {
+  RealT CostFunction1dBodyC::Apply1(const VectorT<RealT> &X) const {
     return Cost (X);
   }
 

@@ -4,22 +4,19 @@
 // General Public License (LGPL). See the lgpl.licence file for details or
 // see http://www.gnu.org/copyleft/lesser.html
 // file-header-ends-here
-//! rcsid="$Id$"
-//! lib=Optimisation
-//! file="Ravl/PatternRec/Optimise/Cost.cc"
 
-#include "Ravl/PatternRec/Cost.hh"
+#include "Ravl2/PatternRec/Cost.hh"
 
 //////////////////////////////////////////
 //: Constructor
-//!param: name       - derived class type name
+//! @param  name       - derived class type name
 
-namespace RavlN {
+namespace Ravl2 {
   
   CostBodyC::CostBodyC (const ParametersC &parameters)
     : _parameters(parameters)
   {
-    InputSize (_parameters.MinX().Size());
+    InputSize (_parameters.MinX().size());
     OutputSize (1);
   }
   
@@ -30,24 +27,24 @@ namespace RavlN {
   
   //: Apply function to 'data'
   
-  VectorC CostBodyC::Apply(const VectorC &X) const {
-    VectorC Y (1);
+  VectorT<RealT> CostBodyC::Apply(const VectorT<RealT> &X) const {
+    VectorT<RealT> Y (1);
     Y[0] = Cost (X);
     return Y;    
   }
 
-  void CostBodyC::SetMask (const SArray1dC<IntT> &mask)
+  void CostBodyC::SetMask (const std::vector<IntT> &mask)
   {
     _parameters.SetMask (mask);
-    InputSize (_parameters.MinX().Size());
+    InputSize (_parameters.MinX().size());
   }
   
-  VectorC CostBodyC::ClipX (const VectorC &X) const
+  VectorT<RealT> CostBodyC::ClipX (const VectorT<RealT> &X) const
   {
-    const VectorC &minX = MinX();
-    const VectorC &maxX = MaxX();
-    VectorC outX = X.Copy();
-    for (IndexC i = 0; i < X.Size(); i++) {
+    const VectorT<RealT> &minX = MinX();
+    const VectorT<RealT> &maxX = MaxX();
+    VectorT<RealT> outX = X.Copy();
+    for (int i = 0; i < X.size(); i++) {
       if (X[i] < minX[i]) outX[i] = minX[i];
       if (X[i] > maxX[i]) outX[i] = maxX[i];
     }
@@ -56,7 +53,7 @@ namespace RavlN {
   
   void CostBodyC::SetParameters (const ParametersC &parameters)
   {
-    InputSize (parameters.MinX().Size());
+    InputSize (parameters.MinX().size());
     _parameters = parameters;
   }
   

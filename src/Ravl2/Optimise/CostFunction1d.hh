@@ -8,17 +8,13 @@
 #define RAVL_COSTFUNCTION1D_HH
 ////////////////////////////////////////////////////////////////////////////
 //! author="Robert Crida"
-//! lib=Optimisation
 //! date="6/8/2003"
-//! userlevel=Normal
 //! example=testCost.cc
-//! file="Ravl/PatternRec/Optimise/CostFunction1d.hh"
 //! docentry="Ravl.API.Pattern Recognition.Optimisation.Cost Functions"
-//! rcsid="$Id$"
 
-#include "Ravl/PatternRec/CostFunction.hh"
+#include "Ravl2/PatternRec/CostFunction.hh"
 
-namespace RavlN {
+namespace Ravl2 {
 
   // --------------------------------------------------------------------------
   // **********  CostFunction1dBodyC  *****************************************
@@ -34,31 +30,31 @@ namespace RavlN {
   public:
     CostFunction1dBodyC (const ParametersC parameters,
                          const CostC &cost,
-                         const VectorC &point,
-                         const VectorC &direction);
+                         const VectorT<RealT> &point,
+                         const VectorT<RealT> &direction);
     //: Constructor
-    //!param: cost   - the function to be optimised
+    //! @param  cost   - the function to be optimised
     
     CostFunction1dBodyC (std::istream &in);
     //: Contructs from stream
     
-    virtual RealT Cost (const VectorC &X) const;
+    virtual RealT Cost (const VectorT<RealT> &X) const;
     //: Evaluate cost function at X
 
-    virtual VectorC Point (const VectorC &X) const;
+    virtual VectorT<RealT> Point (const VectorT<RealT> &X) const;
     //: Evaluate the input vector for the internal cost function
-    //!param: X - one dimensional input value
+    //! @param  X - one dimensional input value
     
     virtual bool Save (std::ostream &out) const;
     //: Writes object to stream, can be loaded using constructor
     
-    virtual RealT Apply1(const VectorC &data) const;
+    virtual RealT Apply1(const VectorT<RealT> &data) const;
     //: Apply function to 'data'
 
   protected:
     CostC _cost;
-    VectorC _point;
-    VectorC _direction;
+    VectorT<RealT> _point;
+    VectorT<RealT> _direction;
   };
   
   
@@ -73,18 +69,18 @@ namespace RavlN {
   public:
     CostFunction1dC (const ParametersC parameters,
                      const CostC &cost,
-                     const VectorC &point,
-                     const VectorC &direction)
+                     const VectorT<RealT> &point,
+                     const VectorT<RealT> &direction)
       :CostC(*(new CostFunction1dBodyC (parameters,cost,point,direction))) {}
     //: Constructor
-    //!param: cost  - the function to be optimised
-    //!param: point     - reference point for 1D line
-    //!param: direction - direction of 1D line
+    //! @param  cost  - the function to be optimised
+    //! @param  point     - reference point for 1D line
+    //! @param  direction - direction of 1D line
     // The optimiser will return a value X which minimizes the cost.
     // Given the P = point and D = direction, then the minimal point in the
-    // original CostC space is P + DX[0]. Note that X.Size() == 1.
+    // original CostC space is P + DX[0]. Note that X.size() == 1.
 
-    VectorC Point (const VectorC &X)
+    VectorT<RealT> Point (const VectorT<RealT> &X)
     { return Body().Point(X); }
   protected:
     inline CostFunction1dBodyC & Body()

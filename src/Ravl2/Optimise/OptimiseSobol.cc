@@ -4,17 +4,14 @@
 // General Public License (LGPL). See the lgpl.licence file for details or
 // see http://www.gnu.org/copyleft/lesser.html
 // file-header-ends-here
-//! rcsid="$Id$"
-//! lib=Optimisation
-//! file="Ravl/PatternRec/Optimise/OptimiseSobol.cc"
 
-#include "Ravl/PatternRec/OptimiseSobol.hh"
-#include "Ravl/SobolSequence.hh"
-#include "Ravl/StrStream.hh"
+#include "Ravl2/PatternRec/OptimiseSobol.hh"
+#include "Ravl2/SobolSequence.hh"
+#include "Ravl2/StrStream.hh"
 
-namespace RavlN {
+namespace Ravl2 {
 
-  OptimiseSobolBodyC::OptimiseSobolBodyC (UIntT numSamples)
+  OptimiseSobolBodyC::OptimiseSobolBodyC (unsigned numSamples)
     :OptimiseBodyC("OptimiseSobolBodyC"),
      _numSamples(numSamples)
   {
@@ -29,19 +26,19 @@ namespace RavlN {
   // Random optimizer with uniform density. Randomly samples the parameter
   // space to find the minimum cost position.
   //
-  VectorC OptimiseSobolBodyC::MinimalX (const CostC &domain, RealT &minimumCost) const
+  VectorT<RealT> OptimiseSobolBodyC::MinimalX (const CostC &domain, RealT &minimumCost) const
   {
-    VectorC X0 = domain.StartX().Copy();
-    VectorC minX = domain.MinX();
-    VectorC maxX = domain.MaxX();
-    int Xdim = minX.Size();
+    VectorT<RealT> X0 = domain.StartX().Copy();
+    VectorT<RealT> minX = domain.MinX();
+    VectorT<RealT> maxX = domain.MaxX();
+    int Xdim = minX.size();
     SobolSequenceC sobolSequence (Xdim);
-    VectorC X (Xdim);
+    VectorT<RealT> X (Xdim);
     RealT currentCost = domain.Cost (X0);    // Cost of starting point
-    VectorC currentX = X0.Copy();            // Best point begins as start point
-    for (UIntT i = 0; i < _numSamples; i++, sobolSequence++) {// For all the samples
-      SArray1dC<RealT> nextValue = sobolSequence.Data();
-      for (IndexC index = 0; index < Xdim; index++)   // Generate random param vector
+    VectorT<RealT> currentX = X0.Copy();            // Best point begins as start point
+    for (unsigned i = 0; i < _numSamples; i++, sobolSequence++) {// For all the samples
+      std::vector<RealT> nextValue = sobolSequence.Data();
+      for (int index = 0; index < Xdim; index++)   // Generate random param vector
 	X[index] = minX[index] + nextValue[index] * (maxX[index]-minX[index]);
       RealT stepCost = domain.Cost (X);      // Evaluate cost at that point
       if (currentCost > stepCost) {          // If best then remember it
@@ -53,9 +50,9 @@ namespace RavlN {
     return domain.ConvertX2P (currentX);     // Return final estimate
   }
   
-  const StringC OptimiseSobolBodyC::GetInfo () const
+  const std::string OptimiseSobolBodyC::GetInfo () const
   {
-    StrOStreamC stream;
+    Strstd::unique_ptr<std::ostream> stream;
     stream << OptimiseBodyC::GetInfo () << "\n";
     stream << "Sobol parameter space search optimisation using " << _numSamples << "samples.";
     return stream.String();
