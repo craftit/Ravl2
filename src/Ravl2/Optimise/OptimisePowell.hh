@@ -17,7 +17,7 @@
 namespace Ravl2
 {
 
-  //! @brief Powell's (roughly) quadratically convergent non-gradient optimiser
+  //! @brief Powell's (roughly) quadratically convergent non-gradient optimiser. This is also know as 'Bobyqa'
   //! Optimisation algorithm that does not use gradient but has roughly quadratic
   //! convergence.
 
