@@ -260,6 +260,7 @@ TEST_CASE("Affine")
 
     Affine<RealT,2> aff;
     auto residual = fit(aff, opnt, ipnt);
+    CHECK(isNearZero(residual));
 
     SPDLOG_TRACE("Affine: {} Residual:{}", aff,residual);
 
@@ -289,6 +290,7 @@ TEST_CASE("Affine")
     auto residual = fit(aff, opnt, ipnt);
 
     //SPDLOG_INFO("Affine: {} Residual:{}", aff,residual);
+    CHECK(isNearZero(residual));
 
     for(size_t i=0;i < ipnt.size();i++) {
       CHECK(euclidDistance(aff(ipnt[i]), opnt[i]) < 0.001f);
