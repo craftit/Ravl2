@@ -97,7 +97,7 @@ namespace Ravl2
   enum class WarpWrapMode
   {
     Stop, //!< Stop the warp operation
-    Leave,//!< Leave the target image unchanged
+    Leave,//!< Leave the target image unchanged, points are not filled or processed
     Fill, //!< Fill the target image with a fill value
     Clamp,//!< Clamp the point to the source image
     Wrap, //!< Wrap the point to the source image (experimental)
