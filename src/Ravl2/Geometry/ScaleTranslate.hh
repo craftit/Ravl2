@@ -8,6 +8,7 @@
 #pragma once
 
 #include "Ravl2/Geometry/Geometry.hh"
+#include "Ravl2/Geometry/Range.hh"
 
 namespace Ravl2
 {
@@ -171,6 +172,32 @@ namespace Ravl2
     }
     return true;
   }
+
+  //! Fit a scale translate between ranges.
+  template <typename DataT, unsigned N>
+  bool fit(ScaleTranslate<DataT,N> &transform,const Range<DataT,N> &rngTo,const Range<DataT,N> &from) {
+    bool ret = true;
+    for(unsigned i = 0; i < N; i++) {
+      if(rngTo.size()[i] == 0 || from.size()[i] == 0) {
+        transform.scaleVector()[i] = 1;
+        ret = false;
+      } else {
+        transform.scaleVector()[i] = rngTo.size()[i] / from.size()[i];
+      }
+      transform.translation()[i] = rngTo.min()[i] - from.min()[i] * transform.scaleVector()[i];
+    }
+    return ret;
+  }
+
+  //! Fit a scale to translate between index ranges.
+  template <typename DataT, unsigned N>
+  void fit(ScaleTranslate<DataT,N> &transform,const IndexRange<N> &rngTo,const IndexRange<N> &from) {
+    for(unsigned i = 0; i < N; i++) {
+      transform.scaleVector()[i] = DataT(rngTo.size()[i]) / DataT(from.size()[i]);
+      transform.translation()[i] = DataT(rngTo.min()[i]) - DataT(from.min()[i]) * transform.scaleVector()[i];
+    }
+  }
+
 
   extern template class ScaleTranslate<float, 2>;
   extern template class ScaleTranslate<float, 3>;

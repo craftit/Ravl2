@@ -12,6 +12,9 @@
 
 namespace Ravl2
 {
+  template <typename DataT, unsigned N>
+  class ScaleTranslate;
+
   //! General affine transformation.
 
   template <typename DataT, unsigned N>
@@ -165,6 +168,28 @@ namespace Ravl2
   {
     return aff.inverse();
   }
+
+  //! @brief Convert ScaleTranslate to Affine.
+  template <typename DataT, unsigned N>
+  Affine<DataT, N> toAffine(ScaleTranslate<DataT, N> const &st)
+  {
+    return Affine<DataT, N>(xt::diag(st.scaleVector()), st.translation());
+  }
+
+  //! @brief Compose transforms
+  template <typename DataT, unsigned N>
+  Affine<DataT, N> operator*(const Affine<DataT, N> &lhs, const ScaleTranslate<DataT, N> &rhs)
+  {
+    return lhs(toAffine(rhs));
+  }
+
+  //! @brief Compose transforms
+  template <typename DataT, unsigned N>
+  Affine<DataT, N> operator*(const ScaleTranslate<DataT, N> &lhs, const Affine<DataT, N> &rhs)
+  {
+    return toAffine(lhs)(rhs);
+  }
+
 
   //! @brief Send to output stream.
   template <typename DataT, unsigned N>

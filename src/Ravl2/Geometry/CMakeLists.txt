@@ -37,6 +37,8 @@ add_library (Ravl2Geometry
         PlanePVV3d.cc PlanePVV3d.hh
         FitProjection.hh
         FitProjection.cc
+        FitAffine.cc
+        FitAffine.hh
 
 )
 

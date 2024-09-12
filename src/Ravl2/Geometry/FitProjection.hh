@@ -24,8 +24,8 @@ namespace Ravl2
 
   //: Fit projection to a set of points.  4 or point correspondences are required
 
-  template <class DataContainerT, typename RealT > // assumed to be a container of Point<RealT,2>
-  bool fitProjection(Matrix<RealT,3,3> &proj, const  DataContainerT &to, const DataContainerT &from)
+  template <typename RealT, class DataContainer1T,class DataContainer2T> // assumed to be a container of Point<RealT,2>
+  bool fitProjection(Matrix<RealT,3,3> &proj, const DataContainer1T &to, const DataContainer2T &from)
   {
     RavlAssert(from.size() == to.size());
     auto neq = from.size();

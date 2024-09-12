@@ -19,6 +19,7 @@
 #include "Ravl2/Geometry/VectorOffset.hh"
 #include "Ravl2/Geometry/FitVectorOffset.hh"
 #include "Ravl2/Geometry/PlanePVV3d.hh"
+#include "Ravl2/Geometry/FitAffine.hh"
 #include "Ravl2/Math/FastFourierTransform.hh"
 
 #define CHECK_EQ(a,b) CHECK((a) == (b))
@@ -165,7 +166,7 @@ TEST_CASE("Vector and Matrix")
 TEST_CASE("Affine")
 {
   using namespace Ravl2;
-  SECTION( "Core. ")
+  SECTION("Core")
   {
     Affine<float, 2>
       a1 = affineFromScaleAngleTranslation(toVector<float>(2, 2), std::numbers::pi_v<float> / 2, toVector<float>(0, 0));
@@ -174,7 +175,7 @@ TEST_CASE("Affine")
     //Point<float, 2> p = a1 * toPoint<float>(0, 0);
     CHECK(euclidDistance(p, toPoint<float>(0, 0)) < 0.001f);
   }
-  SECTION( "Composition. ")
+  SECTION("Composition")
   {
     Affine<float, 2>
       a1 = affineFromScaleAngleTranslation(toVector<float>(2, 2), std::numbers::pi_v<float> / 2, toVector<float>(0, 0));
@@ -189,7 +190,7 @@ TEST_CASE("Affine")
     Point<float, 2> q = toPoint<float>(5, 4);
     CHECK(Ravl2::euclidDistance(a2(a1)(q), a2(a1(q))) < 0.001f);
   }
-  SECTION( "Inverse. ")
+  SECTION("Inverse")
   {
     Affine<float, 2>
       a1 = affineFromScaleAngleTranslation(toVector<float>(2, 2), std::numbers::pi_v<float> / 2, toVector<float>(1, 2));
@@ -199,7 +200,7 @@ TEST_CASE("Affine")
     Point<float, 2> pnt = a1(a2.value()(p));
     CHECK(euclidDistance(pnt, p) < 0.001f);
   }
-  SECTION( "Cereal. ")
+  SECTION("Cereal")
   {
     Affine<float, 2>
       a1 = affineFromScaleAngleTranslation(toVector<float>(1, 2), std::numbers::pi_v<float> / 3, toVector<float>(4, 5));
@@ -219,6 +220,78 @@ TEST_CASE("Affine")
       CHECK(isNearZero(a1.SRMatrix()(0,1) - a2.SRMatrix()(0,1)));
       CHECK(isNearZero(a1.SRMatrix()(1,0) - a2.SRMatrix()(1,0)));
       CHECK(isNearZero(a1.SRMatrix()(1,1) - a2.SRMatrix()(1,1)));
+    }
+  }
+  SECTION("FitPoints")
+  {
+    using RealT = float;
+    std::vector<Point<RealT,2>> ipnt;
+    ipnt.push_back(toPoint<RealT>(1,1));
+    ipnt.push_back(toPoint<RealT>(2,1));
+    ipnt.push_back(toPoint<RealT>(1,3));
+
+    std::vector<Point<RealT,2>> opnt;
+    opnt.push_back(toPoint<RealT>(2,2));
+    opnt.push_back(toPoint<RealT>(3,2));
+    opnt.push_back(toPoint<RealT>(2,3));
+
+    Affine<RealT,2> aff;
+    CHECK(fit(aff,
+        opnt[0], ipnt[0],
+        opnt[1], ipnt[1],
+        opnt[2], ipnt[2]));
+
+    for(size_t i=0;i < ipnt.size();i++) {
+      CHECK(euclidDistance(aff(ipnt[i]), opnt[i]) < 0.001f);
+    }
+  }
+  SECTION("Fit")
+  {
+    using RealT = float;
+    std::vector<Point<RealT,2>> ipnt;
+    ipnt.push_back(toPoint<RealT>(1,1));
+    ipnt.push_back(toPoint<RealT>(2,1));
+    ipnt.push_back(toPoint<RealT>(1,3));
+
+    std::vector<Point<RealT,2>> opnt;
+    opnt.push_back(toPoint<RealT>(2,2));
+    opnt.push_back(toPoint<RealT>(3,2));
+    opnt.push_back(toPoint<RealT>(2,3));
+
+    Affine<RealT,2> aff;
+    auto residual = fit(aff, opnt, ipnt);
+
+    SPDLOG_TRACE("Affine: {} Residual:{}", aff,residual);
+
+    for(size_t i=0;i < ipnt.size();i++) {
+      CHECK(euclidDistance(aff(ipnt[i]), opnt[i]) < 0.001f);
+    }
+  }
+  SECTION("FitLSQ")
+  {
+    using RealT = float;
+
+    // By providing 4 points we switch to a least squares fit, we're duplicating a point though so it should still fit exactly.
+
+    std::vector<Point<RealT,2>> ipnt;
+    ipnt.push_back(toPoint<RealT>(1,1));
+    ipnt.push_back(toPoint<RealT>(2,1));
+    ipnt.push_back(toPoint<RealT>(1,3));
+    ipnt.push_back(toPoint<RealT>(1,3));
+
+    std::vector<Point<RealT,2>> opnt;
+    opnt.push_back(toPoint<RealT>(2,2));
+    opnt.push_back(toPoint<RealT>(3,2));
+    opnt.push_back(toPoint<RealT>(2,3));
+    opnt.push_back(toPoint<RealT>(2,3));
+
+    Affine<RealT,2> aff;
+    auto residual = fit(aff, opnt, ipnt);
+
+    //SPDLOG_INFO("Affine: {} Residual:{}", aff,residual);
+
+    for(size_t i=0;i < ipnt.size();i++) {
+      CHECK(euclidDistance(aff(ipnt[i]), opnt[i]) < 0.001f);
     }
   }
 }
