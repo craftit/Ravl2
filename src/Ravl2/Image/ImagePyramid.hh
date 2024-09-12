@@ -25,15 +25,23 @@ namespace Ravl2
     //! @param org2level Transform to map a point from the original image to the level image.
     //! @param img The scaled image.
     PyramidLevel(const TransformT &org2level, const ImageT &img)
-        : mTransform(org2level),
+        : mTransformTo(org2level),
+          mTransformFrom(*inverse(org2level)),
           mImage(img)
     {}
 
     //! Access the scale and translation of the image.
-    //! @return The scale and translation of the image.
-    [[nodiscard]] const auto &transform() const
+    //! @return Transform to map a point from the original image to the level image.
+    [[nodiscard]] const auto &transformTo() const
     {
-      return mTransform;
+      return mTransformTo;
+    }
+
+    //! Access the scale and translation of the image.
+    //! @return Transform to map a point from the original image to the level image.
+    [[nodiscard]] const auto &transformFrom() const
+    {
+      return mTransformFrom;
     }
 
     //! Access the image.
@@ -44,7 +52,8 @@ namespace Ravl2
     }
 
   private:
-    TransformT mTransform;
+    TransformT mTransformTo;
+    TransformT mTransformFrom;
     ImageT mImage;
   };
 
@@ -80,6 +89,26 @@ namespace Ravl2
       return mLevels[index];
     }
 
+    //! Access an image in the pyramid.
+    //! @param index The index of the level to access.
+    //! @return The image at the given index.
+    [[nodiscard]] const auto &image(size_t index) const {
+      return mLevels[index].image();
+    }
+
+    //! Access transform to a level in the pyramid.
+    //! @param index The index of the level to access.
+    //! @return The transform to the level at the given index.
+    [[nodiscard]] const auto &transformTo(size_t index) const {
+      return mLevels[index].transformTo();
+    }
+
+    //! Access transform from a level in the pyramid.
+    //! @param index The index of the level to access.
+    //! @return The transform from the level at the given index.
+    [[nodiscard]] const auto &transformFrom(size_t index) const {
+      return mLevels[index].transformFrom();
+    }
 
     //! Find the pyramid level that best matches the scale and translation.
     //! @param target Target scale.
