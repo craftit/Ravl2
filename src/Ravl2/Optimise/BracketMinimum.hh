@@ -11,6 +11,7 @@
 
 #pragma once
 
+#include <algorithm>
 #include <spdlog/spdlog.h>
 #include "Ravl2/Optimise/Optimise.hh"
 
@@ -60,7 +61,7 @@ namespace Ravl2
 
       RealT r = dx10 * (fx1 - fx2);
       RealT q = dx12 * (fx1 - fx0);
-      RealT xn = x1 - (dx12 * q - dx10 * r) / (2 * sign(std::max(fabs(q-r),smallVal),q-r));
+      RealT xn = x1 - (dx12 * q - dx10 * r) / (2 * sign(std::max(std::abs(q-r),smallVal),q-r));
       RealT xlim = x1 + glimit * (x2 - x1);
       if ((x1 - xn) * (xn - x2) > 0) {
 	fxn = func(xn);

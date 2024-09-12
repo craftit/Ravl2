@@ -57,14 +57,14 @@ namespace Ravl2 {
     // Main iteration loop
     for (unsigned iter = 0; iter < _iterations; iter++) {
       xm = (a + b) * RealT(0.5);
-      tol1 = _tolerance * fabs(x1) + smallVal;
+      tol1 = _tolerance * std::abs(x1) + smallVal;
       tol2 = 2 * tol1;
       // test for termination
-      if (fabs(x1 - xm) <= (tol2 - RealT(0.5) * (b - a))) {
+      if (std::abs(x1 - xm) <= (tol2 - RealT(0.5) * (b - a))) {
         minimumCost = fx1;
         return {x1,minimumCost};
       }
-      if (fabs(e) <= tol1) {
+      if (std::abs(e) <= tol1) {
         e = (x1 >= xm? a - x1: b - x1);
         d = cgold * e;
       }
@@ -74,11 +74,11 @@ namespace Ravl2 {
         p = (x1 - x3) * q - (x1 - x2) * r;
         q = 2 * (q - r);
         if (q > 0) p = -p;
-        q = fabs(q);
+        q = std::abs(q);
         etemp = e;
         e = d;
         // determine the acceptability of the parabolic fit.
-        if (fabs(p) >= fabs(RealT(0.5) * q * etemp) || p <= q * (a - x1) || p >= q * (b - x1)) {
+        if (std::abs(p) >= std::abs(RealT(0.5) * q * etemp) || p <= q * (a - x1) || p >= q * (b - x1)) {
           e = (x1 >= xm ? a - x1: b - x1);
           d = cgold * e;
         }
@@ -89,7 +89,7 @@ namespace Ravl2 {
             d = sign(tol1, xm - x1);
         }
       }
-      x0 = (fabs(d) >= tol1? x1 + d: x1 + sign(tol1, d));
+      x0 = (std::abs(d) >= tol1? x1 + d: x1 + sign(tol1, d));
       fx0 = func(x0);             // Evaluate the function at the new point.
       if (fx0 > fx1) {                       // Now decide what to do with our function evaluation.
         if (x0 < x1)
