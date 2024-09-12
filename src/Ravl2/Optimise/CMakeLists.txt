@@ -3,6 +3,7 @@
 include(GenerateExportHeader)
 
 add_library (Ravl2Optimise
+  Optimise.cc Optimise.hh
   OptimiseBrent.hh OptimiseBrent.cc
   BracketMinimum.cc BracketMinimum.hh
   OptimisePowell.cc OptimisePowell.hh

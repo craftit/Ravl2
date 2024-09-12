@@ -17,7 +17,7 @@ TEST_CASE("Optimise")
       return X[0] * X[0] + X[1] * X[1];
     };
 
-    OptimisePowell powell (100, 1e-6,true,false);
+    OptimisePowell powell (100, OptimisePowell::RealT(1e-6),true,false);
 
     auto [sol,cost] = powell.minimise(CostDomain(VectorT<RealT>({-1.0,-1.0}),VectorT<RealT>({1.0,1.0})),func,VectorT<RealT>({-1.0,-1.0}));
     //SPDLOG_INFO("Powell: X {} cost {}", sol, cost);

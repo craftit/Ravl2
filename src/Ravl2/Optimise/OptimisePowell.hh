@@ -59,9 +59,9 @@ namespace Ravl2
     static std::tuple<RealT,RealT> SetupLimits(const VectorT<RealT> &dir,const VectorT<RealT> &P,const CostDomain &domain);
 
       unsigned _iterations = 100;
-    RealT _tolerance = 1e-4;
+    RealT _tolerance = RealT(1e-4);
     unsigned _brentIterations = 100;
-    RealT _brentTolerance = 1e-4;
+    RealT _brentTolerance = RealT(1e-4);
     OptimiseBrent _brent;
     bool _useBracketMinimum = true;
   };

@@ -24,9 +24,9 @@ namespace Ravl2 {
   OptimisePowell::OptimisePowell(Configuration &config)
    : Optimise(config),
      _iterations(config.getNumber<unsigned>("iterations","Limit on the number of optimisation iterations",100,1,10000)),
-     _tolerance(config.getNumber<RealT>("tolerance","Tolerance for stopping optimisation",1e-4,1e-10,10)),
+     _tolerance(config.getNumber<RealT>("tolerance","Tolerance for stopping optimisation",RealT(1e-4),RealT(1e-10),10)),
      _brentIterations(config.getNumber<unsigned>("brentIterations","Limit on the number of Brent iterations",_iterations,1,10000)),
-     _brentTolerance(config.getNumber<RealT>("brentTolerance","Tolerance for stopping Brent optimisation",_tolerance,1e-10,10)),
+     _brentTolerance(config.getNumber<RealT>("brentTolerance","Tolerance for stopping Brent optimisation",_tolerance,RealT(1e-10),10)),
      _brent(_brentIterations,_brentTolerance),
      _useBracketMinimum(config.getBool("useBracketMinimum","Use bracket minimum in Brent",true))
   {}
@@ -42,7 +42,7 @@ namespace Ravl2 {
     RealT min = -std::numeric_limits<RealT>::min();
     RealT max = std::numeric_limits<RealT>::max();
     for(size_t i = 0;i < P.size();i++) {
-      if(dir[i] == 0.0)
+      if(dir[i] == 0)
 	continue; // Avoid division by zero.
       RealT maxv = (domain.min()[i] - P[i]) / dir[i]; // Limit for MinX
       RealT minv = (domain.max()[i] - P[i]) / dir[i]; // Limit for MaxX
@@ -103,7 +103,7 @@ namespace Ravl2 {
 	RealT startAt = 0.0;
 	RealT fPlast = minimumCost;
 	if(_useBracketMinimum) {
-	  auto [minB,maxB,midB] = bracketMinimum (minP,maxP,linearFunc);
+	  auto [minB,maxB,midB] = bracketMinimum (RealT(0),maxP,linearFunc);
 	  minP = minB;
 	  maxP = maxB;
 	  startAt = midB;
@@ -125,7 +125,7 @@ namespace Ravl2 {
       RealT fPdiff = fP-minimumCost;
 
       // Check if we're stopped converging.
-      if (_tolerance > 0 && (2.0*std::abs(fPdiff) <= _tolerance*(std::abs(fP)+std::abs(minimumCost)))) {
+      if (_tolerance > 0 && (2*std::abs(fPdiff) <= _tolerance*(std::abs(fP)+std::abs(minimumCost)))) {
 	break;
       }
       // check if we should continue in the same direction
@@ -137,15 +137,15 @@ namespace Ravl2 {
       // if it has still improved in the same direction
       if (fPsameagain <= fP) {
         RealT t =
-          2.0 * ((fP+fPsameagain)-2.0*minimumCost)*sqr(fPdiff-valueOfBiggest)
+          2 * ((fP+fPsameagain)-2*minimumCost)*sqr(fPdiff-valueOfBiggest)
           - valueOfBiggest*sqr(fP-fPsameagain);
 
-        if (t < 0.0) {
+        if (t < 0) {
 	  auto [minP,maxP ] = SetupLimits(Pdiff,P,domain);
 	  auto linearFunc = [&func,&P,&Pdiff](RealT x) {
 	    return func(P + Pdiff * x);
 	  };
-	  RealT startAt = 0.0;
+	  RealT startAt = 0;
 	  if(_useBracketMinimum) {
 	    auto [minB,maxB,midB] = bracketMinimum (minP,maxP,linearFunc);
 	    minP = minB;
@@ -164,6 +164,11 @@ namespace Ravl2 {
       }
     }
     return std::make_tuple(P,minimumCost);
+  }
+
+  namespace {
+    [[maybe_unused]] bool g_register = defaultConfigFactory().registerNamedType<Optimise, OptimisePowell>("OptimisePowell");
+
   }
 
 }

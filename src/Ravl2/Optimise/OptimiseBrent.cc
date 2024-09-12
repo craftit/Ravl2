@@ -35,14 +35,14 @@ namespace Ravl2 {
     const std::function<Optimise::RealT(Optimise::RealT val)> &func
   ) const
   {
-    const RealT cgold = 0.3819660;
-    const RealT smallVal = 1.0e-10;
+    const auto cgold = RealT(0.3819660);
+    const RealT smallVal = std::numeric_limits<RealT>::epsilon() * 100; //1.0e-10
     RealT minimumCost = initialCost;
 
     RealT d = 0,etemp,fx0,fx1,fx2,fx3,p,q,r,tol1,tol2,x3,x2,xm;
     RealT x1 = startAt;
     RealT x0 = startAt;
-    RealT e = 0.0;                          // This will be the distance moved on the step before last.
+    RealT e = 0;                          // This will be the distance moved on the step before last.
 
     RealT a = min;
     RealT b = max;
@@ -56,11 +56,11 @@ namespace Ravl2 {
 
     // Main iteration loop
     for (unsigned iter = 0; iter < _iterations; iter++) {
-      xm = (a + b) * 0.5;
+      xm = (a + b) * RealT(0.5);
       tol1 = _tolerance * fabs(x1) + smallVal;
-      tol2 = 2.0 * tol1;
+      tol2 = 2 * tol1;
       // test for termination
-      if (fabs(x1 - xm) <= (tol2 - 0.5 * (b - a))) {
+      if (fabs(x1 - xm) <= (tol2 - RealT(0.5) * (b - a))) {
         minimumCost = fx1;
         return {x1,minimumCost};
       }
@@ -72,13 +72,13 @@ namespace Ravl2 {
         r = (fx1 - fx3) * (x1 - x2);
         q = (fx1 - fx2) * (x1 - x3);
         p = (x1 - x3) * q - (x1 - x2) * r;
-        q = 2.0 * (q - r);
-        if (q > 0.0) p = -p;
+        q = 2 * (q - r);
+        if (q > 0) p = -p;
         q = fabs(q);
         etemp = e;
         e = d;
         // determine the acceptability of the parabolic fit.
-        if (fabs(p) >= fabs(0.5 * q * etemp) || p <= q * (a - x1) || p >= q * (b - x1)) {
+        if (fabs(p) >= fabs(RealT(0.5) * q * etemp) || p <= q * (a - x1) || p >= q * (b - x1)) {
           e = (x1 >= xm ? a - x1: b - x1);
           d = cgold * e;
         }

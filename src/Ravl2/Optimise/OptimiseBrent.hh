@@ -24,7 +24,7 @@ namespace Ravl2 {
   class OptimiseBrent
   {
   public:
-    using RealT = double;
+    using RealT = Optimise::RealT;
 
     //! Constructor
     //! @param  iterations - maximum number of iterations to use
@@ -46,7 +46,7 @@ namespace Ravl2 {
 
   private:
     unsigned _iterations = 100;
-    RealT _tolerance = 1.0e-4;
+    RealT _tolerance = RealT(1.0e-4);
   };
   
 }

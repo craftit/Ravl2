@@ -25,18 +25,18 @@ namespace Ravl2
   template<typename RealT,typename FuncT>
   std::tuple<RealT,RealT,RealT> bracketMinimum (RealT min,RealT max, const FuncT &func,int steps = 3)
   {
-    const RealT gold = 1.618034;
-    const RealT smallVal = 1.0e-20;
-    const RealT glimit = 100.0;
+    const RealT gold = RealT(1.618034);
+    const RealT smallVal = std::numeric_limits<RealT>::epsilon() * 100;
+    const RealT glimit = RealT(100);
 
     RealT x0 = min;
 
     if(steps < 2)
       steps = 2;
 
-    RealT x1 = x0 + 0.5;
-    if(x1 > (max/ steps)) {
-      x1 = (max / steps);
+    RealT x1 = x0 + RealT(0.5);
+    if(x1 > (max/ RealT(steps))) {
+      x1 = (max / RealT(steps));
     }
 
     SPDLOG_TRACE("BracketMinimum. Start: Min={} Max={} ",x0,x1);
@@ -60,9 +60,9 @@ namespace Ravl2
 
       RealT r = dx10 * (fx1 - fx2);
       RealT q = dx12 * (fx1 - fx0);
-      RealT xn = x1 - (dx12 * q - dx10 * r) / (2.0 * sign(std::max(fabs(q-r),smallVal),q-r));
+      RealT xn = x1 - (dx12 * q - dx10 * r) / (2 * sign(std::max(fabs(q-r),smallVal),q-r));
       RealT xlim = x1 + glimit * (x2 - x1);
-      if ((x1 - xn) * (xn - x2) > 0.0) {
+      if ((x1 - xn) * (xn - x2) > 0) {
 	fxn = func(xn);
 	if (fxn < fx2) {
 	  x0 = x1;

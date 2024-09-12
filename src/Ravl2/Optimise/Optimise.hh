@@ -15,7 +15,7 @@ namespace Ravl2
   class CostDomain
   {
   public:
-    using RealT = double;
+    using RealT = float;
 
     //! Construct from minimum and maximum values
     CostDomain(const VectorT<RealT> &min,
@@ -24,20 +24,26 @@ namespace Ravl2
 	mMax(max)
     {}
 
+    //! Construct from minimum and maximum values
+    CostDomain(VectorT<RealT> &&min,
+	       VectorT<RealT> &&max)
+      : mMin(std::move(min)),
+	mMax(std::move(max))
+    {}
     //! Access the minimum value of for the arguments of the cost function
-    const VectorT<RealT> &min () const
+    [[nodiscard]] const VectorT<RealT> &min () const
     { return mMin; }
 
     //! Access the maximum value of for the arguments of the cost function
-    const VectorT<RealT> &max () const
+    [[nodiscard]] const VectorT<RealT> &max () const
     { return mMax; }
 
     //! Access mid point of the domain
-    VectorT<RealT> mid () const
+    [[nodiscard]] VectorT<RealT> mid () const
     { return (mMin + mMax) / 2; }
 
     //! Get the number of dimensions
-    size_t size () const
+    [[nodiscard]] size_t size () const
     { return mMin.size(); }
   private:
     VectorT<RealT> mMin;
@@ -50,7 +56,7 @@ namespace Ravl2
   class Optimise
   {
   public:
-    using RealT = double;
+    using RealT = CostDomain::RealT;
 
     Optimise() = default;
 
