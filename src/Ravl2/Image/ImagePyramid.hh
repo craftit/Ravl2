@@ -80,6 +80,7 @@ namespace Ravl2
       return mLevels[index];
     }
 
+
     //! Find the pyramid level that best matches the scale and translation.
     //! @param target Target scale.
     //! @return The pyramid level that best matches the scale and translation.
@@ -100,6 +101,28 @@ namespace Ravl2
         }
       }
       return *bestLevel;
+    }
+
+    //! Find level at which the area is scaled by 'scale'
+    [[nodiscard]]
+    size_t findAreaScale(float scale) const {
+      if(mLevels.empty()) {
+        SPDLOG_WARN("ImagePyramid::findAreaScale is empty");
+        throw std::runtime_error("ImagePyramid::findAreaScale is empty");
+      }
+      // This assumes the first entry is the original image.
+      auto baseArea = float(mLevels[0].image().range().area());
+      float bestScaleError = std::abs(1.0f - scale);
+      size_t bestLevel = 0;
+      for(size_t i = 1; i < mLevels.size(); ++i) {
+        auto area = float(mLevels[i].image().area());
+        auto scaleError = std::abs((area / baseArea) - scale);
+        if(scaleError < bestScaleError) {
+          bestScaleError = scaleError;
+          bestLevel = i;
+        }
+      }
+      return bestLevel;
     }
 
     //! Add a level to the pyramid.

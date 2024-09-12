@@ -18,7 +18,7 @@
 namespace Ravl2
 {
 
-  //!  Updates the cost function parameter range to bracket a minimum.
+  //! Updates the cost function parameter range to bracket a minimum.
   //! @param min - the minimum value of the domain
   //! @param max - the maximum value of the domain
   //! @param func - The function to be minimised
