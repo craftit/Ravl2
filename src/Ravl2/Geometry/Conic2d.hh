@@ -202,6 +202,7 @@ namespace Ravl2
     return s;
   }
 
+  extern template class Conic2dC<float>;
 }// namespace Ravl2
 
 #if FMT_VERSION >= 90000

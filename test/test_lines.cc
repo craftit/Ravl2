@@ -182,7 +182,7 @@ TEST_CASE("Fit LineABC")
       points.push_back(toPoint<RealT>(RealT(i) * dx + offx + randomGauss(rng), RealT(i) * dy + offy + randomGauss(rng)));
 
     LineABC2dC<RealT> line;
-    auto res = fitLSQ(line, points);
+    auto res = fit(line, points);
     CHECK(res >= 0);
     CHECK(res < 5);
     //cerr << "Line=" << line << " Res=" << res <<"\n";

@@ -17,5 +17,6 @@
 
 namespace Ravl2
 {
+  template class Conic2dC<float>;
 
 }

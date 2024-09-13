@@ -18,34 +18,6 @@
 
 namespace Ravl2
 {
-
-#if 0
-  //: Compute various ellipse parameters.
-  //!param: centre - Centre of ellipse.
-  //!param: major - Size of major axis.
-  //!param: minor - Size of minor axis
-  //!param: angle - Angle of major axis.
-  
-  bool Ellipse2dC::EllipseParameters(Point<RealT,2> &centre,RealT &major,RealT &minor,RealT &angle) const
-{
-    centre = p.Translation();
-    FMatrixC<2,2> U,V;
-    FVectorC<2> S = SVD(p.SRMatrix(), U, V);
-    ONDEBUG(std::cerr << "U:\n"<<U<<"V:\n"<<V);
-    U = U * V.T();
-    ONDEBUG(cerr<<"U*V.T():\n"<<U<<endl);
-    // U contains the rotation in the form:
-    // cos -sin
-    // sin  cos
-    // hence angle can be computed as:
-    angle = atan(U[1][0]/U[0][0]);
-    major = S[0];
-    minor = S[1];
-
-    ONDEBUG(std::cerr << "Center=" << centre << " Major=" << major << " Minor=" << minor << " Angle=" << angle << "\n");
-    return true;
-  }
-
-#endif
+  template class Ellipse2dC<float>;
 
 }// namespace Ravl2

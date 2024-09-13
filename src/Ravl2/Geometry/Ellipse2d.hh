@@ -12,6 +12,7 @@
 
 #include "Ravl2/Types.hh"
 #include "Ravl2/Geometry/Affine.hh"
+#include "Ravl2/Geometry/Conic2d.hh"
 #include "Ravl2/Math/LinearAlgebra.hh"
 
 #define DODEBUG 0
@@ -43,8 +44,8 @@ namespace Ravl2
     //!param: conicParams - Conic parameters a to f, where a * sqr(row) + b * row * col + c * sqr(col) + d * row + e * col + f = 0
     constexpr explicit Ellipse2dC(const Vector<RealT, 6> &conicParams)
     {
-      Conic2dC conic(conicParams);
-      conic.AsEllipse(*this);// What to do if this fails?
+      Conic2dC<RealT> conic(conicParams);
+      *this = *toEllipse(conic);// What to do if this fails?
     }
 
     //! Construct from affine transform from unit circle centered on the origin
@@ -231,6 +232,8 @@ namespace Ravl2
     obj = Ellipse2dC(aff);
     return s;
   }
+
+  extern template class Ellipse2dC<float>;
 }// namespace Ravl2
 
 #if FMT_VERSION >= 90000
