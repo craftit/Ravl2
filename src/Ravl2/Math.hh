@@ -38,11 +38,28 @@ namespace Ravl2
     return static_cast<IntT>(std::floor(x));
   }
 
+  //! Returns the greatest integral  value  less  than  or equal  to  'x'.
+  template <typename RealT, typename IntT = int>
+    requires std::is_integral_v<RealT>
+  inline constexpr IntT intFloor(RealT x)
+  {
+    return x;
+  }
+
   //! Returns the smallest integral  value  greater  than  or equal  to  'x'.
   template <typename RealT, typename IntT = int>
+    requires std::is_floating_point<RealT>::value
   constexpr IntT intCeil(RealT x)
   {
     return static_cast<IntT>(std::ceil(x));
+  }
+
+  //! Returns the smallest integral  value  greater  than  or equal  to  'x'.
+  template <typename RealT, typename IntT = int>
+    requires std::is_integral_v<RealT>
+  constexpr IntT intCeil(RealT x)
+  {
+    return x;
   }
 
   //! @brief Is integer power of 2 ?

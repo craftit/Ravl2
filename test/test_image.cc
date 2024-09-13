@@ -8,6 +8,7 @@
 #include "Ravl2/Image/Array2Sqr2Iter2.hh"
 #include "Ravl2/Image/Matching.hh"
 #include "Ravl2/Image/ImageExtend.hh"
+#include "Ravl2/Image/ImagePyramid.hh"
 #include "Ravl2/Image/ZigZagIter.hh"
 #include "Ravl2/Image/DCT2d.hh"
 #include "Ravl2/Image/Warp.hh"
@@ -359,7 +360,44 @@ TEST_CASE("DiscreteCosineTransform (forwardDCT)")
   }
 }
 
-TEST_CASE("WarpSubSample")
+TEST_CASE("ImagePyramid")
 {
+  using namespace Ravl2;
+
+  SECTION("ConstructAndFind")
+  {
+    // Make an image
+    Array<uint8_t,2> patch({27,27},0);
+    patch[2][2] = 1.0f;
+    patch[2][3] = 1.0f;
+    patch[3][2] = 1.0f;
+    patch[3][3] = 1.0f;
+
+    auto sumImg =  SummedAreaTable<uint32_t>::buildTable(patch);
+    auto pyramid = buildImagePyramid(patch, sumImg, 3, toVector<float>(2,2));
+
+    ASSERT_EQ(pyramid.numLevels(), 3u);
+    auto level = pyramid.findAreaScale(0.33f);
+    SPDLOG_INFO("Level: {}", level);
+    ASSERT_EQ(level, 1u);
+  }
+  SECTION("Construct")
+  {
+    // Try using the build method that constructs the summed area table.
+    // Make an image
+    Array<uint8_t,2> patch({27,27},0);
+    patch[2][2] = 1.0f;
+    patch[2][3] = 1.0f;
+    patch[3][2] = 1.0f;
+    patch[3][3] = 1.0f;
+
+    auto pyramid = buildImagePyramid(patch, 3, toVector<float>(2,2));
+
+    ASSERT_EQ(pyramid.numLevels(), 3u);
+    auto level = pyramid.findAreaScale(0.33f);
+    SPDLOG_INFO("Level: {}", level);
+    ASSERT_EQ(level, 1u);
+
+  }
 
 }

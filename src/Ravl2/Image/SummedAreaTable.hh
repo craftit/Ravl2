@@ -104,8 +104,9 @@ namespace Ravl2
     //! @param out The array to put the result in.
     //! @param scale This is the scale factor to apply to the output.
     //! @param offset This is the point adds an offset in the input space to the sampled pixels.
-    template<typename AccumT,typename CoordT = double>
-    Array<DataT, 2> &sampleGrid(Array<DataT, 2> &out, const Vector<float,2> pixelScale,Point<float,2> pixelOffset = toPoint<float>(0,0)) const
+    template <typename CoordT = double, typename RealT = float, typename ArrayT, typename PixelT = typename ArrayT::value_type>
+      requires WindowedArray<ArrayT, PixelT, 2>
+    ArrayT sampleGrid(ArrayT out, const Vector<RealT,2> pixelScale,Point<RealT,2> pixelOffset = toPoint<RealT>(0,0)) const
     {
       // Check it fits within the table.
       auto scale = toVector<CoordT>(pixelScale);
@@ -127,9 +128,9 @@ namespace Ravl2
           auto val0 = interpolateBilinear<CoordT>(*this,pnt + toVector<CoordT>(-scale[0],0));
           auto val1 = interpolateBilinear<CoordT>(*this,pnt );
           if constexpr(std::is_integral_v<DataT>)  {
-            *it = DataT(intRound((val1 - val0 - last1 + last0) * areaNorm));
+            *it = PixelT(intRound((val1 - val0 - last1 + last0) * areaNorm));
           } else {
-            *it = DataT((val1 - val0 - last1 + last0) * areaNorm);
+            *it = PixelT((val1 - val0 - last1 + last0) * areaNorm);
           }
           last0 = val0;
           last1 = val1;
@@ -141,7 +142,7 @@ namespace Ravl2
 
     //! Calculate the difference between two halfs of the rectangle split vertically.
     //! This mid-point is an absolute row location and should be within the rectangle.
-    DataT verticalDifference2(IndexRange<2> range, int mid) const
+    [[nodiscard]] DataT verticalDifference2(IndexRange<2> range, int mid) const
     {
       auto top = range.range(0).min();
       auto left = range.range(1).min();
@@ -157,7 +158,7 @@ namespace Ravl2
 
     //! Calculate the difference between two halves of the rectangle split horizontally.
     //! This mid-point is an absolute column location and should be within the rectangle.
-    DataT horizontalDifference2(IndexRange<2> range, int mid) const
+    [[nodiscard]] DataT horizontalDifference2(IndexRange<2> range, int mid) const
     {
       auto top = range.range(0).min();
       auto left = range.range(1).min();
@@ -173,7 +174,7 @@ namespace Ravl2
 
     //! Calculate the difference between two halves of the rectangle split vertically.
     //! This mid-point is an absolute row location and should be within the rectangle.
-    DataT verticalDifference3(const IndexRange<2> &range, const IndexRange<1> &rng) const
+    [[nodiscard]] DataT verticalDifference3(const IndexRange<2> &range, const IndexRange<1> &rng) const
     {
       RavlAssert(range.range(1).contains(rng));
       IndexRange<2> rng2(range.range(0), rng);
@@ -182,7 +183,7 @@ namespace Ravl2
 
     //! Calculate the difference between two rectangles one lying inside the other in the horizontal dimension.
     //! This mid-point is an absolute column location and should be within the rectangle.
-    DataT horizontalDifference3(const IndexRange<2> &range, const IndexRange<1> &rng) const
+    [[nodiscard]] DataT horizontalDifference3(const IndexRange<2> &range, const IndexRange<1> &rng) const
     {
       RavlAssert(range.range(0).contains(rng));
       IndexRange<2> rng2(rng, range.range(1));

@@ -282,6 +282,12 @@ namespace Ravl2
       return IndexRange<1>(intFloor(mMin), intCeil(mMax));
     }
 
+    //! Get the largest integer range contained by the real range.
+    [[nodiscard]] constexpr IndexRange<1> toInnerIndexRange() const
+    {
+      return IndexRange<1>(intCeil(mMin), intFloor(mMax));
+    }
+
   private:
     RealT mMin = 0;
     RealT mMax = 0;
@@ -632,6 +638,16 @@ namespace Ravl2
       return ret;
     }
 
+    //! Get the largest integer range contained by the real range.
+    [[nodiscard]] constexpr IndexRange<N> toInnerIndexRange() const
+    {
+      IndexRange<N> ret;
+      for(unsigned i = 0; i < N; i++) {
+        ret[i] = mRanges[i].toInnerIndexRange();
+      }
+      return ret;
+    }
+
     //! scale range
     [[nodiscard]] constexpr Range<RealT, N> operator*(const Vector<RealT, N> &scale) const
     {
@@ -787,6 +803,13 @@ namespace Ravl2
   inline constexpr IndexRange<1> toIndexRange(Range<RealT, 1> ir)
   {
     return IndexRange<1>(intFloor(ir.min()), intCeil(ir.max()));
+  }
+
+  //! Get the largest integer range contained by the real range.
+  template <typename RealT, unsigned N>
+  inline constexpr IndexRange<N> toInnerIndexRange(Range<RealT, N> ir)
+  {
+    return ir.toInnerIndexRange();
   }
 
   //! Serialization support

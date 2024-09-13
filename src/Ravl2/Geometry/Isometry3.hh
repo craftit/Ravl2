@@ -93,7 +93,21 @@ namespace Ravl2
       iso1.rotation() * iso2.rotation(),
       iso1.rotation().rotate(iso2.translation()) + iso1.translation());
   }
+  //! Stream output.
+  template <typename DataT>
+  std::ostream &operator<<(std::ostream &os, const Isometry3<DataT> &in)
+  {
+    os << "Isometry3(" << in.rotation() << "," << in.translation() << ")";
+    return os;
+  }
+
 
   extern template class Isometry3<float>;
 
 }// namespace Ravl2
+
+#if FMT_VERSION >= 90000
+template <typename RealT>
+struct fmt::formatter<Ravl2::Isometry3<RealT>> : fmt::ostream_formatter {
+};
+#endif

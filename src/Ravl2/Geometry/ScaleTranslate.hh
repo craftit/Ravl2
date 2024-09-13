@@ -33,10 +33,10 @@ namespace Ravl2
     inline constexpr ScaleTranslate(const Vector<DataT, N> &scale, const Vector<DataT, N> &translate);
 
     //! Access the translation component of the transformation.
-    inline constexpr Vector<DataT, N> &translation() { return mT; }
+    [[nodiscard]]inline constexpr Vector<DataT, N> &translation() { return mT; }
 
     //! Constant access to the translation component of the transformation.
-    inline constexpr const Vector<DataT, N> &translation() const { return mT; }
+    [[nodiscard]] inline constexpr const Vector<DataT, N> &translation() const { return mT; }
 
     //! In place Scaling along the X & Y axis by value given in the vector.
     // If all values 1, then no effect.
@@ -54,6 +54,9 @@ namespace Ravl2
 
     //! Compose this transform with 'In'
     [[nodiscard]] constexpr inline ScaleTranslate<DataT, N> operator*(const ScaleTranslate &in) const;
+
+    //! Compose this transform with 'In's
+    [[nodiscard]] constexpr inline Range<DataT,N> operator*(const Range<DataT,N> &in) const;
 
     //! Return 'In' / 'Out'
     [[nodiscard]] constexpr inline ScaleTranslate<DataT, N> operator/(const ScaleTranslate &in) const;
@@ -81,6 +84,12 @@ namespace Ravl2
     [[nodiscard]] constexpr inline auto operator()(const ScaleTranslate &In) const
     {
       return ScaleTranslate(mS * In.scaleVector(), mS * In.translation() + mT);
+    }
+
+    //! Transform a range.
+    [[nodiscard]] constexpr inline auto operator()(const Range<DataT,N> &In) const
+    {
+      return Range<DataT,N>(mS * In.min() + mT, mS * In.max() + mT);
     }
 
     //! Serialization support
@@ -113,7 +122,7 @@ namespace Ravl2
   template <typename DataT, unsigned N>
   constexpr void ScaleTranslate<DataT, N>::scale(const Vector<DataT, N> &xy)
   {
-    mS = xy;
+    mS *= xy;
   }
 
   template <typename DataT, unsigned N>
@@ -123,7 +132,7 @@ namespace Ravl2
   }
 
   template <typename DataT, unsigned N>
-  ScaleTranslate<DataT, N> constexpr ScaleTranslate<DataT, N>::inverse(void) const
+  ScaleTranslate<DataT, N> constexpr ScaleTranslate<DataT, N>::inverse() const
   {
     ScaleTranslate<DataT, N> ret;
     ret.mS = DataT(1) / mS;
@@ -142,6 +151,12 @@ namespace Ravl2
   [[nodiscard]] constexpr ScaleTranslate<DataT, N> ScaleTranslate<DataT, N>::operator*(const ScaleTranslate<DataT, N> &In) const
   {
     return ScaleTranslate(mS * In.scaleVector(), mS * In.translation() + mT);
+  }
+
+  template <typename DataT, unsigned N>
+  [[nodiscard]] constexpr Range<DataT, N> ScaleTranslate<DataT, N>::operator*(const Range<DataT, N> &In) const
+  {
+    return (*this)(In);
   }
 
   template <typename DataT, unsigned N>
@@ -198,8 +213,21 @@ namespace Ravl2
     }
   }
 
+  //! Stream output.
+  template <typename DataT, unsigned N>
+  std::ostream &operator<<(std::ostream &os, const ScaleTranslate<DataT, N> &In)
+  {
+    os << "Scale: " << In.scaleVector() << " Translate: " << In.translation();
+    return os;
+  }
 
   extern template class ScaleTranslate<float, 2>;
   extern template class ScaleTranslate<float, 3>;
 
 }// namespace Ravl2
+
+#if FMT_VERSION >= 90000
+template <typename RealT, unsigned N>
+struct fmt::formatter<Ravl2::ScaleTranslate<RealT, N>> : fmt::ostream_formatter {
+};
+#endif
