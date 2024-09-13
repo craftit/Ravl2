@@ -12,7 +12,7 @@
 
 #include "Ravl2/Types.hh"
 #include "Ravl2/Geometry/Affine.hh"
-#include "Ravl2/Geometry/Conic2d.hh"
+#include "Ravl2/Geometry/Conic2.hh"
 #include "Ravl2/Math/LinearAlgebra.hh"
 
 #define DODEBUG 0
@@ -25,39 +25,39 @@
 namespace Ravl2
 {
   template <typename RealT>
-  class Conic2dC;
+  class Conic2;
 
   //! @brief Ellipse in 2d space.
-  //! This uses a form of inverted Euclidean representation, in contrast to the general 2-D conic <a href="RavlN.Conic2dC.html">Conic2dC</a>.<br>
+  //! This uses a form of inverted Euclidean representation, in contrast to the general 2-D conic <a href="RavlN.Conic2.html">Conic2</a>.<br>
   //! The representation is the affine transform that transforms (scales, rotates, translates) a point from the unit circle to the "corresponding"
   //! point on the ellipse.
 
   template <typename RealT>
-  class Ellipse2dC
+  class Ellipse
   {
   public:
     //! @brief Default constructor.
     //! The parameters of the ellipse are left undefined.
-    constexpr Ellipse2dC() = default;
+    constexpr Ellipse() = default;
 
     //! Create from conic parameters.
     //!param: conicParams - Conic parameters a to f, where a * sqr(row) + b * row * col + c * sqr(col) + d * row + e * col + f = 0
-    constexpr explicit Ellipse2dC(const Vector<RealT, 6> &conicParams)
+    constexpr explicit Ellipse(const Vector<RealT, 6> &conicParams)
     {
-      Conic2dC<RealT> conic(conicParams);
+      Conic2<RealT> conic(conicParams);
       *this = *toEllipse(conic);// What to do if this fails?
     }
 
     //! Construct from affine transform from unit circle centered on the origin
     //!param: np - Transform from unit circle centered on the origin
-    constexpr explicit Ellipse2dC(const Affine<RealT, 2> &np)
+    constexpr explicit Ellipse(const Affine<RealT, 2> &np)
         : p(np)
     {}
 
     //! Construct from affine transform from unit circle centered on the origin
     //!param: sr - scale rotation matrix.
     //!param: off - offset from origin
-    constexpr Ellipse2dC(const Matrix<RealT, 2, 2> &sr, const Vector<RealT, 2> &off)
+    constexpr Ellipse(const Matrix<RealT, 2, 2> &sr, const Vector<RealT, 2> &off)
         : p(sr, off)
     {}
 
@@ -66,7 +66,7 @@ namespace Ravl2
     //!param: major - Size of major axis. (at given angle)
     //!param: minor - Size of minor axis.
     //!param: angle - Angle of major axis.
-    constexpr Ellipse2dC(const Point<RealT, 2> &centre, RealT major, RealT minor, RealT angle)
+    constexpr Ellipse(const Point<RealT, 2> &centre, RealT major, RealT minor, RealT angle)
     {
       p = Affine<RealT, 2>(xt::linalg::dot(Matrix<RealT, 2, 2>({{std::cos(angle), -std::sin(angle)},
                                                                 {std::sin(angle), std::cos(angle)}}),
@@ -153,7 +153,7 @@ namespace Ravl2
   //! @param  conic - Conic to turn into an Ellipse
   //! @return Ellipse if conic is an conic, otherwise if hyperbola or degenerate std::nullopt.
   template <typename RealT>
-  constexpr std::optional<Ellipse2dC<RealT>> toEllipse(const Conic2dC<RealT> &conic)
+  constexpr std::optional<Ellipse<RealT>> toEllipse(const Conic2<RealT> &conic)
   {
     // Ellipse representation is transformation required to transform unit
     // circle into conic.  This is the inverse of the "square root" of
@@ -181,8 +181,8 @@ namespace Ravl2
     // ordering.  I.e. so that [1,0] on unit circle gets mapped to
     // end of major axis rather than minor axis.
 
-    auto ret = Ellipse2dC<RealT>(xt::linalg::dot(E, scale), centre);
-    ONDEBUG(std::cerr << "Ellipse2dC:\n"
+    auto ret = Ellipse<RealT>(xt::linalg::dot(E, scale), centre);
+    ONDEBUG(std::cerr << "Ellipse:\n"
                       << ret << std::endl);
     ONDEBUG(std::cerr << "[1,0] on unit circle goes to " << ret.Projection()(toVector<RealT>(1, 0)) << " on conic" << std::endl);
     return ret;
@@ -194,13 +194,13 @@ namespace Ravl2
   //! Based on method presented in 'Numerically Stable Direct Least Squares Fitting of Ellipses'
   //! by Radim Halir and Jan Flusser.
   template <typename RealT>
-  constexpr bool FitEllipse(const std::vector<Point<RealT, 2>> &points, Ellipse2dC<RealT> &ellipse);
+  constexpr bool FitEllipse(const std::vector<Point<RealT, 2>> &points, Ellipse<RealT> &ellipse);
 
   //! docentry="Ravl.API.Math.Statistics;Ravl.API.Math.Geometry.2D"
   //! @brief Compute an ellipse from a 2d covariance matrix, mean, and standard deviation.
   //! The ellipse is the contour of a 2-D Gaussian random variable which lies "stdDev" standard deviations from the mean.
   template <typename RealT>
-  [[nodiscard]] constexpr Ellipse2dC<RealT> EllipseMeanCovariance(const Matrix<RealT, 2, 2> &covar, const Point<RealT, 2> &mean, RealT stdDev = 1.0)
+  [[nodiscard]] constexpr Ellipse<RealT> EllipseMeanCovariance(const Matrix<RealT, 2, 2> &covar, const Point<RealT, 2> &mean, RealT stdDev = 1.0)
   {
     auto [dv, E] = xt::linalg::eigh(covar);
     ONDEBUG(std::cerr << "l: " << dv << "\nE\n"
@@ -209,7 +209,7 @@ namespace Ravl2
       {{stdDev * std::sqrt(dv[0]), 0},
        {0, stdDev * std::sqrt(dv[1])}});
     Matrix<RealT, 2, 2> sr = xt::linalg::dot(E, d);
-    return Ellipse2dC(sr, mean);
+    return Ellipse(sr, mean);
   }
 
   //:-
@@ -217,7 +217,7 @@ namespace Ravl2
 
   //! Write ellipse to text stream.
   template <typename RealT>
-  std::ostream &operator<<(std::ostream &s, const Ellipse2dC<RealT> &obj)
+  std::ostream &operator<<(std::ostream &s, const Ellipse<RealT> &obj)
   {
     s << obj.Projection();
     return s;
@@ -225,20 +225,20 @@ namespace Ravl2
 
   //! Read ellipse from text stream.
   template <typename RealT>
-  std::istream &operator>>(std::istream &s, Ellipse2dC<RealT> &obj)
+  std::istream &operator>>(std::istream &s, Ellipse<RealT> &obj)
   {
     Affine<RealT, 2> aff;
     s >> aff;
-    obj = Ellipse2dC(aff);
+    obj = Ellipse(aff);
     return s;
   }
 
-  extern template class Ellipse2dC<float>;
+  extern template class Ellipse<float>;
 }// namespace Ravl2
 
 #if FMT_VERSION >= 90000
 template <typename RealT>
-struct fmt::formatter<Ravl2::Ellipse2dC<RealT>> : fmt::ostream_formatter {
+struct fmt::formatter<Ravl2::Ellipse<RealT>> : fmt::ostream_formatter {
 };
 #endif
 

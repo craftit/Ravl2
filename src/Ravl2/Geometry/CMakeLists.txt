@@ -25,9 +25,9 @@ add_library (Ravl2Geometry
         Transform.cc Transform.hh
         FitLine.cc FitLine.hh
         PolyApprox.hh
-        Conic2d.cc Conic2d.hh
+        Conic2.cc Conic2.hh
         FitConic.hh
-        Ellipse2d.cc Ellipse2d.hh
+        Ellipse.cc Ellipse.hh
         VectorOffset.cc VectorOffset.hh
         FitVectorOffset.hh FitVectorOffset.cc
         Quaternion.cc Quaternion.hh
