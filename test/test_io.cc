@@ -79,7 +79,7 @@ TEST_CASE("File")
     CHECK(save(filename, rng,hints));
 
     IndexRangeSet<2> rng2;
-    CHECK(load(rng2,filename,hints));
+    CHECK(ioLoad(rng2, filename, hints));
     CHECK(rng == rng2);
     // Remove the file
     CHECK(std::remove(filename.c_str()) == 0);
