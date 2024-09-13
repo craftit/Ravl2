@@ -76,7 +76,7 @@ TEST_CASE("File")
     IndexRangeSet<2> rng({10, 10});
     nlohmann::json hints;
     hints["verbose"] = false;
-    CHECK(save(filename, rng,hints));
+    CHECK(ioSave(filename, rng, hints));
 
     IndexRangeSet<2> rng2;
     CHECK(ioLoad(rng2, filename, hints));

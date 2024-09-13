@@ -37,7 +37,7 @@ namespace Ravl2
   //! Format hints include
   //!  - "verbose" - If true, print verbose output.
   template <typename ObjectT>
-  bool save(const std::string &url, const ObjectT &object, const nlohmann::json &formatHint = defaultSaveFormatHint())
+  bool ioSave(const std::string &url, const ObjectT &object, const nlohmann::json &formatHint = defaultSaveFormatHint())
   {
     auto thePlan = openOutput(url, typeid(ObjectT), formatHint);
     if(!thePlan.has_value())
