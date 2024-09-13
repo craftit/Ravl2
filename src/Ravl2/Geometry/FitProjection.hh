@@ -1,9 +1,13 @@
-//
-// Created by charles galambos on 07/09/2024.
-//
+// This file is part of RAVL, Recognition And Vision Library
+// Copyright (C) 2001, University of Surrey
+// This code may be redistributed under the terms of the GNU Lesser
+// General Public License (LGPL). See the lgpl.licence file for details or
+// see http://www.gnu.org/copyleft/lesser.html
+// file-header-ends-here
 
 #pragma once
 
+#include "Ravl2/Concepts.hh"
 #include "Ravl2/Geometry/Projection.hh"
 #include "Ravl2/Math/LeastSquares.hh"
 
@@ -24,7 +28,8 @@ namespace Ravl2
 
   //: Fit projection to a set of points.  4 or point correspondences are required
 
-  template <typename RealT, class DataContainer1T,class DataContainer2T> // assumed to be a container of Point<RealT,2>
+  template <typename RealT, SimpleContainer DataContainer1T,SimpleContainer DataContainer2T> // assumed to be a container of Point<RealT,2>
+   requires std::is_floating_point_v<RealT>
   bool fitProjection(Matrix<RealT,3,3> &proj, const DataContainer1T &to, const DataContainer2T &from)
   {
     RavlAssert(from.size() == to.size());
@@ -104,7 +109,8 @@ namespace Ravl2
 
 
   //: Fit a projective transform given to the mapping between original and newPos.
-  template <typename RealT,typename DataContainer1T,typename DataContainer2T> // DataContainer1/2T must be a container of Point<RealT,2>
+  template <typename RealT,SimpleContainer DataContainer1T,SimpleContainer DataContainer2T> // DataContainer1/2T must be a container of Point<RealT,2>
+   requires std::is_floating_point_v<RealT>
   bool fit(Projection<RealT,2> &proj, const DataContainer2T &newPos, const DataContainer1T &org)
   {
 

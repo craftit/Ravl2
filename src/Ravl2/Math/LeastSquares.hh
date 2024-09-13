@@ -76,7 +76,7 @@ namespace Ravl2
     return {mean, d};
   }
 
-  template <typename RealT, unsigned N>
+  template <typename RealT, size_t N>
   Point<RealT, N> normalisePoint(const Point<RealT, N> &pnt, const Point<RealT, N> &mean, RealT scale)
   {
     return (pnt - mean) * scale;

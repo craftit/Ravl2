@@ -1,10 +1,14 @@
-//
-// Created by charles on 12/09/24.
-//
+// This file is part of RAVL, Recognition And Vision Library
+// Copyright (C) 2001, University of Surrey
+// This code may be redistributed under the terms of the GNU Lesser
+// General Public License (LGPL). See the lgpl.licence file for details or
+// see http://www.gnu.org/copyleft/lesser.html
+// file-header-ends-here
 
 #pragma once
 
 #include "Ravl2/Assert.hh"
+#include "Ravl2/Concepts.hh"
 #include "Ravl2/Geometry/Affine.hh"
 #include "Ravl2/Math/LeastSquares.hh"
 
@@ -12,6 +16,7 @@ namespace Ravl2
 {
   //! Compute the affine normalisation transform for a mean and scale.
   template <typename RealT, unsigned N>
+   requires std::is_floating_point_v<RealT> && (N > 0)
   Affine<RealT,N> meanScaleToAffine(const Point<RealT,N> &mean, RealT scale)
   {
     Matrix<RealT,N,N> normMat = xt::zeros<RealT>({N,N});
@@ -21,8 +26,9 @@ namespace Ravl2
   }
 
 
-  //! Fit affine transform from mapping of 3 points.
+  //! Fit an 2d affine transform from mapping of 3 points.
   template <typename RealT>
+   requires std::is_floating_point_v<RealT>
   bool fit(Affine<RealT, 2> &affine,
            const Point<RealT, 2> &p1b, const Point<RealT, 2> &p1a,
            const Point<RealT, 2> &p2b, const Point<RealT, 2> &p2a,
@@ -47,23 +53,27 @@ namespace Ravl2
     return true;
   }
 
-  template <typename RealT, typename ContainerOfPoint2T>
-  RealT fit(Affine<RealT, 2> &affine,const ContainerOfPoint2T &to,const ContainerOfPoint2T &from)
+  //! Fit a general affine transform from a set of points.
+  //! There needs to be at least N+1 points to fit an N-dimensional affine transform.
+  template <typename RealT, unsigned N, SimpleContainer ContainerOfPointAT, SimpleContainer ContainerOfPointBT>
+   requires std::is_floating_point_v<RealT> && (N > 0)
+  RealT fit(Affine<RealT, N> &affine, const ContainerOfPointAT &to, const ContainerOfPointBT &from)
   {
     RavlAssertMsg(from.size() == to.size(),"Affine2dC FitAffine(), Point arrays must have the same size.");
 
     auto samples = from.size();
-    if ( samples < 3 ) {
+    if ( samples < (N+1) ) {
       throw std::runtime_error("Sample size too small in fit(Affine...) ");
     }
-    RealT residual = 0;
     // Normalise 'from' points.
-    auto [fromMean,fromScale] =  meanAndScale<RealT,2>(from);
-    auto [toMean,toScale] =  meanAndScale<RealT,2>(to);
+    auto [fromMean,fromScale] =  meanAndScale<RealT,N>(from);
+    auto [toMean,toScale] =  meanAndScale<RealT,N>(to);
 
-    Tensor<RealT,2> A({samples,3});
-    VectorT<RealT> b = xt::empty<RealT>({samples});
-    VectorT<RealT> c = xt::empty<RealT>({samples});
+    Tensor<RealT,2> A({samples,N+1});
+    std::array<VectorT<RealT>,N> eqs;
+    for(auto &eq : eqs) {
+      eq = xt::empty<RealT>({samples});
+    }
     size_t i = 0;
 
     auto toIt = to.begin();
@@ -72,43 +82,45 @@ namespace Ravl2
     auto frEnd = from.end();
 
     for(;toIt != toEnd && frIt!=frEnd;++toIt,++frIt,++i) {
-      RealT x1=((*frIt)[0] - fromMean[0]) * fromScale;
-      RealT y1=((*frIt)[1] - fromMean[1]) * fromScale;
-      RealT x2=((*toIt)[0] - toMean[0]) * toScale;
-      RealT y2=((*toIt)[1] - toMean[1]) * toScale;
+      Point<RealT,N> p1 = normalisePoint<RealT>(*toIt,toMean,toScale);
+      Point<RealT,N> p2 = normalisePoint<RealT>(*frIt,fromMean,fromScale);
 
-      A(i,0) = x1;
-      A(i,1) = y1;
-      A(i,2) = 1;
-      b(i) = x2;
-      c(i) = y2;
+      for(size_t j = 0; j < N; j++) {
+	A(i,j) = p2[j];
+      }
+      A(i,N) = 1;
+
+      for(size_t j = 0; j < N; ++j) {
+	eqs[j](i) = p1[j];
+      }
     }
-
-    VectorT<RealT> sab;
-    VectorT<RealT> sac;
-
+    Matrix<RealT,N,N> sr;
+    Vector<RealT,N> tr;
+    RealT residual = 0;
     if(A.shape(0) == A.shape(1)) {
-      // solve for solution vector
-      sab = xt::linalg::solve(A, b);
-      sac = xt::linalg::solve(A, c);
+      for(size_t j = 0; j < N; j++) {
+	auto solA = xt::linalg::solve(A, eqs[j]);
+	for(size_t k = 0; k < N; k++) {
+	  sr(j, k) = solA[k];
+	}
+	tr[j] = solA[N];
+      }
     } else {
-      // solve for least squares solution
-      auto [solA, residualA, rankA, sA] = xt::linalg::lstsq(A, b);
-      auto [solB, residualB, rankB, sB] = xt::linalg::lstsq(A, c);
-      sab = solA;
-      sac = solB;
-      residual += xt::sum(residualA + residualB)();
+      for(size_t j = 0; j < N; j++) {
+	auto [solA, residualA, rankA, sA] = xt::linalg::lstsq(A, eqs[j]);
+	for(size_t k = 0; k < N; k++) {
+	  sr(j, k) = solA[k];
+	}
+	tr[j] = solA[N];
+	residual += xt::sum(residualA)();
+      }
     }
-
-    Matrix<RealT,3,3> sr({{sab[0],sab[1]},
-                          {sac[0],sac[1]}});
-    Vector<RealT,2> tr({sab[2],sac[2]});
 
     auto fromNorm = meanScaleToAffine<RealT,2>(fromMean,fromScale);
     auto toNorm = *inverse(meanScaleToAffine<RealT,2>(toMean,toScale));
 
     // Compose result
-    affine = toNorm(Affine<RealT,2>(sr,tr))(fromNorm);
+    affine = toNorm(Affine<RealT,N>(sr,tr))(fromNorm);
     return residual;
   }
 
