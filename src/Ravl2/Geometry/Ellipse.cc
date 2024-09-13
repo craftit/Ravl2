@@ -5,7 +5,7 @@
 // see http://www.gnu.org/copyleft/lesser.html
 // file-header-ends-here
 
-#include "Ravl2/Geometry/Ellipse2d.hh"
+#include "Ravl2/Geometry/Ellipse.hh"
 //#include "Ravl2/Conic2d.hh"
 //#include "Ravl2/SVD.hh"
 
@@ -18,6 +18,6 @@
 
 namespace Ravl2
 {
-  template class Ellipse2dC<float>;
+  template class Ellipse<float>;
 
 }// namespace Ravl2

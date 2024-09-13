@@ -11,7 +11,7 @@
 #include "Ravl2/Geometry/Circle.hh"
 #include "Ravl2/Geometry/FitCircle.hh"
 #include "Ravl2/Geometry/CircleIter.hh"
-#include "Ravl2/Geometry/Conic2d.hh"
+#include "Ravl2/Geometry/Conic2.hh"
 #include "Ravl2/Geometry/FitConic.hh"
 #include "Ravl2/Geometry/LineABC2d.hh"
 #include "Ravl2/Geometry/Affine.hh"
@@ -365,12 +365,12 @@ TEST_CASE("Conic")
   pnts.push_back(Point<float,2>({3,0}));
   pnts.push_back(Point<float,2>({3,1}));
   pnts.push_back(Point<float,2>({2,4}));
-  Ravl2::Conic2dC<float> conic {};
+  Ravl2::Conic2<float> conic {};
   auto residual = fit(conic, pnts);
   CHECK(residual.has_value());
   SPDLOG_TRACE("Conic: {}", conic);
   //=-0.264764 -0.132382 -0.066191 1.05906 0.463337 -0.794292
-  Ravl2::Conic2dC<float> conic2(-0.264764f, -0.132382f, -0.066191f, 1.05906f, 0.463337f, -0.794292f);
+  Ravl2::Conic2<float> conic2(-0.264764f, -0.132382f, -0.066191f, 1.05906f, 0.463337f, -0.794292f);
 
   for(auto p : pnts) {
     //SPDLOG_INFO("Point {} is on curve: {} 2:{} ", p, conic.Residue(p), conic2.Residue(p));
@@ -393,7 +393,7 @@ TEST_CASE("Ellipse")
     pnts.push_back(Point<float, 2>({3, 1}));
     pnts.push_back(Point<float, 2>({2, 4}));
 #if 1
-    Conic2dC<float> conic {};
+    Conic2<float> conic {};
     auto residual = fit(conic, pnts);
     //auto residual = fitEllipse(conic, pnts);
     CHECK(residual.has_value());
@@ -416,7 +416,7 @@ TEST_CASE("Ellipse")
       {0,1}});
     Vector<RealT,2> mean = toVector<RealT>(50,50);
 
-    Ellipse2dC<RealT> ellipse = EllipseMeanCovariance(covar,mean,1.0f);
+    Ellipse<RealT> ellipse = EllipseMeanCovariance(covar,mean,1.0f);
     //SPDLOG_INFO("Ellipse: {}", ellipse);
     Point<RealT,2> centre;
     RealT min,maj,ang;
@@ -440,7 +440,7 @@ TEST_CASE("Ellipse")
       RealT tangle = RealT(j) * angleStep;
       Point<RealT,2> gtc = toPoint<RealT>(50,50);
       // Generate ellispe
-      Ellipse2dC<RealT> ellipse(gtc,RealT(40),RealT(20),tangle);
+      Ellipse<RealT> ellipse(gtc,RealT(40),RealT(20),tangle);
       // Generate set of points on ellipse
       RealT step = std::numbers::pi_v<RealT>/5;
       std::vector<Point<RealT,2>> points(10);
@@ -449,7 +449,7 @@ TEST_CASE("Ellipse")
         points[i] = ellipse.point(a);
       }
       // Fit set of points to ellipse as conic
-      Conic2dC<RealT> conic;
+      Conic2<RealT> conic;
       CHECK(fitEllipse(conic, points));
       //cerr << "Conic=" << conic.C() << "\n";
       Point<RealT,2> centre;
@@ -461,8 +461,8 @@ TEST_CASE("Ellipse")
       if(std::abs(maj - 40) > 0.000000001) return __LINE__;
       if(std::abs(min - 20) > 0.000000001) return __LINE__;
       if(std::abs(Angle(ang,std::numbers::pi_v<RealT>).Diff(Angle(tangle,std::numbers::pi_v<RealT>))) > 0.000001) return __LINE__;
-      // Fit same set of points to ellipse as Ellipse2dC
-      Ellipse2dC ellipse2;
+      // Fit same set of points to ellipse as Ellipse
+      Ellipse ellipse2;
       CHECK(FitEllipse(points,ellipse2));
       // Check that fitted ellipse has same params as original
       ellipse2.EllipseParameters(centre,maj,min,ang);

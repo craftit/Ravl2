@@ -5,7 +5,7 @@
 // see http://www.gnu.org/copyleft/lesser.html
 // file-header-ends-here
 
-#include "Ravl2/Geometry/Conic2d.hh"
+#include "Ravl2/Geometry/Conic2.hh"
 #include "Ravl2/Geometry/FitConic.hh"
 
 #define DODEBUG 0
@@ -17,6 +17,6 @@
 
 namespace Ravl2
 {
-  template class Conic2dC<float>;
+  template class Conic2<float>;
 
 }

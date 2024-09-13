@@ -33,30 +33,30 @@ namespace Ravl2
   //!  a * sqr(row) + b * row * col + c * sqr(col) + d * row + e * col + f = 0
 
   template <typename RealT>
-  class Conic2dC
+  class Conic2
   {
   public:
     //! @brief Default constructor.
     //! The conic is undefined.
-    constexpr Conic2dC() = default;
+    constexpr Conic2() = default;
 
     //! @brief Construct from parameter vector.
     //! @param  params - Parameters, entry 0 = a, 1 = b, 2 = c, 3 = d, 4 = e, 5 = f
-    constexpr explicit Conic2dC(const Vector<RealT, 6> &params)
+    constexpr explicit Conic2(const Vector<RealT, 6> &params)
         : p(params)
     {}
 
     //! @brief Construct from parameter vector.
-    constexpr explicit Conic2dC(const VectorT<RealT> &params)
+    constexpr explicit Conic2(const VectorT<RealT> &params)
     {
       if(params.size() != 6) {
-        throw std::invalid_argument("Conic2dC: Invalid parameter vector size");
+        throw std::invalid_argument("Conic2: Invalid parameter vector size");
       }
       p = params;
     }
 
     //! Construct from parameters
-    constexpr Conic2dC(RealT a, RealT b, RealT c, RealT d, RealT e, RealT f)
+    constexpr Conic2(RealT a, RealT b, RealT c, RealT d, RealT e, RealT f)
     {
       p[0] = a;
       p[1] = b;
@@ -71,7 +71,7 @@ namespace Ravl2
     //!      (  a  b/2 d/2 )
     //!  C = ( b/2  c  e/2 )
     //!      ( d/2 e/2  f  )</pre>
-    constexpr explicit Conic2dC(const Matrix<RealT, 3, 3> &matrix)
+    constexpr explicit Conic2(const Matrix<RealT, 3, 3> &matrix)
     {
       // Should check matrix is symmetric ?
       p[0] = matrix(0, 0);
@@ -180,13 +180,13 @@ namespace Ravl2
 
 #if 0
 
-  bool FitEllipse(const std::vector<Point<RealT,2>> &points,Conic2dC &conic);
+  bool FitEllipse(const std::vector<Point<RealT,2>> &points,Conic2 &conic);
   //: Fit ellipse
 #endif
 
   //! Write ellipse to text stream.
   template <typename RealT>
-  std::ostream &operator<<(std::ostream &s, const Conic2dC<RealT> &obj)
+  std::ostream &operator<<(std::ostream &s, const Conic2<RealT> &obj)
   {
     s << obj.Parameters();
     return s;
@@ -194,20 +194,20 @@ namespace Ravl2
 
   //! Read ellipse from text stream.
   template <typename RealT>
-  std::istream &operator>>(std::istream &s, Conic2dC<RealT> &obj)
+  std::istream &operator>>(std::istream &s, Conic2<RealT> &obj)
   {
     Vector<RealT, 6> p;
     s >> p;
-    obj = Conic2dC(p);
+    obj = Conic2(p);
     return s;
   }
 
-  extern template class Conic2dC<float>;
+  extern template class Conic2<float>;
 }// namespace Ravl2
 
 #if FMT_VERSION >= 90000
 template <typename RealT>
-struct fmt::formatter<Ravl2::Conic2dC<RealT>> : fmt::ostream_formatter {
+struct fmt::formatter<Ravl2::Conic2<RealT>> : fmt::ostream_formatter {
 };
 #endif
 
