@@ -109,9 +109,10 @@ TEST_CASE("SummedAreaTable")
   using namespace Ravl2;
   SECTION("Simple")
   {
+    Ravl2::SetSPDLogLevel beQuiet(spdlog::level::off);
     Array<int, 2> img({5, 5}, 1);
     SummedAreaTable<unsigned> tab = SummedAreaTable<unsigned>::buildTable(img);
-    //SPDLOG_INFO("Table: {}", tab);
+    SPDLOG_INFO("Table: {}", tab);
     CHECK(tab.sum(img.range()) == 25);
     IndexRange<2> srect(img.range());
     srect = srect.shrink(1);
@@ -138,6 +139,7 @@ TEST_CASE("SummedAreaTable")
 
   SECTION("Grid Scale 1")
   {
+    Ravl2::SetSPDLogLevel beQuiet(spdlog::level::off);
     Array<int, 2> img({6, 6}, 0);
     int sum = 1;
     for(auto &it : img)
@@ -156,9 +158,9 @@ TEST_CASE("SummedAreaTable")
 
     // Try a full scale image.
     Array<int, 2> img3(img.range());
-    tab.sampleGrid<int>(img3, toVector<float>(1,1));
+    tab.sampleGrid(img3, toVector<float>(1,1));
 
-    //SPDLOG_INFO("Img3: {}", img3);
+    SPDLOG_INFO("Img3: {}", img3);
 
     for(auto it = zip(img3,img);it.valid();++it) {
       CHECK(it.template data<0>() == it.template data<1>());
@@ -168,6 +170,7 @@ TEST_CASE("SummedAreaTable")
 
   SECTION("Grid Scale 2")
   {
+    Ravl2::SetSPDLogLevel beQuiet(spdlog::level::off);
     Array<int, 2> imgOrg({6, 6}, 0);
     int sum = 1;
     for(auto &it : imgOrg)
@@ -180,28 +183,15 @@ TEST_CASE("SummedAreaTable")
 
     SummedAreaTable<int> tab = SummedAreaTable<int>::buildTable(img);
     IndexRange<2> rec2({{1, 4}, {1, 4}});
-    Array<int, 2> img2(rec2);
-    tab.sampleGrid<int>(img2, toVector<float>(2,2));
+    Array<int, 2> img2(rec2, -1);
+    tab.sampleGrid(img2, toVector<float>(2,2));
 
     SPDLOG_INFO("ImgOrg: {}", imgOrg);
     SPDLOG_INFO("Img: {}", img);
     SPDLOG_INFO("Img2: {}", img2);
-#if 0
     for(auto it = zip(img2,clip(imgOrg,img2.range()));it.valid();++it) {
       CHECK(it.template data<0>() == it.template data<1>());
     }
-
-    // Try a full scale image.
-    Array<int, 2> img3(img.range());
-    tab.sampleGrid<int>(img3, toVector<float>(1,1));
-
-    //SPDLOG_INFO("Img3: {}", img3);
-
-    for(auto it = zip(img3,imgOrg);it.valid();++it) {
-      CHECK(it.template data<0>() == it.template data<1>());
-    }
-#endif
-
   }
 
 

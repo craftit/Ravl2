@@ -114,8 +114,8 @@ namespace Ravl2
       Range<CoordT,2> outRng = toRange<CoordT>(out.range()) ;
       const auto binOffset = toPoint<CoordT>(-1,-1);
       Range<CoordT,2> rng = Range<CoordT,2>(outRng.min() * scale + offset , outRng.max() * scale + offset );
-      auto areaNorm = 1/(scale[0] * scale[1]);
-      auto indexBounds = rng.toIndexRange();
+      auto areaNorm = CoordT(1)/(scale[0] * scale[1]);
+      auto indexBounds = rng.toIndexRange().shrinkMax(1);
       if(!mClipRange.contains(indexBounds)) {
         SPDLOG_WARN("SampleGrid: Out of bounds: {} Rng:{} Bounds:{} Array:{} ", indexBounds, rng, mClipRange,this->range());
         throw std::out_of_range("SampleGrid: Out of bounds");

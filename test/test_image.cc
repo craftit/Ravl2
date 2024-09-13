@@ -366,6 +366,7 @@ TEST_CASE("ImagePyramid")
 
   SECTION("ConstructAndFind")
   {
+    Ravl2::SetSPDLogLevel beQuiet(spdlog::level::off);
     // Make an image
     Array<uint8_t,2> patch({27,27},0);
     patch[2][2] = 1.0f;
@@ -378,7 +379,7 @@ TEST_CASE("ImagePyramid")
 
     ASSERT_EQ(pyramid.numLevels(), 3u);
     auto level = pyramid.findAreaScale(0.33f);
-    SPDLOG_INFO("Level: {}", level);
+    SPDLOG_TRACE("Level: {}", level);
     ASSERT_EQ(level, 1u);
   }
   SECTION("Construct")
@@ -395,7 +396,7 @@ TEST_CASE("ImagePyramid")
 
     ASSERT_EQ(pyramid.numLevels(), 3u);
     auto level = pyramid.findAreaScale(0.33f);
-    SPDLOG_INFO("Level: {}", level);
+    SPDLOG_TRACE("Level: {}", level);
     ASSERT_EQ(level, 1u);
 
   }
