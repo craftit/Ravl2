@@ -174,17 +174,22 @@ namespace Ravl2
 
 
   //! Create an image pyramid from an image.
-  //! @param img The image to create the pyramid from.
-  //! @param numLevels The number of levels in the pyramid.
+  //! @param fullImg The image to create the pyramid from.
+  //! @param sumImg The summed area table of the image.
+  //! @param numLevels Maximum number of levels in the pyramid.
   //! @param scale The scale factor between levels.
+  //! @param pad The amount of padding to add to the image.
+  //! @param minArea The minimum area of a level, if the area is less than this the pyramid is truncated.
   //! @return The image pyramid.
   template <typename PixelT, typename DataT,typename TransformT = ScaleTranslate<float, 2>>
   ImagePyramid<Array<PixelT,2>, TransformT> buildImagePyramid(
     const Array<PixelT,2> &fullImg,
-    const SummedAreaTable<DataT> &img,
+    const SummedAreaTable<DataT> &subImg,
     size_t numLevels,
     Vector<float, 2> scale,
-    unsigned pad = 0)
+    unsigned pad = 0,
+    int minArea = 16
+    )
   {
     ImagePyramid<Array<PixelT,2>, TransformT> pyramid;
     TransformT levelScale;
@@ -194,9 +199,12 @@ namespace Ravl2
       levelScale.scale(1.0f / scale);
       IndexRange<2> sampleRange = toInnerIndexRange(levelScale(toRange<float>(fullImg.range())));
       SPDLOG_TRACE("Level {} Scale: {}  sample:{} ",i, levelScale,sampleRange);
+      if(sampleRange.area() < minArea) {
+        break;
+      }
       IndexRange<2> fullRange = sampleRange.expand(int(pad));
       Array<PixelT, 2> newImage(fullRange);
-      img.template sampleGrid<float>(clip(newImage,sampleRange), scale);
+      subImg.template sampleGrid<float>(clip(newImage,sampleRange), scale);
       if(pad > 0) {
         // If we've padded the image then we need to set the padding to zero.
         mirrorEdges(newImage, pad);
@@ -207,9 +215,11 @@ namespace Ravl2
   }
 
   //! Create an image pyramid from an image.
-  //! @param img The image to create the pyramid from.
-  //! @param numLevels The number of levels in the pyramid.
+  //! @param fullImg The image to create the pyramid from.
+  //! @param numLevels Maximum number of levels in the pyramid.
   //! @param scale The scale factor between levels.
+  //! @param pad The amount of padding to add to the image.
+  //! @param minArea The minimum area of a level, if the area is less than this the pyramid is truncated.
   //! @return The image pyramid.
   template <typename ImageT, typename DataT = typename ImageT::value_type,  typename TransformT = ScaleTranslate<float, 2>>
     requires WindowedArray<ImageT, DataT, 2>
@@ -217,14 +227,15 @@ namespace Ravl2
     const ImageT &img,
     size_t numLevels,
     Vector<float, 2> scale,
-    unsigned  pad = 0)
+    unsigned pad = 0,
+    int minArea = 16)
   {
     if constexpr(std::is_floating_point_v<DataT>) {
       auto sumImg = SummedAreaTable<double>::buildTable(img);
-      return buildImagePyramid(img, sumImg, numLevels, scale, pad);
+      return buildImagePyramid(img, sumImg, numLevels, scale, pad, minArea);
     } else {
       auto sumImg = SummedAreaTable<int64_t>::buildTable(img);
-      return buildImagePyramid(img, sumImg, numLevels, scale, pad);
+      return buildImagePyramid(img, sumImg, numLevels, scale, pad, minArea);
     }
   }
 
