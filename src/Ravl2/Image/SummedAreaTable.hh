@@ -111,8 +111,9 @@ namespace Ravl2
       // Check it fits within the table.
       auto scale = toVector<CoordT>(pixelScale);
       auto offset = toPoint<CoordT>(pixelOffset);
-      Range<CoordT,2> outRng = toRange<CoordT>(out.range()).shrinkMax(1) ;
-      Range<CoordT,2> rng = Range<CoordT,2>(outRng.min() * scale + offset, outRng.max() * scale + offset);
+      Range<CoordT,2> outRng = toRange<CoordT>(out.range()) ;
+      const auto binOffset = toPoint<CoordT>(-1,-1);
+      Range<CoordT,2> rng = Range<CoordT,2>(outRng.min() * scale + offset , outRng.max() * scale + offset );
       auto areaNorm = 1/(scale[0] * scale[1]);
       auto indexBounds = rng.toIndexRange();
       if(!mClipRange.contains(indexBounds)) {
@@ -121,12 +122,12 @@ namespace Ravl2
       }
       // Is it worth caching the last row of interpolated values ?
       for(auto it = out.begin();it.valid();) {
-        Point<CoordT,2> pnt = offset + toPoint<CoordT>(it.index()) * scale;
-        auto last0 = interpolateBilinear<CoordT>(*this,pnt + toVector<CoordT>(-scale[0],-1));
-        auto last1 = interpolateBilinear<CoordT>(*this,pnt + toVector<CoordT>(0,-1));
+        Point<CoordT,2> pnt = offset + toPoint<CoordT>(it.index()) * scale + binOffset;
+        auto last0 = interpolateBilinear<CoordT>(*this,pnt + toVector<CoordT>(0,0));
+        auto last1 = interpolateBilinear<CoordT>(*this,pnt + toVector<CoordT>(scale[0],0));
         do {
-          auto val0 = interpolateBilinear<CoordT>(*this,pnt + toVector<CoordT>(-scale[0],0));
-          auto val1 = interpolateBilinear<CoordT>(*this,pnt );
+          auto val0 = interpolateBilinear<CoordT>(*this,pnt + toVector<CoordT>(0,scale[1]));
+          auto val1 = interpolateBilinear<CoordT>(*this,pnt + toVector<CoordT>(scale[0],scale[1]) );
           if constexpr(std::is_integral_v<DataT>)  {
             *it = PixelT(intRound((val1 - val0 - last1 + last0) * areaNorm));
           } else {

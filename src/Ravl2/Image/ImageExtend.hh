@@ -120,7 +120,7 @@ namespace Ravl2
     if(n == 0) {
       return;
     }
-    assert(result.range().min(0) >= int(n) && result.range().min(1) >= int(n));
+    assert(result.range().size(0) >= int(n) && result.range().size(1) >= int(n));
     const IndexRange<2> rect = result.range();
     const IndexRange<2> imageRange = rect.shrink(int(n));
     // Take care of border

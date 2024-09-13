@@ -104,12 +104,8 @@ namespace Ravl2
   };
 
   //! Test if an object is an cereal style archive
-  //! This check is designed to work without including cereal headers
   template <typename Archive>
   concept CerealArchive = requires(Archive &archive) {
-    { Archive::is_loading::value } -> std::convertible_to<bool>;
-    { Archive::is_saving::value } -> std::convertible_to<bool>;
-    { Archive::is_text::value } -> std::convertible_to<bool>;
-    { Archive::is_binary::value } -> std::convertible_to<bool>;
+    { archive(cereal::make_nvp("test", 0)) };
   };
 }// namespace Ravl2

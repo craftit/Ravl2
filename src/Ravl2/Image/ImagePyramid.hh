@@ -197,7 +197,7 @@ namespace Ravl2
     pyramid.addLevel(PyramidLevel(fullImg, levelScale));
     for(size_t i = 1; i < numLevels; ++i) {
       levelScale.scale(1.0f / scale);
-      IndexRange<2> sampleRange = toInnerIndexRange(levelScale(toRange<float>(fullImg.range())));
+      IndexRange<2> sampleRange = toInnerIndexRange(levelScale(toRange<float>(fullImg.range()))).shrinkMax(1);
       SPDLOG_TRACE("Level {} Scale: {}  sample:{} ",i, levelScale,sampleRange);
       if(sampleRange.area() < minArea) {
         break;

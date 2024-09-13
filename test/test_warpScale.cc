@@ -136,7 +136,7 @@ TEST_CASE("SummedAreaTable")
     CHECK(tab.sum(rec4) == 40);
   }
 
-  SECTION("Grid")
+  SECTION("Grid Scale 1")
   {
     Array<int, 2> img({6, 6}, 0);
     int sum = 1;
@@ -148,8 +148,8 @@ TEST_CASE("SummedAreaTable")
     Array<int, 2> img2(rec2);
     tab.sampleGrid<int>(img2, toVector<float>(1,1));
 
-    //SPDLOG_INFO("Img: {}", img);
-    //SPDLOG_INFO("Img2: {}", img2);
+    SPDLOG_INFO("Img: {}", img);
+    SPDLOG_INFO("Img2: {}", img2);
     for(auto it = zip(img2,clip(img,img2.range()));it.valid();++it) {
       CHECK(it.template data<0>() == it.template data<1>());
     }
@@ -163,6 +163,44 @@ TEST_CASE("SummedAreaTable")
     for(auto it = zip(img3,img);it.valid();++it) {
       CHECK(it.template data<0>() == it.template data<1>());
     }
+
+  }
+
+  SECTION("Grid Scale 2")
+  {
+    Array<int, 2> imgOrg({6, 6}, 0);
+    int sum = 1;
+    for(auto &it : imgOrg)
+      it = sum++;
+
+    Array<int, 2> img({12, 12}, 0);
+    for(auto it : img.range()) {
+      img[it] = imgOrg[it[0]/2][it[1]/2];
+    }
+
+    SummedAreaTable<int> tab = SummedAreaTable<int>::buildTable(img);
+    IndexRange<2> rec2({{1, 4}, {1, 4}});
+    Array<int, 2> img2(rec2);
+    tab.sampleGrid<int>(img2, toVector<float>(2,2));
+
+    SPDLOG_INFO("ImgOrg: {}", imgOrg);
+    SPDLOG_INFO("Img: {}", img);
+    SPDLOG_INFO("Img2: {}", img2);
+#if 0
+    for(auto it = zip(img2,clip(imgOrg,img2.range()));it.valid();++it) {
+      CHECK(it.template data<0>() == it.template data<1>());
+    }
+
+    // Try a full scale image.
+    Array<int, 2> img3(img.range());
+    tab.sampleGrid<int>(img3, toVector<float>(1,1));
+
+    //SPDLOG_INFO("Img3: {}", img3);
+
+    for(auto it = zip(img3,imgOrg);it.valid();++it) {
+      CHECK(it.template data<0>() == it.template data<1>());
+    }
+#endif
 
   }
 
