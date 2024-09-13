@@ -26,7 +26,7 @@ namespace Ravl2
   {    
   public:
     //! Constructor requires the number of iterations to use
-    OptimisePowell (unsigned iterations, RealT tolerance, bool useBracketMinimum,bool verbose = false);
+    OptimisePowell (unsigned iterations, RealT tolerance, bool useBracketMinimum = true,bool verbose = false);
 
     //! Construct from a configuration
     explicit OptimisePowell(Configuration &config);
