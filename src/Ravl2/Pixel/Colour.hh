@@ -17,22 +17,23 @@ namespace Ravl2
   //! Define a struct to handle color conversions
   //! This is here to work around the fact that we can't partially specialize functions in a namespace
 
-  struct ColorConversion {
+  namespace ColorConversion
+  {
     using WorkingT = float;
 
     //! Matrix to convert YUV values to RGB.
-    static const Matrix<float, 3, 3> mImageYUVtoRGBMatrix;
+    extern const Matrix<float, 3, 3> mImageYUVtoRGBMatrix;
 
     //! Matrix to convert YUV values to RGB.
-    static const Matrix<float, 3, 3> mImageRGBtoYUVMatrixStd;
+    extern const Matrix<float, 3, 3> mImageRGBtoYUVMatrixStd;
 
     //! Matrix to convert YUV values to RGB.
-    static const Matrix<float, 3, 3> mImageRGBtoYUVMatrix;
+    extern const Matrix<float, 3, 3> mImageRGBtoYUVMatrix;
 
     //! Byte conversion tables for YUV to RGB
-    static const std::array<int, 256> mRGBcYUV_ubLookup;
-    static const std::array<int, 256> mRGBcYUV_vrLookup;
-    static const std::array<int, 256 * 256> mRGBcYUV_uvgLookup;
+    extern const std::array<int, 256> mRGBcYUV_ubLookup;
+    extern const std::array<int, 256> mRGBcYUV_vrLookup;
+    extern const std::array<int, 256 * 256> mRGBcYUV_uvgLookup;
 
     // Specialization for Luminance conversion
     template <typename CompT, typename PixelType>
