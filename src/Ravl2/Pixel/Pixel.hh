@@ -190,7 +190,7 @@ namespace Ravl2
     template <typename OCompT, ImageChannel... OChannels>
     explicit Pixel(const Pixel<OCompT, OChannels...> &other)
     {
-      assign(other);
+      assign(*this,other);
     }
 
   private:

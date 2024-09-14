@@ -188,7 +188,7 @@ namespace Ravl2
     size_t numLevels,
     Vector<float, 2> scale,
     unsigned pad = 0,
-    int minArea = 16
+    int minArea = 255
     )
   {
     ImagePyramid<Array<PixelT,2>, TransformT> pyramid;

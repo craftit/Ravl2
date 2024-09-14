@@ -164,13 +164,35 @@ namespace Ravl2
     (target.template set<TargetChannels>(get<TargetChannels, TargetCompT>(source)), ...);
   }
 
-  //! Assign a pixel value to a scalar
-  constexpr void assign(uint8_t &target,
+  //! Assign a pixel value to a scalar, extract Luminance by default
+  inline constexpr void assign(uint8_t &target,
                         const Pixel<uint8_t, ImageChannel::Luminance> &source)
   {
     target = source.template get<ImageChannel::Luminance, uint8_t>();
   }
-
+  
+  //! Assign a pixel value to a scalar, extract Luminance by default
+  inline constexpr void assign(uint8_t &target,
+                               const Pixel<uint8_t, ImageChannel::Luminance, ImageChannel::ChrominanceU, ImageChannel::ChrominanceV> &source)
+  {
+    target = source.template get<ImageChannel::Luminance, uint8_t>();
+  }
+  
+  //! Assign a pixel value to a scalar, extract Luminance by default
+  inline constexpr void assign(uint8_t &target,
+                        const Pixel<uint8_t, ImageChannel::Blue, ImageChannel::Green, ImageChannel::Red> &source)
+  {
+    target = ColorConversion::convert<uint8_t>(source, std::integral_constant<ImageChannel, ImageChannel::Luminance> {});
+  }
+  
+  //! Assign a pixel value to a scalar, extract Luminance by default
+  inline constexpr void assign(uint8_t &target,
+                               const Pixel<uint8_t, ImageChannel::Red, ImageChannel::Green, ImageChannel::Blue> &source)
+  {
+    target = ColorConversion::convert<uint8_t>(source, std::integral_constant<ImageChannel, ImageChannel::Luminance> {});
+  }
+  
+  
   //! Copy data from a source array to destination array
   template <typename Array1T, typename Array2T, typename Data1T = typename Array1T::value_type, unsigned N = Array1T::dimensions>
     requires(WindowedArray<Array1T, typename Array1T::value_type, N> && WindowedArray<Array2T, typename Array2T::value_type, N>) && (N >= 2)
