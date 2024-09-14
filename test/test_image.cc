@@ -375,7 +375,7 @@ TEST_CASE("ImagePyramid")
     patch[3][3] = 1.0f;
 
     auto sumImg =  SummedAreaTable<uint32_t>::buildTable(patch);
-    auto pyramid = buildImagePyramid(patch, sumImg, 3, toVector<float>(2,2));
+    auto pyramid = buildImagePyramid(patch, sumImg, 3, toVector<float>(2,2),0,4);
 
     ASSERT_EQ(pyramid.numLevels(), 3u);
     auto level = pyramid.findAreaScale(0.33f);
