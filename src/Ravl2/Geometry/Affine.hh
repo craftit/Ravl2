@@ -64,9 +64,9 @@ namespace Ravl2
 
     //! Transform Vector,  scale, Rotate, translate.
     // Take a vector and put it though the transformation.
-    [[nodiscard]] constexpr auto operator()(const PointT &pnt) const
+    [[nodiscard]] constexpr auto operator()(PointT pnt) const
     {
-      return PointT((xt::linalg::dot(mSR, pnt) + mT)());
+      return PointT(xt::linalg::dot(mSR, pnt) + mT);
     }
 
     //! Compose this transform with 'In'

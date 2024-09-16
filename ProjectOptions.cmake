@@ -19,7 +19,8 @@ macro(RAVL2_supports_sanitizers)
 endmacro()
 
 macro(RAVL2_setup_options)
-  if(CMAKE_BUILD_TYPE STREQUAL "Debug" OR CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo" OR CMAKE_BUILD_TYPE STREQUAL "Default")
+ # CMAKE_BUILD_TYPE STREQUAL "Debug" OR
+  if(CMAKE_BUILD_TYPE STREQUAL "Default")
     option(RAVL2_ENABLE_HARDENING "Enable hardening" ON)
   else()
     option(RAVL2_ENABLE_HARDENING "Enable hardening" OFF)

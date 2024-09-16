@@ -78,7 +78,7 @@ namespace Ravl2
     //! Compute point on ellipse.
     [[nodiscard]] constexpr Point<RealT, 2> point(RealT angle) const
     {
-      return p(toVector<RealT>(std::cos(angle), std::sin(angle)));
+      return p(toPoint<RealT>(std::cos(angle), std::sin(angle)));
     }
 
     //! Access as projection from unit circle centered on the origin
