@@ -32,7 +32,10 @@ namespace Ravl2
     inline constexpr Affine(const Affine &Oth) noexcept = default;
 
     //! Construct from Scale/Rotate matrix and a translation vector.
-    inline constexpr Affine(const Matrix<DataT, N, N> &SR, const Vector<DataT, N> &T) noexcept;
+    inline constexpr Affine(const Matrix<DataT, N, N> &SR, const Vector<DataT, N> &T) noexcept
+      : mSR(SR),
+        mT(T)
+    {}
 
     //! Access the translation component of the transformation.
     [[nodiscard]] inline constexpr Vector<DataT, N> &Translation() { return mT; }
@@ -96,11 +99,6 @@ namespace Ravl2
 
   /////////////////////////////////////////////////
 
-  template <typename DataT, unsigned N>
-  inline constexpr Affine<DataT, N>::Affine(const Matrix<DataT, N, N> &SR, const Vector<DataT, N> &T) noexcept
-      : mSR(SR),
-        mT(T)
-  {}
 
   template <typename DataT, unsigned N>
   void constexpr Affine<DataT, N>::scale(const Vector<DataT, N> &xy)
