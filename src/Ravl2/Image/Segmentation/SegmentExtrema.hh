@@ -44,16 +44,13 @@ namespace Ravl2
     {
       if(hist != nullptr)
         delete[] hist;
-      if(thresh != nullptr)
-        delete[] thresh;
     }
 
     ExtremaRegionC *merge = nullptr;//!< Region to merge with.
     uint32_t *hist = nullptr;       //!< Histogram of pixels values at level.
     uint32_t total = 0;
 
-    ExtremaThresholdC *thresh = nullptr;//!< Thresholds
-    int nThresh = 0;                    //!< Number of thresholds.
+    std::vector<ExtremaThresholdC> thresh;//!< Thresholds
 
     int maxValue = 0;
     int minValue = 0;
@@ -517,13 +514,10 @@ namespace Ravl2
     auto end = regionMap.begin();
     end += labelAlloc;
     for(auto it = regionMap.begin(); it != end; ++it) {
-      if(it->nThresh > 0) {
+      if(!it->thresh.empty()) {
         GrowRegionBoundary(bounds, *it);
       }
-      if(it->thresh != 0) {
-        delete[] it->thresh;
-        it->thresh = 0;
-      }
+      it->thresh.clear();
     }
 
     return bounds;
@@ -532,7 +526,7 @@ namespace Ravl2
   template <class PixelT>
   void SegmentExtremaC<PixelT>::GrowRegionBoundary(std::vector<Boundary> &ret, ExtremaRegionC &region)
   {
-    for(int i = 0; i < region.nThresh; i++) {
+    for(size_t i = 0; i < region.thresh.size(); i++) {
       Boundary boundary;
       if(!flood.GrowRegion(region.minat, FloodRegionLessThanThresholdC<PixelT>(PixelT(region.thresh[i].thresh)), boundary, maxSize)) {
         SPDLOG_WARN("GrowRegionBoundary, Failed to grow region at:{} Threshold:{} Area:{} SeedValue:{}", region.minat, region.thresh[i].thresh, region.thresh[i].area, flood.Image()[region.minat]);
@@ -576,7 +570,7 @@ namespace Ravl2
   {
     std::vector<Array<int, 2>> ret;
     //cerr << " Thresholds=" << region.nThresh << "\n";
-    for(int i = 0; i < region.nThresh; i++) {
+    for(int i = 0; i < region.thresh.size(); i++) {
       Array<int, 2> mask;
       if(flood.GrowRegion(region.minat, FloodRegionLessThanThresholdC<PixelT>(PixelT(region.thresh[i].thresh)), mask, 1))
         ret.push_back(mask);

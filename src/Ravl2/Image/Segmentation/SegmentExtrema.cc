@@ -144,7 +144,7 @@ namespace Ravl2
     region.maxValue = valueRange.max();
     region.hist[level] = 1;
     region.total = 1;
-    region.thresh = nullptr;
+    region.thresh.clear();
     region.closed = nullptr;
   }
 
@@ -250,7 +250,7 @@ namespace Ravl2
 
     for(auto it = regionMap.begin(); it != end; ++it) {
       if(it->total < minSize || (it->maxValue - it->minValue) < minMargin) {
-        it->nThresh = 0;// Ignore these regions.
+        it->thresh.clear();// Ignore these regions.
         continue;       // Not enough levels in the region.
       }
       // Build the cumulative histogram.
@@ -316,8 +316,9 @@ namespace Ravl2
         et.thresh = maxValue - 1;
       }
       ONDEBUG(SPDLOG_INFO("Thresholds={} Kept={}", nthresh, it->nThresh));
-      ExtremaThresholdC *newthresh = new ExtremaThresholdC[size_t(nthresh)];
-      int nt = 0;
+      //std::vector<ExtremaThresholdC> newthresh = new std::vector<ExtremaThresholdC>(nthresh);
+      std::vector<ExtremaThresholdC> newthresh;
+      newthresh.reserve(nthresh);
 
       unsigned lastSize = 0;
       unsigned lastInd = 0;
@@ -325,26 +326,23 @@ namespace Ravl2
         auto size = chist[thresh[j].pos];
         if((lastSize * 1.15) > size) {// Is size only slightly different ?
           if(thresh[j].margin > thresh[lastInd].margin) {
-            newthresh[nt - 1] = thresh[j];// Move threshold if margin is bigger.
-            newthresh[nt - 1].area = chist[thresh[j].thresh];
+            newthresh.back() = thresh[j];// Move threshold if margin is bigger.
+            newthresh.back().area = chist[thresh[j].thresh];
             lastSize = size;
           }
           ONDEBUG(SPDLOG_INFO("Rejecting threshold={} LastArea={} Area={}", thresh[j].thresh, size, chist[thresh[j].thresh]));
           continue;// Reject it, not enough difference.
         }
-        newthresh[nt] = thresh[j];
-        newthresh[nt].area = chist[newthresh[nt].thresh];
-        nt++;
+        newthresh.push_back(thresh[j]);
+        newthresh.back().area = chist[thresh[j].thresh];
         lastSize = size;
         lastInd = j;
       }
 
-      if(nt > 0) {
-        it->thresh = newthresh;
-        it->nThresh = nt;
+      if(!newthresh.empty()) {
+        it->thresh = std::move(newthresh);
       } else {
-        it->nThresh = 0;
-        delete[] newthresh;
+        it->thresh.clear();
       }
       ONDEBUG(SPDLOG_INFO("Thresholds={} Kept={}", nthresh, it->nThresh));
     }// for(SArray1dIterC<ExtremaRegionC> it(...
