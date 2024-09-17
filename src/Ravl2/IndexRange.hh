@@ -120,7 +120,16 @@ namespace Ravl2
         a *= m_range[i].size();
       return a;
     }
-
+    
+    //! Get the center of the range.
+    [[nodiscard]] constexpr auto center() const noexcept
+    {
+      Index<N> ret;
+      for(unsigned i = 0; i < N; i++)
+        ret[i] = m_range[i].center();
+      return ret;
+    }
+    
     //! Get total number of elements that should be allocated
     //! for an array.  This will always be positive or zero.
     [[nodiscard]] constexpr size_t elements() const

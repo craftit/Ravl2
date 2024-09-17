@@ -84,7 +84,13 @@ namespace Ravl2
     {
       return (m_max - m_min) + 1;
     }
-
+    
+    //! Get the center of the range.
+    [[nodiscard]] constexpr int center() const noexcept
+    {
+      return (m_min + m_max) / 2;
+    }
+    
     //! Get the area of the range.
     [[nodiscard]] constexpr int area() const noexcept
     {

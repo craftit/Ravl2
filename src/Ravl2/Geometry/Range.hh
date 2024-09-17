@@ -84,7 +84,7 @@ namespace Ravl2
     }
 
     //! Returns the index in the middle of the range, eg. (max()+min())/2.
-    [[nodiscard]] inline constexpr RealT Center() const
+    [[nodiscard]] inline constexpr RealT center() const
     {
       return (min() + max()) / 2;
     }
@@ -160,7 +160,7 @@ namespace Ravl2
 
     //! Set the origin of the range to 'position'.
     // Returns a reference to this range.
-    inline constexpr const Range &SetOrigin(RealT position)
+    inline constexpr const Range &setOrigin(RealT position)
     {
       max() = position + max() - min();
       min() = position;
@@ -218,7 +218,7 @@ namespace Ravl2
     //! Returns the index range < min(), (max()+min())/2 >.
     [[nodiscard]] constexpr inline Range FirstHalf() const
     {
-      return Range(min(), Center());
+      return Range(min(), center());
     }
 
     //! Returns the index range < min(), (max()+min())/2 >.
@@ -391,10 +391,10 @@ namespace Ravl2
 
     //! Set the origin of the range to 'newOrigin'
     // Returns a reference to this rectangle.
-    constexpr const Range &SetOrigin(const Vector<RealT, N> &newOrigin)
+    constexpr const Range &setOrigin(const Vector<RealT, N> &newOrigin)
     {
       for(unsigned i = 0; i < N; ++i) {
-        mRanges[i].SetOrigin(newOrigin[i]);
+        mRanges[i].setOrigin(newOrigin[i]);
       }
       return *this;
     }
@@ -408,28 +408,18 @@ namespace Ravl2
       }
       return ret;
     }
-
-    //! Returns the bottom-right index of the rectangle.
-    [[nodiscard]] inline constexpr Vector<RealT, N> End() const
-    {
-      Vector<RealT, N> ret;
-      for(unsigned i = 0; i < N; ++i) {
-        ret[i] = mRanges[i].max();
-      }
-      return ret;
-    }
-
+    
     //! Returns the index which is in the middle of the rectangle
-    [[nodiscard]] inline constexpr Vector<RealT, N> Center() const
+    [[nodiscard]] inline constexpr Vector<RealT, N> center() const
     {
       Vector<RealT, N> ret;
       for(unsigned i = 0; i < N; ++i) {
-        ret[i] = mRanges[i].Center();
+        ret[i] = mRanges[i].center();
       }
       return ret;
     }
 
-    //! Returns the area of the image rectangle expressed in number of indexs.
+    //! Returns the area of the image rectangle expressed in number of indexes.
     [[nodiscard]] inline constexpr RealT area() const
     {
       RealT area = 1;
@@ -438,7 +428,7 @@ namespace Ravl2
       }
       return area;
     }
-
+    
     //! Returns an rectangle expanded by 'n' on each side.
     [[nodiscard]] inline constexpr Range expand(RealT n) const
     {
