@@ -287,15 +287,11 @@ namespace Ravl2
       auto end = regionMap.begin();
       end += labelAlloc;
       for(auto it = regionMap.begin(); it != end; ++it) {
-        if(it->nThresh > 0) {
-          for(int i = 0; i < it->nThresh; i++) {
-            callback(it->minat, it->thresh[i].thresh, it->thresh[i].area);
-          }
+
+        for(const auto &at : it->thresh) {
+          callback(it->minat, at.thresh, at.area);
         }
-        if(it->thresh != nullptr) {
-          delete[] it->thresh;
-          it->thresh = nullptr;
-        }
+        it->thresh.clear();
       }
     }
 
@@ -552,14 +548,11 @@ namespace Ravl2
       return masks;
     auto end = regionMap.begin() + labelAlloc;
     for(auto it = regionMap.begin(); it != end; ++it) {
-      if(it->nThresh > 0) {
+      if(!it->thresh.empty()) {
         auto regions = GrowRegionMask(*it);
         masks.insert(masks.end(), regions.begin(), regions.end());
       }
-      if(it->thresh != nullptr) {
-        delete[] it->thresh;
-        it->thresh = nullptr;
-      }
+      it->thresh.clear();
     }
 
     return masks;
