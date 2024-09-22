@@ -383,9 +383,10 @@ TEST_CASE("ImagePyramid")
 
   SECTION("ConstructAndFind")
   {
-    Ravl2::SetSPDLogLevel beQuiet(spdlog::level::off);
+    using PixelT = uint8_t;
+    //Ravl2::SetSPDLogLevel beQuiet(spdlog::level::off);
     // Make an image
-    Array<uint8_t,2> patch({27,27},0);
+    Array<PixelT,2> patch({27,27},0);
     patch[2][2] = 1.0f;
     patch[2][3] = 1.0f;
     patch[3][2] = 1.0f;
@@ -396,7 +397,7 @@ TEST_CASE("ImagePyramid")
 
     ASSERT_EQ(pyramid.numLevels(), 3u);
     auto level = pyramid.findAreaScale(0.33f);
-    SPDLOG_TRACE("Level: {}", level);
+    SPDLOG_INFO("Level: {}", level);
     ASSERT_EQ(level, 1u);
   }
   SECTION("Construct")
@@ -415,6 +416,49 @@ TEST_CASE("ImagePyramid")
     auto level = pyramid.findAreaScale(0.33f);
     SPDLOG_TRACE("Level: {}", level);
     ASSERT_EQ(level, 1u);
+
+  }
+
+  SECTION("ConstructFloat")
+  {
+    using PixelT = float;
+    //Ravl2::SetSPDLogLevel beQuiet(spdlog::level::off);
+    // Make an image
+    Array<PixelT,2> patch({28,28},0);
+
+    clip(patch,patch.range().shrink(6)) = 1.0f;
+
+    auto pyramid = buildImagePyramid(patch, 3, toVector<float>(2,2),0,4);
+
+    ASSERT_EQ(pyramid.numLevels(), 3u);
+    auto level = pyramid.findAreaScale(0.33f);
+    SPDLOG_INFO("Level: {}", level);
+    ASSERT_EQ(level, 1u);
+//    for(size_t i = 0;i < pyramid.numLevels();i++) {
+//      SPDLOG_INFO("Level:{} Img:{} ", i, pyramid.level(i).image());
+//    }
+
+  }
+
+  SECTION("ConstructOffset")
+  {
+    using PixelT = float;
+    //Ravl2::SetSPDLogLevel beQuiet(spdlog::level::off);
+    // Make an image
+    IndexRange<2> range({{4, 15}, {8, 19}});
+    Array<PixelT,2> patch(range,0);
+
+    clip(patch,patch.range().shrink(2)) = 1.0f;
+
+    auto pyramid = buildImagePyramid(patch, 3, toVector<float>(2,2),0,4);
+
+    ASSERT_EQ(pyramid.numLevels(), 3u);
+    auto level = pyramid.findAreaScale(0.33f);
+    SPDLOG_INFO("Level: {}", level);
+    ASSERT_EQ(level, 1u);
+    for(size_t i = 0;i < pyramid.numLevels();i++) {
+      SPDLOG_INFO("Level:{} Img:{} ", i, pyramid.level(i).image());
+    }
 
   }
 

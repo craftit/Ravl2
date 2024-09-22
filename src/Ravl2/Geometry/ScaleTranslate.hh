@@ -13,7 +13,7 @@
 namespace Ravl2
 {
 
-  //! General affine transformation.
+  //! Scale and translation
 
   template <typename DataT, unsigned N>
   class ScaleTranslate
@@ -100,8 +100,8 @@ namespace Ravl2
     }
 
   protected:
-    Vector<DataT, N> mS = xt::ones<DataT>({N}); // Scale/rotate.
-    Vector<DataT, N> mT = xt::zeros<DataT>({N});// Translate.
+    Vector<DataT, N> mS = xt::ones<DataT>({N}); //!< Scale
+    Vector<DataT, N> mT = xt::zeros<DataT>({N});//!< Translate.
   };
 
   //! Generate an inverse transformation.
