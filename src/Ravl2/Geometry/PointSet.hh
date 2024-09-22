@@ -42,12 +42,12 @@ namespace Ravl2
     [[nodiscard]] constexpr std::vector<RealT> BarycentricCoordinate(const Point<RealT, N> &point) const;
 
     //! Compute the bounding rectangle for the point set.
-    [[nodiscard]] constexpr Range<RealT, N> BoundingRectangle() const;
+    [[nodiscard]] constexpr Range<RealT, N> boundingRectangle() const;
 
     //! translate point set by adding a vector.
     constexpr const PointSet &operator+=(const Vector<RealT, N> &offset);
 
-    //! translate point set by subracting a vector.
+    //! translate point set by subtracting a vector.
     constexpr const PointSet &operator-=(const Vector<RealT, N> &offset);
 
     //! scale the point set by multiplying the points by 'scale'.
@@ -60,20 +60,6 @@ namespace Ravl2
       for(auto &it : *this)
         it = trans(it);
       return *this;
-    }
-
-    //! Serialization support
-    template <class Archive>
-    void serialize(Archive &archive)
-    {
-      cereal::size_type numPnts = this->size();
-      archive(cereal::make_size_tag(numPnts));
-      if(numPnts != this->size()) {
-        this->resize(numPnts);
-      }
-      for(auto &it : *this) {
-        archive(it);
-      }
     }
 
   protected:
@@ -146,7 +132,7 @@ namespace Ravl2
   //! Compute the bounding rectangle for the point set.
 
   template <typename RealT, unsigned N>
-  constexpr Range<RealT, N> PointSet<RealT, N>::BoundingRectangle() const
+  constexpr Range<RealT, N> PointSet<RealT, N>::boundingRectangle() const
   {
     Range<RealT, N> ret;
     auto point = this->begin();

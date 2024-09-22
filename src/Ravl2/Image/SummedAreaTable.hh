@@ -117,7 +117,7 @@ namespace Ravl2
       auto areaNorm = CoordT(1)/(scale[0] * scale[1]);
       auto indexBounds = rng.toIndexRange().shrinkMax(1);
       if(!mClipRange.contains(indexBounds)) {
-        SPDLOG_WARN("SampleGrid: Out of bounds: {} Rng:{} Bounds:{} Array:{} ", indexBounds, rng, mClipRange,this->range());
+        SPDLOG_WARN("SampleGrid: Out of bounds: {} Rng:{} Bounds:{} Array:{} Scale:{} ", indexBounds, rng, mClipRange,this->range(),scale);
         throw std::out_of_range("SampleGrid: Out of bounds");
       }
       // Is it worth caching the last row of interpolated values ?

@@ -132,6 +132,7 @@ namespace Ravl2
 
     //! Add a point checking it isn't a duplicate of the last one.
     void addBack(const Point<RealT, 2> &pnt);
+
   };
 
   //! Let the compiler know that we will use these classes with the following types
@@ -161,6 +162,7 @@ namespace Ravl2
   {
     return Polygon<RealT>(range, orientation);
   }
+
 
   //! Convert an IndexRange to a polygon
   //! @param: range - the range defining the rectangle for the polygon

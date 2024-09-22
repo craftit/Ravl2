@@ -441,6 +441,13 @@ namespace Ravl2
           m_range(range)
     {}
 
+    explicit constexpr ArrayView(DataT *data, const IndexRange<1> &range, [[maybe_unused]] const int *strides)
+        : m_data(data),
+          m_range(range)
+    {
+      assert(*strides == 1);
+    }
+
     constexpr ArrayView() = default;
 
   protected:

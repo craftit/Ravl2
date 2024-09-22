@@ -51,6 +51,23 @@ TEST_CASE("Warp")
     //IndexRange<2> rng = img.range().shift(1, 1);
   }
 
+  SECTION("Shift")
+  {
+    Ravl2::Array<uint8_t, 2> img({10, 10}, 0);
+    clip(img, img.range().shrink(3)) = 1;
+    SPDLOG_TRACE("Source:{}", img);
+
+    auto transform = [](const Ravl2::Point2f &p) -> Ravl2::Point2f {
+      return p + Ravl2::toPoint<float>(1, 1);
+    };
+
+    Ravl2::Array<uint8_t, 2> target(img.range(), 0);
+    Ravl2::warp(target, img, transform);
+
+    SPDLOG_TRACE("Target:{}", target);
+    //IndexRange<2> rng = img.range().shift(1, 1);
+  }
+
 }
 
 

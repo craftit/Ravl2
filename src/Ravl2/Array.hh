@@ -44,7 +44,7 @@ namespace Ravl2
     template <typename ArrayT>
       requires WindowedArray<ArrayT, DataT, N>
     constexpr explicit ArrayAccess(ArrayT &array)
-        : m_ranges(array.range().range_data()),
+        : m_ranges(array.range_data()),
           m_data(array.origin_address()),
           m_strides(array.strides())
     {}
@@ -502,6 +502,13 @@ namespace Ravl2
           m_range(range),
           m_strides(strides)
     {}
+
+    explicit constexpr ArrayView(DataT *data, const IndexRange<N> &range, const int *strides)
+        : m_data(data),
+          m_range(range)
+    {
+      memccpy(m_strides.data(), strides, sizeof(int), N);
+    }
 
     //! Create an empty array
     constexpr ArrayView() = default;

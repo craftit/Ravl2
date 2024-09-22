@@ -198,13 +198,13 @@ namespace Ravl2
     for(size_t i = 1; i < numLevels; ++i) {
       levelScale.scale(1.0f / scale);
       IndexRange<2> sampleRange = toInnerIndexRange(levelScale(toRange<float>(fullImg.range()))).shrinkMax(1);
-      SPDLOG_TRACE("Level {} Scale: {}  sample:{} ",i, levelScale,sampleRange);
+      SPDLOG_INFO("Level {} Scale:{} levelScale:{} sampleRange:{} Area:{} ",i, scale, levelScale,sampleRange,sampleRange.area());
       if(sampleRange.area() < minArea) {
         break;
       }
       IndexRange<2> fullRange = sampleRange.expand(int(pad));
       Array<PixelT, 2> newImage(fullRange);
-      subImg.template sampleGrid(clip(newImage,sampleRange), scale);
+      subImg.template sampleGrid(clip(newImage,sampleRange), levelScale.scaleVector(), levelScale.translation());
       if(pad > 0) {
         // If we've padded the image then we need to set the padding to zero.
         mirrorEdges(newImage, pad);
