@@ -625,6 +625,20 @@ namespace Ravl2
       archive(r);
     }
   }
+  
+  //! Clip a range by another range.
+  template <unsigned N>
+  [[nodiscard]] constexpr IndexRange<N> clip(const IndexRange<N> &range, const IndexRange<N> &clip)
+  {
+    if constexpr(N == 1) {
+      return range.clip(clip);
+    } else {
+      IndexRange<N> ret;
+      for(unsigned i = 0; i < N; i++)
+        ret[i] = range[i].clip(clip[i]);
+      return ret;
+    }
+  }
 
   extern template class IndexRange<2>;
   extern template class IndexRange<3>;

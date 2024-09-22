@@ -198,7 +198,7 @@ namespace Ravl2
     for(size_t i = 1; i < numLevels; ++i) {
       levelScale.scale(1.0f / scale);
       IndexRange<2> sampleRange = toInnerIndexRange(levelScale(toRange<float>(fullImg.range()))).shrinkMax(1);
-      SPDLOG_INFO("Level {} Scale:{} levelScale:{} sampleRange:{} Area:{} ",i, scale, levelScale,sampleRange,sampleRange.area());
+      //SPDLOG_INFO("Level {} Scale:{} levelScale:{} sampleRange:{} Area:{} ",i, scale, levelScale,sampleRange,sampleRange.area());
       if(sampleRange.area() < minArea) {
         break;
       }
