@@ -56,7 +56,8 @@ namespace Ravl2
     }
     size_t pnts = raw.size();
     if(pnts == 0) {
-      return {toPoint<RealT>(0, 0), 1};
+      const Point<RealT, N> zero = xt::zeros<RealT>({N});
+      return {zero, 1};
     }
     auto realSize = static_cast<RealT>(pnts);
     mean /= realSize;
