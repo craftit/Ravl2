@@ -148,6 +148,30 @@ TEST_CASE("SubPixelPeakDetection")
   ASSERT_FALSE(std::abs(at[1] - 1.1f) > 0.000001f);
 }
 
+TEST_CASE("SubPixelPeakDetection1")
+{
+  using namespace Ravl2;
+  auto offset = locatePeakSubPixel1(0.0f,1.0f,0.0f);
+  //SPDLOG_INFO("Offset:{}", offset);
+  ASSERT_FLOAT_EQ(offset,0.0f);
+  offset = locatePeakSubPixel1(0.5,0.8,0.3);
+  //SPDLOG_INFO("Offset:{}", offset);
+  ASSERT_FLOAT_EQ(offset,-0.25f);
+  offset = locatePeakSubPixel1(0.3,0.8,0.5);
+  ASSERT_FLOAT_EQ(offset,0.25f);
+  //SPDLOG_INFO("Offset:{}", offset);
+  offset = locatePeakSubPixel1(0.9,1.0,0.1);
+  ASSERT_FLOAT_EQ(offset,-0.5f);
+  //SPDLOG_INFO("Offset:{}", offset);
+  offset = locatePeakSubPixel1(0.1,1.0,0.9);
+  ASSERT_FLOAT_EQ(offset,0.5f);
+  //SPDLOG_INFO("Offset:{}", offset);
+  offset = locatePeakSubPixel1(9.0f,10.0f,1.0f);
+  ASSERT_FLOAT_EQ(offset,-0.5f);
+  //SPDLOG_INFO("Offset:{}", offset);
+  
+}
+
 // Test 2x2 iterators.
 
 TEST_CASE("Array2Sqr2Iter")

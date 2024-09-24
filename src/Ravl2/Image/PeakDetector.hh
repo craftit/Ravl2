@@ -218,4 +218,28 @@ namespace Ravl2
       corr[1] = RealT(-0.5);
     return fpos + corr;
   }
+  
+  //! Fit a peak in 1 dimension. v1 > v0  and v1 > v2
+  //! Returns a value between -0.5 and 0.5 which is the offset from v1's position.
+  template <typename RealT = float>
+  RealT locatePeakSubPixel1(RealT v0,RealT v1,RealT v2)
+  {
+    // Fit a quadratic to the peak and works out the center.
+    assert(v1 > v0 && v1 > v2);
+    RealT Pxx = (v0 - RealT(2) * v1 + v2) / RealT(2);
+    RealT Px = (v0 - v2) / RealT(2);
+    RealT det = Pxx;
+    if(det == 0)
+      return RealT(0);
+    // calculate sub-pixel corrections to the corner position.
+    RealT corr = Px / det;
+    // pull the corrections inside the pixel.
+    if(corr > RealT(0.5))
+      corr = RealT(0.5);
+    if(corr < RealT(-0.5))
+      corr = RealT(-0.5);
+    return corr;
+  }
+  
+  
 }// namespace Ravl2
