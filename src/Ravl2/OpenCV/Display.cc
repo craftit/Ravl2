@@ -41,9 +41,9 @@ namespace Ravl2
   namespace
   {
 
-    [[maybe_unused]] bool g_dispFmt1 = outputFormatMap().add(std::make_shared<OutputFormatCall>("OpenCV", "", "display", -1, [](const ProbeOutputContext &ctx) -> std::optional<StreamOutputPlan> {
+    [[maybe_unused]] bool g_dispFmt1 = outputFormatMap().add(std::make_shared<OutputFormatCall>("OpenCV", "", "opencv", -1, [](const ProbeOutputContext &ctx) -> std::optional<StreamOutputPlan> {
       auto convChain = typeConverterMap().find(typeid(cv::Mat), ctx.m_sourceType);
-      if(ctx.m_protocol != "display") {
+      if(ctx.m_protocol != "opencv") {
         return std::nullopt;
       }
       if(!convChain.has_value() && ctx.m_sourceType != typeid(cv::Mat)) {
