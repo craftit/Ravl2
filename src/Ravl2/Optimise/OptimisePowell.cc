@@ -10,6 +10,10 @@
 
 namespace Ravl2 {
 
+  void initOptimisePowell()
+  {}
+
+
   OptimisePowell::OptimisePowell (unsigned iterations, RealT tolerance, bool useBracketMinimum,bool verbose)
     : Optimise(verbose),
      _iterations(iterations),
