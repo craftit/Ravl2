@@ -366,7 +366,7 @@ namespace Ravl2
       return m_range[i];
     }
 
-    //! Clip index so it is within the range.
+    //! Clip 'range' so it is within the this range.
     [[nodiscard]] constexpr IndexRange<N> clip(const IndexRange<N> &range) const
     {
       IndexRange<N> ret;
