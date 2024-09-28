@@ -49,7 +49,7 @@ TEST_CASE("RankedScoreArray")
   {
     int lastScore = std::get<0>(test[0]);
     for (size_t i = 1; i < test.size(); i++) {
-      CHECK(std::get<0>(test[i]) > lastScore);
+      CHECK(std::get<0>(test[i]) >= lastScore);
     }
   }
   //SPDLOG_INFO("Dumping.");

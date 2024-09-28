@@ -37,7 +37,7 @@ namespace Ravl2
     // Compute the means.
     RavlAssertMsg(pointsFrom.size() == pointsTo.size(), "fitSimilarity(), Point arrays must have the same size.");
 
-    RealT n = pointsFrom.size();
+    RealT n = RealT(pointsFrom.size());
     if(n < 2) {
       return false;
     }
