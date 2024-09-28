@@ -48,15 +48,13 @@ namespace Ravl2
     requires std::is_floating_point_v<RealT>
   std::tuple<Point<RealT, N>, RealT> meanAndScale(const Container1T &raw)
   {
-    Point<RealT, N> mean;
-    for(unsigned i = 0; i < N; i++)
-      mean[i] = 0;
+    Point<RealT, N> mean = xt::zeros<RealT>({N});
     for(auto it : raw) {
       mean += it;
     }
     size_t pnts = raw.size();
     if(pnts == 0) {
-      return {toPoint<RealT>(0, 0), 1};
+      return {xt::zeros<RealT>({N}), 1};
     }
     auto realSize = static_cast<RealT>(pnts);
     mean /= realSize;

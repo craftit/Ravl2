@@ -13,11 +13,13 @@
 #include "Ravl2/Geometry/CircleIter.hh"
 #include "Ravl2/Geometry/Conic2.hh"
 #include "Ravl2/Geometry/FitConic.hh"
+#include "Ravl2/Geometry/Quaternion.hh"
 #include "Ravl2/Geometry/LineABC2d.hh"
 #include "Ravl2/Geometry/Affine.hh"
 #include "Ravl2/Geometry/ScaleTranslate.hh"
 #include "Ravl2/Geometry/VectorOffset.hh"
 #include "Ravl2/Geometry/FitVectorOffset.hh"
+#include "Ravl2/Geometry/FitSimilarity.hh"
 #include "Ravl2/Geometry/PlanePVV3d.hh"
 #include "Ravl2/Geometry/FitAffine.hh"
 #include "Ravl2/Math/FastFourierTransform.hh"
@@ -593,10 +595,86 @@ TEST_CASE("Planes")
   }
 
 #endif
+}
 
+
+TEST_CASE("FitSimilarity")
+{
+  using namespace Ravl2;
+  using RealT = float;
+
+  std::vector<Point<RealT,3>> points;
+  points.reserve(16);
+
+  points.push_back(toPoint<RealT>(1,4,6));
+  points.push_back(toPoint<RealT>(3,2,9));
+  points.push_back(toPoint<RealT>(7,3,3));
+  points.push_back(toPoint<RealT>(9,7,2));
+  points.push_back(toPoint<RealT>(5,3,2));
+
+  // Generate a random rotation.
+  std::mt19937 rng(static_cast<std::mt19937::result_type>(random()));
+  std::uniform_real_distribution<RealT> randomAngle(-std::numbers::pi_v<RealT>,std::numbers::pi_v<RealT>);
+  std::uniform_real_distribution<RealT> randomTranslation(-5.0, 5.0);
+
+
+  Vector<RealT,3> rotAngle = toVector<RealT>(randomAngle(rng),randomAngle(rng),randomAngle(rng));
+  Vector<RealT,3> offset = toVector<RealT>(randomTranslation(rng),randomTranslation(rng),randomTranslation(rng));
+  Matrix<RealT,3,3> rot = Quaternion<RealT>::fromEulerAngles(rotAngle).rotationMatrix();
+
+  RealT scale = 0.75;
+
+  std::vector<Point<RealT,3>> transformedPoints;
+  transformedPoints.reserve(points.size());
+  for(auto p : points) {
+    transformedPoints.push_back(xt::linalg::dot(rot ,p * scale)  + offset);
+  }
+
+  //! Fit a rigid transform between the two point sets.
+
+  Vector<RealT,3> fittedTranslation;
+  Matrix<RealT,3,3> fittedRotation;
+  RealT fittedScaling = -1;
+
+  CHECK(fitSimilarity<RealT>(
+		    fittedRotation,
+		    fittedTranslation,
+		    fittedScaling,
+		    points,
+		    transformedPoints,
+		    false
+		   ));
+
+
+  SPDLOG_INFO("Rotation={} ", rot);
+  SPDLOG_INFO("Translation={} ", offset);
+  SPDLOG_INFO("Scaling={} ", scale);
+
+  SPDLOG_INFO("Fitted Rotation={} ", fittedRotation);
+  SPDLOG_INFO("Fitted Translation={} ", fittedTranslation);
+  SPDLOG_INFO("Fitted Scaling={} ", fittedScaling);
+
+  CHECK(std::abs(fittedScaling - scale) < 0.0001f);
+  CHECK(xt::sum(xt::abs(fittedRotation - rot))() < 0.0001f);
+  CHECK(xt::sum(xt::abs(fittedTranslation - offset))() < 0.0001f);
+
+#if 0
+  // Check the affine version.
+
+  Affine3dC aff;
+  if(!FitSimilarity(points.Array(),
+		    transformedPoints,
+		    aff
+		   )) return __LINE__;
+
+  for(SArray1dIter2C<Point3dC,Point3dC> it(transformedPoints,points.Array());it;it++) {
+    if((it.Data1() - aff * it.Data2()).SumOfSqr() > 0.0001) return __LINE__;
+  }
+#endif
 
 
 }
+
 
 
 
