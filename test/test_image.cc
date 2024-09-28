@@ -421,7 +421,7 @@ TEST_CASE("ImagePyramid")
 
     ASSERT_EQ(pyramid.numLevels(), 3u);
     auto level = pyramid.findAreaScale(0.33f);
-    SPDLOG_INFO("Level: {}", level);
+    //SPDLOG_INFO("Level: {}", level);
     ASSERT_EQ(level, 1u);
   }
   SECTION("Construct")

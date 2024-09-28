@@ -627,7 +627,7 @@ TEST_CASE("FitSimilarity")
   std::vector<Point<RealT,3>> transformedPoints;
   transformedPoints.reserve(points.size());
   for(auto p : points) {
-    transformedPoints.push_back(xt::linalg::dot(rot ,p * scale)  + offset);
+    transformedPoints.push_back(xt::linalg::dot(rot ,p) * scale  + offset);
   }
 
   //! Fit a rigid transform between the two point sets.
@@ -640,37 +640,33 @@ TEST_CASE("FitSimilarity")
 		    fittedRotation,
 		    fittedTranslation,
 		    fittedScaling,
-		    points,
 		    transformedPoints,
+		    points,
 		    false
 		   ));
 
-
+#if 0
   SPDLOG_INFO("Rotation={} ", rot);
   SPDLOG_INFO("Translation={} ", offset);
   SPDLOG_INFO("Scaling={} ", scale);
-
   SPDLOG_INFO("Fitted Rotation={} ", fittedRotation);
   SPDLOG_INFO("Fitted Translation={} ", fittedTranslation);
   SPDLOG_INFO("Fitted Scaling={} ", fittedScaling);
-
+#endif
   CHECK(std::abs(fittedScaling - scale) < 0.0001f);
   CHECK(xt::sum(xt::abs(fittedRotation - rot))() < 0.0001f);
   CHECK(xt::sum(xt::abs(fittedTranslation - offset))() < 0.0001f);
 
-#if 0
   // Check the affine version.
 
-  Affine3dC aff;
-  if(!FitSimilarity(points.Array(),
-		    transformedPoints,
-		    aff
-		   )) return __LINE__;
+  Affine<RealT,3> aff;
+  CHECK(fitSimilarity(aff,transformedPoints,points));
 
-  for(SArray1dIter2C<Point3dC,Point3dC> it(transformedPoints,points.Array());it;it++) {
-    if((it.Data1() - aff * it.Data2()).SumOfSqr() > 0.0001) return __LINE__;
+  for(auto p : points) {
+    Point<RealT,3> affP = aff(p);
+    Point<RealT,3> rotP = xt::linalg::dot(rot,p) * scale  + offset;
+    CHECK(xt::sum(xt::square(affP - rotP))() < 0.0001f);
   }
-#endif
 
 
 }
