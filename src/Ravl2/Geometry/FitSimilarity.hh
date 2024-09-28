@@ -7,6 +7,7 @@
 #include "Ravl2/Assert.hh"
 #include "Ravl2/Concepts.hh"
 #include "Ravl2/Geometry/Affine.hh"
+#include "Ravl2/Geometry/Isometry3.hh"
 #include "Ravl2/Math/LeastSquares.hh"
 
 namespace Ravl2
@@ -140,6 +141,27 @@ namespace Ravl2
       return false;
     }
     affine.SRMatrix() *= scale;
+    return true;
+  }
+
+  //! @brief Fit an affine isometry transformation between two sets of points.
+  //! Preserves angles and distances.
+  //! @param isometry3 - The affine transformation to be computed.
+  //! @param pointsTo - The first set of points.
+  //! @param pointsFrom - The second set of points.
+  //! @return True if the transformation was computed.
+  template<typename RealT, SimpleContainer ContainerOfPointAT, SimpleContainer ContainerOfPointBT>
+  bool fit(Isometry3<RealT> &isometry3,
+		    const ContainerOfPointAT &pointsTo,
+		    const ContainerOfPointBT &pointsFrom)
+  {
+    RealT scale = 0;
+    Matrix<RealT,3,3> rotation;
+    Vector<RealT,3> translation;
+    if(!fitSimilarity(rotation, translation, scale, pointsTo, pointsFrom, true)) {
+      return false;
+    }
+    isometry3 = Isometry3<RealT>(Quaternion<RealT>::fromMatrix(rotation), translation);
     return true;
   }
 

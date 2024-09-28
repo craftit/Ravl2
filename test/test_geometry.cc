@@ -620,7 +620,7 @@ TEST_CASE("FitSimilarity")
 
   Vector<RealT,3> rotAngle = toVector<RealT>(randomAngle(rng),randomAngle(rng),randomAngle(rng));
   Vector<RealT,3> offset = toVector<RealT>(randomTranslation(rng),randomTranslation(rng),randomTranslation(rng));
-  Matrix<RealT,3,3> rot = Quaternion<RealT>::fromEulerAngles(rotAngle).rotationMatrix();
+  Matrix<RealT,3,3> rot = Quaternion<RealT>::fromEulerAngles(rotAngle).toMatrix();
 
   RealT scale = 0.75;
 
@@ -631,45 +631,128 @@ TEST_CASE("FitSimilarity")
   }
 
   //! Fit a rigid transform between the two point sets.
+  SECTION("Fit direct parameters.")
+  {
+    Vector<RealT, 3> fittedTranslation;
+    Matrix<RealT, 3, 3> fittedRotation;
+    RealT fittedScaling = -1;
 
-  Vector<RealT,3> fittedTranslation;
-  Matrix<RealT,3,3> fittedRotation;
-  RealT fittedScaling = -1;
-
-  CHECK(fitSimilarity<RealT>(
-		    fittedRotation,
-		    fittedTranslation,
-		    fittedScaling,
-		    transformedPoints,
-		    points,
-		    false
-		   ));
+    CHECK(fitSimilarity<RealT>(
+      fittedRotation,
+      fittedTranslation,
+      fittedScaling,
+      transformedPoints,
+      points,
+      false
+			      ));
 
 #if 0
-  SPDLOG_INFO("Rotation={} ", rot);
-  SPDLOG_INFO("Translation={} ", offset);
-  SPDLOG_INFO("Scaling={} ", scale);
-  SPDLOG_INFO("Fitted Rotation={} ", fittedRotation);
-  SPDLOG_INFO("Fitted Translation={} ", fittedTranslation);
-  SPDLOG_INFO("Fitted Scaling={} ", fittedScaling);
+    SPDLOG_INFO("Rotation={} ", rot);
+    SPDLOG_INFO("Translation={} ", offset);
+    SPDLOG_INFO("Scaling={} ", scale);
+    SPDLOG_INFO("Fitted Rotation={} ", fittedRotation);
+    SPDLOG_INFO("Fitted Translation={} ", fittedTranslation);
+    SPDLOG_INFO("Fitted Scaling={} ", fittedScaling);
 #endif
-  CHECK(std::abs(fittedScaling - scale) < 0.0001f);
-  CHECK(xt::sum(xt::abs(fittedRotation - rot))() < 0.0001f);
-  CHECK(xt::sum(xt::abs(fittedTranslation - offset))() < 0.0001f);
-
-  // Check the affine version.
-
-  Affine<RealT,3> aff;
-  CHECK(fitSimilarity(aff,transformedPoints,points));
-
-  for(auto p : points) {
-    Point<RealT,3> affP = aff(p);
-    Point<RealT,3> rotP = xt::linalg::dot(rot,p) * scale  + offset;
-    CHECK(xt::sum(xt::square(affP - rotP))() < 0.0001f);
+    CHECK(std::abs(fittedScaling - scale) < 0.0001f);
+    CHECK(xt::sum(xt::abs(fittedRotation - rot))() < 0.0001f);
+    CHECK(xt::sum(xt::abs(fittedTranslation - offset))() < 0.0001f);
   }
 
 
+  SECTION("Fit an affine transform")
+  {
+    // Check the affine version.
+
+    Affine<RealT, 3> aff;
+    CHECK(fitSimilarity(aff, transformedPoints, points));
+
+    for(auto p : points) {
+      Point<RealT, 3> affP = aff(p);
+      Point<RealT, 3> rotP = xt::linalg::dot(rot, p) * scale + offset;
+      CHECK(xt::sum(xt::square(affP - rotP))() < 0.0001f);
+    }
+  }
+
 }
+
+TEST_CASE("FitIsometry")
+{
+  using namespace Ravl2;
+  using RealT = float;
+
+  std::vector<Point<RealT,3>> points;
+  points.reserve(16);
+
+  points.push_back(toPoint<RealT>(1,4,6));
+  points.push_back(toPoint<RealT>(3,2,9));
+  points.push_back(toPoint<RealT>(7,3,3));
+  points.push_back(toPoint<RealT>(9,7,2));
+  points.push_back(toPoint<RealT>(5,3,2));
+
+  // Generate a random rotation.
+  std::mt19937 rng(static_cast<std::mt19937::result_type>(random()));
+  std::uniform_real_distribution<RealT> randomAngle(-std::numbers::pi_v<RealT>,std::numbers::pi_v<RealT>);
+  std::uniform_real_distribution<RealT> randomTranslation(-5.0, 5.0);
+
+
+  Vector<RealT,3> rotAngle = toVector<RealT>(randomAngle(rng),randomAngle(rng),randomAngle(rng));
+  Vector<RealT,3> offset = toVector<RealT>(randomTranslation(rng),randomTranslation(rng),randomTranslation(rng));
+  Matrix<RealT,3,3> rot = Quaternion<RealT>::fromEulerAngles(rotAngle).toMatrix();
+
+  RealT scale = 1.0f;
+
+  std::vector<Point<RealT,3>> transformedPoints;
+  transformedPoints.reserve(points.size());
+  for(auto p : points) {
+    transformedPoints.push_back(xt::linalg::dot(rot ,p) * scale  + offset);
+  }
+
+  //! Fit a rigid transform between the two point sets.
+  SECTION("Fit direct parameters.")
+  {
+    Vector<RealT, 3> fittedTranslation;
+    Matrix<RealT, 3, 3> fittedRotation;
+    RealT fittedScaling = -1;
+
+    CHECK(fitSimilarity<RealT>(
+      fittedRotation,
+      fittedTranslation,
+      fittedScaling,
+      transformedPoints,
+      points,
+      true));
+
+#if 0
+    SPDLOG_INFO("Rotation={} ", rot);
+    SPDLOG_INFO("Translation={} ", offset);
+    SPDLOG_INFO("Scaling={} ", scale);
+    SPDLOG_INFO("Fitted Rotation={} ", fittedRotation);
+    SPDLOG_INFO("Fitted Translation={} ", fittedTranslation);
+    SPDLOG_INFO("Fitted Scaling={} ", fittedScaling);
+#endif
+    CHECK(std::abs(fittedScaling - scale) < 0.0001f);
+    CHECK(xt::sum(xt::abs(fittedRotation - rot))() < 0.0001f);
+    CHECK(xt::sum(xt::abs(fittedTranslation - offset))() < 0.0001f);
+  }
+
+
+  SECTION("Fit an affine transform")
+  {
+    // Check the affine version.
+
+    Affine<RealT, 3> aff;
+    CHECK(fitIsometry(aff, transformedPoints, points));
+
+    for(auto p : points) {
+      Point<RealT, 3> affP = aff(p);
+      Point<RealT, 3> rotP = xt::linalg::dot(rot, p) * scale + offset;
+      CHECK(xt::sum(xt::square(affP - rotP))() < 0.0001f);
+    }
+  }
+
+}
+
 
 
 
