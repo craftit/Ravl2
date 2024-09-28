@@ -39,6 +39,8 @@ add_library (Ravl2Geometry
         FitProjection.cc
         FitAffine.cc
         FitAffine.hh
+        FitSimilarity.cc
+        FitSimilarity.hh
 
 )
 

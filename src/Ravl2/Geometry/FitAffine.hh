@@ -59,7 +59,7 @@ namespace Ravl2
    requires std::is_floating_point_v<RealT> && (N > 0)
   RealT fit(Affine<RealT, N> &affine, const ContainerOfPointAT &to, const ContainerOfPointBT &from)
   {
-    RavlAssertMsg(from.size() == to.size(),"Affine2dC FitAffine(), Point arrays must have the same size.");
+    RavlAssertMsg(from.size() == to.size(),"fit affine, Point arrays must have the same size.");
 
     auto samples = from.size();
     if ( samples < (N+1) ) {
@@ -124,4 +124,10 @@ namespace Ravl2
     return residual;
   }
 
+  // Instance a fit for float points.
+  extern template Affine<float, 2> meanScaleToAffine<float, 2>(const Point<float, 2> &mean, float scale);
+  extern template bool fit<float>(Affine<float, 2> &affine,
+				  const Point<float, 2> &p1b, const Point<float, 2> &p1a,
+				  const Point<float, 2> &p2b, const Point<float, 2> &p2a,
+				  const Point<float, 2> &p3b, const Point<float, 2> &p3a);
 }// namespace Ravl2

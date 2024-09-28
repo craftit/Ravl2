@@ -48,9 +48,7 @@ namespace Ravl2
     requires std::is_floating_point_v<RealT>
   std::tuple<Point<RealT, N>, RealT> meanAndScale(const Container1T &raw)
   {
-    Point<RealT, N> mean;
-    for(unsigned i = 0; i < N; i++)
-      mean[i] = 0;
+    Point<RealT, N> mean = xt::zeros<RealT>({N});
     for(auto it : raw) {
       mean += it;
     }
@@ -66,10 +64,7 @@ namespace Ravl2
       if constexpr(N == 2) {
 	d += std::hypot(it[0] - mean[0], it[1] - mean[1]);
       } else {
-	RealT sum = 0;
-	for(unsigned i = 0; i < N; i++) {
-	  sum += RealT(std::pow(it[i] - mean[i], 2));
-	}
+	RealT sum = xt::sum(xt::square(it - mean))();
 	d += std::sqrt(sum);
       }
     }
