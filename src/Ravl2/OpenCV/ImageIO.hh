@@ -16,9 +16,5 @@ namespace Ravl2
   //!    'camera://1' - Open camera 1
 
   void initOpenCVImageIO();
-
-
-  //! Wait for a key press
-  void waitKey(int delay = 0);
-
+  
 }// namespace Ravl2

@@ -54,7 +54,8 @@ namespace Ravl2
     }
     size_t pnts = raw.size();
     if(pnts == 0) {
-      return {xt::zeros<RealT>({N}), 1};
+      const Point<RealT, N> zero = xt::zeros<RealT>({N});
+      return {zero, 1};
     }
     auto realSize = static_cast<RealT>(pnts);
     mean /= realSize;
@@ -63,10 +64,7 @@ namespace Ravl2
       if constexpr(N == 2) {
 	d += std::hypot(it[0] - mean[0], it[1] - mean[1]);
       } else {
-	RealT sum = 0;
-	for(unsigned i = 0; i < N; i++) {
-	  sum += RealT(std::pow(it[i] - mean[i], 2));
-	}
+	RealT sum = xt::sum(xt::square(it - mean))();
 	d += std::sqrt(sum);
       }
     }

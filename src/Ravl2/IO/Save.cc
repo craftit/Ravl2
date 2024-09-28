@@ -32,6 +32,18 @@ namespace Ravl2
     if(protocolEnd != std::string::npos) {
       protocol = url.substr(0, protocolEnd);
       rawFilename = url.substr(protocolEnd + 3);
+
+#if defined(__unix__)
+      if(protocol == "display") {
+        protocol = "dlib";
+      }
+#else
+      if(protocol == "display") {
+        protocol = "opencv";
+      }
+#endif
+
+
     } else {
       protocol = "file";
       rawFilename = url;

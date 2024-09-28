@@ -65,5 +65,6 @@ namespace Ravl2
     OptimiseBrent _brent;
     bool _useBracketMinimum = true;
   };
-  
+
+  void initOptimisePowell();
 }
