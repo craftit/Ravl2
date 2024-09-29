@@ -232,7 +232,13 @@ namespace Ravl2
   class ConfigNode : public std::enable_shared_from_this<ConfigNode>
   {
   public:
+    //! Create a new empty node
     ConfigNode();
+
+    //! Create a new node with a source file
+    ConfigNode(const std::string_view &filename)
+      : m_filename(filename)
+    {}
 
     //! Make destructor virtual
     virtual ~ConfigNode() = default;
@@ -262,6 +268,38 @@ namespace Ravl2
     [[nodiscard]] const std::string &name() const
     {
       return m_name;
+    }
+
+    //! Access the source file name.
+    [[nodiscard]] const std::string &filename() const
+    {
+      return m_filename;
+    }
+
+    //! Access the parent node.
+    [[nodiscard]] ConfigNode *parent() const
+    {
+      return m_parent;
+    }
+
+    //! Access the parent node.
+    [[nodiscard]] const ConfigNode &rootNode() const
+    {
+      const ConfigNode *node = this;
+      while(node->m_parent != nullptr) {
+        node = node->m_parent;
+      }
+      return *node;
+    }
+
+    //! Access the parent node.
+    [[nodiscard]] ConfigNode &rootNode()
+    {
+      ConfigNode *node = this;
+      while(node->m_parent != nullptr) {
+        node = node->m_parent;
+      }
+      return *node;
     }
 
     //! Get path to this node.
@@ -427,6 +465,7 @@ namespace Ravl2
 
   protected:
     std::shared_ptr<ConfigFactory> m_factory;
+    std::string m_filename;
     std::string m_name;
     std::string m_description;
     std::any m_value;
@@ -468,6 +507,13 @@ namespace Ravl2
     {
       assert(m_node);
       return m_node->name();
+    }
+
+    //! Name of this node
+    [[nodiscard]] const std::string &filename() const
+    {
+      assert(m_node);
+      return m_node->rootNode().filename();
     }
 
     template <typename DataT>

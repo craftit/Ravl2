@@ -31,6 +31,7 @@ namespace Ravl2
   // ----------------------------------------------------------
 
   ConfigNodeJSON::ConfigNodeJSON(std::string_view filename)
+   : ConfigNode(filename)
   {
     ONDEBUG(SPDLOG_INFO("Reading config file '{}' ", filename));
     std::ifstream ifs;
