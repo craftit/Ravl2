@@ -539,35 +539,38 @@ namespace Ravl2
       return std::any_cast<std::vector<DataT> >(value);
     }
     
+    //! Get a point from the configuration file.
     template <typename RealT,size_t N>
     [[nodiscard]] Point<RealT,N> getPoint(const std::string_view &name, const std::string_view &description, RealT defaultValue, RealT min, RealT max)
     {
       assert(m_node);
-      std::any value = m_node->getValue(name, typeid(std::vector<RealT>));
+      std::any value = m_node->getValue(name, typeid(std::vector<float>));
       if(!value.has_value()) {
         value = m_node->initVector(name, description, float(defaultValue),float(min), float(max),N);
       }
-      auto vec = std::any_cast<std::vector<RealT>>(value);
+      auto vec = std::any_cast<std::vector<float>>(value);
       Point<RealT,N> ret;
       if(vec.size() != N) {
         SPDLOG_ERROR("Expected {} elements in point, got {} ", N, vec.size());
         throw std::runtime_error("Wrong number of elements in point");
       }
       for(size_t i = 0; i < N; i++) {
-        ret[i] = vec[i];
+        ret[i] = RealT(vec[i]);
       }
       return ret;
     }
     
+    //! This reads a matrix from the configuration file.
+    //! The data is stored as a vector in row major order.
     template <typename RealT,size_t N,size_t M>
     [[nodiscard]] Matrix<RealT,N,M> getMatrix(const std::string_view &name, const std::string_view &description, RealT defaultValue, RealT min, RealT max)
     {
       assert(m_node);
-      std::any value = m_node->getValue(name, typeid(std::vector<RealT>));
+      std::any value = m_node->getValue(name, typeid(std::vector<float>));
       if(!value.has_value()) {
         value = m_node->initVector(name, description, float(defaultValue),float(min), float(max),N * M);
       }
-      auto vec = std::any_cast<std::vector<RealT>>(value);
+      auto vec = std::any_cast<std::vector<float>>(value);
       Matrix<RealT,N,M> ret;
       if(vec.size() != N * M) {
         SPDLOG_ERROR("Expected {} elements in matrix, got {} ", N * M, vec.size());
@@ -575,7 +578,7 @@ namespace Ravl2
       }
       for(size_t i = 0; i < N; i++) {
         for(size_t j = 0; j < M; j++) {
-          ret[i][j] = vec[i * M + j];
+          ret(i,j) = RealT(vec[i * M + j]);
         }
       }
       return ret;

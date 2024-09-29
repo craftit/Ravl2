@@ -50,9 +50,25 @@ TEST_CASE("Configuration")
     ASSERT_EQ(pnt[0], 1);
     ASSERT_EQ(pnt[1], 2);
     ASSERT_EQ(pnt[2], 3);
-    
-    
   }
+  
+  SECTION("Matrix")
+  {
+    Ravl2::SetSPDLogLevel beQuiet(spdlog::level::off);
+    Ravl2::Configuration config = Ravl2::Configuration::fromJSONString(R"( { "a":[1,2,3,4,5,6,7,8,9] } )");
+    
+    auto mat =  config.getMatrix<float,3,3>("a", "test 1", 0.0f, 0.0f, 100.0f);
+    EXPECT_FLOAT_EQ(mat(0,0),1);
+    EXPECT_FLOAT_EQ(mat(0,1),2);
+    EXPECT_FLOAT_EQ(mat(0,2),3);
+    EXPECT_FLOAT_EQ(mat(1,0),4);
+    EXPECT_FLOAT_EQ(mat(1,1),5);
+    EXPECT_FLOAT_EQ(mat(1,2),6);
+    EXPECT_FLOAT_EQ(mat(2,0),7);
+    EXPECT_FLOAT_EQ(mat(2,1),8);
+    EXPECT_FLOAT_EQ(mat(2,2),9);
+  }
+  
   
   SECTION("UseGroup")
   {
