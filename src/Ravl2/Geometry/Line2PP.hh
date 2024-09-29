@@ -21,33 +21,33 @@ namespace Ravl2
   //! Line defined by 2 points in 2-dimensional space.
 
   template <typename RealT>
-  class LinePP2dC : public LinePP<RealT, 2>
+  class Line2PP : public LinePP<RealT, 2>
   {
   public:
-    LinePP2dC() = default;
+    Line2PP() = default;
     //! Default constructor.
     // The contents of the line are undefined.
 
-    explicit LinePP2dC(const LinePP<RealT, 2> &Base)
+    explicit Line2PP(const LinePP<RealT, 2> &Base)
         : LinePP<RealT, 2>(Base)
     {}
     //! Constructor from base class
 
-    LinePP2dC(const Point<RealT, 2> &Start, const Point<RealT, 2> &End)
+    Line2PP(const Point<RealT, 2> &Start, const Point<RealT, 2> &End)
         : LinePP<RealT, 2>(Start, End)
     {}
     //! Construct a line from two points.
 
     //! Create line from start and end points
     // cppcheck-suppress duplInheritedMember
-    static LinePP2dC<RealT> fromPoints(const Point<RealT, 2> &start, const Point<RealT, 2> &end)
+    static Line2PP<RealT> fromPoints(const Point<RealT, 2> &start, const Point<RealT, 2> &end)
     {
       return {start, end};
     }
 
     //! Create line from start point and direction
     // cppcheck-suppress duplInheritedMember
-    static LinePP2dC<RealT> fromStartAndDirection(const Point<RealT, 2> &start, const Vector<RealT, 2> &direction)
+    static Line2PP<RealT> fromStartAndDirection(const Point<RealT, 2> &start, const Vector<RealT, 2> &direction)
     {
       return {start, start + direction};
     }
@@ -111,24 +111,24 @@ namespace Ravl2
     //! inside of this line segment.
     //! @param l - another line
     //! @return the parameter of the intersection point on this line.
-    [[nodiscard]] RealT ParIntersection(const LinePP2dC &l) const;
+    [[nodiscard]] RealT ParIntersection(const Line2PP &l) const;
 
     //! @brief Returns true if the intersection of this line segment and the line 'l' is either inside of this line segment or one of the end points.
-    [[nodiscard]] bool HasInnerIntersection(const LinePP2dC &l) const;
+    [[nodiscard]] bool HasInnerIntersection(const Line2PP &l) const;
 
     // Returns the intersection of 2 lines.
-    [[nodiscard]] Point<RealT, 2> Intersection(const LinePP2dC &l) const;
+    [[nodiscard]] Point<RealT, 2> Intersection(const Line2PP &l) const;
 
     //! Calculate the intersection point between this line and l
     //! @param l - another line
     //! @param here - the point of intersection
     //! @return true if the lines intersect or false if they are parallel
-    [[nodiscard]] bool Intersection(const LinePP2dC &L, Point<RealT, 2> &Here) const;
+    [[nodiscard]] bool Intersection(const Line2PP &L, Point<RealT, 2> &Here) const;
 
     //! Calculate the intersection point between this line and l within this segment limits
     //! @param l - another line
     //! @return a point if the lines intersect within the segment limits, otherwise nullopt
-    [[nodiscard]] std::optional<Point<RealT, 2>> innerIntersection(const LinePP2dC &l) const;
+    [[nodiscard]] std::optional<Point<RealT, 2>> innerIntersection(const Line2PP &l) const;
 
     //! Find the column position which intersects the given row.
     //! @param row - Row for which we want to find the intersecting column
@@ -184,7 +184,7 @@ namespace Ravl2
   template <typename RealT>
   [[nodiscard]] inline std::optional<LinePP<RealT, 2>> clip(LinePP<RealT, 2> aLine, const Range<RealT, 2> &rng)
   {
-    LinePP2dC<RealT> line(aLine);
+    Line2PP<RealT> line(aLine);
     if(!line.clipBy(rng)) {
       return std::nullopt;
     }
@@ -194,7 +194,7 @@ namespace Ravl2
   //! @brief Find the intersection of two lines.
   //! Optional will be empty if the lines are parallel.
   template <typename RealT>
-  [[nodiscard]] inline std::optional<Point<RealT, 2>> intersection(const LinePP2dC<RealT> &l1, const LinePP2dC<RealT> &l2)
+  [[nodiscard]] inline std::optional<Point<RealT, 2>> intersection(const Line2PP<RealT> &l1, const Line2PP<RealT> &l2)
   {
     Point<RealT, 2> here;
     if(!l1.Intersection(l2, here)) {
@@ -203,16 +203,16 @@ namespace Ravl2
     return here;
   }
 
-  extern template class LinePP2dC<double>;
-  extern template class LinePP2dC<float>;
+  extern template class Line2PP<double>;
+  extern template class Line2PP<float>;
 
 }// namespace Ravl2
 
 #if FMT_VERSION >= 90000
 template <>
-struct fmt::formatter<Ravl2::LinePP2dC<float>> : fmt::ostream_formatter {
+struct fmt::formatter<Ravl2::Line2PP<float>> : fmt::ostream_formatter {
 };
 template <>
-struct fmt::formatter<Ravl2::LinePP2dC<double>> : fmt::ostream_formatter {
+struct fmt::formatter<Ravl2::Line2PP<double>> : fmt::ostream_formatter {
 };
 #endif

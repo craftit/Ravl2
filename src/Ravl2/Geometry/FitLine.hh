@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include "Ravl2/Geometry/LineABC2d.hh"
+#include "Ravl2/Geometry/Line2ABC.hh"
 #include "Ravl2/Geometry/Moments2.hh"
 
 namespace Ravl2
@@ -16,13 +16,13 @@ namespace Ravl2
 
   template <typename RealT, typename ContainerT>
     requires std::is_same_v<typename ContainerT::value_type, Point<RealT, 2>>
-  constexpr RealT fit(LineABC2dC<RealT> &line, const ContainerT &points)
+  constexpr RealT fit(Line2ABC<RealT> &line, const ContainerT &points)
   {
     Moments2<RealT> sums;
     // Ideally we should normalize the points to the centroid and then fit the line
     for(const Point<RealT, 2> &p : points)
       sums += p;
-    //SPDLOG_INFO("LineABC2dC<RealT> Moments {} from {} points ",sums,points.size());
+    //SPDLOG_INFO("Line2ABC<RealT> Moments {} from {} points ",sums,points.size());
     RealT sxy = sums.M11() - sums.M00() * sums.template centroid<0>() * sums.template centroid<1>();
     RealT sxx = sums.M20() - sums.M00() * sqr(sums.template centroid<0>());
     RealT syy = sums.M02() - sums.M00() * sqr(sums.template centroid<1>());
@@ -30,13 +30,13 @@ namespace Ravl2
     if(sums.varX() > sums.varY()) {
       RealT b = sxy / sxx;
       RealT a = (sums.M01() - b * sums.M10()) / sums.M00();
-      line = LineABC2dC<RealT>(-b, 1, -a);
+      line = Line2ABC<RealT>(-b, 1, -a);
     } else {
       RealT b = sxy / syy;
       RealT a = (sums.M10() - b * sums.M01()) / sums.M00();
-      line = LineABC2dC<RealT>(1, -b, -a);
+      line = Line2ABC<RealT>(1, -b, -a);
     }
-    //SPDLOG_INFO("LineABC2dC<RealT> = {} Prod:{}",line,prod);
+    //SPDLOG_INFO("Line2ABC<RealT> = {} Prod:{}",line,prod);
     if(isNearZero(prod))
       return 0;
     return std::sqrt(sqr(sxy) / prod);

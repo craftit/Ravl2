@@ -5,7 +5,7 @@
 // see http://www.gnu.org/copyleft/lesser.html
 // file-header-ends-here
 
-#include "Ravl2/Geometry/Line2dIter.hh"
+#include "Ravl2/Geometry/Line2Iter.hh"
 
 #define DODEBUG 0
 #if DODEBUG
@@ -19,14 +19,14 @@ namespace Ravl2
 
   //: Constructor.
 
-  Line2dIterC::Line2dIterC(const Index<2> &start, const Index<2> &end)
+  Line2IterC::Line2IterC(const Index<2> &start, const Index<2> &end)
   {
     First(start, end);
   }
 
   //: Start line again.
 
-  void Line2dIterC::First(const Index<2> &start, const Index<2> &end)
+  void Line2IterC::First(const Index<2> &start, const Index<2> &end)
   {
     dx = (end[0] - start[0]);
     dy = (end[1] - start[1]);
@@ -61,7 +61,7 @@ namespace Ravl2
 
   //: Goto next point.
 
-  bool Line2dIterC::Next()
+  bool Line2IterC::Next()
   {
     if(x == xe && y == ye) {
       isElm = false;

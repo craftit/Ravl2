@@ -11,7 +11,7 @@
 
 #include "Ravl2/Geometry/Geometry.hh"
 #include "Ravl2/Index.hh"
-#include "Ravl2/Geometry/LinePP2d.hh"
+#include "Ravl2/Geometry/Line2PP.hh"
 
 namespace Ravl2
 {
@@ -20,16 +20,16 @@ namespace Ravl2
   //! Uses a version of the midpoint algorithm to iterate all
   //! 8-connected grid points on a line between two positions.
 
-  class Line2dIterC
+  class Line2IterC
   {
   public:
     //: Construct from two points.
-    Line2dIterC(const Index<2> &start, const Index<2> &end);
+    Line2IterC(const Index<2> &start, const Index<2> &end);
 
     //! Construct from a line.
     template <class RealT>
-    explicit Line2dIterC(const LinePP2dC<RealT> &line)
-        : Line2dIterC(toIndex(line.P1()), toIndex(line.P2()))
+    explicit Line2IterC(const Line2PP<RealT> &line)
+        : Line2IterC(toIndex(line.P1()), toIndex(line.P2()))
     {}
 
     //! Start line again.

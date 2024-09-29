@@ -12,7 +12,7 @@
 #include "Ravl2/Geometry/Geometry.hh"
 #include "Ravl2/Geometry/Range.hh"
 #include "Ravl2/Geometry/Polygon.hh"
-#include "Ravl2/Geometry/LinePP2d.hh"
+#include "Ravl2/Geometry/Line2PP.hh"
 
 namespace Ravl2
 {

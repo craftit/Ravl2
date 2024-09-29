@@ -101,7 +101,7 @@ namespace Ravl2
     }
 
     //! Returns the point of intersection of this plane with the line 'l'.
-    [[nodiscard]] Point<RealT, 3> Intersection(const LinePV3dC<RealT> &l) const
+    [[nodiscard]] Point<RealT, 3> Intersection(const Line3PV<RealT> &l) const
     {
       return PlaneABCD3d().intersection(l);
     }
@@ -138,7 +138,7 @@ namespace Ravl2
     //! Returns the coordinates (t1,t2) of the point of intersection
     //! of this plane with the line 'l'. The coordinate system of the returned
     //! point is determined by the point of the plane and its two vectors.
-    [[nodiscard]] Point<RealT, 2> ProjectedIntersection(const LinePV3dC<RealT> &l) const
+    [[nodiscard]] Point<RealT, 2> ProjectedIntersection(const Line3PV<RealT> &l) const
     {
       return Projection(Intersection(l));
     }

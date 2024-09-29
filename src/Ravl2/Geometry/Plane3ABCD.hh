@@ -13,7 +13,7 @@
 #include "Ravl2/Types.hh"
 #include "Ravl2/Geometry/Geometry.hh"
 #include "Ravl2/Geometry/VectorOffset.hh"
-#include "Ravl2/Geometry/LinePV3d.hh"
+#include "Ravl2/Geometry/Line3PV.hh"
 #include "Ravl2/Geometry/FitVectorOffset.hh"
 
 namespace Ravl2
@@ -123,7 +123,7 @@ namespace Ravl2
     // the plane 'plane'.
     // If the intersection does not exist the function throw an ExceptionNumericalC
 
-    LinePV3dC<RealT> intersection(const Plane3ABCD<RealT> &plane) const
+    Line3PV<RealT> intersection(const Plane3ABCD<RealT> &plane) const
     {
       Vector<RealT, 3> direction(cross(this->normal(), plane.normal()));
       RealT den = sumOfSqr(direction);
@@ -131,7 +131,7 @@ namespace Ravl2
         throw std::runtime_error("PlaneABCD3dC::intersection(): the planes are almost parallel");
       Vector<RealT, 3> n212(cross(plane.normal(), direction));
       Vector<RealT, 3> n121(cross(direction, this->normal()));
-      return LinePV3dC<RealT>((n212 * D() + n121 * plane.D()) / (-den), direction);
+      return Line3PV<RealT>((n212 * D() + n121 * plane.D()) / (-den), direction);
     }
   };
 

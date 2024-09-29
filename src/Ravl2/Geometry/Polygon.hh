@@ -12,7 +12,7 @@
 #include "Ravl2/LoopIter.hh"
 #include "Ravl2/Geometry/Geometry.hh"
 #include "Ravl2/Geometry/PointSet.hh"
-#include "Ravl2/Geometry/LinePP2d.hh"
+#include "Ravl2/Geometry/Line2PP.hh"
 
 namespace Ravl2
 {
@@ -74,7 +74,7 @@ namespace Ravl2
     //! @brief Clips this polygon by the line
     //! @param: line - a line
     //! @return: the clipped polygon so that only the part on the right side of the
-    [[nodiscard]] Polygon<RealT> clipByLine(const LinePP2dC<RealT> &line, BoundaryOrientationT lineOrientation = BoundaryOrientationT::INSIDE_LEFT) const;
+    [[nodiscard]] Polygon<RealT> clipByLine(const Line2PP<RealT> &line, BoundaryOrientationT lineOrientation = BoundaryOrientationT::INSIDE_LEFT) const;
 
     //! @brief Clips this polygon by the specified axis line through the given point
     //! @param: threshold - the threshold for the specified axis

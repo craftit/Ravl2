@@ -86,14 +86,14 @@ namespace Ravl2
     }
 
 #if 0
-    LineABC2dC Project(const LineABC2dC &line) const {
+    Line2ABC Project(const Line2ABC &line) const {
       Vector<RealT,3> vo = trans.Inverse() * Vector<RealT,3>(line.A(),line.B(),line.C()/iz);
-      return LineABC2dC(vo[0],vo[1],vo[2]*oz);          
+      return Line2ABC(vo[0],vo[1],vo[2]*oz);
     }
     //: Project a line through the transform.
     // Current implementation is slow, as it inverts the projection each time the method is called.
     
-    LineABC2dC operator*(const LineABC2dC &line) const
+    Line2ABC operator*(const Line2ABC &line) const
     { return Project(line); }
     //: Project a line through the transform.
     // Current implementation is slow, as it inverts the projection each time the method is called.

@@ -18,33 +18,33 @@ namespace Ravl2
 {
 
   //: Line determined by one point and a vector in 3D space
-  // The LinePV3dC class represents the line in 3 dimensional Euclidean
+  // The Line3PV class represents the line in 3 dimensional Euclidean
   // space. The line is represented by one point and its direction vector.
 
   template <typename RealT>
-  class LinePV3dC : public LinePV<RealT, 3>
+  class Line3PV : public LinePV<RealT, 3>
   {
   public:
     //:----------------------------------------------
     // Constructors, assigment, copy, and destructor.
 
     //: Creates the non-existing line (0,0,0) [0,0,0].
-    inline LinePV3dC() = default;
+    inline Line3PV() = default;
 
     //: Creates the line passing through the point 'a' and with
     //: the direction 'v'.
-    inline LinePV3dC(const Point<RealT, 3> &a, const Vector<RealT, 3> &v)
+    inline Line3PV(const Point<RealT, 3> &a, const Vector<RealT, 3> &v)
         : LinePV<RealT, 3>(a, v)
     {}
 
     //    //: Creates the line passing through the points 'first' and
     //    //: second.
-    //    inline LinePV3dC(const Point<RealT,3> &first, const Point<RealT,3> &second)
+    //    inline Line3PV(const Point<RealT,3> &first, const Point<RealT,3> &second)
     //        : point(first), mDirection(second - first)
     //    {}
 
     //: Returns the shortest distance between the lines.
-    RealT Distance(const LinePV3dC &line) const
+    RealT Distance(const Line3PV &line) const
     {
       // more information in Rektorys:
       // Prehled uzite matematiky, SNTL, Praha 1988, p. 205
@@ -87,15 +87,15 @@ namespace Ravl2
 
     // Returns the line which is the orthogonal projection of this
     // line into the plane 'p'.
-    LinePV3dC ProjectionInto(const PlaneABCD3dC<RealT> & p) const;
+    Line3PV ProjectionInto(const PlaneABCD3dC<RealT> & p) const;
 #endif
   };
 
 #if 0
-  std::ostream &operator<<(std::ostream &outS, const LinePV3dC &line);
+  std::ostream &operator<<(std::ostream &outS, const Line3PV &line);
   // Saves the 'line' into the output stream.
 
-  std::istream &operator>>(std::istream &inS, LinePV3dC &line);
+  std::istream &operator>>(std::istream &inS, Line3PV &line);
   // Sets the 'line' according to data read from the input stream.
 #endif
 

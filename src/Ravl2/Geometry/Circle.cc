@@ -8,7 +8,7 @@
 //! author="Charles Galambos"
 
 #include "Ravl2/Geometry/Circle.hh"
-#include "Ravl2/Geometry/LineABC2d.hh"
+#include "Ravl2/Geometry/Line2ABC.hh"
 
 namespace Ravl2
 {

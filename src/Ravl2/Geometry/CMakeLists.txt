@@ -14,9 +14,9 @@ add_library (Ravl2Geometry
         CircleIter.cc CircleIter.hh
         Circle.cc Circle.hh
         LinePP.hh LinePP.cc
-        LinePP2d.hh LinePP2d.cc
-        LineABC2d.cc LineABC2d.hh
-        Line2dIter.hh Line2dIter.cc
+        Line2PP.hh Line2PP.cc
+        Line2ABC.cc Line2ABC.hh
+        Line2Iter.hh Line2Iter.cc
         Polygon.cc Polygon.hh
         PolygonRasterIter.cc PolygonRasterIter.hh
         PolyLine.hh PolyLine.cc

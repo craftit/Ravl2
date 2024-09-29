@@ -12,12 +12,12 @@ namespace Ravl2
 {
 
 #if 0
-  Point<RealT, 3> PlaneABCD3dC::Intersection(const LinePV3dC &l) const
+  Point<RealT, 3> PlaneABCD3dC::Intersection(const Line3PV &l) const
 
   Point<RealT, 3> PlaneABCD3dC::Intersection(const PlaneABCD3dC &planeB,
                                              const PlaneABCD3dC &planeC) const
 
-  LinePV3dC PlaneABCD3dC::Intersection(const PlaneABCD3dC &plane) const
+  Line3PV PlaneABCD3dC::Intersection(const PlaneABCD3dC &plane) const
 #endif
   template class Plane3ABCD<float>;
 

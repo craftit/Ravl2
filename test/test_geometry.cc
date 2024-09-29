@@ -14,7 +14,7 @@
 #include "Ravl2/Geometry/Conic2.hh"
 #include "Ravl2/Geometry/FitConic.hh"
 #include "Ravl2/Geometry/Quaternion.hh"
-#include "Ravl2/Geometry/LineABC2d.hh"
+#include "Ravl2/Geometry/Line2ABC.hh"
 #include "Ravl2/Geometry/Affine.hh"
 #include "Ravl2/Geometry/ScaleTranslate.hh"
 #include "Ravl2/Geometry/VectorOffset.hh"

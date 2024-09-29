@@ -13,7 +13,7 @@
 #include <vector>
 #include <spdlog/spdlog.h>
 #include "Ravl2/Types.hh"
-#include "Ravl2/Geometry/LineABC2d.hh"
+#include "Ravl2/Geometry/Line2ABC.hh"
 
 //#include "Ravl2/LeastSquares.hh"
 //#include "Ravl2/Ellipse2d.hh"
@@ -108,11 +108,11 @@ namespace Ravl2
     }
 
     //! Find the tangent at point 'pnt', where pnt is on the conic.
-    [[nodiscard]] constexpr LineABC2dC<RealT> tangent(const Point<RealT, 2> &pnt)
+    [[nodiscard]] constexpr Line2ABC<RealT> tangent(const Point<RealT, 2> &pnt)
     {
       // TODO:- This can be simplified a lot.
       Vector<RealT, 3> res = dot(C(), toVector<RealT>(pnt[0], pnt[1], 1));
-      return LineABC2dC<RealT>(res[0], res[1], res[2]);
+      return Line2ABC<RealT>(res[0], res[1], res[2]);
     }
 
     //! Access parameter vector.

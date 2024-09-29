@@ -282,7 +282,7 @@ TEST_CASE("Clip Polygon")
 
           // Check line.
           {
-            auto axisLine = LinePP2dC<float>::fromStartAndDirection(toPoint<float>(threshold, threshold), toVector<float>(axis == 1 ? 1 : 0, axis == 0 ? 1 : 0));
+            auto axisLine = Line2PP<float>::fromStartAndDirection(toPoint<float>(threshold, threshold), toVector<float>(axis == 1 ? 1 : 0, axis == 0 ? 1 : 0));
             auto resultPoly1 = poly2.clipByLine(axisLine, BoundaryOrientationT::INSIDE_RIGHT);
             if(!resultPoly1.empty()) {
               CHECK(resultPoly1.isConvex());

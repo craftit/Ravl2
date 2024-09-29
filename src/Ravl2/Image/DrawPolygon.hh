@@ -44,7 +44,7 @@ namespace Ravl2
     auto end = poly.end();
     auto last = poly.back();
     for(auto it = poly.begin(); it != end; it++) {
-      DrawLine(dat, PixelT(value), LinePP2dC<CoordT>(last, *it));
+      DrawLine(dat, PixelT(value), Line2PP<CoordT>(last, *it));
       last = *it;
     }
   }

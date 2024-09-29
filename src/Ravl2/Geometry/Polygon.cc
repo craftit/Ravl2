@@ -56,7 +56,7 @@ namespace Ravl2
       // Look out for degenerate polygons
       assert(squaredEuclidDistance(pLast, pNext) > std::numeric_limits<RealT>::epsilon());
       assert(squaredEuclidDistance(pLast, *ptr) > std::numeric_limits<RealT>::epsilon());
-      if(LinePP2dC<RealT>(pLast, pNext).IsPointInsideOn(*ptr, orientation))
+      if(Line2PP<RealT>(pLast, pNext).IsPointInsideOn(*ptr, orientation))
         return false;
       pLast = *ptr;
     }
@@ -98,7 +98,7 @@ namespace Ravl2
     // Point<RealT,2>(p[0]+100...) provides enough accuracy for the calculation
     // - not envisaged that this is a real problem
     Point<RealT, 2> secondPoint = toPoint<RealT>(p[0] + 100, p[1]);
-    LinePP2dC testLine(p, secondPoint);
+    Line2PP testLine(p, secondPoint);
 
     // Just something useful for later, check whether the last point lies
     // to the left or left of my test-line
@@ -110,7 +110,7 @@ namespace Ravl2
 
     auto pLast = this->back();
     for(auto k : *this) {
-      LinePP2dC l2(pLast, k);
+      Line2PP l2(pLast, k);
       // The point can lie on the boundary of the polygon.
       // This creates lots of edge cases. To avoid this, if the point is on the boundary
       // it is considered to be inside the polygon.
@@ -160,7 +160,7 @@ namespace Ravl2
     Polygon ret = *this;// FixMe:- This makes a poinless copy of the polygon.
     auto pLast = oth.back();
     for(auto ptr : oth) {
-      ret = ret.clipByLine(LinePP2dC<RealT>(pLast, ptr), othOrientation);
+      ret = ret.clipByLine(Line2PP<RealT>(pLast, ptr), othOrientation);
       pLast = ptr;
     }
     return ret;
@@ -175,7 +175,7 @@ namespace Ravl2
   }
 
   template <typename RealT>
-  Polygon<RealT> Polygon<RealT>::clipByLine(const LinePP2dC<RealT> &line, BoundaryOrientationT lineOrientation) const
+  Polygon<RealT> Polygon<RealT>::clipByLine(const Line2PP<RealT> &line, BoundaryOrientationT lineOrientation) const
   {
     Polygon ret;
     if(this->size() < 3)// Empty polygon to start with ?
@@ -189,7 +189,7 @@ namespace Ravl2
         if(line.IsPointInsideOn(st, lineOrientation)) {
           ret.push_back(pt);
         } else {
-          auto intersection = LinePP2dC(st, pt).innerIntersection(line);
+          auto intersection = Line2PP(st, pt).innerIntersection(line);
           // This really should be true, but we'll check it anyway.
           if(intersection.has_value()) {
             ret.addBack(intersection.value());
@@ -198,7 +198,7 @@ namespace Ravl2
         }
       } else {
         if(line.IsPointInsideOn(st, lineOrientation)) {
-          auto intersection = LinePP2dC(st, pt).innerIntersection(line);
+          auto intersection = Line2PP(st, pt).innerIntersection(line);
           // This really should be true, but we'll check it anyway.
           if(intersection.has_value()) {
             ret.addBack(intersection.value());
@@ -231,14 +231,14 @@ namespace Ravl2
     ret.reserve(this->size() + 1);// Worst case we cut off a spike and add a point.
     PointT st = this->back();
 
-    auto axisLine = LinePP2dC<RealT>::fromStartAndDirection(toPoint<RealT>(threshold, threshold), toVector<RealT>(axis == 1 ? 1 : 0, axis == 0 ? 1 : 0));
+    auto axisLine = Line2PP<RealT>::fromStartAndDirection(toPoint<RealT>(threshold, threshold), toVector<RealT>(axis == 1 ? 1 : 0, axis == 0 ? 1 : 0));
 
     for(auto pt : (*this)) {
       if(isGreater ? ((pt)[axis] >= threshold) : ((pt)[axis] <= threshold)) {
         if(isGreater ? ((st)[axis] >= threshold) : ((st)[axis] <= threshold)) {
           ret.push_back(pt);
         } else {
-          auto intersection = LinePP2dC(st, pt).innerIntersection(axisLine);
+          auto intersection = Line2PP(st, pt).innerIntersection(axisLine);
           // This really should be true, but we'll check it anyway.
           if(intersection.has_value()) {
             ret.addBack(intersection.value());
@@ -247,7 +247,7 @@ namespace Ravl2
         }
       } else {
         if(isGreater ? ((st)[axis] >= threshold) : ((st)[axis] <= threshold)) {
-          auto intersection = LinePP2dC(st, pt).innerIntersection(axisLine);
+          auto intersection = Line2PP(st, pt).innerIntersection(axisLine);
           // This really should be true, but we'll check it anyway.
           if(intersection.has_value()) {
             ret.addBack(intersection.value());
@@ -289,12 +289,12 @@ namespace Ravl2
     const auto theEnd = this->end();
     {
       // first loop does all but last side
-      LinePP2dC l1(*ft, nextDataCrc(*this, ft));
+      Line2PP l1(*ft, nextDataCrc(*this, ft));
       auto it2 = ft;
       it2++;
       if(it2 != this->end()) {
         for(it2++; it2 != lt; it2++) {
-          LinePP2dC l2(*it2, nextDataCrc(*this, it2));
+          Line2PP l2(*it2, nextDataCrc(*this, it2));
           if(l1.HasInnerIntersection(l2))
             return true;
         }
@@ -302,12 +302,12 @@ namespace Ravl2
     }
     // then go to the last side for all subsequent iterations
     for(ft++; ft != lt; ft++) {
-      LinePP2dC l1(*ft, nextDataCrc(*this, ft));
+      Line2PP l1(*ft, nextDataCrc(*this, ft));
       auto it2 = ft;
       it2++;
       if(it2 != this->end()) {
         for(it2++; it2 != theEnd; it2++) {
-          LinePP2dC l2(*it2, nextDataCrc(*this, it2));
+          Line2PP l2(*it2, nextDataCrc(*this, it2));
           if(l1.HasInnerIntersection(l2))
             return true;
         }

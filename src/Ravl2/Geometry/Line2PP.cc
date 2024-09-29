@@ -5,7 +5,7 @@
 // see http://www.gnu.org/copyleft/lesser.html
 // file-header-ends-here
 
-#include "Ravl2/Geometry/LinePP2d.hh"
+#include "Ravl2/Geometry/Line2PP.hh"
 
 namespace Ravl2
 {
@@ -60,7 +60,7 @@ namespace Ravl2
   //! Uses the Cohen and Sutherland line clipping algorithm.
 
   template <typename RealT>
-  bool LinePP2dC<RealT>::clipBy(const Range<RealT, 2> &rng)
+  bool Line2PP<RealT>::clipBy(const Range<RealT, 2> &rng)
   {
     auto &line = *this;
     bool accept = false;
@@ -101,7 +101,7 @@ namespace Ravl2
   }
 
   template <typename RealT>
-  bool LinePP2dC<RealT>::IsPointIn(const Point<RealT, 2> &pnt, RealT tolerance) const
+  bool Line2PP<RealT>::IsPointIn(const Point<RealT, 2> &pnt, RealT tolerance) const
   {
     if(!IsPointOn(pnt, tolerance))
       return false;
@@ -116,7 +116,7 @@ namespace Ravl2
   }
 
   template <typename RealT>
-  Point<RealT, 2> LinePP2dC<RealT>::Intersection(const LinePP2dC &l) const
+  Point<RealT, 2> Line2PP<RealT>::Intersection(const Line2PP &l) const
   {
     Vector<RealT, 2> n1(perpendicular(this->direction()));
     Vector<RealT, 2> n2(perpendicular(l.direction()));
@@ -130,7 +130,7 @@ namespace Ravl2
   }
 
   template <typename RealT>
-  bool LinePP2dC<RealT>::Intersection(const LinePP2dC &l, Point<RealT, 2> &here) const
+  bool Line2PP<RealT>::Intersection(const Line2PP &l, Point<RealT, 2> &here) const
   {
     Vector<RealT, 2> n1(perpendicular(this->direction()));
     Vector<RealT, 2> n2(perpendicular(l.direction()));
@@ -145,7 +145,7 @@ namespace Ravl2
   }
 
   template <typename RealT>
-  [[nodiscard]] std::optional<Point<RealT, 2>> LinePP2dC<RealT>::innerIntersection(const LinePP2dC &l) const
+  [[nodiscard]] std::optional<Point<RealT, 2>> Line2PP<RealT>::innerIntersection(const Line2PP &l) const
   {
     RealT p = ParIntersection(l);
     if(p < RealT(0) || p > RealT(1))
@@ -154,7 +154,7 @@ namespace Ravl2
   }
 
   template <typename RealT>
-  bool LinePP2dC<RealT>::IntersectRow(RealT row, RealT &col) const
+  bool Line2PP<RealT>::IntersectRow(RealT row, RealT &col) const
   {
     Vector<RealT, 2> dir = this->P2() - this->P1();
     row -= this->P1()[0];
@@ -165,21 +165,21 @@ namespace Ravl2
   }
 
   template <typename RealT>
-  RealT LinePP2dC<RealT>::ParIntersection(const LinePP2dC &l) const
+  RealT Line2PP<RealT>::ParIntersection(const Line2PP &l) const
   {
     auto u2P = toPoint<RealT>(l.point[0][1] - l.point[1][1], l.point[1][0] - l.point[0][0]);// u2p = l.direction().Perpendicular();
     return (dot((l.FirstPoint() - this->FirstPoint()), u2P) / dot(this->direction(), u2P))();
   }
 
   template <typename RealT>
-  bool LinePP2dC<RealT>::HasInnerIntersection(const LinePP2dC &l) const
+  bool Line2PP<RealT>::HasInnerIntersection(const Line2PP &l) const
   {
     RealT t = ParIntersection(l);
     return t >= 0 && t <= 1;
   }
 
   template <typename RealT>
-  RealT LinePP2dC<RealT>::DistanceWithin(const Point<RealT, 2> &pt) const
+  RealT Line2PP<RealT>::DistanceWithin(const Point<RealT, 2> &pt) const
   {
     RealT t = this->ParClosest(pt);
     if(t < RealT(0)) return euclidDistance<RealT, 2>(this->P1(), pt);
@@ -187,7 +187,7 @@ namespace Ravl2
     return this->Distance(pt);
   }
 
-  template class LinePP2dC<double>;
-  template class LinePP2dC<float>;
+  template class Line2PP<double>;
+  template class Line2PP<float>;
 
 }// namespace Ravl2

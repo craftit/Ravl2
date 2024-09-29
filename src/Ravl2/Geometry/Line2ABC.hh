@@ -14,48 +14,48 @@
 namespace Ravl2
 {
   //! @brief Line in 2D space - equation Ax+By+C = 0
-  //! The class LineABC2dC represents a line embedded in the 2D plane.
+  //! The class Line2ABC represents a line embedded in the 2D plane.
   //! The line is represented by the equation aa*x+bb*y+cc = 0.
 
   template <typename RealT>
-  class LineABC2dC
+  class Line2ABC
   {
   public:
     //! Creates a degenerate line (0,0,0).
-    inline constexpr LineABC2dC() = default;
+    inline constexpr Line2ABC() = default;
 
     //! Creates the line determined by the equation a*x+b*y+c = 0.
-    inline constexpr LineABC2dC(RealT a, RealT b, RealT c)
+    inline constexpr Line2ABC(RealT a, RealT b, RealT c)
         : normal({a, b}), mD(c)
     {}
 
     //! Creates the line determined by the equation norm[0]*x+norm[1]*y+c = 0.
-    inline constexpr LineABC2dC(Vector<RealT, 2> norm, RealT vd)
+    inline constexpr Line2ABC(Vector<RealT, 2> norm, RealT vd)
         : normal(norm), mD(vd)
     {}
 
     //! Creates the line passing through two points 'end' and 'start'.
-    inline constexpr LineABC2dC(const Point<RealT, 2> &start, const Point<RealT, 2> &end)
+    inline constexpr Line2ABC(const Point<RealT, 2> &start, const Point<RealT, 2> &end)
         : normal(perpendicular(Vector<RealT, 2>(end - start))), mD(-dot(this->normal, start)())
     {}
 
     //! Creates the line passing through two points 'end' and 'start'.
-    [[nodiscard]] static constexpr LineABC2dC<RealT> fromPoints(const Point<RealT, 2> &start, const Point<RealT, 2> &end)
+    [[nodiscard]] static constexpr Line2ABC<RealT> fromPoints(const Point<RealT, 2> &start, const Point<RealT, 2> &end)
     {
-      return LineABC2dC<RealT>(start, end);
+      return Line2ABC<RealT>(start, end);
     }
 
     //! Creates the line passing through 'pt' with the normal 'norm'.
-    [[nodiscard]] static constexpr LineABC2dC<RealT> fromNormal(const Vector<RealT, 2> &norm, const Point<RealT, 2> &pt)
+    [[nodiscard]] static constexpr Line2ABC<RealT> fromNormal(const Vector<RealT, 2> &norm, const Point<RealT, 2> &pt)
     {
-      return LineABC2dC<RealT>(norm, -dot(norm, pt)());
+      return Line2ABC<RealT>(norm, -dot(norm, pt)());
     }
 
     //! Creates the line passing through 'pt' with the direction 'vec'
-    [[nodiscard]] static constexpr LineABC2dC<RealT> fromDirection(const Point<RealT, 2> &pt, const Vector<RealT, 2> &vec)
+    [[nodiscard]] static constexpr Line2ABC<RealT> fromDirection(const Point<RealT, 2> &pt, const Vector<RealT, 2> &vec)
     {
       auto normal = perpendicular(vec);
-      return LineABC2dC<RealT>(normal, -dot(normal, pt));
+      return Line2ABC<RealT>(normal, -dot(normal, pt));
     }
 
     //! Returns the normal of the line.
@@ -117,7 +117,7 @@ namespace Ravl2
     }
 
     //! Normalizes the equation so that the normal vector is unit.
-    inline constexpr LineABC2dC &MakeUnitNormal()
+    inline constexpr Line2ABC &MakeUnitNormal()
     {
       RealT size = Ravl2::norm_l2(this->normal);
       this->normal /= size;
@@ -126,7 +126,7 @@ namespace Ravl2
     }
 
     //! Returns true if the lines are parallel.
-    [[nodiscard]] inline constexpr bool AreParallel(const LineABC2dC &line) const
+    [[nodiscard]] inline constexpr bool AreParallel(const Line2ABC &line) const
     {
       RealT crossSize = cross(Normal(), line.Normal());
       return isNearZero(crossSize);
@@ -135,7 +135,7 @@ namespace Ravl2
     //! Find the intersection of two lines.
     //! If the intersection doesn't exist, the function returns false.
     //! The intersection is assigned to 'here'.
-    inline constexpr bool Intersection(const LineABC2dC &line, Point<RealT, 2> &here) const
+    inline constexpr bool Intersection(const Line2ABC &line, Point<RealT, 2> &here) const
     {
       RealT crossSize = cross(Normal(), line.Normal());
       if(isNearZero(crossSize))
@@ -148,7 +148,7 @@ namespace Ravl2
     //! Returns the intersection of both lines.
     //! If the intersection
     //! doesn't exist, the function returns Point<RealT,2>(0,0).
-    [[nodiscard]] inline constexpr Point<RealT, 2> Intersection(const LineABC2dC &line) const
+    [[nodiscard]] inline constexpr Point<RealT, 2> Intersection(const Line2ABC &line) const
     {
       RealT crossSize = cross(Normal(), line.Normal());
       if(isNearZero(crossSize))
@@ -204,28 +204,28 @@ namespace Ravl2
   };
 
   template <typename RealT>
-  std::ostream &operator<<(std::ostream &outS, const LineABC2dC<RealT> &line)
+  std::ostream &operator<<(std::ostream &outS, const Line2ABC<RealT> &line)
   {
     outS << line.A() << ' ' << line.B() << ' ' << line.C();
     return (outS);
   }
 
   template <typename RealT>
-  std::istream &operator>>(std::istream &inS, LineABC2dC<RealT> &line)
+  std::istream &operator>>(std::istream &inS, Line2ABC<RealT> &line)
   {
     RealT a, b, c;
     inS >> a >> b >> c;
-    line = LineABC2dC<RealT>(a, b, c);
+    line = Line2ABC<RealT>(a, b, c);
     return (inS);
   }
 
   // Let everyone know there's an implementation already generated for common cases
-  extern template class LineABC2dC<float>;
+  extern template class Line2ABC<float>;
 
 }// namespace Ravl2
 
 #if FMT_VERSION >= 90000
 template <typename RealT>
-struct fmt::formatter<Ravl2::LineABC2dC<RealT>> : fmt::ostream_formatter {
+struct fmt::formatter<Ravl2::Line2ABC<RealT>> : fmt::ostream_formatter {
 };
 #endif
