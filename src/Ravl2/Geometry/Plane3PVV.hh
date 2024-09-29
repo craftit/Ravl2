@@ -51,13 +51,13 @@ namespace Ravl2
     }
     
     //! Access to the first vector of the constant object.
-    inline const Vector<RealT, 3> &Vector1() const
+    inline constexpr const Vector<RealT, 3> &vector1() const
     {
       return mVector1;
     }
 
     //! Access to the second vector of the constant object.
-    inline const Vector<RealT, 3> &Vector2() const
+    inline constexpr const Vector<RealT, 3> &vector2() const
     {
       return mVector2;
     }
@@ -69,19 +69,19 @@ namespace Ravl2
     }
 
     //! Access to the first vector.
-    inline Vector<RealT, 3> &Vector1()
+    inline Vector<RealT, 3> &vector1()
     {
       return mVector1;
     }
 
     //! Access to the second vector.
-    inline Vector<RealT, 3> &Vector2()
+    inline Vector<RealT, 3> &vector2()
     {
       return mVector2;
     }
 
     //! Returns the normal of the plane.
-    [[nodiscard]] Vector<RealT, 3> Normal() const
+    [[nodiscard]] Vector<RealT, 3> normal() const
     {
       return cross(mVector1, mVector2);
     }
@@ -95,13 +95,13 @@ namespace Ravl2
     }
 
     //! Converts this plane representation to PlaneABCD3dC.
-    [[nodiscard]] Plane3ABCD<RealT> PlaneABCD3d() const
+    [[nodiscard]] Plane3ABCD<RealT> planeABCD3d() const
     {
       return Plane3ABCD(Normal(), this->mOrigin);
     }
 
     //! Returns the point of intersection of this plane with the line 'l'.
-    [[nodiscard]] Point<RealT, 3> Intersection(const Line3PV<RealT> &l) const
+    [[nodiscard]] Point<RealT, 3> intersection(const Line3PV<RealT> &l) const
     {
       return PlaneABCD3d().intersection(l);
     }
@@ -138,7 +138,7 @@ namespace Ravl2
     //! Returns the coordinates (t1,t2) of the point of intersection
     //! of this plane with the line 'l'. The coordinate system of the returned
     //! point is determined by the point of the plane and its two vectors.
-    [[nodiscard]] Point<RealT, 2> ProjectedIntersection(const Line3PV<RealT> &l) const
+    [[nodiscard]] Point<RealT, 2> projectedIntersection(const Line3PV<RealT> &l) const
     {
       return Projection(Intersection(l));
     }
@@ -193,7 +193,7 @@ namespace Ravl2
   //! Least squares fit of a plane to a set of points in 3d
   //! At least 3 points are needed.
   template <typename RealT>
-  bool FitPlane(Plane3PVV<RealT> &plane, const std::vector<Point<RealT, 3>> &points);
+  bool fit(Plane3PVV<RealT> &plane, const std::vector<Point<RealT, 3>> &points);
 
   //! Instantiate the template for float and double.
   extern template class Plane3PVV<float>;
