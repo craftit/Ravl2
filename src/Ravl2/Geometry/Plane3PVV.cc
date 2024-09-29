@@ -6,12 +6,12 @@
 // file-header-ends-here
 /////////////////////////////////////////////////////////////
 
-#include "Ravl2/Geometry/PlanePVV3d.hh"
+#include "Ravl2/Geometry/Plane3PVV.hh"
 
 namespace Ravl2
 {
   
-  template class PlanePVV3dC<float>;
-  template class PlanePVV3dC<double>;
+  template class Plane3PVV<float>;
+  template class Plane3PVV<double>;
   
 }// namespace Ravl2

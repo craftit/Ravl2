@@ -24,41 +24,41 @@ namespace Ravl2
 
     Vertex(const Point<RealT,3> &pos,const Vector<RealT,3> &norm)
       : at(pos),
-	normal(norm)
+	mNormal(norm)
     {}
     //: Constructor from position and normal
-    //! @param  pos - Position of vertex.
+    //! @param  pos - position of vertex.
     //! @param  norm - Direction of surface normal at vertex.
     
     explicit Vertex(const Point<RealT,3> &pos)
       : at(pos)
     {}
     //: Constructor from position
-    //! @param  pos - Position of vertex.
+    //! @param  pos - position of vertex.
     // The surface normal is left undefined.
     
-    [[nodiscard]] Vector<RealT,3> &Position()
+    [[nodiscard]] Vector<RealT,3> &position()
     { return at; }
     //: Access position of vertex.
     
-    [[nodiscard]] const Vector<RealT,3> &Position() const
+    [[nodiscard]] const Vector<RealT,3> &position() const
     { return at; }
     //: Access position of vertex.
     
-    [[nodiscard]] Vector<RealT,3> &Normal()
-    { return normal; }
+    [[nodiscard]] Vector<RealT,3> &normal()
+    { return mNormal; }
     //: Access normal at vertex.
 
-    [[nodiscard]] const Vector<RealT,3> &Normal() const
-    { return normal; }
+    [[nodiscard]] const Vector<RealT,3> &normal() const
+    { return mNormal; }
     //: Access normal at vertex.
 
     //! Make unit normal.
     void makeUnitNormal()
     {
-      RealT normLen = RealT(xt::norm_l2(normal)());
+      RealT normLen = RealT(xt::norm_l2(mNormal)());
       if(normLen > RealT(0.0)) {
-        normal /= normLen;
+        mNormal /= normLen;
       }
     }
 
@@ -67,25 +67,25 @@ namespace Ravl2
     constexpr void serialize(Archive &archive)
     {
       archive(cereal::make_nvp("at", at));
-      archive(cereal::make_nvp("normal", normal));
+      archive(cereal::make_nvp("normal", mNormal));
     }
 
   protected:
     Vector<RealT,3> at;        // Position of vertex.
-    Vector<RealT,3> normal;    // Normal to vertex.
+    Vector<RealT,3> mNormal;    // Normal to vertex.
   };
 
   extern template class Vertex<float>;
 
   template<class RealT>
   std::ostream &operator<<(std::ostream &s,const Vertex<RealT> &v) {
-    s << v.Position() << ' ' << v.Normal();
+    s << v.position() << ' ' << v.Normal();
     return s;
   }
 
   template<class RealT>
   std::istream &operator>>(std::istream &s, Vertex<RealT> &v) {
-    s >> v.Position() >> v.Normal();
+    s >> v.position() >> v.Normal();
     return s;
   }
 

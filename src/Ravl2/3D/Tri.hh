@@ -31,15 +31,15 @@ namespace Ravl2
     //: Default constructor.
     
     explicit Tri(const std::array<Vertex<RealT> *,3> &v)
-      : vertices(v)
+      : mVertices(v)
     {}
     //: Construct from another vector.
     
     Tri(Vertex<RealT> &v0,Vertex<RealT> &v1,Vertex<RealT> &v2)
     {
-      vertices[0] = &v0;
-      vertices[1] = &v1;
-      vertices[2] = &v2;
+      mVertices[0] = &v0;
+      mVertices[1] = &v1;
+      mVertices[2] = &v2;
     }
     //: Construct from vertices.
 
@@ -48,166 +48,166 @@ namespace Ravl2
 	 uint8_t texId = 0
 	 )
     {
-      vertices[0] = &v0;
-      vertices[1] = &v1;
-      vertices[2] = &v2;
-      texture[0] = tex0;
-      texture[1] = tex1;
-      texture[2] = tex2;
-      textureID = texId;
-      colour[0] = 196;
-      colour[1] = 196;
-      colour[2] = 196;
+      mVertices[0] = &v0;
+      mVertices[1] = &v1;
+      mVertices[2] = &v2;
+      mTexture[0] = tex0;
+      mTexture[1] = tex1;
+      mTexture[2] = tex2;
+      mTextureID = texId;
+      mColour[0] = 196;
+      mColour[1] = 196;
+      mColour[2] = 196;
     }
     //: Construct from vertices and texture coordinates.
     
     Tri(const std::array<Vertex<RealT> *,3> &v,
 	 const std::array<Vector<RealT,2>,3> &t,
 	 uint8_t texID)
-      : vertices(v), 
-        texture(t),
-        textureID(texID)
+      : mVertices(v),
+        mTexture(t),
+        mTextureID(texID)
     {}
     //: Construct from vertices, texture co-ords, and texture ID.
 
     void Flip()
     {
-      std::swap(vertices[0],vertices[2]);
-      std::swap(texture[0],texture[2]);
-      normal = normal * -1;
+      std::swap(mVertices[0],mVertices[2]);
+      std::swap(mTexture[0],mTexture[2]);
+      mNormal = mNormal * -1;
     }
     //: Flips the triangle.
     // Reverse the order of the vertices in the triangle.
     
     Vertex<RealT> &vertex(unsigned ind) {
       RavlAssert(ind < 3);
-      return *(vertices[ind]);
+      return *(mVertices[ind]);
     }
     //: Access vertex.
     
     [[nodiscard]] const Vertex<RealT> &vertex(unsigned ind) const
-    { return *(vertices[ind]); }
+    { return *(mVertices[ind]); }
     //: Access vertex.
     
     const Vector<RealT,3> &operator[](unsigned ind) const
-    { return vertices[ind]->Position(); }
+    { return mVertices[ind]->position(); }
     //: Access position of vertex.
 
     Vector<RealT,3> &operator[](unsigned ind)
-    { return vertices[ind]->Position(); }
+    { return mVertices[ind]->position(); }
     //: Access position of vertex.
     
     [[nodiscard]] const Vector<RealT,3> &FaceNormal() const
-    { return normal; }
+    { return mNormal; }
     //: Unit normal orthogonal to triangle plane
     
     Vector<RealT,3> &FaceNormal()
-    { return normal; }
+    { return mNormal; }
     //: Unit normal orthogonal to triangle plane
     
     void SetFaceNormal(const Vector<RealT,3> &val)
-    { normal = val; }
+    { mNormal = val; }
     //: Update the face normal.
     
-    [[nodiscard]] Vector<RealT,3> &Normal(unsigned n)
-    { return vertices[n]->Normal(); }
+    [[nodiscard]] Vector<RealT,3> &normal(unsigned n)
+    { return mVertices[n]->normal(); }
     //: Access normal for a vertex.
     
-    [[nodiscard]] Vector<RealT,3> Normal(unsigned n) const
-    { return vertices[n]->Normal(); }
+    [[nodiscard]] Vector<RealT,3> normal(unsigned n) const
+    { return mVertices[n]->normal(); }
     //: Access normal for a vertex.
 
     [[nodiscard]] Vector<RealT,3> &Position(unsigned n)
-    { return vertices[n]->Position(); }
+    { return mVertices[n]->position(); }
     //: Access normal for a vertex.
     
     [[nodiscard]] const Vector<RealT,3> &Position(unsigned n) const
-    { return vertices[n]->Position(); }
+    { return mVertices[n]->position(); }
     //: Access normal for a vertex.
     
     void UpdateFaceNormal()
     {
-      normal = cross(Vector<RealT,3>(Position(1) - Position(0)),(Position(2) - Position(0)));
-      normal /= xt::norm_l2(normal);
+      mNormal = cross(Vector<RealT,3>(Position(1) - Position(0)),(Position(2) - Position(0)));
+      mNormal /= xt::norm_l2(mNormal);
     }
 
     //: Update the face normal.
     
     Vertex<RealT> *&VertexPtr(unsigned n)
-    { return vertices[n]; }
+    { return mVertices[n]; }
     //: Access vertex pointer.
     // Advanced users only.
     
     void SetVertexPtr(unsigned n,Vertex<RealT> *vp)
-    { vertices[n] = vp; }
+    { mVertices[n] = vp; }
     //: Access vertex pointer.
     // Advanced users only.
     
     [[nodiscard]] Vertex<RealT> *VertexPtr(unsigned n) const
-    { return vertices[n]; }
+    { return mVertices[n]; }
     //: Access vertex pointer.
     // Advanced users only.
     
     [[nodiscard]] uint8_t& TextureID()
-    { return textureID; }
+    { return mTextureID; }
     //: Access the texture ID.
     
     [[nodiscard]] uint8_t TextureID() const
-    { return textureID; }
+    { return mTextureID; }
     //: Access the texture ID.
     
     void SetTextureID(uint8_t id)
-    { textureID = id; }
-    //: Set the texture id.
+    { mTextureID = id; }
+    //: Set the mTexture id.
     
     [[nodiscard]] Vector<RealT,2> &TextureCoord(unsigned n)
-    { return texture[n]; }
+    { return mTexture[n]; }
     //: Access texture co-ordinates.
     
     void SetTextureCoord(unsigned n,const Vector<RealT,2> &tc) 
-    { texture[n] = tc; }
+    { mTexture[n] = tc; }
     //: Access texture co-ordinates.
     
     [[nodiscard]] const Vector<RealT,2> &TextureCoord(unsigned n) const
-    { return texture[n]; }
+    { return mTexture[n]; }
     //: Access texture co-ordinates.
     
     [[nodiscard]] std::array<Vector<RealT,2>,3> &TextureCoords()
-    { return texture; }
+    { return mTexture; }
     //: Access texture co-ordinates.
     
     [[nodiscard]] const std::array<Vector<RealT,2>,3> &TextureCoords() const
-    { return texture; }
+    { return mTexture; }
     //: Access texture co-ordinates.
     
     [[nodiscard]] PixelT &Colour()
-    { return colour; }
+    { return mColour; }
     //: Colour of face.
     
     void SetColour(const PixelT &col)
-    { colour = col; }
+    { mColour = col; }
     //: Set colour of face.
     
     [[nodiscard]] const auto &Colour() const
-    { return colour; }
+    { return mColour; }
     //: Colour of face.
 
     template <class Archive>
     void serialize(Archive &archive)
     {
       // We can't save vertices directly, so we save the indices of the vertices elsewhere
-      archive(cereal::make_nvp("texture", texture),
-              cereal::make_nvp("normal", normal),
-              cereal::make_nvp("colour", colour),
-              cereal::make_nvp("textureID", textureID));
+      archive(cereal::make_nvp("texture", mTexture),
+              cereal::make_nvp("normal", mNormal),
+              cereal::make_nvp("colour", mColour),
+              cereal::make_nvp("textureID", mTextureID));
     }
 
   protected:
-    std::array<Vertex<RealT> *,3> vertices;
-    std::array<Vector<RealT,2>,3> texture;
-    Vector<RealT,3> normal {0,0,0} ;
-    PixelT colour { 196, 196, 196 };
-    uint8_t textureID = 0;
+    std::array<Vertex<RealT> *,3> mVertices;
+    std::array<Vector<RealT,2>,3> mTexture;
+    Vector<RealT,3> mNormal {0,0,0} ;
+    PixelT mColour { 196, 196, 196 };
+    uint8_t mTextureID = 0;
   };
 
   extern template class Tri<float>;

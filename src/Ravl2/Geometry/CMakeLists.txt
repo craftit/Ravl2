@@ -33,8 +33,8 @@ add_library (Ravl2Geometry
         Quaternion.cc Quaternion.hh
         Isometry3.cc Isometry3.hh
         LinePV.cc LinePV.hh
-        PlaneABCD3d.cc PlaneABCD3d.hh
-        PlanePVV3d.cc PlanePVV3d.hh
+        Plane3ABCD.cc Plane3ABCD.hh
+        Plane3PVV.cc Plane3PVV.hh
         FitProjection.hh
         FitProjection.cc
         FitAffine.cc

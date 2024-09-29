@@ -20,7 +20,7 @@
 #include "Ravl2/Geometry/VectorOffset.hh"
 #include "Ravl2/Geometry/FitVectorOffset.hh"
 #include "Ravl2/Geometry/FitSimilarity.hh"
-#include "Ravl2/Geometry/PlanePVV3d.hh"
+#include "Ravl2/Geometry/Plane3PVV.hh"
 #include "Ravl2/Geometry/FitAffine.hh"
 #include "Ravl2/Math/FastFourierTransform.hh"
 

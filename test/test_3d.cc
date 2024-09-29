@@ -91,10 +91,10 @@ TEST_CASE("TriMesh")
   {
     TriMesh<float> mesh = createTriMeshPlane(1.0);
 
-    auto ns = mesh.Vertices()[0].Normal()[2];
+    auto ns = mesh.Vertices()[0].normal()[2];
     mesh.UpdateVertexNormals();
     // Check the normals are consistant
-    CHECK(sign(ns) == sign(mesh.Vertices()[0].Normal()[2]));
+    CHECK(sign(ns) == sign(mesh.Vertices()[0].normal()[2]));
     CHECK(testTexCoords(mesh));
 
   }

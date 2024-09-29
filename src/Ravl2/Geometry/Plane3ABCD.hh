@@ -22,40 +22,40 @@ namespace Ravl2
   //! @brief Plane in 3D space - equation Ax+By+Cz+D = 0
 
   template <typename RealT>
-  class PlaneABCD3dC : public VectorOffset<RealT, 3>
+  class Plane3ABCD : public VectorOffset<RealT, 3>
   {
   public:
     //: The non-existing plane (0,0,0,0).
-    PlaneABCD3dC() = default;
+    Plane3ABCD() = default;
 
     //: The plane determined by the equation aa*x+bb*y+cc*z+dd = 0.
-    PlaneABCD3dC(RealT aa, RealT bb, RealT cc, RealT dd)
+    Plane3ABCD(RealT aa, RealT bb, RealT cc, RealT dd)
         : VectorOffset<RealT, 3>(toVector<RealT>(aa, bb, cc), dd)
     {}
 
     //: Creates the plane determined by the vector equation n*x = p.
-    PlaneABCD3dC(const Vector<RealT, 3> &n, RealT p)
+    Plane3ABCD(const Vector<RealT, 3> &n, RealT p)
         : VectorOffset<RealT, 3>(n, p)
     {}
 
     //: Creates the plane with normal 'n' passing through the point 'p'.
-    PlaneABCD3dC(const Vector<RealT, 3> &n, const Point<RealT, 3> &p)
+    Plane3ABCD(const Vector<RealT, 3> &n, const Point<RealT, 3> &p)
         : VectorOffset<RealT, 3>(n, p)
     {}
 
     //: The plane [p; v1; v2].
-    PlaneABCD3dC(const Point<RealT, 3> &p,
-                 const Vector<RealT, 3> &v1,
-                 const Vector<RealT, 3> &v2)
+    Plane3ABCD(const Point<RealT, 3> &p,
+               const Vector<RealT, 3> &v1,
+               const Vector<RealT, 3> &v2)
         : VectorOffset<RealT, 3>(cross(v1, v2), -xt::linalg::dot(cross(v1, v2), p)())
     {}
 
     //: The plane passing through three points 'p1', 'p2', and 'p3'.
-    static inline PlaneABCD3dC<RealT> fromPoints(const Point<RealT, 3> &p1,
-                                                 const Point<RealT, 3> &p2,
-                                                 const Point<RealT, 3> &p3)
+    static inline Plane3ABCD<RealT> fromPoints(const Point<RealT, 3> &p1,
+                                               const Point<RealT, 3> &p2,
+                                               const Point<RealT, 3> &p3)
     {
-      return PlaneABCD3dC<RealT>(p1, p2 - p1, p3 - p1);
+      return Plane3ABCD<RealT>(p1, p2 - p1, p3 - p1);
     }
 
     //: Returns parameter a.
@@ -77,7 +77,7 @@ namespace Ravl2
     }
 
     //: Returns the normal of the plane.
-    [[nodiscard]] inline Vector<RealT, 3> Normal() const
+    [[nodiscard]] inline Vector<RealT, 3> normal() const
     {
       return this->mNormal;
     }
@@ -90,30 +90,30 @@ namespace Ravl2
 
     //: Returns the plane parallel to this plane and passing through
     //: the point 'p'.
-    [[nodiscard]] inline PlaneABCD3dC<RealT> ParallelPlane(const Point<RealT, 3> &p) const
+    [[nodiscard]] inline Plane3ABCD<RealT> parallelPlane(const Point<RealT, 3> &p) const
     {
-      return PlaneABCD3dC(this->normal(), p);
+      return Plane3ABCD(this->normal(), p);
     }
 
     //! @brief Returns the point which is the intersection of this plane with the line 'l'.
     //! If the intersection does not exist the function throw an ExceptionNumericalC
-    [[nodiscard]] Point<RealT, 3> Intersection(const LinePV<RealT,3> &l) const
+    [[nodiscard]] Point<RealT, 3> intersection(const LinePV<RealT, 3> &l) const
     {
       RealT nu = xt::linalg::dot(this->mNormal, l.Direction())();
       if(isNearZero(nu))
-        throw std::runtime_error("PlaneABCD3dC::Intersection(): the line is almost parallel to the plane.");
+        throw std::runtime_error("PlaneABCD3dC::intersection(): the line is almost parallel to the plane.");
       return l.at(-this->residuum(l.FirstPoint()) / nu);
     }
 
     //: Returns the point which is the intersection of three planes.
     // If the intersection does not exist the function throw an ExceptionNumericalC
-    [[nodiscard]] Point<RealT, 3> Intersection(const PlaneABCD3dC<RealT> &planeB,
-                                               const PlaneABCD3dC<RealT> &planeC) const
+    [[nodiscard]] Point<RealT, 3> intersection(const Plane3ABCD<RealT> &planeB,
+                                               const Plane3ABCD<RealT> &planeC) const
     {
       Vector<RealT, 3> n1xn2(cross(this->normal(), planeB.normal()));
       RealT tripleSP = RealT(xt::linalg::dot(n1xn2, planeC.normal())());
       if(isNearZero(tripleSP))
-        throw std::runtime_error("PlaneABCD3dC::Intersection(): the planes are almost parallel");
+        throw std::runtime_error("PlaneABCD3dC::intersection(): the planes are almost parallel");
       Vector<RealT, 3> n2xn3(cross(planeB.normal(), planeC.normal()));
       Vector<RealT, 3> n3xn1(cross(planeC.normal(), this->normal()));
       return Point<RealT, 3>(n2xn3 * D() + n3xn1 * planeB.D() + n1xn2 * planeC.D()) / (-tripleSP);
@@ -123,12 +123,12 @@ namespace Ravl2
     // the plane 'plane'.
     // If the intersection does not exist the function throw an ExceptionNumericalC
 
-    LinePV3dC<RealT> Intersection(const PlaneABCD3dC<RealT> &plane) const
+    LinePV3dC<RealT> intersection(const Plane3ABCD<RealT> &plane) const
     {
       Vector<RealT, 3> direction(cross(this->normal(), plane.normal()));
       RealT den = sumOfSqr(direction);
       if(isNearZero(den))
-        throw std::runtime_error("PlaneABCD3dC::Intersection(): the planes are almost parallel");
+        throw std::runtime_error("PlaneABCD3dC::intersection(): the planes are almost parallel");
       Vector<RealT, 3> n212(cross(plane.normal(), direction));
       Vector<RealT, 3> n121(cross(direction, this->normal()));
       return LinePV3dC<RealT>((n212 * D() + n121 * plane.D()) / (-den), direction);
@@ -138,11 +138,11 @@ namespace Ravl2
   //! Least squares fit of a plane to a set of points in 3d
   //! At least 3 points are needed.
   template <typename RealT>
-  bool fit(PlaneABCD3dC<RealT> &plane, const std::vector<Point<RealT, 3>> &points)
+  bool fit(Plane3ABCD<RealT> &plane, const std::vector<Point<RealT, 3>> &points)
   {
     return fit(static_cast<VectorOffset<RealT, 3> &>(plane), points);
   }
 
-  extern template class PlaneABCD3dC<float>;
+  extern template class Plane3ABCD<float>;
 
 }// namespace Ravl2

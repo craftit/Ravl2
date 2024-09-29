@@ -167,7 +167,7 @@ namespace Ravl2
       face.UpdateFaceNormal();
       Vector<RealT,3> norm = face.FaceNormal();
       for(unsigned j = 0;j < 3;j++) {
-        face.Normal(j) += norm;
+        face.normal(j) += norm;
       }
     }
     for(auto it : vertices) {
@@ -195,7 +195,7 @@ namespace Ravl2
       faces.back().UpdateFaceNormal();
       Vector<RealT,3> norm = faces.back().FaceNormal();
       for(unsigned j = 0;j < 3;j++) {
-        faces.back().Normal(j) += norm;
+        faces.back().normal(j) += norm;
       }
     }
     for(auto it : vertices) {
@@ -233,7 +233,7 @@ namespace Ravl2
     if(vertices.size() == 0)
       return ret; // Can't take a centroid of an empty mesh.
     for(auto it : vertices) {
-      ret += it.Position();
+      ret += it.position();
     }
     return ret / vertices.size();
   }
@@ -246,9 +246,9 @@ namespace Ravl2
   {
     for(auto &it : vertices)
     {
-      Vector<RealT,3> v(it.Position());
-      it.Position() = rt(v);
-      it.Normal()=rt.rotation()(it.Normal());
+      Vector<RealT,3> v(it.position());
+      it.position() = rt(v);
+      it.normal()=rt.rotation()(it.normal());
     }
     for(auto &it : faces)
       it.FaceNormal()=rt.rotation()(it.FaceNormal());
@@ -276,14 +276,14 @@ namespace Ravl2
     const auto end = vertices.end();
     if(it == end)
       return ; // Empty mesh!
-    min = it->Position();
-    max = it->Position();
+    min = it->position();
+    max = it->position();
     for(it++;it != end;++it) {
       for(unsigned i = 0;i < 3;i++) {
-        if(min[i] > it->Position()[i])
-          min[i] = it->Position()[i];
-        if(max[i] < it->Position()[i])
-          max[i] = it->Position()[i];
+        if(min[i] > it->position()[i])
+          min[i] = it->position()[i];
+        if(max[i] < it->position()[i])
+          max[i] = it->position()[i];
       }
     }
   }
@@ -291,7 +291,7 @@ namespace Ravl2
   template<class RealT>
   void TriMesh<RealT>::OffsetScale(const Vector<RealT,3> &off,RealT scale) {
     for(auto &it : vertices) {
-      it.Position() = (it.Position() + off) * scale;
+      it.position() = (it.position() + off) * scale;
     }
   }
 
@@ -299,13 +299,13 @@ namespace Ravl2
   void TriMesh<RealT>::UpdateVertexNormals() {
     Vector<RealT,3> zero  {0,0,0};
     for(auto it : vertices) {
-      it.Normal() = zero;
+      it.normal() = zero;
     }
     for(auto &it : faces) {
       it.UpdateFaceNormal();
       Vector<RealT,3> norm = it.FaceNormal();
       for(unsigned i = 0;i < 3;i++) {
-        it.Normal(i) += norm;
+        it.normal(i) += norm;
       }
     }
     for(auto it : vertices) {

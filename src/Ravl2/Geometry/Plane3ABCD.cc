@@ -6,7 +6,7 @@
 // file-header-ends-here
 ///////////////////////////////////////////////////////////////////
 
-#include "Ravl2/Geometry/PlaneABCD3d.hh"
+#include "Ravl2/Geometry/Plane3ABCD.hh"
 
 namespace Ravl2
 {
@@ -19,6 +19,6 @@ namespace Ravl2
 
   LinePV3dC PlaneABCD3dC::Intersection(const PlaneABCD3dC &plane) const
 #endif
-  template class PlaneABCD3dC<float>;
+  template class Plane3ABCD<float>;
 
 }// namespace Ravl2

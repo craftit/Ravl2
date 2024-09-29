@@ -11,7 +11,7 @@
 #pragma once
 
 #include "Ravl2/Types.hh"
-#include "Ravl2/Geometry/PlaneABCD3d.hh"
+#include "Ravl2/Geometry/Plane3ABCD.hh"
 
 namespace Ravl2
 {
@@ -19,35 +19,35 @@ namespace Ravl2
   //! @brief Plane in 3D space, represented by one point and two vectors.
 
   template <typename RealT>
-  class PlanePVV3dC
+  class Plane3PVV
   {
   public:
     //! Creates the plane P:(0,0,0),V1:[0,0,0],V2:[0,0,0].
-    PlanePVV3dC() = default;
+    Plane3PVV() = default;
 
     //! Copy constructor.
-    PlanePVV3dC(const PlanePVV3dC &plane) = default;
+    Plane3PVV(const Plane3PVV &plane) = default;
 
     //! Creates the plane [p; v1; v2].
-    inline PlanePVV3dC(const Point<RealT, 3> &p,
-                       const Vector<RealT, 3> &v1,
-                       const Vector<RealT, 3> &v2)
+    inline Plane3PVV(const Point<RealT, 3> &p,
+                     const Vector<RealT, 3> &v1,
+                     const Vector<RealT, 3> &v2)
         : mOrigin(p),
           mVector1(v1),
           mVector2(v2)
     {}
     
     //! Assignment operator.
-    PlanePVV3dC &operator=(const PlanePVV3dC &plane) = default;
+    Plane3PVV &operator=(const Plane3PVV &plane) = default;
     
     //! Creates the plane determined by three points 'p1', 'p2', and 'p3'.
     //! The first vector is equal to p2-p1, the second one to p3-p1.
-    static PlanePVV3dC<RealT> fromPoints(
+    static Plane3PVV<RealT> fromPoints(
       const Point<RealT, 3> &p1,
       const Point<RealT, 3> &p2,
       const Point<RealT, 3> &p3)
     {
-      return PlanePVV3dC<RealT>(p1, p2 - p1, p3 - p1);
+      return Plane3PVV<RealT>(p1, p2 - p1, p3 - p1);
     }
     
     //! Access to the first vector of the constant object.
@@ -87,7 +87,7 @@ namespace Ravl2
     }
 
     //! Normalizes the vectors to be unit.
-    inline PlanePVV3dC &makeUnitVectors()
+    inline Plane3PVV &makeUnitVectors()
     {
       mVector1 /= xt::norm_l2(mVector1);
       mVector2 /= xt::norm_l2(mVector2);
@@ -95,15 +95,15 @@ namespace Ravl2
     }
 
     //! Converts this plane representation to PlaneABCD3dC.
-    [[nodiscard]] PlaneABCD3dC<RealT> PlaneABCD3d() const
+    [[nodiscard]] Plane3ABCD<RealT> PlaneABCD3d() const
     {
-      return PlaneABCD3dC(Normal(), this->mOrigin);
+      return Plane3ABCD(Normal(), this->mOrigin);
     }
 
     //! Returns the point of intersection of this plane with the line 'l'.
     [[nodiscard]] Point<RealT, 3> Intersection(const LinePV3dC<RealT> &l) const
     {
-      return PlaneABCD3d().Intersection(l);
+      return PlaneABCD3d().intersection(l);
     }
 
     //! Get the euclidean distance of the point 'point' from this plane.
@@ -171,7 +171,7 @@ namespace Ravl2
   };
 
   template <typename RealT>
-  std::ostream &operator<<(std::ostream &outS, const PlanePVV3dC<RealT> &plane)
+  std::ostream &operator<<(std::ostream &outS, const Plane3PVV<RealT> &plane)
   {
     const Point<RealT, 3> &p = plane.Origin();
     const Vector<RealT, 3> &v1 = plane.Vector1();
@@ -181,7 +181,7 @@ namespace Ravl2
   }
 
   template <typename RealT>
-  std::istream &operator>>(std::istream &inS, PlanePVV3dC<RealT> &plane)
+  std::istream &operator>>(std::istream &inS, Plane3PVV<RealT> &plane)
   {
     Point<RealT, 3> &p = plane.Origin();
     Vector<RealT, 3> &v1 = plane.Vector1();
@@ -193,10 +193,10 @@ namespace Ravl2
   //! Least squares fit of a plane to a set of points in 3d
   //! At least 3 points are needed.
   template <typename RealT>
-  bool FitPlane(PlanePVV3dC<RealT> &plane, const std::vector<Point<RealT, 3>> &points);
+  bool FitPlane(Plane3PVV<RealT> &plane, const std::vector<Point<RealT, 3>> &points);
 
   //! Instantiate the template for float and double.
-  extern template class PlanePVV3dC<float>;
-  extern template class PlanePVV3dC<double>;
+  extern template class Plane3PVV<float>;
+  extern template class Plane3PVV<double>;
   
 }// namespace Ravl2
