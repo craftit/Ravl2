@@ -23,13 +23,13 @@ namespace Ravl2
   {
   public:
     //! Creates the plane P:(0,0,0),V1:[0,0,0],V2:[0,0,0].
-    Plane3PVV() = default;
+    constexpr Plane3PVV() = default;
 
     //! Copy constructor.
-    Plane3PVV(const Plane3PVV &plane) = default;
+    constexpr Plane3PVV(const Plane3PVV &plane) = default;
 
     //! Creates the plane [p; v1; v2].
-    inline Plane3PVV(const Point<RealT, 3> &p,
+    inline constexpr Plane3PVV(const Point<RealT, 3> &p,
                      const Vector<RealT, 3> &v1,
                      const Vector<RealT, 3> &v2)
         : mOrigin(p),
@@ -38,11 +38,11 @@ namespace Ravl2
     {}
     
     //! Assignment operator.
-    Plane3PVV &operator=(const Plane3PVV &plane) = default;
+    constexpr Plane3PVV &operator=(const Plane3PVV &plane) = default;
     
     //! Creates the plane determined by three points 'p1', 'p2', and 'p3'.
     //! The first vector is equal to p2-p1, the second one to p3-p1.
-    static Plane3PVV<RealT> fromPoints(
+    static constexpr Plane3PVV<RealT> fromPoints(
       const Point<RealT, 3> &p1,
       const Point<RealT, 3> &p2,
       const Point<RealT, 3> &p3)
@@ -63,7 +63,7 @@ namespace Ravl2
     }
 
     //! Access to the point.
-    inline Point<RealT, 3> &origin()
+    inline constexpr Point<RealT, 3> &origin()
     {
       return mOrigin;
     }
@@ -97,30 +97,30 @@ namespace Ravl2
     //! Converts this plane representation to PlaneABCD3dC.
     [[nodiscard]] Plane3ABCD<RealT> planeABCD3d() const
     {
-      return Plane3ABCD(Normal(), this->mOrigin);
+      return Plane3ABCD(normal(), this->mOrigin);
     }
 
     //! Returns the point of intersection of this plane with the line 'l'.
     [[nodiscard]] Point<RealT, 3> intersection(const Line3PV<RealT> &l) const
     {
-      return PlaneABCD3d().intersection(l);
+      return planeABCD3d().intersection(l);
     }
 
     //! Get the euclidean distance of the point 'point' from this plane.
     [[nodiscard]] RealT distance(const Point<RealT, 3> &point) const
     {
-      return PlaneABCD3d().distance(point);
+      return planeABCD3d().distance(point);
     }
 
-    Point<RealT, 3> ClosestPoint(const Point<RealT, 3> &p) const
+    Point<RealT, 3> closestPoint(const Point<RealT, 3> &p) const
     {
-      return PlaneABCD3d().projection(p);
+      return planeABCD3d().projection(p);
     }
 
     //! Returns the coordinates (t1,t2) of the point projected onto the plane.
     //! The coordinate system is determined by the point of
     //! the plane and its two vectors.
-    [[nodiscard]] Point<RealT, 2> Projection(const Point<RealT, 3> &pointOnPlane) const
+    [[nodiscard]] Point<RealT, 2> projection(const Point<RealT, 3> &pointOnPlane) const
     {
       Matrix<RealT, 3, 2> a;
       at(0, 0) = mVector1[0];
@@ -140,7 +140,7 @@ namespace Ravl2
     //! point is determined by the point of the plane and its two vectors.
     [[nodiscard]] Point<RealT, 2> projectedIntersection(const Line3PV<RealT> &l) const
     {
-      return Projection(Intersection(l));
+      return projection(intersection(l));
     }
 
     //! Returns the point of the plane: point + t1 * mVector1 + t2 * mVector2.
@@ -174,8 +174,8 @@ namespace Ravl2
   std::ostream &operator<<(std::ostream &outS, const Plane3PVV<RealT> &plane)
   {
     const Point<RealT, 3> &p = plane.Origin();
-    const Vector<RealT, 3> &v1 = plane.Vector1();
-    const Vector<RealT, 3> &v2 = plane.Vector2();
+    const Vector<RealT, 3> &v1 = plane.vector1();
+    const Vector<RealT, 3> &v2 = plane.vector2();
     outS << p << ' ' << v1 << ' ' << v2;
     return (outS);
   }
@@ -184,8 +184,8 @@ namespace Ravl2
   std::istream &operator>>(std::istream &inS, Plane3PVV<RealT> &plane)
   {
     Point<RealT, 3> &p = plane.Origin();
-    Vector<RealT, 3> &v1 = plane.Vector1();
-    Vector<RealT, 3> &v2 = plane.Vector2();
+    Vector<RealT, 3> &v1 = plane.vector1();
+    Vector<RealT, 3> &v2 = plane.vector2();
     inS >> p >> v1 >> v2;
     return (inS);
   }
