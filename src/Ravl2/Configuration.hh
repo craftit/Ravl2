@@ -236,9 +236,7 @@ namespace Ravl2
     ConfigNode();
 
     //! Create a new node with a source file
-    ConfigNode(const std::string_view &filename)
-      : m_filename(filename)
-    {}
+    ConfigNode(const std::string_view &filename);
 
     //! Make destructor virtual
     virtual ~ConfigNode() = default;
@@ -338,7 +336,10 @@ namespace Ravl2
 
     //! Initialise a number field
     [[nodiscard]] virtual std::any initNumber(const std::string_view &name, const std::string_view &description, double defaultValue, double min, double max);
-
+    
+    //! Initialise a vector field
+    [[nodiscard]] virtual std::any initVector(const std::string_view &name, const std::string_view &description, float defaultValue, float min, float max,size_t size);
+    
     //! Initialise a string field
     [[nodiscard]] virtual std::any initString(const std::string_view &name, const std::string_view &description, const std::string_view &defaultValue);
 
@@ -526,7 +527,60 @@ namespace Ravl2
       }
       return std::any_cast<DataT>(value);
     }
-
+    
+    template <typename DataT>
+    [[nodiscard]] std::vector<DataT> getNumericVector(const std::string_view &name, const std::string_view &description, DataT defaultValue, DataT min, DataT max,size_t size)
+    {
+      assert(m_node);
+      std::any value = m_node->getValue(name, typeid(std::vector<DataT>));
+      if(!value.has_value()) {
+        value = m_node->initVector(name, description, float(defaultValue), float(min), float(max),size);
+      }
+      return std::any_cast<std::vector<DataT> >(value);
+    }
+    
+    template <typename RealT,size_t N>
+    [[nodiscard]] Point<RealT,N> getPoint(const std::string_view &name, const std::string_view &description, RealT defaultValue, RealT min, RealT max)
+    {
+      assert(m_node);
+      std::any value = m_node->getValue(name, typeid(std::vector<RealT>));
+      if(!value.has_value()) {
+        value = m_node->initVector(name, description, float(defaultValue),float(min), float(max),N);
+      }
+      auto vec = std::any_cast<std::vector<RealT>>(value);
+      Point<RealT,N> ret;
+      if(vec.size() != N) {
+        SPDLOG_ERROR("Expected {} elements in point, got {} ", N, vec.size());
+        throw std::runtime_error("Wrong number of elements in point");
+      }
+      for(size_t i = 0; i < N; i++) {
+        ret[i] = vec[i];
+      }
+      return ret;
+    }
+    
+    template <typename RealT,size_t N,size_t M>
+    [[nodiscard]] Matrix<RealT,N,M> getMatrix(const std::string_view &name, const std::string_view &description, RealT defaultValue, RealT min, RealT max)
+    {
+      assert(m_node);
+      std::any value = m_node->getValue(name, typeid(std::vector<RealT>));
+      if(!value.has_value()) {
+        value = m_node->initVector(name, description, float(defaultValue),float(min), float(max),N * M);
+      }
+      auto vec = std::any_cast<std::vector<RealT>>(value);
+      Matrix<RealT,N,M> ret;
+      if(vec.size() != N * M) {
+        SPDLOG_ERROR("Expected {} elements in matrix, got {} ", N * M, vec.size());
+        throw std::runtime_error("Wrong number of elements in matrix");
+      }
+      for(size_t i = 0; i < N; i++) {
+        for(size_t j = 0; j < M; j++) {
+          ret[i][j] = vec[i * M + j];
+        }
+      }
+      return ret;
+    }
+    
     [[nodiscard]] std::string getString(const std::string_view &name, const std::string_view &description, const std::string_view &defaultValue)
     {
       assert(m_node);
@@ -645,6 +699,12 @@ namespace Ravl2
       m_node->checkAllFieldsUsed();
     }
 
+    //! Check if this is a valid configuration.
+    [[nodiscard]] bool isValid() const
+    {
+      return m_node != nullptr;
+    }
+    
   protected:
     std::shared_ptr<ConfigNode> m_node;
   };

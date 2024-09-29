@@ -10,6 +10,7 @@
 #pragma once
 
 #include "Ravl2/Types.hh"
+#include "Ravl2/Configuration.hh"
 #include "Ravl2/Geometry/Geometry.hh"
 #include "Ravl2/Geometry/LinePV.hh"
 #include "Ravl2/IndexRange.hh"
@@ -33,7 +34,16 @@ namespace Ravl2
     PinholeCamera0(const RealT &cx, const RealT &cy, const RealT &fx, const RealT &fy, const Matrix<RealT, 3, 3> &R, const Vector<RealT, 3> &t, const IndexRange<2> &frame)
         : m_cx(cx), m_cy(cy), m_fx(fx), m_fy(fy), m_R(R), m_t(t), m_frame(frame)
     {}
-
+    
+    PinholeCamera0(Configuration &config)
+      : m_cx(config.getNumber<RealT>("cx","Center x",0,-1e4,1e4)),
+        m_cy(config.getNumber<RealT>("cy","Center y",0,-1e4,1e4)),
+        m_fx(config.getNumber<RealT>("fx","Focal length",1,0,1e4)),
+        m_fy(config.getNumber<RealT>("fy","Focal length",1,0,1e4))
+    {
+      //m_t = config.getVector<RealT>("t","Translation",0,-1e4,1e4);
+    }
+    
     //! Construct a default camera with a given frame
     //! @param frame - the image frame for the camera
     //! @param f - the focal length of the camera

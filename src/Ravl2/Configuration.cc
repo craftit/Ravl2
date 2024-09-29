@@ -27,7 +27,13 @@ namespace Ravl2
       : m_factory(defaultConfigFactory().shared_from_this()),
         m_name("root")
   {}
-
+  
+  ConfigNode::ConfigNode(const std::string_view &filename)
+    : m_factory(defaultConfigFactory().shared_from_this()),
+      m_filename(filename),
+      m_name("root")
+  {}
+  
   //! Get path to this node.
   std::string ConfigNode::path() const
   {
@@ -89,7 +95,17 @@ namespace Ravl2
     checkRange(x->value(), min, max);
     return x->value();
   }
-
+  
+  //! Initialise a vector field
+  [[nodiscard]] std::any ConfigNode::initVector(const std::string_view &name, const std::string_view &description, float defaultValue, float min, float max,size_t size)
+  {
+    std::vector<float> vec(size,defaultValue);
+    auto x = setChild(std::string(name), std::string(description),vec);
+    checkRange(x->value(), min, max);
+    return x->value();
+  }
+  
+  
   std::any ConfigNode::initObject(const std::string_view &name,
                                   const std::string_view &description,
                                   const std::type_info &type,
@@ -218,5 +234,5 @@ namespace Ravl2
     flagAsUsed(name);
     return it->second.get();
   }
-
+  
 }// namespace Ravl2

@@ -28,7 +28,32 @@ TEST_CASE("Configuration")
     ASSERT_EQ(config.getNumber("a", "test 1", 0, 0, 100), 1);
     ASSERT_EQ(config.getNumber("b", "test 2", 0, 0, 100), 2);
   }
-
+  
+  SECTION("Vector")
+  {
+    Ravl2::SetSPDLogLevel beQuiet(spdlog::level::off);
+    Ravl2::Configuration config = Ravl2::Configuration::fromJSONString(R"( { "a":[1,2,3],"b":[4,5,6] } )");
+    
+    auto a = config.getNumericVector<float>("a", "test 1", 0.0f, 0.0f, 100.0f,3);
+    auto b = config.getNumericVector<float>("b", "test 2", 0.0f, 0.0f, 100.0f,3);
+    ASSERT_EQ(a.size(), 3);
+    ASSERT_EQ(b.size(), 3);
+    ASSERT_EQ(a[0], 1);
+    ASSERT_EQ(a[1], 2);
+    ASSERT_EQ(a[2], 3);
+    ASSERT_EQ(b[0], 4);
+    ASSERT_EQ(b[1], 5);
+    ASSERT_EQ(b[2], 6);
+    
+    // Get as a point
+    auto pnt = config.getPoint<float,3>("a", "test 1", 0.0f, 0.0f, 100.0f);
+    ASSERT_EQ(pnt[0], 1);
+    ASSERT_EQ(pnt[1], 2);
+    ASSERT_EQ(pnt[2], 3);
+    
+    
+  }
+  
   SECTION("UseGroup")
   {
     Ravl2::SetSPDLogLevel beQuiet(spdlog::level::off);
