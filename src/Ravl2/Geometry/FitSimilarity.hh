@@ -8,6 +8,7 @@
 #include "Ravl2/Concepts.hh"
 #include "Ravl2/Geometry/Affine.hh"
 #include "Ravl2/Geometry/Isometry3.hh"
+#include "Ravl2/Geometry/Plane3PVV.hh"
 #include "Ravl2/Math/LeastSquares.hh"
 
 namespace Ravl2
@@ -165,6 +166,19 @@ namespace Ravl2
     return true;
   }
 
+  //! @brief Fit an affine isometry transformation between two sets of points.
+  //! Preserves angles and distances.
+  //! @param isometry3 - The affine transformation to be computed.
+  //! @param pointsTo - The first set of points.
+  //! @param pointsFrom - The second set of points.
+  //! @return True if the transformation was computed.
+  template<typename RealT>
+  bool fit(Isometry3<RealT> &isometry3,const Plane3PVV<RealT> &p1,const Plane3PVV<RealT> &p2)
+  {
+    std::array<Point<RealT,3>,3> pointsTo = {p1.origin(),p1.origin() + p1.vector1(),p1.origin() + p1.vector2()};
+    std::array<Point<RealT,3>,3> pointsFrom = {p2.origin(),p2.origin() + p2.vector1(),p2.origin() + p2.vector2()};
+    return fit(isometry3,pointsTo,pointsFrom);
+  }
 
 
 
