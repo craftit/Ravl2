@@ -161,7 +161,7 @@ namespace Ravl2
     Matrix<RealT, 2, 2> euc;// Euclidean representation of eclipse equation
     Point<RealT, 2> centre;
     // Separate projective conic representation into Euclidean + translation
-    if(!conic.ComputeEllipse(centre, euc))
+    if(!conic.computeEllipse(centre, euc))
       return std::nullopt;
     ONDEBUG(std::cerr << "Euclidean conic is:\n"
                       << euc << "\n Center=" << centre << std::endl);
@@ -187,20 +187,12 @@ namespace Ravl2
     ONDEBUG(std::cerr << "[1,0] on unit circle goes to " << ret.Projection()(toVector<RealT>(1, 0)) << " on conic" << std::endl);
     return ret;
   }
-
-  //! @brief Fit ellipse to points.
-  //!param: points -  Set of points to fit to an ellipse.
-  //!param: ellipse - Ellipse structure to store result in.
-  //! Based on method presented in 'Numerically Stable Direct Least Squares Fitting of Ellipses'
-  //! by Radim Halir and Jan Flusser.
-  template <typename RealT>
-  constexpr bool FitEllipse(const std::vector<Point<RealT, 2>> &points, Ellipse<RealT> &ellipse);
-
+  
   //! docentry="Ravl.API.Math.Statistics;Ravl.API.Math.Geometry.2D"
   //! @brief Compute an ellipse from a 2d covariance matrix, mean, and standard deviation.
   //! The ellipse is the contour of a 2-D Gaussian random variable which lies "stdDev" standard deviations from the mean.
   template <typename RealT>
-  [[nodiscard]] constexpr Ellipse<RealT> EllipseMeanCovariance(const Matrix<RealT, 2, 2> &covar, const Point<RealT, 2> &mean, RealT stdDev = 1.0)
+  [[nodiscard]] constexpr Ellipse<RealT> ellipseMeanCovariance(const Matrix<RealT, 2, 2> &covar, const Point<RealT, 2> &mean, RealT stdDev = 1.0)
   {
     auto [dv, E] = xt::linalg::eigh(covar);
     ONDEBUG(std::cerr << "l: " << dv << "\nE\n"

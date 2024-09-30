@@ -57,6 +57,8 @@ namespace Ravl2
 
 #if 0
   //! @brief Fit ellipse to points.
+  //! @param: points -  Set of points to fit to an ellipse.
+  //! @param: ellipse - Ellipse structure to store result in.
   //! Based on method presented in 'Numerically Stable Direct Least Squares Fitting of Ellipses'
   //! by Radim Halir and Jan Flusser.
 
@@ -140,8 +142,8 @@ namespace Ravl2
     return 0;
   }
 #endif
-
-  //: Fit ellipse to points.
+  
+  //! @brief Fit ellipse to points.
 
   template <typename RealT>
   constexpr std::optional<RealT> fit(Ellipse<RealT> &ellipse, const std::vector<Point<RealT, 2>> &points)

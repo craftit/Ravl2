@@ -85,15 +85,15 @@ namespace Ravl2
     //! @brief Is point on curve ?
     //! @param pnt - Point to test.
     //! @return true if point is on curve.
-    [[nodiscard]] constexpr bool IsOnCurve(const Point<RealT, 2> &pnt, RealT tolerance = RealT(1e-5)) const
+    [[nodiscard]] constexpr bool isOnCurve(const Point<RealT, 2> &pnt, RealT tolerance = RealT(1e-5)) const
     {
-      return isNearZero(Residue(pnt), tolerance);
+      return isNearZero(residue(pnt), tolerance);
     }
 
     //! @brief Compute the residue
     //! Compute x.T() * C * x, where x is projective version of pnt. <br>
     //! Hence gives a measure of distance of point from curve
-    [[nodiscard]] constexpr RealT Residue(const Point<RealT, 2> &pnt) const
+    [[nodiscard]] constexpr RealT residue(const Point<RealT, 2> &pnt) const
     {
       return p[0] * sqr(pnt[0]) + p[1] * pnt[0] * pnt[1] + p[2] * sqr(pnt[1]) + p[3] * pnt[0] + p[4] * pnt[1] + p[5];
     }
@@ -117,7 +117,7 @@ namespace Ravl2
 
     //! Access parameter vector.
     //! 0-a 1-b 2-c 3-d 4-e 5-f
-    [[nodiscard]] constexpr const Vector<RealT, 6> &Parameters() const
+    [[nodiscard]] constexpr const Vector<RealT, 6> &parameters() const
     {
       return p;
     }
@@ -127,10 +127,10 @@ namespace Ravl2
     //! @param  major - Size of major axis.
     //! @param  minor - Size of minor axis
     //! @param  angle - Angle of major axis.
-    constexpr bool EllipseParameters(Point<RealT, 2> &centre, RealT &major, RealT &minor, RealT &angle) const
+    constexpr bool ellipseParameters(Point<RealT, 2> &centre, RealT &major, RealT &minor, RealT &angle) const
     {
       Matrix<RealT, 2, 2> t;
-      if(!ComputeEllipse(centre, t))
+      if(!computeEllipse(centre, t))
         return false;
       angle = std::atan2(-2 * t(0, 1), -t(0, 0) + t(1, 1)) / 2;
       RealT cosa = std::cos(angle);
@@ -144,7 +144,7 @@ namespace Ravl2
 
     //! @brief Compute ellipse parameters.
     // Assumes conic is ellipse, computes ellipse centre and returns remaining parameters as symmetric 2D matrix
-    constexpr bool ComputeEllipse(Point<RealT, 2> &c, Matrix<RealT, 2, 2> &mat) const
+    constexpr bool computeEllipse(Point<RealT, 2> &c, Matrix<RealT, 2, 2> &mat) const
     {
       // (Bill Xmas) I think what this does is:
       // - compute centre by completing the square on ax^2 +bxy + .....
@@ -177,18 +177,12 @@ namespace Ravl2
   private:
     Vector<RealT, 6> p;// 0-a 1-b 2-c 3-d 4-e 5-f
   };
-
-#if 0
-
-  bool FitEllipse(const std::vector<Point<RealT,2>> &points,Conic2 &conic);
-  //: Fit ellipse
-#endif
-
+  
   //! Write ellipse to text stream.
   template <typename RealT>
   std::ostream &operator<<(std::ostream &s, const Conic2<RealT> &obj)
   {
-    s << obj.Parameters();
+    s << obj.parameters();
     return s;
   }
 

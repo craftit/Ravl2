@@ -376,8 +376,8 @@ TEST_CASE("Conic")
 
   for(auto p : pnts) {
     //SPDLOG_INFO("Point {} is on curve: {} 2:{} ", p, conic.Residue(p), conic2.Residue(p));
-    CHECK(conic.IsOnCurve(p,1e-4f));
-    CHECK(conic2.IsOnCurve(p,1e-4f));
+    CHECK(conic.isOnCurve(p, 1e-4f));
+    CHECK(conic2.isOnCurve(p, 1e-4f));
   }
 }
 
@@ -418,7 +418,7 @@ TEST_CASE("Ellipse")
       {0,1}});
     Vector<RealT,2> mean = toVector<RealT>(50,50);
 
-    Ellipse<RealT> ellipse = EllipseMeanCovariance(covar,mean,1.0f);
+    Ellipse<RealT> ellipse = ellipseMeanCovariance(covar, mean, 1.0f);
     //SPDLOG_INFO("Ellipse: {}", ellipse);
     Point<RealT,2> centre;
     RealT min,maj,ang;
@@ -441,14 +441,15 @@ TEST_CASE("Ellipse")
     for(size_t j = 0;j < numSteps;j++) {
       RealT tangle = RealT(j) * angleStep;
       Point<RealT,2> gtc = toPoint<RealT>(50,50);
-      // Generate ellispe
+      // Generate ellipse
       Ellipse<RealT> ellipse(gtc,RealT(40),RealT(20),tangle);
       // Generate set of points on ellipse
       RealT step = std::numbers::pi_v<RealT>/5;
-      std::vector<Point<RealT,2>> points(10);
+      std::vector<Point<RealT,2>> points;
+      points.reserve(10);
       size_t i = 0;
       for(RealT a = 0;i < 10;a += step,i++) {
-        points[i] = ellipse.point(a);
+        points.push_back(ellipse.point(a));
       }
       // Fit set of points to ellipse as conic
       Conic2<RealT> conic;
@@ -456,8 +457,8 @@ TEST_CASE("Ellipse")
       //cerr << "Conic=" << conic.C() << "\n";
       Point<RealT,2> centre;
       RealT min,maj,ang;
-      conic.EllipseParameters(centre,maj,min,ang);
-      //cerr << "Conic representation parameters=" << centre << " " << maj << " " << min << " " << ang << "   Diff=" << Angle(ang,std::numbers::pi_v<RealT>).Diff(Angle(tangle,std::numbers::pi_v<RealT>)) << "\n";
+      conic.ellipseParameters(centre, maj, min, ang);
+      SPDLOG_INFO("Conic representation parameters={} {} {} {}   Diff={}", centre, maj, min, ang, Angle<RealT, 1>(ang).diff(Angle<RealT, 1>(tangle)));
       CHECK(xt::sum(xt::abs(centre - gtc))() < 0.00000001f);
 #if 0
       if(std::abs(maj - 40) > 0.000000001) return __LINE__;
