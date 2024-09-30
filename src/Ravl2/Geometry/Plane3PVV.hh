@@ -67,7 +67,13 @@ namespace Ravl2
     {
       return mOrigin;
     }
-
+    
+    //! Access to the point.
+    inline constexpr const Point<RealT, 3> &origin() const
+    {
+      return mOrigin;
+    }
+    
     //! Access to the first vector.
     inline Vector<RealT, 3> &vector1()
     {
