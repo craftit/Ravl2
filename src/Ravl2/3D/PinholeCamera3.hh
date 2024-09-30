@@ -30,7 +30,14 @@ namespace Ravl2
           m_k1(k1),
           m_k2(k2)
     {}
-
+    
+    //! Construct from a configuration
+    explicit PinholeCamera3(Configuration &config)
+      : PinholeCamera0<RealT>(config),
+        m_k1(config.getNumber<RealT>("k1","Radial distortion coefficient 1",0.0,-1e4,1e4)),
+        m_k2(config.getNumber<RealT>("k2","Radial distortion coefficient 2",0.0,-1e4,1e4))
+    {}
+    
     //! data constructor
     PinholeCamera3(const RealT &cx, const RealT &cy, const RealT &fx, const RealT &fy, const RealT &k1, const RealT &k2, const Matrix<RealT, 3, 3> &R, const Vector<RealT, 3> &t, const IndexRange<2> &frame)
         : PinholeCamera0<RealT>(cx, cy, fx, fy, R, t, frame),

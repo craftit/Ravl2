@@ -11,6 +11,7 @@
 
 #include "Ravl2/Types.hh"
 #include "Ravl2/Configuration.hh"
+#include "Ravl2/Geometry/Quaternion.hh"
 #include "Ravl2/Geometry/Geometry.hh"
 #include "Ravl2/Geometry/LinePV.hh"
 #include "Ravl2/IndexRange.hh"
@@ -36,12 +37,17 @@ namespace Ravl2
     {}
     
     PinholeCamera0(Configuration &config)
-      : m_cx(config.getNumber<RealT>("cx","Center x",0,-1e4,1e4)),
-        m_cy(config.getNumber<RealT>("cy","Center y",0,-1e4,1e4)),
-        m_fx(config.getNumber<RealT>("fx","Focal length",1,0,1e4)),
-        m_fy(config.getNumber<RealT>("fy","Focal length",1,0,1e4))
+      : m_cx(config.getNumber<RealT>("cx","Center x",0.0,-1e4,1e4)),
+        m_cy(config.getNumber<RealT>("cy","Center y",0.0,-1e4,1e4)),
+        m_fx(config.getNumber<RealT>("fx","Focal length",1.0,0.0,1e4)),
+        m_fy(config.getNumber<RealT>("fy","Focal length",1.0,0.0,1e4)),
+        m_t(config.getPoint<RealT,3>("t","Translation",0.0,-1e5,1e5))
     {
-      //m_t = config.getVector<RealT>("t","Translation",0,-1e4,1e4);
+      Vector<float,3> angle = config.getPoint<RealT,3>("rotation","Rotation",0,-360,+360);
+      for(unsigned i = 0; i < 3; i++)
+        angle[i] = deg2rad(angle[i]);
+      m_R = Quaternion<float>::fromEulerAngles(angle).toMatrix();
+      m_frame = config.template get<Ravl2::IndexRange<2>>("frame","Image frame",IndexRange<2>({{0,0},{0,0}}));
     }
     
     //! Construct a default camera with a given frame

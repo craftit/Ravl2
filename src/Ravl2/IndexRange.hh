@@ -471,14 +471,23 @@ namespace Ravl2
   };
 
   template <unsigned N>
-  std::ostream &operator<<(std::ostream &strm, const IndexRange<N> &rng)
+  inline std::ostream &operator<<(std::ostream &strm, const IndexRange<N> &rng)
   {
     for(unsigned i = 0; i < N; i++) {
-      strm << "(" << rng[i].min() << "," << rng[i].max() << ")";
+      strm  << rng[i].min() << " " << rng[i].max() << " ";
     }
     return strm;
   }
-
+  
+  template <unsigned N>
+  inline std::istream &operator>>(std::istream &strm, IndexRange<N> &rng)
+  {
+    for(unsigned i = 0; i < N; i++) {
+      strm >> rng[i].min() >> rng[i].max();
+    }
+    return strm;
+  }
+  
   //! Iterate through an N dimensional range.
 
   template <unsigned N>

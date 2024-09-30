@@ -517,13 +517,14 @@ namespace Ravl2
       return m_node->rootNode().filename();
     }
 
-    template <typename DataT>
-    [[nodiscard]] DataT getNumber(const std::string_view &name, const std::string_view &description, DataT defaultValue, DataT min, DataT max)
+    template <typename DataT,typename ParamT = DataT>
+     requires std::is_convertible_v<ParamT,DataT>
+    [[nodiscard]] DataT getNumber(const std::string_view &name, const std::string_view &description, DataT defaultValue, ParamT min, ParamT max)
     {
       assert(m_node);
       std::any value = m_node->getValue(name, typeid(DataT));
       if(!value.has_value()) {
-        value = m_node->initNumber(name, description, defaultValue, min, max);
+        value = m_node->initNumber(name, description, DataT(defaultValue), DataT(min), DataT(max));
       }
       return std::any_cast<DataT>(value);
     }
@@ -540,8 +541,9 @@ namespace Ravl2
     }
     
     //! Get a point from the configuration file.
-    template <typename RealT,size_t N>
-    [[nodiscard]] Point<RealT,N> getPoint(const std::string_view &name, const std::string_view &description, RealT defaultValue, RealT min, RealT max)
+    template <typename RealT,size_t N,typename ParamT = RealT>
+     requires std::is_convertible_v<ParamT,RealT>
+    [[nodiscard]] Point<RealT,N> getPoint(const std::string_view &name, const std::string_view &description, RealT defaultValue, ParamT min, ParamT max)
     {
       assert(m_node);
       std::any value = m_node->getValue(name, typeid(std::vector<float>));
@@ -562,7 +564,8 @@ namespace Ravl2
     
     //! This reads a matrix from the configuration file.
     //! The data is stored as a vector in row major order.
-    template <typename RealT,size_t N,size_t M>
+    template <typename RealT,size_t N,size_t M,typename ParamT = RealT>
+      requires std::is_convertible_v<ParamT,RealT>
     [[nodiscard]] Matrix<RealT,N,M> getMatrix(const std::string_view &name, const std::string_view &description, RealT defaultValue, RealT min, RealT max)
     {
       assert(m_node);

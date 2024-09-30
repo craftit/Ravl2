@@ -29,14 +29,23 @@ namespace Ravl2
     explicit PinholeCamera2(const PinholeCamera0<RealT> &c0)
         : PinholeCamera0<RealT>(c0)
     {}
-
+    
+    //! Construct from a configuration
+    explicit PinholeCamera2(Configuration &config)
+      : PinholeCamera0<RealT>(config),
+        m_sizex(config.getNumber<RealT>("sx","Pixel size in x",1.0,0.0,1e4)),
+        m_sizey(config.getNumber<RealT>("sy","Pixel size in y",1.0,0.0,1e4)),
+        m_k3(config.getNumber<RealT>("k3","Radial distortion coefficient 3",0.0,-1e4,1e4)),
+        m_k5(config.getNumber<RealT>("k5","Radial distortion coefficient 3",0.0,-1e4,1e4))
+    {}
+    
     //! data constructor
     PinholeCamera2(const RealT &cx, const RealT &cy, const RealT &fx, const RealT &fy, const RealT &sizex, const RealT &sizey, const RealT &k3, const RealT &k5, const Matrix<RealT, 3, 3> &R, const Vector<RealT, 3> &t, const IndexRange<2> &frame)
-        : PinholeCamera0<RealT>(cx, cy, fx, fy, R, t, frame),
-          m_sizex(sizex),
-          m_sizey(sizey),
-          m_k3(k3),
-          m_k5(k5)
+      : PinholeCamera0<RealT>(cx, cy, fx, fy, R, t, frame),
+        m_sizex(sizex),
+        m_sizey(sizey),
+        m_k3(k3),
+        m_k5(k5)
     {}
 
   public:
