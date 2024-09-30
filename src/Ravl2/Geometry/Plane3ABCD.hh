@@ -105,8 +105,8 @@ namespace Ravl2
       return l.at(-this->residuum(l.FirstPoint()) / nu);
     }
 
-    //: Returns the point which is the intersection of three planes.
-    // If the intersection does not exist the function throw an ExceptionNumericalC
+    //! @brief Returns the point which is the intersection of three planes.
+    //! If the intersection does not exist the function throw an ExceptionNumericalC
     [[nodiscard]] Point<RealT, 3> intersection(const Plane3ABCD<RealT> &planeB,
                                                const Plane3ABCD<RealT> &planeC) const
     {

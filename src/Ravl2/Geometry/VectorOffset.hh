@@ -87,6 +87,14 @@ namespace Ravl2
       return (*this);
     }
 
+    //! Flip the normal vector.
+    inline auto &flipNormal()
+    {
+      mNormal = -mNormal;
+      mD = -mD;
+      return (*this);
+    }
+
     //! Serialization support
     template <class Archive>
     constexpr void serialize(Archive &ar)

@@ -101,7 +101,9 @@ namespace Ravl2
   {
     std::vector<float> vec(size,defaultValue);
     auto x = setChild(std::string(name), std::string(description),vec);
-    checkRange(x->value(), min, max);
+    for(auto &v : std::any_cast<std::vector<float>>(x->value())) {
+      checkRange(v, min, max);
+    }
     return x->value();
   }
   

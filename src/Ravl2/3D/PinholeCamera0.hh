@@ -57,8 +57,8 @@ namespace Ravl2
     explicit PinholeCamera0(const IndexRange<2> &frame, float f)
       : m_cx(RealT(frame.range(0).min())+RealT(frame.range(0).size())/RealT(2.0)),
 	m_cy(RealT(frame.range(1).min())+RealT(frame.range(1).size())/RealT(2.0)),
-	m_fx(f),
-	m_fy(f),
+	m_fx(f * RealT(frame.range(0).size())),
+	m_fy(f * RealT(frame.range(1).size())),
   	m_frame(frame)
     {}
 
@@ -260,6 +260,11 @@ namespace Ravl2
   };
 
   //! Unproject a 2D image point to a 3D point in space
+  //! The depth is the distance along the camera ray from the camera origin.
+  //! @param camera - the camera model
+  //! @param z - the image point
+  //! @param depth - the distance along the camera ray from the camera origin
+  //! @return the 3D point in space
   template<typename RealT,typename CameraT>
   Point<RealT,3> unproject(const CameraT &camera, const Point<RealT,2> &z, RealT depth)
   {
@@ -267,6 +272,18 @@ namespace Ravl2
     camera.projectInverseDirection(dir,z);
     return camera.origin() + (depth*dir);
   }
+
+  //! Create a ray from a pixel in the world
+  //! The ray is defined by the camera origin and the direction
+  //! of the ray in world co-ordinates.
+  template<typename RealT,typename CameraT>
+  LinePV<RealT,3> ray(const CameraT &camera, const Point<RealT,2> &z)
+  {
+    Vector<RealT,3> dir;
+    camera.projectInverseDirection(dir,z);
+    return LinePV<RealT,3>(camera.origin(),dir);
+  }
+
 
   template<typename RealT,typename CameraT>
   Point<RealT,2> project(const CameraT &camera, const Point<RealT,3> &pnt)

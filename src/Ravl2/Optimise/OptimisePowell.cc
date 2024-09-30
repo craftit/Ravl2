@@ -28,7 +28,7 @@ namespace Ravl2 {
   OptimisePowell::OptimisePowell(Configuration &config)
    : Optimise(config),
      _iterations(config.getNumber<unsigned>("iterations","Limit on the number of optimisation iterations",100,1,10000)),
-     _tolerance(config.getNumber<RealT>("tolerance","Tolerance for stopping optimisation",1e-4,1e-10,10.0)),
+     _tolerance(config.getNumber<RealT>("tolerance","Tolerance for stopping optimisation",RealT(1e-4),1e-10,10.0)),
      _brentIterations(config.getNumber<unsigned>("brentIterations","Limit on the number of Brent iterations",_iterations,1u,10000u)),
      _brentTolerance(config.getNumber<RealT,float>("brentTolerance","Tolerance for stopping Brent optimisation",_tolerance,1e-10f,10.0f)),
      _brent(_brentIterations,_brentTolerance),

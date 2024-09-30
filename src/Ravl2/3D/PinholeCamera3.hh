@@ -26,11 +26,18 @@ namespace Ravl2
 
     //! construct from an undistorted pinhole camera
     explicit PinholeCamera3(const PinholeCamera0<RealT> &c0, RealT k1 = 0, RealT k2 = 0)
-        : PinholeCamera0<RealT>(c0),
-          m_k1(k1),
-          m_k2(k2)
+      : PinholeCamera0<RealT>(c0),
+        m_k1(k1),
+        m_k2(k2)
     {}
-    
+
+    //! Construct from an image frame and focal length
+    PinholeCamera3(const IndexRange<2> &frame, float f, RealT k1 = 0, RealT k2 = 0)
+      : PinholeCamera0<RealT>(frame, f),
+        m_k1(k1),
+        m_k2(k2)
+    {}
+
     //! Construct from a configuration
     explicit PinholeCamera3(Configuration &config)
       : PinholeCamera0<RealT>(config),
