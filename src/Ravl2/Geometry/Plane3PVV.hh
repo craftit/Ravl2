@@ -140,7 +140,7 @@ namespace Ravl2
       auto [sol, residual, rank, s] = xt::linalg::lstsq(a, tmp);
       return toPoint<RealT>(sol(0, 0), sol(1, 0));
     }
-
+    
     //! Returns the coordinates (t1,t2) of the point of intersection
     //! of this plane with the line 'l'. The coordinate system of the returned
     //! point is determined by the point of the plane and its two vectors.
@@ -148,14 +148,21 @@ namespace Ravl2
     {
       return projection(intersection(l));
     }
-
+    
+    //! @brief Map a point at a 2d position on the plane to a 3d point.
     //! Returns the point of the plane: point + t1 * mVector1 + t2 * mVector2.
+    //! @param t1 first coordinate.
+    //! @param t2 second coordinate.
+    //! @return The 3d point.
     inline Point<RealT, 3> at(const RealT t1, const RealT t2) const
     {
       return mOrigin + mVector1 * t1 + mVector2 * t2;
     }
-
+    
+    //! @brief Map a point at a 2d position on the plane to a 3d point.
     //! Returns the point of the plane: point + t1 * mVector1 + t2 * mVector2.
+    //! @param par The 2d position on the plane.
+    //! @return The 3d point.
     inline Point<RealT, 3> at(const Point<RealT, 2> &par) const
     {
       return mOrigin + mVector1 * par[0] + mVector2 * par[1];
