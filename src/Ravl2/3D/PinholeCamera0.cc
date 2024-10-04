@@ -10,6 +10,7 @@
 namespace Ravl2
 {
   template class PinholeCamera0<float>;
+  template class PinholeCameraImpl<PinholeCamera0<float>>;
   
   namespace
   {

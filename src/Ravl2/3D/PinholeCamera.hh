@@ -15,10 +15,9 @@
 namespace Ravl2
 {
 
-  //: Transform from a camera point to a point in a simple pinhole model
-
-  //: Base Pinhole Camera handle.
-  // This class provides access to transform between 3D world and 2D image points.
+  //! @brief Transform from a camera point to a point in a simple pinhole model
+  //! Base Pinhole Camera handle.
+  //! This class provides access to transform between 3D world and 2D image points.
 
   template <typename RealT>
   class PinholeCamera
@@ -32,73 +31,175 @@ namespace Ravl2
 
     //: Make a copy of body.
     // This should be provided in derived classes.
-    virtual PinholeCamera &Copy() const = 0;
-
-    virtual void project(Vector<RealT, 2> &z, const Vector<RealT, 3> &x) const = 0;
+    virtual PinholeCamera &copy() const = 0;
+    
     //: project a 3D point to a 2D image point
     // This should be provided in derived classes.
-
-    virtual bool ProjectCheck(Vector<RealT, 2> &z, const Vector<RealT, 3> &x) const = 0;
+    virtual void project(Vector<RealT, 2> &z, const Vector<RealT, 3> &x) const = 0;
+    
     //: project 3D point in space to 2D image point checking for degeneracy
     // This should be provided in derived classes.
-
-    virtual void inverseProjectDirection(Vector<RealT, 3> &x, const Vector<RealT, 2> &z) const = 0;
+    virtual bool projectCheck(Vector<RealT, 2> &z, const Vector<RealT, 3> &x) const = 0;
+    
     //:Inverse projection up to a scale factor
     // origin + lambda*x is the camera ray for image point z.
     // This should be provided in derived classes.
-
-    virtual void projectJacobian(Matrix<RealT, 2, 3> &Jz, const Vector<RealT, 3> &x) const = 0;
+    virtual void inverseProjectDirection(Vector<RealT, 3> &x, const Vector<RealT, 2> &z) const = 0;
+    
     //:The Jacobian matrix of the projection funtion
     // This should be provided in derived classes.
-
-    virtual void origin(Vector<RealT, 3> &org) const = 0;
+    virtual void projectJacobian(Matrix<RealT, 2, 3> &Jz, const Vector<RealT, 3> &x) const = 0;
+    
     //: origin of the camera in world co-ordinates
     // This should be provided in derived classes.
-
-    virtual void Direction(Vector<RealT, 3> &dit) const = 0;
+    virtual Vector<RealT, 3> origin() const = 0;
+    
     //: Look direction for the camera in the world co-ordinate frame
     // This should be provided in derived classes.
-
-    virtual const IndexRange<2> &Frame() const = 0;
+    virtual Vector<RealT, 3> direction() const = 0;
+    
     //: Image frame for the camera
     // This should be provided in derived classes.
-
-    virtual void SetFrame(const IndexRange<2> &frame) = 0;
+    virtual const IndexRange<2> &range() const = 0;
+    
     //: Set the image frame for the camera
     // This should be provided in derived classes.
-
-    virtual Vector<RealT, 2> undistort(const Vector<RealT, 2> &z) const = 0;
+    virtual void setRange(const IndexRange<2> &frame) = 0;
+    
     //: Transform from a camera point to a point in a simple pinhole model
     // This should be provided in derived classes.
-
-    virtual Vector<RealT, 2> distort(const Vector<RealT, 2> &z) const = 0;
+    virtual Vector<RealT, 2> undistort(const Vector<RealT, 2> &z) const = 0;
+    
     //: Transform from a simple pinhole model point to a distorted image point
     // This should be provided in derived classes.
+    virtual Vector<RealT, 2> distort(const Vector<RealT, 2> &z) const = 0;
+    
+    //! Serialization support
+    template <class Archive>
+    constexpr void serialize(Archive &archive)
+    {
+      archive();
+    }
 
 #if 0
-    template<class PixelT> 
-    Array<PixelT,2> UndistortImage(const Array<PixelT,2>& img, bool resize = false) const;
     //: Return an undistorted image for a simple pinhole model
+    template<class PixelT>
+    Array<PixelT,2> undistortImage(const Array<PixelT,2>& img, bool resize = false) const;
 
-    template<class PixelT> 
-    Array<PixelT,2> UndistortImage(const Array<PixelT,2>& img, const PixelT bg, bool resize = false) const;
     //: Return an undistorted image for a simple pinhole model filling empty pixels with bg value
+    template<class PixelT>
+    Array<PixelT,2> UndistortImage(const Array<PixelT,2>& img, const PixelT bg, bool resize = false) const;
 
-    template<class PixelT> 
-    Array<PixelT,2> DistortImage(const Array<PixelT,2>& img, bool resize = false) const;
     //: Return a distorted image for a simple pinhole model
+    template<class PixelT>
+    Array<PixelT,2> DistortImage(const Array<PixelT,2>& img, bool resize = false) const;
 
-    template<class PixelT> 
-    Array<PixelT,2> DistortImage(const Array<PixelT,2>& img, const PixelT bg, bool resize = false) const;
     //: Return a distorted image for a simple pinhole model filling empty pixels with bg value
+    template<class PixelT>
+    Array<PixelT,2> DistortImage(const Array<PixelT,2>& img, const PixelT bg, bool resize = false) const;
 #endif
+  };
+  
+  
+  template <typename CameraT,typename RealT = typename CameraT::ValueT>
+  class PinholeCameraImpl
+    : public PinholeCamera<RealT>
+  {
+  public:
+    PinholeCameraImpl() = default;
+
+    //! Constructor.
+    PinholeCameraImpl(const CameraT &camera)
+      : m_camera(camera)
+    {}
+    
+    //! Destructor.
+    virtual ~PinholeCameraImpl() = default;
+    
+    //! Make a copy of body.
+    PinholeCameraImpl &copy() const final
+    {
+      return *new PinholeCameraImpl(m_camera);
+    }
+    
+    //! project a 3D point to a 2D image point
+    void project(Vector<RealT, 2> &z, const Vector<RealT, 3> &x) const final
+    {
+      m_camera.project(z, x);
+    }
+    
+    //! project 3D point in space to 2D image point checking for degeneracy
+    bool projectCheck(Vector<RealT, 2> &z, const Vector<RealT, 3> &x) const final
+    {
+      return m_camera.projectCheck(z, x);
+    }
+    
+    //! Inverse projection up to a scale factor
+    void inverseProjectDirection(Vector<RealT, 3> &x, const Vector<RealT, 2> &z) const final
+    {
+      m_camera.projectInverseDirection(x, z);
+    }
+    
+    //! The Jacobian matrix of the projection function
+    void projectJacobian(Matrix<RealT, 2, 3> &Jz, const Vector<RealT, 3> &x) const final
+    {
+      m_camera.projectJacobian(Jz, x);
+    }
+    
+    //! origin of the camera in world co-ordinates
+    Vector<RealT, 3> origin() const final
+    {
+      return m_camera.origin();
+    }
+    
+    //! Look direction for the camera in the world co-ordinate frame
+    Vector<RealT, 3> direction() const final
+    {
+      return m_camera.direction();
+    }
+    
+    //! Image frame for the camera
+    const IndexRange<2> &range() const final
+    {
+      return m_camera.range();
+    }
+    
+    //! Set the image frame for the camera
+    void setRange(const IndexRange<2> &frame) final
+    {
+      m_camera.setRange(frame);
+    }
+    
+    //! Transform from a camera point to a point in a simple pinhole model
+    Vector<RealT, 2> undistort(const Vector<RealT, 2> &z) const final
+    {
+      return m_camera.undistort(z);
+    }
+    
+    //! Transform from a simple pinhole model point to a distorted image point
+    Vector<RealT, 2> distort(const Vector<RealT, 2> &z) const final
+    {
+      return m_camera.distort(z);
+    }
+    
+    //! Serialization support
+    template <class Archive>
+    constexpr void serialize(Archive &archive)
+    {
+       archive(cereal::base_class<PinholeCamera<RealT>>(this),
+               cereal::make_nvp("camera", m_camera));
+    }
+  
+  private:
+    CameraT m_camera;
   };
 
 #if 0
-  template<class PixelT> Array<PixelT,2>
-  PinholeCamera::UndistortImage(const Array<PixelT,2>& img, bool resize) const
+  
+  template <typename RealT>
+  template<class PixelT>
+  Array<PixelT,2> PinholeCamera<RealT>::undistortImage(const Array<PixelT,2>& img, bool resize) const
   {
-     SampleBilinearC<PixelT, PixelT> sample;
      IndexRange<2> rect;
      RealT minr = img.range().min(0); RealT maxr = img.range().max(0);
      RealT minc = img.range().min(1); RealT maxc = img.range().max(1);
@@ -110,7 +211,7 @@ namespace Ravl2
        {
          Index<2> pix = itrect0.Data();
          if(pix[0]==minr || pix[0]==maxr || pix[1]==minc || pix[1]==maxc) {
-           Vector<RealT,2> z = Undistort(Vector<RealT,2>(pix[1], pix[0]));
+           Vector<RealT,2> z = this->undistort(Vector<RealT,2>(pix[1], pix[0]));
            rect.involve(Index<2>(z[1],z[0]));
          }
        }
@@ -125,15 +226,16 @@ namespace Ravl2
      for (; it; it++, itrect++)
      {
        Index<2> pix = itrect.Data();
-       Vector<RealT,2> z = Distort(Vector<RealT,2>(pix[1], pix[0]));
+       Vector<RealT,2> z = distort(Vector<RealT,2>(pix[1], pix[0]));
        if (z[1]>minr && z[1]<maxr && z[0]>minc && z[0]<maxc)
        {
-         sample(img, Vector<RealT,2>(z[1],z[0]), it.Data());
+         it.Data() = interpolateBilinear(img, Vector<RealT,2>(z[1],z[0]);
        }
      }
 
      return ret;
   }
+  
   //: Derive undistort an image using the 1st order radial distortion model
 
   template<class PixelT> Array<PixelT,2>

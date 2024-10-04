@@ -15,6 +15,7 @@
 #include "Ravl2/Geometry/Geometry.hh"
 #include "Ravl2/Geometry/LinePV.hh"
 #include "Ravl2/IndexRange.hh"
+#include "Ravl2/3D/PinholeCamera.hh"
 
 namespace Ravl2
 {
@@ -28,6 +29,8 @@ namespace Ravl2
   class PinholeCamera0
   {
   public:
+    using ValueT = RealT;
+    
     //! Default constructor
     inline PinholeCamera0() = default;
 
@@ -210,7 +213,7 @@ namespace Ravl2
 
     //! Look direction for the camera in the world co-ordinate frame
     //! Returns camera z-axis in world co-ordinate frame
-    void Direction(Vector<RealT, 3> &dir) const
+    void direction(Vector<RealT, 3> &dir) const
     {
       dir[0] = m_R(2, 0);
       dir[1] = m_R(2, 1);
@@ -306,5 +309,5 @@ namespace Ravl2
   
   
   extern template class PinholeCamera0<float>;
-
+  extern template class PinholeCameraImpl<PinholeCamera0<float>>;
 };// namespace Ravl2
