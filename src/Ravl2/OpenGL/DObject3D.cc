@@ -34,81 +34,69 @@ namespace Ravl2
     return ret;
   }
 
-#if 0
 
   /// DObjectSet3DBodyC ///////////////////////////////////////////////
-  //: Default constructor.
-  DObjectSet3DBodyC::DObjectSet3DBodyC()
-    : gotCenter(false),
-      center(0,0,0),
-      gotExtent(false),
-      extent(1)
-  {}
 
   //: Render object.
   bool DObjectSet3DBodyC::GUIRender(Canvas3DC &c3d) const
   {
     //cerr << "DObjectSet3DBodyC::GUIRender\n";
-    for(DLIterC<DObject3DC> it(parts);it.valid();it.next())
-      it.Data().GUIRender(c3d);
+    for(auto &x: parts)
+      x->GUIRender(c3d);
     return true;
   }
 
   //: Get center of object.
   // defaults to 0,0,0
-  Vector<RealT,3> DObjectSet3DBodyC::GUICenter() const
+  Vector<float,3> DObjectSet3DBodyC::GUICenter() const
   {
-    if(!gotCenter)
-    {
-      center = Vector<RealT,3>(0, 0, 0);
-      if(parts.size() != 0)
-      {
-        RealT count = 0;
-        for(DLIterC<DObject3DC> it(parts); it; it++, count++)
-          center += it.Data().GUICenter();
-        center /= count;
-      }
-      gotCenter = true;
-    }
+    assert(!mUpdateNeeded);
     return center;
   }
 
   //: Get extent of object.
   // defaults to 1
-  RealT DObjectSet3DBodyC::GUIExtent() const
+  float DObjectSet3DBodyC::GUIExtent() const
   {
-    if(!gotExtent)
-    {
-      extent = 1;
-      if(parts.size() != 0)
-      {
-        Vector<RealT,3> at = GUICenter();
-        RealT maxDist = 0;
-        for(DLIterC<DObject3DC> it(parts); it; it++)
-        {
-          RealT dist = at.EuclidDistance(it.Data().GUICenter()) +
-                                         it.Data().GUIExtent();
-          if(dist > maxDist)
-            maxDist = dist;
-        }
-        extent = maxDist;
-      }
-      gotExtent = true;
-    }
+    assert(!mUpdateNeeded);
     return extent;
   }
-
-
+  
+  //: Add object into list.
+  void DObjectSet3DBodyC::GUIAdd(const std::shared_ptr<DObject3DBodyC> &obj) {
+    parts.push_back(obj);
+    center = (center * (parts.size() - 1) + obj->GUICenter()) / parts.size();
+    mUpdateNeeded = true;
+  }
+  
+  void DObjectSet3DBodyC::UpdateCenterExtent()
+  {
+    center = toVector<float>(0,0,0);
+    for(auto &x: parts) {
+      center += x->GUICenter();
+    }
+    center /= parts.size();
+    extent = 0;
+    for(auto &x: parts) {
+      float distToCenter = float(xt::norm_l2(x->GUICenter() - center)() + double(x->GUIExtent()));
+      if(distToCenter > extent) {
+        extent = distToCenter;
+      }
+    }
+    mUpdateNeeded = false;
+  }
+  
+  
   //// DOpenGLBodyC ////////////////////////////////////////////////////////
+  
   //: Render object.
   bool DOpenGLBodyC::GUIRender(Canvas3DC &c3d) const
   {
     //cerr << "DOpenGLBodyC::GUIRender\n";
-    if(sigEvent.IsValid())
-      sigEvent.Invoke();
+    if(sigEvent)
+      sigEvent(c3d);
     return true;
   }
 
-#endif
 }
 

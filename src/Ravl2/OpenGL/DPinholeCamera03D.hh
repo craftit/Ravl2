@@ -22,28 +22,28 @@ namespace Ravl2
     : public DObject3DBodyC
   {
   public:
-    DPinholeCamera03DBodyC(const PinholeCamera0C& _camera,
+    DPinholeCamera03DBodyC(const PinholeCamera0<float>& _camera,
                            const IndexRange<2>& _canvas_region)
       : camera(_camera),
         canvas_region(_canvas_region)
      {}
     // Constructor.
 
-    virtual bool GUIRender(Canvas3DC &c3d) const;
+    bool GUIRender(Canvas3DC &c3d) const override;
     //: Render object.
 
-    virtual Vector<RealT,3> GUICenter() const
-      { return Vector<RealT,3>(0, 0, 0); }
+    Vector<float,3> GUICenter() const override
+    { return toVector<float>(0, 0, 0); }
     //: Get center of object.
     // defaults to 0,0,0
 
-    virtual RealT GUIExtent() const
-      { return 1; }
+    float GUIExtent() const override
+    { return 1; }
     //: Get extent of object.
     // defaults to 1
 
   protected:
-    PinholeCamera0C camera;
+    PinholeCamera0<float> camera;
     IndexRange<2> canvas_region;
   };
 

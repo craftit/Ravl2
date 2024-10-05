@@ -6,6 +6,7 @@ find_package(OpenGL REQUIRED)
 add_library (Ravl2OpenGL
   DObject3D.cc DObject3D.hh
   GLWindow.cc GLWindow.hh
+  DPinholeCamera03D.cc DPinholeCamera03D.hh
 )
 
 add_library(ravl2::Ravl2OpenGL ALIAS Ravl2OpenGL)

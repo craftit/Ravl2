@@ -10,6 +10,7 @@
 #pragma once
 
 #include "Ravl2/Geometry/Geometry.hh"
+#include "Ravl2/Geometry/VectorOffset.hh"
 
 namespace Ravl2
 {
@@ -19,6 +20,7 @@ namespace Ravl2
 
   template <typename RealT>
   class Line2ABC
+     : public VectorOffset<RealT, 2>
   {
   public:
     //! Creates a degenerate line (0,0,0).
@@ -26,18 +28,20 @@ namespace Ravl2
 
     //! Creates the line determined by the equation a*x+b*y+c = 0.
     inline constexpr Line2ABC(RealT a, RealT b, RealT c)
-        : normal({a, b}), mD(c)
+        : VectorOffset<RealT, 2>({a, b},c)
     {}
 
     //! Creates the line determined by the equation norm[0]*x+norm[1]*y+c = 0.
     inline constexpr Line2ABC(Vector<RealT, 2> norm, RealT vd)
-        : normal(norm), mD(vd)
+        : VectorOffset<RealT, 2>(norm,vd)
     {}
 
     //! Creates the line passing through two points 'end' and 'start'.
     inline constexpr Line2ABC(const Point<RealT, 2> &start, const Point<RealT, 2> &end)
-        : normal(perpendicular(Vector<RealT, 2>(end - start))), mD(-dot(this->normal, start)())
-    {}
+     : VectorOffset<RealT, 2>(perpendicular(Vector<RealT, 2>(end - start)),
+                             -dot(perpendicular(Vector<RealT, 2>(end - start)), start))
+    {
+    }
 
     //! Creates the line passing through two points 'end' and 'start'.
     [[nodiscard]] static constexpr Line2ABC<RealT> fromPoints(const Point<RealT, 2> &start, const Point<RealT, 2> &end)
@@ -61,32 +65,32 @@ namespace Ravl2
     //! Returns the normal of the line.
     [[nodiscard]] inline constexpr Vector<RealT, 2> Normal() const
     {
-      return this->normal;
+      return this->mNormal;
     }
 
     //! Returns the normal of the line normalized to have unit size.
     [[nodiscard]] inline constexpr Vector<RealT, 2> UnitNormal() const
     {
-      return this->normal / Ravl2::norm_l2(this->normal);
+      return this->mNormal / Ravl2::norm_l2(this->mNormal);
     }
 
     //! Returns the distance of the line from the origin of the coordinate
     //! system.
     [[nodiscard]] inline constexpr RealT Rho() const
     {
-      return this->mD / Ravl2::norm_l2(this->normal);
+      return this->mD / Ravl2::norm_l2(this->mNormal);
     }
 
     //! Returns parameter a.
     [[nodiscard]] inline constexpr RealT A() const
     {
-      return this->normal[0];
+      return this->mNormal[0];
     }
 
     //! Returns parameter b.
     [[nodiscard]] inline constexpr RealT B() const
     {
-      return this->normal[1];
+      return this->mNormal[1];
     }
 
     //! Returns parameter c.
@@ -113,14 +117,14 @@ namespace Ravl2
     //! used in geometrical computations.
     [[nodiscard]] inline constexpr RealT Residuum(const Point<RealT, 2> &p) const
     {
-      return (this->normal[0] * p[0] + this->normal[1] * p[1]) + this->mD;
+      return (this->mNormal[0] * p[0] + this->mNormal[1] * p[1]) + this->mD;
     }
 
     //! Normalizes the equation so that the normal vector is unit.
     inline constexpr Line2ABC &MakeUnitNormal()
     {
-      RealT size = Ravl2::norm_l2(this->normal);
-      this->normal /= size;
+      RealT size = Ravl2::norm_l2(this->mNormal);
+      this->mNormal /= size;
       this->mD /= size;
       return *this;
     }
@@ -161,16 +165,16 @@ namespace Ravl2
     [[nodiscard]] inline constexpr RealT SqrEuclidDistance(const Point<RealT, 2> &point) const
     {
       RealT t = Residuum(point);
-      return sqr(t) / sumOfSqr(normal);
+      return sqr(t) / sumOfSqr(this->mNormal);
     }
 
     //! Returns the signed distance of the 'point' from the line.
     //! The return value is greater than 0 if the point is on the left
     //! side of the line. The left side of the line is determined
-    //! by the direction of the normal.
+    //! by the direction of the this->mNormal.
     [[nodiscard]] inline constexpr RealT SignedDistance(const Point<RealT, 2> &point) const
     {
-      return Residuum(point) / norm_l2(normal);
+      return Residuum(point) / norm_l2(this->mNormal);
     }
 
     //! Returns the distance of the 'point' from the line.
@@ -184,23 +188,15 @@ namespace Ravl2
     //! the perpendicular line passing through the 'point'.
     [[nodiscard]] inline constexpr Point<RealT, 2> Projection(const Point<RealT, 2> &point) const
     {
-      return point - normal * (Residuum(point) / sumOfSqr(normal));
+      return point - this->mNormal * (Residuum(point) / sumOfSqr( this->mNormal));
     }
 
     //! Serialization support
     template <class Archive>
     constexpr void serialize(Archive &ar)
     {
-      ar(normal[0], normal[1], mD);
+      ar(cereal::base_class<VectorOffset<RealT, 2>>(this));
     }
-
-  private:
-    Vector<RealT, 2> normal {};
-    // The normal of the line.
-
-    RealT mD = 0.0;
-    // The distance of the line from the origin of the coordinate system
-    // multiplied by the size of the normal vector of the line.
   };
 
   template <typename RealT>

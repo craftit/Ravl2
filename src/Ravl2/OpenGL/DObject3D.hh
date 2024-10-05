@@ -13,6 +13,7 @@
 #include <GL/gl.h>
 #include "Ravl2/Pixel/Pixel.hh"
 #include "Ravl2/Types.hh"
+#include "Ravl2/Geometry/Geometry.hh"
 #include "Ravl2/Assert.hh"
 
 namespace Ravl2
@@ -93,40 +94,42 @@ namespace Ravl2
     GLuint id = std::numeric_limits<GLuint>::max(); // Display list id. -1=None. -2=To be generated...
   };
 
-#if 0
 
   ////////////////////////////////////
   //: Body for OpenGL code invocation class.
 
-  class DOpenGLBodyC : public DObject3DBodyC
+  class DOpenGLBodyC
+    : public DObject3DBodyC
   {
   public:
-    DOpenGLBodyC(const TriggerC &se,
-                 const Vector<RealT,3> &ncenter = Vector<RealT,3>(0,0,0), RealT nextent = 1)
+    //: Constructor.
+    DOpenGLBodyC(const std::function<void(Canvas3DC &)> &se,
+                 const Vector<float,3> &ncenter = toVector<float>(0,0,0),
+                 float nextent = 1)
       : sigEvent(se),
 	center(ncenter),
 	extent(nextent)
     {}
-    //: Constructor.
-
-    virtual Vector<RealT,3> GUICenter() const
-      { return center; }
+    
     //: Get center of object.
     // defaults to 0,0,0
-
-    virtual RealT GUIExtent() const
-      { return extent; }
+    virtual Vector<float,3> GUICenter() const
+    { return center; }
+    
     //: Get extent of object.
     // defaults to 1
+    virtual float GUIExtent() const
+    { return extent; }
 
   protected:
-    virtual bool GUIRender(Canvas3DC &c3d) const;
     //: Render object.
+    virtual bool GUIRender(Canvas3DC &c3d) const;
 
-    mutable TriggerC sigEvent;
-    Vector<RealT,3> center;
-    RealT extent;
+    std::function<void(Canvas3DC &)> sigEvent;
+    Vector<float,3> center = toVector<float>(0,0,0);
+    float extent = 1.0;
   };
+  
 
   ////////////////////////////////////
 
@@ -135,32 +138,30 @@ namespace Ravl2
       : public DObject3DBodyC
   {
   public:
-    DObjectSet3DBodyC();
     //: Default constructor.
-
-    virtual bool GUIRender(Canvas3DC &c3d) const;
+    DObjectSet3DBodyC() = default;
+    
     //: Render object.
-
-    virtual Vector<RealT,3> GUICenter() const;
+    virtual bool GUIRender(Canvas3DC &c3d) const;
+    
     //: Get center of object.
     // defaults to 0,0,0
-
-    virtual RealT GUIExtent() const;
+    virtual Vector<float,3> GUICenter() const;
+    
     //: Get extent of object.
     // defaults to 1
-
-    inline void GUIAdd(const DObject3DC &obj)
-      { parts.push_back(obj); gotExtent = gotCenter = false; }
+    virtual float GUIExtent() const;
+    
     //: Add object into list.
+    void GUIAdd(const std::shared_ptr<DObject3DBodyC> &obj);
 
+    //! Update the center and extent of the object.
+    void UpdateCenterExtent();
   protected:
-    std::vector<DObject3DC> parts;
-    mutable bool gotCenter;
-    mutable Vector<RealT,3> center;
-    mutable bool gotExtent;
-    mutable RealT extent;
+    std::vector<std::shared_ptr<DObject3DBodyC> > parts;
+    Vector<float,3> center = toVector<float>(0,0,0);
+    float extent = 1.0f;
+    bool mUpdateNeeded = true;
   };
-
-#endif
 }
 

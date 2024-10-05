@@ -146,3 +146,10 @@ namespace Ravl2
   extern template class Plane3ABCD<float>;
 
 }// namespace Ravl2
+
+#if FMT_VERSION >= 90000
+template <typename RealT>
+struct fmt::formatter<Ravl2::Plane3ABCD<RealT>> : fmt::ostream_formatter {
+};
+#endif
+

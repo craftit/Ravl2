@@ -531,10 +531,12 @@ TEST_CASE("Planes")
   {
 
     for(int i =0 ;i < 100;i++) {
-
-       VectorOffset<RealT,3> plane(toVector<RealT>(randomValue(10),randomValue(10),randomValue(10)),
-                         toPoint<RealT>(randomValue(10),randomValue(10),randomValue(10)));
-
+      auto pntOnPlane = toPoint<RealT>(randomValue(10),randomValue(10),randomValue(10));
+      VectorOffset<RealT,3> plane(toVector<RealT>(randomValue(10),randomValue(10),randomValue(10)),pntOnPlane);
+      
+      // Check point on plane has zero distance.
+      CHECK(plane.distance(pntOnPlane) < 0.00001f);
+      
       auto testPoint = toPoint<RealT>(randomValue(10),randomValue(10),randomValue(10));
 
       auto closestPoint = plane.projection(testPoint);

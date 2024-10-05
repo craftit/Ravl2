@@ -10,18 +10,20 @@
 
 #pragma once
 
-#include "Ravl2/OpenGL//DObject3D.hh"
+#include "Ravl2/OpenGL/DObject3D.hh"
 #include "Ravl2/Pixel/Pixel.hh"
 
 #define DTransform3D_RESET       0x0001
 #define DTransform3D_ROTATION    0x0002
 #define DTransform3D_TRANSLATION 0x0004
 
-namespace Ravl2 {
+namespace Ravl2
+{
 
   ///////////////////////////////////////////////////////
   //: Rotate objects
-  class DTransform3DBodyC : public DObjectSet3DBodyC
+  class DTransform3DBodyC
+    : public DObjectSet3DBodyC
   {
   public:
     DTransform3DBodyC()
@@ -29,15 +31,15 @@ namespace Ravl2 {
       {}
     //: Rotation Constructor.
 
-    DTransform3DBodyC(RealT nAngle, const Vector<RealT,3> &nAxis)
+    DTransform3DBodyC(float nAngle, const Vector<float,3> &nAxis)
       : mode(DTransform3D_ROTATION),
         angle(nAngle),
         axis(nAxis)
       {}
     //: Rotation Constructor.
 
-    DTransform3DBodyC(RealT nAngle, const Vector<RealT,3> &nAxis,
-                      const Vector<RealT,3> &nTrans)
+    DTransform3DBodyC(float nAngle, const Vector<float,3> &nAxis,
+                      const Vector<float,3> &nTrans)
       : mode(DTransform3D_ROTATION | DTransform3D_TRANSLATION),
         angle(nAngle),
         axis(nAxis),
@@ -45,7 +47,7 @@ namespace Ravl2 {
       {}
     //: Rotation/Translation Constructor.
 
-    DTransform3DBodyC(const Vector<RealT,3> &nTrans)
+    DTransform3DBodyC(const Vector<float,3> &nTrans)
       : mode(DTransform3D_TRANSLATION),
         trans(nTrans)
       {}
@@ -55,10 +57,10 @@ namespace Ravl2 {
     //: Render object.
 
   protected:
-    IntT mode;
-    RealT angle;
-    Vector<RealT,3> axis;
-    Vector<RealT,3> trans;
+    int mode = 0;
+    float angle = 0;
+    Vector<float,3> axis = toVector<float>(0,0,1);
+    Vector<float,3> trans = toVector<float>(0,0,0);
   };
 
 

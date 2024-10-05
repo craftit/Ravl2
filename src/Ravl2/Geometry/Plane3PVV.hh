@@ -107,7 +107,7 @@ namespace Ravl2
     }
 
     //! Returns the point of intersection of this plane with the line 'l'.
-    [[nodiscard]] Point<RealT, 3> intersection(const Line3PV<RealT> &l) const
+    [[nodiscard]] Point<RealT, 3> intersection(const LinePV<RealT,3> &l) const
     {
       return planeABCD3d().intersection(l);
     }
@@ -186,7 +186,7 @@ namespace Ravl2
   template <typename RealT>
   std::ostream &operator<<(std::ostream &outS, const Plane3PVV<RealT> &plane)
   {
-    const Point<RealT, 3> &p = plane.Origin();
+    const Point<RealT, 3> &p = plane.origin();
     const Vector<RealT, 3> &v1 = plane.vector1();
     const Vector<RealT, 3> &v2 = plane.vector2();
     outS << p << ' ' << v1 << ' ' << v2;
@@ -196,7 +196,7 @@ namespace Ravl2
   template <typename RealT>
   std::istream &operator>>(std::istream &inS, Plane3PVV<RealT> &plane)
   {
-    Point<RealT, 3> &p = plane.Origin();
+    Point<RealT, 3> &p = plane.origin();
     Vector<RealT, 3> &v1 = plane.vector1();
     Vector<RealT, 3> &v2 = plane.vector2();
     inS >> p >> v1 >> v2;
@@ -213,3 +213,9 @@ namespace Ravl2
   extern template class Plane3PVV<double>;
   
 }// namespace Ravl2
+
+#if FMT_VERSION >= 90000
+template <typename RealT>
+struct fmt::formatter<Ravl2::Plane3PVV<RealT>> : fmt::ostream_formatter {
+};
+#endif

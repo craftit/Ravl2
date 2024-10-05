@@ -456,7 +456,7 @@ TEST_CASE("ImagePyramid")
 
     ASSERT_EQ(pyramid.numLevels(), 3u);
     auto level = pyramid.findAreaScale(0.33f);
-    SPDLOG_INFO("Level: {}", level);
+    //SPDLOG_INFO("Level: {}", level);
     ASSERT_EQ(level, 1u);
 //    for(size_t i = 0;i < pyramid.numLevels();i++) {
 //      SPDLOG_INFO("Level:{} Img:{} ", i, pyramid.level(i).image());
@@ -478,11 +478,11 @@ TEST_CASE("ImagePyramid")
 
     ASSERT_EQ(pyramid.numLevels(), 3u);
     auto level = pyramid.findAreaScale(0.33f);
-    SPDLOG_INFO("Level: {}", level);
+    //SPDLOG_INFO("Level: {}", level);
     ASSERT_EQ(level, 1u);
-    for(size_t i = 0;i < pyramid.numLevels();i++) {
-      SPDLOG_INFO("Level:{} Img:{} ", i, pyramid.level(i).image());
-    }
+//    for(size_t i = 0;i < pyramid.numLevels();i++) {
+//      SPDLOG_INFO("Level:{} Img:{} ", i, pyramid.level(i).image());
+//    }
 
   }
 
