@@ -7,6 +7,8 @@
 //! author="James Smith"
 //! date="26/9/2002"
 
+#pragma once
+
 #include "Ravl2/Geometry/Geometry.hh"
 #include "Ravl2/Geometry/Affine.hh"
 #include "Ravl2/Geometry/Range.hh"

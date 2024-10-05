@@ -11,6 +11,8 @@
 #include "Ravl2/IO/Save.hh"
 #include "Ravl2/Geometry/PolygonRasterIter.hh"
 #include "Ravl2/Geometry/Moments2.hh"
+#include "Ravl2/Geometry/PolyLine.hh"
+#include "Ravl2/Geometry/PolyApprox.hh"
 
 // If true render the polygon to an image for debugging
 #define DODISPLAY 0
@@ -379,7 +381,6 @@ TEST_CASE("Clip Polygon")
     }
 #endif
 
-
     auto score = clippedConvex.area();
     CHECK(std::abs(score - 100) < 1e-6f);
 
@@ -402,4 +403,47 @@ TEST_CASE("Clip Polygon")
 #endif
 
 }
+
+TEST_CASE("Approximate Polygon")
+{
+  using namespace Ravl2;
+  SECTION("Approx Simple")
+  {
+    PolyLine<float,2> poly;
+    poly.push_back(toPoint<float>(0, 0));
+    poly.push_back(toPoint<float>(10, 0));
+    poly.push_back(toPoint<float>(20, 0));
+    
+    auto simplifed = poly.approx(1.0f);
+    CHECK(simplifed.size() == 2);
+  }
+  
+  
+  SECTION("Approx 3")
+  {
+    PolyLine<float,2> poly;
+    poly.push_back(toPoint<float>(0, 0));
+    poly.push_back(toPoint<float>(10, 2));
+    poly.push_back(toPoint<float>(20, 0));
+    
+    auto simplifed = poly.approx(1.0f);
+    SPDLOG_INFO("Simplified: {}", simplifed);
+    CHECK(simplifed.size() == 3);
+  }
+  
+  SECTION("Approx 4")
+  {
+    PolyLine<float,2> poly;
+    poly.push_back(toPoint<float>(0, 0));
+    poly.push_back(toPoint<float>(10, 2));
+    poly.push_back(toPoint<float>(20, 0));
+    poly.push_back(toPoint<float>(30, 0));
+    poly.push_back(toPoint<float>(40, 0));
+    
+    auto simplifed = poly.approx(1.0f);
+    SPDLOG_INFO("Simplified: {}", simplifed);
+    CHECK(simplifed.size() == 5);
+  }
+}
+
 

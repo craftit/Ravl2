@@ -118,7 +118,7 @@ namespace Ravl2
     //! furthest point from the line defined by the two end points and if it is further than the distance limit
     //! adding it to the approximation. The procedure is then repeated for each of the segments either side
     //! of furthest point.
-    [[nodiscard]] Polygon<RealT> Approx(RealT distLimit) const;
+    [[nodiscard]] Polygon<RealT> approx(RealT distLimit) const;
 
     //! @brief Make a reversed copy of the polygon
     [[nodiscard]] Polygon<RealT> reverse() const

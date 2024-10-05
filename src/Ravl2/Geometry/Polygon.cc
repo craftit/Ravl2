@@ -6,6 +6,7 @@
 // file-header-ends-here
 
 #include "Ravl2/Geometry/Polygon.hh"
+#include "Ravl2/Geometry/PolyApprox.hh"
 #include "Ravl2/Geometry/Moments2.hh"
 #include "Ravl2/Geometry/LinePP.hh"
 

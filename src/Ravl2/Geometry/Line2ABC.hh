@@ -218,6 +218,12 @@ namespace Ravl2
   // Let everyone know there's an implementation already generated for common cases
   extern template class Line2ABC<float>;
 
+  //! Construct a line from two points
+  template <typename RealT>
+  [[nodiscard]] inline constexpr Line2ABC<RealT> points2line(Point<RealT, 2> const &start, Point<RealT, 2> const &end)
+  {
+    return Line2ABC<RealT>(start, end);
+  }
 }// namespace Ravl2
 
 #if FMT_VERSION >= 90000

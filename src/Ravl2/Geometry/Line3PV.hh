@@ -36,31 +36,12 @@ namespace Ravl2
     inline Line3PV(const Point<RealT, 3> &a, const Vector<RealT, 3> &v)
         : LinePV<RealT, 3>(a, v)
     {}
-
-    //    //: Creates the line passing through the points 'first' and
-    //    //: second.
-    //    inline Line3PV(const Point<RealT,3> &first, const Point<RealT,3> &second)
-    //        : point(first), mDirection(second - first)
-    //    {}
-
-    //: Returns the shortest distance between the lines.
-    RealT Distance(const Line3PV &line) const
-    {
-      // more information in Rektorys:
-      // Prehled uzite matematiky, SNTL, Praha 1988, p. 205
-      auto axb = cross(this->Direction(), line.Direction());
-      auto modul = Ravl2::norm_l2(axb);
-      if(isNearZero(modul)) {
-        return line.Distance(this->FirstPoint());
-      }
-      return std::abs(RealT(xt::linalg::dot(line.FirstPoint() - this->FirstPoint(), axb)())) / modul;
-    }
-
+    
     //: Returns the line which passes through the closest points
     //: of both lines.
     // The returned line has the first point on this line and
     // the second point on the 'line'.
-    [[nodiscard]] LinePV<RealT, 3> ShortestLine(const LinePV<RealT, 3> &line) const
+    [[nodiscard]] LinePV<RealT, 3> shortestLine(const LinePV<RealT, 3> &line) const
     {
       auto axb = cross(this->Direction(), line.Direction());
       RealT axbNorm = sumOfSqr(axb);
@@ -78,25 +59,24 @@ namespace Ravl2
     //: Returns the point which belongs to both lines.
     // If the lines have no intersection, the function returns the point which
     // lies in the middle of the shortest line segment between both lines.
-    [[nodiscard]] Point<RealT, 3> Intersection(const LinePV<RealT, 3> &l) const
+    [[nodiscard]] Point<RealT, 3> intersection(const LinePV<RealT, 3> &l) const
     {
       return ShortestLine(l).MiddlePoint();
     }
 
-#if 0
-
-    // Returns the line which is the orthogonal projection of this
-    // line into the plane 'p'.
-    Line3PV ProjectionInto(const PlaneABCD3dC<RealT> & p) const;
-#endif
   };
-
-#if 0
-  std::ostream &operator<<(std::ostream &outS, const Line3PV &line);
-  // Saves the 'line' into the output stream.
-
-  std::istream &operator>>(std::istream &inS, Line3PV &line);
-  // Sets the 'line' according to data read from the input stream.
-#endif
-
+  
+  //! Construct a line from two points
+  template <typename RealT>
+  [[nodiscard]] inline constexpr Line3PV<RealT> points2line(Point<RealT, 3> const &start, Point<RealT, 3> const &end)
+  {
+    return Line3PV<RealT>(start, end - start);
+  }
+  
 }// namespace Ravl2
+
+#if FMT_VERSION >= 90000
+template <>
+struct fmt::formatter<Ravl2::Line3PV<float>> : fmt::ostream_formatter {
+};
+#endif

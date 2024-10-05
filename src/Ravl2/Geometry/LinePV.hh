@@ -97,7 +97,7 @@ namespace Ravl2
     }
 
     //: Returns the shortest distance between the lines.
-    [[nodiscard]] RealT Distance(const LinePV<RealT, N> &line) const
+    [[nodiscard]] RealT distance(const LinePV<RealT, N> &line) const
     {
       if constexpr(N == 3) {
         // more information in Rektorys:
@@ -105,7 +105,7 @@ namespace Ravl2
         auto axb = cross(Direction(), line.Direction());
         auto modul = Ravl2::norm_l2(axb);
         if(isNearZero(modul)) {
-          return line.Distance(FirstPoint());
+          return line.distance(FirstPoint());
         }
         return std::abs(RealT(xt::linalg::dot(line.FirstPoint() - FirstPoint(), axb)())) / modul;
       } else {
@@ -114,7 +114,7 @@ namespace Ravl2
     }
 
     //: Returns the distance of the point 'p' from this line.
-    [[nodiscard]] RealT Distance(const Point<RealT, N> &p) const
+    [[nodiscard]] RealT distance(const Point<RealT, N> &p) const
     {
       return RealT(norm_l2(cross(Direction(), (FirstPoint() - p)) / norm_l2(Direction()))());
     }

@@ -24,7 +24,6 @@ add_library (Ravl2Geometry
         Projection.cc Projection.hh
         Transform.cc Transform.hh
         FitLine.cc FitLine.hh
-        PolyApprox.hh
         Conic2.cc Conic2.hh
         FitConic.hh
         Ellipse.cc Ellipse.hh
@@ -35,12 +34,10 @@ add_library (Ravl2Geometry
         LinePV.cc LinePV.hh
         Plane3ABCD.cc Plane3ABCD.hh
         Plane3PVV.cc Plane3PVV.hh
-        FitProjection.hh
-        FitProjection.cc
-        FitAffine.cc
-        FitAffine.hh
-        FitSimilarity.cc
-        FitSimilarity.hh
+        FitProjection.hh FitProjection.cc
+        FitAffine.cc FitAffine.hh
+        FitSimilarity.cc FitSimilarity.hh
+        PolyApprox.hh PolyApprox.cc
 
 )
 

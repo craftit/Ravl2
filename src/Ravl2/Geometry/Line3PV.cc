@@ -27,16 +27,6 @@ namespace Ravl2
 {
 
 #if 0
-  RealT LinePV3dC::Distance(const LinePV3dC & line) const { 
-    // more information in Rektorys: 
-    // Prehled uzite matematiky, SNTL, Praha 1988, p. 205
-    
-    Vector<RealT,3> axb(Vector().Cross(line.Vector()));
-    RealT modul = axb.Magnitude();
-    if (modul == 0)
-      return line.Distance(FirstPoint());
-    return RavlN::std::abs(Vector<RealT,3>(line.FirstPoint() - FirstPoint()).Dot(axb))/modul;
-  }
   
   LinePV3dC LinePV3dC::ShortestLine(const LinePV3dC & line) const {
     Vector<RealT,3> axb(Vector().Cross(line.Vector()));
