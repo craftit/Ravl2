@@ -154,6 +154,53 @@ TEST_CASE("LinePP")
 
 }
 
+TEST_CASE("LineABC")
+{
+  using namespace Ravl2;
+  auto p1 = toPoint<float>(10, 2);
+  auto p2 = toPoint<float>(20, 0);
+  auto p3 = toPoint<float>(30, 0);
+  auto p4 = toPoint<float>(40, 0);
+  
+  
+  SECTION("Construct from points")
+  {
+    Line2ABC<float> line(p1, p4);
+    CHECK(line.distance(p1) < 0.00001f);
+    CHECK(line.distance(p2) > line.distance(p3));
+    CHECK(line.distance(p4) < 0.00001f);
+    
+    Vector<float,2> dir = p4 - p1;
+    auto line2 = Line2ABC<float>::fromDirection(p1, dir);
+    CHECK(line2.distance(p1) < 0.00001f);
+    CHECK(line2.distance(p2) > line2.distance(p3));
+    CHECK(line2.distance(p4) < 0.00001f);
+    auto line3 = Line2ABC<float>::fromNormal(perpendicular(dir), p1);
+    CHECK(line3.distance(p1) < 0.00001f);
+    CHECK(line3.distance(p2) > line2.distance(p3));
+    CHECK(line3.distance(p4) < 0.00001f);
+  }
+  
+  SECTION("makeUnitNormal")
+  {
+    auto line2 = Line2ABC<float>::fromPoints(p1, p4);
+    
+    CHECK((norm_l2(line2.unitNormal())() - 1) < 0.00001f);
+    line2.makeUnitNormal();
+    CHECK(std::abs(norm_l2(line2.normal()) - 1) < 0.00001f);
+    CHECK(std::abs(line2.distance(p1)) < 0.00001f);
+    CHECK(std::abs(line2.distance(p4)) < 0.00001f);
+  }
+  
+  SECTION("isParallel")
+  {
+    auto line1 = Line2ABC<float>::fromPoints(p1, p4);
+    auto line2 = Line2ABC<float>::fromPoints(p2, p3);
+    auto line3 = Line2ABC<float>::fromPoints(p3, p4);
+    CHECK(!line1.isParallel(line2));
+    CHECK(line2.isParallel(line3));
+  }
+}
 
 TEST_CASE("Fit LineABC")
 {
@@ -187,8 +234,8 @@ TEST_CASE("Fit LineABC")
     CHECK(res < 5);
     //cerr << "Line=" << line << " Res=" << res <<"\n";
     for(unsigned i = 0;i < points.size();++i) {
-      RealT dist = line.Distance(points[i]);
-      Point<RealT,2> at = line.Projection(points[i]);
+      RealT dist = line.distance(points[i]);
+      Point<RealT,2> at = line.projection(points[i]);
       RealT sep = euclidDistance(at, points[i]);
       CHECK(std::abs(sep - dist) < 0.0001f);
       //cerr << "Dist=" << dist << "\n";

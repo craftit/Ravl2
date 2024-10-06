@@ -442,7 +442,7 @@ TEST_CASE("Approximate Polygon")
     
     auto simplifed = poly.approx(1.0f);
     SPDLOG_INFO("Simplified: {}", simplifed);
-    CHECK(simplifed.size() == 5);
+    CHECK(simplifed.size() == 4);
   }
 }
 

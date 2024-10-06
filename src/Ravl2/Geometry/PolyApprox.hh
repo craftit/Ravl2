@@ -18,10 +18,9 @@ namespace Ravl2
     template <class RealT,size_t N>
     void approxSegment(std::vector<Point<RealT,N> > &ret, auto p1, auto p2, RealT maxDist)
     {
-      SPDLOG_INFO("approxSegment {} to {} ", *p1, *p2);
       auto at = p1;
       auto fp = p1;
-      auto line = points2line<RealT>(*p1, *p2);
+      auto line = toLine<RealT>(*p1, *p2);
       ++at;
       if(at == p2) {
         return;
@@ -35,10 +34,8 @@ namespace Ravl2
         }
       }
       if(fp == p1) {
-        SPDLOG_INFO("approxSegment no break");
         return; // No point on the line is further than maxDist.
       }
-      SPDLOG_INFO("approxSegment break at {} ", *fp);
       
       // Do two subsections either side.
       approxSegment(ret, p1, fp, maxDist);
