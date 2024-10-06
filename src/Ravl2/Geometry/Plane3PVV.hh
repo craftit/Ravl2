@@ -10,6 +10,7 @@
 
 #pragma once
 
+#include <spdlog/spdlog.h>
 #include "Ravl2/Types.hh"
 #include "Ravl2/Geometry/Plane3ABCD.hh"
 
@@ -129,22 +130,23 @@ namespace Ravl2
     [[nodiscard]] Point<RealT, 2> projection(const Point<RealT, 3> &pointOnPlane) const
     {
       Matrix<RealT, 3, 2> a;
-      at(0, 0) = mVector1[0];
-      at(1, 0) = mVector1[1];
-      at(2, 0) = mVector1[2];
-      at(0, 1) = mVector2[0];
-      at(1, 1) = mVector2[1];
-      at(2, 1) = mVector2[2];
+      a(0, 0) = mVector1[0];
+      a(1, 0) = mVector1[1];
+      a(2, 0) = mVector1[2];
+      a(0, 1) = mVector2[0];
+      a(1, 1) = mVector2[1];
+      a(2, 1) = mVector2[2];
       Point<RealT, 3> tmp = pointOnPlane;
       tmp -= mOrigin;
       auto [sol, residual, rank, s] = xt::linalg::lstsq(a, tmp);
-      return toPoint<RealT>(sol(0, 0), sol(1, 0));
+      //SPDLOG_INFO("Sol: {} {} {} {}  Residual: {} ", sol(0,0), sol(0,1),sol(1,0),sol(1,1), residual(0,0));
+      return toPoint<RealT>(sol(0, 0), sol(0, 1));
     }
     
     //! Returns the coordinates (t1,t2) of the point of intersection
     //! of this plane with the line 'l'. The coordinate system of the returned
     //! point is determined by the point of the plane and its two vectors.
-    [[nodiscard]] Point<RealT, 2> projectedIntersection(const Line3PV<RealT> &l) const
+    [[nodiscard]] Point<RealT, 2> projectedIntersection(const LinePV<RealT,3> &l) const
     {
       return projection(intersection(l));
     }
