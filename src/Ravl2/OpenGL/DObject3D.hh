@@ -113,17 +113,17 @@ namespace Ravl2
     
     //: Get center of object.
     // defaults to 0,0,0
-    virtual Vector<float,3> GUICenter() const
+    Vector<float,3> GUICenter() const override
     { return center; }
     
     //: Get extent of object.
     // defaults to 1
-    virtual float GUIExtent() const
+    float GUIExtent() const override
     { return extent; }
 
   protected:
     //: Render object.
-    virtual bool GUIRender(Canvas3DC &c3d) const;
+    bool GUIRender(Canvas3DC &c3d) const override;
 
     std::function<void(Canvas3DC &)> sigEvent;
     Vector<float,3> center = toVector<float>(0,0,0);
@@ -142,15 +142,15 @@ namespace Ravl2
     DObjectSet3DBodyC() = default;
     
     //: Render object.
-    virtual bool GUIRender(Canvas3DC &c3d) const;
+    bool GUIRender(Canvas3DC &c3d) const override;
     
     //: Get center of object.
     // defaults to 0,0,0
-    virtual Vector<float,3> GUICenter() const;
+    Vector<float,3> GUICenter() const override;
     
     //: Get extent of object.
     // defaults to 1
-    virtual float GUIExtent() const;
+    float GUIExtent() const override;
     
     //: Add object into list.
     void GUIAdd(const std::shared_ptr<DObject3DBodyC> &obj);

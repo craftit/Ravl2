@@ -17,8 +17,8 @@ namespace Ravl2
     const PinholeCamera0<float>& cam = camera;
 
     // virtual image size
-    float sx = canvas_region.range(1).size();
-    float sy = canvas_region.range(0).size();
+    auto sx = float(canvas_region.range(1).size());
+    auto sy = float(canvas_region.range(0).size());
 
     // create camera projection matrix
     float matrixProject[16] =
