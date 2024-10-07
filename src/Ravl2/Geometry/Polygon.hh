@@ -38,7 +38,19 @@ namespace Ravl2
 
     //! Empty list of points.
     constexpr Polygon() = default;
-
+    
+    //! Move from a list of points
+    constexpr Polygon(PointSet<RealT,2> &&pnts)
+      : PointSet<RealT,2>(std::move(pnts))
+    {}
+    
+    //! Assign from a list of points
+    constexpr Polygon &operator=(PointSet<RealT,2> &&pnts)
+    {
+      PointSet<RealT,2>::operator=(std::move(pnts));
+      return *this;
+    }
+    
     //! Construct from list of points
     constexpr explicit Polygon(const std::vector<Point<RealT, 2>> &points)
         : PointSet<RealT, 2>(points)

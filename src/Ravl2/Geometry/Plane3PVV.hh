@@ -204,7 +204,20 @@ namespace Ravl2
     inS >> p >> v1 >> v2;
     return (inS);
   }
-
+  
+  template <typename RealT>
+  class Isometry3;
+  
+  //! Transform plane.
+  template <typename RealT>
+  inline Plane3PVV<RealT> operator*(const Isometry3<RealT> &iso, const Plane3PVV<RealT> &plane)
+  {
+    return Plane3PVV<RealT>(iso * plane.origin(),
+                            iso.rotation().rotate(plane.vector1()),
+                            iso.rotation().rotate(plane.vector2()));
+  }
+  
+  
   //! Least squares fit of a plane to a set of points in 3d
   //! At least 3 points are needed.
   template <typename RealT>

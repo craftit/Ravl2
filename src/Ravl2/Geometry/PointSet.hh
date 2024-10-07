@@ -54,7 +54,17 @@ namespace Ravl2
 
     //! scale the point set by multiplying the points by 'scale'.
     constexpr const PointSet &operator*=(RealT scale);
-
+    
+    //! scale the point set by multiplying the points by 'scale'.
+    constexpr PointSet operator*(RealT scale) const {
+      PointSet<RealT, N> ret;
+      ret.reserve(this->size());
+      for(auto it : *this)
+        ret.push_back(it * scale);
+      return ret;
+    }
+    
+    
     //! Transform the points in place
     template <PointTransform transform>
     constexpr const PointSet<RealT, N> &operator*=(const transform &trans)
