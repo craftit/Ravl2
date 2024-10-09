@@ -15,20 +15,20 @@ namespace Ravl2
   //: Render object.
   bool DCube3DBodyC::GUIRender(Canvas3DC &c3d) const
   {
+    (void)c3d;
     //cerr << "DCube3DBodyC::Render(), Called. \n";
 
     GLColour(colour);
-    Vector<RealT,3> p1 = diag/2;
-    Vector<RealT,3> p7 = -diag/2;
+    Vector<float,3> p1 = diag/2;
+    Vector<float,3> p7 = -diag/2;
 
-    Vector<RealT,3>
-      p2 ( p1[0], p7[1], p1.Z() ),
-      p3 ( p7[0], p7[1], p1.Z() ),
-      p4 ( p7[0], p1[1], p1.Z() ),
+    Vector<float,3> p2 ( {p1[0], p7[1], p1[2]} );
+    Vector<float,3> p3 ( {p7[0], p7[1], p1[2]} );
+    Vector<float,3> p4 ( {p7[0], p1[1], p1[2]} );
 
-      p5 ( p7[0], p1[1], p7.Z() ),
-      p6 ( p1[0], p1[1], p7.Z() ),
-      p8 ( p1[0], p7[1], p7.Z() ) ;
+    Vector<float,3> p5 ( {p7[0], p1[1], p7[2]} );
+    Vector<float,3> p6 ( {p1[0], p1[1], p7[2]} );
+    Vector<float,3> p8 ( {p1[0], p7[1], p7[2]} );
 
 
     glBegin(GL_QUADS);

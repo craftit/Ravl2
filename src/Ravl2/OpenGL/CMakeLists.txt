@@ -7,6 +7,9 @@ add_library (Ravl2OpenGL
   DObject3D.cc DObject3D.hh
   GLWindow.cc GLWindow.hh
   DPinholeCamera03D.cc DPinholeCamera03D.hh
+  DCube3D.cc DCube3D.hh
+  DLight3D.cc DLight3D.hh
+  DPointSet3d.cc DPointSet3d.hh
 )
 
 add_library(ravl2::Ravl2OpenGL ALIAS Ravl2OpenGL)

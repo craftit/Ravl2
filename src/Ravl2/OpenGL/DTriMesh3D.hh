@@ -21,7 +21,9 @@ namespace Ravl2 {
   class DTriMesh3DBodyC : public DObject3DBodyC
   {
   public:
-    DTriMesh3DBodyC(const TriMeshC &oTriMesh);
+    using RealT = float;
+
+    DTriMesh3DBodyC(const TriMesh<RealT> &oTriMesh);
     //: Constructor.
 
     virtual bool GUIRender(Canvas3DC &c3d) const;
@@ -36,7 +38,7 @@ namespace Ravl2 {
     // defaults to 1
 
   protected:
-    TriMeshC model;
+    TriMesh<RealT> model;
 
     bool mUseMeshColour = true;
 

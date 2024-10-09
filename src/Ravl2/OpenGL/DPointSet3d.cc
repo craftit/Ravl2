@@ -7,7 +7,7 @@
 
 #include <GL/gl.h>
 #include "Ravl2/OpenGL/DPointSet3d.hh"
-#include "Ravl2/OpenGL/Canvas3D.hh"
+//#include "Ravl2/OpenGL/Canvas3D.hh"
 
 #define DODEBUG 0
 #if DODEBUG
@@ -21,14 +21,16 @@ namespace Ravl2 {
   // Render object.
   bool DPointSet3dBodyC::GUIRender(Canvas3DC& canvas) const
   {
+    (void)canvas;
     ONDEBUG(std::cerr << "DPointSet3dBodyC::GUIRender(), Called. \n");
     // std::cerr << "Point set render number: " << pointSet.RenderNumber() << std::endl;
 
     glColor3d(1.0,1.0,1.0);
     glBegin(GL_POINTS);
-    for (DLIterC<Point<RealT,3>> it(pointSet); it; it++) {
-      Point<RealT,3> v = *it;
-      glVertex3d(v[0],v[1],v[2]);
+    for(auto it : pointSet)
+    {
+      Point<RealT,3> v = it;
+      glVertex3f(v[0],v[1],v[2]);
     }
     glEnd();
 
@@ -45,19 +47,19 @@ namespace Ravl2 {
 
   //: Get center of object.
   // defaults to 0,0,0
-  Vector<RealT,3> DPointSet3dBodyC::GUICenter() const
+  Vector<DPointSet3dBodyC::RealT,3> DPointSet3dBodyC::GUICenter() const
   {
-    return pointSet.Centroid();
+    return pointSet.pointCentroid();
   }
 
   //: Get extent of object.
   // defaults to 1
-  RealT DPointSet3dBodyC::GUIExtent() const
+  DPointSet3dBodyC::RealT DPointSet3dBodyC::GUIExtent() const
   {
-    Vector<RealT,3> ncenter = pointSet.Centroid();
+    Vector<RealT,3> ncenter = pointSet.pointCentroid();
     RealT dist = 0;
-    for(DLIterC<Point<RealT,3>> it(pointSet);it;it++)
-      dist = Max(dist,Sqrt((ncenter - *it).SumOfSqr()));
+    for(auto it: pointSet)
+      dist = std::max(dist,float(xt::norm_l2(ncenter - it)()));
     return dist;
   }
 

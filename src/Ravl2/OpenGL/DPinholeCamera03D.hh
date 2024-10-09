@@ -32,7 +32,7 @@ namespace Ravl2
     bool GUIRender(Canvas3DC &c3d) const override;
     //: Render object.
 
-    Vector<float,3> GUICenter() const override
+    [[nodiscard]] Vector<float,3> GUICenter() const override
     { return toVector<float>(0, 0, 0); }
     //: Get center of object.
     // defaults to 0,0,0

@@ -4,7 +4,6 @@
 // General Public License (LGPL). See the lgpl.licence file for details or
 // see http://www.gnu.org/copyleft/lesser.html
 // file-header-ends-here
-///////////////////////////////////////////////////
 
 #include "Ravl2/OpenGL/DLight3D.hh"
 
@@ -44,7 +43,7 @@ namespace Ravl2 {
     GLfloat fpos[4];
     fpos[0] = pos[0];
     fpos[1] = pos[1];
-    fpos[2] = pos.Z();
+    fpos[2] = pos[2];
     fpos[3] = 1.;
     //cerr << "Light position:" << pos << std::endl;
     glMatrixMode(GL_MODELVIEW);
@@ -55,12 +54,12 @@ namespace Ravl2 {
 
     // Set colour....
     GLfloat col1[4],col2[4];
-    col1[0] = colour.Red();
-    col1[1] = colour.Green();
-    col1[2] = colour.Blue();
+    col1[0] = get<ImageChannel::Red,float>(colour);
+    col1[1] = get<ImageChannel::Green,float>(colour);
+    col1[2] = get<ImageChannel::Blue,float>(colour);
     col1[3] = 1;
-    for(IntT i = 0;i < 4;i++)
-      col2[i] = col1[i] * 0.1;  // Ambient is 10% of full.
+    for(int i = 0;i < 4;i++)
+      col2[i] = col1[i] * 0.1f;  // Ambient is 10% of full.
 
     glLightfv(lightNo, GL_AMBIENT,  col2);
     glLightfv(lightNo, GL_DIFFUSE,  col1);
@@ -70,7 +69,7 @@ namespace Ravl2 {
   }
 
   //: Convert Light number.
-  GLenum DLight3DBodyC::LightNo(IntT no) const
+  GLenum DLight3DBodyC::LightNo(int no) const
   {
     switch(no)
     {

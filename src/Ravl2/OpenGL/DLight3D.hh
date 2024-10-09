@@ -14,55 +14,45 @@
 
 namespace Ravl2 {
 
-  //////////////////////////////////////////////
-  //: Draw some lines.
+  //: Setup a light in a 3D world.
 
   class DLight3DBodyC
     : public DObject3DBodyC
   {
   public:
-    DLight3DBodyC(const RealRGBValueC &nCol, const Vector<RealT,3> &nPos, int nn)
+    //: Constructor.
+    DLight3DBodyC(const PixelRGB8 &nCol, const Vector<float,3> &nPos, int nn)
       : n(nn),
 	colour(nCol),
 	pos(nPos),
 	spot(false)
     {}
-    //: Constructor.
 
-    virtual bool GUIRender(Canvas3DC &c3d) const;
     //: Render object.
+    bool GUIRender(Canvas3DC &c3d) const override;
 
-    virtual Vector<RealT,3> GUICenter() const
-      { return Vector<RealT,3>(0, 0, 0); }
     //: Get center of object.
     // defaults to 0,0,0
+    Vector<float,3> GUICenter() const override
+      { return Vector<float,3>({0, 0, 0}); }
 
-    virtual RealT GUIExtent() const
-      { return 1; }
     //: Get extent of object.
     // defaults to 1
+    float GUIExtent() const override
+      { return 1; }
 
   protected:
-    GLenum LightNo(IntT no) const;
     //: Convert Light number.
+    GLenum LightNo(int no) const;
 
-    IntT n;           // Number of light. 0-7
-    RealRGBValueC colour; // Colour of light.
-    Vector<RealT,3> pos;    // Position of light.
-    bool spot;        // Spot light ?
-    Vector<RealT,3> dir;    // Direction of spot light.
-    RealT  ang;       // angle of light.
+    int n = 0;           //!< Number of light. 0-7
+    PixelRGB8 colour; //!< Colour of light.
+    Vector<float,3> pos;    //!< Position of light.
+    bool spot = false;        //!< Spot light ?
+    Vector<float,3> dir;    //!< Direction of spot light.
+    float  ang = 0;       //!< angle of light.
   };
 
-  //: Draw some lines.
-  class DLight3DC : public DObject3DC
-  {
-  public:
-    DLight3DC(const RealRGBValueC &col, const Vector<RealT,3> &nPos, int nn = 0)
-      : DObject3DC(*new DLight3DBodyC(col, nPos, nn))
-    {}
-    //: Constructor.
-  };
 }
 
 

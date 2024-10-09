@@ -15,17 +15,25 @@
 namespace Ravl2 {
 
   //: Setup a view point in the 3D world.
-  // See handles description for more information.
+  // This also does some default setup of depth buffers, and shape
+  // models.  If you wish to configures these aspects yours self you
+  // should do so after using this class. (Or not use it at all.)
 
   class DViewPoint3DBodyC : public DObject3DBodyC
   {
   public:
-    DViewPoint3DBodyC(RealT nFov,
-		      Point<RealT,3> nEye,    // Position of eye.
-		      Point<RealT,3> nCentre, // Centre of object to look at.
-		      Vector<RealT,3> nUp,   // Up direction.
-		      RealT dNear,
-		      RealT dFar
+    using RealT = float;
+
+    //: Constructor.
+    // Position of eye. (0,0,-1)
+    // Centre of object (0,0,0)
+    // Up direction.  (Y Axis.)
+    DViewPoint3DBodyC(RealT nFov = 90,
+		      Point<RealT,3> nEye = toPoint<RealT>(0, 0, 10),    // Position of eye.
+		      Point<RealT,3> nCentre = toPoint<RealT>(0, 0, 0), // Centre of object to look at.
+		      Vector<RealT,3> nUp = toVector<RealT>(0,1,0),   // Up direction.
+		      RealT dNear = 0,
+		      RealT dFar = 100
 		      )
       : fov(nFov),
 	eye(nEye),
@@ -36,47 +44,28 @@ namespace Ravl2 {
     {}
     //: Default constructor.
 
-    virtual bool GUIRender(Canvas3DC &c3d) const;
+    bool GUIRender(Canvas3DC &c3d) const override;
     //: Render object.
 
-    virtual Vector<RealT,3> GUICenter() const
-      { return Vector<RealT,3>(0, 0, 0); }
+    Vector<RealT,3> GUICenter() const override
+      { return Vector<RealT,3>({0, 0, 0}); }
     //: Get center of object.
     // defaults to 0,0,0
 
-    virtual RealT GUIExtent() const
+    RealT GUIExtent() const override
       { return 1; }
     //: Get extent of object.
     // defaults to 1
 
   protected:
-    RealT fov;       // Field of view angle.
+    RealT fov = 1.0;       // Field of view angle.
     Point<RealT,3> eye;    // Position of eye.
     Point<RealT,3> centre; // Centre of object to look at.
     Vector<RealT,3> up;    // Up direction.
-    RealT m_dNear, m_dFar; // Clipping planes
+    RealT m_dNear=0;
+    RealT m_dFar=2; // Clipping planes
   };
 
-  //: Setup a view point in the 3D world.
-  // This also does some default setup of depth buffers, and shape
-  // models.  If you wish to configures these aspects yours self you
-  // should do so after using this class. (Or not use it at all.)
-
-  class DViewPoint3DC : public DObject3DC
-  {
-  public:
-    DViewPoint3DC(RealT fov = 90,
-		  Point<RealT,3> nEye = Point<RealT,3>(0, 0, 10),
-		  Point<RealT,3> nCentre  = Point<RealT,3>(0, 0, 0),
-		  Vector<RealT,3> nUp = Vector<RealT,3>(0,1,0),
-		  RealT dNear = 0, RealT dFar = 100)
-    : DObject3DC(*new DViewPoint3DBodyC(fov,nEye,nCentre,nUp,dNear,dFar))
-      {}
-    //: Constructor.
-    // Position of eye. (0,0,-1)
-    // Centre of object (0,0,0)
-    // Up direction.  (Y Axis.)
-  };
 
 }
 

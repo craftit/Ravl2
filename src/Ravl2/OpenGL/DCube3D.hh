@@ -20,30 +20,30 @@ namespace Ravl2 {
     : public DObject3DBodyC
   {
   public:
+    //: Constructor.
     DCube3DBodyC(
-      const Vector<RealT,3> &nDiag = Vector<RealT,3>(1, 1, 1),
-      const RealRGBValueC &col = RealRGBValueC(1, 0, 0))
+      const Vector<float,3> &nDiag = Vector<float,3>({1, 1, 1}),
+      const PixelRGB8 &col = PixelRGB8(1, 0, 0))
       : diag(nDiag),
       colour(col)
       {}
-    //: Constructor.
 
-    virtual bool GUIRender(Canvas3DC &c3d) const;
     //: Render object.
+    bool GUIRender(Canvas3DC &c3d) const override;
 
-     virtual Vector<RealT,3> GUICenter() const
-      { return Vector<RealT,3>(0, 0, 0); }
     //: Get center of object.
     // defaults to 0,0,0
+    [[nodiscard]] Vector<float,3> GUICenter() const override
+    { return Vector<float,3>({0, 0, 0}); }
 
-    virtual RealT GUIExtent() const
-      { return 1; }
     //: Get extent of object.
     // defaults to 1
+    [[nodiscard]] float GUIExtent() const override
+    { return 1; }
 
   protected:
-    Vector<RealT,3> diag;
-    RealRGBValueC colour;
+    Vector<float,3> diag;
+    PixelRGB8 colour;
   };
 
 

@@ -7,9 +7,8 @@
 ////////////////////////////////////////////
 
 #include <GL/gl.h>
-#include <GL/glu.h>
+#include <GL/glut.h>
 #include "Ravl2/OpenGL/DViewPoint3D.hh"
-#include "Ravl2/OpenGL/Canvas3D.hh"
 
 #define DODEBUG 0
 #if DODEBUG
@@ -29,10 +28,10 @@ namespace Ravl2 {
     glLoadIdentity();
     RealT dAspect = 1;//canvas.size()[0]/canvas.size()[1];
     ONDEBUG(std::cerr << "gluPerspective(), FOV=" << fov <<" Aspect:" << dAspect << " Near=" << m_dNear << " Far=" << m_dFar << "\n");
-    gluPerspective(fov, dAspect, m_dNear, m_dFar);
-    gluLookAt(eye[0],    eye[1],    eye.Z(),
-              centre[0], centre[1], centre.Z(),
-              up[0],     up[1],     up.Z());
+    gluPerspective(double(fov), double(dAspect), double(m_dNear), double(m_dFar));
+    gluLookAt(double(eye[0]),    double(eye[1]),    double(eye[2]),
+	      double(centre[0]), double(centre[1]), double(centre[2]),
+		     double(up[0]),     double(up[1]),     double(up[2]));
 
     //glDepthRange(1,5);
 

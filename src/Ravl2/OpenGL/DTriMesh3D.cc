@@ -18,10 +18,11 @@
 #endif
 
 
-namespace Ravl2 {
+namespace Ravl2
+{
 
   //: Constructor.
-  DTriMesh3DBodyC::DTriMesh3DBodyC(const TriMeshC &oTriMesh)
+  DTriMesh3DBodyC::DTriMesh3DBodyC(const TriMesh<RealT> &oTriMesh)
     : model(oTriMesh),
       doneInfo(false),
       extent(0)

@@ -12,6 +12,7 @@
 
 #include <GL/gl.h>
 #include "Ravl2/Pixel/Pixel.hh"
+#include "Ravl2/Pixel/Colour.hh"
 #include "Ravl2/Types.hh"
 #include "Ravl2/Geometry/Geometry.hh"
 #include "Ravl2/Assert.hh"
@@ -56,6 +57,10 @@ namespace Ravl2
 		get<ImageChannel::Blue,float>(colour));
     }
 
+    //! Set a colour.
+    static inline
+    void GLColour(const PixelRGB8 &colour)
+    { glColor3ub(colour.get<ImageChannel::Red>(), colour.get<ImageChannel::Green>(), colour.get<ImageChannel::Blue>()); }
 
     //: Set a vertex.
     static inline

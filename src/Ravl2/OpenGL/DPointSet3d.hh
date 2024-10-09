@@ -19,7 +19,9 @@ namespace Ravl2
   class DPointSet3dBodyC : public DObject3DBodyC
   {
   public:
-    DPointSet3dBodyC(const PointSet3dC& oPointSet)
+    using RealT = float;
+    
+    DPointSet3dBodyC(const PointSet<RealT,3>& oPointSet)
       : pointSet(oPointSet)
     {}
     //: Constructor.
@@ -36,7 +38,7 @@ namespace Ravl2
     // defaults to 1
 
   protected:
-    PointSet3dC pointSet;
+    PointSet<RealT,3> pointSet;
   };
 
 }
