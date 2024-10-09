@@ -185,7 +185,7 @@ TEST_CASE("LineABC")
   {
     auto line2 = Line2ABC<float>::fromPoints(p1, p4);
     
-    CHECK((norm_l2(line2.unitNormal())() - 1) < 0.00001f);
+    CHECK(float(norm_l2(line2.unitNormal())() - 1) < 0.00001f);
     line2.makeUnitNormal();
     CHECK(std::abs(norm_l2(line2.normal()) - 1) < 0.00001f);
     CHECK(std::abs(line2.distance(p1)) < 0.00001f);
