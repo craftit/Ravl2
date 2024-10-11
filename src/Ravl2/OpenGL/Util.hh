@@ -26,10 +26,8 @@ namespace Ravl2
     : public DObjectSet3DBodyC
   {
   public:
-    DTransform3DBodyC()
-      : mode(DTransform3D_RESET)
-      {}
     //: Rotation Constructor.
+    DTransform3DBodyC() = default;
 
     DTransform3DBodyC(float nAngle, const Vector<float,3> &nAxis)
       : mode(DTransform3D_ROTATION),
@@ -53,11 +51,11 @@ namespace Ravl2
       {}
     //: Translation Constructor.
 
-    virtual bool GUIRender(Canvas3DC &c3d) const;
+    bool GUIRender(Canvas3DC &c3d) const override;
     //: Render object.
 
   protected:
-    int mode = 0;
+    int mode = DTransform3D_RESET;
     float angle = 0;
     Vector<float,3> axis = toVector<float>(0,0,1);
     Vector<float,3> trans = toVector<float>(0,0,0);
