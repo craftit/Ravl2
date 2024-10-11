@@ -7,13 +7,13 @@
 ////////////////////////////////////////
 
 #include "Ravl2/OpenGL/Util.hh"
-#include "Ravl2/OpenGL/Canvas3D.hh"
 
 namespace Ravl2 {
 
   //: Render object.
   bool DTransform3DBodyC::GUIRender(Canvas3DC &c3d) const
   {
+    (void)c3d;
     //glPushMatrix();
 
     glMatrixMode(GL_MODELVIEW);
@@ -22,10 +22,10 @@ namespace Ravl2 {
       glLoadIdentity();
 
     if(mode & DTransform3D_ROTATION)
-      glRotated(angle, axis[0], axis[1], axis.Z());
+      glRotatef(angle, axis[0], axis[1], axis[2]);
 
     if(mode & DTransform3D_TRANSLATION)
-      glTranslated(trans[0], trans[1], trans.Z());
+      glTranslatef(trans[0], trans[1], trans[2]);
     
     DObjectSet3DBodyC::GUIRender(c3d);
 
