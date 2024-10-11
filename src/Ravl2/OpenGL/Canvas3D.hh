@@ -32,94 +32,93 @@ namespace Ravl2
   };
 
   //: 3D Canvas body.
-  class Canvas3DBodyC 
+  class Canvas3D 
   {
   public:
-    Canvas3DBodyC(int x, int y, int *nglattrlist = 0, bool autoConfigure = true);
     //: Create a 3D canvas
+    Canvas3D(int x, int y, int *nglattrlist = 0, bool autoConfigure = true);
 
-    bool GUIInitGL();
+    //! We don't want to copy this object.
+    Canvas3D(const Canvas3D &) = delete;
+    Canvas3D &operator=(const Canvas3D &) = delete;
+    Canvas3D(Canvas3D &&) = delete;
+    Canvas3D &operator=(Canvas3D &&) = delete;
+
+    virtual ~Canvas3D() = default;
+
     //: Initialise GL info
     // Returns false if GL is not available.
+    bool GUIInitGL();
 
-    virtual bool Create()
-    { return Create(NULL); }
-    //: Create widget (GUI only)
-
-    virtual bool Create(GtkWidget *Parent);
-    //: Create with a widget supplied from elsewhere. (GUI only)
-
-    bool GUIBeginGL();
     //: Call before using any GL commands.
     // This is needed to select correct gl context for the canvas 3d widget
     // Should only be called by GUI thread.
+    bool GUIBeginGL();
 
-    bool GUIEndGL();
-    //: Call aftern finished with GL
+    //: Call after finished with GL
     // Should only be called by GUI thread.
+    bool GUIEndGL();
 
-    bool GUISwapBuffers();
     //: swap buffers.
+    bool GUISwapBuffers();
 
-    bool GUIClearBuffers();
     //: clears the buffers
     // depth buffer and colour buffer is cleared
+    bool GUIClearBuffers();
 
-    bool GUIProcessReq(DObject3DC &obj);
     //: Process OpenGL requests. (renders obj on the 3d canvas)
+    bool GUIProcessReq(DObject3D &obj);
 
-    bool Put(const DObject3DC &r);
     //: Put render instruction into pipe.
+    bool put(std::shared_ptr<DObject3D> r);
 
-    bool SetTextureMode(bool& bTexture)
-    { m_bTexture = bTexture; return true; }
     //: Enable or disable texturing
+    bool SetTextureMode(bool bTexture)
+    { m_bTexture = bTexture; return true; }
 
-    bool SetLightingMode(bool& bLighting);
     //: Enable or disable lighting
+    bool SetLightingMode(bool bLighting);
 
+    //: Set rendering mode
     bool SetRenderMode(Canvas3DRenderMode& eRenderMode)
     { m_eRenderMode = eRenderMode; return true; }
-    //: Set rendering mode
 
+    //: Is texturing enabled?
     bool GetTextureMode(void) const
     { return m_bTexture; }
-    //: Is texturing enabled?
 
+    //: Is lighting enabled?
     bool GetLightingMode(void) const
     { return m_bLighting; }
-    //: Is lighting enabled?
 
+    //: Get rendering mode
     Canvas3DRenderMode GetRenderMode(void) const
     { return m_eRenderMode; }
-    //: Get rendering mode
 
+    //: Setup lighting
     bool GUIDoLighting() {
       if (m_bLighting) glEnable(GL_LIGHTING);
       else glDisable(GL_LIGHTING);
       return true;
     }
-    //: Setup lighting 
-    
+
+    //: Do we have non power of two textures?
     bool HaveExtNonPowerOfTwoTexture() const
     { return m_glExtNonPowerOfTwoTexture; }
-    //: Do we have non power of two textures?
-    
-    const GLContextC &GUIGLContext() { 
-      if(!m_glContext.IsValid())
-        m_glContext = GLContextC(widget);
-      return m_glContext; 
-    }
+
     //: Get opengl context.
-    
-    bool SaveToImage(Ravl2::Array<ByteRGBValueC,2> &img);
+    GLContext &GUIGLContext() {
+      return *m_glContext;
+    }
+
+    bool SaveToImage(Ravl2::Array<PixelRGB8,2> &img);
     //: Write contents of widget to an image.
   protected:
     
-    bool SaveToImageInternal(Ravl2::Array<ByteRGBValueC,2> *img,SemaphoreRC &done);
+    //bool SaveToImageInternal(Ravl2::Array<PixelRGB8,2> *img,SemaphoreRC &done);
     //: Write contents of widget to an image.
     
-    virtual bool CBConfigureEvent(GdkEvent *event);
+    virtual bool CBConfigureEvent();
     //: Handle configure event
 
     int *glattrlist;
@@ -147,10 +146,8 @@ namespace Ravl2
     bool m_glExtNonPowerOfTwoTexture; // Do we have non power of two textures ?
     bool m_initDone;
     
-    GLContextC m_glContext;
+    std::shared_ptr<GLContext> m_glContext;
   private:
-    Canvas3DBodyC(const Canvas3DBodyC &)
-    {}
     //: Never do this.
   };
 

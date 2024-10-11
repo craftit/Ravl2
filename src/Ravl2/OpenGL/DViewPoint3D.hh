@@ -19,7 +19,7 @@ namespace Ravl2 {
   // models.  If you wish to configures these aspects yours self you
   // should do so after using this class. (Or not use it at all.)
 
-  class DViewPoint3DBodyC : public DObject3DBodyC
+  class DViewPoint3DBodyC : public DObject3D
   {
   public:
     using RealT = float;
@@ -44,7 +44,7 @@ namespace Ravl2 {
     {}
     //: Default constructor.
 
-    bool GUIRender(Canvas3DC &c3d) const override;
+    bool GUIRender(Canvas3D &c3d) const override;
     //: Render object.
 
     Vector<RealT,3> GUICenter() const override

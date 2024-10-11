@@ -11,6 +11,8 @@ add_library (Ravl2OpenGL
   DLight3D.cc DLight3D.hh
   DPointSet3d.cc DPointSet3d.hh
   Util.cc Util.hh
+  GLContext.cc GLContext.hh
+  Canvas3D.cc Canvas3D.hh
 )
 
 add_library(ravl2::Ravl2OpenGL ALIAS Ravl2OpenGL)

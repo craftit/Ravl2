@@ -11,7 +11,7 @@ namespace Ravl2
 {
   using namespace Ravl2;
 
-  bool DPinholeCamera03DBodyC::GUIRender([[maybe_unused]] Canvas3DC &c3d) const
+  bool DPinholeCamera03DBodyC::GUIRender([[maybe_unused]] Canvas3D &c3d) const
   {
     // get camera
     const PinholeCamera0<float>& cam = camera;

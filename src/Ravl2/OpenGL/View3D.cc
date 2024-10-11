@@ -5,9 +5,10 @@
 // see http://www.gnu.org/copyleft/lesser.html
 // file-header-ends-here
 ///////////////////////////////////////////////////
+#include "Ravl2/OpenGL//View3D.hh"
 
+#if 0
 #include "Ravl2/GUI/Manager.hh"
-#include "Ravl2/GUI/View3D.hh"
 #include "Ravl2/GUI/Util.hh"
 #include "Ravl2/GUI/Menu.hh"
 #include "Ravl2/GUI/MenuCheck.hh"
@@ -18,6 +19,7 @@
 #include <gtk/gtk.h>
 #include <gdk/gdk.h>
 #include <GL/glu.h>
+#endif
 
 #define DODEBUG 0
 #if DODEBUG
@@ -37,7 +39,7 @@ namespace Ravl2 {
 
   //: Default constructor.
   View3DBodyC::View3DBodyC(int sx,int sy,bool enableLighting,bool enableTexture)
-    : Canvas3DBodyC(sx,sy),
+    : Canvas3D(sx,sy),
       m_bMaster(false),
       m_bSlave(false),
       m_sRotationTx(Vector<RealT,2>()),
@@ -99,10 +101,10 @@ namespace Ravl2 {
     ConnectRef(Signal("expose_event"),         *this, &View3DBodyC::Refresh);
     ConnectRef(m_sRotationRx,                  *this, &View3DBodyC::SlaveRotation);
 
-    if(!Canvas3DBodyC::Create(Parent))
+    if(!Canvas3D::Create(Parent))
     {
       // Get this sorted out early.
-      std::cerr << "View3DBodyC::Create(), ERROR: Canvas3DBodyC create failed. \n";
+      std::cerr << "View3DBodyC::Create(), ERROR: Canvas3D create failed. \n";
       return false;
     }
 

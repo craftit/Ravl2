@@ -19,7 +19,7 @@
 namespace Ravl2 {
 
   // Render object.
-  bool DPointSet3dBodyC::GUIRender(Canvas3DC& canvas) const
+  bool DPointSet3dBodyC::GUIRender(Canvas3D& canvas) const
   {
     (void)canvas;
     ONDEBUG(std::cerr << "DPointSet3dBodyC::GUIRender(), Called. \n");

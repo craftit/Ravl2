@@ -16,7 +16,7 @@ namespace Ravl2
 
   //: Draw a Point Set
 
-  class DPointSet3dBodyC : public DObject3DBodyC
+  class DPointSet3dBodyC : public DObject3D
   {
   public:
     using RealT = float;
@@ -26,7 +26,7 @@ namespace Ravl2
     {}
     //: Constructor.
 
-    virtual bool GUIRender(Canvas3DC &c3d) const;
+    virtual bool GUIRender(Canvas3D &c3d) const;
     //: Render object.
 
     virtual Vector<RealT,3> GUICenter() const;

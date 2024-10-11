@@ -17,7 +17,7 @@ namespace Ravl2 {
   //: Setup a light in a 3D world.
 
   class DLight3DBodyC
-    : public DObject3DBodyC
+    : public DObject3D
   {
   public:
     //: Constructor.
@@ -29,7 +29,7 @@ namespace Ravl2 {
     {}
 
     //: Render object.
-    bool GUIRender(Canvas3DC &c3d) const override;
+    bool GUIRender(Canvas3D &c3d) const override;
 
     //: Get center of object.
     // defaults to 0,0,0

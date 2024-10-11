@@ -11,7 +11,7 @@
 namespace Ravl2 {
 
   //: Render object.
-  bool DTransform3DBodyC::GUIRender(Canvas3DC &c3d) const
+  bool DTransform3DBodyC::GUIRender(Canvas3D &c3d) const
   {
     (void)c3d;
     //glPushMatrix();

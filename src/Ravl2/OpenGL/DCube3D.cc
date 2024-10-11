@@ -13,7 +13,7 @@ namespace Ravl2
 {
 
   //: Render object.
-  bool DCube3DBodyC::GUIRender(Canvas3DC &c3d) const
+  bool DCube3DBodyC::GUIRender(Canvas3D &c3d) const
   {
     (void)c3d;
     //cerr << "DCube3DBodyC::Render(), Called. \n";

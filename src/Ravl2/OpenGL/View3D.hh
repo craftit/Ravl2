@@ -4,11 +4,10 @@
 // General Public License (LGPL). See the lgpl.licence file for details or
 // see http://www.gnu.org/copyleft/lesser.html
 // file-header-ends-here
-#ifndef RAVLGUI3D_VIEW3D_HEADER
-#define RAVLGUI3D_VIEW3D_HEADER 1
-///////////////////////////////////////////////////////
 //! docentry="Ravl.API.Graphics.3D"
 //! author="James Smith"
+
+#pragma once
 
 #include "Ravl2/OpenGL/Canvas3D.hh"
 
@@ -17,7 +16,7 @@ namespace Ravl2 {
   class MouseEventC;
   class View3DC;
 
-  //: 3D Viewer widget.
+  //! @brief 3D Viewer widget.
   // <p>This class enables you to manipulate a 3D object as you view it, using the mouse.  </p>
   // <ul>
   // <li> Button 1 rotates about horizontal and vertical axes </li>
@@ -26,9 +25,12 @@ namespace Ravl2 {
   // <li> The wheel <i>should</i> zoom in and out, but the code needs fixing</li>
   // </ul>
 
-  class View3DBodyC : public Canvas3DBodyC
+  class View3DBodyC : public Canvas3D
   {
   public:
+    using RealT = float;
+
+    //: Create a 3D viewer
     View3DBodyC(int sx, int sy, bool enableLighting = true,
                 bool enableTexture = true);
     //: Default constructor.
@@ -178,6 +180,3 @@ namespace Ravl2 {
 
 }
 
-
-
-#endif

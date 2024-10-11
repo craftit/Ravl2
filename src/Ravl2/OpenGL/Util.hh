@@ -51,7 +51,7 @@ namespace Ravl2
       {}
     //: Translation Constructor.
 
-    bool GUIRender(Canvas3DC &c3d) const override;
+    bool GUIRender(Canvas3D &c3d) const override;
     //: Render object.
 
   protected:

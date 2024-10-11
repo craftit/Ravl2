@@ -19,21 +19,21 @@
 
 namespace Ravl2
 {
-  class Canvas3DC;
+  class Canvas3D;
 
   //! Display object base class in a 3D world.
-  class DObject3DBodyC
+  class DObject3D
   {
   public:
     //: Default constructor.
-    DObject3DBodyC() = default;
+    DObject3D() = default;
 
     //: Destructor.
     // Make sure display list is free'd
-    virtual ~DObject3DBodyC() = default;
+    virtual ~DObject3D() = default;
 
     //: Render object. Make sure you called Canvas3DC::GUIBeginGL just before
-    virtual bool GUIRender(Canvas3DC &c3d) const = 0;
+    virtual bool GUIRender(Canvas3D &c3d) const = 0;
 
     //: Get center of object.
     // defaults to 0,0,0
@@ -46,7 +46,7 @@ namespace Ravl2
     //  { return 1; }
 
     //: Render, checking for display lists.
-    bool GUIRenderDL(Canvas3DC &c3d);
+    bool GUIRenderDL(Canvas3D &c3d);
 
     //: Set current colour.
     template<typename PixelT>
@@ -104,11 +104,11 @@ namespace Ravl2
   //: Body for OpenGL code invocation class.
 
   class DOpenGLBodyC
-    : public DObject3DBodyC
+    : public DObject3D
   {
   public:
     //: Constructor.
-    DOpenGLBodyC(const std::function<void(Canvas3DC &)> &se,
+    DOpenGLBodyC(const std::function<void(Canvas3D &)> &se,
                  const Vector<float,3> &ncenter = toVector<float>(0,0,0),
                  float nextent = 1)
       : sigEvent(se),
@@ -128,9 +128,9 @@ namespace Ravl2
 
   protected:
     //: Render object.
-    bool GUIRender(Canvas3DC &c3d) const override;
+    bool GUIRender(Canvas3D &c3d) const override;
 
-    std::function<void(Canvas3DC &)> sigEvent;
+    std::function<void(Canvas3D &)> sigEvent;
     Vector<float,3> center = toVector<float>(0,0,0);
     float extent = 1.0;
   };
@@ -140,14 +140,14 @@ namespace Ravl2
 
   //: Body of an  object set in a 3D world.
   class DObjectSet3DBodyC
-      : public DObject3DBodyC
+      : public DObject3D
   {
   public:
     //: Default constructor.
     DObjectSet3DBodyC() = default;
     
     //: Render object.
-    bool GUIRender(Canvas3DC &c3d) const override;
+    bool GUIRender(Canvas3D &c3d) const override;
     
     //: Get center of object.
     // defaults to 0,0,0
@@ -158,12 +158,12 @@ namespace Ravl2
     float GUIExtent() const override;
     
     //: Add object into list.
-    void GUIAdd(const std::shared_ptr<DObject3DBodyC> &obj);
+    void GUIAdd(const std::shared_ptr<DObject3D> &obj);
 
     //! Update the center and extent of the object.
     void UpdateCenterExtent();
   protected:
-    std::vector<std::shared_ptr<DObject3DBodyC> > parts;
+    std::vector<std::shared_ptr<DObject3D> > parts;
     Vector<float,3> center = toVector<float>(0,0,0);
     float extent = 1.0f;
     bool mUpdateNeeded = true;
