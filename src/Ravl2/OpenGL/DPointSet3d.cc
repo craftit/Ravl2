@@ -19,10 +19,10 @@
 namespace Ravl2 {
 
   // Render object.
-  bool DPointSet3dBodyC::GUIRender(Canvas3D& canvas) const
+  bool DPointSet::GUIRender(Canvas3D& canvas) const
   {
     (void)canvas;
-    ONDEBUG(std::cerr << "DPointSet3dBodyC::GUIRender(), Called. \n");
+    ONDEBUG(std::cerr << "DPointSet::GUIRender(), Called. \n");
     // std::cerr << "Point set render number: " << pointSet.RenderNumber() << std::endl;
 
     glColor3d(1.0,1.0,1.0);
@@ -47,14 +47,14 @@ namespace Ravl2 {
 
   //: Get center of object.
   // defaults to 0,0,0
-  Vector<DPointSet3dBodyC::RealT,3> DPointSet3dBodyC::GUICenter() const
+  Vector<DPointSet::RealT,3> DPointSet::GUICenter() const
   {
     return pointSet.pointCentroid();
   }
 
   //: Get extent of object.
   // defaults to 1
-  DPointSet3dBodyC::RealT DPointSet3dBodyC::GUIExtent() const
+  DPointSet::RealT DPointSet::GUIExtent() const
   {
     Vector<RealT,3> ncenter = pointSet.pointCentroid();
     RealT dist = 0;

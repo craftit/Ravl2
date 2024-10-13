@@ -42,7 +42,7 @@ namespace Ravl2
 
     //: Get extent of object.
     // defaults to 1
-    virtual float GUIExtent() const = 0;
+    [[nodiscard]] virtual float GUIExtent() const = 0;
     //  { return 1; }
 
     //: Render, checking for display lists.
@@ -86,11 +86,11 @@ namespace Ravl2
     { m_useDisplayList = true; }
     //: Enable generation of a display list.
 
-    auto DisplayListID() const
+    [[nodiscard]] auto DisplayListID() const
       { return id; }
     //: Access display list ID.
 
-    auto &DisplayListID()
+    [[nodiscard]] auto &DisplayListID()
       { return id; }
     //: Access display list ID.
 

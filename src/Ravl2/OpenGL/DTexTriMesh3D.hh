@@ -19,7 +19,8 @@ namespace Ravl2
 {
 
   //: Draw a TexTriMesh
-  class DTexTriMesh3DBodyC : public DTriMesh3DBodyC
+  class DTexTriMesh3DBodyC
+    : public DTriMesh3D
   {
   public:
     DTexTriMesh3DBodyC(const TexTriMeshC &oTexTriMesh);
@@ -32,9 +33,9 @@ namespace Ravl2
     //: Render object.
 
   protected:
-    TexTriMeshC tmodel;
-    mutable std::vector<unsigned int> texNames;
-    mutable GLContextC m_glContext; // Used for freeing textures.
+    TexTriMeshC<float> tmodel;
+    std::vector<unsigned int> texNames;
+    std::shared_ptr<GLContextC> m_glContext; // Used for freeing textures.
   };
   
 

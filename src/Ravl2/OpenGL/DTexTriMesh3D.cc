@@ -23,7 +23,7 @@
 namespace Ravl2 {
 
   DTexTriMesh3DBodyC::DTexTriMesh3DBodyC(const TexTriMeshC &oTexTriMesh)
-    :  DTriMesh3DBodyC(oTexTriMesh),
+    :  DTriMesh3D(oTexTriMesh),
        tmodel(oTexTriMesh),
        texNames(0)
   {}
@@ -84,11 +84,11 @@ namespace Ravl2 {
         const Array<ByteRGBValueC,2> &curTexture = tmodel.Textures()[i];
         //cerr << "size:" << curTexture.range(1).size() << "  " << curTexture.range(0).size() << std::endl;
 
-        IntT newRows = PowerOfTwo(curTexture.range(0).size());
-        IntT newCols = PowerOfTwo(curTexture.range(1).size());
+        int newRows = PowerOfTwo(curTexture.range(0).size());
+        int newCols = PowerOfTwo(curTexture.range(1).size());
         
-        if(canvas.HaveExtNonPowerOfTwoTexture() || ((IntT) curTexture.range(0).size() == newRows &&
-                                                    (IntT) curTexture.range(1).size() == newCols)) {
+        if(canvas.HaveExtNonPowerOfTwoTexture() || ((int) curTexture.range(0).size() == newRows &&
+                                                    (int) curTexture.range(1).size() == newCols)) {
           // We don't care what size the texture is, we can use it.
           glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB,
                        curTexture.range(1).size(), curTexture.range(0).size(),
@@ -115,12 +115,12 @@ namespace Ravl2 {
 
     // Setup materials and colours as appropriate
     if (canvas.GetLightingMode()) {
-      GLfloat ambient[]  = {0.2,0.2,0.2,1.0};
-      GLfloat diffuse[]  = {0.9,0.9,0.9,1.0};
+      GLfloat ambient[]  = {0.2f,0.2f,0.2f,1.0f};
+      GLfloat diffuse[]  = {0.9f,0.9f,0.9f,1.0f};
       glMaterialfv(GL_FRONT_AND_BACK,GL_AMBIENT,ambient);
       glMaterialfv(GL_FRONT_AND_BACK,GL_DIFFUSE,diffuse);
     } else {
-      glColor3f(1.0,1.0,1.0);
+      glColor3f(1.0f,1.0f,1.0f);
     }
     // Render
     Canvas3DRenderMode eMode = canvas.GetRenderMode();
@@ -177,7 +177,7 @@ namespace Ravl2 {
       break;
     case C3D_FLAT: {
       ONDEBUG(std::cerr << "flat render. \n");
-      IntT eGLShadeModel;
+      int eGLShadeModel;
       glGetIntegerv(GL_SHADE_MODEL,&eGLShadeModel);
       glShadeModel(GL_FLAT); // Flat shading
       // Draw filled polygon
@@ -202,7 +202,7 @@ namespace Ravl2 {
     } break;
     case C3D_SMOOTH: {
       ONDEBUG(std::cerr << "Smooth render. \n");
-      IntT eGLShadeModel;
+      int eGLShadeModel;
       glGetIntegerv(GL_SHADE_MODEL, &eGLShadeModel);
       glShadeModel(GL_SMOOTH); // smooth shading
       // Draw filled polygon

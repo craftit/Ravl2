@@ -13,10 +13,10 @@ namespace Ravl2
 {
 
   //: Render object.
-  bool DCube3DBodyC::GUIRender(Canvas3D &c3d) const
+  bool DCube3D::GUIRender(Canvas3D &c3d) const
   {
     (void)c3d;
-    //cerr << "DCube3DBodyC::Render(), Called. \n";
+    //cerr << "DCube3D::Render(), Called. \n";
 
     GLColour(colour);
     Vector<float,3> p1 = diag/2;
