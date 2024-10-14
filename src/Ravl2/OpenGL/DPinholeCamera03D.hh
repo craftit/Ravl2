@@ -19,7 +19,7 @@ namespace Ravl2
 
   //: Use PinholeCamera0C class to set OpenGL viewpoint
   class DPinholeCamera03DBodyC
-    : public DObject3DBodyC
+    : public DObject3D
   {
   public:
     DPinholeCamera03DBodyC(const PinholeCamera0<float>& _camera,
@@ -29,7 +29,7 @@ namespace Ravl2
      {}
     // Constructor.
 
-    bool GUIRender(Canvas3DC &c3d) const override;
+    bool GUIRender(Canvas3D &c3d) const override;
     //: Render object.
 
     [[nodiscard]] Vector<float,3> GUICenter() const override

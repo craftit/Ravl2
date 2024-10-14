@@ -22,7 +22,7 @@ int main(int argc,char **argv)
   auto window = Ravl2::GLWindow(800, 600, "OpenGL Window");
 
   // Run the main loop
-  Ravl2::GLWindow::runMainLoop();
+  window.runMainLoop();
 
   return 0;
 }

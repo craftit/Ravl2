@@ -186,6 +186,11 @@ namespace Ravl2
         : Vector<CompT, sizeof...(Channels)>({CompT(args)...})
     {}
 
+    //! Construct from an initializer list
+    Pixel(std::initializer_list<CompT> list)
+	: Vector<CompT, sizeof...(Channels)>(list)
+    {}
+
     //! Construct from another pixel, mapping the channels.
     template <typename OCompT, ImageChannel... OChannels>
     explicit Pixel(const Pixel<OCompT, OChannels...> &other)

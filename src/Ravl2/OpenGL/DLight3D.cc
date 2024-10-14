@@ -10,7 +10,7 @@
 namespace Ravl2 {
 
   //: Render object.
-  bool DLight3DBodyC::GUIRender(Canvas3DC &) const
+  bool DLight3DBodyC::GUIRender(Canvas3D &) const
   {
     const GLenum lightNo = LightNo(n);
 

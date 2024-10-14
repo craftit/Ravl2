@@ -19,7 +19,7 @@ namespace Ravl2 {
   // models.  If you wish to configures these aspects yours self you
   // should do so after using this class. (Or not use it at all.)
 
-  class DViewPoint3DBodyC : public DObject3DBodyC
+  class DViewPoint3DBodyC : public DObject3D
   {
   public:
     using RealT = float;
@@ -44,26 +44,26 @@ namespace Ravl2 {
     {}
     //: Default constructor.
 
-    bool GUIRender(Canvas3DC &c3d) const override;
+    bool GUIRender(Canvas3D &c3d) const override;
     //: Render object.
 
-    Vector<RealT,3> GUICenter() const override
+    [[nodiscard]] Vector<RealT,3> GUICenter() const override
       { return Vector<RealT,3>({0, 0, 0}); }
     //: Get center of object.
     // defaults to 0,0,0
 
-    RealT GUIExtent() const override
+    [[nodiscard]] RealT GUIExtent() const override
       { return 1; }
     //: Get extent of object.
     // defaults to 1
 
   protected:
     RealT fov = 1.0;       // Field of view angle.
-    Point<RealT,3> eye;    // Position of eye.
-    Point<RealT,3> centre; // Centre of object to look at.
-    Vector<RealT,3> up;    // Up direction.
+    Point<RealT,3> eye = {0,0,10};    // Position of eye.
+    Point<RealT,3> centre = {0,0,0}; // Centre of object to look at.
+    Vector<RealT,3> up = {0,1,0};    // Up direction.
     RealT m_dNear=0;
-    RealT m_dFar=2; // Clipping planes
+    RealT m_dFar=100; // Clipping planes
   };
 
 

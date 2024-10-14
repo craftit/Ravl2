@@ -62,6 +62,14 @@ namespace Ravl2
     glfwMakeContextCurrent(mWindow);
   }
 
+  //: Switch to GL context.
+  bool GLWindow::Begin()
+  {
+    makeCurrent();
+    return true;
+  }
+
+
   void GLWindow::swapBuffers()
   {
     if (mWindow == nullptr) {
@@ -69,6 +77,14 @@ namespace Ravl2
     }
     glfwSwapBuffers(mWindow);
   }
+
+  //! Put a function on the queue to be executed in the main thread
+  void GLWindow::put(std::function<void()> &&f)
+  {
+    mQueue.push(std::move(f));
+    glfwPostEmptyEvent();
+  }
+
 
   void GLWindow::runMainLoop()
   {
@@ -85,6 +101,13 @@ namespace Ravl2
       // This can be made to exit early by calling 'glfwPostEmptyEvent()'
       glfwWaitEventsTimeout(0.2);
       //glfwSwapBuffers(window);
+      while(!gTerminateMain) {
+	std::function<void()> func;
+	if(!mQueue.tryPop(func)) {
+	  break;
+	}
+	func();
+      }
     }
 
     glfwTerminate();

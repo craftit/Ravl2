@@ -18,36 +18,34 @@ namespace Ravl2 {
 
   //: Draw a TriMesh
 
-  class DTriMesh3DBodyC : public DObject3DBodyC
+  class DTriMesh3D
+    : public DObject3D
   {
   public:
     using RealT = float;
 
-    DTriMesh3DBodyC(const TriMesh<RealT> &oTriMesh);
     //: Constructor.
+    DTriMesh3D(const std::shared_ptr<TriMesh<RealT> > &oTriMesh);
 
-    virtual bool GUIRender(Canvas3DC &c3d) const;
     //: Render object.
+    bool GUIRender(Canvas3D &c3d) const override;
 
-    virtual Vector<RealT,3> GUICenter() const;
     //: Get center of object.
     // defaults to 0,0,0
+    Vector<float,3> GUICenter() const override;
 
-    virtual RealT GUIExtent() const;
     //: Get extent of object.
     // defaults to 1
+    float GUIExtent() const override;
 
   protected:
-    TriMesh<RealT> model;
+    //: Compute center and extent of mesh.
+    void ComputeInfo();
 
+    std::shared_ptr<TriMesh<RealT> > model;
     bool mUseMeshColour = true;
-
-    void ComputeInfo() const;
-    //: Comput center and extent of mesh.
-
-    mutable bool doneInfo;
-    mutable Vector<RealT,3> center;
-    mutable RealT extent;
+    Vector<RealT,3> center = {0,0,0};
+    RealT extent = 1.0;
   };
 
 }

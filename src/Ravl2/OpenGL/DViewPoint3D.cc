@@ -20,7 +20,7 @@
 namespace Ravl2 {
 
   //: Render object.
-  bool DViewPoint3DBodyC::GUIRender(Canvas3DC &canvas) const
+  bool DViewPoint3DBodyC::GUIRender(Canvas3D &canvas) const
   {
     //cerr << "DViewPoint3DBodyC::Render(), Called. \n";
     // Setup GL stuff.

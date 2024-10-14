@@ -16,24 +16,24 @@ namespace Ravl2
 
   //: Draw a Point Set
 
-  class DPointSet3dBodyC : public DObject3DBodyC
+  class DPointSet : public DObject3D
   {
   public:
     using RealT = float;
     
-    DPointSet3dBodyC(const PointSet<RealT,3>& oPointSet)
+    DPointSet(const PointSet<RealT,3>& oPointSet)
       : pointSet(oPointSet)
     {}
     //: Constructor.
 
-    virtual bool GUIRender(Canvas3DC &c3d) const;
+    bool GUIRender(Canvas3D &c3d) const override;
     //: Render object.
 
-    virtual Vector<RealT,3> GUICenter() const;
+    Vector<RealT,3> GUICenter() const override;
     //: Get center of object.
     // defaults to 0,0,0
 
-    virtual RealT GUIExtent() const;
+    RealT GUIExtent() const override;
     //: Get extent of object.
     // defaults to 1
 

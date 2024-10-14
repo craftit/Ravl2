@@ -12,7 +12,7 @@ namespace Ravl2
 
 
   //: Render, checking for display lists.
-  bool DObject3DBodyC::GUIRenderDL(Canvas3DC &c3d) {
+  bool DObject3D::GUIRenderDL(Canvas3D &c3d) {
     bool ret = false;
     //cerr << "Calling Genlist. " << id << "\n";
     if(m_useDisplayList) {
@@ -38,7 +38,7 @@ namespace Ravl2
   /// DObjectSet3DBodyC ///////////////////////////////////////////////
 
   //: Render object.
-  bool DObjectSet3DBodyC::GUIRender(Canvas3DC &c3d) const
+  bool DObjectSet3DBodyC::GUIRender(Canvas3D &c3d) const
   {
     //cerr << "DObjectSet3DBodyC::GUIRender\n";
     for(auto &x: parts)
@@ -63,7 +63,7 @@ namespace Ravl2
   }
   
   //: Add object into list.
-  void DObjectSet3DBodyC::GUIAdd(const std::shared_ptr<DObject3DBodyC> &obj) {
+  void DObjectSet3DBodyC::GUIAdd(const std::shared_ptr<DObject3D> &obj) {
     parts.push_back(obj);
     center = (center * (parts.size() - 1) + obj->GUICenter()) / parts.size();
     mUpdateNeeded = true;
@@ -90,7 +90,7 @@ namespace Ravl2
   //// DOpenGLBodyC ////////////////////////////////////////////////////////
   
   //: Render object.
-  bool DOpenGLBodyC::GUIRender(Canvas3DC &c3d) const
+  bool DOpenGLBodyC::GUIRender(Canvas3D &c3d) const
   {
     //cerr << "DOpenGLBodyC::GUIRender\n";
     if(sigEvent)

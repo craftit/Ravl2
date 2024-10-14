@@ -22,66 +22,63 @@ namespace Ravl2
 {
 
   //: Constructor.
-  DTriMesh3DBodyC::DTriMesh3DBodyC(const TriMesh<RealT> &oTriMesh)
-    : model(oTriMesh),
-      doneInfo(false),
-      extent(0)
-  {}
+  DTriMesh3D::DTriMesh3D(const std::shared_ptr<TriMesh<RealT> > &oTriMesh)
+    : model(oTriMesh)
+  {
+    ComputeInfo();
+  }
 
   //: Compute center and extent of mesh.
-  void DTriMesh3DBodyC::ComputeInfo() const
+  void DTriMesh3D::ComputeInfo()
   {
-    center = model.Centroid();
+    if(!model)
+      return;
+    center = model->Centroid();
     extent = 0;
-    for(SArray1dIterC<Vertex<RealT>> it(model.Vertices());it;it++) {
-      RealT dist = it->Position().SqrEuclidDistance(center);
+
+    for(auto const &vert : model->Vertices()) {
+      RealT dist = euclidDistance(vert.position(), center);
       if(dist > extent)
 	extent = dist;
     }
-    extent = std::sqrt(extent);
-    doneInfo = true;
     ONDEBUG(std::cerr << "Center=" << center << " Extent=" << extent << "\n");
   }
 
 
   //: Get center of object.
   // defaults to 0,0,0
-  Vector<RealT,3> DTriMesh3DBodyC::GUICenter() const
+  Vector<float,3> DTriMesh3D::GUICenter() const
   {
-    if(!doneInfo)
-      ComputeInfo();
-    //cerr << "DTriMesh3DBodyC::GUICenter(): " << center << std::endl;
+    //cerr << "DTriMesh3D::GUICenter(): " << center << std::endl;
     return center;
   }
 
   //: Get extent of object.
   // defaults to 1
-  RealT DTriMesh3DBodyC::GUIExtent() const
+  float DTriMesh3D::GUIExtent() const
   {
-    if(!doneInfo)
-      ComputeInfo();
-    //cerr << "DTriMesh3DBodyC::GUIExtent(): " << extent << std::endl;
+    //cerr << "DTriMesh3D::GUIExtent(): " << extent << std::endl;
     return extent;
   }
 
   //: Render object.
-  bool DTriMesh3DBodyC::GUIRender(Canvas3DC &canvas) const
+  bool DTriMesh3D::GUIRender(Canvas3D &canvas) const
   {
-    if(!model.IsValid())
+    if(!model)
       return true; // Don't do anything.
 
     // Setup materials and colours as appropriate
     if(canvas.GetLightingMode()) {
-      GLfloat ambient[] = {0.2, 0.2, 0.2, 1.0};
-      GLfloat diffuse[] = {0.9, 0.9, 0.9, 1.0};
+      GLfloat ambient[] = {0.2f, 0.2f, 0.2f, 1.0f};
+      GLfloat diffuse[] = {0.9f, 0.9f, 0.9f, 1.0f};
       glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, ambient);
       glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, diffuse);
     } else {
-      glColor3f(1.0, 1.0, 1.0);
+      glColor3f(1.0f, 1.0f, 1.0f);
     }
     // Render
     Canvas3DRenderMode eMode = canvas.GetRenderMode();
-    std::vector<Vertex<RealT>> verts = model.Vertices();
+    const std::vector<Vertex<RealT>> &verts = model->Vertices();
 
     if(mUseMeshColour) {
       glEnable(GL_COLOR_MATERIAL);
@@ -92,74 +89,74 @@ namespace Ravl2
       case C3D_SMOOTH:
       case C3D_POINT:
       case C3D_WIRE:glEnableClientState(GL_NORMAL_ARRAY);
-	glNormalPointer(GL_DOUBLE, sizeof(Vertex<RealT>), (void *)&(verts[0].Normal()));
-      case C3D_FLAT:glEnableClientState(GL_VERTEX_ARRAY);
-	glVertexPointer(3, GL_DOUBLE, sizeof(Vertex<RealT>), (void *)&(verts[0].Position()));
+	glNormalPointer(GL_FLOAT, sizeof(Vertex<RealT>), reinterpret_cast<const void *>(&(verts[0].normal())));
+	// Fall through
+	FMT_FALLTHROUGH;
+	case C3D_FLAT:glEnableClientState(GL_VERTEX_ARRAY);
+	glVertexPointer(3, GL_FLOAT, sizeof(Vertex<RealT>), reinterpret_cast<const void *>(&(verts[0].position())));
 	break;
     }
 
     switch(eMode) {
       case C3D_POINT: {
 	// Draw individual points
-	glDrawArrays(GL_POINTS, 0, verts.size());
+	glDrawArrays(GL_POINTS, 0, GLsizei(verts.size()));
       }
 	break;
       case C3D_WIRE: {
-	for(SArray1dIterC <Tri<RealT>> it(model.Faces()); it; it++) {
+	for(auto const &it : model->Faces()) {
 	  glBegin(GL_LINE);
-	  glArrayElement(model.Index(*it, 0));
-	  glArrayElement(model.Index(*it, 1));
-	  glArrayElement(model.Index(*it, 2));
+	  glArrayElement(GLint(model->index(it, 0)));
+	  glArrayElement(GLint(model->index(it, 1)));
+	  glArrayElement(GLint(model->index(it, 2)));
 	  glEnd();
 	}
-      }
-	break;
+      } break;
       case C3D_FLAT: {
 	ONDEBUG(std::cerr << "flat render. \n");
-	IntT eGLShadeModel;
+	int eGLShadeModel = 0;
 	glGetIntegerv(GL_SHADE_MODEL, &eGLShadeModel);
 	glShadeModel(GL_FLAT); // Flat shading
 	// Draw filled polygon
-	for(SArray1dIterC <Tri<RealT>> it(model.Faces()); it; it++) {
+	for(auto const &it : model->Faces()) {
 	  if(mUseMeshColour) {
-	    glColor3ubv(&(it->Colour()[0]));
+	    GLColour(it.Colour());
 	  }
-	  GLNormal(it->FaceNormal());
+	  GLNormal(it.FaceNormal());
 	  glBegin(GL_POLYGON);
-	  glArrayElement(model.Index(*it, 0));
-	  glArrayElement(model.Index(*it, 1));
-	  glArrayElement(model.Index(*it, 2));
+	  glArrayElement(GLint(model->index(it, 0)));
+	  glArrayElement(GLint(model->index(it, 1)));
+	  glArrayElement(GLint(model->index(it, 2)));
 	  glEnd();
 	}
-	glShadeModel((GLenum)eGLShadeModel); // Restore old shade model
-      }
-	break;
+	glShadeModel(GLenum(eGLShadeModel)); // Restore old shade model
+      }	 break;
       case C3D_SMOOTH: {
 	ONDEBUG(std::cerr << "Smooth render. \n");
-	IntT eGLShadeModel;
+	int eGLShadeModel = 0;
 	glGetIntegerv(GL_SHADE_MODEL, &eGLShadeModel);
 	glShadeModel(GL_SMOOTH); // Flat shading
 	// Draw filled polygon
-	for(SArray1dIterC <Tri<RealT>> it(model.Faces()); it; it++) {
+	for(auto const &it : model->Faces()) {
 	  if(mUseMeshColour) {
-	    glColor3ubv(&(it->Colour()[0]));
+	    GLColour(it.Colour());
 	  }
 	  glBegin(GL_POLYGON);
-	  glArrayElement(model.Index(*it, 0));
-	  glArrayElement(model.Index(*it, 1));
-	  glArrayElement(model.Index(*it, 2));
+	  glArrayElement(GLint(model->index(it, 0)));
+	  glArrayElement(GLint(model->index(it, 1)));
+	  glArrayElement(GLint(model->index(it, 2)));
 	  glEnd();
 	}
-	glShadeModel((GLenum)eGLShadeModel); // Restore old shade model
-      }
-	break;
+	glShadeModel(GLenum(eGLShadeModel)); // Restore old shade model
+      } break;
     };
 
     switch(eMode) {
       case C3D_SMOOTH:
       case C3D_POINT:
       case C3D_WIRE:glDisableClientState(GL_NORMAL_ARRAY);
-      case C3D_FLAT:glDisableClientState(GL_VERTEX_ARRAY);
+        // Fall through
+      FMT_FALLTHROUGH; case C3D_FLAT:glDisableClientState(GL_VERTEX_ARRAY); break;
 	break;
     }
     if(mUseMeshColour){

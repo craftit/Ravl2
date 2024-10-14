@@ -1,41 +1,54 @@
 
-#include "Ravl2/Types.hh"
+#pragma once
+
+#ifndef GL_SILENCE_DEPRECATION
+#define GL_SILENCE_DEPRECATION 1
+#endif
+
 #include <vector>
+#include <GLFW/glfw3.h>
+#include "Ravl2/Types.hh"
 
 namespace Ravl2
 {
-  class GLContextC;
-  
+
   //: OpenGL Context
   
-  class GLContextBodyC 
+  class GLContext
   {
   public:
     //: Constructor.
-    GLContextBodyC(GtkWidget *widget);
+    GLContext() = default;
 
     //: Destructor.
-    virtual ~GLContextBodyC();
+    virtual ~GLContext() = default;
 
-    virtual bool IsReady() const;
+    //! Delete the copy constructor
+    GLContext(const GLContext&) = delete;
+    GLContext& operator=(const GLContext&) = delete;
+    GLContext(GLContext&&) = delete;
+    GLContext& operator=(GLContext&&) = delete;
+
+
     //: Do we have a valid context.
-    
-    virtual bool Begin();
+    [[nodiscard]] virtual bool IsReady() const;
+
+    //! Swap the front and back buffers
+    virtual void swapBuffers();
+
     //: Switch to GL context.
-    
-    virtual void End();
+    virtual bool Begin();
+
     //: Flag that we're finished with the context.
-    
-    virtual bool FreeTextures(const RavlN::std::vector<unsigned int> &textureIds);
-    //: Thread safe freeing of textures.
-    
+    virtual void End();
+
+    //! Thread safe freeing of textures.
+    bool FreeTextures(const std::vector<unsigned int> &textureIds);
+
+    //! Put a function on the queue to be executed in the main thread
+    virtual void put(std::function<void()> &&f) = 0;
+
   protected:
-    virtual bool GUIFreeTextures(RavlN::std::vector<unsigned int> textureIds);
-    //: Thread 
-    
-    GtkWidget *m_widget;
-    
-    friend class GLContextC;
   };
 
 }

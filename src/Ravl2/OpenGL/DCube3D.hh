@@ -13,23 +13,26 @@
 #include "Ravl2/Pixel/Pixel.hh"
 #include "Ravl2/OpenGL/DObject3D.hh"
 
-namespace Ravl2 {
+namespace Ravl2
+{
 
   //: Body of a  object set in a 3D world.
-  class DCube3DBodyC
-    : public DObject3DBodyC
+  class DCube3D
+    : public DObject3D
   {
   public:
+    DCube3D() = default;
+
     //: Constructor.
-    DCube3DBodyC(
-      const Vector<float,3> &nDiag = Vector<float,3>({1, 1, 1}),
-      const PixelRGB8 &col = PixelRGB8(1, 0, 0))
+    explicit DCube3D(
+      const Vector<float,3> &nDiag,
+      const PixelRGB8 &col = {1, 0, 0})
       : diag(nDiag),
       colour(col)
       {}
 
     //: Render object.
-    bool GUIRender(Canvas3DC &c3d) const override;
+    bool GUIRender(Canvas3D &c3d) const override;
 
     //: Get center of object.
     // defaults to 0,0,0
@@ -42,8 +45,8 @@ namespace Ravl2 {
     { return 1; }
 
   protected:
-    Vector<float,3> diag;
-    PixelRGB8 colour;
+    Vector<float,3> diag = {1, 1, 1};
+    PixelRGB8 colour = {1, 0, 0};
   };
 
 
