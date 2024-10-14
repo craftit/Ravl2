@@ -12,7 +12,7 @@
 #pragma once
 
 #include "Ravl2/OpenGL/DObject3D.hh"
-#include "Ravl2/OpenGL/Util.hh"
+#include "Ravl2/OpenGL/DTransform.hh"
 #include "Ravl2/OpenGL/DViewPoint3D.hh"
 #include "Ravl2/OpenGL/DLight3D.hh"
 #include "Ravl2/OpenGL/GLContext.hh"
@@ -84,26 +84,26 @@ namespace Ravl2
     { m_eRenderMode = eRenderMode; return true; }
 
     //: Is texturing enabled?
-    bool GetTextureMode(void) const
+    [[nodiscard]] bool GetTextureMode(void) const
     { return m_bTexture; }
 
     //: Is lighting enabled?
-    bool GetLightingMode(void) const
+    [[nodiscard]] bool GetLightingMode(void) const
     { return m_bLighting; }
 
     //: Get rendering mode
-    Canvas3DRenderMode GetRenderMode(void) const
+    [[nodiscard]] Canvas3DRenderMode GetRenderMode(void) const
     { return m_eRenderMode; }
 
     //: Setup lighting
-    bool GUIDoLighting() {
+    bool GUIDoLighting() const {
       if (m_bLighting) glEnable(GL_LIGHTING);
       else glDisable(GL_LIGHTING);
       return true;
     }
 
     //: Do we have non power of two textures?
-    bool HaveExtNonPowerOfTwoTexture() const
+    [[nodiscard]] bool HaveExtNonPowerOfTwoTexture() const
     { return m_glExtNonPowerOfTwoTexture; }
 
     //: Get opengl context.
@@ -121,25 +121,26 @@ namespace Ravl2
     virtual bool CBConfigureEvent();
     //: Handle configure event
 
-    int *glattrlist;
+    int *glattrlist = nullptr;
     //: Attribute list.
     // see GUI/3D/gdkgl.h for a list of attributes.
     // the attribute list should be terminated with
     // GDK_GL_NONE.
 
-    int sx, sy;
+    int sx = 100;
+    int sy = 100;
     // Size of view port.
     // Only needed for widget creation
 
     Canvas3DRenderMode m_eRenderMode; //: Rendering mode
 
-    bool m_bTexture;
     //: Texture mode
     // true = use texture when rendering.
+    bool m_bTexture = false;
 
-    bool m_bLighting;
     //: Lighting mode
     // true = Use lighting when rendering.
+    bool m_bLighting = false;
 
     bool m_autoConfigure;  //: Handle viewport configure events internally.
     

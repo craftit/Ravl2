@@ -10,7 +10,7 @@ add_library (Ravl2OpenGL
   DCube3D.cc DCube3D.hh
   DLight3D.cc DLight3D.hh
   DPointSet3d.cc DPointSet3d.hh
-  Util.cc Util.hh
+  DTransform.cc DTransform.hh
   GLContext.cc GLContext.hh
   Canvas3D.cc Canvas3D.hh
   DTriMesh3D.cc DTriMesh3D.hh
