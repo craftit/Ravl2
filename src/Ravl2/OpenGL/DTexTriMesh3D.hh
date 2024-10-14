@@ -23,19 +23,19 @@ namespace Ravl2
     : public DTriMesh3D
   {
   public:
-    DTexTriMesh3DBodyC(const TexTriMeshC &oTexTriMesh);
+    DTexTriMesh3DBodyC(const std::shared_ptr<TexTriMesh<RealT> > &oTexTriMesh);
     //: Constructor.
 
     ~DTexTriMesh3DBodyC();
     //: Destructor
 
-    virtual bool GUIRender(Canvas3DC &c3d) const;
+    virtual bool GUIRender(Canvas3D &c3d) const;
     //: Render object.
 
   protected:
-    TexTriMeshC<float> tmodel;
+    std::shared_ptr<TexTriMesh<float> > tmodel;
     std::vector<unsigned int> texNames;
-    std::shared_ptr<GLContextC> m_glContext; // Used for freeing textures.
+    std::shared_ptr<GLContext> m_glContext; // Used for freeing textures.
   };
   
 

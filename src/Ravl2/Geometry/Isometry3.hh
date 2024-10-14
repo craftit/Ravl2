@@ -19,8 +19,11 @@ namespace Ravl2
     using value_type = RealT;
     constexpr static unsigned dimension = 3;
 
+    //! Default constructor.
+    //! Create an identity transform.
     Isometry3() = default;
 
+    //! Construct an isometry from a rotation and translation.
     Isometry3(const Quaternion<RealT> &rotation, const Vector<RealT, 3> &translation)
         : m_rotation(rotation),
           m_translation(translation)

@@ -14,6 +14,8 @@ add_library (Ravl2OpenGL
   GLContext.cc GLContext.hh
   Canvas3D.cc Canvas3D.hh
   DTriMesh3D.cc DTriMesh3D.hh
+  DTexTriMesh3D.cc DTexTriMesh3D.hh
+  DViewPoint3D.cc DViewPoint3D.hh
 )
 
 add_library(ravl2::Ravl2OpenGL ALIAS Ravl2OpenGL)

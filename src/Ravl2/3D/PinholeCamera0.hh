@@ -13,6 +13,7 @@
 #include "Ravl2/Configuration.hh"
 #include "Ravl2/Geometry/Quaternion.hh"
 #include "Ravl2/Geometry/Geometry.hh"
+#include "Ravl2/Geometry/Isometry3.hh"
 #include "Ravl2/Geometry/LinePV.hh"
 #include "Ravl2/IndexRange.hh"
 #include "Ravl2/3D/PinholeCamera.hh"
@@ -35,8 +36,25 @@ namespace Ravl2
     inline PinholeCamera0() = default;
 
     //! Data constructor
-    PinholeCamera0(const RealT &cx, const RealT &cy, const RealT &fx, const RealT &fy, const Matrix<RealT, 3, 3> &R, const Vector<RealT, 3> &t, const IndexRange<2> &frame)
+    PinholeCamera0(const RealT &cx, const RealT &cy,
+                   const RealT &fx, const RealT &fy,
+                   const Matrix<RealT, 3, 3> &R, const Vector<RealT, 3> &t,
+                   const IndexRange<2> &frame)
         : m_cx(cx), m_cy(cy), m_fx(fx), m_fy(fy), m_R(R), m_t(t), m_frame(frame)
+    {}
+    
+    //! Data constructor
+    PinholeCamera0(RealT f,
+                   const Point<RealT,2> &centre,
+                   const IndexRange<2> &frame,
+                   const Isometry3<RealT> &pose = Isometry3<RealT>()
+                   )
+      : m_cx(centre[0]), m_cy(centre[1]),
+        m_fx(f * RealT(frame.range(0).size())),
+        m_fy(f * RealT(frame.range(0).size())),
+        m_R(pose.rotation().toMatrix()),
+        m_t(pose.translation()),
+        m_frame(frame)
     {}
     
     PinholeCamera0(Configuration &config)
@@ -61,7 +79,7 @@ namespace Ravl2
       : m_cx(RealT(frame.range(0).min())+RealT(frame.range(0).size())/RealT(2.0)),
 	m_cy(RealT(frame.range(1).min())+RealT(frame.range(1).size())/RealT(2.0)),
 	m_fx(f * RealT(frame.range(0).size())),
-	m_fy(f * RealT(frame.range(1).size())),
+	m_fy(f * RealT(frame.range(0).size())),
   	m_frame(frame)
     {}
 

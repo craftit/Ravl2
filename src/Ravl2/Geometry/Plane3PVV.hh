@@ -178,6 +178,12 @@ namespace Ravl2
             cereal::make_nvp("vector1", mVector1),
             cereal::make_nvp("vector2", mVector2));
     }
+    
+    //! Test if the plane is valid.
+    [[nodiscard]] bool isValid() const
+    {
+      return !isNearZero(RealT(xt::norm_l2(mVector1)())) && !isNearZero(RealT(xt::norm_l2(mVector2)()));
+    }
 
   private:
     Point<RealT, 3> mOrigin;

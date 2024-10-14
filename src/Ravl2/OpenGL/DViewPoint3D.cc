@@ -22,7 +22,7 @@ namespace Ravl2 {
   //: Render object.
   bool DViewPoint3DBodyC::GUIRender(Canvas3D &canvas) const
   {
-    //cerr << "DViewPoint3DBodyC::Render(), Called. \n";
+    (void) canvas;
     // Setup GL stuff.
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
@@ -32,15 +32,7 @@ namespace Ravl2 {
     gluLookAt(double(eye[0]),    double(eye[1]),    double(eye[2]),
 	      double(centre[0]), double(centre[1]), double(centre[2]),
 		     double(up[0]),     double(up[1]),     double(up[2]));
-
-    //glDepthRange(1,5);
-
-    //we dont need to touch model matrix here
-    //glMatrixMode(GL_MODELVIEW);
-    //glLoadIdentity();
-
-    //glTranslatef(0,0,-15);
-
+    
     return true;
   }
 

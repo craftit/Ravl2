@@ -22,20 +22,20 @@
 
 namespace Ravl2 {
 
-  DTexTriMesh3DBodyC::DTexTriMesh3DBodyC(const TexTriMeshC &oTexTriMesh)
+  DTexTriMesh3DBodyC::DTexTriMesh3DBodyC(const std::shared_ptr<TexTriMesh<RealT> > &oTexTriMesh)
     :  DTriMesh3D(oTexTriMesh),
        tmodel(oTexTriMesh),
        texNames(0)
   {}
   //: Constructor.
 
-  DTexTriMesh3DBodyC::~DTexTriMesh3DBodyC() {
+  DTexTriMesh3DBodyC::~DTexTriMesh3DBodyC()
+  {
     // Make sure textures are free'd in an appropriate context.
-    if(m_glContext.IsValid() && texNames.size() > 0)
-      m_glContext.FreeTextures(texNames);
+    if(m_glContext && texNames.size() > 0)
+      m_glContext->FreeTextures(texNames);
   }
   
-  //: Render object.
   static int PowerOfTwo(int Val)
   {
     Val--;
@@ -44,15 +44,17 @@ namespace Ravl2 {
         return 1 << (i+1);
     return 0;
   }
-
-  bool DTexTriMesh3DBodyC::GUIRender(Canvas3DC &canvas) const
+  
+  //: Render object.
+  bool DTexTriMesh3DBodyC::GUIRender(Canvas3D &canvas) const
   {
+    (void)canvas;
     ONDEBUG(std::cerr << "DTexTriMesh3DBodyC::GUIRender\n");
-    if (!tmodel.IsValid())
-      return true; // Don't do anything.
-
+    if(!tmodel)
+      return false;
+#if 0
     // Setup GL texturing if it's not already done
-    if (texNames.size() == 0 && tmodel.NumTextures() != 0) {
+    if (texNames.size() == 0 && tmodel->NumTextures() != 0) {
       ONDEBUG(std::cerr << "creating tex names\n");
 
       //roate texture coordinates
@@ -63,13 +65,13 @@ namespace Ravl2 {
       // Not sure what this line does...
       glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
       // Allocate textures
-      texNames = std::vector<unsigned int>(tmodel.NumTextures());
+      texNames = std::vector<unsigned int>(tmodel->NumTextures());
       
       // Remeber the context we about to allocate the textures in
       m_glContext = canvas.GUIGLContext();
       
       // Create texture name
-      glGenTextures(tmodel.NumTextures(), &(texNames[0]));
+      glGenTextures(tmodel->NumTextures(), &(texNames[0]));
       for(int i = 0; i < tmodel.NumTextures(); i++)
       {
         //cerr << "texture:" << i << std::endl;
@@ -81,7 +83,7 @@ namespace Ravl2 {
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 
         // Setup texture image
-        const Array<ByteRGBValueC,2> &curTexture = tmodel.Textures()[i];
+        const Array<PixelRGB8,2> &curTexture = tmodel.Textures()[i];
         //cerr << "size:" << curTexture.range(1).size() << "  " << curTexture.range(0).size() << std::endl;
 
         int newRows = PowerOfTwo(curTexture.range(0).size());
@@ -99,8 +101,8 @@ namespace Ravl2 {
           
           // Create texture with power of two size
           //cerr << "size:" << newCols << "  " << newRows << std::endl;
-          Array<ByteRGBValueC,2> texture =
-            WarpScaleC<ByteRGBValueC, ByteRGBValueC>(IndexRange<2>(newRows, newCols)).
+          Array<PixelRGB8,2> texture =
+            WarpScaleC<PixelRGB8, PixelRGB8>(IndexRange<2>(newRows, newCols)).
             Apply(curTexture);
           //cerr << "size:" << texture.range(1).size() << "  " << texture.range(0).size() << std::endl;
           
@@ -152,7 +154,7 @@ namespace Ravl2 {
     case C3D_FLAT:
       //cerr << "set vertices\n";
       glEnableClientState(GL_VERTEX_ARRAY);
-      glVertexPointer(3,GL_DOUBLE,sizeof(Vertex<RealT>),(void *)&(verts[0].Position()));
+      glVertexPointer(3,GL_DOUBLE,sizeof(Vertex<RealT>),(void *)&(verts[0].position()));
       break;
     }
 
@@ -246,6 +248,7 @@ namespace Ravl2 {
     }
 #if USEMESHCOLOUR
     glDisable(GL_COLOR_MATERIAL);
+#endif
 #endif
     return true;
   }

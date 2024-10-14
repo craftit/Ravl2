@@ -82,6 +82,7 @@ namespace Ravl2
   //! @param tol tolerance, default is machine epsilon.
   //! @return true if 'x' is near zero.
   template <class RealT>
+   requires std::is_floating_point<RealT>::value
   inline constexpr bool isNearZero(RealT x, RealT tol = std::numeric_limits<RealT>::epsilon())
   {
     return std::abs(x) < tol;
