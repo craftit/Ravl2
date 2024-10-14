@@ -31,7 +31,7 @@ namespace Ravl2
 
     //: Make a copy of body.
     // This should be provided in derived classes.
-    virtual PinholeCamera &copy() const = 0;
+    virtual std::shared_ptr<PinholeCamera<RealT> > copy() const = 0;
     
     //: project a 3D point to a 2D image point
     // This should be provided in derived classes.
@@ -117,9 +117,9 @@ namespace Ravl2
     virtual ~PinholeCameraImpl() = default;
     
     //! Make a copy of body.
-    PinholeCameraImpl &copy() const final
+    std::shared_ptr<PinholeCamera<RealT> > copy() const final
     {
-      return *new PinholeCameraImpl(m_camera);
+      return std::make_shared<PinholeCameraImpl<CameraT,RealT>>(m_camera);
     }
     
     //! project a 3D point to a 2D image point
