@@ -29,7 +29,32 @@ namespace Ravl2
         return;
       }
     }
+    
+    void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
+    {
+      GLWindow *theWindow = reinterpret_cast<GLWindow *>(glfwGetWindowUserPointer(window));
+      if (theWindow != nullptr) {
+        theWindow->keyCallback(key, scancode, action, mods);
+      }
+    }
+    
+    void cursor_position_callback(GLFWwindow* window, double xpos, double ypos)
+    {
+      GLWindow *theWindow = reinterpret_cast<GLWindow *>(glfwGetWindowUserPointer(window));
+      if (theWindow != nullptr) {
+        theWindow->cursorPositionCallback(xpos, ypos);
+      }
+    }
+    
+    void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
+    {
+      GLWindow *theWindow = reinterpret_cast<GLWindow *>(glfwGetWindowUserPointer(window));
+      if (theWindow != nullptr) {
+            theWindow->mouseButtonCallback(button, action, mods);
+      }
+    }
   }
+  
 
   GLWindow::GLWindow(int width, int height, std::string_view title)
   {
@@ -41,15 +66,23 @@ namespace Ravl2
 
     mWindow = glfwCreateWindow(width, height, title.data(), nullptr, nullptr);
     if (mWindow != nullptr) {
+      glfwSetWindowUserPointer(mWindow, this);
+      
+      glfwSetCursorPosCallback(mWindow, cursor_position_callback);
+      glfwSetMouseButtonCallback(mWindow, mouse_button_callback);
+      glfwSetKeyCallback(mWindow, key_callback);
+      
       glfwMakeContextCurrent(mWindow);
       glfwSwapInterval(1);// Enable vsync
     }
-
+    
+    
   }
 
   GLWindow::~GLWindow()
   {
     if(mWindow != nullptr) {
+      glfwSetWindowUserPointer(mWindow, nullptr);
       glfwDestroyWindow(mWindow);
     }
   }
@@ -77,15 +110,37 @@ namespace Ravl2
     }
     glfwSwapBuffers(mWindow);
   }
-
+  
+  //! Handle key events
+  void GLWindow::keyCallback(int key, int scancode, int action, int mods)
+  {
+    SPDLOG_INFO("Key: {} Scancode: {} Action: {} Mods: {}", key, scancode, action, mods);
+    //      if (key == GLFW_KEY_E && action == GLFW_PRESS)
+    //        activate_airship();
+  }
+  
+  //! Handle cursor position events
+  void GLWindow::cursorPositionCallback(double xpos, double ypos)
+  {
+    //SPDLOG_INFO("Cursor position: {} {}", xpos, ypos);
+  
+  }
+  
+  //! Handle mouse button events
+  void GLWindow::mouseButtonCallback(int button, int action, int mods)
+  {
+    SPDLOG_INFO("Button: {} Action: {} Mods: {}", button, action, mods);
+  }
+  
+  
+  
   //! Put a function on the queue to be executed in the main thread
   void GLWindow::put(std::function<void()> &&f)
   {
     mQueue.push(std::move(f));
     glfwPostEmptyEvent();
   }
-
-
+  
   void GLWindow::runMainLoop()
   {
     // Check if this is the first time the main loop is run

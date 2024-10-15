@@ -34,29 +34,20 @@ namespace Ravl2
 {
 
   //: Create a 3D canvas
-  Canvas3D::Canvas3D(int x, int y, int *nglattrlist,
-                               bool autoConfigure)
-    : glattrlist(nglattrlist),
-      sx(x),
+  Canvas3D::Canvas3D(int x, int y, bool autoConfigure)
+    : sx(x),
       sy(y),
-      m_eRenderMode(C3D_SMOOTH),
-      m_bTexture(false),
-      m_bLighting(true),
-      m_autoConfigure(autoConfigure),
-      m_glExtNonPowerOfTwoTexture(false),
-      m_initDone(false)
+      m_autoConfigure(autoConfigure)
   {
     ONDEBUG(std::cerr << "Canvas3D::Canvas3D(), Called.\n");
   }
-
-  //: Initalise GL info
-  bool Canvas3D::GUIInitGL() {
-    ONDEBUG(std::cerr << "Canvas3D::GUIInitGL(), GL Avaliable ? \n");
-    bool ret = false;
-    return ret;
-  }
-
-
+  
+  //! Create a 3D canvas
+  Canvas3D::Canvas3D(const std::shared_ptr<GLContext> &context, bool autoConfigure)
+   : m_autoConfigure(autoConfigure),
+     m_glContext(context)
+  {}
+  
   //: Call before using any GL commands.
   bool Canvas3D::GUIBeginGL()
   {

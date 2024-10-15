@@ -49,7 +49,8 @@ namespace Ravl2
       return *this;
     }
 
-    //: Switch to GL context.
+    //! Switch to GL context.
+    //! The same as 'makeCurrent'.
     bool Begin() override;
 
     //! Make the window the current context
@@ -68,6 +69,14 @@ namespace Ravl2
     //! Put a function on the queue to be executed in the main thread
     void put(std::function<void()> &&f) override;
 
+    //! Handle key events
+    void keyCallback(int key, int scancode, int action, int mods);
+    
+    //! Handle cursor position events
+    void cursorPositionCallback(double xpos, double ypos);
+  
+    //! Handle mouse button events
+    void mouseButtonCallback(int button, int action, int mods);
   private:
     GLFWwindow* mWindow = nullptr;
     ThreadedQueue<std::function<void()>> mQueue;

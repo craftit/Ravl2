@@ -35,9 +35,12 @@ namespace Ravl2
   class Canvas3D 
   {
   public:
-    //: Create a 3D canvas
-    Canvas3D(int x, int y, int *nglattrlist = 0, bool autoConfigure = true);
-
+    //! Create a 3D canvas
+    Canvas3D(int x, int y, bool autoConfigure = true);
+    
+    //! Create a 3D canvas
+    Canvas3D(const std::shared_ptr<GLContext> &context, bool autoConfigure = true);
+    
     //! We don't want to copy this object.
     Canvas3D(const Canvas3D &) = delete;
     Canvas3D &operator=(const Canvas3D &) = delete;
@@ -45,10 +48,6 @@ namespace Ravl2
     Canvas3D &operator=(Canvas3D &&) = delete;
 
     virtual ~Canvas3D() = default;
-
-    //: Initialise GL info
-    // Returns false if GL is not available.
-    bool GUIInitGL();
 
     //: Call before using any GL commands.
     // This is needed to select correct gl context for the canvas 3d widget
@@ -120,19 +119,13 @@ namespace Ravl2
     
     virtual bool CBConfigureEvent();
     //: Handle configure event
-
-    int *glattrlist = nullptr;
-    //: Attribute list.
-    // see GUI/3D/gdkgl.h for a list of attributes.
-    // the attribute list should be terminated with
-    // GDK_GL_NONE.
-
-    int sx = 100;
-    int sy = 100;
+    
     // Size of view port.
     // Only needed for widget creation
+    int sx = 100;
+    int sy = 100;
 
-    Canvas3DRenderMode m_eRenderMode; //: Rendering mode
+    Canvas3DRenderMode m_eRenderMode = C3D_SMOOTH; //: Rendering mode
 
     //: Texture mode
     // true = use texture when rendering.
@@ -140,12 +133,12 @@ namespace Ravl2
 
     //: Lighting mode
     // true = Use lighting when rendering.
-    bool m_bLighting = false;
+    bool m_bLighting = true;
 
-    bool m_autoConfigure;  //: Handle viewport configure events internally.
+    bool m_autoConfigure = true;  //: Handle viewport configure events internally.
     
-    bool m_glExtNonPowerOfTwoTexture; // Do we have non power of two textures ?
-    bool m_initDone;
+    bool m_glExtNonPowerOfTwoTexture = false; // Do we have non power of two textures ?
+    bool m_initDone = false;
     
     std::shared_ptr<GLContext> m_glContext;
   private:

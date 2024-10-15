@@ -1,7 +1,16 @@
 
 include(GenerateExportHeader)
+include(ExternalProject)
+
+ExternalProject_Add(ImGUI
+        GIT_REPOSITORY https://github.com/ocornut/imgui.git
+        UPDATE_COMMAND ""
+        INSTALL_COMMAND ""
+)
 
 find_package(OpenGL REQUIRED)
+
+# Get imgui
 
 add_library (Ravl2OpenGL
   DObject3D.cc DObject3D.hh
