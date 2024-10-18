@@ -2,11 +2,12 @@
 include(GenerateExportHeader)
 include(ExternalProject)
 
-ExternalProject_Add(ImGUI
-        GIT_REPOSITORY https://github.com/ocornut/imgui.git
-        UPDATE_COMMAND ""
-        INSTALL_COMMAND ""
-)
+#ExternalProject_Add(ImGUI
+#        GIT_REPOSITORY https://github.com/ocornut/imgui.git
+#        UPDATE_COMMAND ""
+#        INSTALL_COMMAND ""
+#        BUILD_COMMAND ""
+#)
 
 find_package(OpenGL REQUIRED)
 
