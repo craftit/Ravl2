@@ -12,7 +12,7 @@
 namespace Ravl2
 {
 
-  //: Vertex in a mesh.
+  //! Vertex in a mesh.
   // This holds a position and a normal.
 
   template<class RealT>
