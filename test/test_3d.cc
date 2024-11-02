@@ -13,7 +13,7 @@ TEST_CASE("PinholeCamera0")
 {
   using namespace Ravl2;
 
-  SECTION("Cereal. ")
+  SECTION("Cereal")
   {
     Matrix<float,3,3> rot  = xt::eye<float>(3);
     Vector<float,3> trans =  {5,6,7};
@@ -36,7 +36,43 @@ TEST_CASE("PinholeCamera0")
       EXPECT_TRUE(xt::allclose(cam.t(), cam2.t()));
     }
   }
-
+  
+  SECTION("Construct Frame")
+  {
+    //! Construct a camera that fills the image at the given distance
+//    static PinholeCamera0 fromFrame(const IndexRange<2> &frame,
+//                                    float horizontalSize,
+//                                    float distance);
+    IndexRange<2> frame = {{10, 99},{10, 99}};
+    float distance = 1.5;
+    auto cam = PinholeCamera0<float>::fromFrame(frame,0.2f,distance);
+    Vector<float, 2> pix;
+    cam.project(pix,toVector<float>(0.0,0.1,distance));
+    SPDLOG_INFO("Pix {}", pix);
+    EXPECT_FLOAT_EQ(pix[1], float(frame.max(1)));
+    cam.project(pix,toVector<float>(0.0,-0.1,distance));
+    SPDLOG_INFO("Pix {}", pix);
+    EXPECT_FLOAT_EQ(pix[1], float(frame.min(1)));
+  }
+  
+  SECTION("Construct Frame Origin")
+  {
+    IndexRange<2> frame = {{-50, 50},{-50, 50}};
+    float distance = 1.5;
+    auto cam = PinholeCamera0<float>::fromFrame(frame,0.2f,distance);
+    Vector<float, 2> pix;
+    cam.project(pix,toVector<float>(0,0,distance));
+    EXPECT_FLOAT_EQ(pix[0], 0);
+    EXPECT_FLOAT_EQ(pix[1], 0);
+    cam.project(pix,toVector<float>(0.0,0.1,distance));
+    SPDLOG_INFO("Pix {}", pix);
+    EXPECT_FLOAT_EQ(pix[1], float(frame.max(1)));
+    cam.project(pix,toVector<float>(0.0,-0.1,distance));
+    SPDLOG_INFO("Pix {}", pix);
+    EXPECT_FLOAT_EQ(pix[1], float(frame.min(1)));
+  }
+  
+  
 }
 
 // Display the texture coordinates of a mesh.

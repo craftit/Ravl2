@@ -2,11 +2,6 @@
 include(GenerateExportHeader)
 include(ExternalProject)
 
-#ExternalProject_Add(ImGUI
-#        GIT_REPOSITORY https://github.com/ocornut/imgui.git
-#        UPDATE_COMMAND ""
-#        INSTALL_COMMAND ""
-#)
 FetchContent_Declare(imgui_external
         GIT_REPOSITORY https://github.com/ocornut/imgui.git
         EXCLUDE_FROM_ALL

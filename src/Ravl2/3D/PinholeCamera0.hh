@@ -50,8 +50,8 @@ namespace Ravl2
                    const Isometry3<RealT> &pose = Isometry3<RealT>()
                    )
       : m_cx(centre[0]), m_cy(centre[1]),
-        m_fx(f * RealT(frame.range(0).size())),
-        m_fy(f * RealT(frame.range(0).size())),
+        m_fx(f),
+        m_fy(f),
         m_R(pose.rotation().toMatrix()),
         m_t(pose.translation()),
         m_frame(frame)
@@ -71,18 +71,47 @@ namespace Ravl2
       m_frame = config.template get<Ravl2::IndexRange<2>>("frame","Image frame",IndexRange<2>({{0,0},{0,0}}));
     }
     
-    //! Construct a default camera with a given frame
+    //! Construct a default camera with a given frame, with the axis at the centre of the frame
     //! @param frame - the image frame for the camera
     //! @param f - the focal length of the camera
     //! The camera is placed at the centre of the frame with the given focal length.
-    explicit PinholeCamera0(const IndexRange<2> &frame, float f)
-      : m_cx(RealT(frame.range(0).min())+RealT(frame.range(0).size())/RealT(2.0)),
-	m_cy(RealT(frame.range(1).min())+RealT(frame.range(1).size())/RealT(2.0)),
-	m_fx(f * RealT(frame.range(0).size())),
-	m_fy(f * RealT(frame.range(0).size())),
+    explicit PinholeCamera0(const IndexRange<2> &frame, float f, const Isometry3<RealT> &pose = Isometry3<RealT>())
+      : m_cx(RealT(frame.range(0).min())+RealT(frame.range(0).size()-1)/RealT(2.0)),
+	m_cy(RealT(frame.range(1).min())+RealT(frame.range(1).size()-1)/RealT(2.0)),
+	m_fx(f),
+	m_fy(f),
+        m_R(pose.rotation().toMatrix()),
+        m_t(pose.translation()),
   	m_frame(frame)
     {}
-
+    
+    //! Construct a camera that fills the image at the given distance
+    //! with the camera at the origin looking along the z-axis
+    //! @param frame - the image frame for the camera
+    //! @param horizontalSize - the size of the image in the x direction
+    //! @param distance - the distance from the camera to the image plane
+    static PinholeCamera0 fromFrame(const IndexRange<2> &frame,
+                                    float horizontalSize,
+                                    float distance)
+    {
+      float f = float(frame.range(0).size()-1) * distance * 2.0f / (horizontalSize);
+      return PinholeCamera0(frame,f,Isometry3<float>(Quaternion<float>::identity(),{0,0,distance}));
+    }
+    
+    //! Construct a camera that fills the image at the given distance
+    //! with the camera at the origin looking along the z-axis, at pixel 0,0
+    //! @param frame - the image frame for the camera
+    //! @param horizontalSize - the size of the image in the x direction
+    //! @param distance - the distance from the camera to the image plane
+    static PinholeCamera0 fromFrameOrigin(const IndexRange<2> &frame,
+                                    float horizontalSize,
+                                    float distance)
+    {
+      float f = float(frame.range(0).size()-1) * distance * 2.0f / (horizontalSize);
+      return PinholeCamera0(f,{0,0},frame,Isometry3<float>(Quaternion<float>::identity(),{0,0,distance}));
+    }
+  
+  
   public:
     //: centre of projection, x co-ordinate
     [[nodiscard]] RealT &cx()
