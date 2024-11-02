@@ -29,7 +29,8 @@ namespace Ravl2
         return;
       }
     }
-    
+
+#if 0
     void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
     {
       GLWindow *theWindow = reinterpret_cast<GLWindow *>(glfwGetWindowUserPointer(window));
@@ -53,6 +54,7 @@ namespace Ravl2
             theWindow->mouseButtonCallback(button, action, mods);
       }
     }
+#endif
   }
   
 
@@ -60,17 +62,35 @@ namespace Ravl2
   {
     checkGLFWInit();
 
+#if defined(IMGUI_IMPL_OPENGL_ES2)
+    // GL ES 2.0 + GLSL 100
+    mGlsl_version = "#version 100";
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 2);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
+    glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_ES_API);
+#elif defined(__APPLE__)
+    // GL 3.2 + GLSL 150
+    mGlsl_version = "#version 150";
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 2);
+    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);  // 3.2+ only
+    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);            // Required on Mac
+#else
+    // GL 3.0 + GLSL 130
+    mGlsl_version = "#version 130";
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
+    //glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);  // 3.2+ only
+    //glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);            // 3.0+ only
+#endif
 
     mWindow = glfwCreateWindow(width, height, title.data(), nullptr, nullptr);
     if (mWindow != nullptr) {
       glfwSetWindowUserPointer(mWindow, this);
       
-      glfwSetCursorPosCallback(mWindow, cursor_position_callback);
-      glfwSetMouseButtonCallback(mWindow, mouse_button_callback);
-      glfwSetKeyCallback(mWindow, key_callback);
+//      glfwSetCursorPosCallback(mWindow, cursor_position_callback);
+//      glfwSetMouseButtonCallback(mWindow, mouse_button_callback);
+//      glfwSetKeyCallback(mWindow, key_callback);
       
       glfwMakeContextCurrent(mWindow);
       glfwSwapInterval(1);// Enable vsync
@@ -108,6 +128,7 @@ namespace Ravl2
     if (mWindow == nullptr) {
       return;
     }
+    glfwMakeContextCurrent(mWindow);
     glfwSwapBuffers(mWindow);
   }
   
@@ -122,6 +143,8 @@ namespace Ravl2
   //! Handle cursor position events
   void GLWindow::cursorPositionCallback(double xpos, double ypos)
   {
+    (void)xpos;
+    (void)ypos;
     //SPDLOG_INFO("Cursor position: {} {}", xpos, ypos);
   
   }
@@ -140,7 +163,14 @@ namespace Ravl2
     mQueue.push(std::move(f));
     glfwPostEmptyEvent();
   }
-  
+
+  //! Add a function to be called on each frame render
+  void GLWindow::addFrameRender(std::function<void()> &&f)
+  {
+    std::lock_guard lock(mMutex);
+    mFrameRender.push_back(std::move(f));
+  }
+
   void GLWindow::runMainLoop()
   {
     // Check if this is the first time the main loop is run
@@ -151,7 +181,7 @@ namespace Ravl2
     }
     checkGLFWInit();
 
-    while(!gTerminateMain) {
+    while(!gTerminateMain && glfwWindowShouldClose(mWindow) == 0) {
       // Poll and handle events (inputs, window resize, etc.)
       // This can be made to exit early by calling 'glfwPostEmptyEvent()'
       glfwWaitEventsTimeout(0.2);
@@ -162,6 +192,14 @@ namespace Ravl2
 	  break;
 	}
 	func();
+      }
+      {
+	std::lock_guard lock(mMutex);
+	for(auto &f : mFrameRender) {
+	  if(f) {
+	    f();
+	  }
+	}
       }
     }
 

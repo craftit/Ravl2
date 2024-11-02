@@ -12,6 +12,7 @@
 #include <GLFW/glfw3.h>
 #include "Ravl2/ThreadedQueue.hh"
 #include "Ravl2/OpenGL/GLContext.hh"
+#include "Ravl2/CallbackArray.hh"
 
 namespace Ravl2
 {
@@ -66,6 +67,10 @@ namespace Ravl2
     //! On some platforms this must be called from the main thread
     void runMainLoop();
 
+    //! Add a function to be called on each frame render
+    //! This can't be called from within the rendering thread
+    void addFrameRender(std::function<void()> &&f);
+
     //! Put a function on the queue to be executed in the main thread
     void put(std::function<void()> &&f) override;
 
@@ -77,9 +82,15 @@ namespace Ravl2
   
     //! Handle mouse button events
     void mouseButtonCallback(int button, int action, int mods);
+
+    //! Get GLSL version
+    [[nodiscard]] const char* glslVersion() const { return mGlsl_version; }
   private:
     GLFWwindow* mWindow = nullptr;
     ThreadedQueue<std::function<void()>> mQueue;
+    std::mutex mMutex;
+    std::vector<std::function<void()>> mFrameRender;
+    const char* mGlsl_version = "#version 130";
   };
 
 

@@ -36,14 +36,14 @@ namespace Ravl2 {
       m_glContext->FreeTextures(texNames);
   }
   
-  static int PowerOfTwo(int Val)
-  {
-    Val--;
-    for(int i = 31; i > 0; i--)
-      if(Val >> i)
-        return 1 << (i+1);
-    return 0;
-  }
+//  static int PowerOfTwo(int Val)
+//  {
+//    Val--;
+//    for(int i = 31; i > 0; i--)
+//      if(Val >> i)
+//        return 1 << (i+1);
+//    return 0;
+//  }
   
   //: Render object.
   bool DTexTriMesh3DBodyC::GUIRender(Canvas3D &canvas) const
