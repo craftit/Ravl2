@@ -76,25 +76,25 @@ namespace Ravl2
     }
     
     //! Access to the first vector.
-    inline Vector<RealT, 3> &vector1()
+    inline  constexpr Vector<RealT, 3> &vector1()
     {
       return mVector1;
     }
 
     //! Access to the second vector.
-    inline Vector<RealT, 3> &vector2()
+    inline constexpr Vector<RealT, 3> &vector2()
     {
       return mVector2;
     }
 
     //! Returns the normal of the plane.
-    [[nodiscard]] Vector<RealT, 3> normal() const
+    [[nodiscard]]  constexpr Vector<RealT, 3> normal() const
     {
       return cross(mVector1, mVector2);
     }
 
     //! Normalizes the vectors to be unit.
-    inline Plane3PVV &makeUnitVectors()
+    inline constexpr Plane3PVV &makeUnitVectors()
     {
       mVector1 /= xt::norm_l2(mVector1);
       mVector2 /= xt::norm_l2(mVector2);
@@ -102,7 +102,7 @@ namespace Ravl2
     }
 
     //! Converts this plane representation to PlaneABCD3dC.
-    [[nodiscard]] Plane3ABCD<RealT> planeABCD3d() const
+    [[nodiscard]] constexpr  Plane3ABCD<RealT> planeABCD3d() const
     {
       return Plane3ABCD(normal(), this->mOrigin);
     }
@@ -114,7 +114,7 @@ namespace Ravl2
     }
 
     //! Get the euclidean distance of the point 'point' from this plane.
-    [[nodiscard]] RealT distance(const Point<RealT, 3> &point) const
+    [[nodiscard]]  constexpr RealT distance(const Point<RealT, 3> &point) const
     {
       return planeABCD3d().distance(point);
     }
@@ -156,7 +156,7 @@ namespace Ravl2
     //! @param t1 first coordinate.
     //! @param t2 second coordinate.
     //! @return The 3d point.
-    inline Point<RealT, 3> at(const RealT t1, const RealT t2) const
+    inline  constexpr Point<RealT, 3> at(const RealT t1, const RealT t2) const
     {
       return mOrigin + mVector1 * t1 + mVector2 * t2;
     }
@@ -165,7 +165,7 @@ namespace Ravl2
     //! Returns the point of the plane: point + t1 * mVector1 + t2 * mVector2.
     //! @param par The 2d position on the plane.
     //! @return The 3d point.
-    inline Point<RealT, 3> at(const Point<RealT, 2> &par) const
+    inline constexpr Point<RealT, 3> at(const Point<RealT, 2> &par) const
     {
       return mOrigin + mVector1 * par[0] + mVector2 * par[1];
     }
@@ -180,7 +180,7 @@ namespace Ravl2
     }
     
     //! Test if the plane is valid.
-    [[nodiscard]] bool isValid() const
+    [[nodiscard]] constexpr bool isValid() const
     {
       return !isNearZero(RealT(xt::norm_l2(mVector1)())) && !isNearZero(RealT(xt::norm_l2(mVector2)()));
     }

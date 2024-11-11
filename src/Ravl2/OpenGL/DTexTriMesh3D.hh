@@ -29,7 +29,7 @@ namespace Ravl2
     ~DTexTriMesh3DBodyC();
     //: Destructor
 
-    virtual bool GUIRender(Canvas3D &c3d) const;
+    bool GUIRender(Canvas3D &c3d) const override;
     //: Render object.
 
   protected:
