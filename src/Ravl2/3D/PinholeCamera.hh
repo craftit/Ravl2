@@ -19,7 +19,7 @@ namespace Ravl2
   //! Base Pinhole Camera handle.
   //! This class provides access to transform between 3D world and 2D image points.
 
-  template <typename RealT>
+  template <typename RealT = float>
   class PinholeCamera
   {
   public:
