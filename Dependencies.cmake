@@ -5,6 +5,11 @@ include(cmake/CPM.cmake)
 # targets
 function(RAVL2_setup_dependencies)
 
+  # Sort out some blas/lapack stuff
+  #set(BLAS_LIBS /usr/lib/x86_64-linux-gnu/blas)
+  #set(BLA_VENDOR "Generic")
+  #set(BLA_PKGCONFIG_BLAS "blas")
+
   #if on apple and BLA_VENDOR is not set, set it to Apple
   if (APPLE AND NOT DEFINED BLA_VENDOR)
     if(APPLE)
@@ -27,10 +32,12 @@ function(RAVL2_setup_dependencies)
   find_package(CLI11 QUIET)
   find_package(nlohmann_json QUIET)
   find_package(cereal QUIET)
+  find_package(OpenGL QUIET)
 
   # Optional dependencies, we won't build them if they're not found
 
   find_package(dlib QUIET)
+  find_package(glfw3 QUIET)
 
   find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Widgets)
   find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS  Core Gui Widgets)

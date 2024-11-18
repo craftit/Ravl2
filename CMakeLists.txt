@@ -18,19 +18,14 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 project(
   Ravl2
   VERSION 0.0.1
-  DESCRIPTION ""
-  HOMEPAGE_URL "%%myurl%%"
+  DESCRIPTION "Recognition and Vision Library 2"
+  HOMEPAGE_URL "https://github.com/craftit/Ravl2"
   LANGUAGES CXX C)
 
 include(cmake/PreventInSourceBuilds.cmake)
 
 # print cmake version
 message(STATUS "CMake version: ${CMAKE_VERSION}")
-
-# Sort out some blas/lapack stuff
-set(BLAS_LIBS /usr/lib/x86_64-linux-gnu/blas)
-set(BLA_VENDOR "Generic")
-set(BLA_PKGCONFIG_BLAS "blas")
 
 include(ProjectOptions.cmake)
 

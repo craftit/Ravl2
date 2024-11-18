@@ -1,8 +1,13 @@
 
 #include <spdlog/spdlog.h>
 #include <catch2/catch_test_macros.hpp>
+#include <nlohmann/json.hpp>
 #include "Ravl2/Assert.hh"
+#include "Ravl2/IndexRangeSet.hh"
 #include "Ravl2/IO/TypeConverter.hh"
+#include "Ravl2/IO/Load.hh"
+#include "Ravl2/IO/Save.hh"
+#include "Ravl2/IO/Cereal.hh"
 
 TEST_CASE("Conversions")
 {
@@ -58,3 +63,44 @@ TEST_CASE("Conversions")
   }
 
 }
+
+TEST_CASE("File")
+{
+  using namespace Ravl2;
+  initCerealIO();
+
+  SECTION("Binary Cereal")
+  {
+    // Generate a temporary file name
+    std::string filename = "test_cereal.xbs";
+    IndexRangeSet<2> rng({10, 10});
+    nlohmann::json hints;
+    hints["verbose"] = false;
+    CHECK(ioSave(filename, rng, hints));
+
+    IndexRangeSet<2> rng2;
+    CHECK(ioLoad(rng2, filename, hints));
+    CHECK(rng == rng2);
+    // Remove the file
+    CHECK(std::remove(filename.c_str()) == 0);
+  }
+
+  SECTION("JSON Cereal")
+  {
+#if 0
+    // Generate a temporary file name
+    std::string filename = "test_cereal.json";
+    IndexRangeSet<2> rng({10, 10});
+    nlohmann::json hints;
+    hints["verbose"] = true;
+    CHECK(save(filename, rng,hints));
+
+    IndexRangeSet<2> rng2;
+    CHECK(load(rng2,filename,hints));
+    CHECK(rng == rng2);
+    // Remove the file
+//    CHECK(std::remove(filename.c_str()) == 0);
+#endif
+  }
+}
+

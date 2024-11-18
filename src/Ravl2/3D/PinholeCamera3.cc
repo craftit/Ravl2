@@ -11,5 +11,10 @@ namespace Ravl2
 {
 
   template class PinholeCamera3<float>;
-
+  
+  namespace
+  {
+    [[maybe_unused]] static bool g_register1 = Ravl2::defaultConfigFactory().registerDirectType<PinholeCamera3<float>>("PinholeCamera3<float>");
+  }
+  
 };// namespace Ravl2

@@ -9,6 +9,8 @@ add_library (Ravl2Math
         FastFourierTransformMath.hh
         LinearAlgebra.cc LinearAlgebra.hh
         LeastSquares.cc LeastSquares.hh
+        PrimitiveBinaryPolynomial.cc PrimitiveBinaryPolynomial.hh
+        SobolSequence.cc SobolSequence.hh
 )
 
 add_library(ravl2::Ravl2Math ALIAS Ravl2Math)

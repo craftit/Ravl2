@@ -8,6 +8,7 @@
 #include "Ravl2/Image/Array2Sqr2Iter2.hh"
 #include "Ravl2/Image/Matching.hh"
 #include "Ravl2/Image/ImageExtend.hh"
+#include "Ravl2/Image/ImagePyramid.hh"
 #include "Ravl2/Image/ZigZagIter.hh"
 #include "Ravl2/Image/DCT2d.hh"
 #include "Ravl2/Image/Warp.hh"
@@ -37,7 +38,7 @@ TEST_CASE("Warp")
   {
     Ravl2::Array<float, 2> img({10, 10}, 0);
     clip(img, img.range().shrink(3)) = 1.0f;
-    SPDLOG_INFO("Source:{}", img);
+    SPDLOG_TRACE("Source:{}", img);
 
     auto transform = [](const Ravl2::Point2f &p) -> Ravl2::Point2f {
       return p + Ravl2::toPoint<float>(1, 1);
@@ -46,7 +47,24 @@ TEST_CASE("Warp")
     Ravl2::Array<float, 2> target(img.range(), 0);
     Ravl2::warp(target, img, transform);
 
-    SPDLOG_INFO("Target:{}", target);
+    SPDLOG_TRACE("Target:{}", target);
+    //IndexRange<2> rng = img.range().shift(1, 1);
+  }
+
+  SECTION("Shift")
+  {
+    Ravl2::Array<uint8_t, 2> img({10, 10}, 0);
+    clip(img, img.range().shrink(3)) = 1;
+    SPDLOG_TRACE("Source:{}", img);
+
+    auto transform = [](const Ravl2::Point2f &p) -> Ravl2::Point2f {
+      return p + Ravl2::toPoint<float>(1, 1);
+    };
+
+    Ravl2::Array<uint8_t, 2> target(img.range(), 0);
+    Ravl2::warp(target, img, transform);
+
+    SPDLOG_TRACE("Target:{}", target);
     //IndexRange<2> rng = img.range().shift(1, 1);
   }
 
@@ -128,6 +146,30 @@ TEST_CASE("SubPixelPeakDetection")
   //cerr << "At=" << at << "\n";
   ASSERT_FALSE(std::abs(at[0] - 0.9f) > 0.000001f);
   ASSERT_FALSE(std::abs(at[1] - 1.1f) > 0.000001f);
+}
+
+TEST_CASE("SubPixelPeakDetection1")
+{
+  using namespace Ravl2;
+  auto offset = locatePeakSubPixel1(0.0f,1.0f,0.0f);
+  //SPDLOG_INFO("Offset:{}", offset);
+  ASSERT_FLOAT_EQ(offset,0.0f);
+  offset = locatePeakSubPixel1(0.5f,0.8f,0.3f);
+  //SPDLOG_INFO("Offset:{}", offset);
+  ASSERT_FLOAT_EQ(offset,-0.25f);
+  offset = locatePeakSubPixel1(0.3f,0.8f,0.5f);
+  ASSERT_FLOAT_EQ(offset,0.25f);
+  //SPDLOG_INFO("Offset:{}", offset);
+  offset = locatePeakSubPixel1(0.9f,1.0f,0.1f);
+  ASSERT_FLOAT_EQ(offset,-0.5f);
+  //SPDLOG_INFO("Offset:{}", offset);
+  offset = locatePeakSubPixel1(0.1f,1.0f,0.9f);
+  ASSERT_FLOAT_EQ(offset,0.5f);
+  //SPDLOG_INFO("Offset:{}", offset);
+  offset = locatePeakSubPixel1(9.0f,10.0f,1.0f);
+  ASSERT_FLOAT_EQ(offset,-0.5f);
+  //SPDLOG_INFO("Offset:{}", offset);
+  
 }
 
 // Test 2x2 iterators.
@@ -359,3 +401,89 @@ TEST_CASE("DiscreteCosineTransform (forwardDCT)")
   }
 }
 
+TEST_CASE("ImagePyramid")
+{
+  using namespace Ravl2;
+
+  SECTION("ConstructAndFind")
+  {
+    using PixelT = uint8_t;
+    //Ravl2::SetSPDLogLevel beQuiet(spdlog::level::off);
+    // Make an image
+    Array<PixelT,2> patch({27,27},0);
+    patch[2][2] = 1.0f;
+    patch[2][3] = 1.0f;
+    patch[3][2] = 1.0f;
+    patch[3][3] = 1.0f;
+
+    auto sumImg =  SummedAreaTable<uint32_t>::buildTable(patch);
+    auto pyramid = buildImagePyramid(patch, sumImg, 3, toVector<float>(2,2),0,4);
+
+    ASSERT_EQ(pyramid.numLevels(), 3u);
+    auto level = pyramid.findAreaScale(0.33f);
+    //SPDLOG_INFO("Level: {}", level);
+    ASSERT_EQ(level, 1u);
+  }
+  SECTION("Construct")
+  {
+    // Try using the build method that constructs the summed area table.
+    // Make an image
+    Array<uint8_t,2> patch({27,27},0);
+    patch[2][2] = 1.0f;
+    patch[2][3] = 1.0f;
+    patch[3][2] = 1.0f;
+    patch[3][3] = 1.0f;
+
+    auto pyramid = buildImagePyramid(patch, 3, toVector<float>(2,2));
+
+    ASSERT_EQ(pyramid.numLevels(), 3u);
+    auto level = pyramid.findAreaScale(0.33f);
+    SPDLOG_TRACE("Level: {}", level);
+    ASSERT_EQ(level, 1u);
+
+  }
+
+  SECTION("ConstructFloat")
+  {
+    using PixelT = float;
+    //Ravl2::SetSPDLogLevel beQuiet(spdlog::level::off);
+    // Make an image
+    Array<PixelT,2> patch({28,28},0);
+
+    clip(patch,patch.range().shrink(6)) = 1.0f;
+
+    auto pyramid = buildImagePyramid(patch, 3, toVector<float>(2,2),0,4);
+
+    ASSERT_EQ(pyramid.numLevels(), 3u);
+    auto level = pyramid.findAreaScale(0.33f);
+    //SPDLOG_INFO("Level: {}", level);
+    ASSERT_EQ(level, 1u);
+//    for(size_t i = 0;i < pyramid.numLevels();i++) {
+//      SPDLOG_INFO("Level:{} Img:{} ", i, pyramid.level(i).image());
+//    }
+
+  }
+
+  SECTION("ConstructOffset")
+  {
+    using PixelT = float;
+    //Ravl2::SetSPDLogLevel beQuiet(spdlog::level::off);
+    // Make an image
+    IndexRange<2> range({{4, 15}, {8, 19}});
+    Array<PixelT,2> patch(range,0);
+
+    clip(patch,patch.range().shrink(2)) = 1.0f;
+
+    auto pyramid = buildImagePyramid(patch, 3, toVector<float>(2,2),0,4);
+
+    ASSERT_EQ(pyramid.numLevels(), 3u);
+    auto level = pyramid.findAreaScale(0.33f);
+    //SPDLOG_INFO("Level: {}", level);
+    ASSERT_EQ(level, 1u);
+//    for(size_t i = 0;i < pyramid.numLevels();i++) {
+//      SPDLOG_INFO("Level:{} Img:{} ", i, pyramid.level(i).image());
+//    }
+
+  }
+
+}

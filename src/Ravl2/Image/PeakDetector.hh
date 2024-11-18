@@ -4,6 +4,7 @@
 // General Public License (LGPL). See the lgpl.licence file for details or
 // see http://www.gnu.org/copyleft/lesser.html
 // file-header-ends-here
+
 #pragma once
 
 #include "Ravl2/Assert.hh"
@@ -13,9 +14,9 @@
 namespace Ravl2
 {
 
-  //! Test if position 'pos' is the largest value in a 3 by 3 area.
-  // Is is the users responsibility to ensure that all pixels around 'pos'
-  // are in the image.
+  //! @brief Test if position 'pos' is the largest value in a 3 by 3 area.
+  //! Is is the users responsibility to ensure that all pixels around 'pos'
+  //! are in the image.
   template <class DataT>
   inline bool PeakDetect3(const Array<DataT, 2> &img, const Index<2> &pos)
   {
@@ -31,10 +32,10 @@ namespace Ravl2
     return (rt[-1] < cent && rt[0] < cent && rt[1] < cent);
   }
 
-  //! Test if position 'pos' is the largest value in a 5 by 5 area.
-  // Is is the users responsibility to ensure that all pixels around 'pos'
-  // are in the image.  The corners of the area are not mask to bring
-  // the area checked closer to a circle.
+  //! @brief Test if position 'pos' is the largest value in a 5 by 5 area.
+  //! It is the users responsibility to ensure that all pixels around 'pos'
+  //! are in the image.  The corners of the area are not mask to bring
+  //! the area checked closer to a circle.
   template <class DataT>
   inline bool PeakDetect5(const Array<DataT, 2> &img, const Index<2> &pos)
   {
@@ -65,10 +66,10 @@ namespace Ravl2
     return true;
   }
 
-  //! Test if position 'pos' is the largest value in a 7 by 7 area.
-  // Is is the users responsibility to ensure that all pixels around 'pos'
-  // are in the image.  The corners of the area are not mask to bring
-  // the area checked closer to a circle.
+  //! @brief Test if position 'pos' is the largest value in a 7 by 7 area.
+  //! It is the users responsibility to ensure that all pixels around 'pos'
+  //! are in the image.  The corners of the area are not mask to bring
+  //! the area checked closer to a circle.
   template <class DataT>
   inline bool PeakDetect7(const Array<DataT, 2> &img, const Index<2> &pos)
   {
@@ -109,10 +110,10 @@ namespace Ravl2
     return true;
   }
 
-  //! Locate peak with sub-pixel precision.
-  // Fits a quadratic to the peak and works out the center. The position of the
-  // peak is returned. 'img' should contain values surrounding the center of
-  // the peak at 'pos'.
+  //! @brief Locate peak with sub-pixel precision.
+  //! Fits a quadratic to the peak and works out the center. The position of the
+  //! peak is returned. 'img' should contain values surrounding the center of
+  //! the peak at 'pos'.
 
   template <class DataT>
   Point2f LocatePeakSubPixel(const Array<DataT, 2> &img, const Index<2> &pos, float pof)
@@ -164,10 +165,10 @@ namespace Ravl2
     return indf + corr;
   }
 
-  //: Locate peak with sub-pixel precision.
-  // Fits a quadratic to the peak and works out the center. The position of the
-  // peak is returned. 'img' should contain values surrounding the center of
-  // the peak at 'pos'.
+  //! @brief Locate peak with sub-pixel precision.
+  //! Fits a quadratic to the peak and works out the center. The position of the
+  //! peak is returned. 'img' should contain values surrounding the center of
+  //! the peak at 'pos'.
   template <class DataT, typename RealT = float>
   Point2f LocatePeakSubPixel(const Array<DataT, 2> &img, const Index<2> &pos)
   {
@@ -217,4 +218,28 @@ namespace Ravl2
       corr[1] = RealT(-0.5);
     return fpos + corr;
   }
+  
+  //! Fit a peak in 1 dimension. v1 > v0  and v1 > v2
+  //! Returns a value between -0.5 and 0.5 which is the offset from v1's position.
+  template <typename RealT = float>
+  RealT locatePeakSubPixel1(RealT v0,RealT v1,RealT v2)
+  {
+    // Fit a quadratic to the peak and works out the center.
+    assert(v1 > v0 && v1 > v2);
+    RealT Pxx = (v0 - RealT(2) * v1 + v2) / RealT(2);
+    RealT Px = (v0 - v2) / RealT(2);
+    RealT det = Pxx;
+    if(det == 0)
+      return RealT(0);
+    // calculate sub-pixel corrections to the corner position.
+    RealT corr = Px / det;
+    // pull the corrections inside the pixel.
+    if(corr > RealT(0.5))
+      corr = RealT(0.5);
+    if(corr < RealT(-0.5))
+      corr = RealT(-0.5);
+    return corr;
+  }
+  
+  
 }// namespace Ravl2

@@ -39,53 +39,68 @@
 
 namespace Ravl2
 {
-
-  //! @brief Normalise an array of points.
+  //! @brief Compute the normalisation for an array of points.
   //! This finds the mean and variation of euclidean point position. It corrects the mean to zero
   //! and the average variation to 1.
-  //!param: raw - Points to be normalised
-  //!param: func - Function/lambda to accept normalised point.
-  //! @return The mean subtracted from the points, and scale applied.
-  template <typename RealT, unsigned N, typename Container1T, typename FuncT>
+  //! @param: raw - Points to be normalised
+  //! @return The mean to be subtracted from the points, and scale they should be multiplied by.
+  template <typename RealT, unsigned N, typename Container1T>
     requires std::is_floating_point_v<RealT>
-  std::tuple<Point<RealT, N>, RealT> normalise(const Container1T &raw, FuncT func)
+  std::tuple<Point<RealT, N>, RealT> meanAndScale(const Container1T &raw)
   {
-    Point<RealT, N> mean;
-    for(unsigned i = 0; i < N; i++)
-      mean[i] = 0;
+    Point<RealT, N> mean = xt::zeros<RealT>({N});
     for(auto it : raw) {
       mean += it;
     }
     size_t pnts = raw.size();
     if(pnts == 0) {
-      return {toPoint<RealT>(0, 0), 1};
+      const Point<RealT, N> zero = xt::zeros<RealT>({N});
+      return {zero, 1};
     }
     auto realSize = static_cast<RealT>(pnts);
     mean /= realSize;
     RealT d = 0;
     for(auto it : raw) {
       if constexpr(N == 2) {
-        d += std::hypot(it[0] - mean[0], it[1] - mean[1]);
+	d += std::hypot(it[0] - mean[0], it[1] - mean[1]);
       } else {
-        RealT sum = 0;
-        for(unsigned i = 0; i < N; i++) {
-          sum += RealT(std::pow(it[i] - mean[i], 2));
-        }
-        d += std::sqrt(sum);
+	RealT sum = xt::sum(xt::square(it - mean))();
+	d += std::sqrt(sum);
       }
     }
     d = isNearZero(d) ? RealT(1) : (realSize / d);
-    for(auto it : raw) {
-      Point<RealT, N> pnt = (it - mean) * d;
-      func(pnt);
-    }
     return {mean, d};
   }
 
-  //: Find least squares solution to X * v = 0, contraining the solutions to |V] == 1
-  //!param: X - Equation matrix.
-  //!param: rv - Result vector.
-  //!return: true if solution found.
+  template <typename RealT, size_t N>
+  Point<RealT, N> normalisePoint(const Point<RealT, N> &pnt, const Point<RealT, N> &mean, RealT scale)
+  {
+    return (pnt - mean) * scale;
+  }
+
+  //! @brief Normalise an array of points.
+  //! This finds the mean and variation of euclidean point position. It corrects the mean to zero
+  //! and the average variation to 1.
+  //! @param: raw - Points to be normalised
+  //! @param: func - Function/lambda to accept normalised point.
+  //! @return The mean subtracted from the points, and scale applied.
+  template <typename RealT, unsigned N, typename Container1T, typename FuncT>
+    requires std::is_floating_point_v<RealT>
+  std::tuple<Point<RealT, N>, RealT> normalise(const Container1T &raw, FuncT func)
+  {
+    auto [mean, scale] = meanAndScale<RealT,N>(raw);
+    for(auto it : raw) {
+      Point<RealT, N> pnt = normalisePoint<RealT,N>(it, mean, scale);
+      func(pnt);
+    }
+    return {mean, scale};
+  }
+
+
+  //! @brief Find least squares solution to X * v = 0, constraining the solutions to |V] == 1
+  //! @param: X - Equation matrix.
+  //! @param: rv - Result vector.
+  //! @return: true if solution found.
   template <typename RealT>
   bool LeastSquaresEq0Mag1(const Tensor<RealT, 2> &X, VectorT<RealT> &rv)
   {

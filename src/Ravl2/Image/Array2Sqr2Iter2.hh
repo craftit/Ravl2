@@ -13,7 +13,8 @@
 namespace Ravl2
 {
 
-  //! Iterator which slides a 2x2 window over two arrays.
+  //! @brief Iterator which slides a 2x2 window over two arrays.
+  //! This is for backward compatibility with Ravl code.  New code supports relative access from normal iterators. with at(-1,0) etc.
   //! The square can be accessed with DataBL,DataBR,DataUL and DataUR
   //! which access the following array elements. <p>
   //!  TL TR <br>
@@ -29,7 +30,7 @@ namespace Ravl2
     //: Constructor.
     template <typename Array1T, typename Array2T>
       requires WindowedArray<Array1T, Data1T, 2> && WindowedArray<Array2T, Data2T, 2>
-    Array2dSqr2Iter2C(Array1T &array1, Array2T &array2)
+    Array2dSqr2Iter2C(const Array1T &array1, const Array2T &array2)
         : range1({{array1.range(0).min() + 1, array1.range(0).max()},
                   {array1.range(1).min() + 1, array1.range(1).max()}}),
           range2({{array2.range(0).min() + 1, array2.range(0).max()},

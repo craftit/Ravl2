@@ -5,6 +5,7 @@
 #include "checks.hh"
 #include "Ravl2/Geometry/Quaternion.hh"
 #include "Ravl2/Geometry/Isometry3.hh"
+#include "Ravl2/Geometry/FitSimilarity.hh"
 
 
 TEST_CASE("Quaternion")
@@ -180,6 +181,25 @@ TEST_CASE("Quaternion")
     }
   }
 
+  SECTION("Rotation matrix")
+  {
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::uniform_real_distribution<double> dis(-1.0, 1.0);
+
+    for(int i = 0;i < 5;++i) {
+      auto q = Quaternion<RealT>::fromAngleAxis(RealT(dis(gen)), Vector3d{dis(gen), dis(gen), dis(gen)});
+
+      Matrix<RealT, 3, 3> matrix = q.toMatrix();
+
+      auto q2 = Quaternion<RealT>::fromMatrix(matrix);
+
+      //SPDLOG_INFO("q: {} q2: {}", q, q2);
+      CHECK(xt::sum(xt::abs(q.asVector() - q2.asVector()))() < 1e-5f);
+    }
+
+  }
+
 }
 
 TEST_CASE("Isometry3")
@@ -189,9 +209,13 @@ TEST_CASE("Isometry3")
 
   SECTION("transform")
   {
-    Isometry3<RealT> test(Quaternion<RealT>::fromEulerAngles({RealT(std::numbers::pi / 4.0), RealT(std::numbers::pi / 5.0), RealT(std::numbers::pi / 6.0)}), Vector3f {1, 2, 3});
+    Isometry3<RealT> test
+      (Quaternion<RealT>::fromEulerAngles({RealT(std::numbers::pi / 4.0), RealT(std::numbers::pi / 5.0),
+					   RealT(std::numbers::pi / 6.0)}
+					 ), Vector3f{1, 2, 3}
+      );
 
-    Vector<RealT, 3> testVec {3, 2, 1};
+    Vector<RealT, 3> testVec{3, 2, 1};
 
     Vector<RealT, 3> restored = test.inverse().transform(test.transform(testVec));
 
@@ -200,5 +224,41 @@ TEST_CASE("Isometry3")
     EXPECT_NEAR(testVec[2], restored[2], RealT(1e-5));
   }
 
-}
+  SECTION("Fit from points")
+  {
+    std::vector<Point<RealT,3>> points;
+    points.reserve(16);
 
+    points.push_back(toPoint<RealT>(1,4,6));
+    points.push_back(toPoint<RealT>(3,2,9));
+    points.push_back(toPoint<RealT>(7,3,3));
+    points.push_back(toPoint<RealT>(9,7,2));
+    points.push_back(toPoint<RealT>(5,3,2));
+
+    // Generate a random rotation.
+    std::mt19937 rng(static_cast<std::mt19937::result_type>(random()));
+    std::uniform_real_distribution<RealT> randomAngle(-std::numbers::pi_v<RealT>,std::numbers::pi_v<RealT>);
+    std::uniform_real_distribution<RealT> randomTranslation(-5.0, 5.0);
+
+
+    Vector<RealT,3> rotAngle = toVector<RealT>(randomAngle(rng),randomAngle(rng),randomAngle(rng));
+    Vector<RealT,3> offset = toVector<RealT>(randomTranslation(rng),randomTranslation(rng),randomTranslation(rng));
+    Matrix<RealT,3,3> rot = Quaternion<RealT>::fromEulerAngles(rotAngle).toMatrix();
+
+    std::vector<Point<RealT,3>> transformedPoints;
+    transformedPoints.reserve(points.size());
+    for(auto p : points) {
+      transformedPoints.push_back(xt::linalg::dot(rot ,p) + offset);
+    }
+
+    Isometry3<RealT> isometry3;
+    CHECK(fit(isometry3,transformedPoints,points));
+
+    for(auto p : points) {
+      Point<RealT, 3> isoP = isometry3(p);
+      Point<RealT, 3> rotP = xt::linalg::dot(rot, p) + offset;
+      CHECK(xt::sum(xt::square(isoP - rotP))() < 0.0001f);
+    }
+
+  }
+}

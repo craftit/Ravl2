@@ -30,7 +30,13 @@ namespace Ravl2
     explicit PinholeCamera1(const PinholeCamera0<RealT> &c0)
         : PinholeCamera0<RealT>(c0)
     {}
-
+    
+    //! Construct from a configuration
+    explicit PinholeCamera1(Configuration &config)
+    : PinholeCamera0<RealT>(config),
+      m_k1(config.getNumber<RealT>("k1","Radial distortion coefficient 1",0.0,-1e4,1e4))
+    {}
+    
     //! data constructor
     PinholeCamera1(const RealT &cx, const RealT &cy, const RealT &fx, const RealT &fy, const RealT &k1, const Matrix<RealT, 3, 3> &R, const Vector<RealT, 3> &t, const IndexRange<2> &frame)
         : PinholeCamera0<RealT>(cx, cy, fx, fy, R, t, frame), m_k1(k1)
@@ -50,13 +56,13 @@ namespace Ravl2
     };
 
   public:
-    //: Project 3D point in space to 2D image point
+    //: project 3D point in space to 2D image point
     //  Projects according to:<br>
     //    z[0] = cx + fx*( (R*x + t)[0] / (R*x + t)[2] )* (1 + k1 * r) <br>
     //    z[1] = cy + fy*( (R*x + t)[1] / (R*x + t)[2] )* (1 + k1 * r) <br>
     //  Can result in a divide-by-zero for degenerate points.
-    //  See ProjectCheck if this is to be avoided.
-    void Project(Vector<RealT, 2> &z, const Vector<RealT, 3> &x) const
+    //  See projectCheck if this is to be avoided.
+    void project(Vector<RealT, 2> &z, const Vector<RealT, 3> &x) const
     {
       Vector<RealT, 3> Rx = (this->m_R * x) + this->m_t;
       RealT dx = this->m_fx * Rx[0] / Rx[2];
@@ -67,10 +73,10 @@ namespace Ravl2
       z[1] = this->m_cy + dy * (1 + this->m_k1 * r);
     }
 
-    //: Project 3D point in space to 2D image point
-    // The same as Project(...) but checks that the point
+    //: project 3D point in space to 2D image point
+    // The same as project(...) but checks that the point
     // is not degenerate.
-    bool ProjectCheck(Vector<RealT, 2> &z, const Vector<RealT, 3> &x) const
+    bool projectCheck(Vector<RealT, 2> &z, const Vector<RealT, 3> &x) const
     {
       Vector<RealT, 3> Rx = (this->m_R * x) + this->m_t;
       if(isNearZero(Rx[2], RealT(1E-3)))
@@ -83,10 +89,10 @@ namespace Ravl2
       return true;
     }
 
-    //: Inverse projection up to a scale factor
-    // Origin + lambda*ProjectInverseDirection is the camera ray
-    // corresponding to image point z.
-    void ProjectInverseDirection(Vector<RealT, 3> &x, const Vector<RealT, 2> &z) const
+    //! Inverse projection up to a scale factor
+    //! origin + lambda*projectInverseDirection is the camera ray
+    //! corresponding to image point z.
+    void projectInverseDirection(Vector<RealT, 3> &x, const Vector<RealT, 2> &z) const
     {
       // Map from distorted to undistorted point
       RealT dx = z[0] - this->m_cx;
@@ -104,8 +110,8 @@ namespace Ravl2
       x = xt::linalg::dot(xt::transpose(this->m_R), Rx);
     }
 
-    //:The Jacobian matrix of the projection funtion
-    void ProjectJacobian(Matrix<RealT, 2, 3> &Jz, const Vector<RealT, 3> &x) const
+    //! The Jacobian matrix of the projection function.
+    void projectJacobian(Matrix<RealT, 2, 3> &Jz, const Vector<RealT, 3> &x) const
     {
       Vector<RealT, 3> Rx = (this->m_R * x) + this->m_t;
       RealT r_Rx2_2 = 1 / (Rx[2] * Rx[2]);
@@ -136,7 +142,7 @@ namespace Ravl2
     }
 
     //: Return an undistorted image point for a PinholeCamera0C model
-    Vector<RealT, 2> Undistort(const Vector<RealT, 2> &z) const
+    Vector<RealT, 2> undistort(const Vector<RealT, 2> &z) const
     {
       // Map from distorted to undistorted image
       RealT dx = z[0] - this->m_cx;
@@ -150,7 +156,7 @@ namespace Ravl2
     }
 
     //: Transform from a simple pinhole model point to a distorted image point
-    Vector<RealT, 2> Distort(const Vector<RealT, 2> &z) const
+    Vector<RealT, 2> distort(const Vector<RealT, 2> &z) const
     {
       RealT dx = z[0] - this->m_cx;
       RealT dy = z[1] - this->m_cy;

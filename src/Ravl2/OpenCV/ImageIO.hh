@@ -16,5 +16,5 @@ namespace Ravl2
   //!    'camera://1' - Open camera 1
 
   void initOpenCVImageIO();
-
+  
 }// namespace Ravl2

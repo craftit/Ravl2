@@ -84,7 +84,7 @@ namespace Ravl2
     }
 
     //! Returns the index in the middle of the range, eg. (max()+min())/2.
-    [[nodiscard]] inline constexpr RealT Center() const
+    [[nodiscard]] inline constexpr RealT center() const
     {
       return (min() + max()) / 2;
     }
@@ -160,7 +160,7 @@ namespace Ravl2
 
     //! Set the origin of the range to 'position'.
     // Returns a reference to this range.
-    inline constexpr const Range &SetOrigin(RealT position)
+    inline constexpr const Range &setOrigin(RealT position)
     {
       max() = position + max() - min();
       min() = position;
@@ -218,7 +218,7 @@ namespace Ravl2
     //! Returns the index range < min(), (max()+min())/2 >.
     [[nodiscard]] constexpr inline Range FirstHalf() const
     {
-      return Range(min(), Center());
+      return Range(min(), center());
     }
 
     //! Returns the index range < min(), (max()+min())/2 >.
@@ -279,7 +279,13 @@ namespace Ravl2
     //! Get the smallest integer range containing the real range.
     [[nodiscard]] constexpr IndexRange<1> toIndexRange() const
     {
-      return IndexRange<1>(int_floor(mMin), int_ceil(mMax));
+      return IndexRange<1>(intFloor(mMin), intCeil(mMax));
+    }
+
+    //! Get the largest integer range contained by the real range.
+    [[nodiscard]] constexpr IndexRange<1> toInnerIndexRange() const
+    {
+      return IndexRange<1>(intCeil(mMin), intFloor(mMax));
     }
 
   private:
@@ -299,15 +305,12 @@ namespace Ravl2
   template <typename RealT>
   IndexRange<2> operator*(const Range<RealT, 1> &realRange, const IndexRange<2> &indexRange);
 
-  //: Read range from input stream.
-  // Read information from the intput stream 's' and sets the real range
-  // according obtained data.
-  template <typename RealT>
-  std::istream &operator>>(std::istream &s, Range<RealT, 1> &r);
 
   //: Saves the index range 'r' into the output stream 's'.
   template <typename RealT>
-  std::ostream &operator<<(std::ostream &s, const Range<RealT, 1> &r);
+  std::ostream &operator<<(std::ostream &s, const Range<RealT, 1> &r) {
+    return s << "(" <<  r.min() << " " << r.max() << ")";
+  }
 
   template <typename RealT>
   inline constexpr const Range<RealT, 1> &Range<RealT, 1>::operator+=(RealT i)
@@ -388,10 +391,10 @@ namespace Ravl2
 
     //! Set the origin of the range to 'newOrigin'
     // Returns a reference to this rectangle.
-    constexpr const Range &SetOrigin(const Vector<RealT, N> &newOrigin)
+    constexpr const Range &setOrigin(const Vector<RealT, N> &newOrigin)
     {
       for(unsigned i = 0; i < N; ++i) {
-        mRanges[i].SetOrigin(newOrigin[i]);
+        mRanges[i].setOrigin(newOrigin[i]);
       }
       return *this;
     }
@@ -405,28 +408,18 @@ namespace Ravl2
       }
       return ret;
     }
-
-    //! Returns the bottom-right index of the rectangle.
-    [[nodiscard]] inline constexpr Vector<RealT, N> End() const
-    {
-      Vector<RealT, N> ret;
-      for(unsigned i = 0; i < N; ++i) {
-        ret[i] = mRanges[i].max();
-      }
-      return ret;
-    }
-
+    
     //! Returns the index which is in the middle of the rectangle
-    [[nodiscard]] inline constexpr Vector<RealT, N> Center() const
+    [[nodiscard]] inline constexpr Vector<RealT, N> center() const
     {
       Vector<RealT, N> ret;
       for(unsigned i = 0; i < N; ++i) {
-        ret[i] = mRanges[i].Center();
+        ret[i] = mRanges[i].center();
       }
       return ret;
     }
 
-    //! Returns the area of the image rectangle expressed in number of indexs.
+    //! Returns the area of the image rectangle expressed in number of indexes.
     [[nodiscard]] inline constexpr RealT area() const
     {
       RealT area = 1;
@@ -435,7 +428,7 @@ namespace Ravl2
       }
       return area;
     }
-
+    
     //! Returns an rectangle expanded by 'n' on each side.
     [[nodiscard]] inline constexpr Range expand(RealT n) const
     {
@@ -635,6 +628,16 @@ namespace Ravl2
       return ret;
     }
 
+    //! Get the largest integer range contained by the real range.
+    [[nodiscard]] constexpr IndexRange<N> toInnerIndexRange() const
+    {
+      IndexRange<N> ret;
+      for(unsigned i = 0; i < N; i++) {
+        ret[i] = mRanges[i].toInnerIndexRange();
+      }
+      return ret;
+    }
+
     //! scale range
     [[nodiscard]] constexpr Range<RealT, N> operator*(const Vector<RealT, N> &scale) const
     {
@@ -709,10 +712,14 @@ namespace Ravl2
   // Multiplying by a real range of 0-1,0-1 is a unit transform.
 
   template <typename RealT, unsigned N>
-  std::ostream &operator<<(std::ostream &s, const Range<RealT, N> &ir);
+  std::ostream &operator<<(std::ostream &strm, const Range<RealT, N> &rng)
+  {
+    for(unsigned i = 0; i < N; i++) {
+      strm << "(" << rng[i].min() << "," << rng[i].max() << ")";
+    }
+    return strm;
+  }
 
-  template <typename RealT, unsigned N>
-  std::istream &operator>>(std::istream &s, Range<RealT, N> &ir);
 
   ///////////////////////////////////////////////////////
 
@@ -785,7 +792,14 @@ namespace Ravl2
   template <typename RealT>
   inline constexpr IndexRange<1> toIndexRange(Range<RealT, 1> ir)
   {
-    return IndexRange<1>(int_floor(ir.min()), int_ceil(ir.max()));
+    return IndexRange<1>(intFloor(ir.min()), intCeil(ir.max()));
+  }
+
+  //! Get the largest integer range contained by the real range.
+  template <typename RealT, unsigned N>
+  inline constexpr IndexRange<N> toInnerIndexRange(Range<RealT, N> ir)
+  {
+    return ir.toInnerIndexRange();
   }
 
   //! Serialization support
@@ -819,3 +833,10 @@ namespace Ravl2
   extern template class Range<float, 2>;
 
 }// namespace Ravl2
+
+namespace fmt
+{
+  template <typename RealT,unsigned N>
+  struct formatter<Ravl2::Range<RealT,N>> : ostream_formatter {
+  };
+}// namespace fmt

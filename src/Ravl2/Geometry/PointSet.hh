@@ -7,6 +7,8 @@
 //! author="James Smith"
 //! date="26/9/2002"
 
+#pragma once
+
 #include "Ravl2/Geometry/Geometry.hh"
 #include "Ravl2/Geometry/Affine.hh"
 #include "Ravl2/Geometry/Range.hh"
@@ -36,44 +38,40 @@ namespace Ravl2
     {}
 
     //! Returns the centroid (mean) of the points
-    [[nodiscard]] constexpr Point<RealT, N> PointCentroid() const;
+    [[nodiscard]] constexpr Point<RealT, N> pointCentroid() const;
 
     //! Calculates the barycentric coordinate of point
     [[nodiscard]] constexpr std::vector<RealT> BarycentricCoordinate(const Point<RealT, N> &point) const;
 
     //! Compute the bounding rectangle for the point set.
-    [[nodiscard]] constexpr Range<RealT, N> BoundingRectangle() const;
+    [[nodiscard]] constexpr Range<RealT, N> boundingRectangle() const;
 
     //! translate point set by adding a vector.
     constexpr const PointSet &operator+=(const Vector<RealT, N> &offset);
 
-    //! translate point set by subracting a vector.
+    //! translate point set by subtracting a vector.
     constexpr const PointSet &operator-=(const Vector<RealT, N> &offset);
 
     //! scale the point set by multiplying the points by 'scale'.
     constexpr const PointSet &operator*=(RealT scale);
-
+    
+    //! scale the point set by multiplying the points by 'scale'.
+    constexpr PointSet operator*(RealT scale) const {
+      PointSet<RealT, N> ret;
+      ret.reserve(this->size());
+      for(auto it : *this)
+        ret.push_back(it * scale);
+      return ret;
+    }
+    
+    
     //! Transform the points in place
     template <PointTransform transform>
     constexpr const PointSet<RealT, N> &operator*=(const transform &trans)
     {
       for(auto &it : *this)
-        *it = trans(*it);
+        it = trans(it);
       return *this;
-    }
-
-    //! Serialization support
-    template <class Archive>
-    void serialize(Archive &archive)
-    {
-      cereal::size_type numPnts = this->size();
-      archive(cereal::make_size_tag(numPnts));
-      if(numPnts != this->size()) {
-        this->resize(numPnts);
-      }
-      for(auto &it : *this) {
-        archive(it);
-      }
     }
 
   protected:
@@ -89,7 +87,7 @@ namespace Ravl2
   };
 
   template <typename RealT, unsigned N>
-  constexpr Point<RealT, N> PointSet<RealT, N>::PointCentroid() const
+  constexpr Point<RealT, N> PointSet<RealT, N>::pointCentroid() const
   {
     // Create return value
     Point<RealT, N> centroid {};
@@ -103,17 +101,6 @@ namespace Ravl2
     centroid /= RealT(count);
     // Done
     return centroid;
-  }
-
-  template <typename RealT, unsigned N>
-  static constexpr RealT PCot(const Point<RealT, N> &oPointA, const Point<RealT, N> &oPointB, const Point<RealT, N> &oPointC)
-  {
-    auto oBA = oPointA - oPointB;
-    auto oBC = oPointC - oPointB;
-    RealT cp = std::abs(cross(oBC, oBA));
-    if(cp < 1e-6)
-      cp = 1e-6;
-    return (oBC.dot(oBA) / cp);
   }
 
   template <typename RealT, unsigned N>
@@ -157,7 +144,7 @@ namespace Ravl2
   //! Compute the bounding rectangle for the point set.
 
   template <typename RealT, unsigned N>
-  constexpr Range<RealT, N> PointSet<RealT, N>::BoundingRectangle() const
+  constexpr Range<RealT, N> PointSet<RealT, N>::boundingRectangle() const
   {
     Range<RealT, N> ret;
     auto point = this->begin();
@@ -211,6 +198,7 @@ namespace Ravl2
   }
 
   extern template class PointSet<float, 2>;
+  extern template class PointSet<float, 3>;
 
 }// namespace Ravl2
 

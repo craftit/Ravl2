@@ -12,11 +12,18 @@ find_package(LAPACK REQUIRED)
 find_package(dlib QUIET)
 find_package(Qt5 QUIET)
 
+add_subdirectory(Optimise)
 add_subdirectory(Geometry)
 add_subdirectory(Math)
 add_subdirectory(Image)
 add_subdirectory(3D)
 add_subdirectory(OpenCV)
+
+
+# If OpenGL is found, add the OpenGL subdirectory
+if(TARGET OpenGL::GL)
+    add_subdirectory(OpenGL)
+endif()
 
 # If dlib is found, add the dlib subdirectory
 if(TARGET dlib::dlib)
@@ -52,7 +59,7 @@ add_library(Ravl2Core
     ConfigJson.cc ConfigJson.hh
     Pixel/Pixel.cc Pixel/Pixel.hh
     Pixel/Colour.cc Pixel/Colour.hh
-        IO/InputSequence.cc IO/InputSequence.hh
+    IO/InputSequence.cc IO/InputSequence.hh
     IO/OutputFormat.cc IO/OutputFormat.hh
     IO/TypeConverter.cc IO/TypeConverter.hh
     IO/Load.cc IO/Load.hh
@@ -61,10 +68,9 @@ add_library(Ravl2Core
     IO/Cereal.cc IO/Cereal.hh
     IO/StreamInput.hh IO/StreamInput.cc
     IO/StreamOutput.cc IO/StreamOutput.hh
-        IO/InputStreamContainer.cc
-        IO/InputStreamContainer.hh
-        IO/OutputSequence.hh
-        IO/OutputSequence.cc
+    IO/InputStreamContainer.cc IO/InputStreamContainer.hh
+    IO/OutputSequence.hh IO/OutputSequence.cc
+    ThreadedQueue.cc ThreadedQueue.hh
 )
 
 add_library(ravl2::Ravl2Core ALIAS Ravl2Core)
@@ -76,11 +82,14 @@ if (APPLE)
     target_link_libraries(Ravl2Core PUBLIC "-framework Accelerate")
 endif()
 
+# We need to define CEREAL_THREAD_SAFE 1 for cereal to be thread safe
+target_compile_definitions(Ravl2Core PUBLIC CEREAL_THREAD_SAFE=1)
 
 target_link_libraries(Ravl2Core PUBLIC ${OpenCV_LIBS} cereal::cereal fmt::fmt xtensor xtensor-blas spdlog::spdlog BLAS::BLAS LAPACK::LAPACK)
 
 target_include_directories(Ravl2Core ${WARNING_GUARD} PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src>
-        $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/include>)
+        $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/include>
+        $<BUILD_INTERFACE:${CMAKE_BINARY_DIR}/include>)
 
 message(STATUS "RAVL2 Binary     : ${PROJECT_BINARY_DIR}")
 message(STATUS "RAVL2 Installing : ${CMAKE_INSTALL_PREFIX}")

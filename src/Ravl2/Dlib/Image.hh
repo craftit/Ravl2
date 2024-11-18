@@ -35,7 +35,7 @@
 
 namespace Ravl2
 {
-  namespace DLibConvert
+  namespace DLibIO
   {
     //! Returns the number of rows in the given image
     //!  ensures
@@ -170,22 +170,22 @@ namespace Ravl2
       {}
 
       //! Provide the dlib array2d interface
-      int nc() const { return num_columns(*this); }
+      int nc() const { return this->range(1).size(); }
 
-      int nr() const { return num_rows(*this); }
+      int nr() const { return this->range(0).size(); }
 
       void set_size(int rows, int cols) { set_image_size(*this, rows, cols); }
 
       const DataT *operator[](int r) const { return &(*this)(r, 0); }
     };
 
-  }// namespace DLibConvert
+  }// namespace DLibIO
 
   //! Create a Ravl2::ArrayView from a dlib::array2d
   //! This creates a view, it is up to the user to ensure the array2d is not destroyed before the view.
 
   template <typename ArrayT, typename DataT = typename ArrayT::type>
-    requires DLibConvert::DlibArray2d<ArrayT>
+    requires DLibIO::DlibArray2d<ArrayT>
   ArrayView<DataT, 2> toArrayView(ArrayT &anArray)
   {
     IndexRange<2> indexRange({{0, num_rows(anArray) - 1}, {0, num_columns(anArray) - 1}});
@@ -210,10 +210,10 @@ namespace Ravl2
 
   //! Create a dlib image from a Ravl2::Array
   template <typename ArrayT, typename DataT = typename ArrayT::type>
-    requires DLibConvert::DlibArray2d<ArrayT>
-  [[nodiscard]] inline DLibConvert::DLibArray<ArrayT> toDlib(const ArrayT &anArray)
+    requires DLibIO::DlibArray2d<ArrayT>
+  [[nodiscard]] inline DLibIO::DLibArray<ArrayT> toDlib(const ArrayT &anArray)
   {
-    return DLibConvert::DLibArray<ArrayT>(anArray);
+    return DLibIO::DLibArray<ArrayT>(anArray);
   }
 
 #if 0

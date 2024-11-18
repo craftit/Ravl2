@@ -53,7 +53,7 @@ int main(int argc,char **argv)
 
   Ravl2::Array<uint8_t,2> img;
 
-  if(!Ravl2::load(img, inf)) {
+  if(!Ravl2::ioLoad(img, inf)) {
     SPDLOG_ERROR("Failed to load image '{}'", inf);
     return 1;
   }
@@ -71,7 +71,7 @@ int main(int argc,char **argv)
   }
 
   // Save image to a file.
-  if(!Ravl2::save(outf,img)) {
+  if(!Ravl2::ioSave(outf,img)) {
     SPDLOG_ERROR("Failed to save image");
     return 1;
   }

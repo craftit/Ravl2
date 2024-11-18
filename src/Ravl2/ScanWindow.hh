@@ -145,6 +145,12 @@ namespace Ravl2
       return ArrayAccess<DataT, N>(mWindowRange, &(*mAt), mAt.strides());
     }
 
+    //! Window range, this is the range in the image that the window is currently on
+    [[nodiscard]] inline constexpr IndexRange<N> windowRange() const
+    {
+      return mWindowRange + mAt.index();
+    }
+
     //! Access window
     [[nodiscard]] inline constexpr ArrayAccess<DataT, N> operator*() const
     {

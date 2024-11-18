@@ -4,23 +4,22 @@
 // General Public License (LGPL). See the lgpl.licence file for details or
 // see http://www.gnu.org/copyleft/lesser.html
 // file-header-ends-here
-#ifndef RAVLIMAGE_MATCHPATCH_HEADER
-#define RAVLIMAGE_MATCHPATCH_HEADER 1
-///////////////////////////////////////////////////////////////////////////////////////
 //! author="Charles Galambos"
 
+#pragma once
+
 #include "Ravl2/Image/PeakDetector.hh"
-#include "Ravl2/SquareIter.hh"
+#include "Ravl2/Image/SquareIter.hh"
 #include "Ravl2/Image/Matching.hh"
 
 namespace Ravl2
 {
 
-  template <class DataT, class SumT>
-  SumT SearchMinAbsDifferenceCreep(const Array<DataT, 2> &patch, const Array<DataT, 2> &img, const Index<2> &start, Point<RealT, 2> &rat, SumT &rminScore, int searchSize = 50)
+  template <typename DataT, typename SumT, typename RealT = float>
+  SumT searchMinAbsDifferenceCreep(const Array<DataT, 2> &patch, const Array<DataT, 2> &img, const Index<2> &start, Point<RealT, 2> &rat, SumT &rminScore, int searchSize = 50)
   {
     SumT minScore;
-    IndexRange<2> sarea(start, searchSize + 8, searchSize + 8);
+    IndexRange<2> sarea = IndexRange<2>(start,start).expand(searchSize + 8);
     sarea.clipBy(img.range() - patch.range());
     //cerr << "Img=" << img.range() << " SArea=" << sarea << "\n";
     if(!sarea.contains(start)) {
@@ -60,4 +59,3 @@ namespace Ravl2
 
 }// namespace Ravl2
 
-#endif

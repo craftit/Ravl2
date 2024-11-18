@@ -1,13 +1,18 @@
 
 #include <numbers>
 #include <cereal/archives/json.hpp>
+#include <cereal/types/vector.hpp>
 
 #include "checks.hh"
 #include "Ravl2/Array.hh"
 #include "Ravl2/Image/DrawPolygon.hh"
-#include "Ravl2/Geometry/Polygon2d.hh"
-#include "Ravl2/Geometry/Polygon2dIter.hh"
-
+#include "Ravl2/Image/DrawCross.hh"
+#include "Ravl2/Geometry/Polygon.hh"
+#include "Ravl2/IO/Save.hh"
+#include "Ravl2/Geometry/PolygonRasterIter.hh"
+#include "Ravl2/Geometry/Moments2.hh"
+#include "Ravl2/Geometry/PolyLine.hh"
+#include "Ravl2/Geometry/PolyApprox.hh"
 
 // If true render the polygon to an image for debugging
 #define DODISPLAY 0
@@ -35,14 +40,14 @@ TEST_CASE("Polygon2dIter")
 								}
 							       );
 
-    Polygon2dC<float> polygon;
+    Polygon<float> polygon;
     polygon.push_back(Point<float, 2>({0, 0}));
     polygon.push_back(Point<float, 2>({5, 7}));
     polygon.push_back(Point<float, 2>({0, 10}));
     polygon.push_back(Point<float, 2>({10, 10}));
     polygon.push_back(Point<float, 2>({10, 0}));
     unsigned int i = 0;
-    for(Polygon2dIterC<float> it(polygon); it; ++it, ++i) {
+    for(PolygonRasterIter<float> it(polygon); it; ++it, ++i) {
 //SPDLOG_INFO("{} {}", it[0], it.RowIndexRange());
       EXPECT_TRUE(range[0].contains(it.row()));
       EXPECT_TRUE(range[1].contains(it.rowIndexRange()));
@@ -52,9 +57,10 @@ TEST_CASE("Polygon2dIter")
     }
     EXPECT_EQ(i, expectedResult.size());
   }
+
   SECTION("Cereal ")
   {
-    Polygon2dC<float> polygon;
+    Polygon<float> polygon;
     polygon.push_back(Point<float, 2>({0, 0}));
     polygon.push_back(Point<float, 2>({5, 7}));
     polygon.push_back(Point<float, 2>({0, 10}));
@@ -66,10 +72,10 @@ TEST_CASE("Polygon2dIter")
       cereal::JSONOutputArchive oarchive(ss);
       oarchive(polygon);
     }
-//SPDLOG_INFO("Polygon2dC<float>: {}", ss.str());
+//SPDLOG_INFO("Polygon<float>: {}", ss.str());
     {
       cereal::JSONInputArchive iarchive(ss);
-      Polygon2dC<float> polygon2;
+      Polygon<float> polygon2;
       iarchive(polygon2);
       CHECK(polygon.size() == polygon2.size());
       CHECK(polygon == polygon2);
@@ -77,36 +83,101 @@ TEST_CASE("Polygon2dIter")
   }
 }
 
-TEST_CASE("Polygon2d")
+TEST_CASE("Polygon")
 {
   using namespace Ravl2;
   SECTION("Self intersection")
   {
     {
-      Polygon2dC<float> poly;
+      Polygon<float> poly;
       poly.push_back(toPoint<float>(10, 0));
       poly.push_back(toPoint<float>(10, 10));
       poly.push_back(toPoint<float>(0, 20));
       poly.push_back(toPoint<float>(-10, 0));
 
-      CHECK(!poly.IsSelfIntersecting());
+      CHECK(!poly.isSelfIntersecting());
       CHECK(poly.isConvex());
     }
 
     {
-      Polygon2dC<float> poly;
+      Polygon<float> poly;
       poly.push_back(toPoint<float>(0, 0));
       poly.push_back(toPoint<float>(10, 10));
       poly.push_back(toPoint<float>(10, 0));
       poly.push_back(toPoint<float>(0, 10));
-      CHECK(poly.IsSelfIntersecting() == true);
+      CHECK(poly.isSelfIntersecting() == true);
       CHECK(!poly.isConvex());
     }
   }
 
-  SECTION("Overlap")
+  SECTION("Contains")
   {
-    Polygon2dC<float> poly;
+    Polygon<float> poly;
+    poly.push_back(toPoint<float>(10, 0));
+    poly.push_back(toPoint<float>(10, 10));
+    poly.push_back(toPoint<float>(0, 10));
+    poly.push_back(toPoint<float>(0, 0));
+
+    CHECK(poly.isConvex());
+    CHECK(poly.area() > 0);
+    EXPECT_FLOAT_EQ(poly.perimeter(),40.0f);
+    CHECK(euclidDistance(poly.centroid(),toPoint<float>(5,5)) < 1e-6f);
+
+
+    auto center = poly.centroid();
+    CHECK(poly.contains(center));
+    CHECK(!poly.contains(toPoint<float>(20,20)));
+    CHECK(!poly.contains(toPoint<float>(5,20)));
+    CHECK(!poly.contains(toPoint<float>(20,5)));
+    CHECK(!poly.contains(toPoint<float>(-5,5)));
+    CHECK(!poly.contains(toPoint<float>(-5,-5)));
+
+
+    // Poly contains uses boundary counting, so orientation doesn't matter.
+    auto rPoly = poly.reverse();
+    CHECK(rPoly.size() == poly.size());
+    EXPECT_FLOAT_EQ(rPoly.area(),-poly.area());
+    CHECK(rPoly.contains(center));
+    CHECK(!rPoly.contains(toPoint<float>(20,20)));
+    CHECK(!rPoly.contains(toPoint<float>(5,20)));
+    CHECK(!rPoly.contains(toPoint<float>(20,5)));
+    CHECK(!rPoly.contains(toPoint<float>(-5,5)));
+    CHECK(!rPoly.contains(toPoint<float>(-5,-5)));
+  }
+
+  SECTION("Contains 2")
+  {
+    Polygon<float> poly({Point2f ({396.887756f,  296.020416f}) ,{ 429.030609f,  538.367371f}, { 243.31633f,  538.877563f}, { 240.765305f,  297.040802f}});
+
+    Point2f pnt = {318.115112f,  385.001129f};
+
+//    {
+//      Array<uint8_t , 2> img({600,600}, 0);
+//      DrawPolygon(img, 255, poly);
+//      DrawCross(img, 128, toIndex(pnt),5);
+//      save("dlib://poly", img);
+//    }
+    CHECK(poly.contains(pnt));
+
+  }
+
+  SECTION("Moments")
+  {
+    Polygon<double> poly({Point2d ({396.887756,  296.020416}) ,{ 429.030609,  538.367371}, { 243.31633,  538.877563}, { 240.765305,  297.040802}});
+
+    auto val = moments(poly);
+    SPDLOG_TRACE("Moments: {} Centroid:{} ", val, val.centroid());
+    SPDLOG_TRACE("Centroid:{} ", poly.centroid());
+
+    CHECK(xt::sum(xt::abs(val.centroid() - poly.centroid()))() < 1e-6);
+
+  }
+
+
+
+  SECTION("overlap")
+  {
+    Polygon<float> poly;
     poly.push_back(toPoint<float>(10, 0));
     poly.push_back(toPoint<float>(10, 10));
     poly.push_back(toPoint<float>(0, 10));
@@ -115,16 +186,17 @@ TEST_CASE("Polygon2d")
     CHECK(poly.isConvex());
     CHECK(poly.area() > 0);
 
-    auto score = poly.Overlap(poly);
+
+    auto score = poly.overlap(poly);
     CHECK(std::abs(score - 1.0f) < 0.000001f);
 
-    Polygon2dC poly2 = poly;
+    Polygon poly2 = poly;
     poly2 += toPoint<float>(100, 100);
 
-    score = poly.Overlap(poly2);
+    score = poly.overlap(poly2);
     CHECK(std::abs(score) < 0.000001f);
 
-    score = poly2.Overlap(poly);
+    score = poly2.overlap(poly);
     CHECK(std::abs(score) < 0.000001f);
   }
 
@@ -132,23 +204,25 @@ TEST_CASE("Polygon2d")
   {
     Range<float, 2> range1({{0, 10},
 			    {0, 10}});
-    Polygon2dC<float> poly1 = toPolygon(range1);
+    Polygon<float> poly1 = toPolygon(range1);
     CHECK(poly1.size() == 4);
     CHECK(isNearZero(poly1.area() - 100));
 
     // Let's create a hole
-    Polygon2dC<float> poly2= toPolygon(range1, BoundaryOrientationT::INSIDE_RIGHT);
+    Polygon<float> poly2= toPolygon(range1, BoundaryOrientationT::INSIDE_RIGHT);
     CHECK(poly2.size() == 4);
     CHECK(isNearZero(poly2.area() + 100));
     CHECK(!poly2.isConvex());
   }
+
+
 }
 
 
 TEST_CASE("Clip Polygon")
 {
   using namespace Ravl2;
-  Polygon2dC<float> poly;
+  Polygon<float> poly;
   poly.push_back(toPoint<float>(10, 0));
   poly.push_back(toPoint<float>(10, 10));
   poly.push_back(toPoint<float>(0, 20));
@@ -161,7 +235,7 @@ TEST_CASE("Clip Polygon")
 
   SECTION("Self Clipping")
   {
-    auto selfClip = poly.ClipByConvex(poly);
+    auto selfClip = poly.clipByConvex(poly);
 
     CHECK(selfClip.size() == poly.size());
     CHECK(isNearZero(selfClip.area() - poly.area()));
@@ -169,23 +243,23 @@ TEST_CASE("Clip Polygon")
 
   SECTION("Clip Axis")
   {
-    Polygon2dC resultPoly = poly.ClipByAxis(0, 1, true);
-    SPDLOG_INFO("clipByAxis all: {}", resultPoly);
+    Polygon resultPoly = poly.clipByAxis(0, 1, true);
+    SPDLOG_TRACE("clipByAxis all: {}", resultPoly);
     CHECK(resultPoly.size() == poly.size());
     CHECK(isNearZero(resultPoly.area() - poly.area()));
 
-    resultPoly = poly.ClipByAxis(-0.1f, 1, false);
-    SPDLOG_INFO("none: {}", resultPoly);
+    resultPoly = poly.clipByAxis(-0.1f, 1, false);
+    SPDLOG_TRACE("none: {}", resultPoly);
     CHECK(resultPoly.empty());
 
     Range<float,1> scanRange(-11, 21);
     const float step = 0.1f;
-    const int numDivisions = int_round(scanRange.size() / step);
-    int testNum = 0;
+    const int numDivisions = intRound(scanRange.size() / step);
+    [[maybe_unused]] int testNum = 0;
     for(unsigned axis = 0; axis < 2; ++axis) {
       // Try different starting points.
       for(size_t startAt = 0; startAt < poly.size(); startAt++) {
-        Polygon2dC<float> poly2;
+        Polygon<float> poly2;
         for(size_t i = 0; i < poly.size(); ++i) {
           poly2.push_back(poly[((i + startAt) % poly.size())]);
         }
@@ -197,11 +271,11 @@ TEST_CASE("Clip Polygon")
 
           // Check axis version
           {
-            auto resultPoly1 = poly2.ClipByAxis(threshold, axis, false);
+            auto resultPoly1 = poly2.clipByAxis(threshold, axis, false);
             if(!resultPoly1.empty()) {
               CHECK(resultPoly1.isConvex());
             }
-            auto resultPoly2 = poly2.ClipByAxis(threshold, axis, true);
+            auto resultPoly2 = poly2.clipByAxis(threshold, axis, true);
             if(!resultPoly2.empty()) {
               CHECK(resultPoly2.isConvex());
             }
@@ -210,12 +284,12 @@ TEST_CASE("Clip Polygon")
 
           // Check line.
           {
-            auto axisLine = LinePP2dC<float>::fromStartAndDirection(toPoint<float>(threshold, threshold), toVector<float>(axis == 1 ? 1 : 0, axis == 0 ? 1 : 0));
-            auto resultPoly1 = poly2.ClipByLine(axisLine, BoundaryOrientationT::INSIDE_RIGHT);
+            auto axisLine = Line2PP<float>::fromStartAndDirection(toPoint<float>(threshold, threshold), toVector<float>(axis == 1 ? 1 : 0, axis == 0 ? 1 : 0));
+            auto resultPoly1 = poly2.clipByLine(axisLine, BoundaryOrientationT::INSIDE_RIGHT);
             if(!resultPoly1.empty()) {
               CHECK(resultPoly1.isConvex());
             }
-            auto resultPoly2 = poly2.ClipByLine(axisLine, BoundaryOrientationT::INSIDE_LEFT);
+            auto resultPoly2 = poly2.clipByLine(axisLine, BoundaryOrientationT::INSIDE_LEFT);
             if(!resultPoly2.empty()) {
               CHECK(resultPoly2.isConvex());
             }
@@ -252,7 +326,7 @@ TEST_CASE("Clip Polygon")
         }
       }
     }
-    SPDLOG_INFO("Tested {} cases", testNum);
+    SPDLOG_TRACE("Tested {} cases", testNum);
   }
 
 #if 1
@@ -264,13 +338,13 @@ TEST_CASE("Clip Polygon")
     Range<float, 2> range2({{0, 10},
                             {0, 15}});
 
-    Polygon2dC range1Poly = toPolygon(range1);
+    Polygon range1Poly = toPolygon(range1);
     CHECK(range1Poly.size() == 4);
     CHECK(isNearZero(range1Poly.area() - 100));
     CHECK(range1Poly.isConvex());
 
-    Polygon2dC clippedConvex = poly.ClipByConvex(range1Poly);
-    Polygon2dC clippedRange = poly.ClipByRange(range1);
+    Polygon clippedConvex = poly.clipByConvex(range1Poly);
+    Polygon clippedRange = poly.clipByRange(range1);
 
     CHECK(clippedConvex.size() > 0);
     CHECK(clippedRange.size() > 0);
@@ -286,7 +360,7 @@ TEST_CASE("Clip Polygon")
     {
       Array<int, 2> img({{-15, 15},
                          {-5,  25}}, 0);
-      Polygon2dC rect(range1);
+      Polygon rect(range1);
       DrawFilledPolygon(img, 1, rect);
       SPDLOG_INFO("Rect: {}", img);
     }
@@ -307,27 +381,69 @@ TEST_CASE("Clip Polygon")
     }
 #endif
 
-
     auto score = clippedConvex.area();
     CHECK(std::abs(score - 100) < 1e-6f);
 
     score = clippedRange.area();
     CHECK(std::abs(score - 100) < 1e-6f);
 
-    score = clippedConvex.Overlap(clippedRange);
+    score = clippedConvex.overlap(clippedRange);
     CHECK(std::abs(score - 1) < 1e-6f);
 
-    score = clippedConvex.CommonOverlap(clippedRange);
+    score = clippedConvex.commonOverlap(clippedRange);
     CHECK(std::abs(score - 1) < 1e-6f);
 
     // Clipping by two different routes should give the same result..
-    clippedConvex = poly.ClipByConvex(Polygon2dC(range2));
-    clippedRange = poly.ClipByRange(range2);
+    clippedConvex = poly.clipByConvex(Polygon(range2));
+    clippedRange = poly.clipByRange(range2);
 
-    score = clippedConvex.Overlap(clippedRange);
+    score = clippedConvex.overlap(clippedRange);
     CHECK(std::abs(score - 1) < 1e-6f);
   }
 #endif
 
 }
+
+TEST_CASE("Approximate Polygon")
+{
+  using namespace Ravl2;
+  SECTION("Approx Simple")
+  {
+    PolyLine<float,2> poly;
+    poly.push_back(toPoint<float>(0, 0));
+    poly.push_back(toPoint<float>(10, 0));
+    poly.push_back(toPoint<float>(20, 0));
+    
+    auto simplifed = poly.approx(1.0f);
+    CHECK(simplifed.size() == 2);
+  }
+  
+  
+  SECTION("Approx 3")
+  {
+    PolyLine<float,2> poly;
+    poly.push_back(toPoint<float>(0, 0));
+    poly.push_back(toPoint<float>(10, 2));
+    poly.push_back(toPoint<float>(20, 0));
+    
+    auto simplifed = poly.approx(1.0f);
+    SPDLOG_INFO("Simplified: {}", simplifed);
+    CHECK(simplifed.size() == 3);
+  }
+  
+  SECTION("Approx 4")
+  {
+    PolyLine<float,2> poly;
+    poly.push_back(toPoint<float>(0, 0));
+    poly.push_back(toPoint<float>(10, 2));
+    poly.push_back(toPoint<float>(20, 0));
+    poly.push_back(toPoint<float>(30, 0));
+    poly.push_back(toPoint<float>(40, 0));
+    
+    auto simplifed = poly.approx(1.0f);
+    SPDLOG_INFO("Simplified: {}", simplifed);
+    CHECK(simplifed.size() == 4);
+  }
+}
+
 

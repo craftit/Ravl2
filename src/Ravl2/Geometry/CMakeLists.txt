@@ -14,27 +14,31 @@ add_library (Ravl2Geometry
         CircleIter.cc CircleIter.hh
         Circle.cc Circle.hh
         LinePP.hh LinePP.cc
-        LinePP2d.hh LinePP2d.cc
-        LineABC2d.cc LineABC2d.hh
-        Line2dIter.hh Line2dIter.cc
-        Polygon2d.cc Polygon2d.hh
-        Polygon2dIter.cc Polygon2dIter.hh
+        Line2PP.hh Line2PP.cc
+        Line2ABC.cc Line2ABC.hh
+        Line2Iter.hh Line2Iter.cc
+        Polygon.cc Polygon.hh
+        PolygonRasterIter.cc PolygonRasterIter.hh
         PolyLine.hh PolyLine.cc
         Range.hh Range.cc
         Projection.cc Projection.hh
         Transform.cc Transform.hh
         FitLine.cc FitLine.hh
-        PolyApprox.hh
-        Conic2d.cc Conic2d.hh
+        Conic2.cc Conic2.hh
         FitConic.hh
-        Ellipse2d.cc Ellipse2d.hh
+        Ellipse.cc Ellipse.hh
         VectorOffset.cc VectorOffset.hh
-        FitVectorOffset.hh
+        FitVectorOffset.hh FitVectorOffset.cc
         Quaternion.cc Quaternion.hh
         Isometry3.cc Isometry3.hh
         LinePV.cc LinePV.hh
-        PlaneABCD3d.cc PlaneABCD3d.hh
-        PlanePVV3d.cc PlanePVV3d.hh
+        Plane3ABCD.cc Plane3ABCD.hh
+        Plane3PVV.cc Plane3PVV.hh
+        FitProjection.hh FitProjection.cc
+        FitAffine.cc FitAffine.hh
+        FitSimilarity.cc FitSimilarity.hh
+        PolyApprox.hh PolyApprox.cc
+
 )
 
 add_library(ravl2::Ravl2Geometry ALIAS Ravl2Geometry)
@@ -42,7 +46,7 @@ add_library(ravl2::Ravl2Geometry ALIAS Ravl2Geometry)
 target_link_libraries(Ravl2Geometry PRIVATE RAVL2_options RAVL2_warnings
 )
 
-target_link_libraries(Ravl2Geometry PUBLIC Ravl2Core xtensor-blas)
+target_link_libraries(Ravl2Geometry PUBLIC Ravl2Core xtensor-blas Ravl2Math)
 
 target_include_directories(Ravl2Geometry ${WARNING_GUARD} PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src>
         $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/include>)

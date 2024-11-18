@@ -88,6 +88,44 @@ namespace Ravl2
       return ret;
     }
 
+
+    //! Access window with the current element at the origin.
+    [[nodiscard]] constexpr ArrayAccess<ElementT, N> window() const noexcept
+    {
+      return ArrayAccess<ElementT, N>(mAccess.range() - index(), mPtr, mAccess.strides());
+    }
+
+    //! Access a point relative to the current element
+    [[nodiscard]] constexpr ElementT &operator[](const Index<N> &ind) const
+    {
+      ElementT *tPtr = mPtr;
+      for(unsigned i = 0; i < N-1; i++) {
+        tPtr += mAccess.stride(i) * ind[i];
+      }
+      tPtr += ind[N-1];
+      return *tPtr;
+    }
+
+    //! Partial index with current point as origin
+    template <unsigned M>
+      requires(M < N)
+    [[nodiscard]] constexpr auto operator[](const Index<M> &ind) const
+    {
+      ElementT *tPtr = mPtr;
+      for(unsigned i = 0; i < M; i++) {
+        tPtr += mAccess.stride(i) * ind[i];
+      }
+      return ArrayAccess<ElementT, N - M>(&(mAccess.range_data()[M]), tPtr, &mAccess.strides()[M]);
+    }
+
+    //! Element by element call operator access
+    template <IndexType... IndexDataT, unsigned IndexN = sizeof...(IndexDataT)>
+      requires (IndexN <= N)
+    constexpr inline auto& operator()(IndexDataT... data) const
+    {
+      return operator[](Index<IndexN>({int(data)...}));
+    }
+
     [[nodiscard]] constexpr const IndexRange<N> &range() const
     {
       return mAccess.range();
@@ -190,6 +228,13 @@ namespace Ravl2
       return std::get<Ind>(mIters).dataPtr();
     }
 
+    //! Access the iterator
+    template <unsigned Ind>
+    [[nodiscard]] constexpr auto &iter()
+    {
+      return std::get<Ind>(mIters);
+    }
+
     //! Get the index in the array the iterator is at
     template <unsigned Ind>
     [[nodiscard]] constexpr auto index() const
@@ -201,6 +246,15 @@ namespace Ravl2
     [[nodiscard]] constexpr auto index() const
     {
       return std::get<0>(mIters).index();
+    }
+
+    //! Element by element call operator access,
+    //! This access isn't range checked, it is up to the user to ensure the index is valid.
+    template <unsigned Ind, IndexType... IndexDataT, unsigned IndexN = sizeof...(IndexDataT)>
+      requires (IndexN <= N)
+    constexpr inline auto& at(IndexDataT... data) const
+    {
+      return std::get<Ind>(mIters).operator[](Index<IndexN>({int(data)...}));
     }
 
     //! Get the index in the array the iterator is at

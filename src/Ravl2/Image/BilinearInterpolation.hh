@@ -25,7 +25,7 @@ namespace Ravl2
   //! \param pnt - The point in the i/p image coord system for which the interpolated value is required.
   //! \return The interpolated value.
 
-  template <typename ArrayT, typename Point2T>
+  template < typename WorkT = float, typename ArrayT, typename Point2T = Point<WorkT,2> >
     requires WindowedArray<ArrayT, typename ArrayT::value_type, ArrayT::dimensions>
   [[nodiscard]] constexpr auto interpolateBilinear(const ArrayT &img, Point2T pnt)
   {
@@ -39,9 +39,9 @@ namespace Ravl2
     const int iy = int(fy);
     const auto *pixel1 = &((img)[ix][iy]);
     const auto *pixel2 = &((img)[ix + 1][iy]);
-    const auto onemu = (1.0f - u);
-    const auto onemt = (1.0f - t);
-    return (pixel1[0] * (onemt * onemu)) + (pixel1[1] * (t * onemu)) + (pixel2[0] * (onemt * u)) + (pixel2[1] * (t * u));
+    const auto onemu = (1 - u);
+    const auto onemt = (1 - t);
+    return (WorkT(pixel1[0]) * (onemt * onemu)) + (WorkT(pixel1[1]) * (t * onemu)) + (WorkT(pixel2[0]) * (onemt * u)) + (WorkT(pixel2[1]) * (t * u));
   }
 
   //! @brief Bilinear interpolation

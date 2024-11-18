@@ -31,6 +31,7 @@ namespace Ravl2
   // ----------------------------------------------------------
 
   ConfigNodeJSON::ConfigNodeJSON(std::string_view filename)
+   : ConfigNode(filename)
   {
     ONDEBUG(SPDLOG_INFO("Reading config file '{}' ", filename));
     std::ifstream ifs;
@@ -67,6 +68,33 @@ namespace Ravl2
     auto x = setChild(std::string(name), std::string(description), val);
     return x->value();
   }
+
+  std::any ConfigNodeJSON::initNumber(const std::string_view &name,
+				      const std::string_view &description,
+				      unsigned defaultValue,
+				      unsigned min,
+				      unsigned max)
+  {
+    std::string const tname(name);// jsoncpp doesn't support string_view.
+    // Just use the default value?
+    if(m_json.find(tname) == m_json.end()) {
+      m_json[tname] = defaultValue;
+      return ConfigNode::initNumber(name, description, defaultValue, min, max);
+    }
+    json const value = m_json[tname];
+    if(!value.is_number()) {
+      SPDLOG_ERROR("Expected a number for field {}.{}  got '{}'  ", rootPathString(), name, value.dump());
+      throw std::runtime_error("Expected a number in field.");
+    }
+    unsigned val = value.template get<unsigned>();
+    if(val < min || val > max) {
+      SPDLOG_ERROR("Number for field {}.{} out of range. {} <= ({}) <= {}  ", rootPathString(), name, min, val, max);
+      throw std::out_of_range("Out of range.");
+    }
+    auto x = setChild(std::string(name), std::string(description), val);
+    return x->value();
+  }
+
 
   std::any ConfigNodeJSON::initNumber(const std::string_view &name,
                                       const std::string_view &description,
@@ -123,7 +151,7 @@ namespace Ravl2
   std::any
   ConfigNodeJSON::initNumber(const std::string_view &name, const std::string_view &description, size_t defaultValue, size_t min, size_t max)
   {
-    std::string const tname(name);// jsoncpp doesn't support string_view.
+    std::string const tname(name);
     // Just use the default value?
     if(m_json.find(tname) == m_json.end()) {
       m_json[tname] = defaultValue;
@@ -142,7 +170,46 @@ namespace Ravl2
     auto x = setChild(std::string(name), std::string(description), val);
     return x->value();
   }
-
+  
+  //! Initialise a vector field
+  std::any ConfigNodeJSON::initVector(const std::string_view &name, const std::string_view &description, float defaultValue, float min, float max,size_t size)
+  {
+    // Just use the default value?
+    if(m_json.find(name) == m_json.end()) {
+      m_json[name] = defaultValue;
+      return ConfigNode::initVector(name, description, defaultValue, min, max,size);
+    }
+    
+    json const value = m_json[name];
+    if(!value.is_array()) {
+      SPDLOG_ERROR("Expected a array for field {}.{}  got '{}'  ", rootPathString(), name, value.dump());
+      throw std::runtime_error("Expected a array in field.");
+    }
+    std::vector<float> val;
+    val.reserve(size);
+    for(auto &v : value) {
+      if(!v.is_number()) {
+        SPDLOG_ERROR("Expected a number for field {}.{}  got '{}'  ", rootPathString(), name, v.dump());
+        throw std::runtime_error("Expected a number in field.");
+      }
+      float num = v.template get<float>();
+      if(num < min || num > max) {
+        SPDLOG_ERROR("Number for field {}.{} out of range. {} <= ({}) <= {}  ", rootPathString(), name, min, num, max);
+        throw std::out_of_range("Out of range.");
+      }
+      val.push_back(num);
+    }
+    if(size != std::numeric_limits<size_t>::max() && val.size() != size) {
+      SPDLOG_ERROR("Expected a vector of size {} for field {}.{}  got '{}'  ", size, rootPathString(), name, value.dump());
+      throw std::runtime_error("Expected a vector of size.");
+    }
+    auto x = setChild(std::string(name), std::string(description), val);
+    return x->value();
+    
+    
+  }
+  
+  
   std::any ConfigNodeJSON::initString(const std::string_view &name,
                                       const std::string_view &description,
                                       const std::string_view &defaultValue)
@@ -295,7 +362,7 @@ namespace Ravl2
     std::string theName(name);
     json childJson = m_json[theName];
     if(childJson.is_null()) {
-      SPDLOG_INFO("Failed to find child node '{}' in {} ", name, rootPathString());
+      SPDLOG_WARN("Failed to find child node '{}' in {} ", name, rootPathString());
     }
     return std::make_shared<ConfigNodeJSON>(*this, std::move(theName), std::move(description), std::move(value), childJson);
   }

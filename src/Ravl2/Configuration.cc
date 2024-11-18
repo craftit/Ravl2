@@ -15,7 +15,6 @@
 namespace Ravl2
 {
 
-#if 1
   ConfigFactory &defaultConfigFactory()
   {
     static std::shared_ptr<ConfigFactory> factory = std::make_shared<ConfigFactory>();
@@ -28,7 +27,13 @@ namespace Ravl2
       : m_factory(defaultConfigFactory().shared_from_this()),
         m_name("root")
   {}
-
+  
+  ConfigNode::ConfigNode(const std::string_view &filename)
+    : m_factory(defaultConfigFactory().shared_from_this()),
+      m_filename(filename),
+      m_name("root")
+  {}
+  
   //! Get path to this node.
   std::string ConfigNode::path() const
   {
@@ -61,6 +66,14 @@ namespace Ravl2
     return x->value();
   }
 
+  std::any ConfigNode::initNumber(
+    const std::string_view &name, const std::string_view &description, unsigned defaultValue, unsigned min, unsigned max)
+  {
+    auto x = setChild(std::string(name), std::string(description), defaultValue);
+    checkRange(x->value(), min, max);
+    return x->value();
+  }
+
   //! Initialise a number field
   std::any ConfigNode::initNumber(const std::string_view &name, const std::string_view &description, size_t defaultValue, size_t min, size_t max)
   {
@@ -82,7 +95,19 @@ namespace Ravl2
     checkRange(x->value(), min, max);
     return x->value();
   }
-
+  
+  //! Initialise a vector field
+  [[nodiscard]] std::any ConfigNode::initVector(const std::string_view &name, const std::string_view &description, float defaultValue, float min, float max,size_t size)
+  {
+    std::vector<float> vec(size,defaultValue);
+    auto x = setChild(std::string(name), std::string(description),vec);
+    for(auto &v : std::any_cast<std::vector<float>>(x->value())) {
+      checkRange(v, min, max);
+    }
+    return x->value();
+  }
+  
+  
   std::any ConfigNode::initObject(const std::string_view &name,
                                   const std::string_view &description,
                                   const std::type_info &type,
@@ -211,7 +236,5 @@ namespace Ravl2
     flagAsUsed(name);
     return it->second.get();
   }
-
-#endif
-
+  
 }// namespace Ravl2

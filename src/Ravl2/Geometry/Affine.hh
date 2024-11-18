@@ -8,9 +8,13 @@
 #pragma once
 
 #include "Ravl2/Geometry/Geometry.hh"
+#include "Ravl2/Math/LinearAlgebra.hh"
 
 namespace Ravl2
 {
+  template <typename DataT, unsigned N>
+  class ScaleTranslate;
+
   //! General affine transformation.
 
   template <typename DataT, unsigned N>
@@ -28,7 +32,10 @@ namespace Ravl2
     inline constexpr Affine(const Affine &Oth) noexcept = default;
 
     //! Construct from Scale/Rotate matrix and a translation vector.
-    inline constexpr Affine(const Matrix<DataT, N, N> &SR, const Vector<DataT, N> &T) noexcept;
+    inline constexpr Affine(const Matrix<DataT, N, N> &SR, const Vector<DataT, N> &T) noexcept
+      : mSR(SR),
+        mT(T)
+    {}
 
     //! Access the translation component of the transformation.
     [[nodiscard]] inline constexpr Vector<DataT, N> &Translation() { return mT; }
@@ -44,7 +51,7 @@ namespace Ravl2
     inline constexpr void translate(const Vector<DataT, N> &T);
 
     //! Generate an inverse transformation.
-    [[nodiscard]] constexpr Affine<DataT, N> inverse() const;
+    [[nodiscard]] constexpr std::optional<Affine<DataT, N> > inverse() const;
 
     //! Get Scale/Rotate matrix.
     [[nodiscard]] constexpr Matrix<DataT, N, N> &SRMatrix() { return mSR; }
@@ -60,7 +67,7 @@ namespace Ravl2
 
     //! Transform Vector,  scale, Rotate, translate.
     // Take a vector and put it though the transformation.
-    [[nodiscard]] constexpr auto operator()(const PointT &pnt) const
+    [[nodiscard]] constexpr auto operator()(PointT pnt) const
     {
       return PointT(xt::linalg::dot(mSR, pnt) + mT);
     }
@@ -92,11 +99,6 @@ namespace Ravl2
 
   /////////////////////////////////////////////////
 
-  template <typename DataT, unsigned N>
-  inline constexpr Affine<DataT, N>::Affine(const Matrix<DataT, N, N> &SR, const Vector<DataT, N> &T) noexcept
-      : mSR(SR),
-        mT(T)
-  {}
 
   template <typename DataT, unsigned N>
   void constexpr Affine<DataT, N>::scale(const Vector<DataT, N> &xy)
@@ -111,10 +113,14 @@ namespace Ravl2
   }
 
   template <typename DataT, unsigned N>
-  constexpr Affine<DataT, N> Affine<DataT, N>::inverse(void) const
+  constexpr std::optional<Affine<DataT, N> > Affine<DataT, N>::inverse() const
   {
     Affine<DataT, N> ret;
-    ret.mSR = xt::linalg::inv(mSR);
+    auto inv = Ravl2::inverse(mSR);
+    if(!inv.has_value()) {
+      return std::nullopt;
+    }
+    ret.mSR = inv.value();
     ret.mT = xt::linalg::dot(ret.mSR, mT) * -1;
     return ret;
   }
@@ -156,10 +162,32 @@ namespace Ravl2
 
   //! @brief Computer inverse of affine transformation.
   template <typename DataT, unsigned N>
-  constexpr Affine<DataT, N> inverse(const Affine<DataT, N> &aff)
+  constexpr std::optional<Affine<DataT, N> > inverse(const Affine<DataT, N> &aff)
   {
     return aff.inverse();
   }
+
+  //! @brief Convert ScaleTranslate to Affine.
+  template <typename DataT, unsigned N>
+  Affine<DataT, N> toAffine(ScaleTranslate<DataT, N> const &st)
+  {
+    return Affine<DataT, N>(xt::diag(st.scaleVector()), st.translation());
+  }
+
+  //! @brief Compose transforms
+  template <typename DataT, unsigned N>
+  Affine<DataT, N> operator*(const Affine<DataT, N> &lhs, const ScaleTranslate<DataT, N> &rhs)
+  {
+    return lhs(toAffine(rhs));
+  }
+
+  //! @brief Compose transforms
+  template <typename DataT, unsigned N>
+  Affine<DataT, N> operator*(const ScaleTranslate<DataT, N> &lhs, const Affine<DataT, N> &rhs)
+  {
+    return toAffine(lhs)(rhs);
+  }
+
 
   //! @brief Send to output stream.
   template <typename DataT, unsigned N>

@@ -10,6 +10,7 @@
 #include <cstdint>
 #include <spdlog/spdlog.h>
 #include "Ravl2/Types.hh"
+#include "Ravl2/Array.hh"
 
 namespace Ravl2
 {
@@ -96,6 +97,7 @@ namespace Ravl2
   //! Some traits for channels with a pixel type
   template <typename DataT, ImageChannel channel>
   struct PixelTypeTraits {
+    using value_type = DataT;
     static constexpr bool isNormalized = PixelChannelTraits<channel>::isNormalized;
     static constexpr DataT min = (std::is_integral_v<DataT> ? 0 : DataT(0));
     static constexpr DataT max = (std::is_integral_v<DataT> ? std::numeric_limits<DataT>::max() : DataT(1));
@@ -107,6 +109,7 @@ namespace Ravl2
   template <typename DataT, ImageChannel channel>
     requires(std::is_floating_point_v<DataT> && (channel == ImageChannel::ChrominanceU || channel == ImageChannel::ChrominanceV))
   struct PixelTypeTraits<DataT, channel> {
+    using value_type = DataT;
     static constexpr bool isNormalized = PixelChannelTraits<channel>::isNormalized;
     static constexpr DataT min = DataT(-0.5);
     static constexpr DataT max = DataT(0.5);
@@ -118,10 +121,11 @@ namespace Ravl2
   template <typename DataT, ImageChannel channel>
     requires std::is_signed_v<DataT> && std::is_integral_v<DataT>
   struct PixelTypeTraits<DataT, channel> {
+    using value_type = DataT;
     static constexpr bool isNormalized = PixelChannelTraits<channel>::isNormalized;
-    static constexpr int min = 0;
-    static constexpr int max = std::numeric_limits<DataT>::max();
-    static constexpr int offset = 0;
+    static constexpr DataT min = 0;
+    static constexpr DataT max = std::numeric_limits<DataT>::max();
+    static constexpr DataT offset = 0;
     static constexpr DataT defaultValue = 0;
   };
 
@@ -129,10 +133,11 @@ namespace Ravl2
   template <typename DataT, ImageChannel channel>
     requires(std::is_integral_v<DataT> && std::is_unsigned_v<DataT> && (channel == ImageChannel::ChrominanceU || channel == ImageChannel::ChrominanceV))
   struct PixelTypeTraits<DataT, channel> {
+    using value_type = DataT;
     static constexpr bool isNormalized = PixelChannelTraits<channel>::isNormalized;
-    static constexpr int min = std::numeric_limits<DataT>::min();
-    static constexpr int max = std::numeric_limits<DataT>::max();
-    static constexpr int offset = std::numeric_limits<DataT>::max() / 2;
+    static constexpr DataT min = std::numeric_limits<DataT>::min();
+    static constexpr DataT max = std::numeric_limits<DataT>::max();
+    static constexpr DataT offset = std::numeric_limits<DataT>::max() / 2;
     static constexpr DataT defaultValue = offset;
   };
 
@@ -149,8 +154,12 @@ namespace Ravl2
       if constexpr(std::is_floating_point_v<CompT>) {
         return raw;
       }
+      if constexpr(std::is_floating_point_v<PixelValueTypeT> && std::is_integral_v<CompT>) {
+        // If we're converting to an integer type then we need to clamp the value.
+        return intRound< decltype(raw),CompT>(std::clamp( raw, PixelValueTypeT(PixelTypeTraits<CompT, channel>::min), PixelValueTypeT(PixelTypeTraits<CompT, channel>::max)));
+      }
       // If we're converting to an integer type then we need to clamp the value.
-      return CompT(std::clamp(int_round(raw), int(PixelTypeTraits<CompT, channel>::min), int(PixelTypeTraits<CompT, channel>::max)));
+      return CompT(std::clamp(raw, decltype(raw)(PixelTypeTraits<CompT, channel>::min), decltype(raw)(PixelTypeTraits<CompT, channel>::max)));
     }
     // If the channel is not normalized then we can just return the value.
     return CompT(pixel);
@@ -177,11 +186,16 @@ namespace Ravl2
         : Vector<CompT, sizeof...(Channels)>({CompT(args)...})
     {}
 
+    //! Construct from an initializer list
+    Pixel(std::initializer_list<CompT> list)
+	: Vector<CompT, sizeof...(Channels)>(list)
+    {}
+
     //! Construct from another pixel, mapping the channels.
     template <typename OCompT, ImageChannel... OChannels>
     explicit Pixel(const Pixel<OCompT, OChannels...> &other)
     {
-      assign(other);
+      assign(*this,other);
     }
 
   private:
@@ -250,11 +264,11 @@ namespace Ravl2
 
     //! Serialization support
     //! Just do the same thing as the vector.
-    template <typename ArchiveT>
-    void serialize(ArchiveT &archive)
-    {
-      archive(static_cast<Vector<CompT, sizeof...(Channels)> &>(*this));
-    }
+//    template <typename ArchiveT>
+//    void serialize(ArchiveT &archive)
+//    {
+//      archive(static_cast<Vector<CompT, sizeof...(Channels)> &>(*this));
+//    }
   };
 
   //! Stream output
@@ -290,8 +304,9 @@ namespace Ravl2
   //! Define some common formats to save typing
   using PixelY8 = Pixel<uint8_t, ImageChannel::Luminance>;
   using PixelY16 = Pixel<uint16_t, ImageChannel::Luminance>;
-  using PixelD16 = Pixel<uint16_t, ImageChannel::Depth>;
-  using PixelD32F = Pixel<float, ImageChannel::Depth>;
+  using PixelY32F = Pixel<uint16_t, ImageChannel::Luminance>;
+  using PixelZ16 = Pixel<uint16_t, ImageChannel::Depth>;
+  using PixelZ32F = Pixel<float, ImageChannel::Depth>;
   using PixelRGB8 = Pixel<uint8_t, ImageChannel::Red, ImageChannel::Green, ImageChannel::Blue>;
   using PixelRGBA8 = Pixel<uint8_t, ImageChannel::Red, ImageChannel::Green, ImageChannel::Blue, ImageChannel::Alpha>;
   using PixelRGB16 = Pixel<uint16_t, ImageChannel::Red, ImageChannel::Green, ImageChannel::Blue>;
@@ -312,6 +327,24 @@ namespace Ravl2
   extern template class Pixel<uint8_t, ImageChannel::Blue, ImageChannel::Green, ImageChannel::Red, ImageChannel::Alpha>;
   extern template class Pixel<uint8_t, ImageChannel::Luminance, ImageChannel::ChrominanceU, ImageChannel::ChrominanceV>;
   extern template class Pixel<float, ImageChannel::Luminance, ImageChannel::ChrominanceU, ImageChannel::ChrominanceV>;
+
+  // Also about arrays based on the pixel types
+  extern template class Array<PixelY8,2>;
+  extern template class Array<PixelY16,2>;
+  extern template class Array<PixelZ16, 2>;
+  extern template class Array<PixelZ32F, 2>;
+  extern template class Array<PixelRGB8,2>;
+  extern template class Array<PixelRGBA8,2>;
+  extern template class Array<PixelRGB16,2>;
+  extern template class Array<PixelRGBA16,2>;
+  extern template class Array<PixelRGB32F,2>;
+  extern template class Array<PixelRGBA32F,2>;
+  extern template class Array<PixelBGR8,2>;
+  extern template class Array<PixelBGRA8,2>;
+  extern template class Array<PixelYUV8,2>;
+  extern template class Array<PixelYUV32F,2>;
+
+
 
 }// namespace Ravl2
 

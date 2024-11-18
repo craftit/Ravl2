@@ -13,7 +13,7 @@ namespace Ravl2
     return instance;
   }
 
-  std::optional<ConversionChain> TypeConverterMap::find(const std::unordered_set<std::type_index> &to, const std::type_info &from)
+  std::optional<ConversionChain> TypeConverterMap::findInternal(const std::unordered_set<std::type_index> &to, const std::unordered_set<std::type_index> &from)
   {
     std::shared_lock lock(m_mutex);
     auto startVersion = mVersion;
@@ -25,9 +25,10 @@ namespace Ravl2
 
     std::multimap<float, ConversionChain> solutions;
     std::unordered_map<std::type_index, float> visited;
-    visited[std::type_index(from)] = 1.0f;
-
-    solutions.emplace(1.0f, ConversionChain {{}, std::type_index(from), 1.0f});
+    for(const auto &x : from) {
+      visited[x] = 1.0f;
+      solutions.emplace(1.0f, ConversionChain {{}, x, 1.0f});
+    }
 
     while(!solutions.empty()) {
       auto [loss, entry] = *solutions.begin();
@@ -73,8 +74,19 @@ namespace Ravl2
 
   std::optional<ConversionChain> TypeConverterMap::find(const std::type_info &to, const std::type_info &from)
   {
-    std::unordered_set<std::type_index> toSet {to};
-    return find(toSet, from);
+    return findInternal({to}, {from});
+  }
+
+  //! Find a convertion mChain to one of set of possible types with a best first search.
+  [[nodiscard]] std::optional<ConversionChain> TypeConverterMap::find(const std::unordered_set<std::type_index> &to, const std::type_info &from)
+  {
+    return typeConverterMap().findInternal(to, {from});
+  }
+
+  //! Find a convertion mChain to one of set of possible types with a best first search.
+  [[nodiscard]] std::optional<ConversionChain> TypeConverterMap::find(const std::type_index &to, const std::unordered_set<std::type_index> &from)
+  {
+    return typeConverterMap().findInternal({to}, from);
   }
 
   std::optional<std::any> TypeConverterMap::convert(const std::type_info &to, const std::any &from)

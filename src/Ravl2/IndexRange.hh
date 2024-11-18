@@ -120,7 +120,16 @@ namespace Ravl2
         a *= m_range[i].size();
       return a;
     }
-
+    
+    //! Get the center of the range.
+    [[nodiscard]] constexpr auto center() const noexcept
+    {
+      Index<N> ret;
+      for(unsigned i = 0; i < N; i++)
+        ret[i] = m_range[i].center();
+      return ret;
+    }
+    
     //! Get total number of elements that should be allocated
     //! for an array.  This will always be positive or zero.
     [[nodiscard]] constexpr size_t elements() const
@@ -357,7 +366,7 @@ namespace Ravl2
       return m_range[i];
     }
 
-    //! Clip index so it is within the range.
+    //! Clip 'range' so it is within the this range.
     [[nodiscard]] constexpr IndexRange<N> clip(const IndexRange<N> &range) const
     {
       IndexRange<N> ret;
@@ -462,14 +471,23 @@ namespace Ravl2
   };
 
   template <unsigned N>
-  std::ostream &operator<<(std::ostream &strm, const IndexRange<N> &rng)
+  inline std::ostream &operator<<(std::ostream &strm, const IndexRange<N> &rng)
   {
     for(unsigned i = 0; i < N; i++) {
-      strm << "(" << rng[i].min() << "," << rng[i].max() << ")";
+      strm  << rng[i].min() << " " << rng[i].max() << " ";
     }
     return strm;
   }
-
+  
+  template <unsigned N>
+  inline std::istream &operator>>(std::istream &strm, IndexRange<N> &rng)
+  {
+    for(unsigned i = 0; i < N; i++) {
+      strm >> rng[i].min() >> rng[i].max();
+    }
+    return strm;
+  }
+  
   //! Iterate through an N dimensional range.
 
   template <unsigned N>
@@ -614,6 +632,20 @@ namespace Ravl2
     }
     for(auto &r : range.ranges()) {
       archive(r);
+    }
+  }
+  
+  //! Clip a range by another range.
+  template <unsigned N>
+  [[nodiscard]] constexpr IndexRange<N> clip(const IndexRange<N> &range, const IndexRange<N> &clip)
+  {
+    if constexpr(N == 1) {
+      return range.clip(clip);
+    } else {
+      IndexRange<N> ret;
+      for(unsigned i = 0; i < N; i++)
+        ret[i] = range[i].clip(clip[i]);
+      return ret;
     }
   }
 

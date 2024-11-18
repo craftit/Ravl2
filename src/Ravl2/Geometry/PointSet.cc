@@ -10,5 +10,6 @@
 namespace Ravl2
 {
   template class PointSet<float, 2>;
+  template class PointSet<float, 3>;
 
 }

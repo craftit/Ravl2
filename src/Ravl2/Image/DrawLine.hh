@@ -10,8 +10,8 @@
 #pragma once
 
 #include "Ravl2/Array.hh"
-#include "Ravl2/Geometry/Line2dIter.hh"
-#include "Ravl2/Geometry/LinePP2d.hh"
+#include "Ravl2/Geometry/Line2Iter.hh"
+#include "Ravl2/Geometry/Line2PP.hh"
 
 namespace Ravl2
 {
@@ -22,13 +22,13 @@ namespace Ravl2
   //! @param aLine The line to draw.
   template <typename ArrayT, typename CoordTypeT, typename DataT = typename ArrayT::value_type, unsigned N = ArrayT::dimensions>
     requires WindowedArray<ArrayT, DataT, N>
-  void DrawLine(ArrayT Dat, const DataT &Value, const LinePP2dC<CoordTypeT> &aLine)
+  void DrawLine(ArrayT Dat, const DataT &Value, const Line2PP<CoordTypeT> &aLine)
   {
-    LinePP2dC<CoordTypeT> line = aLine;
+    Line2PP<CoordTypeT> line = aLine;
     if(!line.clipBy(toRange<CoordTypeT>(Dat.range().shrinkMax(1))))
       return;
 
-    for(Line2dIterC it(toIndex<2>(line.P1()), toIndex<2>(line.P2())); it; ++it)
+    for(Line2IterC it(toIndex<2>(line.P1()), toIndex<2>(line.P2())); it; ++it)
       Dat[*it] = Value;
   }
 
@@ -44,13 +44,12 @@ namespace Ravl2
   {
     if(Dat.range().contains(From) && Dat.range().contains(To)) {
       // If both start and end are inside the image, all pixels in between are.
-      for(Line2dIterC it(From, To); it; ++it) {
+      for(Line2IterC it(From, To); it; ++it) {
         Dat[*it] = Value;
       }
       return;
     }
-    SPDLOG_INFO("DrawLine: Line not completely inside image");
-    DrawLine(Dat, Value, LinePP2dC<float>(toPoint<float>(From), toPoint<float>(To)));
+    DrawLine(Dat, Value, Line2PP<float>(toPoint<float>(From), toPoint<float>(To)));
   }
 
   //! @brief Draw a pixel wide line in an image, shaded between two colours <code>valuefrom</code> and <code>valueto</code>
@@ -62,14 +61,14 @@ namespace Ravl2
 
   template <typename ArrayT, typename CoordTypeT, typename DataT = typename ArrayT::ValueT, unsigned N = ArrayT::dimensions>
     requires WindowedArray<ArrayT, DataT, N>
-  void DrawLine(ArrayT &Dat, const DataT &ValueFrom, const DataT &ValueTo, const LinePP2dC<CoordTypeT> &Line)
+  void DrawLine(ArrayT &Dat, const DataT &ValueFrom, const DataT &ValueTo, const Line2PP<CoordTypeT> &Line)
   {
-    LinePP2dC line = Line;
+    Line2PP line = Line;
     Range<CoordTypeT, 2> frame(Dat.range().min(0), Dat.range().max(0), Dat.range().min(1), Dat.range().max(1));
     if(line.clipBy(frame)) {
       CoordTypeT length = line.Length();
       // If both start and end are inside the image, all pixels in between are.
-      for(Line2dIterC it(line.P1(), line.P2()); it; ++it) {
+      for(Line2IterC it(line.P1(), line.P2()); it; ++it) {
         CoordTypeT alpha = euclidDistance(it.Data(), toIndex<2>(line.P1())) / length;
         Dat[*it] = DataT((ValueFrom * (1 - alpha)) + (ValueTo * alpha));
       }
@@ -88,6 +87,6 @@ namespace Ravl2
     requires WindowedArray<ArrayT, DataT, N>
   void DrawLine(ArrayT &dat, const DataT &valuefrom, const DataT &valueto, const Index<2> &from, const Index<2> &to)
   {
-    DrawLine(dat, valuefrom, valueto, LinePP2dC<CoordTypeT>(toPoint<CoordTypeT>(from), toPoint<CoordTypeT>(to)));
+    DrawLine(dat, valuefrom, valueto, Line2PP<CoordTypeT>(toPoint<CoordTypeT>(from), toPoint<CoordTypeT>(to)));
   }
 }// namespace Ravl2

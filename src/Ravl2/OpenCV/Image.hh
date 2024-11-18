@@ -3,6 +3,7 @@
 
 #include <spdlog/spdlog.h>
 #include <opencv2/core.hpp>
+#include "Ravl2/IndexRange.hh"
 #include "Ravl2/Array.hh"
 #include "Ravl2/Pixel/Pixel.hh"
 
@@ -24,12 +25,12 @@ namespace Ravl2
   //! The type of the array must be the same as the cv::Mat
   //! This uses reference counting to ensure that the cv::Mat is not destroyed before the array
 
-  template <typename DataT, unsigned N>
-  Array<DataT, N> toArray(const cv::Mat &m)
+  template <typename PixelT, unsigned N>
+  Array<PixelT, N> toArray(const cv::Mat &m)
   {
     if(m.dims != N)
       throw std::runtime_error("fromCvMat: cv::Mat has wrong number of dimensions");
-    if(m.type() != cv::DataType<DataT>::type) {
+    if(m.type() != cv::DataType<PixelT>::type) {
       SPDLOG_INFO("m.type() = {}", m.type());
       throw std::runtime_error("fromCvMat: cv::Mat has wrong data type");
     }
@@ -37,16 +38,20 @@ namespace Ravl2
     std::array<int, N> strides;
     for(unsigned i = 0; i < N; ++i) {
       indexRange[i] = IndexRange<1>(0, m.size[int(i)] - 1);
-      strides[i] = int(m.step[int(i)] / sizeof(DataT));
+      strides[i] = int(m.step[int(i)] / sizeof(PixelT));
     }
-    auto dataPtr = reinterpret_cast<DataT *>(m.data);
-    return Array<DataT, N>(dataPtr, indexRange, strides,
-                           std::shared_ptr<DataT[]>(dataPtr, [val = cv::Mat(m)]([[maybe_unused]] DataT *delPtr) { assert(static_cast<void *>(delPtr) == val.data); }));
+    auto dataPtr = reinterpret_cast<PixelT *>(m.data);
+    return Array<PixelT, N>(dataPtr, indexRange, strides,
+                            std::shared_ptr<PixelT[]>(dataPtr, [val = cv::Mat(m)]([[maybe_unused]] PixelT *delPtr) { assert(static_cast<void *>(delPtr) == val.data); }));
   }
 
   //! Make to Array for  Array<PixelBGR8, N>
   template <>
   Array<PixelBGR8, 2> toArray(const cv::Mat &m);
+
+  //! Make to Array for  Array<PixelBGRA8, N>
+  template <>
+  Array<PixelBGRA8, 2> toArray(const cv::Mat &m);
 
   //! Make to cv::Mat for  Array<PixelBGR8, N>
   template <>

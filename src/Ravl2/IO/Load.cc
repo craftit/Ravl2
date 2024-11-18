@@ -5,9 +5,13 @@
 namespace Ravl2
 {
 
-  const nlohmann::json &defaultLoadFormatHint()
+  const nlohmann::json &defaultLoadFormatHint(bool verbose)
   {
     static nlohmann::json hint;
+    static nlohmann::json hint2 = {{"verbose", true}};
+    if(verbose) {
+      return hint2;
+    }
     return hint;
   }
 
@@ -60,7 +64,7 @@ namespace Ravl2
         ctx.m_data.resize(size_t(numRead));
       }
       if(verbose) {
-        SPDLOG_INFO("Read {} bytes from file", ctx.m_data.size());
+        SPDLOG_INFO("Read {} bytes of from file", ctx.m_data.size());
       }
       tmpStrm->seekg(0);
       ctx.mStream = std::move(tmpStrm);

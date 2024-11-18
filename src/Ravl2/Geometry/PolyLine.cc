@@ -6,8 +6,12 @@
 // file-header-ends-here
 
 #include "Ravl2/Geometry/PolyLine.hh"
+#include "Ravl2/Geometry/PolyApprox.hh"
 
 namespace Ravl2
 {
+  //! Let the compiler know that we will use these classes with the following types
+  template class PolyLine<float,2>;
+  template class PolyLine<float,3>;
 
 }

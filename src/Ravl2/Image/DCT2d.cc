@@ -159,7 +159,7 @@ namespace Ravl2
       N = 0;
       return;
     }
-    m = int_ceil(std::log(size) / std::log(2.0));
+    m = intCeil(std::log(size) / std::log(2.0));
     N = 1 << m;
     cosines.resize(size_t(N));
     makecosinetable();
@@ -443,9 +443,9 @@ namespace Ravl2
 
   void VecRadDCT::setup(unsigned int size, unsigned int pts)
   {
-    m = int_ceil(std::log(size) / std::log(2));
+    m = intCeil(std::log(size) / std::log(2));
     N = 1 << m;
-    N0 = 1 << int_ceil(std::log(pts) / std::log(2));// must be power of 2
+    N0 = 1 << intCeil(std::log(pts) / std::log(2));// must be power of 2
 
     // Allocate ptr array.
     r.resize(size_t(N));

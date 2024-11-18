@@ -26,7 +26,7 @@ namespace Ravl2
   //! @brief Iterator that holds a position and allows for circular iteration, from the end, go to the beginning
   //! This is particularly useful for porting code that originally used a circular linked list.
 
-  template <class Container>
+  template <typename Container,typename IteratorT = Container::iterator>
   class LoopIter
   {
   public:
@@ -38,43 +38,18 @@ namespace Ravl2
     }
 
     //! Constructor
-    LoopIter(Container &c, typename Container::iterator it)
+    LoopIter(Container &c, const IteratorT &it)
         : container(c),
           iter(it)
     {
     }
-
-    //! Get a iterator at the last element
-    //! The container must not be empty
-    static LoopIter
-    Last(Container &c)
-    {
-      auto iter = c.end();
-      assert(c.empty() != c.end());
-      iter--;
-      return LoopIter(c, iter);
-    }
-
-    //! Get a iterator at the first element
-    static LoopIter
-    First(Container &c)
-    {
-      return LoopIter(c, c.begin());
-    }
-
-    void
-    GotoLast()
-    {
-      iter = container.end();
-      --iter;
-    }
-
-    void
-    GotoFirst()
-    {
-      iter = container.begin();
-    }
-
+    
+    //! Copy constructor
+    LoopIter(const LoopIter &it)
+      : container(it.container),
+        iter(it.iter)
+    {}
+    
     //! Compare two iterators
     bool
     operator==(const LoopIter &other) const
@@ -85,7 +60,7 @@ namespace Ravl2
 
     //! Compare two iterators
     bool
-    operator==(const typename Container::iterator &other) const
+    operator==(const IteratorT &other) const
     {
       return iter == other;
     }
@@ -99,15 +74,13 @@ namespace Ravl2
     }
 
     //! Access the current element
-    auto &
-    Data()
+    auto &data()
     {
       return *iter;
     }
 
     //! Circular get the element after the current one
-    auto &
-    NextCrcData()
+    auto &nextCrcData()
     {
       auto next = iter;
       ++next;
@@ -115,43 +88,48 @@ namespace Ravl2
         next = container.begin();
       return *next;
     }
-
-    //! Get the data after the current one
-    auto &
-    NextData()
+    
+    //! Assign the iterator
+    LoopIter &operator=(const IteratorT &it)
     {
-      auto next = iter;
-      ++next;
-      assert(next != container.end());
-      return *next;
-    }
-
-    auto &
-    operator++()
-    {
-      ++iter;
+      iter = it;
       return *this;
     }
+    
+    //! Assign the iterator to another iterator
+    LoopIter &operator=(const LoopIter &it)
+    {
+      assert(&container == &it.container);
+      iter = it.iter;
+      return *this;
+    }
+    
+    auto &operator++()
+    {
+      ++iter;
+      if(iter == container.end())
+        iter = container.begin();
+      return *this;
+    }
+    
+    //! Access data
+    auto operator*()
+    { return *iter; }
+    
+    //! Access data
+    auto operator*() const
+    { return *iter; }
 
   protected:
     Container &container;
-    typename Container::iterator iter;
+    IteratorT iter;
   };
-
+  
   //! Helper function to create a circular iterator
-  //! This creates an iterator that points to the last valid element
-  template <class Container>
-  LoopIter<Container>
-  beginLoopLast(Container &c)
+  template <typename ContainerT,typename IteratorT>
+  LoopIter<ContainerT,IteratorT> loopIter(ContainerT &c, const IteratorT &it)
   {
-    return LoopIter<Container>::Last(c);
+    return LoopIter<ContainerT,IteratorT>(c, it);
   }
-
-  //! Helper function to create a circular iterator
-  template <class Container>
-  LoopIter<Container>
-  beginLoopFirst(Container &c)
-  {
-    return LoopIter<Container>::First(c);
-  }
+  
 }// namespace Ravl2

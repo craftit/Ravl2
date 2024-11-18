@@ -42,14 +42,14 @@ namespace Ravl2
 
   //! Get a perpendicular vector in 2d space
   template <typename DataT>
-  inline constexpr Vector<DataT, 2> perpendicular(const Vector<DataT, 2> &v)
+  [[nodiscard]] inline constexpr Vector<DataT, 2> perpendicular(const Vector<DataT, 2> &v)
   {
     return {-v(1), v(0)};
   }
 
   //! Convert to a span
   template <typename T>
-  constexpr auto span(T t)
+  [[nodiscard]] constexpr auto span(T t)
   {
     return std::span(t);
   }
@@ -58,7 +58,7 @@ namespace Ravl2
   //! This ensures that the span is constructed correctly from a view
   //! \param view The view to make a span
   template <typename CT, typename... S>
-  constexpr auto span(xt::xview<CT, S...> view)
+  [[nodiscard]] constexpr auto span(xt::xview<CT, S...> view)
   {
     assert(view.is_contiguous());
     return std::span(view.begin(), view.size());
@@ -90,7 +90,7 @@ namespace Ravl2
   }
 
   template <typename RealT, size_t N>
-  constexpr RealT squaredEuclidDistance(const Point<RealT, N> &a, const Point<RealT, N> &b)
+  [[nodiscard]] constexpr RealT squaredEuclidDistance(const Point<RealT, N> &a, const Point<RealT, N> &b)
   {
     RealT sum = 0;
     for(unsigned i = 0; i < N; i++) {
@@ -100,7 +100,7 @@ namespace Ravl2
   }
 
   template <typename RealT, size_t N>
-  constexpr auto euclidDistance(const Point<RealT, N> &a, const Point<RealT, N> &b)
+  [[nodiscard]] constexpr auto euclidDistance(const Point<RealT, N> &a, const Point<RealT, N> &b)
   {
     RealT sum = 0;
     for(unsigned i = 0; i < N; i++) {
@@ -110,13 +110,13 @@ namespace Ravl2
   }
 
   template <typename Pnt1T, typename Pnt2T>
-  constexpr auto euclidDistance(Pnt1T a, Pnt2T b)
+  [[nodiscard]] constexpr auto euclidDistance(Pnt1T a, Pnt2T b)
   {
     return xt::linalg::norm(a - b, 2);
   }
 
   template <typename RealT = float, unsigned N>
-  constexpr auto euclidDistance(const Index<N> &a, const Index<N> &b)
+  [[nodiscard]] constexpr auto euclidDistance(const Index<N> &a, const Index<N> &b)
   {
     int sum = 0;
     for(unsigned i = 0; i < N; i++) {
@@ -126,26 +126,26 @@ namespace Ravl2
   }
 
   template <typename DataTypeT, typename RealT = DataTypeT::value_type>
-  constexpr RealT sumOfSqr(const DataTypeT &a)
+  [[nodiscard]] constexpr RealT sumOfSqr(const DataTypeT &a)
   {
     return xt::sum(a * a)();
   }
 
   template <typename RealT>
     requires std::is_floating_point<RealT>::value
-  constexpr RealT sumOfSqr(RealT a)
+  [[nodiscard]] constexpr RealT sumOfSqr(RealT a)
   {
     return std::abs(a);
   }
 
   template <typename A, typename B>
-  constexpr auto cityBlockDistance(xt::xexpression<A> a, xt::xexpression<B> b)
+  [[nodiscard]] constexpr auto cityBlockDistance(xt::xexpression<A> a, xt::xexpression<B> b)
   {
     return xt::sum(xt::abs(a - b));
   }
 
   template <unsigned N>
-  constexpr auto cityBlockDistance(const Index<N> &a, const Index<N> &b)
+  [[nodiscard]] constexpr auto cityBlockDistance(const Index<N> &a, const Index<N> &b)
   {
     int sum = 0;
     for(unsigned i = 0; i < N; i++) {
@@ -166,7 +166,7 @@ namespace Ravl2
   //!   Point<RealT,2> bb(third  - *this);
   //!   return aa[0]*bb[1] - aa[1]*bb[0];
   template <typename RealT>
-  constexpr RealT triangleArea2(const Point<RealT, 2> &first, const Point<RealT, 2> &second, const Point<RealT, 2> &third)
+  [[nodiscard]] constexpr RealT triangleArea2(const Point<RealT, 2> &first, const Point<RealT, 2> &second, const Point<RealT, 2> &third)
   {
     return (second[0] - first[0]) * (third[1] - first[1]) - (second[1] - first[1]) * (third[0] - first[0]);
   }
@@ -176,14 +176,14 @@ namespace Ravl2
 
   //! Cross product of two 2d vectors
   template <typename RealT>
-  RealT cross(const Point<RealT, 2> &a, const Point<RealT, 2> &b)
+  [[nodiscard]] RealT cross(const Point<RealT, 2> &a, const Point<RealT, 2> &b)
   {
     return a[0] * b[1] - a[1] * b[0];
   }
 
   //! Cross product of two 2d vectors
   template <typename RealT>
-  Point<RealT, 3> cross(const Point<RealT, 3> &a, const Point<RealT, 3> &b)
+  [[nodiscard]] Point<RealT, 3> cross(const Point<RealT, 3> &a, const Point<RealT, 3> &b)
   {
     return {a[1] * b[2] - a[2] * b[1],
             a[2] * b[0] - a[0] * b[2],
@@ -193,11 +193,11 @@ namespace Ravl2
   //! Convert a point to the closest integer index
   template <size_t N, typename RealT>
     requires std::is_floating_point<RealT>::value
-  constexpr inline Index<N> toIndex(const Point<RealT, N> &pnt)
+  [[nodiscard]] constexpr inline Index<N> toIndex(const Point<RealT, N> &pnt)
   {
     Index<N> ret;
     for(unsigned i = 0; i < N; i++) {
-      ret[i] = int_round(pnt[i]);
+      ret[i] = intRound(pnt[i]);
     }
     return ret;
   }
@@ -205,7 +205,7 @@ namespace Ravl2
   //! Get the closest integer index from an integer point
   template <size_t N, typename NumberT>
     requires std::is_integral<NumberT>::value
-  constexpr inline Index<N> toIndex(const Point<NumberT, N> &pnt)
+  [[nodiscard]] constexpr inline Index<N> toIndex(const Point<NumberT, N> &pnt)
   {
     Index<N> ret;
     for(unsigned i = 0; i < N; i++) {
@@ -217,7 +217,7 @@ namespace Ravl2
   //! Convert an index to a point
   template <typename RealT, unsigned N>
     requires std::is_convertible<int, RealT>::value
-  constexpr inline Point<RealT, N> toPoint(const Index<N> &idx)
+  [[nodiscard]] constexpr inline Point<RealT, N> toPoint(const Index<N> &idx)
   {
     Point<RealT, N> ret;
     for(unsigned i = 0; i < N; i++) {
@@ -229,7 +229,7 @@ namespace Ravl2
   //! Convert a parameter list of RealT to a point
   template <typename RealT, typename... DataT, unsigned N = sizeof...(DataT)>
     requires(std::is_convertible_v<DataT, RealT> && ...)
-  constexpr Point<RealT, N> toPoint(DataT... data)
+  [[nodiscard]] constexpr Point<RealT, N> toPoint(DataT... data)
   {
     return Point<RealT, N>({RealT(data)...});
   }
@@ -237,7 +237,7 @@ namespace Ravl2
   //! Convert a parameter list of RealT to a point
   template <typename RealT, typename SourceT, size_t N>
     requires(std::is_convertible_v<SourceT, RealT>)
-  constexpr Point<RealT, N> toPoint(const Point<SourceT, N> &pnt)
+  [[nodiscard]] constexpr Point<RealT, N> toPoint(const Point<SourceT, N> &pnt)
   {
     Point<RealT, N> ret;
     for(unsigned i = 0; i < N; i++) {
@@ -249,14 +249,26 @@ namespace Ravl2
   //! Convert a parameter list of RealT to a point
   template <typename RealT, typename... DataT, unsigned N = sizeof...(DataT)>
     requires(std::is_convertible_v<DataT, RealT> && ...)
-  constexpr inline Vector<RealT, N> toVector(DataT... data)
+  [[nodiscard]] constexpr inline Vector<RealT, N> toVector(DataT... data)
   {
     return Vector<RealT, N>({RealT(data)...});
   }
 
+  //! Convert a parameter list of RealT to a point
+  template <typename RealT, typename SourceT, size_t N>
+    requires(std::is_convertible_v<SourceT, RealT>)
+  [[nodiscard]] constexpr Point<RealT, N> toVector(const Point<SourceT, N> &pnt)
+  {
+    Vector<RealT, N> ret;
+    for(unsigned i = 0; i < N; i++) {
+      ret[i] = RealT(pnt[i]);
+    }
+    return ret;
+  }
+
   //! Linear interpolation between two points
   template <typename RealT, size_t N>
-  constexpr inline Point<RealT, N> lerp(const Point<RealT, N> &a, const Point<RealT, N> &b, RealT t)
+  [[nodiscard]] constexpr inline Point<RealT, N> lerp(const Point<RealT, N> &a, const Point<RealT, N> &b, RealT t)
   {
     Point<RealT, N> ret;
     for(unsigned i = 0; i < N; i++) {

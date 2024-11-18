@@ -55,7 +55,7 @@ TEST_CASE("Draw")
   EXPECT_EQ(img[99][0],128);
 
 #if 0
-  //Ellipse2dC ellipse(Point<RealT,2>(50,50),40,20,0);
+  //Ellipse ellipse(Point<RealT,2>(50,50),40,20,0);
   //DrawEllipse(img,(uint8_t) 255,ellipse);
 
 #endif

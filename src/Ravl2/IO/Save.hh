@@ -26,7 +26,7 @@ namespace Ravl2
   [[nodiscard]] std::optional<StreamOutputPlan> openOutput(const std::string &url, const std::type_info &type, const nlohmann::json &formatHint);
 
   //! Default save format hint.
-  [[nodiscard]] const nlohmann::json &defaultSaveFormatHint();
+  [[nodiscard]] const nlohmann::json &defaultSaveFormatHint(bool verbose = false);
 
   //! @brief Save an object to a file.
   //! @param object - The object to save.
@@ -37,7 +37,7 @@ namespace Ravl2
   //! Format hints include
   //!  - "verbose" - If true, print verbose output.
   template <typename ObjectT>
-  bool save(const std::string &url, const ObjectT &object, const nlohmann::json &formatHint = defaultSaveFormatHint())
+  bool ioSave(const std::string &url, const ObjectT &object, const nlohmann::json &formatHint = defaultSaveFormatHint())
   {
     auto thePlan = openOutput(url, typeid(ObjectT), formatHint);
     if(!thePlan.has_value())

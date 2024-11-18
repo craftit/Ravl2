@@ -27,11 +27,12 @@ namespace Ravl2
 
     //! Constructor from a vector and a point on the plane/line.
     VectorOffset(const Vector<RealT, N> &norm, const Point<RealT, N> &p)
-        : mNormal(norm), mD(xt::sum(norm * p)())
+        : mNormal(norm),
+          mD(-xt::linalg::dot(norm,p)())
     {}
 
     //! Returns the normal of the plane.
-    [[nodiscard]] inline Vector<RealT, 3> normal() const
+    [[nodiscard]] inline const Vector<RealT, N> &normal() const
     {
       return mNormal;
     }
@@ -52,7 +53,7 @@ namespace Ravl2
     //! used in geometrical computations.
     [[nodiscard]] constexpr RealT residuum(const Point<RealT, N> &p) const
     {
-      return xt::sum(mNormal * p)() + this->mD;
+      return xt::linalg::dot(mNormal,p)() + this->mD;
     }
 
     //! Returns the signed distance of the 'point' from the line.
@@ -87,11 +88,19 @@ namespace Ravl2
       return (*this);
     }
 
+    //! Flip the normal vector.
+    inline auto &flipNormal()
+    {
+      mNormal = -mNormal;
+      mD = -mD;
+      return (*this);
+    }
+
     //! Serialization support
     template <class Archive>
     constexpr void serialize(Archive &ar)
     {
-      ar(mNormal, mD);
+      ar(cereal::make_nvp("normal", mNormal), cereal::make_nvp("d", mD));
     }
 
   protected:
@@ -101,5 +110,28 @@ namespace Ravl2
 
   extern template class VectorOffset<float, 2>;
   extern template class VectorOffset<float, 3>;
-
+  
+  template <typename RealT,size_t N>
+  std::ostream &operator<<(std::ostream &outS, const VectorOffset<RealT,N> &plane)
+  {
+    outS << plane.normal() << ' ' << plane.offset();
+    return (outS);
+  }
+  
+  template <typename RealT,size_t N>
+  std::istream &operator>>(std::istream &inS, VectorOffset<RealT,N> &plane)
+  {
+    Vector<RealT,N> norm;
+    RealT d;
+    inS >> norm >> d;
+    plane = VectorOffset<RealT,N>(norm, d);
+    return (inS);
+  }
+  
 }// namespace Ravl2
+
+#if FMT_VERSION >= 90000
+template <typename RealT, size_t N>
+struct fmt::formatter<Ravl2::VectorOffset<RealT, N>> : fmt::ostream_formatter {
+};
+#endif

@@ -9,7 +9,7 @@
 #pragma once
 
 #include <numbers>
-#include "Ravl2/Geometry/Ellipse2d.hh"
+#include "Ravl2/Geometry/Ellipse.hh"
 #include "Ravl2/Image/DrawPolygon.hh"
 
 namespace Ravl2
@@ -22,7 +22,7 @@ namespace Ravl2
   //! with a better way of choosing this number.
 
   template <class DataT, typename RealT>
-  void DrawEllipse(Array<DataT, 2> &image, const DataT &value, const Ellipse2dC<RealT> &ellipse)
+  void DrawEllipse(Array<DataT, 2> &image, const DataT &value, const Ellipse<RealT> &ellipse)
   {
     auto [major, minor] = ellipse.size();
     if((major + minor) < 3) {// Very small ?
@@ -33,7 +33,7 @@ namespace Ravl2
       return;
     }
     RealT step = 2 * std::numbers::pi_v<RealT> / (major + minor);
-    Polygon2dC<RealT> poly;
+    Polygon<RealT> poly;
     for(RealT a = 0; a < 2 * std::numbers::pi_v<RealT>; a += step)
       poly.push_back(ellipse.point(a));
     DrawPolygon(image, value, poly);
@@ -47,7 +47,7 @@ namespace Ravl2
   //! with a better way of choosing this number.
 
   template <class DataT, typename RealT>
-  void DrawFilledEllipse(Array<DataT, 2> &image, const DataT &value, const Ellipse2dC<RealT> &ellipse)
+  void DrawFilledEllipse(Array<DataT, 2> &image, const DataT &value, const Ellipse<RealT> &ellipse)
   {
     RealT maj, min;
     ellipse.Size(maj, min);
@@ -58,7 +58,7 @@ namespace Ravl2
       return;
     }
     RealT step = 2 * std::numbers::pi_v<RealT> / (maj + min);
-    Polygon2dC<RealT> poly;
+    Polygon<RealT> poly;
     for(RealT a = 0; a < 2 * std::numbers::pi_v<RealT>; a += step)
       poly.push_back(ellipse.Point(a));
     DrawFilledPolygon(image, value, poly, fill);

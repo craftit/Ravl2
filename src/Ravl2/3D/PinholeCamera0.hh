@@ -10,8 +10,13 @@
 #pragma once
 
 #include "Ravl2/Types.hh"
+#include "Ravl2/Configuration.hh"
+#include "Ravl2/Geometry/Quaternion.hh"
 #include "Ravl2/Geometry/Geometry.hh"
+#include "Ravl2/Geometry/Isometry3.hh"
+#include "Ravl2/Geometry/LinePV.hh"
 #include "Ravl2/IndexRange.hh"
+#include "Ravl2/3D/PinholeCamera.hh"
 
 namespace Ravl2
 {
@@ -25,14 +30,88 @@ namespace Ravl2
   class PinholeCamera0
   {
   public:
+    using ValueT = RealT;
+    
     //! Default constructor
     inline PinholeCamera0() = default;
 
     //! Data constructor
-    PinholeCamera0(const RealT &cx, const RealT &cy, const RealT &fx, const RealT &fy, const Matrix<RealT, 3, 3> &R, const Vector<RealT, 3> &t, const IndexRange<2> &frame)
+    PinholeCamera0(const RealT &cx, const RealT &cy,
+                   const RealT &fx, const RealT &fy,
+                   const Matrix<RealT, 3, 3> &R, const Vector<RealT, 3> &t,
+                   const IndexRange<2> &frame)
         : m_cx(cx), m_cy(cy), m_fx(fx), m_fy(fy), m_R(R), m_t(t), m_frame(frame)
     {}
-
+    
+    //! Data constructor
+    PinholeCamera0(RealT f,
+                   const Point<RealT,2> &centre,
+                   const IndexRange<2> &frame,
+                   const Isometry3<RealT> &pose = Isometry3<RealT>()
+                   )
+      : m_cx(centre[0]), m_cy(centre[1]),
+        m_fx(f),
+        m_fy(f),
+        m_R(pose.rotation().toMatrix()),
+        m_t(pose.translation()),
+        m_frame(frame)
+    {}
+    
+    PinholeCamera0(Configuration &config)
+      : m_cx(config.getNumber<RealT>("cx","Center x",0.0,-1e4,1e4)),
+        m_cy(config.getNumber<RealT>("cy","Center y",0.0,-1e4,1e4)),
+        m_fx(config.getNumber<RealT>("fx","Focal length",1.0,0.0,1e4)),
+        m_fy(config.getNumber<RealT>("fy","Focal length",1.0,0.0,1e4)),
+        m_t(config.getPoint<RealT,3>("t","Translation",0.0,-1e5,1e5))
+    {
+      Vector<float,3> angle = config.getPoint<RealT,3>("rotation","Rotation",0,-360,+360);
+      for(unsigned i = 0; i < 3; i++)
+        angle[i] = deg2rad(angle[i]);
+      m_R = Quaternion<float>::fromEulerAngles(angle).toMatrix();
+      m_frame = config.template get<Ravl2::IndexRange<2>>("frame","Image frame",IndexRange<2>({{0,0},{0,0}}));
+    }
+    
+    //! Construct a default camera with a given frame, with the axis at the centre of the frame
+    //! @param frame - the image frame for the camera
+    //! @param f - the focal length of the camera
+    //! The camera is placed at the centre of the frame with the given focal length.
+    explicit PinholeCamera0(const IndexRange<2> &frame, float f, const Isometry3<RealT> &pose = Isometry3<RealT>())
+      : m_cx(RealT(frame.range(0).min())+RealT(frame.range(0).size()-1)/RealT(2.0)),
+	m_cy(RealT(frame.range(1).min())+RealT(frame.range(1).size()-1)/RealT(2.0)),
+	m_fx(f),
+	m_fy(f),
+        m_R(pose.rotation().toMatrix()),
+        m_t(pose.translation()),
+  	m_frame(frame)
+    {}
+    
+    //! Construct a camera that fills the image at the given distance
+    //! with the camera at the origin looking along the z-axis
+    //! @param frame - the image frame for the camera
+    //! @param horizontalSize - the size of the image in the x direction
+    //! @param distance - the distance from the camera to the image plane
+    static PinholeCamera0 fromFrame(const IndexRange<2> &frame,
+                                    float horizontalSize,
+                                    float distance)
+    {
+      float f = float(frame.range(0).size()-1) * distance * 2.0f / (horizontalSize);
+      return PinholeCamera0(frame,f,Isometry3<float>(Quaternion<float>::identity(),{0,0,distance}));
+    }
+    
+    //! Construct a camera that fills the image at the given distance
+    //! with the camera at the origin looking along the z-axis, at pixel 0,0
+    //! @param frame - the image frame for the camera
+    //! @param horizontalSize - the size of the image in the x direction
+    //! @param distance - the distance from the camera to the image plane
+    static PinholeCamera0 fromFrameOrigin(const IndexRange<2> &frame,
+                                    float horizontalSize,
+                                    float distance)
+    {
+      float f = float(frame.range(0).size()-1) * distance * 2.0f / (horizontalSize);
+      return PinholeCamera0(f,{0,0},frame,Isometry3<float>(Quaternion<float>::identity(),{0,0,distance}));
+    }
+  
+  
   public:
     //: centre of projection, x co-ordinate
     [[nodiscard]] RealT &cx()
@@ -119,25 +198,25 @@ namespace Ravl2
     }
 
   public:
-    //: Project 3D point in space to 2D image point
-    //  Projects according to:<br>
-    //    z[0] = cx + fx*( (R*x + t)[0] / (R*x + t)[2] )<br>
-    //    z[1] = cy + fy*( (R*x + t)[1] / (R*x + t)[2] )<br>
-    //  Can result in a divide-by-zero for degenerate points.
-    //  See ProjectCheck if this is to be avoided.
-    void Project(Vector<RealT, 2> &z, const Vector<RealT, 3> &x) const
+    //! project 3D point in space to 2D image point
+    //!  Projects according to:<br>
+    //!    z[0] = cx + fx*( (R*x + t)[0] / (R*x + t)[2] )<br>
+    //!    z[1] = cy + fy*( (R*x + t)[1] / (R*x + t)[2] )<br>
+    //!  Can result in a divide-by-zero for degenerate points.
+    //!  See projectCheck if this is to be avoided.
+    void project(Vector<RealT, 2> &z, const Vector<RealT, 3> &x) const
     {
-      Vector<RealT, 3> Rx = (m_R * x) + m_t;
+      Vector<RealT, 3> Rx = xt::linalg::dot(m_R,x) + m_t;
       z[0] = m_cx + m_fx * Rx[0] / Rx[2];
       z[1] = m_cy + m_fy * Rx[1] / Rx[2];
     }
 
-    //: Project 3D point in space to 2D image point
-    // The same as Project(...) but checks that the point
+    //: project 3D point in space to 2D image point
+    // The same as project(...) but checks that the point
     // is not degenerate.
-    bool ProjectCheck(Vector<RealT, 2> &z, const Vector<RealT, 3> &x) const
+    bool projectCheck(Vector<RealT, 2> &z, const Vector<RealT, 3> &x) const
     {
-      Vector<RealT, 3> Rx = (m_R * x) + m_t;
+      Vector<RealT, 3> Rx =  xt::linalg::dot(m_R,x) + m_t;
       if(isNearZero(Rx[2], RealT(1e-3)))
         return false;
       z[0] = m_cx + m_fx * Rx[0] / Rx[2];
@@ -145,8 +224,8 @@ namespace Ravl2
       return true;
     }
 
-    //:The Jacobian matrix of the projection function
-    void ProjectJacobian(Matrix<RealT, 2, 3> &Jz, const Vector<RealT, 3> &x) const
+    //! The Jacobian matrix of the projection function.
+    void projectJacobian(Matrix<RealT, 2, 3> &Jz, const Vector<RealT, 3> &x) const
     {
       Vector<RealT, 3> Rx = (m_R * x) + m_t;
       RealT r_Rx2_2 = 1 / (Rx[2] * Rx[2]);
@@ -158,10 +237,10 @@ namespace Ravl2
       Jz(1, 2) = m_fy * (m_R(1, 2) * Rx[2] - m_R(2, 2) * Rx[1]) * r_Rx2_2;
     }
 
-    //:Inverse projection up to a scale factor
-    // Origin + lambda*ProjectInverseDirection is the camera ray
-    // corresponding to image point z.
-    void ProjectInverseDirection(Vector<RealT, 3> &x, const Vector<RealT, 2> &z) const
+    //! Inverse projection up to a scale factor.
+    //! origin + lambda*projectInverseDirection is the camera ray
+    //! corresponding to image point z.
+    void projectInverseDirection(Vector<RealT, 3> &x, const Vector<RealT, 2> &z) const
     {
       Vector<RealT, 3> Rx;
       Rx[0] = (z[0] - m_cx) / m_fx;
@@ -171,31 +250,38 @@ namespace Ravl2
       x = xt::linalg::dot(xt::transpose(m_R), Rx);
     }
 
-    //: Origin of the camera in world co-ordinates
-    //  Computed as -R.T() * t.
-    void Origin(Vector<RealT, 3> &org) const
+    //! origin of the camera in world co-ordinates.
+    //!  Computed as -R.T() * t.
+    [[nodiscard]] Point<RealT, 3> origin() const
     {
       //TMul(m_R,m_t,org);
-      org = xt::linalg::dot(-xt::transpose(m_R), m_t);
+      return Point<RealT, 3>(xt::linalg::dot(-xt::transpose(m_R), m_t));
     }
 
-    //: Look direction for the camera in the world co-ordinate frame
-    // Returns camera z-axis in world coordinate frame
-    void Direction(Vector<RealT, 3> &dir) const
+    //! Look direction for the camera in the world co-ordinate frame
+    //! Returns camera z-axis in world co-ordinate frame
+    void direction(Vector<RealT, 3> &dir) const
     {
       dir[0] = m_R(2, 0);
       dir[1] = m_R(2, 1);
       dir[2] = m_R(2, 2);
     }
 
-    //: Return an undistorted image point for a simple pinhole model
-    [[nodiscard]] Vector<RealT, 2> Undistort(const Vector<RealT, 2> &z) const
+    //! Look direction for the camera in the world co-ordinate frame
+    //! Returns camera z-axis in world co-ordinate frame
+    [[nodiscard]] Vector<RealT, 3> direction() const
+    {
+      return toVector<RealT>(m_R(2, 0), m_R(2, 1), m_R(2, 2));
+    }
+
+    //! Return an undistorted image point for a simple pinhole model
+    [[nodiscard]] Vector<RealT, 2> undistort(const Vector<RealT, 2> &z) const
     {
       return z;
     }
 
-    //: Transform from a simple pinhole model point to a distorted image point
-    [[nodiscard]] Vector<RealT, 2> Distort(const Vector<RealT, 2> &z) const
+    //! Transform from a simple pinhole model point to a distorted image point
+    [[nodiscard]] Vector<RealT, 2> distort(const Vector<RealT, 2> &z) const
     {
       return z;
     }
@@ -223,6 +309,52 @@ namespace Ravl2
     IndexRange<2> m_frame;
   };
 
-  extern template class PinholeCamera0<float>;
+  //! Unproject a 2D image point to a 3D point in space
+  //! The depth is the distance along the camera ray from the camera origin.
+  //! @param camera - the camera model
+  //! @param z - the image point
+  //! @param depth - the distance along the camera ray from the camera origin
+  //! @return the 3D point in space
+  template<typename RealT,typename CameraT>
+  Point<RealT,3> unproject(const CameraT &camera, const Point<RealT,2> &z, RealT depth)
+  {
+    Vector<RealT,3> dir;
+    camera.projectInverseDirection(dir,z);
+    return camera.origin() + (depth*dir);
+  }
 
+  //! Create a ray from a pixel in the world
+  //! The ray is defined by the camera origin and the direction
+  //! of the ray in world co-ordinates.
+  template<typename RealT,typename CameraT>
+  LinePV<RealT,3> ray(const CameraT &camera, const Point<RealT,2> &z)
+  {
+    Vector<RealT,3> dir;
+    camera.projectInverseDirection(dir,z);
+    return LinePV<RealT,3>(camera.origin(),dir);
+  }
+
+
+  template<typename RealT,typename CameraT>
+  Point<RealT,2> project(const CameraT &camera, const Point<RealT,3> &pnt)
+  {
+    Point<RealT,2> z;
+    camera.project(z,pnt);
+    return z;
+  }
+
+  //! Project a ray from a pixel into the world
+  //! The ray is defined by the camera origin and the direction
+  //! of the ray in world co-ordinates.
+  template<typename RealT,typename CameraT>
+  LinePV<RealT,3> projectRay(const CameraT &camera, const Point<RealT,2> &z)
+  {
+    Vector<RealT,3> dir;
+    camera.projectInverseDirection(dir,z);
+    return LinePV<RealT,3>(camera.origin(),dir);
+  }
+  
+  
+  extern template class PinholeCamera0<float>;
+  extern template class PinholeCameraImpl<PinholeCamera0<float>>;
 };// namespace Ravl2

@@ -4,6 +4,10 @@
 
 #pragma once
 
+#ifndef CEREAL_THREAD_SAFE
+#define CEREAL_THREAD_SAFE 1
+#endif
+
 #include <span>
 #include <fmt/ostream.h>
 #include <cereal/cereal.hpp>
@@ -135,6 +139,9 @@ struct fmt::formatter<Ravl2::Point<RealT, N>> : fmt::ostream_formatter {
 };
 template <typename RealT, size_t N>
 struct fmt::formatter<xt::xtensor<RealT, N>> : ostream_formatter {
+};
+template <typename RealT, size_t N, size_t M>
+struct fmt::formatter<Ravl2::Matrix<RealT, N, M>> : ostream_formatter {
 };
 template <>
 struct fmt::formatter<xt::xarray<float>::shape_type> : fmt::ostream_formatter {

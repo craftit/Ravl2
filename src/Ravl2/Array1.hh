@@ -133,21 +133,42 @@ namespace Ravl2
     }
 
     //! Index access
+    //! This access isn't range checked, it is up to the user to ensure the index is valid.
     [[nodiscard]] constexpr DataT &operator[](int i) const
     {
       return mPtr[i];
     }
 
     //! Index access
-    constexpr inline auto &operator()(int i)
+    //! This access isn't range checked, it is up to the user to ensure the index is valid.
+    template<IndexType IndexT>
+    [[nodiscard]] constexpr DataT &operator()(IndexT i) const
     {
-      return mPtr[i];
+      return mPtr[int(i)];
     }
 
     //! Index access
-    constexpr inline const auto &operator()(int i) const
+    //! This access isn't range checked, it is up to the user to ensure the index is valid.
+    template<IndexType IndexT>
+    [[nodiscard]] constexpr inline const auto &operator()(IndexT i) const
     {
-      return mPtr[i];
+      return mPtr[int(i)];
+    }
+
+    //! Access relative element
+    //! This access isn't range checked, it is up to the user to ensure the index is valid.
+    template<IndexType IndexT>
+    [[nodiscard]] constexpr inline const auto &at(IndexT i) const
+    {
+      return mPtr[int(i)];
+    }
+
+    //! Access relative element
+    //! This access isn't range checked, it is up to the user to ensure the index is valid.
+    template<IndexType IndexT>
+    [[nodiscard]] constexpr inline auto &at(IndexT i)
+    {
+      return mPtr[int(i)];
     }
 
     //! Access element point
@@ -271,6 +292,22 @@ namespace Ravl2
       assert(m_ranges != nullptr);
       assert(m_ranges->contains(i));
       return m_data[i.index(0)];
+    }
+
+    //! Access indexed element.
+    [[nodiscard]] inline constexpr DataT &operator()(int i) noexcept
+    {
+      assert(m_ranges != nullptr);
+      assert(m_ranges->contains(i));
+      return m_data[i];
+    }
+
+    //! Access indexed element.
+    [[nodiscard]] inline constexpr const DataT &operator()(int i) const noexcept
+    {
+      assert(m_ranges != nullptr);
+      assert(m_ranges->contains(i));
+      return m_data[i];
     }
 
     //! Range of index's for row
@@ -404,6 +441,13 @@ namespace Ravl2
           m_range(range)
     {}
 
+    explicit constexpr ArrayView(DataT *data, const IndexRange<1> &range, [[maybe_unused]] const int *strides)
+        : m_data(data),
+          m_range(range)
+    {
+      assert(*strides == 1);
+    }
+
     constexpr ArrayView() = default;
 
   protected:
@@ -446,6 +490,22 @@ namespace Ravl2
     {
       assert(m_range.contains(i));
       return m_data[i.index(0)];
+    }
+
+    //! Access next dimension of array.
+    template <IndexType IndexT>
+    [[nodiscard]] constexpr DataT &operator()(IndexT i)
+    {
+      assert(m_range.contains(int(i)));
+      return m_data[i];
+    }
+
+    //! Access next dimension of array.
+    template <IndexType IndexT>
+    [[nodiscard]] constexpr const DataT &operator()(IndexT i) const
+    {
+      assert(m_range.contains(int(i)));
+      return m_data[i];
     }
 
     //! Access range of array

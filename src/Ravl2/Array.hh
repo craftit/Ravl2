@@ -44,7 +44,7 @@ namespace Ravl2
     template <typename ArrayT>
       requires WindowedArray<ArrayT, DataT, N>
     constexpr explicit ArrayAccess(ArrayT &array)
-        : m_ranges(array.range().range_data()),
+        : m_ranges(array.range_data()),
           m_data(array.origin_address()),
           m_strides(array.strides())
     {}
@@ -372,6 +372,55 @@ namespace Ravl2
       return ind;
     }
 
+    //! Access window with the current element at the origin.
+    [[nodiscard]] constexpr ArrayAccess<DataT, N> window() const noexcept
+    {
+      return ArrayAccess<DataT, N>(m_access.range() - index(), mPtr, m_access.strides());
+    }
+
+    //! Access a point relative to the current element
+    //! This access isn't range checked, it is up to the user to ensure the index is valid.
+    [[nodiscard]] constexpr DataT &operator[](const Index<N> &ind) const
+    {
+      DataT *tPtr = mPtr;
+      for(unsigned i = 0; i < N-1; i++) {
+        tPtr += m_access.stride(i) * ind[i];
+      }
+      tPtr += ind[N-1];
+      return *tPtr;
+    }
+
+    //! Partial index with current point as origin
+    //! This access isn't range checked, it is up to the user to ensure the index is valid.
+    template <unsigned M>
+      requires(M < N)
+    [[nodiscard]] constexpr auto operator[](const Index<M> &ind)
+    {
+      DataT *tPtr = mPtr;
+      for(unsigned i = 0; i < M; i++) {
+        tPtr += m_access.stride(i) * ind[i];
+      }
+      return ArrayAccess<DataT, N - M>(&(m_access.range_data()[M]), tPtr, &m_access.strides()[M]);
+    }
+
+    //! Element by element call operator access,
+    //! This access isn't range checked, it is up to the user to ensure the index is valid.
+    template <IndexType... IndexDataT, unsigned IndexN = sizeof...(IndexDataT)>
+      requires (IndexN <= N)
+    constexpr inline auto& at(IndexDataT... data) const
+    {
+      return operator[](Index<IndexN>({int(data)...}));
+    }
+
+    //! Element by element call operator access
+    //! This access isn't range checked, it is up to the user to ensure the index is valid.
+    template <IndexType... IndexDataT, unsigned IndexN = sizeof...(IndexDataT)>
+      requires (IndexN <= N)
+    constexpr inline auto& operator()(IndexDataT... data) const
+    {
+      return operator[](Index<IndexN>({int(data)...}));
+    }
+
     //! Iterator difference
     //! This is the number of elements between the two iterators in the first iterators range.
     [[nodiscard]] constexpr difference_type operator-(const ArrayIter<DataT, N> &other) const noexcept
@@ -453,6 +502,13 @@ namespace Ravl2
           m_range(range),
           m_strides(strides)
     {}
+
+    explicit constexpr ArrayView(DataT *data, const IndexRange<N> &range, const int *strides)
+        : m_data(data),
+          m_range(range)
+    {
+      memccpy(m_strides.data(), strides, sizeof(int), N);
+    }
 
     //! Create an empty array
     constexpr ArrayView() = default;
@@ -552,6 +608,41 @@ namespace Ravl2
       dind += ind.index(N - 1);
       return m_data[dind];
     }
+
+    //! Element by element call operator access
+    template <IndexType... IndexDataT, unsigned IndexN = sizeof...(IndexDataT)>
+      requires (IndexN <= N)
+    constexpr inline auto& operator()(IndexDataT... data)
+    {
+      return operator[](Index<IndexN>({int(data)...}));
+    }
+
+    //! Element by element call operator access
+    template <IndexType... IndexDataT, unsigned IndexN = sizeof...(IndexDataT)>
+     requires (IndexN <= N)
+    constexpr inline const auto &operator()(IndexDataT... data) const
+    {
+      return operator[](Index<IndexN>({int(data)...}));
+    }
+
+    //! Index an element
+    template<unsigned M>
+      requires(M <= N)
+    [[nodiscard]]
+    constexpr inline auto operator()(Index<M> ind) const
+    {
+      return operator[](ind);
+    }
+
+    //! Index an element
+    template<unsigned M>
+      requires(M <= N)
+    [[nodiscard]]
+    constexpr inline auto& operator()(Index<M> ind)
+    {
+      return operator[](ind);
+    }
+
 
     //! Get begin iterator
     [[nodiscard]] constexpr ArrayIter<DataT, N> begin() const

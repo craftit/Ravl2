@@ -9,7 +9,7 @@ namespace Ravl2
 
   //: Returns the value of the determinant of this matrix.
   template <typename RealT>
-  [[nodiscard]] inline RealT determinant(const Matrix<RealT, 2, 2> &data)
+  [[nodiscard]] inline constexpr RealT determinant(const Matrix<RealT, 2, 2> &data)
   {
     return data(0, 0) * data(1, 1) - data(0, 1) * data(1, 0);
   }
@@ -17,7 +17,7 @@ namespace Ravl2
   //: Compute the inverse of a 2x2 matrix
 
   template <typename RealT>
-  [[nodiscard]] inline std::optional<Matrix<RealT, 2, 2>> inverse(const Matrix<RealT, 2, 2> &data)
+  [[nodiscard]] inline constexpr std::optional<Matrix<RealT, 2, 2>> inverse(const Matrix<RealT, 2, 2> &data)
   {
     RealT det = determinant(data);
     if(isNearZero(det))
@@ -28,7 +28,7 @@ namespace Ravl2
 
   //: Returns the value of the determinant of this matrix.
   template <typename RealT>
-  [[nodiscard]] inline RealT determinant(const Matrix<RealT, 3, 3> &data)
+  [[nodiscard]] inline constexpr RealT determinant(const Matrix<RealT, 3, 3> &data)
   {
     RealT d1 = data(1, 1) * data(2, 2) - data(1, 2) * data(2, 1);
     RealT d2 = data(1, 2) * data(2, 0) - data(1, 0) * data(2, 2);
@@ -37,7 +37,7 @@ namespace Ravl2
   }
 
   template <typename RealT>
-  [[nodiscard]] std::optional<Matrix<RealT, 3, 3>> inverse(const Matrix<RealT, 3, 3> &data)
+  [[nodiscard]] constexpr  std::optional<Matrix<RealT, 3, 3>> inverse(const Matrix<RealT, 3, 3> &data)
   {
     RealT d1 = data(1, 1) * data(2, 2) - data(1, 2) * data(2, 1);
     RealT d2 = data(1, 2) * data(2, 0) - data(1, 0) * data(2, 2);

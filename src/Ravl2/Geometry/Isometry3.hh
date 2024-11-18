@@ -19,8 +19,11 @@ namespace Ravl2
     using value_type = RealT;
     constexpr static unsigned dimension = 3;
 
+    //! Default constructor.
+    //! Create an identity transform.
     Isometry3() = default;
 
+    //! Construct an isometry from a rotation and translation.
     Isometry3(const Quaternion<RealT> &rotation, const Vector<RealT, 3> &translation)
         : m_rotation(rotation),
           m_translation(translation)
@@ -93,7 +96,21 @@ namespace Ravl2
       iso1.rotation() * iso2.rotation(),
       iso1.rotation().rotate(iso2.translation()) + iso1.translation());
   }
+  //! Stream output.
+  template <typename DataT>
+  std::ostream &operator<<(std::ostream &os, const Isometry3<DataT> &in)
+  {
+    os << "Isometry3(" << in.rotation() << "," << in.translation() << ")";
+    return os;
+  }
+
 
   extern template class Isometry3<float>;
 
 }// namespace Ravl2
+
+#if FMT_VERSION >= 90000
+template <typename RealT>
+struct fmt::formatter<Ravl2::Isometry3<RealT>> : fmt::ostream_formatter {
+};
+#endif

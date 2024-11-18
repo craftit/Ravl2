@@ -1,7 +1,7 @@
 
 #include "Ravl2/Math/LeastSquares.hh"
-#include "Ravl2/Geometry/Conic2d.hh"
-#include "Ravl2/Geometry/Ellipse2d.hh"
+#include "Ravl2/Geometry/Conic2.hh"
+#include "Ravl2/Geometry/Ellipse.hh"
 
 #define DODEBUG 0
 #if DODEBUG
@@ -14,7 +14,7 @@ namespace Ravl2
 {
   //! @brief Fit a conic to a set of points.
   template <typename RealT>
-  std::optional<RealT> fit(Conic2dC<RealT> &conic, const std::vector<Point<RealT, 2>> &points)
+  std::optional<RealT> fit(Conic2<RealT> &conic, const std::vector<Point<RealT, 2>> &points)
   {
     auto samples = points.size();
     ONDEBUG(std::cerr << "FitConic(), Points=" << points.size() << "\n");
@@ -42,7 +42,7 @@ namespace Ravl2
     //SPDLOG_INFO("Result1={}", result);
     // --------- Undo normalisation ----------------
     // TODO:- Make this more efficient by expanding out manually.
-    Conic2dC<RealT> Cr(result);
+    Conic2<RealT> Cr(result);
     RealT d = scale;
     Matrix<RealT, 3, 3> Hi(
       {{d, 0, -mean[0] * d},
@@ -51,17 +51,19 @@ namespace Ravl2
 
     // Matrix<RealT,3,3> nC = Hi.TMul(Cr.C()) * Hi;
     Matrix<RealT, 3, 3> nC = xt::linalg::dot(xt::linalg::dot(xt::transpose(Hi), Cr.C()), Hi);
-    conic = Conic2dC(nC);
+    conic = Conic2(nC);
     return 0;
   }
 
 #if 0
   //! @brief Fit ellipse to points.
+  //! @param: points -  Set of points to fit to an ellipse.
+  //! @param: ellipse - Ellipse structure to store result in.
   //! Based on method presented in 'Numerically Stable Direct Least Squares Fitting of Ellipses'
   //! by Radim Halir and Jan Flusser.
 
   template<typename RealT>
-  std::optional<RealT> fitEllipse(Conic2dC<RealT> &conic, const std::vector<Point<RealT,2>> &points) {
+  std::optional<RealT> fitEllipse(Conic2<RealT> &conic, const std::vector<Point<RealT,2>> &points) {
     if(points.size() < 5)
       return std::nullopt;
 
@@ -129,24 +131,24 @@ namespace Ravl2
     Vector<RealT,6> a = xt::concatenate(xt::xtuple(a1, a2),1);
 
     // Undo normalisation.
-    Conic2dC Cr(a);
+    Conic2 Cr(a);
     Matrix<RealT,3,3> Hi(
       {{ scale,0,-mean[0] * scale},
        {0,scale,-mean[1] * scale},
        { 0,0,1}});
 
     Matrix<RealT,3,3> nC = xt::linalg::dot( xt::linalg::dot(xt::transpose(Hi) ,Cr.C()), Hi);
-    conic = Conic2dC(nC);
+    conic = Conic2(nC);
     return 0;
   }
 #endif
-
-  //: Fit ellipse to points.
+  
+  //! @brief Fit ellipse to points.
 
   template <typename RealT>
-  constexpr std::optional<RealT> fit(Ellipse2dC<RealT> &ellipse, const std::vector<Point<RealT, 2>> &points)
+  constexpr std::optional<RealT> fit(Ellipse<RealT> &ellipse, const std::vector<Point<RealT, 2>> &points)
   {
-    Conic2dC<RealT> conic;
+    Conic2<RealT> conic;
     auto residual = fit(conic, points);
     if(!residual.has_value())
       return residual;

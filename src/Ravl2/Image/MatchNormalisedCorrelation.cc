@@ -7,6 +7,7 @@
 //! author="Charles Galambos"
 
 #include "Ravl2/Image/MatchNormalisedCorrelation.hh"
+#include "Ravl2/ScanWindow.hh"
 #include "Ravl2/Math/Sums1d2.hh"
 
 namespace Ravl2
@@ -14,7 +15,7 @@ namespace Ravl2
 
   //: 'img' is the image to search.
 
-  MatchNormalisedCorrelationC::MatchNormalisedCorrelationC(const Array<ByteT, 2> &img)
+  MatchNormalisedCorrelation::MatchNormalisedCorrelation(const Array<uint8_t, 2> &img)
       : threshold(10)
   {
     SetSearchImage(img);
@@ -22,71 +23,70 @@ namespace Ravl2
 
   //: Default constructor.
 
-  MatchNormalisedCorrelationC::MatchNormalisedCorrelationC()
+  MatchNormalisedCorrelation::MatchNormalisedCorrelation()
       : threshold(10)
   {}
 
   //: Setup search image.
 
-  bool MatchNormalisedCorrelationC::SetSearchImage(const Array<ByteT, 2> &img)
+  bool MatchNormalisedCorrelation::SetSearchImage(const Array<uint8_t, 2> &img)
   {
     searchImg = img;
-    sums.BuildTable(img);
+    sums = Ravl2::SummedAreaTable2C<int, int>::BuildTable(img);
     return true;
   }
 
-  int SumOfProducts(const RangeBufferAccess2dC<ByteT> &templ, const RangeBufferAccess2dC<ByteT> &subImg)
+  int SumOfProducts(const Array<uint8_t, 2>& templ, const ArrayAccess<uint8_t, 2> &subImg)
   {
     int sumxy = 0;
-    // The following loop could probably be speeded up with some MMX code.
-    for(BufferAccess2dIter2C<ByteT, ByteT> it2(templ, templ.range(1),
-                                               subImg, subImg.range(1));
-        it2; it2++)
-      sumxy += (int)it2.data<0>() * it2.data<1>();
+    // The following loop could probably be speeder up with some MMX code.
+    for(auto it2 = zip(templ,subImg); it2.valid(); ) {
+      do {
+	sumxy += it2.data<0>() * it2.data<1>();
+      } while(it2.next());
+    }
     return sumxy;
   }
 
   //: The location in the image most likely to match the template.
   // Returns false if no likely match is found.
 
-  bool MatchNormalisedCorrelationC::Search(const Array<ByteT, 2> &templ,
-                                           const IndexRange<2> &searchArea,
-                                           RealT &score, Index<2> &at) const
+  bool MatchNormalisedCorrelation::Search(const Array<uint8_t, 2> &templ,
+					  const IndexRange<2> &searchArea,
+					  RealT &score, Index<2> &at) const
   {
     score = 0;
-    Sums1d2C tsums;
-    for(Array2dIterC<ByteT> it(templ); it; it++)
-      tsums += *it;
-    RealT tarea = (RealT)tsums.size();
-    MeanVariance smv = tsums.MeanVariance();
-    RealT tmean = smv.Mean();
-    RealT tvar = smv.Variance();
+    Sums1d2C<int32_t> tsums;
+    for(auto it : templ)
+      tsums += it;
+    auto tarea = RealT(tsums.size());
+    MeanVariance smv = toMeanVariance<float>(tsums,SampleStatisticsT::POPULATION);
+    RealT tmean = smv.mean();
+    RealT tvar = smv.variance();
     RealT z = std::sqrt(tvar) * tarea;
-    RealT tsum = tsums.Sum();
+    auto tsum = RealT(tsums.sum());
 
     IndexRange<2> clippedSearchArea = searchArea;
     clippedSearchArea.clipBy(searchImg.range());
 
-    for(Rectangle2dIterC itr(clippedSearchArea, templ.range()); itr; itr++) {
-      IndexRange<2> rect = itr.Window();
-      RangeBufferAccess2dC<ByteT> subImg(searchImg, rect);
-      int sumxy = SumOfProducts(templ, subImg);
+    for(ScanWindow itr(searchImg, templ.range()); itr.valid(); ++itr) {
+      auto sumxy = SumOfProducts(templ, itr.window());
 
       // Calculate mean and variance for search image.
-      Vector<int, 2> rs = sums.Sum(rect);
-      RealT ssum = rs[0];
-      RealT smean = (RealT)rs[0] / tarea;
-      RealT svar = ((RealT)rs[1] - sqr((RealT)rs[0]) / tarea) / (tarea - 1);
+      Vector<int, 2> rs = sums.Sum(itr.windowRange());
+      auto ssum = RealT(rs[0]);
+      RealT smean = RealT(rs[0]) / tarea;
+      RealT svar = (RealT(rs[1]) - sqr(RealT(rs[0])) / tarea) / (tarea - 1);
 
       // Compute correlation score.
       RealT curScore =
-        (sumxy - smean * tsum - tmean * ssum + smean * tmean * tarea)
+        (RealT(sumxy) - smean * tsum - tmean * ssum + smean * tmean * tarea)
         / (std::sqrt(svar) * z);
       //cerr << " " << curScore;
       // Compair it to pervious scores.
       if(curScore > score) {// Best so far ?
         score = curScore;
-        at = itr.Window().Center();
+        at = itr.index();
       }
     }
 

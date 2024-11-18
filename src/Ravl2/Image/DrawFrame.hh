@@ -30,9 +30,9 @@ namespace Ravl2
   }
 
   //! Draw a rectangle in an image.
-  template <typename ArrayT, typename DataT = typename ArrayT::value_type>
-    requires WindowedArray<ArrayT, DataT, 2>
-  void DrawFrame(ArrayT &dat, const DataT &value, const IndexRange<2> &rect)
+  template <typename ArrayT, typename DataT = ArrayT::value_type, typename PixelT>
+    requires WindowedArray<ArrayT, DataT, 2> && std::is_convertible_v<PixelT, DataT>
+  void DrawFrame(ArrayT &dat, const PixelT &value, const IndexRange<2> &rect)
   {
     IndexRange<2> dr = rect.clip(dat.range());
     if(dr.empty())
@@ -48,8 +48,8 @@ namespace Ravl2
       it2 = &(dat[dr.range(0).max()][dr.range(1).min()]);
       eor = &(it1[ColN]);
       for(; it1 != eor;) {
-        *(it1++) = value;
-        *(it2++) = value;
+        *(it1++) = DataT(value);
+        *(it2++) = DataT(value);
       }
     } else {
       // Do top and bottom lines separately
@@ -58,14 +58,14 @@ namespace Ravl2
         it1 = &(dat[dr.range(0).min()][dr.range(1).min()]);
         eor = &(it1[ColN]);
         for(; it1 != eor;)
-          *(it1++) = value;
+          *(it1++) = DataT(value);
       }
       if(rect.range(0).max() == dr.range(0).max()) {
         // Do bottom horizontal line.
         it1 = &(dat[dr.range(0).max()][dr.range(1).min()]);
         eor = &(it1[ColN]);
         for(; it1 != eor;)
-          *(it1++) = value;
+          *(it1++) = DataT(value);
       }
     }
     // Do vertical lines.
@@ -73,17 +73,17 @@ namespace Ravl2
     if(dr.range(1).min() == rect.range(1).min() && dr.range(1).max() == rect.range(1).max()) {// Not clipped.
       for(auto r = dr.range(0).min() + 1; r < dr.range(0).max(); r++) {
         it1 = &(dat[r][dr.range(1).min()]);
-        it1[0] = value;
-        it1[ColN] = value;
+        it1[0] = DataT(value);
+        it1[ColN] = DataT(value);
       }
     } else {// Clipped.
       if(dr.range(1).min() == rect.range(1).min()) {
         for(int r = dr.range(0).min() + 1; r < dr.range(0).max(); r++)
-          dat[r][dr.range(1).min()] = value;
+          dat[r][dr.range(1).min()] = DataT(value);
       }
       if(dr.range(1).max() == rect.range(1).max()) {
         for(int r = dr.range(0).min() + 1; r < dr.range(0).max(); r++)
-          dat[r][dr.range(1).max()] = value;
+          dat[r][dr.range(1).max()] = DataT(value);
       }
     }
   }

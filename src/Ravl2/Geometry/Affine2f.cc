@@ -92,7 +92,8 @@ namespace RavlN
   bool FitAffine(const Point2dC &p1a,const Point2dC &p1b,
 		 const Point2dC &p2a,const Point2dC &p2b,
 		 const Point2dC &p3a,const Point2dC &p3b,
-		 Affine2dC &affine) {
+		 Affine2dC &affine)
+{
 
     Matrix3dC A(p1a[0],p1a[1],1.0,
 		p2a[0],p2a[1],1.0,

@@ -8,6 +8,11 @@ add_library (Ravl2x3D
   PinholeCamera2.cc PinholeCamera2.hh
   PinholeCamera3.cc PinholeCamera3.hh
   PinholeCameraArray.cc PinholeCameraArray.hh
+  Vertex.cc Vertex.hh
+  Tri.cc Tri.hh
+  TriMesh.cc TriMesh.hh
+  TexTriMesh.cc TexTriMesh.hh
+  MeshShapes.cc MeshShapes.hh
 )
 
 add_library(ravl2::Ravl2x3D ALIAS Ravl2x3D)

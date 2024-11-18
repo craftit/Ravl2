@@ -232,7 +232,11 @@ namespace Ravl2
   class ConfigNode : public std::enable_shared_from_this<ConfigNode>
   {
   public:
+    //! Create a new empty node
     ConfigNode();
+
+    //! Create a new node with a source file
+    ConfigNode(const std::string_view &filename);
 
     //! Make destructor virtual
     virtual ~ConfigNode() = default;
@@ -264,6 +268,38 @@ namespace Ravl2
       return m_name;
     }
 
+    //! Access the source file name.
+    [[nodiscard]] const std::string &filename() const
+    {
+      return m_filename;
+    }
+
+    //! Access the parent node.
+    [[nodiscard]] ConfigNode *parent() const
+    {
+      return m_parent;
+    }
+
+    //! Access the parent node.
+    [[nodiscard]] const ConfigNode &rootNode() const
+    {
+      const ConfigNode *node = this;
+      while(node->m_parent != nullptr) {
+        node = node->m_parent;
+      }
+      return *node;
+    }
+
+    //! Access the parent node.
+    [[nodiscard]] ConfigNode &rootNode()
+    {
+      ConfigNode *node = this;
+      while(node->m_parent != nullptr) {
+        node = node->m_parent;
+      }
+      return *node;
+    }
+
     //! Get path to this node.
     [[nodiscard]] std::string path() const;
 
@@ -290,6 +326,9 @@ namespace Ravl2
     [[nodiscard]] virtual std::any initNumber(const std::string_view &name, const std::string_view &description, int defaultValue, int min, int max);
 
     //! Initialise a number field
+    [[nodiscard]] virtual std::any initNumber(const std::string_view &name, const std::string_view &description, unsigned defaultValue, unsigned min, unsigned max);
+
+    //! Initialise a number field
     [[nodiscard]] virtual std::any initNumber(const std::string_view &name, const std::string_view &description, size_t defaultValue, size_t min, size_t max);
 
     //! Initialise a number field
@@ -297,7 +336,10 @@ namespace Ravl2
 
     //! Initialise a number field
     [[nodiscard]] virtual std::any initNumber(const std::string_view &name, const std::string_view &description, double defaultValue, double min, double max);
-
+    
+    //! Initialise a vector field
+    [[nodiscard]] virtual std::any initVector(const std::string_view &name, const std::string_view &description, float defaultValue, float min, float max,size_t size);
+    
     //! Initialise a string field
     [[nodiscard]] virtual std::any initString(const std::string_view &name, const std::string_view &description, const std::string_view &defaultValue);
 
@@ -424,6 +466,7 @@ namespace Ravl2
 
   protected:
     std::shared_ptr<ConfigFactory> m_factory;
+    std::string m_filename;
     std::string m_name;
     std::string m_description;
     std::any m_value;
@@ -467,17 +510,83 @@ namespace Ravl2
       return m_node->name();
     }
 
-    template <typename DataT>
-    [[nodiscard]] DataT getNumber(const std::string_view &name, const std::string_view &description, DataT defaultValue, DataT min, DataT max)
+    //! Name of this node
+    [[nodiscard]] const std::string &filename() const
+    {
+      assert(m_node);
+      return m_node->rootNode().filename();
+    }
+
+    template <typename DataT,typename ParamT = DataT>
+     requires std::is_convertible_v<ParamT,DataT>
+    [[nodiscard]] DataT getNumber(const std::string_view &name, const std::string_view &description, DataT defaultValue, ParamT min, ParamT max)
     {
       assert(m_node);
       std::any value = m_node->getValue(name, typeid(DataT));
       if(!value.has_value()) {
-        value = m_node->initNumber(name, description, defaultValue, min, max);
+        value = m_node->initNumber(name, description, DataT(defaultValue), DataT(min), DataT(max));
       }
       return std::any_cast<DataT>(value);
     }
-
+    
+    template <typename DataT>
+    [[nodiscard]] std::vector<DataT> getNumericVector(const std::string_view &name, const std::string_view &description, DataT defaultValue, DataT min, DataT max,size_t size)
+    {
+      assert(m_node);
+      std::any value = m_node->getValue(name, typeid(std::vector<DataT>));
+      if(!value.has_value()) {
+        value = m_node->initVector(name, description, float(defaultValue), float(min), float(max),size);
+      }
+      return std::any_cast<std::vector<DataT> >(value);
+    }
+    
+    //! Get a point from the configuration file.
+    template <typename RealT,size_t N,typename ParamT = RealT>
+     requires std::is_convertible_v<ParamT,RealT>
+    [[nodiscard]] Point<RealT,N> getPoint(const std::string_view &name, const std::string_view &description, RealT defaultValue, ParamT min, ParamT max)
+    {
+      assert(m_node);
+      std::any value = m_node->getValue(name, typeid(std::vector<float>));
+      if(!value.has_value()) {
+        value = m_node->initVector(name, description, float(defaultValue),float(min), float(max),N);
+      }
+      auto vec = std::any_cast<std::vector<float>>(value);
+      Point<RealT,N> ret;
+      if(vec.size() != N) {
+        SPDLOG_ERROR("Expected {} elements in point, got {} ", N, vec.size());
+        throw std::runtime_error("Wrong number of elements in point");
+      }
+      for(size_t i = 0; i < N; i++) {
+        ret[i] = RealT(vec[i]);
+      }
+      return ret;
+    }
+    
+    //! This reads a matrix from the configuration file.
+    //! The data is stored as a vector in row major order.
+    template <typename RealT,size_t N,size_t M,typename ParamT = RealT>
+      requires std::is_convertible_v<ParamT,RealT>
+    [[nodiscard]] Matrix<RealT,N,M> getMatrix(const std::string_view &name, const std::string_view &description, RealT defaultValue, RealT min, RealT max)
+    {
+      assert(m_node);
+      std::any value = m_node->getValue(name, typeid(std::vector<float>));
+      if(!value.has_value()) {
+        value = m_node->initVector(name, description, float(defaultValue),float(min), float(max),N * M);
+      }
+      auto vec = std::any_cast<std::vector<float>>(value);
+      Matrix<RealT,N,M> ret;
+      if(vec.size() != N * M) {
+        SPDLOG_ERROR("Expected {} elements in matrix, got {} ", N * M, vec.size());
+        throw std::runtime_error("Wrong number of elements in matrix");
+      }
+      for(size_t i = 0; i < N; i++) {
+        for(size_t j = 0; j < M; j++) {
+          ret(i,j) = RealT(vec[i * M + j]);
+        }
+      }
+      return ret;
+    }
+    
     [[nodiscard]] std::string getString(const std::string_view &name, const std::string_view &description, const std::string_view &defaultValue)
     {
       assert(m_node);
@@ -596,6 +705,12 @@ namespace Ravl2
       m_node->checkAllFieldsUsed();
     }
 
+    //! Check if this is a valid configuration.
+    [[nodiscard]] bool isValid() const
+    {
+      return m_node != nullptr;
+    }
+    
   protected:
     std::shared_ptr<ConfigNode> m_node;
   };

@@ -11,14 +11,18 @@
 #include "Ravl2/Geometry/Circle.hh"
 #include "Ravl2/Geometry/FitCircle.hh"
 #include "Ravl2/Geometry/CircleIter.hh"
-#include "Ravl2/Geometry/Conic2d.hh"
+#include "Ravl2/Geometry/Conic2.hh"
 #include "Ravl2/Geometry/FitConic.hh"
-#include "Ravl2/Geometry/LineABC2d.hh"
+#include "Ravl2/Geometry/Quaternion.hh"
+#include "Ravl2/Geometry/Line2ABC.hh"
 #include "Ravl2/Geometry/Affine.hh"
 #include "Ravl2/Geometry/ScaleTranslate.hh"
 #include "Ravl2/Geometry/VectorOffset.hh"
 #include "Ravl2/Geometry/FitVectorOffset.hh"
-#include "Ravl2/Geometry/PlanePVV3d.hh"
+#include "Ravl2/Geometry/FitSimilarity.hh"
+#include "Ravl2/Geometry/Plane3PVV.hh"
+#include "Ravl2/Geometry/FitAffine.hh"
+#include "Ravl2/Math/FastFourierTransform.hh"
 
 #define CHECK_EQ(a,b) CHECK((a) == (b))
 #define CHECK_NE(a,b) CHECK_FALSE((a) == (b))
@@ -101,7 +105,7 @@ TEST_CASE("Moments")
       cereal::JSONOutputArchive oarchive(ss);
       oarchive(moments);
     }
-    SPDLOG_INFO("Json: {}", ss.str());
+    SPDLOG_TRACE("Json: {}", ss.str());
     {
       cereal::JSONInputArchive iarchive(ss);
       Moments2<double> moments2;
@@ -128,7 +132,7 @@ TEST_CASE("Vector and Matrix")
       //serialize(oarchive, p1);
       oarchive(p1);
     }
-    SPDLOG_INFO("Point<float,2>: {}", ss.str());
+    SPDLOG_TRACE("Point<float,2>: {}", ss.str());
     {
       cereal::JSONInputArchive iarchive(ss);
       Point<float,2> p2;
@@ -164,7 +168,7 @@ TEST_CASE("Vector and Matrix")
 TEST_CASE("Affine")
 {
   using namespace Ravl2;
-  SECTION( "Core. ")
+  SECTION("Core")
   {
     Affine<float, 2>
       a1 = affineFromScaleAngleTranslation(toVector<float>(2, 2), std::numbers::pi_v<float> / 2, toVector<float>(0, 0));
@@ -173,7 +177,7 @@ TEST_CASE("Affine")
     //Point<float, 2> p = a1 * toPoint<float>(0, 0);
     CHECK(euclidDistance(p, toPoint<float>(0, 0)) < 0.001f);
   }
-  SECTION( "Composition. ")
+  SECTION("Composition")
   {
     Affine<float, 2>
       a1 = affineFromScaleAngleTranslation(toVector<float>(2, 2), std::numbers::pi_v<float> / 2, toVector<float>(0, 0));
@@ -188,7 +192,17 @@ TEST_CASE("Affine")
     Point<float, 2> q = toPoint<float>(5, 4);
     CHECK(Ravl2::euclidDistance(a2(a1)(q), a2(a1(q))) < 0.001f);
   }
-  SECTION( "Cereal. ")
+  SECTION("Inverse")
+  {
+    Affine<float, 2>
+      a1 = affineFromScaleAngleTranslation(toVector<float>(2, 2), std::numbers::pi_v<float> / 2, toVector<float>(1, 2));
+    auto a2 = a1.inverse();
+    CHECK(a2.has_value());
+    Point<float, 2> p = toPoint<float>(3, 4);
+    Point<float, 2> pnt = a1(a2.value()(p));
+    CHECK(euclidDistance(pnt, p) < 0.001f);
+  }
+  SECTION("Cereal")
   {
     Affine<float, 2>
       a1 = affineFromScaleAngleTranslation(toVector<float>(1, 2), std::numbers::pi_v<float> / 3, toVector<float>(4, 5));
@@ -208,6 +222,80 @@ TEST_CASE("Affine")
       CHECK(isNearZero(a1.SRMatrix()(0,1) - a2.SRMatrix()(0,1)));
       CHECK(isNearZero(a1.SRMatrix()(1,0) - a2.SRMatrix()(1,0)));
       CHECK(isNearZero(a1.SRMatrix()(1,1) - a2.SRMatrix()(1,1)));
+    }
+  }
+  SECTION("FitPoints")
+  {
+    using RealT = float;
+    std::vector<Point<RealT,2>> ipnt;
+    ipnt.push_back(toPoint<RealT>(1,1));
+    ipnt.push_back(toPoint<RealT>(2,1));
+    ipnt.push_back(toPoint<RealT>(1,3));
+
+    std::vector<Point<RealT,2>> opnt;
+    opnt.push_back(toPoint<RealT>(2,2));
+    opnt.push_back(toPoint<RealT>(3,2));
+    opnt.push_back(toPoint<RealT>(2,3));
+
+    Affine<RealT,2> aff;
+    CHECK(fit(aff,
+        opnt[0], ipnt[0],
+        opnt[1], ipnt[1],
+        opnt[2], ipnt[2]));
+
+    for(size_t i=0;i < ipnt.size();i++) {
+      CHECK(euclidDistance(aff(ipnt[i]), opnt[i]) < 0.001f);
+    }
+  }
+  SECTION("Fit")
+  {
+    using RealT = float;
+    std::vector<Point<RealT,2>> ipnt;
+    ipnt.push_back(toPoint<RealT>(1,1));
+    ipnt.push_back(toPoint<RealT>(2,1));
+    ipnt.push_back(toPoint<RealT>(1,3));
+
+    std::vector<Point<RealT,2>> opnt;
+    opnt.push_back(toPoint<RealT>(2,2));
+    opnt.push_back(toPoint<RealT>(3,2));
+    opnt.push_back(toPoint<RealT>(2,3));
+
+    Affine<RealT,2> aff;
+    auto residual = fit(aff, opnt, ipnt);
+    CHECK(isNearZero(residual));
+
+    SPDLOG_TRACE("Affine: {} Residual:{}", aff,residual);
+
+    for(size_t i=0;i < ipnt.size();i++) {
+      CHECK(euclidDistance(aff(ipnt[i]), opnt[i]) < 0.001f);
+    }
+  }
+  SECTION("FitLSQ")
+  {
+    using RealT = float;
+
+    // By providing 4 points we switch to a least squares fit, we're duplicating a point though so it should still fit exactly.
+
+    std::vector<Point<RealT,2>> ipnt;
+    ipnt.push_back(toPoint<RealT>(1,1));
+    ipnt.push_back(toPoint<RealT>(2,1));
+    ipnt.push_back(toPoint<RealT>(1,3));
+    ipnt.push_back(toPoint<RealT>(1,3));
+
+    std::vector<Point<RealT,2>> opnt;
+    opnt.push_back(toPoint<RealT>(2,2));
+    opnt.push_back(toPoint<RealT>(3,2));
+    opnt.push_back(toPoint<RealT>(2,3));
+    opnt.push_back(toPoint<RealT>(2,3));
+
+    Affine<RealT,2> aff;
+    auto residual = fit(aff, opnt, ipnt);
+
+    //SPDLOG_INFO("Affine: {} Residual:{}", aff,residual);
+    CHECK(isNearZero(residual));
+
+    for(size_t i=0;i < ipnt.size();i++) {
+      CHECK(euclidDistance(aff(ipnt[i]), opnt[i]) < 0.001f);
     }
   }
 }
@@ -252,7 +340,7 @@ TEST_CASE("Circle")
   {
     Circle2dC<float> circle2;
     EXPECT_TRUE(circle2.Fit(pnts[0], pnts[1], pnts[2]));
-    SPDLOG_INFO("Center={} Radius={}", circle2.Centre(), circle2.Radius());
+    SPDLOG_TRACE("Center={} Radius={}", circle2.Centre(), circle2.Radius());
     float sqrMag = xt::sum(xt::square(Point<float, 2>(circle2.Centre() - Point<float, 2>({1, 2}))))[0];
     CHECK(sqrMag < 0.01f);
     CHECK(std::abs(circle2.Radius() - 2) < 0.01f);
@@ -263,7 +351,7 @@ TEST_CASE("Circle")
     Circle2dC<float> circle;
     auto residual = Ravl2::fit(circle, pnts);
     CHECK(residual.has_value());
-    SPDLOG_INFO("Center={} Radius={} Residual={}", circle.Centre(), circle.Radius(), residual.value());
+    SPDLOG_TRACE("Center={} Radius={} Residual={}", circle.Centre(), circle.Radius(), residual.value());
     CHECK(sumOfSqr(Point<float, 2>(circle.Centre() - toPoint<float>(1, 2))) < 0.01f);
     CHECK(std::abs(circle.Radius() - 2) < 0.01f);
   }
@@ -279,17 +367,17 @@ TEST_CASE("Conic")
   pnts.push_back(Point<float,2>({3,0}));
   pnts.push_back(Point<float,2>({3,1}));
   pnts.push_back(Point<float,2>({2,4}));
-  Ravl2::Conic2dC<float> conic {};
+  Ravl2::Conic2<float> conic {};
   auto residual = fit(conic, pnts);
   CHECK(residual.has_value());
-  SPDLOG_INFO("Conic: {}", conic);
+  SPDLOG_TRACE("Conic: {}", conic);
   //=-0.264764 -0.132382 -0.066191 1.05906 0.463337 -0.794292
-  Ravl2::Conic2dC<float> conic2(-0.264764f, -0.132382f, -0.066191f, 1.05906f, 0.463337f, -0.794292f);
+  Ravl2::Conic2<float> conic2(-0.264764f, -0.132382f, -0.066191f, 1.05906f, 0.463337f, -0.794292f);
 
   for(auto p : pnts) {
-    SPDLOG_INFO("Point {} is on curve: {} 2:{} ", p, conic.Residue(p), conic2.Residue(p));
-    CHECK(conic.IsOnCurve(p,1e-4f));
-    CHECK(conic2.IsOnCurve(p,1e-4f));
+    //SPDLOG_INFO("Point {} is on curve: {} 2:{} ", p, conic.Residue(p), conic2.Residue(p));
+    CHECK(conic.isOnCurve(p, 1e-4f));
+    CHECK(conic2.isOnCurve(p, 1e-4f));
   }
 }
 
@@ -307,18 +395,18 @@ TEST_CASE("Ellipse")
     pnts.push_back(Point<float, 2>({3, 1}));
     pnts.push_back(Point<float, 2>({2, 4}));
 #if 1
-    Conic2dC<float> conic {};
+    Conic2<float> conic {};
     auto residual = fit(conic, pnts);
     //auto residual = fitEllipse(conic, pnts);
     CHECK(residual.has_value());
-    SPDLOG_INFO("Ellipse: {}", conic);
+    //SPDLOG_INFO("Ellipse: {}", conic);
 
     auto optEllipse = toEllipse(conic);
     REQUIRE(optEllipse.has_value());
 
     auto ellipse = optEllipse.value();
     for(auto p : pnts) {
-      SPDLOG_INFO("Point {} is on curve: {} ", p, ellipse.residue(p));
+      //SPDLOG_INFO("Point {} is on curve: {} ", p, ellipse.residue(p));
       CHECK(ellipse.IsOnCurve(p, 1e-4f));
     }
 #endif
@@ -326,17 +414,16 @@ TEST_CASE("Ellipse")
   SECTION("Mean Covariance")
   {
     using RealT = float;
-    SPDLOG_INFO("Mean Covariance");
     Matrix<RealT,2,2> covar({{4,0},
       {0,1}});
     Vector<RealT,2> mean = toVector<RealT>(50,50);
 
-    Ellipse2dC<RealT> ellipse = EllipseMeanCovariance(covar,mean,1.0f);
-    SPDLOG_INFO("Ellipse: {}", ellipse);
+    Ellipse<RealT> ellipse = ellipseMeanCovariance(covar, mean, 1.0f);
+    //SPDLOG_INFO("Ellipse: {}", ellipse);
     Point<RealT,2> centre;
     RealT min,maj,ang;
     ellipse.EllipseParameters(centre,maj,min,ang);
-    SPDLOG_INFO("Parameters={} {} {} {} ", centre, maj, min, ang);
+    //SPDLOG_INFO("Parameters={} {} {} {} ", centre, maj, min, ang);
 
     CHECK((std::abs(maj - RealT(2))) < 0.0000001f);
     CHECK(std::abs(min - 1) < 0.0000001f);
@@ -354,30 +441,31 @@ TEST_CASE("Ellipse")
     for(size_t j = 0;j < numSteps;j++) {
       RealT tangle = RealT(j) * angleStep;
       Point<RealT,2> gtc = toPoint<RealT>(50,50);
-      // Generate ellispe
-      Ellipse2dC<RealT> ellipse(gtc,RealT(40),RealT(20),tangle);
+      // Generate ellipse
+      Ellipse<RealT> ellipse(gtc,RealT(40),RealT(20),tangle);
       // Generate set of points on ellipse
       RealT step = std::numbers::pi_v<RealT>/5;
-      std::vector<Point<RealT,2>> points(10);
+      std::vector<Point<RealT,2>> points;
+      points.reserve(10);
       size_t i = 0;
       for(RealT a = 0;i < 10;a += step,i++) {
-        points[i] = ellipse.point(a);
+        points.push_back(ellipse.point(a));
       }
       // Fit set of points to ellipse as conic
-      Conic2dC<RealT> conic;
+      Conic2<RealT> conic;
       CHECK(fitEllipse(conic, points));
       //cerr << "Conic=" << conic.C() << "\n";
       Point<RealT,2> centre;
       RealT min,maj,ang;
-      conic.EllipseParameters(centre,maj,min,ang);
-      //cerr << "Conic representation parameters=" << centre << " " << maj << " " << min << " " << ang << "   Diff=" << Angle(ang,std::numbers::pi_v<RealT>).Diff(Angle(tangle,std::numbers::pi_v<RealT>)) << "\n";
+      conic.ellipseParameters(centre, maj, min, ang);
+      SPDLOG_INFO("Conic representation parameters={} {} {} {}   Diff={}", centre, maj, min, ang, Angle<RealT, 1>(ang).diff(Angle<RealT, 1>(tangle)));
       CHECK(xt::sum(xt::abs(centre - gtc))() < 0.00000001f);
 #if 0
       if(std::abs(maj - 40) > 0.000000001) return __LINE__;
       if(std::abs(min - 20) > 0.000000001) return __LINE__;
       if(std::abs(Angle(ang,std::numbers::pi_v<RealT>).Diff(Angle(tangle,std::numbers::pi_v<RealT>))) > 0.000001) return __LINE__;
-      // Fit same set of points to ellipse as Ellipse2dC
-      Ellipse2dC ellipse2;
+      // Fit same set of points to ellipse as Ellipse
+      Ellipse ellipse2;
       CHECK(FitEllipse(points,ellipse2));
       // Check that fitted ellipse has same params as original
       ellipse2.EllipseParameters(centre,maj,min,ang);
@@ -443,10 +531,12 @@ TEST_CASE("Planes")
   {
 
     for(int i =0 ;i < 100;i++) {
-
-       VectorOffset<RealT,3> plane(toVector<RealT>(randomValue(10),randomValue(10),randomValue(10)),
-                         toPoint<RealT>(randomValue(10),randomValue(10),randomValue(10)));
-
+      auto pntOnPlane = toPoint<RealT>(randomValue(10),randomValue(10),randomValue(10));
+      VectorOffset<RealT,3> plane(toVector<RealT>(randomValue(10),randomValue(10),randomValue(10)),pntOnPlane);
+      
+      // Check point on plane has zero distance.
+      CHECK(plane.distance(pntOnPlane) < 0.00001f);
+      
       auto testPoint = toPoint<RealT>(randomValue(10),randomValue(10),randomValue(10));
 
       auto closestPoint = plane.projection(testPoint);
@@ -508,10 +598,165 @@ TEST_CASE("Planes")
   }
 
 #endif
+}
 
 
+TEST_CASE("FitSimilarity")
+{
+  using namespace Ravl2;
+  using RealT = float;
+
+  std::vector<Point<RealT,3>> points;
+  points.reserve(16);
+
+  points.push_back(toPoint<RealT>(1,4,6));
+  points.push_back(toPoint<RealT>(3,2,9));
+  points.push_back(toPoint<RealT>(7,3,3));
+  points.push_back(toPoint<RealT>(9,7,2));
+  points.push_back(toPoint<RealT>(5,3,2));
+
+  // Generate a random rotation.
+  std::mt19937 rng(static_cast<std::mt19937::result_type>(random()));
+  std::uniform_real_distribution<RealT> randomAngle(-std::numbers::pi_v<RealT>,std::numbers::pi_v<RealT>);
+  std::uniform_real_distribution<RealT> randomTranslation(-5.0, 5.0);
+
+
+  Vector<RealT,3> rotAngle = toVector<RealT>(randomAngle(rng),randomAngle(rng),randomAngle(rng));
+  Vector<RealT,3> offset = toVector<RealT>(randomTranslation(rng),randomTranslation(rng),randomTranslation(rng));
+  Matrix<RealT,3,3> rot = Quaternion<RealT>::fromEulerAngles(rotAngle).toMatrix();
+
+  RealT scale = 0.75;
+
+  std::vector<Point<RealT,3>> transformedPoints;
+  transformedPoints.reserve(points.size());
+  for(auto p : points) {
+    transformedPoints.push_back(xt::linalg::dot(rot ,p) * scale  + offset);
+  }
+
+  //! Fit a rigid transform between the two point sets.
+  SECTION("Fit direct parameters.")
+  {
+    Vector<RealT, 3> fittedTranslation;
+    Matrix<RealT, 3, 3> fittedRotation;
+    RealT fittedScaling = -1;
+
+    CHECK(fitSimilarity<RealT>(
+      fittedRotation,
+      fittedTranslation,
+      fittedScaling,
+      transformedPoints,
+      points,
+      false
+			      ));
+
+#if 0
+    SPDLOG_INFO("Rotation={} ", rot);
+    SPDLOG_INFO("Translation={} ", offset);
+    SPDLOG_INFO("Scaling={} ", scale);
+    SPDLOG_INFO("Fitted Rotation={} ", fittedRotation);
+    SPDLOG_INFO("Fitted Translation={} ", fittedTranslation);
+    SPDLOG_INFO("Fitted Scaling={} ", fittedScaling);
+#endif
+    CHECK(std::abs(fittedScaling - scale) < 0.0001f);
+    CHECK(xt::sum(xt::abs(fittedRotation - rot))() < 0.0001f);
+    CHECK(xt::sum(xt::abs(fittedTranslation - offset))() < 0.0001f);
+  }
+
+
+  SECTION("Fit an affine transform")
+  {
+    // Check the affine version.
+
+    Affine<RealT, 3> aff;
+    CHECK(fitSimilarity(aff, transformedPoints, points));
+
+    for(auto p : points) {
+      Point<RealT, 3> affP = aff(p);
+      Point<RealT, 3> rotP = xt::linalg::dot(rot, p) * scale + offset;
+      CHECK(xt::sum(xt::square(affP - rotP))() < 0.0001f);
+    }
+  }
 
 }
+
+TEST_CASE("FitIsometry")
+{
+  using namespace Ravl2;
+  using RealT = float;
+
+  std::vector<Point<RealT,3>> points;
+  points.reserve(16);
+
+  points.push_back(toPoint<RealT>(1,4,6));
+  points.push_back(toPoint<RealT>(3,2,9));
+  points.push_back(toPoint<RealT>(7,3,3));
+  points.push_back(toPoint<RealT>(9,7,2));
+  points.push_back(toPoint<RealT>(5,3,2));
+
+  // Generate a random rotation.
+  std::mt19937 rng(static_cast<std::mt19937::result_type>(random()));
+  std::uniform_real_distribution<RealT> randomAngle(-std::numbers::pi_v<RealT>,std::numbers::pi_v<RealT>);
+  std::uniform_real_distribution<RealT> randomTranslation(-5.0, 5.0);
+
+
+  Vector<RealT,3> rotAngle = toVector<RealT>(randomAngle(rng),randomAngle(rng),randomAngle(rng));
+  Vector<RealT,3> offset = toVector<RealT>(randomTranslation(rng),randomTranslation(rng),randomTranslation(rng));
+  Matrix<RealT,3,3> rot = Quaternion<RealT>::fromEulerAngles(rotAngle).toMatrix();
+
+  RealT scale = 1.0f;
+
+  std::vector<Point<RealT,3>> transformedPoints;
+  transformedPoints.reserve(points.size());
+  for(auto p : points) {
+    transformedPoints.push_back(xt::linalg::dot(rot ,p) * scale  + offset);
+  }
+
+  //! Fit a rigid transform between the two point sets.
+  SECTION("Fit direct parameters.")
+  {
+    Vector<RealT, 3> fittedTranslation;
+    Matrix<RealT, 3, 3> fittedRotation;
+    RealT fittedScaling = -1;
+
+    CHECK(fitSimilarity<RealT>(
+      fittedRotation,
+      fittedTranslation,
+      fittedScaling,
+      transformedPoints,
+      points,
+      true));
+
+#if 0
+    SPDLOG_INFO("Rotation={} ", rot);
+    SPDLOG_INFO("Translation={} ", offset);
+    SPDLOG_INFO("Scaling={} ", scale);
+    SPDLOG_INFO("Fitted Rotation={} ", fittedRotation);
+    SPDLOG_INFO("Fitted Translation={} ", fittedTranslation);
+    SPDLOG_INFO("Fitted Scaling={} ", fittedScaling);
+#endif
+    CHECK(std::abs(fittedScaling - scale) < 0.0001f);
+    CHECK(xt::sum(xt::abs(fittedRotation - rot))() < 0.0001f);
+    CHECK(xt::sum(xt::abs(fittedTranslation - offset))() < 0.0001f);
+  }
+
+
+  SECTION("Fit an affine transform")
+  {
+    // Check the affine version.
+
+    Affine<RealT, 3> aff;
+    CHECK(fitIsometry(aff, transformedPoints, points));
+
+    for(auto p : points) {
+      Point<RealT, 3> affP = aff(p);
+      Point<RealT, 3> rotP = xt::linalg::dot(rot, p) * scale + offset;
+      CHECK(xt::sum(xt::square(affP - rotP))() < 0.0001f);
+    }
+  }
+
+}
+
+
 
 
 

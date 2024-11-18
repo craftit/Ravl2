@@ -16,26 +16,50 @@ namespace Ravl2
     return T(T(0) < val) - (val < T(0));
   }
 
+  //: Returns the value 'a' with a sign of 'b'.
+  template <typename RealT>
+  inline constexpr RealT sign(RealT a, RealT b)
+  { return (b >= 0) ? std::abs(a) : - std::abs(a); }
+
   //! Returns the value x rounded to the nearest integer.
-  template <class RealT, class IntT = int>
-  inline constexpr IntT int_round(RealT x)
+  template <typename RealT, typename IntT = int>
+   requires std::is_floating_point<RealT>::value
+  inline constexpr IntT intRound(RealT x)
   {
     return IntT(std::lrint(x));
     //return static_cast<IntT>((RealT(x) >= 0) ? (x + RealT(0.5)) : (x - RealT(0.5)));
   }
 
   //! Returns the greatest integral  value  less  than  or equal  to  'x'.
-  template <class RealT, class IntT = int>
-  inline constexpr IntT int_floor(RealT x)
+  template <typename RealT, typename IntT = int>
+    requires std::is_floating_point<RealT>::value
+  inline constexpr IntT intFloor(RealT x)
   {
     return static_cast<IntT>(std::floor(x));
   }
 
+  //! Returns the greatest integral  value  less  than  or equal  to  'x'.
+  template <typename RealT, typename IntT = int>
+    requires std::is_integral_v<RealT>
+  inline constexpr IntT intFloor(RealT x)
+  {
+    return x;
+  }
+
   //! Returns the smallest integral  value  greater  than  or equal  to  'x'.
-  template <class RealT, class IntT = int>
-  IntT constexpr int_ceil(RealT x)
+  template <typename RealT, typename IntT = int>
+    requires std::is_floating_point<RealT>::value
+  constexpr IntT intCeil(RealT x)
   {
     return static_cast<IntT>(std::ceil(x));
+  }
+
+  //! Returns the smallest integral  value  greater  than  or equal  to  'x'.
+  template <typename RealT, typename IntT = int>
+    requires std::is_integral_v<RealT>
+  constexpr IntT intCeil(RealT x)
+  {
+    return x;
   }
 
   //! @brief Is integer power of 2 ?
@@ -58,6 +82,7 @@ namespace Ravl2
   //! @param tol tolerance, default is machine epsilon.
   //! @return true if 'x' is near zero.
   template <class RealT>
+   requires std::is_floating_point<RealT>::value
   inline constexpr bool isNearZero(RealT x, RealT tol = std::numeric_limits<RealT>::epsilon())
   {
     return std::abs(x) < tol;

@@ -5,6 +5,7 @@
 #pragma once
 
 #include "Ravl2/Array.hh"
+#include "Ravl2/Math.hh"
 #include "Ravl2/Geometry/Affine.hh"
 #include "Ravl2/Geometry/Range.hh"
 #include "Ravl2/Image/BilinearInterpolation.hh"
@@ -16,11 +17,16 @@ namespace Ravl2
   //! This operation is used to assign the pixel value from the source to the target
   //! @param Target The target pixel to assign to
   //! @param Source The source pixel to assign from
-  template <typename TargetT, typename SourceT>
+  template <typename TargetT>
   struct AssignOp {
-    void operator()(TargetT &Target, const SourceT &Source) const
+    template <typename SourceT>
+    constexpr void operator()(TargetT &target, const SourceT &source) const
     {
-      Target = Source;
+      if constexpr (std::is_integral_v<TargetT> && std::is_floating_point_v<SourceT>) {
+        target = intRound<SourceT,TargetT>(source);
+      } else {
+        target = TargetT(source);
+      }
     }
   };
 
@@ -29,7 +35,7 @@ namespace Ravl2
   //! @param transform The point-to-point mapping to use
   //! @return The range of pixels the transformed points will sample from
   template <typename TransformT, unsigned N, typename CoordTypeT = float>
-  Range<CoordTypeT, N> projectedBounds(const IndexRange<N> &targetRange, const TransformT &transform)
+  Range<CoordTypeT, N> projectedBounds(const TransformT &transform, const IndexRange<N> &targetRange)
   {
     Range<CoordTypeT, N> transformedRange;
     for(unsigned i = 0; i < (1u << N); i++) {
@@ -97,7 +103,7 @@ namespace Ravl2
   enum class WarpWrapMode
   {
     Stop, //!< Stop the warp operation
-    Leave,//!< Leave the target image unchanged
+    Leave,//!< Leave the target image unchanged, points are not filled or processed
     Fill, //!< Fill the target image with a fill value
     Clamp,//!< Clamp the point to the source image
     Wrap, //!< Wrap the point to the source image (experimental)
@@ -123,9 +129,10 @@ namespace Ravl2
     typename FillTypeT = typename TargetArrayT::value_type,
     typename PointT = Point<float, SourceArrayT::dimensions>,
     typename SamplerT = InterpolateBilinear<SourceArrayT, PointT>,
-    typename OperationT = AssignOp<typename TargetArrayT::value_type, typename SourceArrayT::value_type>,
+    typename OperationT = AssignOp<typename TargetArrayT::value_type>,
     unsigned N = SourceArrayT::dimensions>
-    requires WindowedArray<TargetArrayT, typename TargetArrayT::value_type, TargetArrayT::dimensions> && WindowedArray<SourceArrayT, typename SourceArrayT::value_type, SourceArrayT::dimensions>
+    requires WindowedArray<TargetArrayT, typename TargetArrayT::value_type, TargetArrayT::dimensions> &&
+             WindowedArray<SourceArrayT, typename SourceArrayT::value_type, SourceArrayT::dimensions>
   bool warp(TargetArrayT &target,
             const SourceArrayT &source,
             const TransformT &transform,
@@ -135,7 +142,7 @@ namespace Ravl2
   {
     // Get the range of pixels the transformed points will sample from
     auto realSourceRange = interpolationBounds<CoordTypeT>(source.range(), sampler);
-    auto realSampleRange = projectedBounds(target.range(), transform);
+    auto realSampleRange = projectedBounds(transform, target.range());
     if(realSourceRange.contains(realSampleRange)) {
       // Iterate over the target image, no need for bounds check.
       for(auto it = target.begin(); it.valid();) {

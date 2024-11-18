@@ -11,7 +11,7 @@
 #pragma once
 
 #include "Ravl2/Geometry/PointSet.hh"
-#include "Ravl2/Geometry/LinePP.hh"
+#include "Ravl2/Geometry/Line2PP.hh"
 
 namespace Ravl2
 {
@@ -27,25 +27,28 @@ namespace Ravl2
 
     //! Construct from list of points
     constexpr explicit PolyLine(const std::vector<Point<RealT, N>> &points)
-        : PointSet<RealT, 2>(points)
+        : PointSet<RealT, N>(points)
     {}
 
     //! @brief Returns true if the polygon is self intersecting.
     //! If any line segments cross each other then the polygon is self intersecting.
     [[nodiscard]] constexpr bool isSelfIntersecting() const
     {
-      auto ft = this->begin();
-      const auto theEnd = this->end();
-      if(!ft) return false;
-      while(true) {
-        LinePP<RealT, N> l1(ft.Data(), ft.NextData());
-        ft++;
-        auto it2 = ft;
-        if(it2 == theEnd) break;
-        for(; it2; it2++) {
-          LinePP<RealT, N> l2(it2.Data(), it2.NextData());
-          if(l1.HasInnerIntersection(l2))
-            return true;
+      if constexpr(N == 2) {
+        const auto theEnd = this->end();
+        for(auto ft = this->begin();ft != theEnd;++ft) {
+          auto next = ft;
+          next++;
+          if(next == theEnd) break;
+          Line2PP<RealT> l1(*ft, *next);
+          for(auto it2 = next;it2 != theEnd;++it2) {
+            auto next2 = it2;
+            next2++;
+            if(next2 == theEnd) break;
+            Line2PP<RealT> l2(*it2, *next2);
+            if(l1.HasInnerIntersection(l2))
+              return true;
+          }
         }
       }
       return false;
@@ -56,7 +59,7 @@ namespace Ravl2
     //! line defined by the two end points and if it is further than the distance limit adding it
     //! to the approximation. The procedure is then repeated for each of the segments either side
     //! of the furthest point.
-    [[nodiscard]] PolyLine<RealT, N> Approx(RealT distLimit) const;
+    [[nodiscard]] PolyLine<RealT, N> approx(RealT distLimit) const;
 
     //! Measure the length of the poly line in euclidean space.
     [[nodiscard]] constexpr RealT length() const
@@ -64,7 +67,7 @@ namespace Ravl2
       auto ft = this->begin();
       const auto theEnd = this->end();
       if(ft == theEnd) return 0;
-      Point<RealT, 2> last = *ft;
+      Point<RealT, N> last = *ft;
       RealT len = 0;
       for(ft++; ft != theEnd; ft++) {
         len += euclidDistance(last, *ft);
@@ -73,4 +76,18 @@ namespace Ravl2
       return len;
     }
   };
+  
+  //! Let the compiler know that we will use these classes with the following types
+  extern template class PolyLine<float,2>;
+  extern template class PolyLine<float,3>;
+  
 }// namespace Ravl2
+
+#if FMT_VERSION >= 90000
+template <>
+struct fmt::formatter<Ravl2::PolyLine<float,2>> : fmt::ostream_formatter {
+};
+template <>
+struct fmt::formatter<Ravl2::PolyLine<float,3>> : fmt::ostream_formatter {
+};
+#endif

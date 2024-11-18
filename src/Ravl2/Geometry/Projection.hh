@@ -10,6 +10,7 @@
 
 #pragma once
 
+#include <spdlog/spdlog.h>
 #include "Ravl2/Types.hh"
 #include "Ravl2/Geometry/Affine.hh"
 #include "Ravl2/Geometry/Geometry.hh"
@@ -41,10 +42,10 @@ namespace Ravl2
     //! <p>These are the scale values that the last term in the projective vectors must have for correct normalisation.  They are usually set = 1.  However for some optimisation operations better results are obtained if values more representative of typical components of the vector are used.
     //! In the projection "b = P a", Iz and Oz is the scale values for a and b respectively.</p>
     //! <p> This constructor assumes that the values of the last column of "transform" have already been set to correspond to the value of "iz".</p>
-    constexpr explicit Projection(const Matrix<RealT, N, N> &transform, RealT Oz = 1, RealT Iz = 1)
-        : trans(transform),
-          iz(Iz),
-          oz(Oz)
+    constexpr explicit Projection(const Matrix<RealT, N+1, N+1> &transform, RealT Oz = 1, RealT Iz = 1)
+      : trans(transform),
+	iz(Iz),
+	oz(Oz)
     {}
 
     //! Construct a projective transform from an affine one
@@ -67,7 +68,7 @@ namespace Ravl2
     }
 
     //! project a point through the transform.
-    constexpr Point<RealT, N> project(const Point<RealT, N> &pnt) const
+    [[nodiscard]] constexpr Point<RealT, N> project(const Point<RealT, N> &pnt) const
     {
       Vector<RealT, N + 1> vi;
       for(size_t i = 0; i < N; i++) {
@@ -79,39 +80,31 @@ namespace Ravl2
     }
 
     //! project a point through the transform.
-    constexpr Point<RealT, N> operator()(const Point<RealT, N> &pnt) const
+    [[nodiscard]] constexpr Point<RealT, N> operator()(const Point<RealT, N> &pnt) const
     {
       return project(pnt);
     }
 
 #if 0
-    LineABC2dC Project(const LineABC2dC &line) const {
+    Line2ABC Project(const Line2ABC &line) const {
       Vector<RealT,3> vo = trans.Inverse() * Vector<RealT,3>(line.A(),line.B(),line.C()/iz);
-      return LineABC2dC(vo[0],vo[1],vo[2]*oz);          
+      return Line2ABC(vo[0],vo[1],vo[2]*oz);
     }
     //: Project a line through the transform.
     // Current implementation is slow, as it inverts the projection each time the method is called.
     
-    LineABC2dC operator*(const LineABC2dC &line) const
+    Line2ABC operator*(const Line2ABC &line) const
     { return Project(line); }
     //: Project a line through the transform.
     // Current implementation is slow, as it inverts the projection each time the method is called.
-
-    LinePP2dC Project(const LinePP2dC &line) const
-    { return LinePP2dC(this->Project(line[0]),this->Project(line[1])); }
-    //: Project a line through the transform.
-    
-    LinePP2dC operator*(const LinePP2dC &line) const
-    { return LinePP2dC(this->Project(line[0]),this->Project(line[1])); }
-    //: Project a line through the transform.
-
 #endif
-    //: Combine two transforms
-    //!param: oth - the other transform to be combined with this one
-    //!return: the result of cascading this transform with the other one.<br>
-    // Note that the iz and oz values of the two transforms are combined
-    // for the resulting one.
-    Projection<RealT, N> operator*(const Projection<RealT, N> &oth) const
+
+    //! Combine two transforms
+    //! @param: oth - the other transform to be combined with this one
+    //! @return: the result of cascading this transform with the other one.<br>
+    //! Note that the iz and oz values of the two transforms are combined
+    //! for the resulting one.
+    [[nodiscard]] Projection<RealT, N> operator*(const Projection<RealT, N> &oth) const
     {
       Matrix<RealT, N + 1, N + 1> diag = xt::eye<RealT>(N + 1);
       diag(N, N) = iz / oth.oz;
@@ -121,9 +114,9 @@ namespace Ravl2
     }
 
     //! Invert transform.
-    constexpr Projection Inverse() const
+    [[nodiscard]] constexpr Projection inverse() const
     {
-      return Projection(inverse(trans).value(), iz, oz);
+      return Projection(Ravl2::inverse(trans).value(), iz, oz);
     }
 
     //! Returns identity projection
@@ -148,64 +141,62 @@ namespace Ravl2
       return trans;
     }
 
-    //! Accesss iz.
-    constexpr RealT IZ() const
+    //! Access iz.
+    [[nodiscard]] constexpr RealT IZ() const
     {
       return iz;
     }
 
-    //! Accesss oz.
-    constexpr RealT OZ() const
+    //! Access oz.
+    [[nodiscard]] constexpr RealT OZ() const
     {
       return oz;
     }
 
-    //! Accesss iz.
-    constexpr RealT &IZ()
+    //! Access iz.
+    [[nodiscard]] constexpr RealT &IZ()
     {
       return iz;
     }
 
-    //! Accesss oz.
-    constexpr RealT &OZ()
+    //! Access oz.
+    [[nodiscard]] constexpr RealT &OZ()
     {
       return oz;
     }
 
     //! Test if projection is near affine.
-    constexpr bool IsNearAffine(const RealT tolerance = 1e-6) const
+    [[nodiscard]] constexpr bool IsNearAffine(const RealT tolerance = 1e-6) const
     {
       return (std::abs(trans(N, N)) + std::abs(trans(N, 0))) * (iz / oz) < tolerance;
     }
 
     //! Get homography
     //! This returns the projection normalised to make the projective scales both = 1
-    constexpr Matrix<RealT, N + 1, N + 1> Homography() const
+    [[nodiscard]] constexpr Matrix<RealT, N + 1, N + 1> homography() const
     {
       Matrix<RealT, N + 1, N + 1> mat1 = xt::eye<RealT>(3);
       mat1(N, N) = iz;
       Matrix<RealT, N + 1, N + 1> mat2 = xt::eye<RealT>(3);
       mat2(N, N) = oz;
       using xt::linalg::dot;
-      Matrix<RealT, N + 1, N + 1> ret = dot(dot(inverse(mat2).value(), trans), mat1);
+      Matrix<RealT, N + 1, N + 1> ret = dot(dot(Ravl2::inverse(mat2).value(), trans), mat1);
       return ret;
     }
 
-#if 0
     //! Get an affine approximation of this projective transform
     //! @return: the affine approximation
-    constexpr Affine<RealT, N> AffineApproximation() const
+    [[nodiscard]] constexpr Affine<RealT, N> AffineApproximation() const
     {
-      Matrix<RealT,3,3> htrans = Homography();
-      RealT t1 = htrans[0][2] / htrans[2][2];
-      RealT t2 = htrans[1][2] / htrans[2][2];
-      RealT h1 = htrans[0][0] / htrans[2][2]  - t1 * htrans[2][0];
-      RealT h2 = htrans[0][1] / htrans[2][2] - t1 * htrans[2][1];
-      RealT h3 = htrans[1][0] / htrans[2][2] - t2 * htrans[2][0];
-      RealT h4 = htrans[1][1] / htrans[2][2] - t2 * htrans[2][1];
-      return Affine<RealT,N>(Matrix<RealT,2,2>(h1,h2,h3,h4), Vector<RealT,2>(t1,t2));
+      Matrix<RealT,3,3> htrans = homography();
+      RealT t1 = htrans(0,2) / htrans(2,2);
+      RealT t2 = htrans(1,2) / htrans(2,2);
+      RealT h1 = htrans(0,0) / htrans(2,2)  - t1 * htrans(2,0);
+      RealT h2 = htrans(0,1) / htrans(2,2) - t1 * htrans(2,1);
+      RealT h3 = htrans(1,0) / htrans(2,2) - t2 * htrans(2,0);
+      RealT h4 = htrans(1,1) / htrans(2,2) - t2 * htrans(2,1);
+      return Affine<RealT,N>(Matrix<RealT,2,2>({{h1,h2},{h3,h4}}), Vector<RealT,2>({t1,t2}));
     }
-#endif
 
     //! True if not the zero projection and Matrix<RealT,3,3> is "real"
     [[nodiscard]] constexpr inline bool IsValid() const
@@ -226,42 +217,7 @@ namespace Ravl2
     RealT oz = 1;
   };
 
-#if 0
-  Projection2dC FitProjection(const std::vector<Point<RealT,2>> &org,const std::vector<Point<RealT,2>> &newPos,RealT &residual);
-  //: Fit a projective transform given to the mapping between original and newPos.
-  // Note: In the current version of the routine 'residual' isn't currently computed.
-  
-  Projection2dC FitProjection(const std::vector<Point<RealT,2>> &org,const std::vector<Point<RealT,2>> &newPos);
-  //: Fit a projective transform given to the mapping between original and newPos.
-  
-  Projection2dC FitProjection(const std::vector<Point<RealT,2>> &org,const std::vector<Point<RealT,2>> &newPos,RealT &residual);
-  //: Fit a projective transform given to the mapping between original and newPos.
-  // Note: In the current version of the routine 'residual' isn't currently computed.
-
-  Projection2dC FitProjection(const std::vector<PairC<Point<RealT,2>> > &matchPairs, RealT &residual);
-  //: Fit a projective transform given an array of matched points.
-  
-  Projection2dC FitProjection(const std::vector<Point<RealT,2>> &org,const std::vector<Point<RealT,2>> &newPos);
-  //: Fit a projective transform given to the mapping between original and newPos.
-  
-  Projection2dC FitProjection(const std::vector<Point<RealT,2>> &org,const std::vector<Point<RealT,2>> &newPos,const std::vector<RealT> &weight);
-  //: Fit a projective transform given to the mapping between original and newPos with weighting for points.
-  
-  bool FitProjection(const std::vector<Point<RealT,2>> &from,const std::vector<Point<RealT,2>> &to,Matrix<RealT,3,3> &proj);
-  //: Fit a projective matrix.
-  
-  bool FitProjection(const std::vector<Point<RealT,2>> &from,const std::vector<Point<RealT,2>> &to,const std::vector<RealT> &weight,Matrix<RealT,3,3> &proj);
-  //: Fit a projective matrix with weighting for points.
-  
-  PointSet2dC operator*(const Projection2dC &trans,const PointSet2dC &points);
-  //: Apply a projective transform to a point set
-  
-  Polygon2dC operator*(const Projection2dC &trans,const Polygon2dC &points);
-  //: Apply a projective transform to a polygon
-
-#endif
-  //: Read from a stream.
-
+  //! Read from a stream.
   template <typename RealT, unsigned N>
   std::istream &operator>>(std::istream &s, Projection<RealT, N> &proj)
   {
@@ -269,14 +225,22 @@ namespace Ravl2
     return s;
   }
 
-  //: Write to a stream.
+  //! Write to a stream.
   template <typename RealT, unsigned N>
   std::ostream &operator<<(std::ostream &s, const Projection<RealT, N> &proj)
   {
-    s << proj.Matrix() << ' ' << proj.IZ() << ' ' << proj.OZ();
+    s << proj.matrix() << ' ' << proj.IZ() << ' ' << proj.OZ();
     return s;
   }
 
   extern template class Projection<float, 2>;
 
 }// namespace Ravl2
+
+namespace fmt
+{
+  template <typename DataT, unsigned N>
+  struct formatter<Ravl2::Projection<DataT, N>> : ostream_formatter {
+  };
+}// namespace fmt
+

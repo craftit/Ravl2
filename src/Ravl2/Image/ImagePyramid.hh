@@ -6,7 +6,8 @@
 
 #include "Ravl2/Geometry/ScaleTranslate.hh"
 #include "Ravl2/Image/WarpScale.hh"
-//#include "Ravl2/Image/ImageExtend.hh"
+#include "Ravl2/Image/SummedAreaTable.hh"
+#include "Ravl2/Image/ImageExtend.hh"
 #include "Ravl2/Array.hh"
 
 namespace Ravl2
@@ -23,16 +24,24 @@ namespace Ravl2
     //! Create a pyramid level with a scale and an image.
     //! @param org2level Transform to map a point from the original image to the level image.
     //! @param img The scaled image.
-    PyramidLevel(const TransformT &org2level, const ImageT &img)
-        : mTransform(org2level),
+    PyramidLevel(const ImageT &img, const TransformT &org2level)
+        : mTransformTo(org2level),
+          mTransformFrom(inverse(org2level)),
           mImage(img)
     {}
 
     //! Access the scale and translation of the image.
-    //! @return The scale and translation of the image.
-    [[nodiscard]] const auto &transform() const
+    //! @return Transform to map a point from the original image to the level image.
+    [[nodiscard]] const auto &transformTo() const
     {
-      return mTransform;
+      return mTransformTo;
+    }
+
+    //! Access the scale and translation of the image.
+    //! @return Transform to map a point from the original image to the level image.
+    [[nodiscard]] const auto &transformFrom() const
+    {
+      return mTransformFrom;
     }
 
     //! Access the image.
@@ -43,7 +52,8 @@ namespace Ravl2
     }
 
   private:
-    TransformT mTransform;
+    TransformT mTransformTo;
+    TransformT mTransformFrom;
     ImageT mImage;
   };
 
@@ -56,33 +66,54 @@ namespace Ravl2
   {
   public:
     //! Default constructor.
-    ImagePyramid() = default;
+    constexpr ImagePyramid() = default;
 
     //! Create a pyramid with a single level.
     //! @param level The level to add to the pyramid.
-    explicit ImagePyramid(const PyramidLevel<ImageT, TransformT> &level)
+    constexpr explicit ImagePyramid(const PyramidLevel<ImageT, TransformT> &level)
     {
       addLevel(level);
     }
 
     //! Construct from a list of levels.
     //! @param levels The levels to add to the pyramid.
-    explicit ImagePyramid(const std::vector<PyramidLevel<ImageT, TransformT>> &&levels)
+    constexpr explicit ImagePyramid(const std::vector<PyramidLevel<ImageT, TransformT>> &&levels)
         : mLevels(std::move(levels))
     {}
 
     //! Access a level in the pyramid.
     //! @param index The index of the level to access.
     //! @return The level at the given index.
-    [[nodiscard]] const PyramidLevel<ImageT, TransformT> &level(size_t index) const
+    [[nodiscard]] constexpr const PyramidLevel<ImageT, TransformT> &level(size_t index) const
     {
       return mLevels[index];
+    }
+
+    //! Access an image in the pyramid.
+    //! @param index The index of the level to access.
+    //! @return The image at the given index.
+    [[nodiscard]] constexpr const auto &image(size_t index) const {
+      return mLevels[index].image();
+    }
+
+    //! Access transform to a level in the pyramid.
+    //! @param index The index of the level to access.
+    //! @return The transform to the level at the given index.
+    [[nodiscard]] constexpr const auto &transformTo(size_t index) const {
+      return mLevels[index].transformTo();
+    }
+
+    //! Access transform from a level in the pyramid.
+    //! @param index The index of the level to access.
+    //! @return The transform from the level at the given index.
+    [[nodiscard]] constexpr const auto &transformFrom(size_t index) const {
+      return mLevels[index].transformFrom();
     }
 
     //! Find the pyramid level that best matches the scale and translation.
     //! @param target Target scale.
     //! @return The pyramid level that best matches the scale and translation.
-    [[nodiscard]] const PyramidLevel<ImageT, TransformT> &findLevel(const TransformT &target) const
+    [[nodiscard]] constexpr const PyramidLevel<ImageT, TransformT> &findLevel(const TransformT &target) const
     {
       if(mLevels.empty()) {
         throw std::runtime_error("ImagePyramid::findLevel: No levels in the pyramid.");
@@ -101,16 +132,38 @@ namespace Ravl2
       return *bestLevel;
     }
 
+    //! Find level at which the area is scaled by 'scale'
+    [[nodiscard]]
+    constexpr size_t findAreaScale(float scale) const {
+      if(mLevels.empty()) {
+        SPDLOG_WARN("ImagePyramid::findAreaScale is empty");
+        throw std::runtime_error("ImagePyramid::findAreaScale is empty");
+      }
+      // This assumes the first entry is the original image.
+      auto baseArea = float(mLevels[0].image().range().area());
+      float bestScaleError = std::abs(1.0f - scale);
+      size_t bestLevel = 0;
+      for(size_t i = 1; i < mLevels.size(); ++i) {
+        auto area = float(mLevels[i].image().range().area());
+        auto scaleError = std::abs((area / baseArea) - scale);
+        if(scaleError < bestScaleError) {
+          bestScaleError = scaleError;
+          bestLevel = i;
+        }
+      }
+      return bestLevel;
+    }
+
     //! Add a level to the pyramid.
     //! @param level The level to add.
-    void addLevel(const PyramidLevel<ImageT, TransformT> &level)
+    constexpr void addLevel(const PyramidLevel<ImageT, TransformT> &level)
     {
       mLevels.push_back(level);
     }
 
     //! Access the number of levels in the pyramid.
     //! @return The number of levels in the pyramid.
-    [[nodiscard]] size_t numLevels() const
+    [[nodiscard]] constexpr size_t numLevels() const
     {
       return mLevels.size();
     }
@@ -119,41 +172,72 @@ namespace Ravl2
     std::vector<PyramidLevel<ImageT, TransformT>> mLevels;
   };
 
+
   //! Create an image pyramid from an image.
-  //! @param img The image to create the pyramid from.
-  //! @param numLevels The number of levels in the pyramid.
+  //! @param fullImg The image to create the pyramid from.
+  //! @param sumImg The summed area table of the image.
+  //! @param numLevels Maximum number of levels in the pyramid.
   //! @param scale The scale factor between levels.
+  //! @param pad The amount of padding to add to the image.
+  //! @param minArea The minimum area of a level, if the area is less than this the pyramid is truncated.
   //! @return The image pyramid.
-  template <typename ImageT, typename DataT = typename ImageT::value_type, unsigned N = ImageT::dimensions, typename TransformT = ScaleTranslate<float, 2>>
-    requires WindowedArray<ImageT, DataT, N>
-  ImagePyramid<ImageT, TransformT> makeImagePyramid(
+  template <typename PixelT, typename DataT,typename TransformT = ScaleTranslate<float, 2>>
+  ImagePyramid<Array<PixelT,2>, TransformT> buildImagePyramid(
+    const Array<PixelT,2> &fullImg,
+    const SummedAreaTable<DataT> &subImg,
+    size_t numLevels,
+    Vector<float, 2> scale,
+    unsigned pad = 0,
+    int minArea = 255
+    )
+  {
+    ImagePyramid<Array<PixelT,2>, TransformT> pyramid;
+    TransformT levelScale;
+    // Put in the first level.
+    pyramid.addLevel(PyramidLevel(fullImg, levelScale));
+    for(size_t i = 1; i < numLevels; ++i) {
+      levelScale.scale(1.0f / scale);
+      IndexRange<2> sampleRange = toInnerIndexRange(levelScale(toRange<float>(fullImg.range()))).shrinkMax(1);
+      //SPDLOG_INFO("Level {} Scale:{} levelScale:{} sampleRange:{} Area:{} ",i, scale, levelScale,sampleRange,sampleRange.area());
+      if(sampleRange.area() < minArea) {
+        break;
+      }
+      IndexRange<2> fullRange = sampleRange.expand(int(pad));
+      Array<PixelT, 2> newImage(fullRange);
+      Vector<float,2> invScale = 1.0f / levelScale.scaleVector();
+      subImg.template sampleGrid(clip(newImage,sampleRange), invScale, toVector<float>(0,0));
+      if(pad > 0) {
+        // If we've padded the image then we need to set the padding to zero.
+        mirrorEdges(newImage, pad);
+      }
+      pyramid.addLevel(PyramidLevel(newImage, levelScale));
+    }
+    return pyramid;
+  }
+
+  //! Create an image pyramid from an image.
+  //! @param fullImg The image to create the pyramid from.
+  //! @param numLevels Maximum number of levels in the pyramid.
+  //! @param scale The scale factor between levels.
+  //! @param pad The amount of padding to add to the image.
+  //! @param minArea The minimum area of a level, if the area is less than this the pyramid is truncated.
+  //! @return The image pyramid.
+  template <typename ImageT, typename DataT = typename ImageT::value_type,  typename TransformT = ScaleTranslate<float, 2>>
+    requires WindowedArray<ImageT, DataT, 2>
+  ImagePyramid<ImageT, TransformT> buildImagePyramid(
     const ImageT &img,
     size_t numLevels,
     Vector<float, 2> scale,
-    int pad = 0)
+    unsigned pad = 0,
+    int minArea = 16)
   {
-    ImagePyramid<ImageT, TransformT> pyramid;
-    TransformT levelScale;
-    Array<DataT, N> levelImg;
-    // Do we need to clone the initial image?
-    if constexpr(std::is_same_v<ImageT, Array<DataT, N>>) {
-      levelImg = img;
+    if constexpr(std::is_floating_point_v<DataT>) {
+      auto sumImg = SummedAreaTable<double>::buildTable(img);
+      return buildImagePyramid(img, sumImg, numLevels, scale, pad, minArea);
     } else {
-      levelImg = clone(img);
+      auto sumImg = SummedAreaTable<int64_t>::buildTable(img);
+      return buildImagePyramid(img, sumImg, numLevels, scale, pad, minArea);
     }
-    // Put in the first level.
-    pyramid.addLevel(PyramidLevel<ImageT, TransformT>(levelScale, levelImg));
-    for(size_t i = 1; i < numLevels; ++i) {
-      levelScale.scale(1.0f / scale);
-      IndexRange<2> newRange = levelScale(img.range()).expand(pad);
-      Array<DataT, N> newImage(img.range());
-      warpScale(img, levelScale, newImage);
-      if(pad > 0) {
-        // If we've padded the image then we need to set the padding to zero.
-      }
-      pyramid.addLevel(PyramidLevel<ImageT, TransformT>(levelScale, newImage));
-    }
-    return pyramid;
   }
 
 }// namespace Ravl2

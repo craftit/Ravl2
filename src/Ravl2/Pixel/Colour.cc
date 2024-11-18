@@ -49,7 +49,7 @@ namespace Ravl2
       std::array<int, 256> values {};
       auto *off = &(values[128]);
       for(int i = -128; i < 128; i++)
-        off[i] = int_round(float(i) * 2.0325203252033f);
+        off[i] = intRound(float(i) * 2.0325203252033f);
       return values;
     }
 
@@ -58,7 +58,7 @@ namespace Ravl2
       std::array<int, 256> values {};
       auto *off = &(values[128]);
       for(int i = -128; i < 128; i++)
-        off[i] = int_round(float(i) * 1.1402508551881f);
+        off[i] = intRound(float(i) * 1.1402508551881f);
       return values;
     }
 
@@ -67,7 +67,7 @@ namespace Ravl2
       std::array<int, 256 * 256> values {};
       for(int u = 0; u < 256; u++)
         for(int v = 0; v < 256; v++)
-          values[unsigned(u + 256 * v)] = int_round(float(u - 128) * -0.3947313749117f + float(v - 128) * -0.5808092090311f);
+          values[unsigned(u + 256 * v)] = intRound(float(u - 128) * -0.3947313749117f + float(v - 128) * -0.5808092090311f);
       //return &(values[128 + 256 * 128]);
       return values;
     }
@@ -83,7 +83,7 @@ namespace Ravl2
     [[maybe_unused]] bool g_reg9 = registerConversion(convert<Array<PixelRGB8, 2>, Array<PixelRGBA8, 2>>, 1.0f);
     [[maybe_unused]] bool g_reg10 = registerConversion(convert<Array<PixelBGRA8, 2>, Array<PixelRGBA8, 2>>, 1.0f);
     [[maybe_unused]] bool g_reg11 = registerConversion(convert<Array<PixelBGRA8, 2>, Array<PixelBGRA8, 2>>, 1.0f);
-    [[maybe_unused]] bool g_reg12 = registerConversion(convert<Array<PixelD32F, 2>, Array<PixelD16, 2>>, 1.0f);
+    [[maybe_unused]] bool g_reg12 = registerConversion(convert<Array<PixelZ32F, 2>, Array<PixelZ16, 2>>, 1.0f);
     [[maybe_unused]] bool g_reg13 = registerConversion(convert<Array<uint8_t, 2>, Array<PixelY8, 2>>, 0.33f);
 
   }// namespace
@@ -103,6 +103,6 @@ namespace Ravl2
   template void convert(Array<PixelRGB8, 2> &dest, const Array<PixelRGBA8, 2> &src);
   template void convert(Array<PixelBGRA8, 2> &dest, const Array<PixelRGBA8, 2> &src);
   template void convert(Array<PixelRGBA8, 2> &dest, const Array<PixelBGRA8, 2> &src);
-  template void convert(Array<PixelD32F, 2> &dest, const Array<PixelD16, 2> &src);
+  template void convert(Array<PixelZ32F, 2> &dest, const Array<PixelZ16, 2> &src);
 
 }// namespace Ravl2

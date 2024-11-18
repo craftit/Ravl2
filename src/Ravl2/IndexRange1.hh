@@ -23,7 +23,7 @@ namespace Ravl2
     using value_type = int;
     constexpr static unsigned dimensions = 1;
 
-    //! Default constructor
+    //! Default constructor, constructs an empty range.
     constexpr IndexRange() = default;
 
     //! Constructor from a min and max value, inclusive.
@@ -84,7 +84,13 @@ namespace Ravl2
     {
       return (m_max - m_min) + 1;
     }
-
+    
+    //! Get the center of the range.
+    [[nodiscard]] constexpr int center() const noexcept
+    {
+      return (m_min + m_max) / 2;
+    }
+    
     //! Get the area of the range.
     [[nodiscard]] constexpr int area() const noexcept
     {
@@ -246,6 +252,8 @@ namespace Ravl2
     //! Clip index so it is within the range.
     [[nodiscard]] constexpr IndexRange<1> clip(const IndexRange<1> &range) const
     {
+      if(range.max() < m_min || range.min() > m_max)
+        return {};
       return {clip(range.min()), clip(range.max())};
     }
 

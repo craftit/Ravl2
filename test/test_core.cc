@@ -20,23 +20,23 @@
 
 TEST_CASE("Math")
 {
-  // Check the int_floor
-  CHECK_EQ(Ravl2::int_floor(1.0),1);
-  CHECK_EQ(Ravl2::int_floor(0.1),0);
-  CHECK_EQ(Ravl2::int_floor(0.9),0);
-  CHECK_EQ(Ravl2::int_floor(-0.1),-1);
-  CHECK_EQ(Ravl2::int_floor(0.0),0);
-  CHECK_EQ(Ravl2::int_floor(-0.0),0);
-  CHECK_EQ(Ravl2::int_floor(-1.0),-1);
-  CHECK_EQ(Ravl2::int_floor(-2.0),-2);
+  // Check the intFloor
+  CHECK_EQ(Ravl2::intFloor(1.0),1);
+  CHECK_EQ(Ravl2::intFloor(0.1),0);
+  CHECK_EQ(Ravl2::intFloor(0.9),0);
+  CHECK_EQ(Ravl2::intFloor(-0.1),-1);
+  CHECK_EQ(Ravl2::intFloor(0.0),0);
+  CHECK_EQ(Ravl2::intFloor(-0.0),0);
+  CHECK_EQ(Ravl2::intFloor(-1.0),-1);
+  CHECK_EQ(Ravl2::intFloor(-2.0),-2);
 
-  // Check the int_round
-  CHECK_EQ(Ravl2::int_round(0.1),0);
-  CHECK_EQ(Ravl2::int_round(0.9),1);
-  CHECK_EQ(Ravl2::int_round(-0.1),0);
-  CHECK_EQ(Ravl2::int_round(0.0),0);
-  CHECK_EQ(Ravl2::int_round(-0.0),0);
-  CHECK_EQ(Ravl2::int_round(-0.9),-1);
+  // Check the intRound
+  CHECK_EQ(Ravl2::intRound(0.1),0);
+  CHECK_EQ(Ravl2::intRound(0.9),1);
+  CHECK_EQ(Ravl2::intRound(-0.1),0);
+  CHECK_EQ(Ravl2::intRound(0.0),0);
+  CHECK_EQ(Ravl2::intRound(-0.0),0);
+  CHECK_EQ(Ravl2::intRound(-0.9),-1);
 
   // Check the sign
   CHECK_EQ(Ravl2::sign(1),1);
@@ -73,6 +73,10 @@ TEST_CASE("Array")
     }
 
     CHECK(c == 10);
+
+    // Check bracket access
+    CHECK(val(0) == 0);
+
   }
 
   SECTION("Array<int,1> Cereal. ")
@@ -132,6 +136,10 @@ TEST_CASE("Array")
       }
     }
     CHECK_EQ(c,110);
+
+    // Check bracket access
+    CHECK(val[0][0] == 0);
+    CHECK(val(0,0) == 0);
   }
 
   SECTION("Array 3d")
@@ -280,7 +288,7 @@ TEST_CASE("Array")
   }
 }
 
-TEST_CASE("ArrayIter1", "[ArrayIter<1>]")
+TEST_CASE("ArrayIter1")
 {
   Ravl2::Array<int,1> val(Ravl2::IndexRange<1>(0,9));
   int sum = 0;
@@ -296,7 +304,7 @@ TEST_CASE("ArrayIter1", "[ArrayIter<1>]")
   CHECK_EQ(sum,45);
 }
 
-TEST_CASE("ArrayAccessIter1", "[ArrayIter<1>]")
+TEST_CASE("ArrayAccessIter1")
 {
   Ravl2::Array<int,1> val(Ravl2::IndexRange<1>(0,9));
   Ravl2::ArrayAccess<int,1> view(val);
@@ -313,9 +321,9 @@ TEST_CASE("ArrayAccessIter1", "[ArrayIter<1>]")
   CHECK_EQ(sum,45);
 }
 
-TEST_CASE("ArrayIter2", "[ArrayIter<N>]")
+TEST_CASE("ArrayIter2")
 {
-  // Check 1x2 case
+  SECTION("1x2")
   {
     Ravl2::Array<int, 2> val(Ravl2::IndexRange<2>({1, 2}));
     int at = 0;
@@ -341,7 +349,7 @@ TEST_CASE("ArrayIter2", "[ArrayIter<N>]")
     CHECK_FALSE(iter.valid());
   }
 
-  // Check 2x1 case
+  SECTION("2x1")
   {
     Ravl2::Array<int, 2> val(Ravl2::IndexRange<2>({2, 1}));
     int at = 0;
@@ -368,7 +376,7 @@ TEST_CASE("ArrayIter2", "[ArrayIter<N>]")
     CHECK_FALSE(iter.valid());
   }
 
-  // Check 1x1 case
+  SECTION("1x1")
   {
     Ravl2::Array<int, 2> val(Ravl2::IndexRange<2>({1, 1}));
     int at = 0;
@@ -387,7 +395,7 @@ TEST_CASE("ArrayIter2", "[ArrayIter<N>]")
     CHECK_EQ(iter, end);
     CHECK_FALSE(iter.valid());
   }
-  // Check 2x2 case
+  SECTION("2x2")
   {
     Ravl2::Array<int, 2> val(Ravl2::IndexRange<2>({2, 2}));
     int at = 0;
@@ -409,6 +417,7 @@ TEST_CASE("ArrayIter2", "[ArrayIter<N>]")
     CHECK(!iter.valid());
   }
 
+  SECTION("NxM")
   {
     Ravl2::Array<int, 2> val(Ravl2::IndexRange<2>({10, 20}));
     int sum = 0;
@@ -436,9 +445,27 @@ TEST_CASE("ArrayIter2", "[ArrayIter<N>]")
     CHECK_EQ(sum, 19900);
   }
 
+  SECTION("Relative Access")
+  {
+    Ravl2::Array<int, 2> val(Ravl2::IndexRange<2>({5, 7}));
+    int at = 0;
+    for (auto a: val.range()) {
+      val[a] = at++;
+    }
+    Ravl2::IndexRange<2> win = val.range().shrink(1);
+    for(auto it = clip(val,win).begin();it.valid();++it)
+    {
+      CHECK(it(0,0) == *it);
+      CHECK(it(0,-1) == (*it)-1);
+      CHECK(it(0,1) == (*it)+1);
+      CHECK(it(-1,0) == (*it)-7);
+      CHECK(it(1,0) == (*it)+7);
+    }
+
+  }
 }
 
-TEST_CASE("ArrayIter2Offset", "[ArrayIter<N>]")
+TEST_CASE("ArrayIter2Offset")
 {
   Ravl2::Array<int, 2> kernel(Ravl2::IndexRange<2>(Ravl2::IndexRange<1>(1,2),Ravl2::IndexRange<1>(3,5)));
   int at = 0;
@@ -472,7 +499,7 @@ TEST_CASE("ArrayIter2Offset", "[ArrayIter<N>]")
   CHECK_EQ(it,end);
 }
 
-TEST_CASE("ArrayIter3",  "[ArrayIter<N>]")
+TEST_CASE("ArrayIter3")
 {
   // Check 2x3x4 case
   {
@@ -501,7 +528,7 @@ TEST_CASE("ArrayIter3",  "[ArrayIter<N>]")
 }
 
 
-TEST_CASE("ArrayIter2View", "[ArrayIter<N>]")
+TEST_CASE("ArrayIter2View")
 {
   Ravl2::Array<int, 2> matrix(Ravl2::IndexRange<2>({4, 4}));
   int at = 0;
@@ -545,7 +572,7 @@ TEST_CASE("ArrayIter2View", "[ArrayIter<N>]")
   CHECK_EQ(sum, targetSum);
 }
 
-TEST_CASE("ShiftView", "Array<N>")
+TEST_CASE("ShiftView")
 {
   Ravl2::Array<int, 2> matrix(Ravl2::IndexRange<2>({5, 5}));
   int at = 0;
@@ -599,21 +626,38 @@ TEST_CASE("ZipN")
     a[ai] = at;
     b[ai] = unsigned (at++);
   }
-  auto it = zip(a, b);
-  int count = 0;
-  CHECK(it.valid());
-  CHECK(it.index<0>() == Index<2>({0, 0}));
-
-  for(;it.valid();++it)
+  SECTION("Basic")
   {
-    //SPDLOG_INFO("Data: {} {}  @ {} ", it.data<0>(), it.data<1>(),it.index<0>());
-    CHECK(a.range().contains(it.index<0>()));
+    auto it = zip(a, b);
+    int count = 0;
     CHECK(it.valid());
-    CHECK_EQ(it.data<0>(), int(it.data<1>()));
-    CHECK(count < 16);
-    count++;
+    CHECK(it.index<0>() == Index<2>({0, 0}));
+
+    for(; it.valid(); ++it) {
+      //SPDLOG_INFO("Data: {} {}  @ {} ", it.data<0>(), it.data<1>(),it.index<0>());
+      CHECK(a.range().contains(it.index<0>()));
+      CHECK(it.valid());
+      CHECK_EQ(it.data<0>(), int(it.data<1>()));
+      CHECK(count < 16);
+      count++;
+    }
+    CHECK_EQ(count, 16);
   }
-  CHECK_EQ(count, 16);
+  SECTION("Relative")
+  {
+    auto win = a.range().shrink(1);
+    auto it = zip(clip(a,win),clip(b,win));
+    for(; it.valid(); ++it) {
+      CHECK(it.iter<0>()(0,0) == it.data<0>());
+      CHECK(it.at<0>(0,0) == it.data<0>());
+      CHECK(it.at<1>(0,0) == it.data<1>());
+      CHECK(it.at<1>(0,1) == it.data<1>()+1);
+      CHECK(it.at<1>(0,-1) == it.data<1>()-1);
+      CHECK(it.at<1>(1,0) == it.data<1>()+4);
+      CHECK(it.at<1>(-1,0) == it.data<1>()-4);
+    }
+
+  }
 }
 
 

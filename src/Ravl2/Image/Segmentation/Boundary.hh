@@ -21,7 +21,7 @@
 namespace Ravl2
 {
   template <typename RealT>
-  class Polygon2dC;
+  class Polygon;
 
   //! @brief Crack code boundary
 
@@ -202,9 +202,9 @@ namespace Ravl2
   //! Straight edges are compressed into a single segment.
 
   template <typename RealT>
-  Polygon2dC<RealT> toPolygon(const Boundary &bnd)
+  Polygon<RealT> toPolygon(const Boundary &bnd)
   {
-    Polygon2dC<RealT> polygon;
+    Polygon<RealT> polygon;
 
     auto et = bnd.edges().begin();
     auto endAt = bnd.edges().end();
