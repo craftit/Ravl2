@@ -67,21 +67,21 @@ namespace Ravl2
 
     //! Transform Vector,  scale, Rotate, translate.
     // Take a vector and put it though the transformation.
-    [[nodiscard]] constexpr auto operator()(PointT pnt) const
+    [[nodiscard]] constexpr PointT operator()(PointT pnt) const
     {
-      return PointT(xt::linalg::dot(mSR, pnt) + mT);
+      return dot(mSR, pnt) + mT;
     }
 
     //! Compose this transform with 'In'
     [[nodiscard]] inline constexpr auto operator()(const Affine &in) const
     {
-      return Affine(xt::linalg::dot(mSR, in.SRMatrix()), xt::linalg::dot(mSR, in.Translation()) + mT);
+      return Affine(dot(mSR, in.SRMatrix()), dot(mSR, in.Translation()) + mT);
     }
 
     //! @brief Divide this transform by 'in'
     [[nodiscard]] inline constexpr auto divideBy(const Affine &in) const
     {
-      Matrix<DataT, N, N> invSr = xt::linalg::inv(in.SRMatrix());
+      Matrix<DataT, N, N> invSr = Ravl2::inverse(in.SRMatrix());
       return Affine(mSR * invSr, invSr * (mT - in.Translation()));
     }
 
@@ -93,8 +93,8 @@ namespace Ravl2
     }
 
   protected:
-    Matrix<DataT, N, N> mSR = xt::eye<DataT>(N);//!< Scale/rotate.
-    Vector<DataT, N> mT = xt::zeros<DataT>({N});//!< Translate.
+    Matrix<DataT, N, N> mSR = Matrix<DataT, N, N>::Identity();//!< Scale/rotate.
+    Vector<DataT, N> mT = Vector<DataT,N>::zeros();//!< Translate.
   };
 
   /////////////////////////////////////////////////
@@ -103,7 +103,7 @@ namespace Ravl2
   template <typename DataT, unsigned N>
   void constexpr Affine<DataT, N>::scale(const Vector<DataT, N> &xy)
   {
-    mSR = xt::linalg::dot(mSR, xt::diag(xy));
+    mSR = mSR * Eigen::DiagonalWrapper(xy);
   }
 
   template <typename DataT, unsigned N>
@@ -121,7 +121,7 @@ namespace Ravl2
       return std::nullopt;
     }
     ret.mSR = inv.value();
-    ret.mT = xt::linalg::dot(ret.mSR, mT) * -1;
+    ret.mT = dot(ret.mSR, mT) * -1;
     return ret;
   }
 
@@ -171,7 +171,7 @@ namespace Ravl2
   template <typename DataT, unsigned N>
   Affine<DataT, N> toAffine(ScaleTranslate<DataT, N> const &st)
   {
-    return Affine<DataT, N>(xt::diag(st.scaleVector()), st.translation());
+    return Affine<DataT, N>(Eigen::DiagonalWrapper(st.scaleVector()), st.translation());
   }
 
   //! @brief Compose transforms

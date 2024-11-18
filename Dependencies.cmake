@@ -26,6 +26,7 @@ function(RAVL2_setup_dependencies)
 
   find_package(fmt QUIET)
   find_package(spdlog QUIET)
+  find_package(Eigen3 3.3 QUIET)
   find_package(xtensor QUIET)
   find_package(xtensor-blas QUIET)
   find_package(Catch2 3 QUIET)

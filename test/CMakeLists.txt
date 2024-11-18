@@ -62,6 +62,7 @@ add_executable(tests
         checks.hh
         test_warpScale.cc
         test_projective.cc
+        test_eigen.cc
 )
 target_link_libraries(
   tests
@@ -75,7 +76,8 @@ target_link_libraries(
           ravl2::Ravl2x3D
           ravl2::Ravl2OpenCV
           ravl2::Ravl2Optimise
-          Catch2::Catch2WithMain)
+          Catch2::Catch2WithMain
+          Eigen3::Eigen)
 
 if(WIN32 AND BUILD_SHARED_LIBS)
   add_custom_command(

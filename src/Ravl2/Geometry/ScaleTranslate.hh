@@ -75,7 +75,7 @@ namespace Ravl2
 
     //! Transform Vector,  scale, Rotate, translate.
     // Take a vector and put it though the transformation.
-    [[nodiscard]] constexpr auto operator()(const Vector<DataT, N> &pnt) const
+    [[nodiscard]] constexpr Point<DataT,N> operator()(const Point<DataT, N> &pnt) const
     {
       return mS * pnt + mT;
     }
@@ -100,8 +100,8 @@ namespace Ravl2
     }
 
   protected:
-    Vector<DataT, N> mS = xt::ones<DataT>({N}); //!< Scale
-    Vector<DataT, N> mT = xt::zeros<DataT>({N});//!< Translate.
+    Vector<DataT, N> mS = Vector<DataT, N>::Ones(); //!< Scale
+    Vector<DataT, N> mT = Vector<DataT, N>::Zero();//!< Translate.
   };
 
   //! Generate an inverse transformation.

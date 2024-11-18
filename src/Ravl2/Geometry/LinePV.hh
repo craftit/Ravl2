@@ -75,7 +75,7 @@ namespace Ravl2
     // Use at() to get to the corresponding point on the line.
     [[nodiscard]] RealT ParClosest(const Point<RealT, N> &pnt) const
     {
-      return (xt::linalg::dot(mDirection, (pnt - mPoint)) / xt::sum(mDirection * mDirection))();
+      return (dot(mDirection, (pnt - mPoint)) / sum(mDirection.array() * mDirection.array()))();
     }
 
     //: Returns the direction vector of this line.

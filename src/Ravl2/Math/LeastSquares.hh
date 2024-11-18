@@ -102,7 +102,7 @@ namespace Ravl2
   //! @param: rv - Result vector.
   //! @return: true if solution found.
   template <typename RealT>
-  bool LeastSquaresEq0Mag1(const Tensor<RealT, 2> &X, VectorT<RealT> &rv)
+  bool LeastSquaresEq0Mag1(const MatrixT<RealT> &X, VectorT<RealT> &rv)
   {
     auto [U, S, V] = xt::linalg::svd(X);
     // The result matrix V is transposed from what we would expect.

@@ -32,7 +32,7 @@ namespace Ravl2
     //! Goto first point in sequence.
     constexpr bool reset()
     {
-      work = xt::zeros<unsigned>({N});
+      work = Vector<unsigned, N>::zeros();
       done = false;
       s = 0;
       next();
@@ -100,7 +100,7 @@ namespace Ravl2
 	// Work out direction numbers.
 	int shift = bits - 1;
 	for(size_t i = 0; i < bits; i++) {
-	  vx(i, k) = seq[i] << (shift--);
+	  vx(int(i), int(k)) = seq[i] << (shift--);
 	}
       }
       next();
@@ -109,7 +109,7 @@ namespace Ravl2
     size_t s = 0;        // Position in sequence.
     bool done = false;
     const RealT frac = 1.0 / (1 << bits);
-    Vector<unsigned, N> work = xt::zeros<unsigned>({N});
+    Vector<unsigned, N> work = Vector<unsigned, N>::zeros();
     Point<RealT, N> result;
     Matrix<unsigned, bits, N> vx;
   };

@@ -10,36 +10,10 @@
 
 #include <span>
 #include <fmt/ostream.h>
+#include <eigen3/Eigen/Dense>
+#include <eigen3/Eigen/Geometry>
 #include <cereal/cereal.hpp>
 #include <cereal/types/array.hpp>
-
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wdouble-promotion"
-#pragma GCC diagnostic ignored "-Wshadow"
-#pragma GCC diagnostic ignored "-Wsign-conversion"
-#pragma GCC diagnostic ignored "-Wfloat-conversion"
-#pragma GCC diagnostic ignored "-Wunused-local-typedefs"
-#pragma GCC diagnostic ignored "-Wnull-dereference"
-#pragma GCC diagnostic ignored "-Warray-bounds"
-#pragma GCC diagnostic ignored "-Wunused-parameter"
-#if !defined(__clang__) && defined(__GNUC__)
-#pragma GCC diagnostic ignored "-Wduplicated-branches"
-#pragma GCC diagnostic ignored "-Wunused-but-set-parameter"
-#pragma GCC diagnostic ignored "-Wuseless-cast"
-#pragma GCC diagnostic ignored "-Wparentheses"
-#endif
-#ifdef __clang__
-#pragma GCC diagnostic ignored "-Wimplicit-float-conversion"
-#endif
-#include <xtensor/xio.hpp>
-#include <xtensor/xtensor.hpp>
-#include <xtensor/xview.hpp>
-#include <xtensor/xrandom.hpp>
-#include <xtensor/xadapt.hpp>
-#include <xtensor/xnorm.hpp>
-#include <xtensor/xmath.hpp>
-#include <xtensor/xreducer.hpp>
-#pragma GCC diagnostic pop
 
 #include "Ravl2/Index.hh"
 #include "Ravl2/Math.hh"
@@ -70,29 +44,29 @@ namespace Ravl2
   }
 
   template <typename DataT>
-  using VectorT = xt::xtensor<DataT, 1>;
+  using VectorT = Eigen::Matrix<DataT, Eigen::Dynamic, 1>;
+
+  //template <typename DataT> using TensorT = Eigen::Tensor<DataT>;
 
   template <typename DataT>
-  using TensorT = xt::xarray<DataT>;
+  using MatrixT = Eigen::Matrix<DataT, Eigen::Dynamic, Eigen::Dynamic>;
 
-  template <typename DataT>
-  using MatrixT = xt::xtensor<DataT, 2>;
+  using IndexSizeT = Eigen::Index;
 
-  using EmbeddingMatrixT = xt::xtensor<float, 2>;
+  using EmbeddingMatrixT = Eigen::Matrix<float, Eigen::Dynamic, Eigen::Dynamic>;
   using VectorViewT = std::span<float>;
   using ConstVectorViewT = std::span<const float>;
 
   template <typename DataT, size_t N>
-  using Point = xt::xtensor_fixed<DataT, xt::xshape<N>, XTENSOR_DEFAULT_LAYOUT, false>;
+  using Point = Eigen::Matrix<DataT, N, 1>;
 
   template <typename DataT, size_t N>
-  using Vector = xt::xtensor_fixed<DataT, xt::xshape<N>, XTENSOR_DEFAULT_LAYOUT, false>;
+  using Vector = Eigen::Matrix<DataT, N, 1>;
 
   template <typename DataT, size_t N, size_t M>
-  using Matrix = xt::xtensor_fixed<DataT, xt::xshape<N, M>, XTENSOR_DEFAULT_LAYOUT, false>;
+  using Matrix = Eigen::Matrix<DataT, N, M>;
 
-  template <typename DataT, unsigned N>
-  using Tensor = xt::xtensor<DataT, N>;
+  //template <typename DataT, unsigned N> using Tensor = xt::xtensor<DataT, N>;
 
   using Vector4f = Vector<float, 4>;
   using Vector3f = Vector<float, 3>;
@@ -130,6 +104,7 @@ namespace Ravl2
 
 }// namespace Ravl2
 
+#if 0
 #if FMT_VERSION >= 90000
 template <>
 struct fmt::formatter<xt::xarray<float>> : fmt::ostream_formatter {
@@ -183,3 +158,4 @@ namespace xt
     }
   }
 }// namespace xt
+#endif
