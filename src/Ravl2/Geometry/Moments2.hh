@@ -325,7 +325,7 @@ namespace Ravl2
   constexpr Vector<SumT, 2> Moments2<SumT>::principalAxisSize() const
   {
     Matrix<SumT, 2, 2> mat = covariance();
-    auto vec = xt::linalg::eigvalsh(mat);
+    auto vec = mat.eigenvalues();
     if(vec[0] < vec[1])
       std::swap(vec[0], vec[1]);
     return vec;

@@ -153,14 +153,14 @@ namespace Ravl2
     [[nodiscard]] Vector<RealT, 2> UnitNormal() const
     {
       auto normal = this->Normal();
-      return normal / xt::linalg::norm(normal, 2);
+      return normal / normal.norm();
     }
 
     //! Returns signed perpendicular distance of pt from this line
     [[nodiscard]] RealT SignedDistance(const Point<RealT, 2> Pt) const
     {
       auto dir = this->direction();
-      return cross<RealT>(dir, Pt - this->P1()) / xt::linalg::norm(dir, 2);
+      return cross<RealT>(dir, Pt - this->P1()) / dir.norm();
     }
 
     //! Return unsigned perpendicular distance of pt from this line
@@ -172,7 +172,7 @@ namespace Ravl2
     //! Returns intersection of line with perpendicular from Pt to line
     [[nodiscard]] Point<RealT, 2> Projection(const Point<RealT, 2> &Pt) const
     {
-      return Point<RealT, 2>(this->ParClosest(Pt));
+      return this->PointAt(this->ParClosest(Pt));
     }
 
     //! Returns distance of pt to nearest point on the line within the segment limits

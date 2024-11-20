@@ -44,7 +44,7 @@ namespace Ravl2
 
     //! Get the number of dimensions
     [[nodiscard]] size_t size () const
-    { return mMin.size(); }
+    { return size_t(mMin.size()); }
   private:
     VectorT<RealT> mMin;
     VectorT<RealT> mMax;

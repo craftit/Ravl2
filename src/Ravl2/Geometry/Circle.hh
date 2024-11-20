@@ -90,20 +90,20 @@ namespace Ravl2
     //! Is point inside circle ?
     [[nodiscard]] inline constexpr bool IsInside(const Point<RealT, 2> &point) const
     {
-      return squaredEuclidDistance(centre, point) < (radius * radius);
+      return squaredEuclidDistance<RealT,2>(centre, point) < (radius * radius);
     }
 
     //! Find the closest point on the circle to 'point'.
     [[nodiscard]] inline constexpr Point<RealT, 2> Projection(const Point<RealT, 2> &point) const
     {
       Vector<RealT, 2> dir = point - centre;
-      return centre + (radius / norm_l2(dir)) * dir;
+      return centre + ((radius / dir.norm()) * dir.array()).matrix();
     }
 
     //! Angle between origin and point p.
     [[nodiscard]] inline constexpr RealT Angle(const Point<RealT, 2> &p) const
     {
-      return angle(p, centre);
+      return angle<RealT,2>(p, centre);
     }
 
     //! Get point on circle at given angle.

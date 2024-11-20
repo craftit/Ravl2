@@ -52,6 +52,7 @@ namespace Ravl2
   using MatrixT = Eigen::Matrix<DataT, Eigen::Dynamic, Eigen::Dynamic>;
 
   using IndexSizeT = Eigen::Index;
+  using IndexT = Eigen::Index;
 
   using EmbeddingMatrixT = Eigen::Matrix<float, Eigen::Dynamic, Eigen::Dynamic>;
   using VectorViewT = std::span<float>;

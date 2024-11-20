@@ -28,7 +28,7 @@ namespace Ravl2
     //! Constructor from a vector and a point on the plane/line.
     VectorOffset(const Vector<RealT, N> &norm, const Point<RealT, N> &p)
         : mNormal(norm),
-          mD(-xt::linalg::dot(norm,p)())
+          mD(-norm.dot(p))
     {}
 
     //! Returns the normal of the plane.
@@ -53,7 +53,7 @@ namespace Ravl2
     //! used in geometrical computations.
     [[nodiscard]] constexpr RealT residuum(const Point<RealT, N> &p) const
     {
-      return xt::linalg::dot(mNormal,p)() + this->mD;
+      return mNormal.dot(p) + this->mD;
     }
 
     //! Returns the signed distance of the 'point' from the line.
@@ -62,7 +62,7 @@ namespace Ravl2
     //! by the direction of the normal.
     [[nodiscard]] constexpr RealT signedDistance(const Point<RealT, N> &point) const
     {
-      return residuum(point) / norm_l2(mNormal);
+      return residuum(point) / mNormal.norm();
     }
 
     //! Returns the distance of the 'point' from this.
@@ -82,7 +82,7 @@ namespace Ravl2
     //! Normalizes the normal vector have a length of 1.
     inline auto &makeUnitNormal()
     {
-      RealT mag = RealT(norm_l2(mNormal)());
+      RealT mag = RealT(mNormal.norm());
       mNormal /= mag;
       mD /= mag;
       return (*this);

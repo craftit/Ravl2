@@ -75,7 +75,7 @@ namespace Ravl2
     // Use at() to get to the corresponding point on the line.
     [[nodiscard]] RealT ParClosest(const Point<RealT, N> &pnt) const
     {
-      return (dot(mDirection, (pnt - mPoint)) / sum(mDirection.array() * mDirection.array()))();
+      return (mDirection.dot(pnt - mPoint)) / sum(mDirection.array() * mDirection.array());
     }
 
     //: Returns the direction vector of this line.
@@ -93,7 +93,7 @@ namespace Ravl2
     //: Make the direction part of the line a unit vector.
     void MakeDirectionUnitDirection()
     {
-      mDirection /= norm_l2(mDirection);
+      mDirection /= mDirection.norm();
     }
 
     //: Returns the shortest distance between the lines.
@@ -103,11 +103,11 @@ namespace Ravl2
         // more information in Rektorys:
         // Prehled uzite matematiky, SNTL, Praha 1988, p. 205
         auto axb = cross(Direction(), line.Direction());
-        auto modul = Ravl2::norm_l2(axb);
+        auto modul = axb.norm();
         if(isNearZero(modul)) {
           return line.distance(FirstPoint());
         }
-        return std::abs(RealT(xt::linalg::dot(line.FirstPoint() - FirstPoint(), axb)())) / modul;
+        return std::abs(RealT((line.FirstPoint() - FirstPoint()).dot(axb))) / modul;
       } else {
         return 0;
       }
@@ -116,7 +116,13 @@ namespace Ravl2
     //: Returns the distance of the point 'p' from this line.
     [[nodiscard]] RealT distance(const Point<RealT, N> &p) const
     {
-      return RealT(norm_l2(cross(Direction(), (FirstPoint() - p)) / norm_l2(Direction()))());
+      if constexpr(N == 3) {
+	return cross<RealT>(Direction(), Point<RealT, N>(FirstPoint() - p)).norm() / Direction().norm();
+      }
+      if constexpr(N == 2) {
+	return cross<RealT>(Direction(), Point<RealT, N>(FirstPoint() - p)) / Direction().norm();
+      }
+      throw std::runtime_error("Not implemented for N != 2, 3");
     }
 
     //! IO Handling

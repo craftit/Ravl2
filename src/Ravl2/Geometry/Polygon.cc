@@ -211,7 +211,7 @@ namespace Ravl2
     // Avoid generating degenerate polygons.
     if(!ret.empty()) {
       // Check first and last are different.
-      if(squaredEuclidDistance(ret.front(), ret.back()) < std::numeric_limits<RealT>::epsilon()) {
+      if(squaredEuclidDistance<RealT,2>(ret.front(), ret.back()) < std::numeric_limits<RealT>::epsilon()) {
         ret.pop_back();
       }
     }

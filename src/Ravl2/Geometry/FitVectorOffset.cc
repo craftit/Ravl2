@@ -6,5 +6,5 @@
 
 namespace Ravl2
 {
-  template bool fit(VectorOffset<float, 3> &plane, const std::vector<Point<float, 3>> &points);
+  //template bool fit(VectorOffset<float, 3> &plane, const std::vector<Point<float, 3>> &points);
 }

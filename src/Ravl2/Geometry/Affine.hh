@@ -69,19 +69,19 @@ namespace Ravl2
     // Take a vector and put it though the transformation.
     [[nodiscard]] constexpr PointT operator()(PointT pnt) const
     {
-      return dot(mSR, pnt) + mT;
+      return mSR * pnt + mT;
     }
 
     //! Compose this transform with 'In'
     [[nodiscard]] inline constexpr auto operator()(const Affine &in) const
     {
-      return Affine(dot(mSR, in.SRMatrix()), dot(mSR, in.Translation()) + mT);
+      return Affine(mSR * in.SRMatrix(), mSR * in.Translation() + mT);
     }
 
     //! @brief Divide this transform by 'in'
     [[nodiscard]] inline constexpr auto divideBy(const Affine &in) const
     {
-      Matrix<DataT, N, N> invSr = Ravl2::inverse(in.SRMatrix());
+      Matrix<DataT, N, N> invSr = *Ravl2::inverse(in.SRMatrix());
       return Affine(mSR * invSr, invSr * (mT - in.Translation()));
     }
 
@@ -94,7 +94,7 @@ namespace Ravl2
 
   protected:
     Matrix<DataT, N, N> mSR = Matrix<DataT, N, N>::Identity();//!< Scale/rotate.
-    Vector<DataT, N> mT = Vector<DataT,N>::zeros();//!< Translate.
+    Vector<DataT, N> mT = Vector<DataT,N>::Zero();//!< Translate.
   };
 
   /////////////////////////////////////////////////
@@ -107,7 +107,7 @@ namespace Ravl2
   }
 
   template <typename DataT, unsigned N>
-  inline constexpr void Affine<DataT, N>::translate(const Vector<DataT, N> &T)
+  constexpr void Affine<DataT, N>::translate(const Vector<DataT, N> &T)
   {
     mT += T;
   }
@@ -121,7 +121,7 @@ namespace Ravl2
       return std::nullopt;
     }
     ret.mSR = inv.value();
-    ret.mT = dot(ret.mSR, mT) * -1;
+    ret.mT = ret.mSR * mT * -1;
     return ret;
   }
 
@@ -141,15 +141,7 @@ namespace Ravl2
   template <typename DataT, unsigned N>
   constexpr bool Affine<DataT, N>::isReal() const
   {
-    for(auto x : mSR) {
-      if(std::isinf(x) || std::isnan(x))
-        return false;
-    }
-    for(auto x : mT) {
-      if(std::isinf(x) || std::isnan(x))
-        return false;
-    }
-    return true;
+    return Eigen::isfinite(mSR.array()).all() && Eigen::isfinite(mT.array()).all();
   }
 
   template <typename DataT>

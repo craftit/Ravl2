@@ -53,6 +53,6 @@ namespace Ravl2
     return true;
   }
   
-  extern template bool fit(VectorOffset<float, 3> &plane, const std::vector<Point<float, 3>> &points);
+  //extern template bool fit(VectorOffset<float, 3u> &plane, const std::vector<Point<float, 3u>> &points);
 
 }// namespace Ravl2

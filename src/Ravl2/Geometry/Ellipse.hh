@@ -68,10 +68,10 @@ namespace Ravl2
     //!param: angle - Angle of major axis.
     constexpr Ellipse(const Point<RealT, 2> &centre, RealT major, RealT minor, RealT angle)
     {
-      p = Affine<RealT, 2>(xt::linalg::dot(Matrix<RealT, 2, 2>({{std::cos(angle), -std::sin(angle)},
-                                                                {std::sin(angle), std::cos(angle)}}),
+      p = Affine<RealT, 2>(Matrix<RealT, 2, 2>({{std::cos(angle), -std::sin(angle)},
+                                                                {std::sin(angle), std::cos(angle)}}) *
                                            Matrix<RealT, 2, 2>({{major, 0},
-                                                                {0, minor}})),
+                                                                {0, minor}}),
                            centre);
     }
 
@@ -153,7 +153,7 @@ namespace Ravl2
   //! @param  conic - Conic to turn into an Ellipse
   //! @return Ellipse if conic is an conic, otherwise if hyperbola or degenerate std::nullopt.
   template <typename RealT>
-  constexpr std::optional<Ellipse<RealT>> toEllipse(const Conic2<RealT> &conic)
+  std::optional<Ellipse<RealT>> toEllipse(const Conic2<RealT> &conic)
   {
     // Ellipse representation is transformation required to transform unit
     // circle into conic.  This is the inverse of the "square root" of
@@ -167,7 +167,11 @@ namespace Ravl2
                       << euc << "\n Center=" << centre << std::endl);
 
     // Then decompose to get orientation and scale
-    auto [lambda, E] = xt::linalg::eigh(euc);
+    //auto [lambda, E] = xt::linalg::eigh(euc);
+    Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> solver(euc);
+    auto E = solver.eigenvectors();
+    auto lambda = solver.eigenvalues();
+
     // lambda now contains inverted squared *minor* & *major* axes respectively
     // (N.B.: check: E[0][1] *MUST* have same sign as conic orientation)
     ONDEBUG(std::cerr << "Eigen decomp is:\n"
@@ -181,7 +185,7 @@ namespace Ravl2
     // ordering.  I.e. so that [1,0] on unit circle gets mapped to
     // end of major axis rather than minor axis.
 
-    auto ret = Ellipse<RealT>(xt::linalg::dot(E, scale), centre);
+    auto ret = Ellipse<RealT>(E * scale, centre);
     ONDEBUG(std::cerr << "Ellipse:\n"
                       << ret << std::endl);
     ONDEBUG(std::cerr << "[1,0] on unit circle goes to " << ret.Projection()(toVector<RealT>(1, 0)) << " on conic" << std::endl);

@@ -22,7 +22,7 @@ namespace Ravl2
     constexpr void normalise()
     {
       // Calculate the magnitude
-      auto const mag = RealT(norm_l2(m_vec));
+      auto const mag = RealT(m_vec.norm());
       // If the magnitude is non-zero, then normalise the quaternion
       assert(!isNearZero(mag));
       m_vec /= mag;
@@ -42,7 +42,7 @@ namespace Ravl2
     [[nodiscard]]
     constexpr bool isNormalised() const
     {
-      auto const mag = RealT(norm_l2(m_vec));
+      auto const mag = RealT(m_vec.norm());
       return isNearZero(mag - 1.0f, 1e-6f);
     }
 
@@ -71,7 +71,7 @@ namespace Ravl2
     {
       auto s = std::sin(angle / 2);
       Vector4f vec {std::cos(angle / 2), axis[0] * s, axis[1] * s, axis[2] * s};
-      vec /= norm_l2(vec);
+      vec /= vec.norm();
       return Quaternion(vec);
     }
 
@@ -183,7 +183,7 @@ namespace Ravl2
     //! Compute the rotation angle from an axis angle representation
     [[nodiscard]] constexpr RealT angle() const
     {
-      auto norm = RealT(norm_l2(m_vec));
+      auto norm = RealT(m_vec.norm());
       return std::atan2(std::sqrt(sqr(m_vec[1] / norm) + sqr(m_vec[2] / norm) + sqr(m_vec[3] / norm)), m_vec[0] / norm);
     }
 

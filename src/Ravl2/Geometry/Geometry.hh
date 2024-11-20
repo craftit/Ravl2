@@ -67,7 +67,7 @@ namespace Ravl2
   template <typename RealT, IndexSizeT N>
   [[nodiscard]] constexpr RealT angle(const Vector<RealT, N> &a, const Vector<RealT, N> &b)
   {
-    return RealT(std::acos((dot(a, b) / (norm_l2(a) * norm_l2(b)))()));
+    return std::acos((a.dot(b) / (a.norm() * b.norm())));
   }
 
   template <typename RealT>

@@ -194,7 +194,7 @@ namespace Ravl2
       auto v = direction();
       RealT l2 = sqr(v[0]) + sqr(v[1]);
       if(l2 == RealT(0)) throw std::underflow_error("FLinePPC::ParClosest(): Cannot find line parameter for zero-length line");
-      return dot(v, pnt - point[0])() / l2;
+      return v.dot(pnt - point[0]) / l2;
     }
 
     //! Serialization support

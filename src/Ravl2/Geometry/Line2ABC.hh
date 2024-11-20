@@ -40,7 +40,7 @@ namespace Ravl2
     inline constexpr Line2ABC(const Point<RealT, 2> &start, const Point<RealT, 2> &end)
     {
       this->mNormal = perpendicular(Vector<RealT, 2>(end - start));
-      this->mD = -dot(this->mNormal, start)();
+      this->mD = -this->mNormal.dot(start);
     }
 
     //! Creates the line passing through two points 'end' and 'start'.
@@ -52,27 +52,27 @@ namespace Ravl2
     //! Creates the line passing through 'pt' with the normal 'norm'.
     [[nodiscard]] static constexpr Line2ABC<RealT> fromNormal(const Vector<RealT, 2> &normal, const Point<RealT, 2> &pt)
     {
-      return Line2ABC<RealT>(normal, RealT(-dot(normal, pt)()));
+      return Line2ABC<RealT>(normal, RealT(-normal.dot(pt)));
     }
 
     //! Creates the line passing through 'pt' with the direction 'vec'
     [[nodiscard]] static constexpr Line2ABC<RealT> fromDirection(const Point<RealT, 2> &pt, const Vector<RealT, 2> &vec)
     {
       auto normal = perpendicular(vec);
-      return Line2ABC<RealT>(normal, RealT(-dot(normal, pt)()));
+      return Line2ABC<RealT>(normal, RealT(-normal.dot(pt)));
     }
     
     //! Returns the normal of the line normalized to have unit size.
     [[nodiscard]] inline constexpr Vector<RealT, 2> unitNormal() const
     {
-      return this->mNormal / Ravl2::norm_l2(this->mNormal);
+      return this->mNormal / this->mNormal.norm();
     }
 
     //! Returns the distance of the line from the origin of the coordinate
     //! system.
     [[nodiscard]] inline constexpr RealT rho() const
     {
-      return this->mD / Ravl2::norm_l2(this->mNormal);
+      return this->mD / this->mNormal.norm();
     }
 
     //! Returns parameter a.

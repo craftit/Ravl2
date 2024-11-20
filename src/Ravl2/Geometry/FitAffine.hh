@@ -69,7 +69,7 @@ namespace Ravl2
     auto [fromMean,fromScale] =  meanAndScale<RealT,N>(from);
     auto [toMean,toScale] =  meanAndScale<RealT,N>(to);
 
-    Tensor<RealT,2> A({samples,N+1});
+    MatrixT<RealT> A(samples,N+1);
     std::array<VectorT<RealT>,N> eqs;
     for(auto &eq : eqs) {
       eq = xt::empty<RealT>({samples});
