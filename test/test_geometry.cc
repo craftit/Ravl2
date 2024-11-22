@@ -5,6 +5,7 @@
 #include <spdlog/spdlog.h>
 #include <cereal/archives/json.hpp>
 
+#include "Ravl2/IO/Cereal.hh"
 #include "Ravl2/Math.hh"
 #include "Ravl2/Angle.hh"
 #include "Ravl2/Geometry/Geometry.hh"
@@ -709,7 +710,7 @@ TEST_CASE("FitIsometry")
   std::vector<Point<RealT,3>> transformedPoints;
   transformedPoints.reserve(points.size());
   for(auto p : points) {
-    transformedPoints.push_back(xt::linalg::dot(rot ,p) * scale  + offset);
+    transformedPoints.push_back((rot * p) * scale  + offset);
   }
 
   //! Fit a rigid transform between the two point sets.
@@ -719,7 +720,7 @@ TEST_CASE("FitIsometry")
     Matrix<RealT, 3, 3> fittedRotation;
     RealT fittedScaling = -1;
 
-    CHECK(fitSimilarity<RealT>(
+    CHECK(fitSimilarity<RealT,3>(
       fittedRotation,
       fittedTranslation,
       fittedScaling,

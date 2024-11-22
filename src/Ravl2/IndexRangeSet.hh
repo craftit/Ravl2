@@ -181,21 +181,35 @@ namespace Ravl2
       }
       return ret;
     }
+  };
 
-    //! Serialization support
-    template <class Archive>
-    constexpr void serialize(Archive &archive)
+#if 1
+    template<class Archive,unsigned N>
+    void save(Archive & archive,
+              IndexRangeSet<N> const & m)
     {
-      cereal::size_type s = this->size();
+      cereal::size_type s = m.size();
       archive(cereal::make_size_tag(s));
-      if(s != this->size()) {
-        this->resize(s);
-      }
-      for(auto &i : *this) {
+      for(auto &i : m) {
         archive(i);
       }
     }
-  };
+
+    template<class Archive,unsigned N>
+    void load(Archive & archive,
+              IndexRangeSet<N> & m)
+    {
+      cereal::size_type s = m.size();
+      archive(cereal::make_size_tag(s));
+      if(s != m.size()) {
+        m.resize(s);
+      }
+      for(auto &i : m) {
+        archive(i);
+      }
+    }
+
+#endif
 
   // Let everyone know there's an implementation already generated for common cases
   extern template class IndexRangeSet<3>;

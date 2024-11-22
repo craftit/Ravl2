@@ -11,30 +11,6 @@
 //! file="Ravl/Math/LinearAlgebra/General/LeastSquares.hh"
 
 #pragma once
-
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wdouble-promotion"
-#pragma GCC diagnostic ignored "-Wshadow"
-#pragma GCC diagnostic ignored "-Wsign-conversion"
-#pragma GCC diagnostic ignored "-Wfloat-conversion"
-#pragma GCC diagnostic ignored "-Wunused-local-typedefs"
-#pragma GCC diagnostic ignored "-Wnull-dereference"
-#pragma GCC diagnostic ignored "-Warray-bounds"
-#pragma GCC diagnostic ignored "-Wunused-parameter"
-#if !defined(__clang__) && defined(__GNUC__)
-#pragma GCC diagnostic ignored "-Wduplicated-branches"
-#pragma GCC diagnostic ignored "-Wunused-but-set-parameter"
-#pragma GCC diagnostic ignored "-Wuseless-cast"
-#pragma GCC diagnostic ignored "-Wparentheses"
-#endif
-#ifdef __clang__
-#pragma GCC diagnostic ignored "-Wimplicit-float-conversion"
-#endif
-#include <xtensor/xmath.hpp>
-#include <xtensor/xsort.hpp>
-#include <xtensor-blas/xlinalg.hpp>
-#pragma GCC diagnostic pop
-
 #include "Ravl2/Math/LinearAlgebra.hh"
 
 namespace Ravl2
@@ -48,7 +24,7 @@ namespace Ravl2
     requires std::is_floating_point_v<RealT>
   std::tuple<Point<RealT, N>, RealT> meanAndScale(const Container1T &raw)
   {
-    Point<RealT, N> mean = xt::zeros<RealT>({N});
+    Point<RealT, N> mean = Point<RealT, N>::Zero();
     for(auto it : raw) {
       mean += it;
     }
@@ -64,8 +40,7 @@ namespace Ravl2
       if constexpr(N == 2) {
 	d += std::hypot(it[0] - mean[0], it[1] - mean[1]);
       } else {
-	RealT sum = xt::sum(xt::square(it - mean))();
-	d += std::sqrt(sum);
+	d +=  (it - mean).norm();
       }
     }
     d = isNearZero(d) ? RealT(1) : (realSize / d);

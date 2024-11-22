@@ -191,7 +191,7 @@ TEST_CASE("Quaternion")
 
     for(int i = 0;i < 5;++i) {
       Vector<RealT,3> vec(dis(gen), dis(gen), dis(gen));
-      auto q = Quaternion<RealT>::fromAngleAxis(RealT(dis(gen)), vec);
+      auto q = Quaternion<RealT>::fromAngleAxis(dis(gen), vec);
 
       Matrix<RealT, 3, 3> matrix = q.toMatrix();
 

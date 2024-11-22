@@ -118,13 +118,13 @@ namespace Ravl2
   //! @param pointsFrom - The second set of points.
   //! @param forceUnitScale - If true, the scale is forced to 1.
   //! @return True if the transformation was computed.
-  template<typename RealT,IndexSizeT N, SimpleContainer ContainerOfPointAT, SimpleContainer ContainerOfPointBT>
+  template<typename RealT,unsigned N, SimpleContainer ContainerOfPointAT, SimpleContainer ContainerOfPointBT>
   bool fitSimilarity(Affine<RealT,N> &affine,
 			   const ContainerOfPointAT &pointsTo,
 			   const ContainerOfPointBT &pointsFrom)
   {
     RealT scale = 0;
-    if(!fitSimilarity(affine.SRMatrix(), affine.Translation(), scale, pointsTo, pointsFrom, false)) {
+    if(!fitSimilarity<RealT,N>(affine.SRMatrix(), affine.Translation(), scale, pointsTo, pointsFrom, false)) {
       return false;
     }
     affine.SRMatrix() *= scale;
@@ -143,7 +143,7 @@ namespace Ravl2
 		     const ContainerOfPointBT &pointsFrom)
   {
     RealT scale = 0;
-    if(!fitSimilarity(affine.SRMatrix(), affine.Translation(), scale, pointsTo, pointsFrom, true)) {
+    if(!fitSimilarity<RealT,N>(affine.SRMatrix(), affine.Translation(), scale, pointsTo, pointsFrom, true)) {
       return false;
     }
     affine.SRMatrix() *= scale;

@@ -622,7 +622,6 @@ namespace Ravl2
 
   //! Serialization support
   template <class Archive, unsigned N>
-    requires(N > 1)
   constexpr void serialize(Archive &archive, IndexRange<N> &range)
   {
     cereal::size_type s = N;

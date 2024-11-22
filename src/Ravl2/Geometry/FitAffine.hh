@@ -73,7 +73,7 @@ namespace Ravl2
     for(auto &eq : eqs) {
       eq = VectorT<RealT>(samples);
     }
-    size_t i = 0;
+    IndexT i = 0;
 
     auto toIt = to.begin();
     auto toEnd = to.end();
@@ -84,34 +84,38 @@ namespace Ravl2
       Point<RealT,N> p1 = normalisePoint<RealT,N>(*toIt,toMean,toScale);
       Point<RealT,N> p2 = normalisePoint<RealT,N>(*frIt,fromMean,fromScale);
 
-      for(size_t j = 0; j < N; j++) {
+      for(IndexT j = 0; j < IndexT(N); j++) {
 	A(i,j) = p2[j];
       }
       A(i,N) = 1;
 
-      for(size_t j = 0; j < N; ++j) {
-	eqs[j](i) = p1[j];
+      for(IndexT j = 0; j < IndexT(N); ++j) {
+	eqs[unsigned(j)](i) = p1[j];
       }
     }
     Matrix<RealT,N,N> sr;
     Vector<RealT,N> tr;
     RealT residual = 0;
-    if(A.shape(0) == A.shape(1)) {
-      for(size_t j = 0; j < N; j++) {
-	auto solA = xt::linalg::solve(A, eqs[j]);
-	for(size_t k = 0; k < N; k++) {
-	  sr(j, k) = solA[k];
-	}
-	tr[j] = solA[N];
+    if(A.rows() == A.cols()) {
+      auto sol = A.ldlt();
+      for(IndexT j = 0; j < IndexT(N); j++) {
+        //auto solA = xt::linalg::solve(A, eqs[j]);
+        auto solA = sol.solve(eqs[size_t(j)]);
+        for(IndexT k = 0; k < IndexT(N); k++) {
+          sr(j, k) = solA[k];
+        }
+        tr[j] = solA[N];
       }
     } else {
-      for(size_t j = 0; j < N; j++) {
-	auto [solA, residualA, rankA, sA] = xt::linalg::lstsq(A, eqs[j]);
-	for(size_t k = 0; k < N; k++) {
+      auto sol = A.bdcSvd(Eigen::ComputeThinU | Eigen::ComputeThinV);
+      for(IndexT j = 0; j < IndexT(N); j++) {
+	//auto [solA, residualA, rankA, sA] = xt::linalg::lstsq(A, eqs[j]);
+        auto solA = sol.solve(eqs[unsigned(j)]);
+	for(IndexT k = 0; k < IndexT(N); k++) {
 	  sr(j, k) = solA[k];
 	}
-	tr[j] = solA[N];
-	residual += xt::sum(residualA)();
+	tr[j] = solA[IndexT(N)];
+	//residual += xt::sum(residualA)();
       }
     }
 

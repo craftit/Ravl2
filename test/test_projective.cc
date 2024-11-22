@@ -16,7 +16,7 @@ TEST_CASE("Projective2")
 
   //SPDLOG_INFO("Projection: {}", proj);
   // Check homography
-  CHECK(sumOfSqr(proj.homography() - xt::eye(3)) < 0.001);
+  CHECK(sumOfSqr(proj.homography() - Matrix<RealT,3,3>::Identity()) < 0.001);
 
   std::vector<Point<RealT,2>> ipnt;
   ipnt.push_back(toPoint<RealT>(1, 1));

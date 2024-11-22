@@ -129,9 +129,9 @@ namespace Ravl2
   }
 
   template <typename DataTypeT, typename RealT = DataTypeT::value_type>
-  [[nodiscard]] constexpr RealT sumOfSqr(const DataTypeT &a)
+  [[nodiscard]] constexpr RealT sumOfSqr(const DataTypeT &ae)
   {
-    return Ravl2::sum(a.array() * a.array());
+    return ae.cwiseProduct(ae).sum();
   }
 
   template <typename RealT>

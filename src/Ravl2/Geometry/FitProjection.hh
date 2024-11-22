@@ -52,7 +52,7 @@ namespace Ravl2
       const Point<RealT,2> y = normalisePoint<RealT,2>(*toIt,toMean,toScale);
 
       //auto row1 = A[i++];
-      auto row1 = xt::view(A, i++, xt::all());
+      auto row1 = A.row(i++);
 
       RealT r = y[0];
       RealT c = y[1];
@@ -129,7 +129,7 @@ namespace Ravl2
 
       // Construct 8x8 matrix of linear equations
       Matrix<RealT,8,8> A = Matrix<RealT,8,8>::Zero();
-      VectorT<RealT> b = VectorT<RealT>::Zero();
+      Vector<RealT,8> b = Vector<RealT,8>::Zero();
 
       // distinguish between explicit and implicit forms of point observations
       IndexT i=0;

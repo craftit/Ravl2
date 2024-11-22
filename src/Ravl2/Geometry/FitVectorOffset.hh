@@ -14,38 +14,41 @@ namespace Ravl2
     if(points.size() < 3)
       return false;
 
-    Matrix<RealT, N, N> covar = xt::zeros<RealT>({N, N});
+    Matrix<RealT, N, N> covar = Matrix<RealT, N, N>::Zero();
 
     auto [mean, scale] = normalise<RealT, N>(points, [&covar](const Point<RealT, N> &pnt) {
-      for(size_t i = 0; i < N; i++) {
-        for(size_t j = i; j < 3; j++)
+      for(IndexT i = 0; i < IndexT(N); i++) {
+        for(IndexT j = i; j < 3; j++)
           covar(i, j) += pnt[i] * pnt[j];
       }
     });
 
     // Make it symmetric.
-    for(size_t i = 0; i < N; i++) {
-      for(size_t j = i + 1; j < N; j++) {
+    for(IndexT i = 0; i < IndexT(N); i++) {
+      for(IndexT j = i + 1; j < IndexT(N); j++) {
         covar(j, i) = covar(i, j);
       }
     }
 
-    auto [u, s, v] = xt::linalg::svd(covar, true, true);
+    //auto [u, s, v] = xt::linalg::svd(covar, true, true);
+    Eigen::template JacobiSVD<Matrix<RealT, N, N> > svd(covar);
+    auto s = svd.singularValues();
+    auto v = svd.matrixV();
 
     // Find the smallest singular value,
     // they are normally sorted, but let's be paranoid.
     RealT min = s[0];
-    size_t minI = 0;
-    for(size_t i = 1; i < N; i++) {
+    IndexT minI = 0;
+    for(IndexT i = 1; i < IndexT(N); i++) {
       if(s[i] < min) {
         minI = i;
         min = s[i];
       }
     }
 
-    Vector<RealT, N> normal = xt::view(v, minI, xt::all());
+    Vector<RealT, N> normal = v.row(minI);
     RealT d = 0;
-    for(size_t i = 0; i < N; i++) {
+    for(IndexT i = 0; i < IndexT(N); i++) {
       normal[i] *= scale;
       d += normal[i] * mean[i];
     }

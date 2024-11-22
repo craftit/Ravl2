@@ -36,10 +36,9 @@ namespace Ravl2
     if(N < 3)// Under determined.
       return std::nullopt;
 
-    typename MatrixT<RealT>::shape_type sh = {N, 3};
-    MatrixT<RealT> A = xt::empty<RealT>(sh);
-    VectorT<RealT> B = xt::empty<RealT>({N});
-    size_t i = 0;
+    MatrixT<RealT> A(N, 3);
+    VectorT<RealT> B(N);
+    IndexT i = 0;
     auto [mean, scale] = normalise<RealT, 2>(points, [&i, &A, &B](const Point<RealT, 2> &pnt) {
       const RealT X = pnt[0];
       const RealT Y = pnt[1];
@@ -50,10 +49,9 @@ namespace Ravl2
       i++;
     });
 
-    auto [x, residual, rank, s] = xt::linalg::lstsq(A, B);
+    //auto [x, residual, rank, s] = xt::linalg::lstsq(A, B);
+    auto x = A.bdcSvd(Eigen::ComputeThinU | Eigen::ComputeThinV).solve(B);
     //SPDLOG_INFO("Rank:{} Residual:{}", int(rank), residual());
-    if(rank < 3)
-      return std::nullopt;// Fit failed.
 
     const RealT X = x[0] / -2;
     const RealT Y = x[1] / -2;
@@ -61,7 +59,7 @@ namespace Ravl2
     scale = 1 / scale;
     circle = Circle2dC<RealT>((toPoint<RealT>(X, Y) * scale) + mean, radius * scale);
     //SPDLOG_INFO("Circle2dC::FitLSQ() Center={} Radius={}", circle.Centre(), circle.Radius());
-    return residual() * scale;
+    return 0;//residual() * scale;
   }
 
 }// namespace Ravl2
