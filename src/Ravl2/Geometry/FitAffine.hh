@@ -71,7 +71,7 @@ namespace Ravl2
     MatrixT<RealT> A(samples,N+1);
     std::array<VectorT<RealT>,N> eqs;
     for(auto &eq : eqs) {
-      eq = xt::empty<RealT>({samples});
+      eq = VectorT<RealT>(samples);
     }
     size_t i = 0;
 
@@ -81,8 +81,8 @@ namespace Ravl2
     auto frEnd = from.end();
 
     for(;toIt != toEnd && frIt!=frEnd;++toIt,++frIt,++i) {
-      Point<RealT,N> p1 = normalisePoint<RealT>(*toIt,toMean,toScale);
-      Point<RealT,N> p2 = normalisePoint<RealT>(*frIt,fromMean,fromScale);
+      Point<RealT,N> p1 = normalisePoint<RealT,N>(*toIt,toMean,toScale);
+      Point<RealT,N> p2 = normalisePoint<RealT,N>(*frIt,fromMean,fromScale);
 
       for(size_t j = 0; j < N; j++) {
 	A(i,j) = p2[j];

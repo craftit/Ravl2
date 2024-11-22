@@ -1,6 +1,7 @@
 
 #include "checks.hh"
 
+#include "Ravl2/IO/Cereal.hh"
 #include "Ravl2/3D/PinholeCamera0.hh"
 #include "Ravl2/3D/TriMesh.hh"
 #include "Ravl2/3D/MeshShapes.hh"
@@ -32,8 +33,8 @@ TEST_CASE("PinholeCamera0")
       EXPECT_FLOAT_EQ(cam.cy(), cam2.cy());
       EXPECT_FLOAT_EQ(cam.fx(), cam2.fx());
       EXPECT_FLOAT_EQ(cam.fy(), cam2.fy());
-      EXPECT_TRUE(xt::allclose(cam.R(), cam2.R()));
-      EXPECT_TRUE(xt::allclose(cam.t(), cam2.t()));
+      EXPECT_TRUE(cam.R().isApprox(cam2.R()));
+      EXPECT_TRUE(cam.t().isApprox(cam2.t()));
     }
   }
   

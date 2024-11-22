@@ -88,11 +88,11 @@ namespace Ravl2
     return std::sqrt(sum);
   }
 
-  template <typename RealT, size_t N>
+  template <typename RealT, IndexSizeT N>
   [[nodiscard]] constexpr RealT squaredEuclidDistance(const Point<RealT, N> &a, const Point<RealT, N> &b)
   { return (a - b).squaredNorm(); }
 
-  template <typename RealT, size_t N>
+  template <typename RealT, IndexSizeT N>
   [[nodiscard]] constexpr auto euclidDistance(const Point<RealT, N> &a, const Point<RealT, N> &b)
   {
     RealT sum = 0;
@@ -112,7 +112,7 @@ namespace Ravl2
     return Ravl2::norm(a - b);
   }
 
-  template <typename RealT = float, unsigned N>
+  template <typename RealT = float, IndexSizeT N>
   [[nodiscard]] constexpr auto euclidDistance(const Index<N> &a, const Index<N> &b)
   {
     int sum = 0;
@@ -194,7 +194,7 @@ namespace Ravl2
   }
 
   //! Convert a point to the closest integer index
-  template <size_t N, typename RealT>
+  template <IndexSizeT N, typename RealT>
     requires std::is_floating_point<RealT>::value
   [[nodiscard]] constexpr inline Index<N> toIndex(const Point<RealT, N> &pnt)
   {
@@ -206,13 +206,13 @@ namespace Ravl2
   }
 
   //! Get the closest integer index from an integer point
-  template <size_t N, typename NumberT>
+  template <IndexSizeT N, typename NumberT>
     requires std::is_integral<NumberT>::value
-  [[nodiscard]] constexpr inline Index<N> toIndex(const Point<NumberT, N> &pnt)
+  [[nodiscard]] constexpr inline Index<unsigned (N)> toIndex(const Point<NumberT, N> &pnt)
   {
-    Index<N> ret;
+    Index<unsigned (N)> ret;
     for(unsigned i = 0; i < N; i++) {
-      ret[i] = NumberT(pnt[i]);
+      ret[i] = NumberT(pnt[IndexT(i)]);
     }
     return ret;
   }
@@ -224,13 +224,13 @@ namespace Ravl2
   {
     Point<RealT, N> ret;
     for(unsigned i = 0; i < N; i++) {
-      ret[i] = RealT(idx[i]);
+      ret[IndexT(i)] = RealT(idx[i]);
     }
     return ret;
   }
 
   //! Convert a parameter list of RealT to a point
-  template <typename RealT, typename... DataT, unsigned N = sizeof...(DataT)>
+  template <typename RealT, typename... DataT, IndexSizeT N = sizeof...(DataT)>
     requires(std::is_convertible_v<DataT, RealT> && ...)
   [[nodiscard]] constexpr Point<RealT, N> toPoint(DataT... data)
   {
@@ -238,7 +238,7 @@ namespace Ravl2
   }
 
   //! Convert a parameter list of RealT to a point
-  template <typename RealT, typename SourceT, size_t N>
+  template <typename RealT, typename SourceT, IndexSizeT N>
     requires(std::is_convertible_v<SourceT, RealT>)
   [[nodiscard]] constexpr Point<RealT, N> toPoint(const Point<SourceT, N> &pnt)
   {
@@ -250,7 +250,7 @@ namespace Ravl2
   }
 
   //! Convert a parameter list of RealT to a point
-  template <typename RealT, typename... DataT, unsigned N = sizeof...(DataT)>
+  template <typename RealT, typename... DataT, IndexSizeT N = sizeof...(DataT)>
     requires(std::is_convertible_v<DataT, RealT> && ...)
   [[nodiscard]] constexpr inline Vector<RealT, N> toVector(DataT... data)
   {
@@ -258,7 +258,7 @@ namespace Ravl2
   }
 
   //! Convert a parameter list of RealT to a point
-  template <typename RealT, typename SourceT, size_t N>
+  template <typename RealT, typename SourceT, IndexSizeT N>
     requires(std::is_convertible_v<SourceT, RealT>)
   [[nodiscard]] constexpr Point<RealT, N> toVector(const Point<SourceT, N> &pnt)
   {
@@ -270,7 +270,7 @@ namespace Ravl2
   }
 
   //! Linear interpolation between two points
-  template <typename RealT, size_t N>
+  template <typename RealT, IndexSizeT N>
   [[nodiscard]] constexpr inline Point<RealT, N> lerp(const Point<RealT, N> &a, const Point<RealT, N> &b, RealT t)
   {
     Point<RealT, N> ret;
@@ -282,7 +282,7 @@ namespace Ravl2
 
   //! Check all elements of a matrix are real
   //! That is not nan or infinite
-  template <typename RealT, size_t N, size_t M>
+  template <typename RealT, IndexSizeT N, IndexSizeT M>
   [[nodiscard]] bool isReal(Matrix<RealT, N, M> const &m)
   {
     for(auto x : m) {
@@ -294,7 +294,7 @@ namespace Ravl2
 
   //! Check all elements of a vector are real
   //! That is not nan or infinite
-  template <typename RealT, size_t N>
+  template <typename RealT, IndexSizeT N>
   [[nodiscard]] bool isReal(Vector<RealT, N> const &v)
   {
     for(auto x : v) {

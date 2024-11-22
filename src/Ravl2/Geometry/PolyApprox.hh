@@ -15,7 +15,7 @@ namespace Ravl2
 {
   namespace detail
   {
-    template <class RealT,size_t N>
+    template <class RealT,IndexSizeT N>
     void approxSegment(std::vector<Point<RealT,N> > &ret, auto p1, auto p2, RealT maxDist)
     {
       auto at = p1;

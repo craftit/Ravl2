@@ -2,6 +2,7 @@
 // Created by charles galambos on 22/10/2023.
 //
 
+#include <random>
 #include "checks.hh"
 #include "Ravl2/Geometry/Quaternion.hh"
 #include "Ravl2/Geometry/Isometry3.hh"
@@ -98,7 +99,7 @@ TEST_CASE("Quaternion")
     Quaternion const q2 = Quaternion<RealT>::fromAngleAxis(RealT(std::numbers::pi/4.0), {0.0, 0.0, 1.0});
 
     // At 0 we should be close to q1
-    Quaternion const q3 = slerp(q1,q2, 0);
+    Quaternion const q3 = slerp(q1,q2, 0.0f);
     EXPECT_FLOAT_EQ(q3.angle(),0);
 
     // At 1 we should be close to q2
@@ -173,11 +174,12 @@ TEST_CASE("Quaternion")
       // set a random position
       testVec = {dis(gen), dis(gen), dis(gen)};
       position = {dis(gen), dis(gen), dis(gen)};
-      auto q = Quaternion<RealT>::fromAngleAxis(RealT(dis(gen)), Vector3d{dis(gen), dis(gen), dis(gen)});
+      Vector3d vec(dis(gen), dis(gen), dis(gen));
+      auto q = Quaternion<double>::fromAngleAxis(dis(gen), vec);
 
       auto restored = q.inverse().rotate(q.rotate(testVec));
 
-      EXPECT_NEAR(xt::norm_l2(restored - testVec)(), 0.0, 1e-5);
+      EXPECT_NEAR((restored - testVec).norm(), 0.0, 1e-5);
     }
   }
 
@@ -185,17 +187,18 @@ TEST_CASE("Quaternion")
   {
     std::random_device rd;
     std::mt19937 gen(rd());
-    std::uniform_real_distribution<double> dis(-1.0, 1.0);
+    std::uniform_real_distribution<RealT> dis(-1.0, 1.0);
 
     for(int i = 0;i < 5;++i) {
-      auto q = Quaternion<RealT>::fromAngleAxis(RealT(dis(gen)), Vector3d{dis(gen), dis(gen), dis(gen)});
+      Vector<RealT,3> vec(dis(gen), dis(gen), dis(gen));
+      auto q = Quaternion<RealT>::fromAngleAxis(RealT(dis(gen)), vec);
 
       Matrix<RealT, 3, 3> matrix = q.toMatrix();
 
       auto q2 = Quaternion<RealT>::fromMatrix(matrix);
 
       //SPDLOG_INFO("q: {} q2: {}", q, q2);
-      CHECK(xt::sum(xt::abs(q.asVector() - q2.asVector()))() < 1e-5f);
+      CHECK((q.asVector() - q2.asVector()).cwiseAbs().sum() < 1e-5f);
     }
 
   }
@@ -248,7 +251,7 @@ TEST_CASE("Isometry3")
     std::vector<Point<RealT,3>> transformedPoints;
     transformedPoints.reserve(points.size());
     for(auto p : points) {
-      transformedPoints.push_back(xt::linalg::dot(rot ,p) + offset);
+      transformedPoints.push_back((rot * p) + offset);
     }
 
     Isometry3<RealT> isometry3;
@@ -256,8 +259,8 @@ TEST_CASE("Isometry3")
 
     for(auto p : points) {
       Point<RealT, 3> isoP = isometry3(p);
-      Point<RealT, 3> rotP = xt::linalg::dot(rot, p) + offset;
-      CHECK(xt::sum(xt::square(isoP - rotP))() < 0.0001f);
+      Point<RealT, 3> rotP = (rot * p) + offset;
+      CHECK((isoP - rotP).cwiseAbs().sum() < 0.0001f);
     }
 
   }

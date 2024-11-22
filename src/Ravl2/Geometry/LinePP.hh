@@ -16,7 +16,7 @@ namespace Ravl2
 
   //! Line in N dimensional space define by two points.
 
-  template <typename RealT, unsigned int N>
+  template <typename RealT, IndexSizeT N>
   class LinePP
   {
   public:

@@ -171,7 +171,7 @@ namespace Ravl2
   //! range of the data type.
 
   template <typename CompT, ImageChannel... Channels>
-  class Pixel : public Vector<CompT, sizeof...(Channels)>
+  class Pixel : public Vector<CompT, IndexSizeT(sizeof...(Channels))>
   {
   public:
     using value_type = CompT;

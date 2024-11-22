@@ -204,13 +204,16 @@ namespace Ravl2
   template <typename RealT>
   [[nodiscard]] constexpr Ellipse<RealT> ellipseMeanCovariance(const Matrix<RealT, 2, 2> &covar, const Point<RealT, 2> &mean, RealT stdDev = 1.0)
   {
-    auto [dv, E] = xt::linalg::eigh(covar);
+    //auto [dv, E] = xt::linalg::eigh(covar);
+    Eigen::SelfAdjointEigenSolver<Matrix<RealT, 2, 2>> solver(covar);
+    Matrix<RealT,2,2> E = solver.eigenvectors();
+    Vector<RealT,2> dv = solver.eigenvalues();
     ONDEBUG(std::cerr << "l: " << dv << "\nE\n"
                       << E << std::endl);
     Matrix<RealT, 2, 2> d(
       {{stdDev * std::sqrt(dv[0]), 0},
        {0, stdDev * std::sqrt(dv[1])}});
-    Matrix<RealT, 2, 2> sr = xt::linalg::dot(E, d);
+    Matrix<RealT, 2, 2> sr = E * d;
     return Ellipse(sr, mean);
   }
 

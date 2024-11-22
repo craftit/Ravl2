@@ -46,7 +46,7 @@ namespace Ravl2
       return isNearZero(mag - 1.0f, 1e-6f);
     }
 
-    explicit constexpr Quaternion(const Vector4f &vec)
+    explicit constexpr Quaternion(const Vector<RealT,4> &vec)
         : m_vec(vec)
     {}
 
@@ -67,10 +67,10 @@ namespace Ravl2
     //! Create a quaternion from an axis angle representation
     //! @param angle The angle of rotation in radians
     //! @param axis The axis of rotation
-    [[nodiscard]] static Quaternion fromAngleAxis(RealT angle, const Vector3f &axis)
+    [[nodiscard]] static Quaternion fromAngleAxis(RealT angle, const Vector<RealT,3> &axis)
     {
       auto s = std::sin(angle / 2);
-      Vector4f vec {std::cos(angle / 2), axis[0] * s, axis[1] * s, axis[2] * s};
+      Vector<RealT,4> vec {std::cos(angle / 2), axis[0] * s, axis[1] * s, axis[2] * s};
       vec /= vec.norm();
       return Quaternion(vec);
     }
@@ -79,7 +79,7 @@ namespace Ravl2
     [[nodiscard]] static Quaternion fromMatrix(const Matrix<RealT, 3, 3> &m)
     {
       RealT trace = m(0, 0) + m(1, 1) + m(2, 2);
-      Vector4f q;
+      Vector<RealT,4> q;
       if(trace > 0) {
 	RealT s = 0.5f / std::sqrt(trace + 1.0f);
 	q[0] = 0.25f / s;
@@ -110,13 +110,13 @@ namespace Ravl2
       return Quaternion(q);
     }
 
-    [[nodiscard]] constexpr Vector4f &asVector()
+    [[nodiscard]] constexpr Vector<RealT,4> &asVector()
     {
       return m_vec;
     }
 
     //! Get the vector representation
-    [[nodiscard]] constexpr const Vector4f &asVector() const
+    [[nodiscard]] constexpr const Vector<RealT,4> &asVector() const
     {
       return m_vec;
     }
@@ -252,7 +252,7 @@ namespace Ravl2
   constexpr Quaternion<RealT> slerp(const Quaternion<RealT> &p1, const Quaternion<RealT> &p2, float t)
   {
     const RealT one = RealT(1.0) - std::numeric_limits<RealT>::epsilon();
-    RealT d = dot(p1.asVector(), p2.asVector())();
+    RealT d = p1.asVector().dot(p2.asVector());
     RealT absD = std::fabs(d);
 
     RealT scale0;

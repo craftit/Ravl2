@@ -149,7 +149,7 @@ TEST_CASE("LinePP")
     // Test for bug now corrected - should clip point 2
     Line2PP l6(pnt2,pnt5);
     CHECK(l6.clipBy(rng));
-    CHECK_FALSE((pnt6 - l6.P2())() > 0.00001f);
+    CHECK_FALSE((pnt6 - l6.P2()).norm() > 0.00001f);
   }
 
 }
@@ -185,9 +185,9 @@ TEST_CASE("LineABC")
   {
     auto line2 = Line2ABC<float>::fromPoints(p1, p4);
     
-    CHECK(float(norm_l2(line2.unitNormal())() - 1) < 0.00001f);
+    CHECK(std::abs(line2.unitNormal().norm() - 1) < 0.00001f);
     line2.makeUnitNormal();
-    CHECK(std::abs(norm_l2(line2.normal()) - 1) < 0.00001f);
+    CHECK(std::abs((line2.normal().norm()) - 1) < 0.00001f);
     CHECK(std::abs(line2.distance(p1)) < 0.00001f);
     CHECK(std::abs(line2.distance(p4)) < 0.00001f);
   }

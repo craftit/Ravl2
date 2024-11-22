@@ -58,13 +58,13 @@ namespace Ravl2
   using VectorViewT = std::span<float>;
   using ConstVectorViewT = std::span<const float>;
 
-  template <typename DataT, size_t N>
+  template <typename DataT, IndexSizeT N>
   using Point = Eigen::Matrix<DataT, N, 1>;
 
-  template <typename DataT, size_t N>
+  template <typename DataT, IndexSizeT N>
   using Vector = Eigen::Matrix<DataT, N, 1>;
 
-  template <typename DataT, size_t N, size_t M>
+  template <typename DataT, IndexSizeT N, IndexSizeT M>
   using Matrix = Eigen::Matrix<DataT, N, M>;
 
   //template <typename DataT, unsigned N> using Tensor = xt::xtensor<DataT, N>;
@@ -111,6 +111,10 @@ struct fmt::formatter<T> : ostream_formatter {};
 
 template <typename T>
 struct fmt::formatter<Eigen::WithFormat<T>> : ostream_formatter {};
+
+
+
+
 
 #if 0
 #if FMT_VERSION >= 90000

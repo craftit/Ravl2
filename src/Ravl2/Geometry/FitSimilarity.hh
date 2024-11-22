@@ -26,7 +26,7 @@ namespace Ravl2
   //! @param forceUnitScale - If true, the scale is forced to 1.
   //! @return True if the transformation was computed.
 
-  template<typename RealT,size_t N, SimpleContainer ContainerOfPointAT, SimpleContainer ContainerOfPointBT>
+  template<typename RealT,IndexSizeT N, SimpleContainer ContainerOfPointAT, SimpleContainer ContainerOfPointBT>
   bool fitSimilarity(Matrix<RealT,N,N> &rotation,
 		     Vector<RealT,N> &translation,
 		     RealT &scale,
@@ -42,8 +42,8 @@ namespace Ravl2
     if(n < 2) {
       return false;
     }
-    Point<RealT,N> mean1 = xt::zeros<RealT>({N});
-    Point<RealT,N> mean2 = xt::zeros<RealT>({N});
+    Point<RealT,N> mean1 = Point<RealT,N>::Zero();
+    Point<RealT,N> mean2 = Point<RealT,N>::Zero();
 
     for(auto x : pointsFrom) {
       mean1 += x;
@@ -61,12 +61,12 @@ namespace Ravl2
     auto points1End = pointsFrom.end();
     auto points2End = pointsTo.end();
     RealT ps1 = 0,ps2 = 0;
-    Matrix<RealT,N,N> covar = xt::zeros<RealT>({N,N});
+    Matrix<RealT,N,N> covar = Matrix<RealT,N,N>::Zero();
     for(;points1It != points1End && points2It != points2End;++points1It,++points2It) {
       Point<RealT,N> p1 = *points1It - mean1;
       Point<RealT,N> p2 = *points2It - mean2;
-      ps1 += xt::sum(xt::square(p1))();
-      ps2 += xt::sum(xt::square(p2))();
+      ps1 += p1.squaredNorm();
+      ps2 += p2.squaredNorm();
       for(unsigned i = 0;i < N;++i) {
 	for(unsigned j = 0;j < N;++j) {
 	  covar(i,j) += p1[j] * p2[i];
@@ -84,23 +84,28 @@ namespace Ravl2
     // Compute the rotation from the covariance matrix.
     covar /= n;
 
-    auto [u, d, v] = xt::linalg::svd(covar, true, true);
+    //auto [u, d, v] = xt::linalg::svd(covar, true, true);
+    Eigen::template JacobiSVD<Matrix<RealT, N, N>, Eigen::ComputeFullU|Eigen::ComputeFullV> svd(covar);
+    auto u = svd.matrixU();
+    auto d = svd.singularValues();
+    auto v = svd.matrixV();
 
-    Matrix<RealT,N,N> s = xt::eye<RealT>(N);
+
+    Matrix<RealT,N,N> s = Matrix<RealT,N,N>::Identity();
 
     // Correct mirroring.
-    if((xt::linalg::det(u) * xt::linalg::det(v)) < 0) {
+    if((u.determinant() * v.determinant()) < 0) {
       s(N-1,N-1) = -1;
       d[N-1] *= -1;
     }
 
-    rotation = xt::linalg::dot(xt::linalg::dot(u, s),v);
+    rotation = u * s * v;
 
     // Compute the translation.
     if(forceUnitScale) {
-      translation = mean2 - xt::linalg::dot(rotation,mean1);
+      translation = mean2 - rotation * mean1;
     } else {
-      translation = mean2 - xt::linalg::dot(rotation,mean1) * scale;
+      translation = mean2 - (rotation * mean1) * scale;
     }
 
     return true;
@@ -113,7 +118,7 @@ namespace Ravl2
   //! @param pointsFrom - The second set of points.
   //! @param forceUnitScale - If true, the scale is forced to 1.
   //! @return True if the transformation was computed.
-  template<typename RealT,unsigned N, SimpleContainer ContainerOfPointAT, SimpleContainer ContainerOfPointBT>
+  template<typename RealT,IndexSizeT N, SimpleContainer ContainerOfPointAT, SimpleContainer ContainerOfPointBT>
   bool fitSimilarity(Affine<RealT,N> &affine,
 			   const ContainerOfPointAT &pointsTo,
 			   const ContainerOfPointBT &pointsFrom)
@@ -159,7 +164,7 @@ namespace Ravl2
     RealT scale = 0;
     Matrix<RealT,3,3> rotation;
     Vector<RealT,3> translation;
-    if(!fitSimilarity(rotation, translation, scale, pointsTo, pointsFrom, true)) {
+    if(!fitSimilarity<RealT,3>(rotation, translation, scale, pointsTo, pointsFrom, true)) {
       return false;
     }
     isometry3 = Isometry3<RealT>(Quaternion<RealT>::fromMatrix(rotation), translation);

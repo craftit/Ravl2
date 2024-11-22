@@ -8,7 +8,7 @@ namespace Ravl2
 
   //! Least squares fit of a plane to a set of points in 3d
   //! At least 3 points are needed.
-  template <typename RealT, size_t N>
+  template <typename RealT, IndexSizeT N>
   bool fit(VectorOffset<RealT, N> &plane, const std::vector<Point<RealT, N>> &points)
   {
     if(points.size() < 3)

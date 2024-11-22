@@ -541,7 +541,7 @@ namespace Ravl2
     }
     
     //! Get a point from the configuration file.
-    template <typename RealT,size_t N,typename ParamT = RealT>
+    template <typename RealT,IndexSizeT N,typename ParamT = RealT>
      requires std::is_convertible_v<ParamT,RealT>
     [[nodiscard]] Point<RealT,N> getPoint(const std::string_view &name, const std::string_view &description, RealT defaultValue, ParamT min, ParamT max)
     {
@@ -564,7 +564,7 @@ namespace Ravl2
     
     //! This reads a matrix from the configuration file.
     //! The data is stored as a vector in row major order.
-    template <typename RealT,size_t N,size_t M,typename ParamT = RealT>
+    template <typename RealT,IndexSizeT N,IndexSizeT M,typename ParamT = RealT>
       requires std::is_convertible_v<ParamT,RealT>
     [[nodiscard]] Matrix<RealT,N,M> getMatrix(const std::string_view &name, const std::string_view &description, RealT defaultValue, RealT min, RealT max)
     {

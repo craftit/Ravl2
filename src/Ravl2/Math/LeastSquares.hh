@@ -44,7 +44,7 @@ namespace Ravl2
   //! and the average variation to 1.
   //! @param: raw - Points to be normalised
   //! @return The mean to be subtracted from the points, and scale they should be multiplied by.
-  template <typename RealT, unsigned N, typename Container1T>
+  template <typename RealT, IndexSizeT N, typename Container1T>
     requires std::is_floating_point_v<RealT>
   std::tuple<Point<RealT, N>, RealT> meanAndScale(const Container1T &raw)
   {
@@ -54,7 +54,7 @@ namespace Ravl2
     }
     size_t pnts = raw.size();
     if(pnts == 0) {
-      const Point<RealT, N> zero = xt::zeros<RealT>({N});
+      const Point<RealT, N> zero = Point<RealT, N>::Zero();
       return {zero, 1};
     }
     auto realSize = static_cast<RealT>(pnts);
@@ -72,7 +72,7 @@ namespace Ravl2
     return {mean, d};
   }
 
-  template <typename RealT, size_t N>
+  template <typename RealT, IndexSizeT N>
   Point<RealT, N> normalisePoint(const Point<RealT, N> &pnt, const Point<RealT, N> &mean, RealT scale)
   {
     return (pnt - mean) * scale;
@@ -84,7 +84,7 @@ namespace Ravl2
   //! @param: raw - Points to be normalised
   //! @param: func - Function/lambda to accept normalised point.
   //! @return The mean subtracted from the points, and scale applied.
-  template <typename RealT, unsigned N, typename Container1T, typename FuncT>
+  template <typename RealT, IndexSizeT N, typename Container1T, typename FuncT>
     requires std::is_floating_point_v<RealT>
   std::tuple<Point<RealT, N>, RealT> normalise(const Container1T &raw, FuncT func)
   {
@@ -104,10 +104,14 @@ namespace Ravl2
   template <typename RealT>
   bool LeastSquaresEq0Mag1(const MatrixT<RealT> &X, VectorT<RealT> &rv)
   {
-    auto [U, S, V] = xt::linalg::svd(X);
+    Eigen::template JacobiSVD<Matrix<RealT, 2, 2>, Eigen::ComputeFullV> svd(X);
+
+    //auto [U, S, V] = xt::linalg::svd(X);
     // The result matrix V is transposed from what we would expect.
     // rv = xt::view(V, xt::all(), -1);
-    rv = xt::view(V, -1, xt::all());
+    auto V = svd.matrixV();
+    // Get the last column of V.
+    rv = V.col(V.cols() - 1);
     return true;
   }
 

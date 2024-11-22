@@ -13,7 +13,7 @@ namespace Ravl2
 
   //! @brief Vector and offset. This defines a line in 2D space, and a plane in 3D space.
 
-  template <typename RealT, size_t N>
+  template <typename RealT, IndexSizeT N>
   class VectorOffset
   {
   public:
@@ -111,14 +111,14 @@ namespace Ravl2
   extern template class VectorOffset<float, 2>;
   extern template class VectorOffset<float, 3>;
   
-  template <typename RealT,size_t N>
+  template <typename RealT,IndexSizeT N>
   std::ostream &operator<<(std::ostream &outS, const VectorOffset<RealT,N> &plane)
   {
     outS << plane.normal() << ' ' << plane.offset();
     return (outS);
   }
   
-  template <typename RealT,size_t N>
+  template <typename RealT,IndexSizeT N>
   std::istream &operator>>(std::istream &inS, VectorOffset<RealT,N> &plane)
   {
     Vector<RealT,N> norm;
@@ -131,7 +131,7 @@ namespace Ravl2
 }// namespace Ravl2
 
 #if FMT_VERSION >= 90000
-template <typename RealT, size_t N>
+template <typename RealT, Ravl2::IndexSizeT N>
 struct fmt::formatter<Ravl2::VectorOffset<RealT, N>> : fmt::ostream_formatter {
 };
 #endif

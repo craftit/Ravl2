@@ -1,7 +1,6 @@
 
 #include <numbers>
-#include <cereal/archives/json.hpp>
-#include <cereal/types/vector.hpp>
+#include "Ravl2/IO/Cereal.hh"
 
 #include "checks.hh"
 #include "Ravl2/Array.hh"
@@ -169,7 +168,7 @@ TEST_CASE("Polygon")
     SPDLOG_TRACE("Moments: {} Centroid:{} ", val, val.centroid());
     SPDLOG_TRACE("Centroid:{} ", poly.centroid());
 
-    CHECK(xt::sum(xt::abs(val.centroid() - poly.centroid()))() < 1e-6);
+    CHECK((val.centroid() - poly.centroid()).cwiseAbs().sum() < 1e-6);
 
   }
 

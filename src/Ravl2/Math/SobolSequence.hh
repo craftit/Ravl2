@@ -21,7 +21,7 @@ namespace Ravl2
   //! Generate a Sobol sequence.
   //! Re-implementation from numerical recipies 2nd edition. pg 312
 
-  template<typename RealT, IndexSizeT N, IndexSizeT bits = IndexSizeT(sizeof(RealT) * 8 - 2)>
+  template<typename RealT, IndexSizeT N, IndexSizeT bits = (sizeof(RealT) * 8 - 2)>
    requires std::is_floating_point<RealT>::value && (bits > 0) && (N <= 6)
   class SobolSequence
   {
@@ -51,17 +51,17 @@ namespace Ravl2
       IndexT b = 0;
       IndexT k = s++;
       // Find the least unset bit from sequence position.
-      for(; b <= bits; b++) {
+      for(; b <= IndexT(bits); b++) {
 	if(!(k & 1))
 	  break;
 	k >>= 1;
       }
       //cerr << "b:" << b << " " << s << "\n";
-      if(b == bits) {
+      if(b == IndexT(bits)) {
 	done = true;
 	return false;
       }
-      for(IndexT i = 0; i < N; i++) {
+      for(IndexT i = 0; i < IndexT(N); i++) {
 	work[i] ^= vx(b,i);
 	result[i] = RealT(work[i]) * frac;
       }

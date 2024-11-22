@@ -16,9 +16,7 @@ namespace Ravl2
   template <typename RealT, unsigned N>
   Matrix<RealT,N+1,N+1> projectiveNormalisationMatrix(Point<RealT,N> mean, RealT scale)
   {
-    Matrix<RealT,N+1,N+1> normMat = xt::zeros<RealT>({N+1,N+1});
-    for(unsigned i = 0; i < N; i++)
-      normMat(i,i) = scale;
+    Matrix<RealT,N+1,N+1> normMat = Matrix<RealT,N+1,N+1>::Identity() * scale;
     for(unsigned i = 0; i < N; i++)
       normMat(i,N) = -mean[i] * scale;
     normMat(N,N) = 1;
@@ -41,10 +39,9 @@ namespace Ravl2
     auto [toMean,toScale] =  meanAndScale<RealT,2>(to);
 
     // Build matrix.
-    typename MatrixT<RealT>::shape_type sh = {neq * 2, 9};
-    Tensor<RealT, 2> A(sh);
+    MatrixT<RealT> A(neq * 2, 9);
 
-    size_t i = 0;
+    IndexT i = 0;
     auto toIt = to.begin();
     auto toEnd = to.end();
     auto frIt = from.begin();
@@ -73,7 +70,7 @@ namespace Ravl2
       row1[8] = c;
 
       //auto row2 = A[i++];
-      auto row2 = xt::view(A, i++, xt::all());
+      auto row2 = A.row(i++);
 
       row2[0] = x[0];
       row2[1] = x[1];
@@ -103,7 +100,7 @@ namespace Ravl2
       SPDLOG_ERROR("Failed to invert normalisation matrix. {} from mean {} scale {} ",projectiveNormalisationMatrix<RealT,2>(toMean,toScale),toMean,toScale);
       return false;
     }
-    proj =  xt::linalg::dot(xt::linalg::dot(toNorm.value(), mat),fromNorm);
+    proj =  toNorm.value() * mat * fromNorm;
     return true;
   }
 
@@ -131,11 +128,11 @@ namespace Ravl2
       // bottom-right element P[2][2] is not zero.
 
       // Construct 8x8 matrix of linear equations
-      Matrix<RealT,8,8> A = xt::zeros<RealT>({8,8});
-      VectorT<RealT> b = xt::zeros<RealT>({8});
+      Matrix<RealT,8,8> A = Matrix<RealT,8,8>::Zero();
+      VectorT<RealT> b = VectorT<RealT>::Zero();
 
       // distinguish between explicit and implicit forms of point observations
-      size_t i=0;
+      IndexT i=0;
       auto it1 = org.begin();
       const auto it1end = org.end();
       auto it2 = newPos.begin();
@@ -155,7 +152,9 @@ namespace Ravl2
 
       // solve for solution vector
       try {
-	auto sb = xt::linalg::solve(A, b);
+	//auto sb = xt::linalg::solve(A, b);
+        auto solver = A.bdcSvd(Eigen::ComputeThinU | Eigen::ComputeThinV);
+        auto sb = solver.solve(b);
 	Matrix<RealT, 3, 3> P({{sb[0], sb[1], sb[2]},
 			       {sb[3], sb[4], sb[5]},
 			       {sb[6], sb[7], 1.0}}
@@ -168,9 +167,7 @@ namespace Ravl2
       return true;
     }
 
-    Matrix<RealT,3,3> P({{1.0,0.0,0.0},
-			 {0.0,1.0,0.0},
-			 {0.0,0.0,1.0}});
+    Matrix<RealT,3,3> P = Matrix<RealT,3,3>::Identity();
     if(!fitProjection(P,newPos,org))
       return false;
     proj = Projection<RealT,2> (P,zh1,zh2);

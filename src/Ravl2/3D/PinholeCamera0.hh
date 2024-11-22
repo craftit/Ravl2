@@ -17,6 +17,7 @@
 #include "Ravl2/Geometry/LinePV.hh"
 #include "Ravl2/IndexRange.hh"
 #include "Ravl2/3D/PinholeCamera.hh"
+#include "Ravl2/IO/Cereal.hh"
 
 namespace Ravl2
 {

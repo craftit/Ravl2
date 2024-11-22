@@ -147,8 +147,8 @@ namespace Ravl2
   template <typename DataT>
   inline constexpr Affine<DataT, 2> affineFromScaleAngleTranslation(const Vector<DataT, 2> &scale, DataT angle, const Vector<DataT, 2> &translation)
   {
-    Matrix<DataT, 2, 2> SR = {{std::cos(angle) * scale[1], -std::sin(angle) * scale[0]},
-                              {std::sin(angle) * scale[1], std::cos(angle) * scale[0]}};
+    Matrix<DataT, 2, 2> SR( {{std::cos(angle) * scale[1], -std::sin(angle) * scale[0]},
+                              {std::sin(angle) * scale[1], std::cos(angle) * scale[0]}});
     return Affine<DataT, 2>(SR, translation);
   }
 
