@@ -112,7 +112,7 @@ namespace Ravl2
       Rx[1] = (uz[1] - this->m_cy) / this->m_fy;
       Rx[2] = 1.0;
       // TMul(this->m_R, Rx, x);
-      x = xt::linalg::dot(xt::transpose(this->m_R), Rx);
+      x = this->m_R.transpose() * Rx;
     }
 
     //: Return an undistorted image point for a PinholeCamera0C model

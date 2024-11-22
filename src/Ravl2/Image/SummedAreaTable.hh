@@ -109,11 +109,11 @@ namespace Ravl2
     ArrayT sampleGrid(ArrayT out, const Vector<RealT,2> pixelScale,Point<RealT,2> pixelOffset = toPoint<RealT>(0,0)) const
     {
       // Check it fits within the table.
-      auto scale = toVector<CoordT>(pixelScale);
-      auto offset = toPoint<CoordT>(pixelOffset);
+      auto scale = pixelScale.template cast<CoordT>();
+      auto offset =pixelOffset.template cast<CoordT>();
       Range<CoordT,2> outRng = toRange<CoordT>(out.range()) ;
       const auto binOffset = toPoint<CoordT>(-1,-1);
-      Range<CoordT,2> rng = Range<CoordT,2>(outRng.min() * scale + offset , outRng.max() * scale + offset );
+      Range<CoordT,2> rng = Range<CoordT,2>(outRng.min().cwiseProduct(scale) + offset , outRng.max().cwiseProduct(scale) + offset );
       auto areaNorm = CoordT(1)/(scale[0] * scale[1]);
       auto indexBounds = rng.toIndexRange().shrinkMax(1);
       if(!mClipRange.contains(indexBounds)) {
@@ -122,7 +122,7 @@ namespace Ravl2
       }
       // Is it worth caching the last row of interpolated values ?
       for(auto it = out.begin();it.valid();) {
-        Point<CoordT,2> pnt = offset + toPoint<CoordT>(it.index()) * scale + binOffset;
+        Point<CoordT,2> pnt = offset + toPoint<CoordT>(it.index()).cwiseProduct(scale) + binOffset;
         auto last0 = interpolateBilinear<CoordT>(*this,pnt + toVector<CoordT>(0,0));
         auto last1 = interpolateBilinear<CoordT>(*this,pnt + toVector<CoordT>(scale[0],0));
         do {

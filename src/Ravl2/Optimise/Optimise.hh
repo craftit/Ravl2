@@ -25,11 +25,11 @@ namespace Ravl2
     {}
 
     //! Construct from minimum and maximum values
-    CostDomain(VectorT<RealT> &&min,
-	       VectorT<RealT> &&max)
-      : mMin(std::move(min)),
-	mMax(std::move(max))
-    {}
+//    CostDomain(VectorT<RealT> &&min,
+//	       VectorT<RealT> &&max)
+//      : mMin(std::move(min)),
+//	mMax(std::move(max))
+//    {}
     //! Access the minimum value of for the arguments of the cost function
     [[nodiscard]] const VectorT<RealT> &min () const
     { return mMin; }

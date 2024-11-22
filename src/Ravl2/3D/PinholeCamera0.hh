@@ -206,7 +206,7 @@ namespace Ravl2
     //!  See projectCheck if this is to be avoided.
     void project(Vector<RealT, 2> &z, const Vector<RealT, 3> &x) const
     {
-      Vector<RealT, 3> Rx = xt::linalg::dot(m_R,x) + m_t;
+      Vector<RealT, 3> Rx = m_R * x + m_t;
       z[0] = m_cx + m_fx * Rx[0] / Rx[2];
       z[1] = m_cy + m_fy * Rx[1] / Rx[2];
     }
@@ -216,7 +216,7 @@ namespace Ravl2
     // is not degenerate.
     bool projectCheck(Vector<RealT, 2> &z, const Vector<RealT, 3> &x) const
     {
-      Vector<RealT, 3> Rx =  xt::linalg::dot(m_R,x) + m_t;
+      Vector<RealT, 3> Rx =  m_R * x + m_t;
       if(isNearZero(Rx[2], RealT(1e-3)))
         return false;
       z[0] = m_cx + m_fx * Rx[0] / Rx[2];
@@ -247,7 +247,7 @@ namespace Ravl2
       Rx[1] = (z[1] - m_cy) / m_fy;
       Rx[2] = 1.0;
       //TMul(m_R,Rx,x);
-      x = xt::linalg::dot(xt::transpose(m_R), Rx);
+      x = m_R.transpose() * Rx;
     }
 
     //! origin of the camera in world co-ordinates.
@@ -255,7 +255,7 @@ namespace Ravl2
     [[nodiscard]] Point<RealT, 3> origin() const
     {
       //TMul(m_R,m_t,org);
-      return Point<RealT, 3>(xt::linalg::dot(-xt::transpose(m_R), m_t));
+      return Point<RealT, 3>(-m_R.transpose() * m_t);
     }
 
     //! Look direction for the camera in the world co-ordinate frame
@@ -304,8 +304,8 @@ namespace Ravl2
     RealT m_cy = 0;
     RealT m_fx = 1;
     RealT m_fy = 1;
-    Matrix<RealT, 3, 3> m_R = xt::eye<RealT>(3);
-    Vector<RealT, 3> m_t;
+    Matrix<RealT, 3, 3> m_R = Matrix<RealT, 3, 3>::Identity();
+    Vector<RealT, 3> m_t = Vector<RealT,3>::Zero();
     IndexRange<2> m_frame;
   };
 

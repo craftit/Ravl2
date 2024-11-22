@@ -238,6 +238,13 @@ namespace Ravl2
   extern template class LinePP<float, 2>;
   extern template class LinePP<float, 3>;
 
+  //! Construct a line from two points
+  template <typename RealT,unsigned int N>
+  [[nodiscard]] inline constexpr LinePP<RealT,N> toLine(Point<RealT, N> const &start, Point<RealT, N> const &end)
+  {
+    return LinePP<RealT,N>(start, end);
+  }
+
 }// namespace Ravl2
 
 #if FMT_VERSION >= 90000

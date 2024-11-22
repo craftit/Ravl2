@@ -56,7 +56,7 @@ namespace Ravl2
     //! Make unit normal.
     void makeUnitNormal()
     {
-      RealT normLen = RealT(xt::norm_l2(mNormal)());
+      RealT normLen = RealT(mNormal.norm());
       if(normLen > RealT(0.0)) {
         mNormal /= normLen;
       }

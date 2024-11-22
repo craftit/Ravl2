@@ -100,7 +100,7 @@ namespace Ravl2
       }
 
       // Now minimise the image plane error to all points
-      Tensor<RealT, 2> J(2 * iNum, 3);
+      MatrixT<RealT> J(2 * iNum, 3);
       VectorT<RealT> Z(2 * iNum);
       int it, iCam;
       for(it = 0; it < 10; it++) {
@@ -120,7 +120,7 @@ namespace Ravl2
           Z[2 * iCam + 1] = imgPt[1] - imgPt1a.template data<1>()[1];
         }
         // Find the update to solve the least squares problem J*d=Z
-        Tensor<RealT, 2> JTJ = J.T() * J;
+        MatrixT<RealT> JTJ = J.T() * J;
         VectorT<RealT> JTZ = J.T() * Z;
         JTJ.InverseIP();
         VectorT<RealT> d = JTJ * JTZ;

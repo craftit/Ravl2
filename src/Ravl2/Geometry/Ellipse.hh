@@ -10,6 +10,7 @@
 
 #pragma once
 
+#include <eigen3/Eigen/SVD>
 #include "Ravl2/Types.hh"
 #include "Ravl2/Geometry/Affine.hh"
 #include "Ravl2/Geometry/Conic2.hh"
@@ -121,7 +122,10 @@ namespace Ravl2
       centre = p.Translation();
       ONDEBUG(std::cerr << "SRMatrix:\n"
                         << p.SRMatrix() << std::endl);
-      auto [u, s, vt] = xt::linalg::svd(p.SRMatrix(), true, true);
+      //auto [u, s, vt] = xt::linalg::svd(p.SRMatrix(), true, true);
+      Eigen::template JacobiSVD<Matrix<RealT, 2, 2>, Eigen::ComputeThinU> svd(p.SRMatrix());
+      auto s = svd.singularValues();
+      auto u = svd.matrixU();
       ONDEBUG(std::cerr << "U:\n"
                         << u << "\nS:" << s << "V:\n"
                         << vt << std::endl);
@@ -141,7 +145,9 @@ namespace Ravl2
     [[nodiscard]]
     constexpr std::tuple<RealT, RealT> size() const
     {
-      auto [u, s, vt] = xt::linalg::svd(p.SRMatrix(), false, false);
+      Eigen::template JacobiSVD<Matrix<RealT, 2, 2> > svd(p.SRMatrix());
+      //auto [u, s, vt] = xt::linalg::svd(p.SRMatrix(), false, false);
+      auto s = svd.singularValues();
       return {s[0], s[1]};
     }
 
@@ -168,9 +174,9 @@ namespace Ravl2
 
     // Then decompose to get orientation and scale
     //auto [lambda, E] = xt::linalg::eigh(euc);
-    Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> solver(euc);
-    auto E = solver.eigenvectors();
-    auto lambda = solver.eigenvalues();
+    Eigen::SelfAdjointEigenSolver<Matrix<RealT, 2, 2>> solver(euc);
+    Matrix<RealT,2,2> E = solver.eigenvectors();
+    Vector<RealT,2> lambda = solver.eigenvalues();
 
     // lambda now contains inverted squared *minor* & *major* axes respectively
     // (N.B.: check: E[0][1] *MUST* have same sign as conic orientation)
@@ -179,8 +185,8 @@ namespace Ravl2
                       << lambda << std::endl);
 
     Matrix<RealT, 2, 2> scale(
-      {{0, RealT(1) / std::sqrt(lambda[0])},
-       {RealT(1) / std::sqrt(lambda[1]), 0}});
+      {{0, RealT(1 / RealT(std::sqrt(lambda[0])) )},
+       {RealT(1 / std::sqrt(lambda[1])), 0}});
     // Columns are swapped in order to swap x & y to compensate for eigenvalue
     // ordering.  I.e. so that [1,0] on unit circle gets mapped to
     // end of major axis rather than minor axis.

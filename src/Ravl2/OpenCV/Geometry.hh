@@ -139,6 +139,7 @@ namespace Ravl2
   }
 
   // Provide some common instantiations
+#if 0
   extern template cv::Vec<float, 2> toCvVec(const Vector<float, 2> &vec);
   extern template cv::Vec<float, 3> toCvVec(const Vector<float, 3> &vec);
   extern template cv::Vec<double, 2> toCvVec(const Vector<double, 2> &vec);
@@ -148,5 +149,6 @@ namespace Ravl2
   extern template cv::Mat toCvMat(const Matrix<double, 3, 3> &mat);
   extern template cv::Mat toCvMat(const Matrix<float, 4, 4> &mat);
   extern template cv::Mat toCvMat(const Matrix<double, 4, 4> &mat);
+#endif
 
 }// namespace Ravl2

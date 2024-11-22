@@ -171,7 +171,7 @@ namespace Ravl2
   template <typename RealT>
   void Polygon<RealT>::addBack(const Point<RealT, 2> &pnt)
   {
-    if(this->empty() || squaredEuclidDistance(pnt, this->back()) > std::numeric_limits<RealT>::epsilon())
+    if(this->empty() || squaredEuclidDistance<RealT,2>(pnt, this->back()) > std::numeric_limits<RealT>::epsilon())
       this->push_back(pnt);
   }
 
@@ -259,7 +259,7 @@ namespace Ravl2
     }
     if(!ret.empty()) {
       // Check first and last are different.
-      if(squaredEuclidDistance(ret.front(), ret.back()) < std::numeric_limits<RealT>::epsilon()) {
+      if(squaredEuclidDistance<RealT,2>(ret.front(), ret.back()) < std::numeric_limits<RealT>::epsilon()) {
         ret.pop_back();
       }
     }

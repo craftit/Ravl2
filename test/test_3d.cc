@@ -15,7 +15,7 @@ TEST_CASE("PinholeCamera0")
 
   SECTION("Cereal")
   {
-    Matrix<float,3,3> rot  = xt::eye<float>(3);
+    Matrix<float,3,3> rot  = Matrix<float,3,3>::Identity();
     Vector<float,3> trans =  {5,6,7};
     PinholeCamera0<float> cam(1.0f, 2.0f, 3.0f, 4.0f, rot, trans, IndexRange<2>({{0, 100},{0, 100}}));
     std::stringstream ss;

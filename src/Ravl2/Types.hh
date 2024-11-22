@@ -105,6 +105,13 @@ namespace Ravl2
 
 }// namespace Ravl2
 
+template <typename T>
+requires std::is_base_of_v<Eigen::DenseBase<T>, T>
+struct fmt::formatter<T> : ostream_formatter {};
+
+template <typename T>
+struct fmt::formatter<Eigen::WithFormat<T>> : ostream_formatter {};
+
 #if 0
 #if FMT_VERSION >= 90000
 template <>

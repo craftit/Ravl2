@@ -19,9 +19,7 @@ namespace Ravl2
    requires std::is_floating_point_v<RealT> && (N > 0)
   Affine<RealT,N> meanScaleToAffine(const Point<RealT,N> &mean, RealT scale)
   {
-    Matrix<RealT,N,N> normMat = xt::zeros<RealT>({N,N});
-    for(unsigned i = 0; i < N; i++)
-      normMat(i,i) = scale;
+    Matrix<RealT,N,N> normMat = Matrix<RealT,N,N>::Identity() * scale;
     return Affine<RealT,N>(normMat,-mean * scale);
   }
 
@@ -43,8 +41,9 @@ namespace Ravl2
     Vector<RealT, 3> b({p1b[0], p2b[0], p3b[0]});
     Vector<RealT, 3> c({p1b[1], p2b[1], p3b[1]});
 
-    auto sab = xt::linalg::solve(A, b);
-    auto sac = xt::linalg::solve(A, c);
+    Eigen::ColPivHouseholderQR<Matrix3f> dec(A);
+    auto sab = dec.solve(b);
+    auto sac = dec.solve(c);
 
     affine.Translation()[0] = sab[2];
     affine.Translation()[1] = sac[2];

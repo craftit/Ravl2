@@ -8,7 +8,7 @@
 #include "Ravl2/Geometry/Polygon.hh"
 #include "Ravl2/Geometry/PolyLine.hh"
 #include "Ravl2/Geometry/Line2ABC.hh"
-#include "Ravl2/Geometry/Line3PV.hh"
+#include "Ravl2/Geometry/LinePV.hh"
 #include "Ravl2/LoopIter.hh"
 
 namespace Ravl2
@@ -20,7 +20,7 @@ namespace Ravl2
     {
       auto at = p1;
       auto fp = p1;
-      auto line = toLine<RealT>(*p1, *p2);
+      auto line = LinePV<RealT,N>::fromPoints(*p1, *p2);
       ++at;
       if(at == p2) {
         return;
@@ -38,9 +38,9 @@ namespace Ravl2
       }
       
       // Do two subsections either side.
-      approxSegment(ret, p1, fp, maxDist);
+      approxSegment<RealT,N>(ret, p1, fp, maxDist);
       ret.push_back(*fp);
-      approxSegment(ret, fp, p2, maxDist);
+      approxSegment<RealT,N>(ret, fp, p2, maxDist);
     }
   }
   //: Generate an approximation to the given polyline within the given distance limit.
@@ -109,9 +109,9 @@ namespace Ravl2
     }
     
     ret.push_back(*maxAt);
-    detail::approxSegment(ret, maxAt,max2At , maxDist);
+    detail::approxSegment<RealT,2>(ret, maxAt,max2At , maxDist);
     ret.push_back(*max2At);
-    detail::approxSegment(ret, loopIter(*this,max2At), loopIter(*this,maxAt), maxDist);
+    detail::approxSegment<RealT,2>(ret, loopIter(*this,max2At), loopIter(*this,maxAt), maxDist);
     return ret;
   }
 
@@ -134,7 +134,7 @@ namespace Ravl2
         break;
       default: {
         ret.push_back(*it);
-        detail::approxSegment(ret, it, this->end()-1, distLimit);
+        detail::approxSegment<RealT,N>(ret, it, this->end()-1, distLimit);
         ret.push_back(this->back());
       } break;
     }

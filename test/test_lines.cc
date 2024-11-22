@@ -95,7 +95,7 @@ TEST_CASE("LinePP")
 
     auto pnt = line2.innerIntersection(line1);
     CHECK(pnt.has_value());
-    CHECK(squaredEuclidDistance(pnt.value(),toPoint<RealT>(0.5, 0.5)) < 0.0001f);
+    CHECK(squaredEuclidDistance<RealT,2>(pnt.value(),toPoint<RealT>(0.5, 0.5)) < 0.0001f);
 
     // check that exception gets thrown for zero-length line
     Line2PP line3(toPoint<RealT>(0, 0), toPoint<RealT>(0, 0));

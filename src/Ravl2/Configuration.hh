@@ -556,8 +556,8 @@ namespace Ravl2
         SPDLOG_ERROR("Expected {} elements in point, got {} ", N, vec.size());
         throw std::runtime_error("Wrong number of elements in point");
       }
-      for(size_t i = 0; i < N; i++) {
-        ret[i] = RealT(vec[i]);
+      for(int i = 0; i < int(N); i++) {
+        ret[i] = RealT(vec[size_t(i)]);
       }
       return ret;
     }
@@ -581,7 +581,7 @@ namespace Ravl2
       }
       for(size_t i = 0; i < N; i++) {
         for(size_t j = 0; j < M; j++) {
-          ret(i,j) = RealT(vec[i * M + j]);
+          ret(int(i),int(j)) = RealT(vec[i * M + j]);
         }
       }
       return ret;

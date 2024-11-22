@@ -23,7 +23,7 @@ namespace Ravl2
     }
     // ---------- Compute parameters ----------------------
     typename MatrixT<RealT>::shape_type sh = {samples, 6};
-    Tensor<RealT, 2> A(sh);
+    MatrixT<RealT> A(sh);
     size_t i = 0;
 
     auto [mean, scale] = normalise<RealT, 2>(points, [&i, &A](const Point<RealT, 2> &p) {

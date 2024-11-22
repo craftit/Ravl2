@@ -68,7 +68,7 @@ namespace Ravl2
   
   //! Construct a line from two points
   template <typename RealT>
-  [[nodiscard]] inline constexpr Line3PV<RealT> points2line(Point<RealT, 3> const &start, Point<RealT, 3> const &end)
+  [[nodiscard]] inline constexpr Line3PV<RealT> toLine(Point<RealT, 3> const &start, Point<RealT, 3> const &end)
   {
     return Line3PV<RealT>(start, end - start);
   }
