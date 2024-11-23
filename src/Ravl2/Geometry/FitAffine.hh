@@ -97,15 +97,17 @@ namespace Ravl2
     Vector<RealT,N> tr;
     RealT residual = 0;
     if(A.rows() == A.cols()) {
-      auto sol = A.ldlt();
+      auto sol = A.colPivHouseholderQr();
       for(IndexT j = 0; j < IndexT(N); j++) {
         //auto solA = xt::linalg::solve(A, eqs[j]);
-        auto solA = sol.solve(eqs[size_t(j)]);
+        auto solA = sol.solve(eqs[unsigned(j)]);
+	//SPDLOG_INFO("solA {}: {}",j, solA);
         for(IndexT k = 0; k < IndexT(N); k++) {
           sr(j, k) = solA[k];
         }
         tr[j] = solA[N];
       }
+      //SPDLOG_INFO("sr:{} tr:{}", sr, tr);
     } else {
       auto sol = A.bdcSvd(Eigen::ComputeThinU | Eigen::ComputeThinV);
       for(IndexT j = 0; j < IndexT(N); j++) {

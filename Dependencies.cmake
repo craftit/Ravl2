@@ -26,7 +26,7 @@ function(RAVL2_setup_dependencies)
 
   find_package(fmt QUIET)
   find_package(spdlog QUIET)
-  find_package(Eigen3 3.3 QUIET)
+  find_package(Eigen3 3.4 QUIET)
   find_package(xtensor QUIET)
   find_package(xtensor-blas QUIET)
   find_package(Catch2 3 QUIET)
@@ -80,6 +80,21 @@ function(RAVL2_setup_dependencies)
     cpmaddpackage("gh:CLIUtils/CLI11@2.3.2")
   else()
     message(STATUS "Found native CLI11::CLI11")
+  endif()
+
+  if(NOT TARGET Eigen3::Eigen)
+    cpmaddpackage(
+            NAME
+            eigen
+            GITLAB_REPOSITORY
+            "libeigen/eigen"
+            VERSION
+            3.4.0
+            GIT_TAG
+            "3.4.0"
+    )
+  else()
+    message(STATUS "Found native Eigen3::Eigen")
   endif()
 
   if(NOT TARGET xtl)

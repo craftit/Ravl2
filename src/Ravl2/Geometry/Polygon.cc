@@ -5,6 +5,7 @@
 // see http://www.gnu.org/copyleft/lesser.html
 // file-header-ends-here
 
+#include "Ravl2/Geometry/Geometry.hh"
 #include "Ravl2/Geometry/Polygon.hh"
 #include "Ravl2/Geometry/PolyApprox.hh"
 #include "Ravl2/Geometry/Moments2.hh"
@@ -55,8 +56,8 @@ namespace Ravl2
     for(auto ptr = this->begin(); ptr != this->end(); ++ptr) {
       auto pNext = nextDataCrc(*this, ptr);
       // Look out for degenerate polygons
-      assert(squaredEuclidDistance(pLast, pNext) > std::numeric_limits<RealT>::epsilon());
-      assert(squaredEuclidDistance(pLast, *ptr) > std::numeric_limits<RealT>::epsilon());
+      assert((pLast - pNext).cwiseAbs().sum() > std::numeric_limits<RealT>::epsilon());
+      assert((pLast - *ptr).cwiseAbs().sum() > std::numeric_limits<RealT>::epsilon());
       if(Line2PP<RealT>(pLast, pNext).IsPointInsideOn(*ptr, orientation))
         return false;
       pLast = *ptr;

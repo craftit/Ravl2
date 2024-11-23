@@ -43,7 +43,7 @@ namespace Ravl2
     constexpr bool isNormalised() const
     {
       auto const mag = RealT(m_vec.norm());
-      return isNearZero(mag - 1.0f, 1e-6f);
+      return isNearZero(mag - RealT(1.0), RealT(1e-6));
     }
 
     explicit constexpr Quaternion(const Vector<RealT,4> &vec)

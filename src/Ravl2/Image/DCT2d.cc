@@ -56,7 +56,7 @@ namespace Ravl2
   void
   unpackZigZag(Array<float, 2> &img, const VectorT<float> &vec)
   {
-    RavlAssert(vec.size() <= img.range().elements());
+    RavlAssert(size_t(vec.size()) <= img.range().elements());
     auto it = vec.begin();
     const auto end = vec.end();
     for(ZigZagIterC zit(img.range()); it != end; ++zit, ++it)

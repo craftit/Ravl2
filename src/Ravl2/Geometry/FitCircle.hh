@@ -32,12 +32,12 @@ namespace Ravl2
   template <typename RealT>
   std::optional<RealT> fit(Circle2dC<RealT> &circle, const std::vector<Point<RealT, 2>> &points)
   {
-    size_t N = points.size();
-    if(N < 3)// Under determined.
+    size_t numSamples = points.size();
+    if(numSamples < 3)// Under determined.
       return std::nullopt;
 
-    MatrixT<RealT> A(N, 3);
-    VectorT<RealT> B(N);
+    MatrixT<RealT> A(numSamples, 3);
+    VectorT<RealT> B(numSamples);
     IndexT i = 0;
     auto [mean, scale] = normalise<RealT, 2>(points, [&i, &A, &B](const Point<RealT, 2> &pnt) {
       const RealT X = pnt[0];
@@ -50,15 +50,17 @@ namespace Ravl2
     });
 
     //auto [x, residual, rank, s] = xt::linalg::lstsq(A, B);
-    auto x = A.bdcSvd(Eigen::ComputeThinU | Eigen::ComputeThinV).solve(B);
     //SPDLOG_INFO("Rank:{} Residual:{}", int(rank), residual());
+    SPDLOG_INFO("A:{} \n B:{}", A,B);
+    auto x = A.bdcSvd(Eigen::ComputeThinU | Eigen::ComputeThinV).solve(B);
+    SPDLOG_INFO("Sol:{}", x);
 
     const RealT X = x[0] / -2;
     const RealT Y = x[1] / -2;
     const RealT radius = std::sqrt(((X * X) + (Y * Y)) - x[2]);
     scale = 1 / scale;
     circle = Circle2dC<RealT>((toPoint<RealT>(X, Y) * scale) + mean, radius * scale);
-    //SPDLOG_INFO("Circle2dC::FitLSQ() Center={} Radius={}", circle.Centre(), circle.Radius());
+    SPDLOG_INFO("Circle2dC::FitLSQ() Center={} Radius={}", circle.Centre(), circle.Radius());
     return 0;//residual() * scale;
   }
 
