@@ -120,7 +120,8 @@ namespace Ravl2
       //throw std::runtime_error("Sample size too small in Projection2dC. ");
       return false;
     }
-    RealT zh1 = 1.0,zh2 = 1.0;
+    RealT zh1 = 1.0;
+    RealT zh2 = 1.0;
     if (orgSize == 4) {
       // FIXME:- Pick better values for zh1 and zh2 !!
 
@@ -153,7 +154,8 @@ namespace Ravl2
       // solve for solution vector
       try {
 	//auto sb = xt::linalg::solve(A, b);
-        auto solver = A.bdcSvd(Eigen::ComputeThinU | Eigen::ComputeThinV);
+        //auto solver = A.bdcSvd(Eigen::ComputeFullU | Eigen::ComputeFullV);
+        auto solver = A.colPivHouseholderQr();
         auto sb = solver.solve(b);
 	Matrix<RealT, 3, 3> P({{sb[0], sb[1], sb[2]},
 			       {sb[3], sb[4], sb[5]},

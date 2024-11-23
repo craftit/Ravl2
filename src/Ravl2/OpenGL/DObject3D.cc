@@ -75,10 +75,10 @@ namespace Ravl2
     for(auto &x: parts) {
       center += x->GUICenter();
     }
-    center /= parts.size();
+    center /= float(parts.size());
     extent = 0;
     for(auto &x: parts) {
-      float distToCenter = float(xt::norm_l2(x->GUICenter() - center)() + double(x->GUIExtent()));
+      float distToCenter = float((x->GUICenter() - center).norm() + x->GUIExtent());
       if(distToCenter > extent) {
         extent = distToCenter;
       }

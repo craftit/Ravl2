@@ -210,7 +210,7 @@ namespace Ravl2
     }
 
   protected:
-    Matrix<RealT, N + 1, N + 1> trans;// = xt::eye<RealT>();
+    Matrix<RealT, N + 1, N + 1> trans = Matrix<RealT, N + 1, N + 1>::Identity();
     RealT iz = 1;
     RealT oz = 1;
   };

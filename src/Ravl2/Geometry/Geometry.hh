@@ -32,18 +32,6 @@ namespace Ravl2
     return std::span(t);
   }
 
-#if 0
-  //! \brief Make a span of a tensor
-  //! This ensures that the span is constructed correctly from a view
-  //! \param view The view to make a span
-  template <typename CT, typename... S>
-  [[nodiscard]] constexpr auto span(xt::xview<CT, S...> view)
-  {
-    assert(view.is_contiguous());
-    return std::span(view.begin(), view.size());
-  }
-#endif
-
   template <typename RealT, IndexSizeT N>
   auto dot(const Vector<RealT, N> &a, const Vector<RealT, N> &b)
   {
@@ -141,12 +129,6 @@ namespace Ravl2
     return std::abs(a);
   }
 
-//  template <typename A, typename B>
-//  [[nodiscard]] constexpr auto cityBlockDistance(xt::xexpression<A> a, xt::xexpression<B> b)
-//  {
-//    return sum(abs(a - b));
-//  }
-
   template <unsigned N>
   [[nodiscard]] constexpr auto cityBlockDistance(const Index<N> &a, const Index<N> &b)
   {
@@ -173,9 +155,6 @@ namespace Ravl2
   {
     return (second[0] - first[0]) * (third[1] - first[1]) - (second[1] - first[1]) * (third[0] - first[0]);
   }
-
-//  using xt::linalg::cross;
-//  using xt::linalg::dot;
 
   //! Cross product of two 2d vectors
   template <typename RealT>

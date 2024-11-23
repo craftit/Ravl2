@@ -79,7 +79,7 @@ namespace Ravl2
   template <typename RealT>
   bool LeastSquaresEq0Mag1(const MatrixT<RealT> &X, VectorT<RealT> &rv)
   {
-    Eigen::template JacobiSVD<Matrix<RealT, 2, 2>, Eigen::ComputeFullV> svd(X);
+    auto svd = X.jacobiSvd(Eigen::ComputeFullV);
 
     //auto [U, S, V] = xt::linalg::svd(X);
     // The result matrix V is transposed from what we would expect.

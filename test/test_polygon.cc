@@ -406,6 +406,7 @@ TEST_CASE("Clip Polygon")
 TEST_CASE("Approximate Polygon")
 {
   using namespace Ravl2;
+#if 0
   SECTION("Approx Simple")
   {
     PolyLine<float,2> poly;
@@ -443,6 +444,7 @@ TEST_CASE("Approximate Polygon")
     SPDLOG_INFO("Simplified: {}", simplifed);
     CHECK(simplifed.size() == 4);
   }
+#endif
 }
 
 

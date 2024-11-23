@@ -85,7 +85,8 @@ namespace Ravl2
     covar /= n;
 
     //auto [u, d, v] = xt::linalg::svd(covar, true, true);
-    Eigen::template JacobiSVD<Matrix<RealT, N, N>, Eigen::ComputeFullU|Eigen::ComputeFullV> svd(covar);
+    //Eigen::template JacobiSVD<Matrix<RealT, N, N>, Eigen::ComputeFullU|Eigen::ComputeFullV> svd(covar);
+    auto svd = covar.jacobiSvd(Eigen::ComputeFullU | Eigen::ComputeFullV);
     auto u = svd.matrixU();
     auto d = svd.singularValues();
     auto v = svd.matrixV();
@@ -99,7 +100,7 @@ namespace Ravl2
       d[N-1] *= -1;
     }
 
-    rotation = u * s * v;
+    rotation = u * s * v.transpose();
 
     // Compute the translation.
     if(forceUnitScale) {

@@ -18,8 +18,9 @@ namespace Ravl2
 
     auto [mean, scale] = normalise<RealT, N>(points, [&covar](const Point<RealT, N> &pnt) {
       for(IndexT i = 0; i < IndexT(N); i++) {
-        for(IndexT j = i; j < 3; j++)
+        for(IndexT j = i; j < IndexT(N); j++) {
           covar(i, j) += pnt[i] * pnt[j];
+        }
       }
     });
 
@@ -31,7 +32,7 @@ namespace Ravl2
     }
 
     //auto [u, s, v] = xt::linalg::svd(covar, true, true);
-    Eigen::template JacobiSVD<Matrix<RealT, N, N> > svd(covar);
+    Eigen::template JacobiSVD<Eigen::Matrix<RealT, N, N> > svd(covar,Eigen::ComputeFullV);
     auto s = svd.singularValues();
     auto v = svd.matrixV();
 
@@ -46,7 +47,9 @@ namespace Ravl2
       }
     }
 
-    Vector<RealT, N> normal = v.row(minI);
+    Vector<RealT, N> normal = v.col(minI);
+    //SPDLOG_INFO("V: {}", v);
+    //SPDLOG_INFO("Normal: {}  At:{}  Scale:{}", normal,minI, scale);
     RealT d = 0;
     for(IndexT i = 0; i < IndexT(N); i++) {
       normal[i] *= scale;
