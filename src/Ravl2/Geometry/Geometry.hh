@@ -238,7 +238,7 @@ namespace Ravl2
   }
 
   //! Convert a parameter list of RealT to a point
-  template <typename RealT, typename SourceT, IndexSizeT N>
+  template <typename RealT, typename SourceT, int N>
     requires(std::is_convertible_v<SourceT, RealT>)
   [[nodiscard]] constexpr Point<RealT, N> toPoint(const Point<SourceT, N> &pnt)
   {
