@@ -46,7 +46,7 @@ add_library(ravl2::Ravl2Geometry ALIAS Ravl2Geometry)
 target_link_libraries(Ravl2Geometry PRIVATE RAVL2_options RAVL2_warnings
 )
 
-target_link_libraries(Ravl2Geometry PUBLIC Ravl2Core xtensor-blas Ravl2Math)
+target_link_libraries(Ravl2Geometry PUBLIC Ravl2Core Ravl2Math)
 
 target_include_directories(Ravl2Geometry ${WARNING_GUARD} PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src>
         $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/include>)
