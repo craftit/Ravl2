@@ -18,8 +18,12 @@ add_library(imgui
         ${imgui_external_SOURCE_DIR}/backends/imgui_impl_opengl3.cpp
 )
 
+# Set compile flags for imgui.  Suppress useless cast
+target_compile_options(imgui PRIVATE -Wno-old-style-cast -Wno-useless-cast)
+
 target_include_directories(imgui PUBLIC ${imgui_external_SOURCE_DIR})
 target_link_libraries(imgui PUBLIC glfw )
+
 
 find_package(OpenGL REQUIRED)
 
