@@ -78,7 +78,7 @@ namespace Ravl2
     center /= float(parts.size());
     extent = 0;
     for(auto &x: parts) {
-      float distToCenter = float((x->GUICenter() - center).norm() + x->GUIExtent());
+      float distToCenter = (x->GUICenter() - center).norm() + x->GUIExtent();
       if(distToCenter > extent) {
         extent = distToCenter;
       }

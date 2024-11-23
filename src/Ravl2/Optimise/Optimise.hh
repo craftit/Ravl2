@@ -17,12 +17,24 @@ namespace Ravl2
   public:
     using RealT = float;
 
+    //! Construct a default domain
+    CostDomain() = default;
+
     //! Construct from minimum and maximum values
     CostDomain(const VectorT<RealT> &min,
 	       const VectorT<RealT> &max)
       : mMin(min),
 	mMax(max)
     {}
+
+    CostDomain(const std::initializer_list<RealT> &min,
+               const std::initializer_list<RealT> &max)
+      : mMin(min.size()),
+        mMax(max.size())
+    {
+      std::copy(min.begin(), min.end(), mMin.begin());
+      std::copy(max.begin(), max.end(), mMax.begin());
+    }
 
     //! Construct from minimum and maximum values
 //    CostDomain(VectorT<RealT> &&min,

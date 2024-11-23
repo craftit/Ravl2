@@ -140,7 +140,7 @@ namespace Ravl2
   template <typename RealT>
   bool fit(Plane3ABCD<RealT> &plane, const std::vector<Point<RealT, 3>> &points)
   {
-    return fit(static_cast<VectorOffset<RealT, 3> &>(plane), points);
+    return fit<RealT,3>(static_cast<VectorOffset<RealT, 3> &>(plane), points);
   }
 
   extern template class Plane3ABCD<float>;

@@ -59,7 +59,7 @@ namespace Ravl2 {
     Vector<RealT,3> ncenter = pointSet.pointCentroid();
     RealT dist = 0;
     for(const auto& it: pointSet)
-      dist = std::max(dist,float((ncenter - it).norm()));
+      dist = std::max(dist,((ncenter - it).norm()));
     return dist;
   }
 
