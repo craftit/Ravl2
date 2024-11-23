@@ -50,17 +50,16 @@ namespace Ravl2
     });
 
     //auto [x, residual, rank, s] = xt::linalg::lstsq(A, B);
-    //SPDLOG_INFO("Rank:{} Residual:{}", int(rank), residual());
-    SPDLOG_INFO("A:{} \n B:{}", A,B);
-    auto x = A.bdcSvd(Eigen::ComputeThinU | Eigen::ComputeThinV).solve(B);
-    SPDLOG_INFO("Sol:{}", x);
+    //SPDLOG_INFO("A:{} \n B:{}", A,B);
+    auto solver = A.bdcSvd(Eigen::ComputeThinU | Eigen::ComputeThinV);
+    auto x = solver.solve(B);
 
     const RealT X = x[0] / -2;
     const RealT Y = x[1] / -2;
     const RealT radius = std::sqrt(((X * X) + (Y * Y)) - x[2]);
     scale = 1 / scale;
     circle = Circle2dC<RealT>((toPoint<RealT>(X, Y) * scale) + mean, radius * scale);
-    SPDLOG_INFO("Circle2dC::FitLSQ() Center={} Radius={}", circle.Centre(), circle.Radius());
+    //SPDLOG_INFO("Circle2dC::FitLSQ() Center={} Radius={}", circle.Centre(), circle.Radius());
     return 0;//residual() * scale;
   }
 
