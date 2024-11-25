@@ -1,8 +1,10 @@
 
+#include <spdlog/spdlog.h>
 #include <catch2/catch_test_macros.hpp>
 #include <eigen3/Eigen/Dense>
 
 #include "Ravl2/Math.hh"
+#include "Ravl2/IO/Cereal.hh"
 
 TEST_CASE("EigenIntegration")
 {
@@ -18,9 +20,61 @@ TEST_CASE("EigenIntegration")
     CHECK(sizeof(mat) == 3*3*sizeof(float));
     CHECK(mat(0,1) == 2);
     CHECK(mat(1,0) == 4);
-
   }
-
-
-
+  
+  SECTION("Cereal Vec<3,1")
+  {
+    Eigen::Matrix<float, 3, 1> vec {{1,2,3}};
+    std::stringstream ss;
+    {
+      cereal::JSONOutputArchive oarchive(ss);
+      oarchive(vec);
+    }
+    SPDLOG_INFO("VecString: {}", ss.str());
+    {
+      cereal::JSONInputArchive iarchive(ss);
+      Eigen::Matrix<float, 3, 1> vec2;
+      iarchive(vec2);
+      CHECK(vec.isApprox(vec2));
+    }
+  }
+  SECTION("Cereal Vec<3,1>")
+  {
+    Eigen::Matrix<float, 1, 3> vec {1,2,3};
+    std::stringstream ss;
+    {
+      cereal::JSONOutputArchive oarchive(ss);
+      oarchive(vec);
+    }
+    SPDLOG_INFO("VecString: {}", ss.str());
+    {
+      cereal::JSONInputArchive iarchive(ss);
+      Eigen::Matrix<float, 1, 3> vec2;
+      iarchive(vec2);
+      SPDLOG_INFO("Vec: {} -> {}", vec, vec2);
+      CHECK(vec.isApprox(vec2));
+    }
+  }
+  SECTION("Cereal Vec<3,Dyn>")
+  {
+    Eigen::Matrix<float, 1, Eigen::Dynamic> vec = Eigen::Matrix<float, 1, Eigen::Dynamic>::Random(1,3);
+    
+    std::stringstream ss;
+    {
+      cereal::JSONOutputArchive oarchive(ss);
+      oarchive(vec);
+    }
+    SPDLOG_INFO("VecString: '{}'", ss.str());
+    {
+      cereal::JSONInputArchive iarchive(ss);
+      Eigen::Matrix<float, 1, Eigen::Dynamic> vec2;
+      iarchive(vec2);
+      SPDLOG_INFO("Vec: {} -> {}", vec, vec2);
+      CHECK(vec.isApprox(vec2));
+    }
+  }
+  
+  
+  
+  
 }

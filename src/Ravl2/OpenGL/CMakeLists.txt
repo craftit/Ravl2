@@ -19,11 +19,15 @@ add_library(imgui
 )
 
 # Set compile flags for imgui.  Suppress useless cast
-target_compile_options(imgui PRIVATE -Wno-old-style-cast -Wno-useless-cast)
+# If we're using gcc
+if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+    target_compile_options(imgui PRIVATE -Wno-old-style-cast -Wno-useless-cast)
+else ()
+    target_compile_options(imgui PRIVATE -Wno-old-style-cast)
+endif()
 
 target_include_directories(imgui PUBLIC ${imgui_external_SOURCE_DIR})
 target_link_libraries(imgui PUBLIC glfw )
-
 
 find_package(OpenGL REQUIRED)
 
