@@ -49,10 +49,10 @@ TEST_CASE("PinholeCamera0")
     auto cam = PinholeCamera0<float>::fromFrame(frame,0.2f,distance);
     Vector<float, 2> pix;
     cam.project(pix,toVector<float>(0.0,0.1,distance));
-    SPDLOG_INFO("Pix {}", pix);
+    //SPDLOG_INFO("Pix {}", pix);
     EXPECT_FLOAT_EQ(pix[1], float(frame.max(1)));
     cam.project(pix,toVector<float>(0.0,-0.1,distance));
-    SPDLOG_INFO("Pix {}", pix);
+    //SPDLOG_INFO("Pix {}", pix);
     EXPECT_FLOAT_EQ(pix[1], float(frame.min(1)));
   }
   
@@ -66,10 +66,10 @@ TEST_CASE("PinholeCamera0")
     EXPECT_FLOAT_EQ(pix[0], 0);
     EXPECT_FLOAT_EQ(pix[1], 0);
     cam.project(pix,toVector<float>(0.0,0.1,distance));
-    SPDLOG_INFO("Pix {}", pix);
+    //SPDLOG_INFO("Pix {}", pix);
     EXPECT_FLOAT_EQ(pix[1], float(frame.max(1)));
     cam.project(pix,toVector<float>(0.0,-0.1,distance));
-    SPDLOG_INFO("Pix {}", pix);
+    //SPDLOG_INFO("Pix {}", pix);
     EXPECT_FLOAT_EQ(pix[1], float(frame.min(1)));
   }
   

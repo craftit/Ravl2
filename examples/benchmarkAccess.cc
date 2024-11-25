@@ -247,31 +247,6 @@ Ravl2::Array<float,2> ConvolveKernelIndex1(const Ravl2::Array<float,2> &matrix,
 
 
 
-xt::xtensor<float,2> ConvolveKernelXtensor(const xt::xtensor<float,2> &matrix,
-                                           const xt::xtensor<float,2> &kernel)
-{
-  matrix.shape(0);
-  auto result = xt::xtensor<float,2>(
-    {matrix.shape(0) - kernel.shape(0) + 1,
-    matrix.shape(1) - kernel.shape(1) + 1});
-
-  for(int sr = 0; sr < result.shape(0); sr++) {
-    for(int sc = 0; sc < result.shape(1); sc++)
-    {
-      float sum = 0;
-      for(int kr = 0; kr < kernel.shape(0); kr++)
-      {
-	for(int kc = 0; kc < kernel.shape(1); kc++)
-	{
-	  sum += kernel(kr, kc) * matrix(kr + sr, kc + sc);
-	}
-      }
-      result(sr, sc) = sum;
-    }
-  }
-
-  return result;
-}
 
 
 Ravl2::Array<float,2> ConvolveKernelPtr(const Ravl2::Array<float,2> &matrix,
@@ -329,21 +304,6 @@ int generateTestData(Ravl2::Array<float,2> &matrix, Ravl2::Array<float,2> &kerne
   return 0;
 }
 
-int generateTestDataX(xt::xtensor<float,2> &matrix,xt::xtensor<float,2> &kernel)
-{
-  matrix = xt::xtensor<float,2>({128,128});
-  kernel = xt::xtensor<float,2>({16,16});
-
-  for(auto r = 0; r < matrix.shape(0); r++)
-    for(auto c = 0; c < matrix.shape(1); c++)
-      matrix(r,c) = float((r-c) * (r-c));
-
-  for(auto r = 0; r < kernel.shape(0); r++)
-    for(auto c = 0; c < kernel.shape(1); c++)
-      kernel(r,c) = float((r-c) * (r-c));
-
-  return 0;
-}
 
 
 float sumElem(const Ravl2::Array<float,2> &array) {
@@ -521,22 +481,6 @@ int testPlainAccess()
     steady_clock::time_point t2 = steady_clock::now();
     duration<double> time_span = duration_cast<duration<double>>(t2 - t1);
     std::cout << "Pointer took " << time_span.count() << " seconds  to sum " << theSum << std::endl;
-  }
-
-  {
-    xt::xtensor<float,2> x_matrix;
-    xt::xtensor<float,2> x_kernel;
-    generateTestDataX(x_matrix,x_kernel);
-
-    steady_clock::time_point t1 = steady_clock::now();
-    float theSum = 0;
-    for(int i = 0;i < 100;i++) {
-      auto result = ConvolveKernelXtensor(x_matrix, x_kernel);
-      theSum += sumElemX(result);
-    }
-    steady_clock::time_point t2 = steady_clock::now();
-    duration<double> time_span = duration_cast<duration<double>>(t2 - t1);
-    std::cout << "xtensor took " << time_span.count() << " seconds  to sum " << theSum << std::endl;
   }
 
 #if RAVL2_USE_SSE

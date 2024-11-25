@@ -2,32 +2,36 @@
 include(GenerateExportHeader)
 include(ExternalProject)
 
-FetchContent_Declare(imgui_external
-        GIT_REPOSITORY https://github.com/ocornut/imgui.git
-        EXCLUDE_FROM_ALL
-)
-FetchContent_MakeAvailable(imgui_external)
+set(BUILD_IMGUIGLFW OFF CACHE BOOL "Build imgui with glfw")
 
-add_library(imgui
-        ${imgui_external_SOURCE_DIR}/imgui.cpp
-        ${imgui_external_SOURCE_DIR}/imgui_draw.cpp
-        ${imgui_external_SOURCE_DIR}/imgui_tables.cpp
-        ${imgui_external_SOURCE_DIR}/imgui_widgets.cpp
-        ${imgui_external_SOURCE_DIR}/backends/imgui_impl_glfw.cpp
-        ${imgui_external_SOURCE_DIR}/backends/imgui_impl_opengl2.cpp
-        ${imgui_external_SOURCE_DIR}/backends/imgui_impl_opengl3.cpp
-)
+if(BUILD_IMGUIGLFW)
+    FetchContent_Declare(imgui_external
+            GIT_REPOSITORY https://github.com/ocornut/imgui.git
+            EXCLUDE_FROM_ALL
+    )
+    FetchContent_MakeAvailable(imgui_external)
 
-# Set compile flags for imgui.  Suppress useless cast
-# If we're using gcc
-if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-    target_compile_options(imgui PRIVATE -Wno-old-style-cast -Wno-useless-cast)
-else ()
-    target_compile_options(imgui PRIVATE -Wno-old-style-cast)
-endif()
+    add_library(imgui
+            ${imgui_external_SOURCE_DIR}/imgui.cpp
+            ${imgui_external_SOURCE_DIR}/imgui_draw.cpp
+            ${imgui_external_SOURCE_DIR}/imgui_tables.cpp
+            ${imgui_external_SOURCE_DIR}/imgui_widgets.cpp
+            ${imgui_external_SOURCE_DIR}/backends/imgui_impl_glfw.cpp
+            ${imgui_external_SOURCE_DIR}/backends/imgui_impl_opengl2.cpp
+            ${imgui_external_SOURCE_DIR}/backends/imgui_impl_opengl3.cpp
+    )
 
-target_include_directories(imgui PUBLIC ${imgui_external_SOURCE_DIR})
-target_link_libraries(imgui PUBLIC glfw )
+    # Set compile flags for imgui.  Suppress useless cast
+    # If we're using gcc
+    if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+        target_compile_options(imgui PRIVATE -Wno-old-style-cast -Wno-useless-cast)
+    else ()
+        target_compile_options(imgui PRIVATE -Wno-old-style-cast)
+    endif()
+
+    target_include_directories(imgui PUBLIC ${imgui_external_SOURCE_DIR})
+    target_link_libraries(imgui PUBLIC glfw )
+endif ()
 
 find_package(OpenGL REQUIRED)
 
@@ -46,13 +50,12 @@ add_library (Ravl2OpenGL
   DTriMesh3D.cc DTriMesh3D.hh
   DTexTriMesh3D.cc DTexTriMesh3D.hh
   DViewPoint3D.cc DViewPoint3D.hh
-  ImGui.cc ImGui.hh
 )
 
 add_library(ravl2::Ravl2OpenGL ALIAS Ravl2OpenGL)
 
 target_link_libraries(Ravl2OpenGL PRIVATE RAVL2_options RAVL2_warnings)
-target_link_libraries(Ravl2OpenGL PUBLIC Ravl2x3D ${OPENGL_LIBRARIES} glfw imgui)
+target_link_libraries(Ravl2OpenGL PUBLIC Ravl2x3D ${OPENGL_LIBRARIES} glfw)
 
 target_include_directories(Ravl2OpenGL ${WARNING_GUARD} PUBLIC
         $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src>
@@ -77,4 +80,12 @@ endif()
 
 add_executable(viewer3d viewer3d.cc)
 target_link_libraries (viewer3d PUBLIC Ravl2Image Ravl2OpenGL CLI11::CLI11)
+
+if(BUILD_IMGUIGLFW)
+target_link_libraries(viewer3d PRIVATE imgui)
+add_library (Ravl2ImGUI
+        ImGui.cc ImGui.hh
+)
+endif ()
+
 

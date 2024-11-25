@@ -20,6 +20,70 @@
 #include "Ravl2/IO/Save.hh"
 #include "Ravl2/IO/Load.hh"
 
+namespace Ravl2
+{
+  namespace detail
+  {
+    //! Helper to serialize the content of an array without the range.
+
+    template <typename ArrayT>
+    struct CerealMatrixBlock {
+      CerealMatrixBlock() = default;
+
+      explicit CerealMatrixBlock(ArrayT &data)
+          : mData(&data)
+      {}
+
+      template <typename ArchiveT>
+      void save(ArchiveT & archive) const
+      {
+        assert(mData != nullptr);
+        auto rows = mData->rows();
+        auto cols = mData->cols();
+        if constexpr(std::is_same_v<ArchiveT, cereal::JSONOutputArchive>) {
+          cereal::size_type buffSize = cereal::size_type(mData->rows() * mData->cols());
+          cereal::size_type size = buffSize;
+          archive(cereal::make_size_tag(size));
+          if(size != buffSize) {
+            throw std::out_of_range("unexpected size");
+          }
+        }
+        for(int i = 0;i < rows;i++) {
+          for(int j = 0; j < cols; j++) {
+            archive((*mData)(i, j));
+          }
+        }
+      }
+
+      template <typename ArchiveT>
+      void load(ArchiveT & archive)
+      {
+        assert(mData != nullptr);
+        auto rows = mData->rows();
+        auto cols = mData->cols();
+        if constexpr(std::is_same_v<ArchiveT, cereal::JSONInputArchive>) {
+          cereal::size_type buffSize = cereal::size_type(rows * cols);
+          cereal::size_type size = buffSize;
+          archive(cereal::make_size_tag(size));
+          if(size != buffSize) {
+            SPDLOG_ERROR("Size mismatch: {} != {}", size, buffSize);
+            throw std::out_of_range("unexpected size");
+          }
+        }
+        for(int i = 0;i < rows;i++) {
+          for(int j = 0; j < cols; j++) {
+            archive((*mData)(i, j));
+          }
+        }
+      }
+
+      ArrayT *mData = nullptr;
+    };
+
+  }// namespace detail
+}
+
+
 namespace cereal
 {
 #if 0
@@ -51,22 +115,17 @@ namespace cereal
     int32_t rows = int32_t(m.rows());
     int32_t cols = int32_t(m.cols());
     if(_Rows == Eigen::Dynamic) {
-      ar(rows);
+      ar(cereal::make_nvp("rows",rows));
     }
     if(_Cols == Eigen::Dynamic) {
-      ar(cols);
+      ar(cereal::make_nvp("cols",cols));
     }
     // Check if this is a json archive.
     if constexpr (traits::is_output_serializable<BinaryData<_Scalar>, Archive>::value && !std::is_same_v<Archive, cereal::JSONOutputArchive>) {
       ar(binary_data(m.data(),size_t(rows)*size_t(cols)*sizeof(_Scalar)));
     } else {
-      if constexpr(std::is_same_v<Archive, cereal::JSONOutputArchive>) {
-        uint64_t mSize = uint64_t(rows*cols);
-        ar(cereal::make_size_tag(mSize));
-      }
-      for(int i = 0;i < rows;i++)
-        for(int j = 0;j < cols;j++)
-          ar(m(i, j));
+      Ravl2::detail::CerealMatrixBlock<const Eigen::Matrix<_Scalar, _Rows, _Cols, _Options, _MaxRows, _MaxCols>> blk(m);
+      ar(cereal::make_nvp("data", blk));
     }
   }
 
@@ -76,31 +135,22 @@ namespace cereal
     int32_t rows = _Rows;
     int32_t cols = _Cols;
     if constexpr(_Rows == Eigen::Dynamic) {
-      ar(rows);
+      ar(cereal::make_nvp("rows",rows));
       if constexpr(_Cols == Eigen::Dynamic) {
-        ar(cols);
-        m.resize(rows, cols);
-      } else {
-        m.resize(rows);
+        ar(cereal::make_nvp("cols",cols));
       }
+      m.resize(rows,cols);
     } else {
       if constexpr(_Cols == Eigen::Dynamic) {
-        ar(cols);
-        m.resize(cols);
+        ar(cereal::make_nvp("cols",cols));
+        m.resize(rows,cols);
       }
     }
     if constexpr (traits::is_input_serializable<BinaryData<_Scalar>, Archive>::value && !std::is_same_v<Archive, cereal::JSONInputArchive>) {
       ar(binary_data(m.data(),size_t(rows)*size_t(cols)*sizeof(_Scalar)));
     } else {
-      if constexpr(std::is_same_v<Archive, cereal::JSONInputArchive>) {
-        uint64_t mSize = uint64_t(rows*cols);
-        ar(cereal::make_size_tag(mSize));
-        SPDLOG_INFO("Loading matrix of size: {}x{} Size:{} ", rows, cols, mSize);
-        assert(mSize == uint64_t(rows*cols));
-      }
-      for(int i = 0;i < rows;i++)
-        for(int j = 0;j < cols;j++)
-          ar(m(i, j));
+      Ravl2::detail::CerealMatrixBlock<Eigen::Matrix<_Scalar, _Rows, _Cols, _Options, _MaxRows, _MaxCols>> blk(m);
+      ar(cereal::make_nvp("data", blk));
     }
   }
 #endif

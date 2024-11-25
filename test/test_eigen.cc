@@ -22,15 +22,15 @@ TEST_CASE("EigenIntegration")
     CHECK(mat(1,0) == 4);
   }
   
-  SECTION("Cereal Vec<3,1")
+  SECTION("Cereal Vec<3,1>")
   {
-    Eigen::Matrix<float, 3, 1> vec {{1,2,3}};
+    Eigen::Matrix<float, 3, 1> vec {{1.1f,2.2f,3.3f}};
     std::stringstream ss;
     {
       cereal::JSONOutputArchive oarchive(ss);
       oarchive(vec);
     }
-    SPDLOG_INFO("VecString: {}", ss.str());
+    //SPDLOG_INFO("VecString: {}", ss.str());
     {
       cereal::JSONInputArchive iarchive(ss);
       Eigen::Matrix<float, 3, 1> vec2;
@@ -40,40 +40,77 @@ TEST_CASE("EigenIntegration")
   }
   SECTION("Cereal Vec<3,1>")
   {
-    Eigen::Matrix<float, 1, 3> vec {1,2,3};
+    Eigen::Matrix<float, 1, 3> vec {1.1f,2.2f,3.3f};
     std::stringstream ss;
     {
       cereal::JSONOutputArchive oarchive(ss);
       oarchive(vec);
     }
-    SPDLOG_INFO("VecString: {}", ss.str());
+    //SPDLOG_INFO("VecString: {}", ss.str());
     {
       cereal::JSONInputArchive iarchive(ss);
       Eigen::Matrix<float, 1, 3> vec2;
       iarchive(vec2);
-      SPDLOG_INFO("Vec: {} -> {}", vec, vec2);
+      //SPDLOG_INFO("Vec: {} -> {}", vec, vec2);
       CHECK(vec.isApprox(vec2));
     }
   }
-  SECTION("Cereal Vec<3,Dyn>")
+  SECTION("Cereal Matrix<Dyn,Dyn>")
   {
-    Eigen::Matrix<float, 1, Eigen::Dynamic> vec = Eigen::Matrix<float, 1, Eigen::Dynamic>::Random(1,3);
+    Eigen::Matrix<float, Eigen::Dynamic, Eigen::Dynamic> vec = Eigen::Matrix<float, Eigen::Dynamic, Eigen::Dynamic>::Random(2,3);
     
     std::stringstream ss;
     {
       cereal::JSONOutputArchive oarchive(ss);
       oarchive(vec);
     }
-    SPDLOG_INFO("VecString: '{}'", ss.str());
+    //SPDLOG_INFO("VecString: '{}'", ss.str());
     {
       cereal::JSONInputArchive iarchive(ss);
-      Eigen::Matrix<float, 1, Eigen::Dynamic> vec2;
+      Eigen::Matrix<float, Eigen::Dynamic, Eigen::Dynamic> vec2;
       iarchive(vec2);
-      SPDLOG_INFO("Vec: {} -> {}", vec, vec2);
+      //SPDLOG_INFO("Vec: {} -> {}", vec, vec2);
       CHECK(vec.isApprox(vec2));
     }
   }
-  
+  SECTION("Cereal Matrix<2,Dyn>")
+  {
+    Eigen::Matrix<float, 2, Eigen::Dynamic> vec = Eigen::Matrix<float, 2, Eigen::Dynamic>::Random(2,3);
+
+    std::stringstream ss;
+    {
+      cereal::JSONOutputArchive oarchive(ss);
+      oarchive(vec);
+    }
+    //SPDLOG_INFO("VecString: '{}'", ss.str());
+    {
+      cereal::JSONInputArchive iarchive(ss);
+      Eigen::Matrix<float, 2, Eigen::Dynamic> vec2;
+      iarchive(vec2);
+      //SPDLOG_INFO("Vec: {} -> {}", vec, vec2);
+      CHECK(vec.isApprox(vec2));
+    }
+  }
+
+  SECTION("Cereal Matrix<Dyn,2>")
+  {
+    Eigen::Matrix<float, Eigen::Dynamic, 2> vec = Eigen::Matrix<float, Eigen::Dynamic, 2>::Random(3,2);
+
+    std::stringstream ss;
+    {
+      cereal::JSONOutputArchive oarchive(ss);
+      oarchive(vec);
+    }
+    //SPDLOG_INFO("VecString: '{}'", ss.str());
+    {
+      cereal::JSONInputArchive iarchive(ss);
+      Eigen::Matrix<float, Eigen::Dynamic, 2> vec2;
+      iarchive(vec2);
+      //SPDLOG_INFO("Vec: {} -> {}", vec, vec2);
+      CHECK(vec.isApprox(vec2));
+    }
+  }
+
   
   
   
