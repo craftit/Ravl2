@@ -58,7 +58,7 @@ namespace Ravl2
         m_frame(frame)
     {}
     
-    PinholeCamera0(Configuration &config)
+    explicit PinholeCamera0(Configuration &config)
       : m_cx(config.getNumber<RealT>("cx","Center x",0.0,-1e4,1e4)),
         m_cy(config.getNumber<RealT>("cy","Center y",0.0,-1e4,1e4)),
         m_fx(config.getNumber<RealT>("fx","Focal length",1.0,0.0,1e4)),
