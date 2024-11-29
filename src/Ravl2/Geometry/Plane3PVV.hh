@@ -187,9 +187,9 @@ namespace Ravl2
     }
 
   private:
-    Point<RealT, 3> mOrigin;
-    Vector<RealT, 3> mVector1;
-    Vector<RealT, 3> mVector2;
+    Point<RealT, 3> mOrigin = Point<RealT, 3>::Zero();
+    Vector<RealT, 3> mVector1 = Vector<RealT, 3>::Zero();
+    Vector<RealT, 3> mVector2 = Vector<RealT, 3>::Zero();
   };
 
   template <typename RealT>
