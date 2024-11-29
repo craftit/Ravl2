@@ -97,14 +97,14 @@ namespace Ravl2
 
   //! @brief Convert degrees to radians
   template <typename RealT>
-  inline RealT deg2rad(RealT x)
+  inline constexpr RealT deg2rad(RealT x)
   {
     return x * static_cast<RealT>(std::numbers::pi / 180.0);
   }
 
   //! @brief Convert radians to degrees
   template <typename RealT>
-  inline RealT rad2deg(RealT x)
+  inline constexpr RealT rad2deg(RealT x)
   {
     return x * static_cast<RealT>(180.0 / std::numbers::pi);
   }

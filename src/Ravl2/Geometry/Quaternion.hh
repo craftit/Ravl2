@@ -121,7 +121,7 @@ namespace Ravl2
       return m_vec;
     }
 
-    //! Rotate vector
+    //! Rotate a vector
     //! Maybe a different precision from the quaternion type.
     template <typename Real2T>
     [[nodiscard]] constexpr Vector<Real2T, 3> rotate(const Vector<Real2T, 3> &v) const
@@ -187,7 +187,8 @@ namespace Ravl2
       return std::atan2(std::sqrt(sqr(m_vec[1] / norm) + sqr(m_vec[2] / norm) + sqr(m_vec[3] / norm)), m_vec[0] / norm);
     }
 
-    // This assumes the quaternion is normalised.
+    //! Compute a cost that is zero when the quaternion is the identity.
+    //! This assumes the quaternion is normalised.
     [[nodiscard]] constexpr RealT zeroCost() const
     {
       auto lx = m_vec[1];
@@ -217,7 +218,7 @@ namespace Ravl2
     }
 
     //! From XYZ euler angles
-    [[nodiscard]] static constexpr Quaternion fromEulerAngles(const Vector3f &angles)
+    [[nodiscard]] static constexpr Quaternion<RealT> fromEulerAnglesXYZ(const Vector3f &angles)
     {
       // We should simplify this out.
       auto ret = fromAngleAxis(angles[0], {1.0f, 0.0f, 0.0f}) * fromAngleAxis(angles[1], {0.0f, 1.0f, 0.0f}) * fromAngleAxis(angles[2], {0.0f, 0.0f, 1.0f});
@@ -311,7 +312,7 @@ namespace Ravl2
   template <typename RealT, typename Real2T>
   [[nodiscard]] constexpr Quaternion<RealT> ApplyAngularVelocity(const Quaternion<RealT> &orientation, const Vector<Real2T, 3> &angularVelocity, Real2T duration)
   {
-    auto rot = Quaternion<RealT>::fromEulerAngles(angularVelocity * duration);
+    auto rot = Quaternion<RealT>::fromEulerAnglesXYZ(angularVelocity * duration);
     return orientation * rot;//add to the starting rotation
   }
 

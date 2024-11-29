@@ -23,7 +23,7 @@ namespace Ravl2
   class Plane3PVV
   {
   public:
-    //! Creates the plane P:(0,0,0),V1:[0,0,0],V2:[0,0,0].
+    //! Creates a degenerate plane P:(0,0,0),V1:[0,0,0],V2:[0,0,0].
     constexpr Plane3PVV() = default;
 
     //! Copy constructor.

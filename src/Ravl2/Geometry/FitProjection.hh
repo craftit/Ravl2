@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include "Ravl2/Assert.hh"
 #include "Ravl2/Concepts.hh"
 #include "Ravl2/Geometry/Projection.hh"
 #include "Ravl2/Math/LeastSquares.hh"

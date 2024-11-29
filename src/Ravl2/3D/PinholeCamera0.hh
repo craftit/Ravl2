@@ -68,7 +68,7 @@ namespace Ravl2
       Vector<float,3> angle = config.getPoint<RealT,3>("rotation","Rotation",0,-360,+360);
       for(unsigned i = 0; i < 3; i++)
         angle[i] = deg2rad(angle[i]);
-      m_R = Quaternion<float>::fromEulerAngles(angle).toMatrix();
+      m_R = Quaternion<float>::fromEulerAnglesXYZ(angle).toMatrix();
       m_frame = config.template get<Ravl2::IndexRange<2>>("frame","Image frame",IndexRange<2>({{0,0},{0,0}}));
     }
     

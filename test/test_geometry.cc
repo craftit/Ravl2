@@ -625,7 +625,7 @@ TEST_CASE("FitSimilarity")
 
   Vector<RealT,3> rotAngle = toVector<RealT>(randomAngle(rng),randomAngle(rng),randomAngle(rng));
   Vector<RealT,3> offset = toVector<RealT>(randomTranslation(rng),randomTranslation(rng),randomTranslation(rng));
-  Matrix<RealT,3,3> rot = Quaternion<RealT>::fromEulerAngles(rotAngle).toMatrix();
+  Matrix<RealT,3,3> rot = Quaternion<RealT>::fromEulerAnglesXYZ(rotAngle).toMatrix();
 
   RealT scale = 0.75;
 
@@ -703,7 +703,7 @@ TEST_CASE("FitIsometry")
 
   Vector<RealT,3> rotAngle = toVector<RealT>(randomAngle(rng),randomAngle(rng),randomAngle(rng));
   Vector<RealT,3> offset = toVector<RealT>(randomTranslation(rng),randomTranslation(rng),randomTranslation(rng));
-  Matrix<RealT,3,3> rot = Quaternion<RealT>::fromEulerAngles(rotAngle).toMatrix();
+  Matrix<RealT,3,3> rot = Quaternion<RealT>::fromEulerAnglesXYZ(rotAngle).toMatrix();
 
   RealT scale = 1.0f;
 
