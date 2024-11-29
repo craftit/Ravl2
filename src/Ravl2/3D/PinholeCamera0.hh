@@ -111,8 +111,7 @@ namespace Ravl2
       float f = float(frame.range(0).size()-1) * distance * 2.0f / (horizontalSize);
       return PinholeCamera0(f,{0,0},frame,Isometry3<float>(Quaternion<float>::identity(),{0,0,distance}));
     }
-  
-  
+    
   public:
     //: centre of projection, x co-ordinate
     [[nodiscard]] RealT &cx()

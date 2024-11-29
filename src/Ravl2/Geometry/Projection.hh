@@ -31,6 +31,7 @@ namespace Ravl2
   public:
     using value_type = RealT;
     constexpr static unsigned dimension = N;
+    using PointT = Point<RealT, N>;
 
     //! Default constructor.
     //! Creates an identity transform.
