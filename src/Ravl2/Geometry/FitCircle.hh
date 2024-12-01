@@ -30,7 +30,7 @@ namespace Ravl2
   //! 'residual' is from the least squares fit and can be used to assess
   //! the quality of the fit.  Returns false if fit failed.
   template <typename RealT>
-  std::optional<RealT> fit(Circle2<RealT> &circle, const std::vector<Point<RealT, 2>> &points)
+  std::optional<RealT> fit(Circle<RealT> &circle, const std::vector<Point<RealT, 2>> &points)
   {
     size_t numSamples = points.size();
     if(numSamples < 3)// Under determined.
@@ -58,7 +58,7 @@ namespace Ravl2
     const RealT Y = x[1] / -2;
     const RealT radius = std::sqrt(((X * X) + (Y * Y)) - x[2]);
     scale = 1 / scale;
-    circle = Circle2<RealT>((toPoint<RealT>(X, Y) * scale) + mean, radius * scale);
+    circle = Circle<RealT>((toPoint<RealT>(X, Y) * scale) + mean, radius * scale);
     //SPDLOG_INFO("Circle2dC::FitLSQ() Center={} Radius={}", circle.Centre(), circle.Radius());
     return 0;//residual() * scale;
   }

@@ -18,26 +18,26 @@ namespace Ravl2
   //! Circle in 2-D space.
 
   template <typename RealT>
-  class Circle2
+  class Circle
   {
   public:
     //! Construct a circle with radius of 1 centered on the origin.
-    inline constexpr Circle2() = default;
+    inline constexpr Circle() = default;
 
     //! Constructor.
-    inline constexpr Circle2(const Point<RealT, 2> &at, RealT rad) noexcept
+    inline constexpr Circle(const Point<RealT, 2> &at, RealT rad) noexcept
         : centre(at),
           radius(rad)
     {}
 
     //! Generate circle from 3 points on its circumference
-    constexpr Circle2(const Point<RealT, 2> &p1, const Point<RealT, 2> &p2, const Point<RealT, 2> &p3)
+    constexpr Circle(const Point<RealT, 2> &p1, const Point<RealT, 2> &p2, const Point<RealT, 2> &p3)
     {
       fit(p1, p2, p3);
     }
 
     //! Fit circle to a set of points.
-    inline constexpr explicit Circle2(const std::vector<Point<RealT, 2>> &points)
+    inline constexpr explicit Circle(const std::vector<Point<RealT, 2>> &points)
     {
       (void)points;
       //RealT tmp;
@@ -135,9 +135,9 @@ namespace Ravl2
   //! 'residual' is from the least squares fit and can be used to assess
   //! the quality of the fit.  Returns false if fit failed.
   template <typename RealT>
-  std::optional<RealT> fit(Circle2<RealT> &circle, const std::vector<Point<RealT, 2>> &points);
+  std::optional<RealT> fit(Circle<RealT> &circle, const std::vector<Point<RealT, 2>> &points);
 
   // Let everyone know there's an implementation already generated for common cases
-  extern template class Circle2<float>;
+  extern template class Circle<float>;
 
 }// namespace Ravl2
