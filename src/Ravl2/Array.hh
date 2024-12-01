@@ -714,7 +714,14 @@ namespace Ravl2
     {
       return m_strides.data();
     }
-
+    
+    //! Broadcast assignment
+    auto &operator=(const DataT &value)
+    {
+      fill(*this, value);
+      return *this;
+    }
+  
   protected:
     DataT *m_data = nullptr;
     IndexRange<N> m_range;
@@ -828,15 +835,44 @@ namespace Ravl2
   };
 
   //! Take a sub array of the given array.
-  //! The range must be entirely contained in the original array and
-  //! must exist for the lifetime of the sub array.
+  template <typename ArrayT, typename DataT = typename ArrayT::value_type, unsigned N = ArrayT::dimensions>
+    requires WindowedArray<ArrayT, DataT, N>
+  constexpr auto clip(const ArrayT &array, IndexRange<N> &&range)
+  {
+    //static_assert(false, "This function is not intended to be used with temporary ranges.");
+    return ArrayView<DataT, N>(array.origin_address(), clip(range, array.range()), array.strides());
+  }
+
+  //! Take a sub array of the given array.
   template <typename ArrayT, typename DataT = typename ArrayT::value_type, unsigned N = ArrayT::dimensions>
     requires WindowedArray<ArrayT, DataT, N>
   constexpr auto clip(const ArrayT &array, const IndexRange<N> &range)
   {
     assert(array.range().contains(range));
     return ArrayAccess<DataT, N>(range, array.origin_address(), array.strides());
+    //return ArrayView<DataT, N>(array.origin_address(), clip(range, array.range()), array.strides());
   }
+
+  //! Take a sub array of the given array, using the given range.
+  //! The range must be entirely contained in the original array and must exist for the lifetime of the view.
+  template <typename ArrayT, typename DataT = typename ArrayT::value_type, unsigned N = ArrayT::dimensions>
+  requires WindowedArray<ArrayT, DataT, N>
+  constexpr auto clipUnsafe(const ArrayT &array, const IndexRange<N> &range)
+  {
+    assert(array.range().contains(range));
+    return ArrayAccess<DataT, N>( range,  array.origin_address(),array.strides());
+  }
+
+  //! Take a sub array of the given array, using the given range.
+  //! The range must be entirely contained in the original array and must exist for the lifetime of the view.
+  template <typename ArrayT, typename DataT = typename ArrayT::value_type, unsigned N = ArrayT::dimensions>
+    requires WindowedArray<ArrayT, DataT, N>
+  constexpr auto clipUnsafe(const ArrayT &array, IndexRange<N> &&range)
+  {
+    static_assert(false, "This function is not intended to be used with temporary ranges.");
+    return ArrayView<DataT, N>(array.origin_address(), clip(range, array.range()), array.strides());
+  }
+
 
   //! Copy data from a source array to destination array
   template <typename Array1T, typename Array2T, unsigned N = Array1T::dimensions>

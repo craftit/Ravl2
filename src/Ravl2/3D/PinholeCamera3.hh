@@ -144,7 +144,7 @@ namespace Ravl2
     }
 
   protected:
-    //: Apply radial distortion
+    //! Apply radial distortion
     Vector<RealT, 2> distort0(const Vector<RealT, 2> &z) const
     {
       Vector<RealT, 2> ret = z;
@@ -159,7 +159,7 @@ namespace Ravl2
       return ret;
     }
 
-    //: Remove radial distortion
+    //! Remove radial distortion
     Vector<RealT, 2> undistort0(const Vector<RealT, 2> &z) const
     {
       Vector<RealT, 2> ret = z;

@@ -63,7 +63,7 @@ namespace Ravl2
       Vector<DataT, 2> zero {};
       DrawFrame(ret, zero, ret.range());// We only really need the top row and left column cleared.
 
-      Array2dSqr2Iter2C<Vector<DataT, 2>, InT> it(clip(ret,in.range()), in);
+      Array2dSqr2Iter2C<Vector<DataT, 2>, InT> it(clipUnsafe(ret,in.range()), in);
       // First pixel.
       it.DataTL1() = SumAndSqr(it.DataTL2());
       Vector<DataT, 2> rowSum = SumAndSqr(it.DataBL2());

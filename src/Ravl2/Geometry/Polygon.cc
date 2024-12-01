@@ -32,7 +32,7 @@ namespace Ravl2
       this->push_back(toPoint<RealT>(range[0].max(), range[1].min()));
     }
   }
-
+  
   template <typename RealT>
   RealT Polygon<RealT>::area() const
   {

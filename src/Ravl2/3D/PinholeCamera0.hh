@@ -68,7 +68,7 @@ namespace Ravl2
       Vector<float,3> angle = config.getPoint<RealT,3>("rotation","Rotation",0,-360,+360);
       for(unsigned i = 0; i < 3; i++)
         angle[i] = deg2rad(angle[i]);
-      m_R = Quaternion<float>::fromEulerAngles(angle).toMatrix();
+      m_R = Quaternion<float>::fromEulerAnglesXYZ(angle).toMatrix();
       m_frame = config.template get<Ravl2::IndexRange<2>>("frame","Image frame",IndexRange<2>({{0,0},{0,0}}));
     }
     
@@ -111,93 +111,99 @@ namespace Ravl2
       float f = float(frame.range(0).size()-1) * distance * 2.0f / (horizontalSize);
       return PinholeCamera0(f,{0,0},frame,Isometry3<float>(Quaternion<float>::identity(),{0,0,distance}));
     }
-  
-  
+    
   public:
-    //: centre of projection, x co-ordinate
+    //! centre of projection, x co-ordinate
     [[nodiscard]] RealT &cx()
     {
       return m_cx;
     };
 
-    //: centre of projection, x co-ordinate
+    //! centre of projection, x co-ordinate
     [[nodiscard]] const RealT &cx() const
     {
       return m_cx;
     };
 
-    //: centre of projection, y co-ordinate
+    //! centre of projection, y co-ordinate
     [[nodiscard]] RealT &cy()
     {
       return m_cy;
     };
 
-    //: centre of projection, y co-ordinate
+    //! centre of projection, y co-ordinate
     [[nodiscard]] const RealT &cy() const
     {
       return m_cy;
     };
 
-    //: focal length in camera y direction (pixels)
+    //! focal length in camera y direction (pixels)
     [[nodiscard]] RealT &fx()
     {
       return m_fx;
     };
 
-    //: focal length in camera y direction (pixels)
+    //! focal length in camera y direction (pixels)
     [[nodiscard]] const RealT &fx() const
     {
       return m_fx;
     };
 
-    //: focal length in camera z direction (pixels)
+    //! focal length in camera z direction (pixels)
     [[nodiscard]] RealT &fy()
     {
       return m_fy;
     };
 
-    //: focal length in camera z direction (pixels)
+    //! focal length in camera z direction (pixels)
     [[nodiscard]] const RealT &fy() const
     {
       return m_fy;
     };
 
-    //: rotation world -> camera
+    //! rotation world -> camera
     [[nodiscard]] Matrix<RealT, 3, 3> &R()
     {
       return m_R;
     };
 
-    //: rotation world -> camera
+    //! rotation world -> camera
     [[nodiscard]] const Matrix<RealT, 3, 3> &R() const
     {
       return m_R;
     };
 
-    //: translation world -> camera (in camera co-ordinates)
+    //! translation world -> camera (in camera co-ordinates)
     [[nodiscard]] Vector<RealT, 3> &t()
     {
       return m_t;
     };
 
-    //: translation world -> camera (in camera co-ordinates)
+    //! translation world -> camera (in camera co-ordinates)
     [[nodiscard]] const Vector<RealT, 3> &t() const
     {
       return m_t;
     };
 
-    //: Image frame for the camera
+    //! Image frame for the camera
     [[nodiscard]] const IndexRange<2> &range() const
     {
       return m_frame;
     }
 
-    //: Set the image frame for the camera
+    //! Set the image frame for the camera
     void setRange(const IndexRange<2> &frame)
     {
       m_frame = frame;
     }
 
+    //! Set the camera pose, this is the transformation that takes a point
+    //! from world to camera co-ordinates
+    void setPose(const Isometry3<RealT> &pose)
+    {
+      m_R = pose.rotation().toMatrix();
+      m_t = pose.translation();
+    }
   public:
     //! project 3D point in space to 2D image point
     //!  Projects according to:<br>

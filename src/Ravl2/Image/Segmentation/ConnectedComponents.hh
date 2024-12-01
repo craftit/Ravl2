@@ -189,7 +189,7 @@ namespace Ravl2
           int ix = iat[0];
           int iy = iat[1];
           subRect.max(0) = ix - 1;
-          for(auto its = begin(clip(jp, subRect)); its.valid(); ++its)
+          for(auto its = begin(clipUnsafe(jp, subRect)); its.valid(); ++its)
             *its = labelTable[*its];
 
           // Change labels in the processed part of the row.

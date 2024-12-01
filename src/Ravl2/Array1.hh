@@ -568,7 +568,14 @@ namespace Ravl2
     {
       return &gStride1;
     }
-
+    
+    //! Broadcast assignment
+    auto &operator=(const DataT &value)
+    {
+      fill(*this, value);
+      return *this;
+    }
+  
   protected:
     DataT *m_data = nullptr;
     IndexRange<1> m_range;
@@ -725,7 +732,7 @@ namespace Ravl2
       if(!arr.range().contains(range)) {
         throw std::out_of_range("requested range is outside that of the allocated array");
       }
-      arr = clip(arr, range);
+      arr = clipUnsafe(arr, range);
     }
     detail::CerealDataBlock<ArrayT> blk(arr);
     archive(cereal::make_nvp("data", blk));

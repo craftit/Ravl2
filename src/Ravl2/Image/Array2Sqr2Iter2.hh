@@ -38,8 +38,8 @@ namespace Ravl2
     {
       assert(!range1.empty());
       assert(!range2.empty());
-      auto access1 = clip(array1, range1);
-      auto access2 = clip(array2, range2);
+      auto access1 = clipUnsafe(array1, range1);
+      auto access2 = clipUnsafe(array2, range2);
       cit = ArrayIterZipN<2, Data1T, Data2T>(access1, access2);
       up1 = &(this->cit.template data<0>()) - cit.template strides<0>()[0];
       up2 = &(this->cit.template data<1>()) - cit.template strides<1>()[0];

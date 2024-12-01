@@ -127,7 +127,7 @@ namespace Ravl2
     }
 
   private:
-    Point<RealT, 2> centre {};
+    Point<RealT, 2> centre  = Point<RealT,2>::Zero();
     RealT radius = 0;
   };
 

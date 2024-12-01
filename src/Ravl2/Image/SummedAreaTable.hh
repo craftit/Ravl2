@@ -48,7 +48,14 @@ namespace Ravl2
       SummedAreaTable<DataT> ret(Array<DataT, 2>(rng),in.range());
       DataT zero {};
       DrawFrame(ret, zero, rng);// We only really need the top row and left column cleared.
-      auto work = clip(ret,in.range());
+      auto work = clipUnsafe(ret,in.range());
+      if(work.range().empty())
+        return ret;
+      if(work.range().range(0).size() < 2 || work.range().range(1).size() < 2) {
+        SPDLOG_WARN("SummedAreaTable: Image too small to build table: {}", in.range());
+        ret = SummedAreaTable<DataT>();
+        return ret;
+      }
       Array2dSqr2Iter2C<DataT, InT> it(work, in);
       // First pixel.
       it.DataTL1() = DataT(it.DataTL2());
@@ -109,15 +116,17 @@ namespace Ravl2
     ArrayT sampleGrid(ArrayT out, const Vector<RealT,2> pixelScale,Point<RealT,2> pixelOffset = toPoint<RealT>(0,0)) const
     {
       // Check it fits within the table.
-      auto scale = pixelScale.template cast<CoordT>();
-      auto offset =pixelOffset.template cast<CoordT>();
-      Range<CoordT,2> outRng = toRange<CoordT>(out.range()) ;
-      const auto binOffset = toPoint<CoordT>(-1,-1);
-      Range<CoordT,2> rng = Range<CoordT,2>(outRng.min().cwiseProduct(scale) + offset , outRng.max().cwiseProduct(scale) + offset );
-      auto areaNorm = CoordT(1)/(scale[0] * scale[1]);
-      auto indexBounds = rng.toIndexRange().shrinkMax(1);
+      const Vector<CoordT,2> scale = pixelScale.template cast<CoordT>();
+      const Vector<CoordT,2> offset =pixelOffset.template cast<CoordT>();
+      const Range<CoordT,2> outRng = toRange<CoordT>(out.range()) ;
+      //SPDLOG_INFO("SampleGrid: Out:{} IndexRng:{} Scale:{} Offset:{} ", outRng,out.range(), scale, offset);
+      const Point<CoordT,2> binOffset = toPoint<CoordT>(-1,-1);
+      const Range<CoordT,2> rng = Range<CoordT,2>(outRng.min().cwiseProduct(scale) + offset,outRng.max().cwiseProduct(scale) + offset);
+      const auto areaNorm = CoordT(1)/(scale[0] * scale[1]);
+      const auto indexBounds = rng.toIndexRange().shrinkMax(1);
       if(!mClipRange.contains(indexBounds)) {
         SPDLOG_WARN("SampleGrid: Out of bounds: {} Rng:{} Bounds:{} Array:{} Scale:{} ", indexBounds, rng, mClipRange,this->range(),scale);
+        assert(mClipRange.contains(indexBounds));
         throw std::out_of_range("SampleGrid: Out of bounds");
       }
       // Is it worth caching the last row of interpolated values ?

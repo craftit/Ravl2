@@ -33,7 +33,7 @@ namespace Ravl2
                  {narray.range(1).min() + 1, narray.range(1).max()}})
     {
       assert(!range.empty());
-      cit = clip(narray, range).begin();
+      cit = clipUnsafe(narray, range).begin();
       up = cit.data() - cit.strides()[0];
     }
     //: Constructor.
