@@ -37,6 +37,10 @@ namespace Ravl2
         mT(T)
     {}
 
+    //! Get the identity transformation.
+    [[nodiscard]] inline static constexpr Affine identity()
+    { return Affine(Matrix<DataT, N, N>::Identity(), Vector<DataT, N>::Zero()); }
+
     //! Access the translation component of the transformation.
     [[nodiscard]] inline constexpr Vector<DataT, N> &Translation() { return mT; }
 

@@ -32,6 +32,10 @@ namespace Ravl2
     //! Construct from scale and a translation vector.
     inline constexpr ScaleTranslate(const Vector<DataT, N> &scale, const Vector<DataT, N> &translate);
 
+    //! Construct an identity transform.
+    [[nodiscard]] static constexpr ScaleTranslate identity()
+    { return ScaleTranslate(Vector<DataT, N>::Ones(), Vector<DataT, N>::Zero()); }
+
     //! Access the translation component of the transformation.
     [[nodiscard]]inline constexpr Vector<DataT, N> &translation() { return mT; }
 
