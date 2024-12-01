@@ -198,7 +198,7 @@ namespace Ravl2
     for(size_t i = 1; i < numLevels; ++i) {
       levelScale.scale(scale.cwiseInverse());
       const IndexRange<2> sampleRange = toInnerIndexRange(levelScale(toRange<float>(fullImg.range()))).shrinkMax(1);
-      SPDLOG_INFO("Level {} Scale:{} levelScale:{} sampleRange:{} Area:{} ",i, scale, levelScale,sampleRange,sampleRange.area());
+      //SPDLOG_INFO("Level {} Scale:{} levelScale:{} sampleRange:{} Area:{} ",i, scale, levelScale,sampleRange,sampleRange.area());
       if(sampleRange.area() < minArea) {
         break;
       }
@@ -207,7 +207,7 @@ namespace Ravl2
       const Vector<float,2> invScale = levelScale.scaleVector().cwiseInverse();
       auto sampleImg = clip(newImage,sampleRange);
       assert(sampleImg.range().area() > 0);
-      SPDLOG_INFO("SampleImg:{} ", sampleImg.range());
+      //SPDLOG_INFO("SampleImg:{} ", sampleImg.range());
       subImg.template sampleGrid(sampleImg, invScale, toVector<float>(0,0));
       if(pad > 0) {
         // If we've padded the image then we need to set the padding to zero.

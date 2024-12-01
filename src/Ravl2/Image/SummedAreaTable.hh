@@ -119,11 +119,9 @@ namespace Ravl2
       const Vector<CoordT,2> scale = pixelScale.template cast<CoordT>();
       const Vector<CoordT,2> offset =pixelOffset.template cast<CoordT>();
       const Range<CoordT,2> outRng = toRange<CoordT>(out.range()) ;
-      SPDLOG_INFO("SampleGrid: Out:{} IndexRng:{} Scale:{} Offset:{} ", outRng,out.range(), scale, offset);
+      //SPDLOG_INFO("SampleGrid: Out:{} IndexRng:{} Scale:{} Offset:{} ", outRng,out.range(), scale, offset);
       const Point<CoordT,2> binOffset = toPoint<CoordT>(-1,-1);
-      const Point<CoordT,2> rngMin = outRng.min().cwiseProduct(scale) + offset;
-      const Point<CoordT,2> rngMax = outRng.max().cwiseProduct(scale) + offset;
-      const Range<CoordT,2> rng = Range<CoordT,2>(rngMin,rngMax);
+      const Range<CoordT,2> rng = Range<CoordT,2>(outRng.min().cwiseProduct(scale) + offset,outRng.max().cwiseProduct(scale) + offset);
       const auto areaNorm = CoordT(1)/(scale[0] * scale[1]);
       const auto indexBounds = rng.toIndexRange().shrinkMax(1);
       if(!mClipRange.contains(indexBounds)) {

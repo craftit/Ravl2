@@ -732,7 +732,7 @@ namespace Ravl2
       if(!arr.range().contains(range)) {
         throw std::out_of_range("requested range is outside that of the allocated array");
       }
-      arr = clip(arr, range);
+      arr = clipUnsafe(arr, range);
     }
     detail::CerealDataBlock<ArrayT> blk(arr);
     archive(cereal::make_nvp("data", blk));

@@ -834,6 +834,7 @@ namespace Ravl2
     std::shared_ptr<DataT[]> m_buffer;
   };
 
+#if 0
   //! Take a sub array of the given array.
   template <typename ArrayT, typename DataT = typename ArrayT::value_type, unsigned N = ArrayT::dimensions>
     requires WindowedArray<ArrayT, DataT, N>
@@ -841,6 +842,16 @@ namespace Ravl2
   {
     return ArrayView<DataT, N>(array.origin_address(), clip(range, array.range()), array.strides());
   }
+#else
+  //! Take a sub array of the given array.
+  template <typename ArrayT, typename DataT = typename ArrayT::value_type, unsigned N = ArrayT::dimensions>
+    requires WindowedArray<ArrayT, DataT, N>
+  constexpr auto clip(const ArrayT &array, const IndexRange<N> &range)
+  {
+    assert(array.range().contains(range));
+    return ArrayAccess<DataT, N>(range, array.origin_address(), array.strides());
+  }
+#endif
   
   //! Take a sub array of the given array, using the given range.
   //! The range must be entirely contained in the original array and must exist for the lifetime of the view.
@@ -849,7 +860,7 @@ namespace Ravl2
   constexpr auto clipUnsafe(const ArrayT &array, const IndexRange<N> &range)
   {
     assert(array.range().contains(range));
-    return ArrayView<DataT, N>(array.origin_address(), range, array.strides());
+    return ArrayAccess<DataT, N>( range,  array.origin_address(),array.strides());
   }
   
   //! Copy data from a source array to destination array
