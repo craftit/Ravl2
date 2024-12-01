@@ -37,6 +37,10 @@ add_test(NAME cli.has_help COMMAND intro --help)
 add_test(NAME cli.version_matches COMMAND intro --version)
 set_tests_properties(cli.version_matches PROPERTIES PASS_REGULAR_EXPRESSION "${PROJECT_VERSION}")
 
+add_executable(test_call test_calls.cc)
+target_link_libraries(test_call PRIVATE ravl2::RAVL2_warnings ravl2::RAVL2_options ravl2::Ravl2Core Catch2::Catch2WithMain)
+
+
 add_executable(tests
         test_index.cc
         test_core.cc

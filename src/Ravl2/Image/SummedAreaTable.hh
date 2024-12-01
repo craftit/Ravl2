@@ -48,7 +48,7 @@ namespace Ravl2
       SummedAreaTable<DataT> ret(Array<DataT, 2>(rng),in.range());
       DataT zero {};
       DrawFrame(ret, zero, rng);// We only really need the top row and left column cleared.
-      auto work = clip(ret,in.range());
+      auto work = clipUnsafe(ret,in.range());
       if(work.range().empty())
         return ret;
       if(work.range().range(0).size() < 2 || work.range().range(1).size() < 2) {

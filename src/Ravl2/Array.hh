@@ -834,15 +834,15 @@ namespace Ravl2
     std::shared_ptr<DataT[]> m_buffer;
   };
 
-#if 0
   //! Take a sub array of the given array.
   template <typename ArrayT, typename DataT = typename ArrayT::value_type, unsigned N = ArrayT::dimensions>
     requires WindowedArray<ArrayT, DataT, N>
-  constexpr auto clip(const ArrayT &array, const IndexRange<N> &range)
+  constexpr auto clip(const ArrayT &array, IndexRange<N> &&range)
   {
+    //static_assert(false, "This function is not intended to be used with temporary ranges.");
     return ArrayView<DataT, N>(array.origin_address(), clip(range, array.range()), array.strides());
   }
-#else
+
   //! Take a sub array of the given array.
   template <typename ArrayT, typename DataT = typename ArrayT::value_type, unsigned N = ArrayT::dimensions>
     requires WindowedArray<ArrayT, DataT, N>
@@ -850,9 +850,9 @@ namespace Ravl2
   {
     assert(array.range().contains(range));
     return ArrayAccess<DataT, N>(range, array.origin_address(), array.strides());
+    //return ArrayView<DataT, N>(array.origin_address(), clip(range, array.range()), array.strides());
   }
-#endif
-  
+
   //! Take a sub array of the given array, using the given range.
   //! The range must be entirely contained in the original array and must exist for the lifetime of the view.
   template <typename ArrayT, typename DataT = typename ArrayT::value_type, unsigned N = ArrayT::dimensions>
@@ -862,7 +862,18 @@ namespace Ravl2
     assert(array.range().contains(range));
     return ArrayAccess<DataT, N>( range,  array.origin_address(),array.strides());
   }
-  
+
+  //! Take a sub array of the given array, using the given range.
+  //! The range must be entirely contained in the original array and must exist for the lifetime of the view.
+  template <typename ArrayT, typename DataT = typename ArrayT::value_type, unsigned N = ArrayT::dimensions>
+    requires WindowedArray<ArrayT, DataT, N>
+  constexpr auto clipUnsafe(const ArrayT &array, IndexRange<N> &&range)
+  {
+    static_assert(false, "This function is not intended to be used with temporary ranges.");
+    return ArrayView<DataT, N>(array.origin_address(), clip(range, array.range()), array.strides());
+  }
+
+
   //! Copy data from a source array to destination array
   template <typename Array1T, typename Array2T, unsigned N = Array1T::dimensions>
     requires(WindowedArray<Array1T, typename Array1T::value_type, N> && WindowedArray<Array2T, typename Array2T::value_type, N>) && (N >= 2) && std::is_convertible_v<typename Array2T::value_type, typename Array1T::value_type>

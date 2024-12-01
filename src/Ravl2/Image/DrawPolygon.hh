@@ -29,7 +29,7 @@ namespace Ravl2
     for(PolygonRasterIter<CoordT> it(poly); it.valid(); ++it) {
       if(!dat.range(0).contains(it.row()))
         continue;
-      fill(clip(dat[it.row()], it.rowIndexRange()), PixelT(value));
+      fill(clipUnsafe(dat[it.row()], it.rowIndexRange()), PixelT(value));
     }
   }
 

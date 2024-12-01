@@ -205,7 +205,7 @@ namespace Ravl2
       const IndexRange<2> fullRange = sampleRange.expand(int(pad));
       Array<PixelT, 2> newImage(fullRange);
       const Vector<float,2> invScale = levelScale.scaleVector().cwiseInverse();
-      auto sampleImg = clip(newImage,sampleRange);
+      auto sampleImg = clipUnsafe(newImage,sampleRange);
       assert(sampleImg.range().area() > 0);
       //SPDLOG_INFO("SampleImg:{} ", sampleImg.range());
       subImg.template sampleGrid(sampleImg, invScale, toVector<float>(0,0));

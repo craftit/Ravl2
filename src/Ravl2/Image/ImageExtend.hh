@@ -66,7 +66,7 @@ namespace Ravl2
     IndexRange<2> rect = image.range().expand(int(n));
     resizeArray(result, rect);
     // Copy centre of image
-    copy(clip(result, image.range()), image);
+    copy(clipUnsafe(result, image.range()), image);
     // Take care of border
     DrawFrame(result, borderValue, n, rect);
   }
@@ -83,7 +83,7 @@ namespace Ravl2
     const IndexRange<2> rect = image.range().expand(int(n));
     resizeArray(result, rect);
     // Copy centre of image
-    copy(clip(result, image.range()), image);
+    copy(clipUnsafe(result, image.range()), image);
     if(n <= 0) {
       return;// Nothing to do.
     }
@@ -96,8 +96,8 @@ namespace Ravl2
     for(int r : image.range(0)) {
       const OutT value1 = image[r][minCol];
       const OutT value2 = image[r][maxCol];
-      fill(clip(result[r], leftRect), value1);
-      fill(clip(result[r], rightRect), value2);
+      fill(clipUnsafe(result[r], leftRect), value1);
+      fill(clipUnsafe(result[r], rightRect), value2);
     }
 
     // Take care of top of image.
@@ -164,7 +164,7 @@ namespace Ravl2
     const IndexRange<2> rect = image.range().expand(int(n));
     resizeArray(result, rect);
     // Copy centre of image
-    copy(clip(result, image.range()), image);
+    copy(clipUnsafe(result, image.range()), image);
     mirrorEdges(result, n);
   }
 

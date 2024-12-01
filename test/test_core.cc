@@ -321,6 +321,38 @@ TEST_CASE("ArrayAccessIter1")
   CHECK_EQ(sum,45);
 }
 
+TEST_CASE("clip")
+{
+  using namespace Ravl2;
+  Ravl2::Array<int, 2> val(Ravl2::IndexRange<2>({10, 10}));
+
+  for(auto a: val.range()) {
+    val[a] = a[0] * 10 + a[1];
+  }
+
+  IndexRange<2> subRange = val.range().shrink(1);
+
+  auto unsafeClipped = clipUnsafe(val, subRange);
+  int count = 0;
+  int sum = 0;
+  for(auto a : unsafeClipped) {
+    count++;
+    sum += a;
+  }
+
+  auto safe = clip(val, subRange);
+  int count2 = 0;
+  int sum2 = 0;
+  for(auto a : safe) {
+    count2++;
+    sum2 += a;
+  }
+
+  CHECK_EQ(count, count2);
+  CHECK_EQ(sum, sum2);
+}
+
+
 TEST_CASE("ArrayIter2")
 {
   SECTION("1x2")

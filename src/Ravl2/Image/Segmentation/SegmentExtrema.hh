@@ -389,7 +389,7 @@ namespace Ravl2
     // Sort pixels into appropriate lists.
     RavlAssert(pixs.range().contains(img.range()));
 
-    for(auto it = zip(img, clip(pixs, img.range())); it.valid(); it++) {
+    for(auto it = zip(img, clipUnsafe(pixs, img.range())); it.valid(); it++) {
       it.template data<1>().region = 0;
       PixelT val = it.template data<0>();
       if(val > limitMaxValue) {
@@ -418,7 +418,7 @@ namespace Ravl2
 
     // Sort pixels into appropriate lists.
     valueRange = IndexRange<1>::mostEmpty();
-    for(auto it = zip(img, clip(pixs, img.range())); it.valid(); ++it) {
+    for(auto it = zip(img, clipUnsafe(pixs, img.range())); it.valid(); ++it) {
       it.template data<1>().region = nullptr;
       int val = it.template data<0>();
       if(val > limitMaxValue)
@@ -447,7 +447,7 @@ namespace Ravl2
       rng.clipBy(img.range());
       if(rng.area() < 1)
         continue;
-      auto it = clip(img, rng).begin();
+      auto it = clipUnsafe(img, rng).begin();
       if(first) {
         lmin = *it;
         lmax = *it;
@@ -473,7 +473,7 @@ namespace Ravl2
 
     // Clear chain image.
 
-    for(auto &it : clip(pixs, img.range())) {
+    for(auto &it : clipUnsafe(pixs, img.range())) {
       it.Data().region = 0;
       it.Data().next = 0;
     }
@@ -485,7 +485,7 @@ namespace Ravl2
       rng.clipBy(img.range());
       if(rng.area() < 1)
         continue;
-      for(auto it = begin(clip(img, rng), clip(pixs, rng)); it; it++) {
+      for(auto it = begin(clipUnsafe(img, rng), clipUnsafe(pixs, rng)); it; it++) {
         PixelT val = it.template data<0>();
         if(val > limitMaxValue)
           continue;

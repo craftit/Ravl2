@@ -261,7 +261,7 @@ namespace Ravl2
     }
     rng = rng.expand(1);
     rng.clipBy(marki.range());
-    boundary = Boundary::traceBoundary(clip(marki, rng), id);
+    boundary = Boundary::traceBoundary(clipUnsafe(marki, rng), id);
     return true;
   }
 
@@ -282,7 +282,7 @@ namespace Ravl2
       DrawFrame(mask, MaskT(0), padding, mask.range());
     size_t size = 0;
 
-    for(auto it = zip(clip(mask, rng), clip(marki, rng)); it.valid(); it++) {
+    for(auto it = zip(clipUnsafe(mask, rng), clipUnsafe(marki, rng)); it.valid(); it++) {
       if(it.template data<1>() == id) {
         size++;
         it.template data<0>() = 1;
