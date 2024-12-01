@@ -18,26 +18,26 @@ namespace Ravl2
   //! Circle in 2-D space.
 
   template <typename RealT>
-  class Circle2dC
+  class Circle2
   {
   public:
     //! Construct a circle with radius of 1 centered on the origin.
-    inline constexpr Circle2dC() = default;
+    inline constexpr Circle2() = default;
 
     //! Constructor.
-    inline constexpr Circle2dC(const Point<RealT, 2> &at, RealT rad) noexcept
+    inline constexpr Circle2(const Point<RealT, 2> &at, RealT rad) noexcept
         : centre(at),
           radius(rad)
     {}
 
     //! Generate circle from 3 points on its circumference
-    constexpr Circle2dC(const Point<RealT, 2> &p1, const Point<RealT, 2> &p2, const Point<RealT, 2> &p3)
+    constexpr Circle2(const Point<RealT, 2> &p1, const Point<RealT, 2> &p2, const Point<RealT, 2> &p3)
     {
-      Fit(p1, p2, p3);
+      fit(p1, p2, p3);
     }
 
     //! Fit circle to a set of points.
-    inline constexpr explicit Circle2dC(const std::vector<Point<RealT, 2>> &points)
+    inline constexpr explicit Circle2(const std::vector<Point<RealT, 2>> &points)
     {
       (void)points;
       //RealT tmp;
@@ -47,7 +47,7 @@ namespace Ravl2
 
     //! Fit a circle from 3 points on its circumference
     //! Returns false if the points are collinear.
-    constexpr bool Fit(const Point<RealT, 2> &p0, const Point<RealT, 2> &p1, const Point<RealT, 2> &p2)
+    constexpr bool fit(const Point<RealT, 2> &p0, const Point<RealT, 2> &p1, const Point<RealT, 2> &p2)
     {
       Vector<RealT, 2> a1({p1[1] - p0[1], p0[0] - p1[0]});
       Vector<RealT, 2> a2({p2[1] - p1[1], p1[0] - p2[0]});
@@ -135,9 +135,9 @@ namespace Ravl2
   //! 'residual' is from the least squares fit and can be used to assess
   //! the quality of the fit.  Returns false if fit failed.
   template <typename RealT>
-  std::optional<RealT> fit(Circle2dC<RealT> &circle, const std::vector<Point<RealT, 2>> &points);
+  std::optional<RealT> fit(Circle2<RealT> &circle, const std::vector<Point<RealT, 2>> &points);
 
   // Let everyone know there's an implementation already generated for common cases
-  extern template class Circle2dC<float>;
+  extern template class Circle2<float>;
 
 }// namespace Ravl2

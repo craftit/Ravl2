@@ -340,8 +340,8 @@ TEST_CASE("Circle")
 
   SECTION("Fit 3 points.")
   {
-    Circle2dC<float> circle2;
-    EXPECT_TRUE(circle2.Fit(pnts[0], pnts[1], pnts[2]));
+    Circle2<float> circle2;
+    EXPECT_TRUE(circle2.fit(pnts[0], pnts[1], pnts[2]));
     SPDLOG_TRACE("Center={} Radius={}", circle2.Centre(), circle2.Radius());
     float sqrMag = Point<float, 2>(circle2.Centre() - Point<float, 2>({1, 2})).squaredNorm();
     CHECK(sqrMag < 0.01f);
@@ -350,7 +350,7 @@ TEST_CASE("Circle")
 
   SECTION("Fit N points.")
   {
-    Circle2dC<float> circle;
+    Circle2<float> circle;
     auto residual = Ravl2::fit(circle, pnts);
     CHECK(residual.has_value());
     SPDLOG_TRACE("Center={} Radius={} Residual={}", circle.Centre(), circle.Radius(), residual.value());
