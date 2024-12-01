@@ -636,14 +636,14 @@ namespace Ravl2
   
   //! Clip a range by another range.
   template <unsigned N>
-  [[nodiscard]] constexpr IndexRange<N> clip(const IndexRange<N> &range, const IndexRange<N> &clip)
+  [[nodiscard]] constexpr IndexRange<N> clip(const IndexRange<N> &range, const IndexRange<N> &clipRange)
   {
     if constexpr(N == 1) {
-      return range.clip(clip);
+      return range.clip(clipRange);
     } else {
       IndexRange<N> ret;
       for(unsigned i = 0; i < N; i++)
-        ret[i] = range[i].clip(clip[i]);
+        ret[i] = range[i].clip(clipRange[i]);
       return ret;
     }
   }

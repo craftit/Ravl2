@@ -568,7 +568,14 @@ namespace Ravl2
     {
       return &gStride1;
     }
-
+    
+    //! Broadcast assignment
+    auto &operator=(const DataT &value)
+    {
+      fill(*this, value);
+      return *this;
+    }
+  
   protected:
     DataT *m_data = nullptr;
     IndexRange<1> m_range;

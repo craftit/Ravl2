@@ -27,6 +27,8 @@ namespace Ravl2
   {
     // Draw one-colour polygon
     for(PolygonRasterIter<CoordT> it(poly); it.valid(); ++it) {
+      if(!dat.range(0).contains(it.row()))
+        continue;
       fill(clip(dat[it.row()], it.rowIndexRange()), PixelT(value));
     }
   }

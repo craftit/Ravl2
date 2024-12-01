@@ -66,7 +66,15 @@ namespace Ravl2
     //! @param: orientation - the orientation of the boundary
     //! If BoundaryOrientationT::INSIDE_LEFT makes a counter clockwise polygon, with a positive area.
     explicit Polygon(const Range<RealT, 2> &range, BoundaryOrientationT orientation = BoundaryOrientationT::INSIDE_LEFT);
-
+    
+    //! Constructor creates a rectangular polygon of the index range
+    //! @param: range - the range defining the rectangle for the polygon
+    //! @param: orientation - the orientation of the boundary
+    //! If BoundaryOrientationT::INSIDE_LEFT makes a counter clockwise polygon, with a positive area.
+    explicit Polygon(const IndexRange<2> &range, BoundaryOrientationT orientation = BoundaryOrientationT::INSIDE_LEFT)
+     : Polygon(toRange<RealT, 2>(range), orientation)
+    {}
+    
     //! @return: the signed area of this polygon
     //! @param: type - the orientation of the boundary inverts sign.
     [[nodiscard]] RealT area() const;

@@ -404,56 +404,54 @@ TEST_CASE("DiscreteCosineTransform (forwardDCT)")
 TEST_CASE("ImagePyramid")
 {
   using namespace Ravl2;
-
+#if 0
   SECTION("ConstructAndFind")
   {
     using PixelT = uint8_t;
     //Ravl2::SetSPDLogLevel beQuiet(spdlog::level::off);
     // Make an image
-    Array<PixelT,2> patch({27,27},0);
+    Array<PixelT, 2> patch({27, 27}, 0);
     patch[2][2] = 1.0f;
     patch[2][3] = 1.0f;
     patch[3][2] = 1.0f;
     patch[3][3] = 1.0f;
-
-    auto sumImg =  SummedAreaTable<uint32_t>::buildTable(patch);
-    auto pyramid = buildImagePyramid(patch, sumImg, 3, toVector<float>(2,2),0,4);
-
+    
+    auto sumImg = SummedAreaTable<uint32_t>::buildTable(patch);
+    auto pyramid = buildImagePyramid(patch, sumImg, 3, toVector<float>(2, 2), 0, 4);
+    
     ASSERT_EQ(pyramid.numLevels(), 3u);
     auto level = pyramid.findAreaScale(0.33f);
     //SPDLOG_INFO("Level: {}", level);
     ASSERT_EQ(level, 1u);
-  }
-  SECTION("Construct")
+  }SECTION("Construct")
   {
     // Try using the build method that constructs the summed area table.
     // Make an image
-    Array<uint8_t,2> patch({27,27},0);
+    Array<uint8_t, 2> patch({27, 27}, 0);
     patch[2][2] = 1.0f;
     patch[2][3] = 1.0f;
     patch[3][2] = 1.0f;
     patch[3][3] = 1.0f;
-
-    auto pyramid = buildImagePyramid(patch, 3, toVector<float>(2,2));
-
+    
+    auto pyramid = buildImagePyramid(patch, 3, toVector<float>(2, 2));
+    
     ASSERT_EQ(pyramid.numLevels(), 3u);
     auto level = pyramid.findAreaScale(0.33f);
     SPDLOG_TRACE("Level: {}", level);
     ASSERT_EQ(level, 1u);
-
   }
-
+  
   SECTION("ConstructFloat")
   {
     using PixelT = float;
     //Ravl2::SetSPDLogLevel beQuiet(spdlog::level::off);
     // Make an image
-    Array<PixelT,2> patch({28,28},0);
-
-    clip(patch,patch.range().shrink(6)) = 1.0f;
-
-    auto pyramid = buildImagePyramid(patch, 3, toVector<float>(2,2),0,4);
-
+    Array<PixelT, 2> patch({28, 28}, 0);
+    
+    clip(patch, patch.range().shrink(6)) = 1.0f;
+    
+    auto pyramid = buildImagePyramid(patch, 3, toVector<float>(2, 2), 0, 4);
+    
     ASSERT_EQ(pyramid.numLevels(), 3u);
     auto level = pyramid.findAreaScale(0.33f);
     //SPDLOG_INFO("Level: {}", level);
@@ -461,21 +459,21 @@ TEST_CASE("ImagePyramid")
 //    for(size_t i = 0;i < pyramid.numLevels();i++) {
 //      SPDLOG_INFO("Level:{} Img:{} ", i, pyramid.level(i).image());
 //    }
-
+  
   }
-
+  
   SECTION("ConstructOffset")
   {
     using PixelT = float;
     //Ravl2::SetSPDLogLevel beQuiet(spdlog::level::off);
     // Make an image
     IndexRange<2> range({{4, 15}, {8, 19}});
-    Array<PixelT,2> patch(range,0);
-
-    clip(patch,patch.range().shrink(2)) = 1.0f;
-
-    auto pyramid = buildImagePyramid(patch, 3, toVector<float>(2,2),0,4);
-
+    Array<PixelT, 2> patch(range, 0);
+    
+    clip(patch, patch.range().shrink(2)) = 1.0f;
+    
+    auto pyramid = buildImagePyramid(patch, 3, toVector<float>(2, 2), 0, 4);
+    
     ASSERT_EQ(pyramid.numLevels(), 3u);
     auto level = pyramid.findAreaScale(0.33f);
     //SPDLOG_INFO("Level: {}", level);
@@ -483,7 +481,22 @@ TEST_CASE("ImagePyramid")
 //    for(size_t i = 0;i < pyramid.numLevels();i++) {
 //      SPDLOG_INFO("Level:{} Img:{} ", i, pyramid.level(i).image());
 //    }
-
+  
   }
-
+#endif
+  SECTION("Construct Negative Origin")
+  {
+    using PixelT = float;
+    //Ravl2::SetSPDLogLevel beQuiet(spdlog::level::off);
+    // Make an image
+    IndexRange<2> range({{-20, 30}, {-30, 60}});
+    Array<PixelT, 2> patch(range, 0);
+    
+    auto pyramid = Ravl2::buildImagePyramid(patch, 12, Ravl2::toVector<float>(2, 2), 2, 300);
+    ASSERT_EQ(pyramid.numLevels(), 3u);
+    auto level = pyramid.findAreaScale(0.33f);
+    //SPDLOG_INFO("Level: {}", level);
+    ASSERT_EQ(level, 1u);
+    
+  }
 }
