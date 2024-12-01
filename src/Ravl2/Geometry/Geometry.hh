@@ -18,6 +18,14 @@ namespace Ravl2
     { a(pnt) } -> std::convertible_to<Point<RealT, N>>;
   };
 
+  //! Operator to transform a point
+  template <typename TransformT, typename RealT = typename TransformT::value_type, unsigned N = TransformT::dimension>
+   requires PointTransform<TransformT, RealT, N>
+  [[nodiscard]] constexpr auto operator*(const TransformT &a, const Point<RealT, N> &pnt)
+  {
+    return a(pnt);
+  }
+  
   //! Get a perpendicular vector in 2d space
   template <typename DataT>
   [[nodiscard]] inline constexpr Vector<DataT, 2> perpendicular(const Vector<DataT, 2> &v)
