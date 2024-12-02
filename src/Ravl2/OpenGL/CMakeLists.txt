@@ -2,6 +2,10 @@
 include(GenerateExportHeader)
 include(ExternalProject)
 
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(GLFW REQUIRED glfw3)
+find_package(OpenGL REQUIRED)
+
 set(BUILD_IMGUIGLFW OFF CACHE BOOL "Build imgui with glfw")
 
 if(BUILD_IMGUIGLFW)
@@ -30,10 +34,9 @@ if(BUILD_IMGUIGLFW)
     endif()
 
     target_include_directories(imgui PUBLIC ${imgui_external_SOURCE_DIR})
-    target_link_libraries(imgui PUBLIC glfw )
+    target_link_libraries(imgui PUBLIC ${GLFW_LIBRARIES} )
 endif ()
 
-find_package(OpenGL REQUIRED)
 
 # Get imgui
 
@@ -55,7 +58,7 @@ add_library (Ravl2OpenGL
 add_library(ravl2::Ravl2OpenGL ALIAS Ravl2OpenGL)
 
 target_link_libraries(Ravl2OpenGL PRIVATE RAVL2_options RAVL2_warnings)
-target_link_libraries(Ravl2OpenGL PUBLIC Ravl2x3D ${OPENGL_LIBRARIES} glfw)
+target_link_libraries(Ravl2OpenGL PUBLIC Ravl2x3D ${OPENGL_LIBRARIES} ${GLFW_LIBRARIES})
 
 target_include_directories(Ravl2OpenGL ${WARNING_GUARD} PUBLIC
         $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src>
