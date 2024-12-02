@@ -113,7 +113,7 @@ namespace Ravl2
   template <typename DataT>
   std::ostream &operator<<(std::ostream &os, const Isometry3<DataT> &in)
   {
-    os << "Isometry3(" << in.rotation() << "," << in.translation() << ")";
+    os << "Isometry3(" << in.rotation() << "," << Eigen::WithFormat(in.translation(),defaultEigenFormat()) << ")";
     return os;
   }
 

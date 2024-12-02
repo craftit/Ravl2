@@ -196,7 +196,7 @@ namespace Ravl2
   {
     s << dat.size() << std::endl;
     for(auto it : dat) {
-      s << ' ' << it;
+      s << ' ' << Eigen::WithFormat(it, defaultEigenFormat()) << std::endl;
     }
     return s;
   }

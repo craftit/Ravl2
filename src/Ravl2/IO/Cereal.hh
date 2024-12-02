@@ -9,7 +9,11 @@
 #define CEREAL_THREAD_SAFE 1
 #endif
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wnull-dereference"
+// The compiler claims this has some potential null dereference issues.
 #include <cereal/archives/binary.hpp>
+#pragma GCC diagnostic pop
 #include <cereal/archives/json.hpp>
 #include <cereal/types/string.hpp>
 #include <cereal/types/vector.hpp>

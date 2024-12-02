@@ -103,12 +103,37 @@ namespace Ravl2
   //! Get a human-readable name for a type.
   std::string typeName(const std::type_index &type);
 
+  const Eigen::IOFormat &defaultEigenFormat();
 }// namespace Ravl2
 
 template <typename T>
+struct fmt::formatter<Eigen::WithFormat<T>> : ostream_formatter {};
+
+#if 0
+template <typename T>
 requires std::is_base_of_v<Eigen::DenseBase<T>, T>
 struct fmt::formatter<T> : ostream_formatter {};
+#else
+template <class _Scalar, int _Rows, int _Cols, int _Options, int _MaxRows, int _MaxCols>
+struct fmt::formatter<Eigen::Matrix<_Scalar, _Rows, _Cols, _Options, _MaxRows, _MaxCols>>
+{
+  template<typename ParseContext>
+  constexpr auto parse(ParseContext& ctx) {
+    return ctx.begin();
+  }
 
-template <typename T>
-struct fmt::formatter<Eigen::WithFormat<T>> : ostream_formatter {};
+  template<typename FormatContext>
+  auto format(Eigen::Matrix<_Scalar, _Rows, _Cols, _Options, _MaxRows, _MaxCols> const& mat, FormatContext& ctx)
+  {
+    if constexpr(_Rows == 1 && _Cols == 1)
+      return fmt::format_to(ctx.out(), "{}", mat(0,0));
+    else
+      return fmt::format_to(ctx.out(), "{}", Eigen::WithFormat(mat, Ravl2::defaultEigenFormat()));
+  }
+
+};
+
+#endif
+
+
 

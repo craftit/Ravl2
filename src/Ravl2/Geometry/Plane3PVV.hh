@@ -159,7 +159,7 @@ namespace Ravl2
     //! @return The 3d point.
     inline  constexpr Point<RealT, 3> at(const RealT t1, const RealT t2) const
     {
-      return mOrigin + mVector1 * t1 + mVector2 * t2;
+      return mOrigin + (mVector1 * t1) + (mVector2 * t2);
     }
     
     //! @brief Map a point at a 2d position on the plane to a 3d point.

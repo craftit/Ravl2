@@ -228,7 +228,7 @@ namespace Ravl2
   template <typename RealT, unsigned N>
   std::ostream &operator<<(std::ostream &s, const Projection<RealT, N> &proj)
   {
-    s << proj.matrix() << ' ' << proj.IZ() << ' ' << proj.OZ();
+    s << "Projection(" << Eigen::WithFormat(proj.matrix(),defaultEigenFormat()) << " iz=" << proj.IZ() << " oz=" << proj.OZ() << ")";
     return s;
   }
 
