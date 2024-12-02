@@ -17,6 +17,8 @@ function(RAVL2_setup_dependencies)
     else()
       set(BLA_VENDOR "All")
     endif ()
+  else ()
+    set(BLA_VENDOR "All")
   endif()
 
   find_package(BLAS REQUIRED)

@@ -230,14 +230,14 @@ namespace Ravl2
     constexpr static unsigned dimensions = 1;
     constexpr ArrayAccess() = default;
 
-    constexpr ArrayAccess(DataT *data, const IndexRange<1> *rng, const int *strides)
+    constexpr ArrayAccess(DataT *data, const IndexRange<1> *rng, [[maybe_unused]] const int *strides)
         : m_ranges(rng),
           m_data(data)
     {
       assert(*strides == 1);
     }
 
-    constexpr ArrayAccess(DataT *data, const IndexRange<1> &rng, const int *strides)
+    constexpr ArrayAccess(DataT *data, const IndexRange<1> &rng, [[maybe_unused]] const int *strides)
         : m_ranges(&rng),
           m_data(data)
     {
