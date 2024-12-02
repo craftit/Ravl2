@@ -32,6 +32,10 @@ namespace Ravl2
     //! Construct from scale and a translation vector.
     inline constexpr ScaleTranslate(const Vector<DataT, N> &scale, const Vector<DataT, N> &translate);
 
+    //! Construct an identity transform.
+    [[nodiscard]] static constexpr ScaleTranslate identity()
+    { return ScaleTranslate(Vector<DataT, N>::Ones(), Vector<DataT, N>::Zero()); }
+
     //! Access the translation component of the transformation.
     [[nodiscard]]inline constexpr Vector<DataT, N> &translation() { return mT; }
 
@@ -75,21 +79,21 @@ namespace Ravl2
 
     //! Transform Vector,  scale, Rotate, translate.
     // Take a vector and put it though the transformation.
-    [[nodiscard]] constexpr auto operator()(const Vector<DataT, N> &pnt) const
+    [[nodiscard]] constexpr Point<DataT,N> operator()(const Point<DataT, N> &pnt) const
     {
-      return mS * pnt + mT;
+      return (mS.array() * pnt.array()).matrix() + mT;
     }
 
     //! Compose this transform with 'In'
     [[nodiscard]] constexpr inline auto operator()(const ScaleTranslate &In) const
     {
-      return ScaleTranslate(mS * In.scaleVector(), mS * In.translation() + mT);
+      return ScaleTranslate(mS.array() * In.scaleVector().array(), (mS.array() * In.translation().array()).matrix() + mT);
     }
 
     //! Transform a range.
     [[nodiscard]] constexpr inline auto operator()(const Range<DataT,N> &In) const
     {
-      return Range<DataT,N>(mS * In.min() + mT, mS * In.max() + mT);
+      return Range<DataT,N>((mS.array() * In.min().array()).matrix() + mT, (mS.array() * In.max().array()).matrix() + mT);
     }
 
     //! Serialization support
@@ -100,8 +104,8 @@ namespace Ravl2
     }
 
   protected:
-    Vector<DataT, N> mS = xt::ones<DataT>({N}); //!< Scale
-    Vector<DataT, N> mT = xt::zeros<DataT>({N});//!< Translate.
+    Vector<DataT, N> mS = Vector<DataT, N>::Ones(); //!< Scale
+    Vector<DataT, N> mT = Vector<DataT, N>::Zero();//!< Translate.
   };
 
   //! Generate an inverse transformation.
@@ -122,7 +126,7 @@ namespace Ravl2
   template <typename DataT, unsigned N>
   constexpr void ScaleTranslate<DataT, N>::scale(const Vector<DataT, N> &xy)
   {
-    mS *= xy;
+    mS.array() *= xy.array();
   }
 
   template <typename DataT, unsigned N>
@@ -135,8 +139,8 @@ namespace Ravl2
   ScaleTranslate<DataT, N> constexpr ScaleTranslate<DataT, N>::inverse() const
   {
     ScaleTranslate<DataT, N> ret;
-    ret.mS = DataT(1) / mS;
-    ret.mT = ret.mS * mT;
+    ret.mS = mS.cwiseInverse();
+    ret.mT = ret.mS.cwiseProduct(mT);
     ret.mT *= -1;
     return ret;
   }
@@ -144,13 +148,13 @@ namespace Ravl2
   template <typename DataT, unsigned N>
   Vector<DataT, N> constexpr ScaleTranslate<DataT, N>::operator*(const Vector<DataT, N> &in) const
   {
-    return (mS * in) + mT;
+    return (mS.array() * in.array()).matrix() + mT;
   }
 
   template <typename DataT, unsigned N>
   [[nodiscard]] constexpr ScaleTranslate<DataT, N> ScaleTranslate<DataT, N>::operator*(const ScaleTranslate<DataT, N> &In) const
   {
-    return ScaleTranslate(mS * In.scaleVector(), mS * In.translation() + mT);
+    return ScaleTranslate(mS.array() * In.scaleVector().array(), (mS.array() * In.translation().array()).matrix() + mT);
   }
 
   template <typename DataT, unsigned N>
@@ -162,8 +166,8 @@ namespace Ravl2
   template <typename DataT, unsigned N>
   constexpr ScaleTranslate<DataT, N> ScaleTranslate<DataT, N>::operator/(const ScaleTranslate<DataT, N> &in) const
   {
-    Vector<DataT, N> invScale = DataT(1) / in.scaleVector();
-    return ScaleTranslate(mS * invScale, invScale * (mT - in.translation()));
+    Vector<DataT, N> invScale = in.scaleVector().cwiseInverse();
+    return ScaleTranslate(mS.array() * invScale.array(), invScale.array() * (mT - in.translation()).array());
   }
 
   template <typename DataT, unsigned N>

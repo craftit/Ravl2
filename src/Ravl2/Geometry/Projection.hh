@@ -31,6 +31,7 @@ namespace Ravl2
   public:
     using value_type = RealT;
     constexpr static unsigned dimension = N;
+    using PointT = Point<RealT, N>;
 
     //! Default constructor.
     //! Creates an identity transform.
@@ -56,8 +57,8 @@ namespace Ravl2
         : iz(Iz),
           oz(Oz)
     {
-      for(size_t i = 0; i < N; i++) {
-        for(size_t j = 0; j < N; j++) {
+      for(IndexT i = 0; i < IndexT(N); i++) {
+        for(IndexT j = 0; j < IndexT(N); j++) {
           trans(i, j) = affineTransform.SRMatrix()(i, j);
         }
         trans(i, N) = affineTransform.Translation()[i] / iz;
@@ -71,12 +72,12 @@ namespace Ravl2
     [[nodiscard]] constexpr Point<RealT, N> project(const Point<RealT, N> &pnt) const
     {
       Vector<RealT, N + 1> vi;
-      for(size_t i = 0; i < N; i++) {
+      for(IndexT i = 0; i < IndexT(N); i++) {
         vi[i] = pnt[i];
       }
       vi[N] = iz;
-      auto vo = xt::linalg::dot(trans, vi);
-      return oz * Vector<RealT, N>(vo) / vo[N];
+      Vector<RealT, N+1> vo = trans * vi;
+      return ((oz * vo.array()) / vo[N]).head(N);
     }
 
     //! project a point through the transform.
@@ -106,10 +107,9 @@ namespace Ravl2
     //! for the resulting one.
     [[nodiscard]] Projection<RealT, N> operator*(const Projection<RealT, N> &oth) const
     {
-      Matrix<RealT, N + 1, N + 1> diag = xt::eye<RealT>(N + 1);
+      Matrix<RealT, N + 1, N + 1> diag = Matrix<RealT, N + 1, N + 1>::Identity();
       diag(N, N) = iz / oth.oz;
-      using xt::linalg::dot;
-      Matrix<RealT, N + 1, N + 1> transform = dot(dot(trans, diag), oth.trans);
+      Matrix<RealT, N + 1, N + 1> transform = trans * diag * oth.trans;
       return Projection<RealT, N>(transform, oz, oth.iz);
     }
 
@@ -122,7 +122,7 @@ namespace Ravl2
     //! Returns identity projection
     static constexpr Projection<RealT, N> identity(RealT oz = 1, RealT iz = 1)
     {
-      Matrix<RealT, N + 1, N + 1> m = xt::eye<RealT>(N + 1);
+      Matrix<RealT, N + 1, N + 1> m = Matrix<RealT, N + 1, N + 1>::Identity();
       m(N, N) = oz / iz;
       return Projection(m, oz, iz);
     }
@@ -175,12 +175,11 @@ namespace Ravl2
     //! This returns the projection normalised to make the projective scales both = 1
     [[nodiscard]] constexpr Matrix<RealT, N + 1, N + 1> homography() const
     {
-      Matrix<RealT, N + 1, N + 1> mat1 = xt::eye<RealT>(3);
+      Matrix<RealT, N + 1, N + 1> mat1 = Matrix<RealT, N + 1, N + 1>::Identity();
       mat1(N, N) = iz;
-      Matrix<RealT, N + 1, N + 1> mat2 = xt::eye<RealT>(3);
+      Matrix<RealT, N + 1, N + 1> mat2 = Matrix<RealT, N + 1, N + 1>::Identity();
       mat2(N, N) = oz;
-      using xt::linalg::dot;
-      Matrix<RealT, N + 1, N + 1> ret = dot(dot(Ravl2::inverse(mat2).value(), trans), mat1);
+      Matrix<RealT, N + 1, N + 1> ret = Ravl2::inverse(mat2).value() * trans* mat1;
       return ret;
     }
 
@@ -201,7 +200,7 @@ namespace Ravl2
     //! True if not the zero projection and Matrix<RealT,3,3> is "real"
     [[nodiscard]] constexpr inline bool IsValid() const
     {
-      return !isNearZero(xt::sum(xt::abs(trans))()) && isReal(trans);
+      return !isNearZero(trans.cwiseAbs().sum()) && trans.array().isFinite().all();
     }
 
     //! Serialization support
@@ -212,7 +211,7 @@ namespace Ravl2
     }
 
   protected:
-    Matrix<RealT, N + 1, N + 1> trans;// = xt::eye<RealT>();
+    Matrix<RealT, N + 1, N + 1> trans = Matrix<RealT, N + 1, N + 1>::Identity();
     RealT iz = 1;
     RealT oz = 1;
   };

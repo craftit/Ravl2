@@ -171,7 +171,7 @@ namespace Ravl2
   //! range of the data type.
 
   template <typename CompT, ImageChannel... Channels>
-  class Pixel : public Vector<CompT, sizeof...(Channels)>
+  class Pixel : public Vector<CompT, IndexSizeT(sizeof...(Channels))>
   {
   public:
     using value_type = CompT;
@@ -183,13 +183,18 @@ namespace Ravl2
     //! Unpack from parameter pack.
     template <typename... Args>
     explicit Pixel(Args... args)
-        : Vector<CompT, sizeof...(Channels)>({CompT(args)...})
+        : Vector<CompT, IndexSizeT (sizeof...(Channels))>({CompT(args)...})
     {}
 
     //! Construct from an initializer list
     Pixel(std::initializer_list<CompT> list)
-	: Vector<CompT, sizeof...(Channels)>(list)
-    {}
+    {
+      if(list.size() != sizeof...(Channels)) {
+	SPDLOG_ERROR("Pixel initializer list size mismatch: {} != {}", list.size(), sizeof...(Channels));
+	throw std::runtime_error("Pixel initializer list size mismatch");
+      }
+      std::copy(list.begin(), list.end(), this->begin());
+    }
 
     //! Construct from another pixel, mapping the channels.
     template <typename OCompT, ImageChannel... OChannels>

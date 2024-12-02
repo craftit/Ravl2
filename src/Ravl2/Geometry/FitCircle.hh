@@ -30,16 +30,15 @@ namespace Ravl2
   //! 'residual' is from the least squares fit and can be used to assess
   //! the quality of the fit.  Returns false if fit failed.
   template <typename RealT>
-  std::optional<RealT> fit(Circle2dC<RealT> &circle, const std::vector<Point<RealT, 2>> &points)
+  std::optional<RealT> fit(Circle<RealT> &circle, const std::vector<Point<RealT, 2>> &points)
   {
-    size_t N = points.size();
-    if(N < 3)// Under determined.
+    size_t numSamples = points.size();
+    if(numSamples < 3)// Under determined.
       return std::nullopt;
 
-    typename MatrixT<RealT>::shape_type sh = {N, 3};
-    MatrixT<RealT> A = xt::empty<RealT>(sh);
-    VectorT<RealT> B = xt::empty<RealT>({N});
-    size_t i = 0;
+    MatrixT<RealT> A(numSamples, 3);
+    VectorT<RealT> B(numSamples);
+    IndexT i = 0;
     auto [mean, scale] = normalise<RealT, 2>(points, [&i, &A, &B](const Point<RealT, 2> &pnt) {
       const RealT X = pnt[0];
       const RealT Y = pnt[1];
@@ -50,18 +49,18 @@ namespace Ravl2
       i++;
     });
 
-    auto [x, residual, rank, s] = xt::linalg::lstsq(A, B);
-    //SPDLOG_INFO("Rank:{} Residual:{}", int(rank), residual());
-    if(rank < 3)
-      return std::nullopt;// Fit failed.
+    //auto [x, residual, rank, s] = xt::linalg::lstsq(A, B);
+    //SPDLOG_INFO("A:{} \n B:{}", A,B);
+    auto solver = A.bdcSvd(Eigen::ComputeThinU | Eigen::ComputeThinV);
+    auto x = solver.solve(B);
 
     const RealT X = x[0] / -2;
     const RealT Y = x[1] / -2;
     const RealT radius = std::sqrt(((X * X) + (Y * Y)) - x[2]);
     scale = 1 / scale;
-    circle = Circle2dC<RealT>((toPoint<RealT>(X, Y) * scale) + mean, radius * scale);
+    circle = Circle<RealT>((toPoint<RealT>(X, Y) * scale) + mean, radius * scale);
     //SPDLOG_INFO("Circle2dC::FitLSQ() Center={} Radius={}", circle.Centre(), circle.Radius());
-    return residual() * scale;
+    return 0;//residual() * scale;
   }
 
 }// namespace Ravl2

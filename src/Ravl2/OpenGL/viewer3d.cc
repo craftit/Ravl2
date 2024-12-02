@@ -7,6 +7,7 @@
 
 #define USE_OPENGL3 1
 
+#if 0
 #include "imgui.h"
 #include "backends/imgui_impl_glfw.h"
 #if USE_OPENGL3
@@ -14,7 +15,7 @@
 #else
 #include "backends/imgui_impl_opengl2.h"
 #endif
-
+#endif
 
 static void glfw_error_callback(int error, const char* description)
 {

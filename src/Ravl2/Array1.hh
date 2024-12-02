@@ -44,7 +44,7 @@ namespace Ravl2
         : mPtr(array)
     {}
 
-    constexpr explicit ArrayIter([[maybe_unused]] IndexRange<1> &rng, DataT *array)
+    constexpr explicit ArrayIter(DataT *array, [[maybe_unused]] IndexRange<1> &rng)
         : mPtr(array)
     {}
 
@@ -230,14 +230,14 @@ namespace Ravl2
     constexpr static unsigned dimensions = 1;
     constexpr ArrayAccess() = default;
 
-    constexpr ArrayAccess(const IndexRange<1> *rng, DataT *data, [[maybe_unused]] const int *strides)
+    constexpr ArrayAccess(DataT *data, const IndexRange<1> *rng, const int *strides)
         : m_ranges(rng),
           m_data(data)
     {
       assert(*strides == 1);
     }
 
-    constexpr ArrayAccess(const IndexRange<1> &rng, DataT *data, [[maybe_unused]] const int *strides)
+    constexpr ArrayAccess(DataT *data, const IndexRange<1> &rng, const int *strides)
         : m_ranges(&rng),
           m_data(data)
     {
@@ -568,7 +568,14 @@ namespace Ravl2
     {
       return &gStride1;
     }
-
+    
+    //! Broadcast assignment
+    auto &operator=(const DataT &value)
+    {
+      fill(*this, value);
+      return *this;
+    }
+  
   protected:
     DataT *m_data = nullptr;
     IndexRange<1> m_range;
@@ -725,7 +732,7 @@ namespace Ravl2
       if(!arr.range().contains(range)) {
         throw std::out_of_range("requested range is outside that of the allocated array");
       }
-      arr = clip(arr, range);
+      arr = clipUnsafe(arr, range);
     }
     detail::CerealDataBlock<ArrayT> blk(arr);
     archive(cereal::make_nvp("data", blk));

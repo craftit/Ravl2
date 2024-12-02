@@ -50,9 +50,9 @@ namespace Ravl2
         throw std::runtime_error("LinePV<RealT,3>::ShortestLine(): the lines are almost parallel");
       Vector<RealT, 3> pmr(this->FirstPoint() - line.FirstPoint());
       Point<RealT, 3> p1(this->FirstPoint()
-                         + this->Direction() * ((xt::linalg::dot(axb, cross(line.Direction(), pmr))) / axbNorm));
+                         + this->Direction() * ((axb * cross(line.Direction(), pmr)) / axbNorm));
       Point<RealT, 3> p2(line.FirstPoint()
-                         + line.Direction() * ((xt::linalg::dot(axb, cross(this->Direction(), pmr))) / axbNorm));
+                         + line.Direction() * (((axb * cross(this->Direction(), pmr))) / axbNorm));
       return LinePV<RealT, 3>::fromPoints(p1, p2);
     }
 
@@ -68,7 +68,7 @@ namespace Ravl2
   
   //! Construct a line from two points
   template <typename RealT>
-  [[nodiscard]] inline constexpr Line3PV<RealT> points2line(Point<RealT, 3> const &start, Point<RealT, 3> const &end)
+  [[nodiscard]] inline constexpr Line3PV<RealT> toLine(Point<RealT, 3> const &start, Point<RealT, 3> const &end)
   {
     return Line3PV<RealT>(start, end - start);
   }

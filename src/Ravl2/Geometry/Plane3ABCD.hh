@@ -47,7 +47,7 @@ namespace Ravl2
     Plane3ABCD(const Point<RealT, 3> &p,
                const Vector<RealT, 3> &v1,
                const Vector<RealT, 3> &v2)
-        : VectorOffset<RealT, 3>(cross(v1, v2), -xt::linalg::dot(cross(v1, v2), p)())
+        : VectorOffset<RealT, 3>(cross(v1, v2), -cross(v1, v2).dot(p))
     {}
 
     //: The plane passing through three points 'p1', 'p2', and 'p3'.
@@ -99,7 +99,7 @@ namespace Ravl2
     //! If the intersection does not exist the function throw an ExceptionNumericalC
     [[nodiscard]] Point<RealT, 3> intersection(const LinePV<RealT, 3> &l) const
     {
-      RealT nu = xt::linalg::dot(this->mNormal, l.Direction())();
+      RealT nu = this->mNormal.dot(l.Direction());
       if(isNearZero(nu))
         throw std::runtime_error("PlaneABCD3dC::intersection(): the line is almost parallel to the plane.");
       return l.at(-this->residuum(l.FirstPoint()) / nu);
@@ -111,7 +111,7 @@ namespace Ravl2
                                                const Plane3ABCD<RealT> &planeC) const
     {
       Vector<RealT, 3> n1xn2(cross(this->normal(), planeB.normal()));
-      RealT tripleSP = RealT(xt::linalg::dot(n1xn2, planeC.normal())());
+      RealT tripleSP = n1xn2.dot(planeC.normal());
       if(isNearZero(tripleSP))
         throw std::runtime_error("PlaneABCD3dC::intersection(): the planes are almost parallel");
       Vector<RealT, 3> n2xn3(cross(planeB.normal(), planeC.normal()));
@@ -140,7 +140,7 @@ namespace Ravl2
   template <typename RealT>
   bool fit(Plane3ABCD<RealT> &plane, const std::vector<Point<RealT, 3>> &points)
   {
-    return fit(static_cast<VectorOffset<RealT, 3> &>(plane), points);
+    return fit<RealT,3>(static_cast<VectorOffset<RealT, 3> &>(plane), points);
   }
 
   extern template class Plane3ABCD<float>;

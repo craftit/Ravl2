@@ -196,16 +196,19 @@ namespace Ravl2
     // Put in the first level.
     pyramid.addLevel(PyramidLevel(fullImg, levelScale));
     for(size_t i = 1; i < numLevels; ++i) {
-      levelScale.scale(1.0f / scale);
-      IndexRange<2> sampleRange = toInnerIndexRange(levelScale(toRange<float>(fullImg.range()))).shrinkMax(1);
+      levelScale.scale(scale.cwiseInverse());
+      const IndexRange<2> sampleRange = toInnerIndexRange(levelScale(toRange<float>(fullImg.range()))).shrinkMax(1);
       //SPDLOG_INFO("Level {} Scale:{} levelScale:{} sampleRange:{} Area:{} ",i, scale, levelScale,sampleRange,sampleRange.area());
       if(sampleRange.area() < minArea) {
         break;
       }
-      IndexRange<2> fullRange = sampleRange.expand(int(pad));
+      const IndexRange<2> fullRange = sampleRange.expand(int(pad));
       Array<PixelT, 2> newImage(fullRange);
-      Vector<float,2> invScale = 1.0f / levelScale.scaleVector();
-      subImg.template sampleGrid(clip(newImage,sampleRange), invScale, toVector<float>(0,0));
+      const Vector<float,2> invScale = levelScale.scaleVector().cwiseInverse();
+      auto sampleImg = clipUnsafe(newImage,sampleRange);
+      assert(sampleImg.range().area() > 0);
+      //SPDLOG_INFO("SampleImg:{} ", sampleImg.range());
+      subImg.template sampleGrid(sampleImg, invScale, toVector<float>(0,0));
       if(pad > 0) {
         // If we've padded the image then we need to set the padding to zero.
         mirrorEdges(newImage, pad);

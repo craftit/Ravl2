@@ -2,6 +2,7 @@
 // Created by charles galambos on 22/10/2023.
 //
 
+#include <random>
 #include "checks.hh"
 #include "Ravl2/Geometry/Quaternion.hh"
 #include "Ravl2/Geometry/Isometry3.hh"
@@ -98,7 +99,7 @@ TEST_CASE("Quaternion")
     Quaternion const q2 = Quaternion<RealT>::fromAngleAxis(RealT(std::numbers::pi/4.0), {0.0, 0.0, 1.0});
 
     // At 0 we should be close to q1
-    Quaternion const q3 = slerp(q1,q2, 0);
+    Quaternion const q3 = slerp(q1,q2, 0.0f);
     EXPECT_FLOAT_EQ(q3.angle(),0);
 
     // At 1 we should be close to q2
@@ -126,11 +127,11 @@ TEST_CASE("Quaternion")
   {
 
     // Setup a zero rotation
-    Quaternion<RealT> const qZero = Quaternion<RealT>::fromEulerAngles({0.0, 0.0, 0.0});
+    Quaternion<RealT> const qZero = Quaternion<RealT>::fromEulerAnglesXYZ({0.0, 0.0, 0.0});
     EXPECT_FLOAT_EQ(qZero.angle(),0);
 
     // Setup a 45 degree rotation about the x axis
-    Quaternion<RealT> const q1 = Quaternion<RealT>::fromEulerAngles({RealT(std::numbers::pi/4.0), 0.0, 0.0 });
+    Quaternion<RealT> const q1 = Quaternion<RealT>::fromEulerAnglesXYZ({RealT(std::numbers::pi / 4.0), 0.0, 0.0});
     EXPECT_FLOAT_EQ(q1.angle(),RealT(std::numbers::pi/8.0));
     auto angles1 = q1.eulerAngles();
     EXPECT_FLOAT_EQ(angles1[0],RealT(std::numbers::pi/4.0));
@@ -138,7 +139,7 @@ TEST_CASE("Quaternion")
     EXPECT_FLOAT_EQ(angles1[2],0);
 
     // Setup a 45 degree rotation about the y axis
-    Quaternion<RealT> const q2 = Quaternion<RealT>::fromEulerAngles({0.0, RealT(std::numbers::pi/4.0), 0.0 });
+    Quaternion<RealT> const q2 = Quaternion<RealT>::fromEulerAnglesXYZ({0.0, RealT(std::numbers::pi / 4.0), 0.0});
     EXPECT_FLOAT_EQ(q1.angle(),RealT(std::numbers::pi/8.0));
     auto angles2 = q2.eulerAngles();
     EXPECT_FLOAT_EQ(angles2[0],0);
@@ -146,7 +147,7 @@ TEST_CASE("Quaternion")
     EXPECT_FLOAT_EQ(angles2[2],0);
 
     // Setup a 45 degree rotation about the z axis
-    Quaternion<RealT> const q3 = Quaternion<RealT>::fromEulerAngles({0.0, 0.0, RealT(std::numbers::pi/4.0) });
+    Quaternion<RealT> const q3 = Quaternion<RealT>::fromEulerAnglesXYZ({0.0, 0.0, RealT(std::numbers::pi / 4.0)});
     EXPECT_FLOAT_EQ(q1.angle(),RealT(std::numbers::pi/8.0));
     auto angles3 = q3.eulerAngles();
     EXPECT_FLOAT_EQ(angles3[0],0);
@@ -154,7 +155,7 @@ TEST_CASE("Quaternion")
     EXPECT_FLOAT_EQ(angles3[2],RealT(std::numbers::pi/4.0));
 
     // Setup a combined rotation
-    Quaternion<RealT> const q4 = Quaternion<RealT>::fromEulerAngles({RealT(std::numbers::pi/4.0), RealT(std::numbers::pi/5.0), RealT(std::numbers::pi/6.0) });
+    Quaternion<RealT> const q4 = Quaternion<RealT>::fromEulerAnglesXYZ({RealT(std::numbers::pi / 4.0), RealT(std::numbers::pi / 5.0), RealT(std::numbers::pi / 6.0)});
     auto angles4 = q4.eulerAngles();
     EXPECT_FLOAT_EQ(angles4[0],RealT(std::numbers::pi/4.0));
     EXPECT_FLOAT_EQ(angles4[1],RealT(std::numbers::pi/5.0));
@@ -173,11 +174,12 @@ TEST_CASE("Quaternion")
       // set a random position
       testVec = {dis(gen), dis(gen), dis(gen)};
       position = {dis(gen), dis(gen), dis(gen)};
-      auto q = Quaternion<RealT>::fromAngleAxis(RealT(dis(gen)), Vector3d{dis(gen), dis(gen), dis(gen)});
+      Vector3d vec(dis(gen), dis(gen), dis(gen));
+      auto q = Quaternion<double>::fromAngleAxis(dis(gen), vec);
 
       auto restored = q.inverse().rotate(q.rotate(testVec));
 
-      EXPECT_NEAR(xt::norm_l2(restored - testVec)(), 0.0, 1e-5);
+      EXPECT_NEAR((restored - testVec).norm(), 0.0, 1e-5);
     }
   }
 
@@ -185,17 +187,18 @@ TEST_CASE("Quaternion")
   {
     std::random_device rd;
     std::mt19937 gen(rd());
-    std::uniform_real_distribution<double> dis(-1.0, 1.0);
+    std::uniform_real_distribution<RealT> dis(-1.0, 1.0);
 
     for(int i = 0;i < 5;++i) {
-      auto q = Quaternion<RealT>::fromAngleAxis(RealT(dis(gen)), Vector3d{dis(gen), dis(gen), dis(gen)});
+      Vector<RealT,3> vec(dis(gen), dis(gen), dis(gen));
+      auto q = Quaternion<RealT>::fromAngleAxis(dis(gen), vec);
 
       Matrix<RealT, 3, 3> matrix = q.toMatrix();
 
       auto q2 = Quaternion<RealT>::fromMatrix(matrix);
 
       //SPDLOG_INFO("q: {} q2: {}", q, q2);
-      CHECK(xt::sum(xt::abs(q.asVector() - q2.asVector()))() < 1e-5f);
+      CHECK((q.asVector() - q2.asVector()).cwiseAbs().sum() < 1e-5f);
     }
 
   }
@@ -210,9 +213,8 @@ TEST_CASE("Isometry3")
   SECTION("transform")
   {
     Isometry3<RealT> test
-      (Quaternion<RealT>::fromEulerAngles({RealT(std::numbers::pi / 4.0), RealT(std::numbers::pi / 5.0),
-					   RealT(std::numbers::pi / 6.0)}
-					 ), Vector3f{1, 2, 3}
+      (Quaternion<RealT>::fromEulerAnglesXYZ({RealT(std::numbers::pi / 4.0), RealT(std::numbers::pi / 5.0),
+                                                                 RealT(std::numbers::pi / 6.0)}), Vector3f{1, 2, 3}
       );
 
     Vector<RealT, 3> testVec{3, 2, 1};
@@ -243,12 +245,12 @@ TEST_CASE("Isometry3")
 
     Vector<RealT,3> rotAngle = toVector<RealT>(randomAngle(rng),randomAngle(rng),randomAngle(rng));
     Vector<RealT,3> offset = toVector<RealT>(randomTranslation(rng),randomTranslation(rng),randomTranslation(rng));
-    Matrix<RealT,3,3> rot = Quaternion<RealT>::fromEulerAngles(rotAngle).toMatrix();
+    Matrix<RealT,3,3> rot = Quaternion<RealT>::fromEulerAnglesXYZ(rotAngle).toMatrix();
 
     std::vector<Point<RealT,3>> transformedPoints;
     transformedPoints.reserve(points.size());
     for(auto p : points) {
-      transformedPoints.push_back(xt::linalg::dot(rot ,p) + offset);
+      transformedPoints.push_back((rot * p) + offset);
     }
 
     Isometry3<RealT> isometry3;
@@ -256,8 +258,8 @@ TEST_CASE("Isometry3")
 
     for(auto p : points) {
       Point<RealT, 3> isoP = isometry3(p);
-      Point<RealT, 3> rotP = xt::linalg::dot(rot, p) + offset;
-      CHECK(xt::sum(xt::square(isoP - rotP))() < 0.0001f);
+      Point<RealT, 3> rotP = (rot * p) + offset;
+      CHECK((isoP - rotP).cwiseAbs().sum() < 0.0001f);
     }
 
   }

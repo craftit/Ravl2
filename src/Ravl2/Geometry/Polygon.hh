@@ -66,7 +66,15 @@ namespace Ravl2
     //! @param: orientation - the orientation of the boundary
     //! If BoundaryOrientationT::INSIDE_LEFT makes a counter clockwise polygon, with a positive area.
     explicit Polygon(const Range<RealT, 2> &range, BoundaryOrientationT orientation = BoundaryOrientationT::INSIDE_LEFT);
-
+    
+    //! Constructor creates a rectangular polygon of the index range
+    //! @param: range - the range defining the rectangle for the polygon
+    //! @param: orientation - the orientation of the boundary
+    //! If BoundaryOrientationT::INSIDE_LEFT makes a counter clockwise polygon, with a positive area.
+    explicit Polygon(const IndexRange<2> &range, BoundaryOrientationT orientation = BoundaryOrientationT::INSIDE_LEFT)
+     : Polygon(toRange<RealT, 2>(range), orientation)
+    {}
+    
     //! @return: the signed area of this polygon
     //! @param: type - the orientation of the boundary inverts sign.
     [[nodiscard]] RealT area() const;
@@ -186,6 +194,17 @@ namespace Ravl2
     return Polygon<RealT>(toRange<RealT>(range), orientation);
   }
 
+  //! Put a polygon through a transformation
+  template <typename RealT,typename TransformT>
+   requires PointTransform<TransformT>
+  [[nodiscard]] Polygon<RealT> operator*(const TransformT &trans, const Polygon<RealT> &poly)
+  {
+    Polygon<RealT> ret;
+    ret.reserve(poly.size());
+    for(const auto &p : poly)
+      ret.push_back(trans(p));
+    return ret;
+  }
 }// namespace Ravl2
 
 #if FMT_VERSION >= 90000

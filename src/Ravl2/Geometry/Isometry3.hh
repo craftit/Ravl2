@@ -29,6 +29,19 @@ namespace Ravl2
           m_translation(translation)
     {}
 
+    //! Construct an isometry from a euler rotation and translation.
+    //! XYZ euler angles
+    static Isometry3<RealT> fromEulerXYZTranslation(const Vector<RealT, 3> &eulerXYZ, const Vector<RealT, 3> &translation)
+    {
+      return Isometry3(Quaternion<RealT>::fromEulerAnglesXYZ(eulerXYZ), translation);
+    }
+
+    //! Construct an identity isometry
+    [[nodiscard]] static Isometry3<RealT> identity()
+    {
+      return Isometry3(Quaternion<RealT>::identity(), {0, 0, 0});
+    }
+
     //! Transform a point
     [[nodiscard]] Vector<RealT, 3> transform(const Vector<RealT, 3> &v) const
     {

@@ -205,7 +205,7 @@ namespace Ravl2
     ExtremaRegionC *labels[6];
 
     // For each grey level value in image.
-    for(auto lit : clip(levels, valueRange)) {
+    for(auto lit : clipUnsafe(levels, valueRange)) {
       //ONDEBUG(SPDLOG_INFO("Level={}", clevel));
 
       // Go through linked list of pixels at the current brightness level.

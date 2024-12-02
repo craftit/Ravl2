@@ -12,12 +12,150 @@
 #include <cereal/archives/binary.hpp>
 #include <cereal/archives/json.hpp>
 #include <cereal/types/string.hpp>
+#include <cereal/types/vector.hpp>
 #include <utility>
 #include "Ravl2/IO/OutputFormat.hh"
 #include "Ravl2/IO/InputFormat.hh"
 #include "Ravl2/IO/TypeConverter.hh"
 #include "Ravl2/IO/Save.hh"
 #include "Ravl2/IO/Load.hh"
+
+namespace Ravl2
+{
+  namespace detail
+  {
+    //! Helper to serialize the content of an array without the range.
+
+    template <typename ArrayT>
+    struct CerealMatrixBlock {
+      CerealMatrixBlock() = default;
+
+      explicit CerealMatrixBlock(ArrayT &data)
+          : mData(&data)
+      {}
+
+      template <typename ArchiveT>
+      void save(ArchiveT & archive) const
+      {
+        assert(mData != nullptr);
+        auto rows = mData->rows();
+        auto cols = mData->cols();
+        if constexpr(std::is_same_v<ArchiveT, cereal::JSONOutputArchive>) {
+          cereal::size_type buffSize = cereal::size_type(mData->rows() * mData->cols());
+          cereal::size_type size = buffSize;
+          archive(cereal::make_size_tag(size));
+          if(size != buffSize) {
+            throw std::out_of_range("unexpected size");
+          }
+        }
+        for(int i = 0;i < rows;i++) {
+          for(int j = 0; j < cols; j++) {
+            archive((*mData)(i, j));
+          }
+        }
+      }
+
+      template <typename ArchiveT>
+      void load(ArchiveT & archive)
+      {
+        assert(mData != nullptr);
+        auto rows = mData->rows();
+        auto cols = mData->cols();
+        if constexpr(std::is_same_v<ArchiveT, cereal::JSONInputArchive>) {
+          cereal::size_type buffSize = cereal::size_type(rows * cols);
+          cereal::size_type size = buffSize;
+          archive(cereal::make_size_tag(size));
+          if(size != buffSize) {
+            SPDLOG_ERROR("Size mismatch: {} != {}", size, buffSize);
+            throw std::out_of_range("unexpected size");
+          }
+        }
+        for(int i = 0;i < rows;i++) {
+          for(int j = 0; j < cols; j++) {
+            archive((*mData)(i, j));
+          }
+        }
+      }
+
+      ArrayT *mData = nullptr;
+    };
+
+  }// namespace detail
+}
+
+
+namespace cereal
+{
+#if 0
+  template <class Archive, class Derived> inline
+  typename std::enable_if<traits::is_output_serializable<BinaryData<typename Derived::Scalar>, Archive>::value, void>::type
+  save(Archive & ar, Eigen::PlainObjectBase<Derived> const & m){
+    typedef Eigen::PlainObjectBase<Derived> ArrT;
+    if(ArrT::RowsAtCompileTime==Eigen::Dynamic) ar(m.rows());
+    if(ArrT::ColsAtCompileTime==Eigen::Dynamic) ar(m.cols());
+    ar(binary_data(m.data(),size_t(m.size())*sizeof(typename Derived::Scalar)));
+  }
+
+  template <class Archive, class Derived> inline
+  typename std::enable_if<traits::is_input_serializable<BinaryData<typename Derived::Scalar>, Archive>::value, void>::type
+  load(Archive & ar, Eigen::PlainObjectBase<Derived> & m){
+    typedef Eigen::PlainObjectBase<Derived> ArrT;
+    Eigen::Index rows=ArrT::RowsAtCompileTime, cols=ArrT::ColsAtCompileTime;
+    if(rows==Eigen::Dynamic) ar(rows);
+    if(cols==Eigen::Dynamic) ar(cols);
+    m.resize(rows,cols);
+    ar(binary_data(m.data(),size_t(rows)*size_t(cols)*sizeof(typename Derived::Scalar)));
+  }
+#endif
+
+#if 1
+  template <class Archive, class _Scalar, int _Rows, int _Cols, int _Options, int _MaxRows, int _MaxCols> inline
+  void save(Archive & ar, Eigen::Matrix<_Scalar, _Rows, _Cols, _Options, _MaxRows, _MaxCols> const & m)
+  {
+    int32_t rows = int32_t(m.rows());
+    int32_t cols = int32_t(m.cols());
+    if(_Rows == Eigen::Dynamic) {
+      ar(cereal::make_nvp("rows",rows));
+    }
+    if(_Cols == Eigen::Dynamic) {
+      ar(cereal::make_nvp("cols",cols));
+    }
+    // Check if this is a json archive.
+    if constexpr (traits::is_output_serializable<BinaryData<_Scalar>, Archive>::value && !std::is_same_v<Archive, cereal::JSONOutputArchive>) {
+      ar(binary_data(m.data(),size_t(rows)*size_t(cols)*sizeof(_Scalar)));
+    } else {
+      Ravl2::detail::CerealMatrixBlock<const Eigen::Matrix<_Scalar, _Rows, _Cols, _Options, _MaxRows, _MaxCols>> blk(m);
+      ar(cereal::make_nvp("data", blk));
+    }
+  }
+
+  template <class Archive, class _Scalar, int _Rows, int _Cols, int _Options, int _MaxRows, int _MaxCols> inline
+  void load(Archive & ar, Eigen::Matrix<_Scalar, _Rows, _Cols, _Options, _MaxRows, _MaxCols> & m)
+  {
+    int32_t rows = _Rows;
+    int32_t cols = _Cols;
+    if constexpr(_Rows == Eigen::Dynamic) {
+      ar(cereal::make_nvp("rows",rows));
+      if constexpr(_Cols == Eigen::Dynamic) {
+        ar(cereal::make_nvp("cols",cols));
+      }
+      m.resize(rows,cols);
+    } else {
+      if constexpr(_Cols == Eigen::Dynamic) {
+        ar(cereal::make_nvp("cols",cols));
+        m.resize(rows,cols);
+      }
+    }
+    if constexpr (traits::is_input_serializable<BinaryData<_Scalar>, Archive>::value && !std::is_same_v<Archive, cereal::JSONInputArchive>) {
+      ar(binary_data(m.data(),size_t(rows)*size_t(cols)*sizeof(_Scalar)));
+    } else {
+      Ravl2::detail::CerealMatrixBlock<Eigen::Matrix<_Scalar, _Rows, _Cols, _Options, _MaxRows, _MaxCols>> blk(m);
+      ar(cereal::make_nvp("data", blk));
+    }
+  }
+#endif
+
+}
 
 namespace Ravl2
 {

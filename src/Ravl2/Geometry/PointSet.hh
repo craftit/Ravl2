@@ -82,7 +82,7 @@ namespace Ravl2
       auto cr = std::abs(cross(oBC, oBA));
       if(cr < RealT(1e-6))
         cr = RealT(1e-6);
-      return (xt::linalg::dot(oBC, oBA) / cr)();
+      return oBC.dot(oBA) / cr;
     }
   };
 
@@ -106,39 +106,43 @@ namespace Ravl2
   template <typename RealT, unsigned N>
   constexpr std::vector<RealT> PointSet<RealT, N>::BarycentricCoordinate(const Point<RealT, N> &point) const
   {
-    // Create return array
-    std::vector<RealT> oWeights(this->size());
-    if(this->size() == 0)
+    if constexpr(N != 2) {
+      throw std::runtime_error("BarycentricCoordinate only implemented for 2D points");
+    } else {
+      // Create return array
+      std::vector<RealT> oWeights(this->size());
+      if(this->size() == 0)
+	return oWeights;
+      // Keep track of total
+      RealT fTotalWeight = 0;
+      // For each polygon vertex
+      auto res = oWeights.begin();
+      const auto end = this->end();
+      Point<RealT, N> previous = *(this->end() - 1);
+      auto next = this->begin() + 1;
+      for(const auto &it : (*this)) {
+	RealT sqDist = sumOfSqr(point - it);
+	if(sqDist != 0) {
+	  RealT fWeight = (pCot(point, it, previous) + pCot(point, it, *next)) / sqDist;
+	  *res = fWeight;
+	  fTotalWeight += fWeight;
+	} else {
+	  *res = 1;
+	  fTotalWeight += 1;
+	}
+	previous = it;
+	++next;
+	if(next == end) {
+	  next = this->begin();
+	}
+	++res;
+      }
+      // Normalise weights
+      for(auto &it : oWeights)
+	it /= fTotalWeight;
+      // Done
       return oWeights;
-    // Keep track of total
-    RealT fTotalWeight = 0;
-    // For each polygon vertex
-    auto res = oWeights.begin();
-    const auto end = this->end();
-    auto previous = *(this->end() - 1);
-    auto next = this->begin() + 1;
-    for(auto it : (*this)) {
-      RealT sqDist = sumOfSqr(point - it);
-      if(sqDist != 0) {
-        RealT fWeight = (pCot(point, it, previous) + pCot(point, it, *next)) / sqDist;
-        *res = fWeight;
-        fTotalWeight += fWeight;
-      } else {
-        *res = 1;
-        fTotalWeight += 1;
-      }
-      previous = it;
-      ++next;
-      if(next == end) {
-        next = this->begin();
-      }
-      ++res;
     }
-    // Normalise weights
-    for(auto &it : oWeights)
-      it /= fTotalWeight;
-    // Done
-    return oWeights;
   }
 
   //! Compute the bounding rectangle for the point set.

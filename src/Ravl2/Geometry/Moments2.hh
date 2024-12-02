@@ -325,10 +325,10 @@ namespace Ravl2
   constexpr Vector<SumT, 2> Moments2<SumT>::principalAxisSize() const
   {
     Matrix<SumT, 2, 2> mat = covariance();
-    auto vec = xt::linalg::eigvalsh(mat);
-    if(vec[0] < vec[1])
+    auto vec = mat.eigenvalues();
+    if(vec[0].real() < vec[1].real())
       std::swap(vec[0], vec[1]);
-    return vec;
+    return Vector<SumT, 2>({vec[0].real(), vec[1].real()});
   }
 
   template <class SumT>

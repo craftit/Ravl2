@@ -7,9 +7,8 @@
 /////////////////////////////////////////////////////////////////////
 //! author="Charles Galambos"
 
-#include <cereal/types/vector.hpp>
-#include "Ravl2/3D/TriMesh.hh"
 #include "Ravl2/IO/Cereal.hh"
+#include "Ravl2/3D/TriMesh.hh"
 
 namespace Ravl2
 {

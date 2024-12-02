@@ -23,7 +23,7 @@ namespace Ravl2
   class Plane3PVV
   {
   public:
-    //! Creates the plane P:(0,0,0),V1:[0,0,0],V2:[0,0,0].
+    //! Creates a degenerate plane P:(0,0,0),V1:[0,0,0],V2:[0,0,0].
     constexpr Plane3PVV() = default;
 
     //! Copy constructor.
@@ -96,8 +96,8 @@ namespace Ravl2
     //! Normalizes the vectors to be unit.
     inline constexpr Plane3PVV &makeUnitVectors()
     {
-      mVector1 /= xt::norm_l2(mVector1);
-      mVector2 /= xt::norm_l2(mVector2);
+      mVector1.normalize();
+      mVector2.normalize();
       return *this;
     }
 
@@ -138,9 +138,10 @@ namespace Ravl2
       a(2, 1) = mVector2[2];
       Point<RealT, 3> tmp = pointOnPlane;
       tmp -= mOrigin;
-      auto [sol, residual, rank, s] = xt::linalg::lstsq(a, tmp);
+      // This is quick, but requires a full matrix.
+      auto sol = a.householderQr().solve(tmp);
       //SPDLOG_INFO("Sol: {} {} {} {}  Residual: {} ", sol(0,0), sol(0,1),sol(1,0),sol(1,1), residual(0,0));
-      return toPoint<RealT>(sol(0, 0), sol(0, 1));
+      return toPoint<RealT>(sol(0), sol(1));
     }
     
     //! Returns the coordinates (t1,t2) of the point of intersection
@@ -182,13 +183,13 @@ namespace Ravl2
     //! Test if the plane is valid.
     [[nodiscard]] constexpr bool isValid() const
     {
-      return !isNearZero(RealT(xt::norm_l2(mVector1)())) && !isNearZero(RealT(xt::norm_l2(mVector2)()));
+      return !isNearZero(mVector1.norm()) && !isNearZero(mVector2.norm());
     }
 
   private:
-    Point<RealT, 3> mOrigin;
-    Vector<RealT, 3> mVector1;
-    Vector<RealT, 3> mVector2;
+    Point<RealT, 3> mOrigin = Point<RealT, 3>::Zero();
+    Vector<RealT, 3> mVector1 = Vector<RealT, 3>::Zero();
+    Vector<RealT, 3> mVector2 = Vector<RealT, 3>::Zero();
   };
 
   template <typename RealT>

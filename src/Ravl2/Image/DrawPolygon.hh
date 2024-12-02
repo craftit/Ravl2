@@ -21,13 +21,18 @@ namespace Ravl2
   //! @param dat The image to draw into
   //! @param value The value to draw
   //! @param poly The polygon to draw
-  template <typename ArrayT, typename CoordT = float, typename DataT = typename ArrayT::value_type>
-    requires WindowedArray<ArrayT, DataT, 2>
+  template <typename ArrayT, typename CoordT = float, typename DataT,typename PixelT = typename ArrayT::value_type>
+    requires WindowedArray<ArrayT, PixelT, 2> && std::is_convertible_v<DataT, PixelT>
   void DrawFilledPolygon(ArrayT &dat, const DataT &value, const Polygon<CoordT> &poly)
   {
     // Draw one-colour polygon
     for(PolygonRasterIter<CoordT> it(poly); it.valid(); ++it) {
-      fill(clip(dat[it.row()], it.rowIndexRange()), value);
+      if(!dat.range(0).contains(it.row()))
+        continue;
+      IndexRange<1> range = clip(it.rowIndexRange(),dat.range(0));
+      if(range.empty())
+        continue;
+      fill(clipUnsafe(dat[it.row()], range), PixelT(value));
     }
   }
 

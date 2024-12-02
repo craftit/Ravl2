@@ -11,30 +11,6 @@
 //! file="Ravl/Math/LinearAlgebra/General/LeastSquares.hh"
 
 #pragma once
-
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wdouble-promotion"
-#pragma GCC diagnostic ignored "-Wshadow"
-#pragma GCC diagnostic ignored "-Wsign-conversion"
-#pragma GCC diagnostic ignored "-Wfloat-conversion"
-#pragma GCC diagnostic ignored "-Wunused-local-typedefs"
-#pragma GCC diagnostic ignored "-Wnull-dereference"
-#pragma GCC diagnostic ignored "-Warray-bounds"
-#pragma GCC diagnostic ignored "-Wunused-parameter"
-#if !defined(__clang__) && defined(__GNUC__)
-#pragma GCC diagnostic ignored "-Wduplicated-branches"
-#pragma GCC diagnostic ignored "-Wunused-but-set-parameter"
-#pragma GCC diagnostic ignored "-Wuseless-cast"
-#pragma GCC diagnostic ignored "-Wparentheses"
-#endif
-#ifdef __clang__
-#pragma GCC diagnostic ignored "-Wimplicit-float-conversion"
-#endif
-#include <xtensor/xmath.hpp>
-#include <xtensor/xsort.hpp>
-#include <xtensor-blas/xlinalg.hpp>
-#pragma GCC diagnostic pop
-
 #include "Ravl2/Math/LinearAlgebra.hh"
 
 namespace Ravl2
@@ -44,17 +20,17 @@ namespace Ravl2
   //! and the average variation to 1.
   //! @param: raw - Points to be normalised
   //! @return The mean to be subtracted from the points, and scale they should be multiplied by.
-  template <typename RealT, unsigned N, typename Container1T>
+  template <typename RealT, IndexSizeT N, typename Container1T>
     requires std::is_floating_point_v<RealT>
   std::tuple<Point<RealT, N>, RealT> meanAndScale(const Container1T &raw)
   {
-    Point<RealT, N> mean = xt::zeros<RealT>({N});
+    Point<RealT, N> mean = Point<RealT, N>::Zero();
     for(auto it : raw) {
       mean += it;
     }
     size_t pnts = raw.size();
     if(pnts == 0) {
-      const Point<RealT, N> zero = xt::zeros<RealT>({N});
+      const Point<RealT, N> zero = Point<RealT, N>::Zero();
       return {zero, 1};
     }
     auto realSize = static_cast<RealT>(pnts);
@@ -64,15 +40,14 @@ namespace Ravl2
       if constexpr(N == 2) {
 	d += std::hypot(it[0] - mean[0], it[1] - mean[1]);
       } else {
-	RealT sum = xt::sum(xt::square(it - mean))();
-	d += std::sqrt(sum);
+	d +=  (it - mean).norm();
       }
     }
     d = isNearZero(d) ? RealT(1) : (realSize / d);
     return {mean, d};
   }
 
-  template <typename RealT, size_t N>
+  template <typename RealT, IndexSizeT N>
   Point<RealT, N> normalisePoint(const Point<RealT, N> &pnt, const Point<RealT, N> &mean, RealT scale)
   {
     return (pnt - mean) * scale;
@@ -84,7 +59,7 @@ namespace Ravl2
   //! @param: raw - Points to be normalised
   //! @param: func - Function/lambda to accept normalised point.
   //! @return The mean subtracted from the points, and scale applied.
-  template <typename RealT, unsigned N, typename Container1T, typename FuncT>
+  template <typename RealT, IndexSizeT N, typename Container1T, typename FuncT>
     requires std::is_floating_point_v<RealT>
   std::tuple<Point<RealT, N>, RealT> normalise(const Container1T &raw, FuncT func)
   {
@@ -102,12 +77,16 @@ namespace Ravl2
   //! @param: rv - Result vector.
   //! @return: true if solution found.
   template <typename RealT>
-  bool LeastSquaresEq0Mag1(const Tensor<RealT, 2> &X, VectorT<RealT> &rv)
+  bool LeastSquaresEq0Mag1(const MatrixT<RealT> &X, VectorT<RealT> &rv)
   {
-    auto [U, S, V] = xt::linalg::svd(X);
+    auto svd = X.jacobiSvd(Eigen::ComputeFullV);
+
+    //auto [U, S, V] = xt::linalg::svd(X);
     // The result matrix V is transposed from what we would expect.
     // rv = xt::view(V, xt::all(), -1);
-    rv = xt::view(V, -1, xt::all());
+    auto V = svd.matrixV();
+    // Get the last column of V.
+    rv = V.col(V.cols() - 1);
     return true;
   }
 

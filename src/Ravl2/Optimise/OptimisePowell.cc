@@ -45,7 +45,7 @@ namespace Ravl2 {
     
     RealT min = -std::numeric_limits<RealT>::min();
     RealT max = std::numeric_limits<RealT>::max();
-    for(size_t i = 0;i < P.size();i++) {
+    for(IndexT i = 0;i < P.size();i++) {
       if(dir[i] == 0)
 	continue; // Avoid division by zero.
       RealT maxv = (domain.min()[i] - P[i]) / dir[i]; // Limit for MinX
@@ -78,14 +78,14 @@ namespace Ravl2 {
     VectorT<RealT> P = start;
     RealT minimumCost = func(P);
     auto numDim = P.size();
-    std::vector<VectorT<RealT>> Di(numDim);
+    std::vector<VectorT<RealT>> Di((std::size_t(numDim)));
     if(mVerbose) {
       SPDLOG_INFO("MinimalX bracketMin={} Iterations={} Tolerance={} ", _useBracketMinimum, _iterations,_tolerance);
     }
     // Initialise directions to basis unit vectors
-    for(size_t i = 0;i < Di.size();i++) {
-      Di[i] = xt::zeros<RealT>({numDim});
-      Di[i][i] = 1.0;
+    for(IndexT i = 0;i < IndexT(Di.size());i++) {
+      Di[std::size_t(i)] = VectorT<RealT>::Zero(numDim);
+      Di[std::size_t(i)][i] = 1.0;
     }
     VectorT<RealT> Plast;
     VectorT<RealT> Psameagain;
@@ -159,8 +159,8 @@ namespace Ravl2 {
 	  auto [bestVal,bestCost] = _brent.minimise(minP,maxP,startAt,minimumCost,linearFunc);
 	  P += Pdiff * bestVal;
 	  //minimumCost = bestCost;
-	  Di[indexOfBiggest] = Di[numDim-1]; // Replace vector yielding largest cost
-	  Di[numDim-1] = Pdiff;              // Put in new direction vector.
+	  Di[indexOfBiggest] = Di[size_t(numDim-1)]; // Replace vector yielding largest cost
+	  Di[size_t(numDim-1)] = Pdiff;              // Put in new direction vector.
         }
       }
       if(mVerbose) {

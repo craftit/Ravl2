@@ -763,7 +763,7 @@ namespace Ravl2
   }
 
   //! Clamp a point to be within a range.
-  template <typename RealT, size_t N>
+  template <typename RealT, IndexSizeT N>
   constexpr auto clamp(const Point<RealT, N> &pnt, const Range<RealT, unsigned(N)> &rng)
   {
     Point<RealT, N> ret;

@@ -29,7 +29,7 @@ namespace Ravl2
     //! Construct from a line.
     template <class RealT>
     explicit Line2IterC(const Line2PP<RealT> &line)
-        : Line2IterC(toIndex(line.P1()), toIndex(line.P2()))
+        : Line2IterC(toIndex<2>(line.P1()), toIndex<2>(line.P2()))
     {}
 
     //! Start line again.

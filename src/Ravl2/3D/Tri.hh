@@ -127,8 +127,8 @@ namespace Ravl2
     
     void UpdateFaceNormal()
     {
-      mNormal = cross(Vector<RealT,3>(Position(1) - Position(0)),(Position(2) - Position(0)));
-      mNormal /= xt::norm_l2(mNormal);
+      mNormal = cross<RealT>(Vector<RealT,3>(Position(1) - Position(0)),(Position(2) - Position(0)));
+      mNormal /= mNormal.norm();
     }
 
     //: Update the face normal.

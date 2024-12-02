@@ -111,7 +111,7 @@ namespace Ravl2
     [[nodiscard]] constexpr Line2ABC<RealT> tangent(const Point<RealT, 2> &pnt)
     {
       // TODO:- This can be simplified a lot.
-      Vector<RealT, 3> res = dot(C(), toVector<RealT>(pnt[0], pnt[1], 1));
+      Vector<RealT, 3> res = C() * toVector<RealT>(pnt[0], pnt[1], 1);
       return Line2ABC<RealT>(res[0], res[1], res[2]);
     }
 

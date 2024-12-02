@@ -9,6 +9,7 @@
 
 #include <algorithm>
 #include <vector>
+#include <map>
 #include <set>
 #include "Ravl2/Array.hh"
 #include "Ravl2/Image/Array2Sqr2Iter.hh"

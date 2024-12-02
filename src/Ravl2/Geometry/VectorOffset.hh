@@ -13,7 +13,7 @@ namespace Ravl2
 
   //! @brief Vector and offset. This defines a line in 2D space, and a plane in 3D space.
 
-  template <typename RealT, size_t N>
+  template <typename RealT, IndexSizeT N>
   class VectorOffset
   {
   public:
@@ -28,7 +28,7 @@ namespace Ravl2
     //! Constructor from a vector and a point on the plane/line.
     VectorOffset(const Vector<RealT, N> &norm, const Point<RealT, N> &p)
         : mNormal(norm),
-          mD(-xt::linalg::dot(norm,p)())
+          mD(-norm.dot(p))
     {}
 
     //! Returns the normal of the plane.
@@ -53,7 +53,7 @@ namespace Ravl2
     //! used in geometrical computations.
     [[nodiscard]] constexpr RealT residuum(const Point<RealT, N> &p) const
     {
-      return xt::linalg::dot(mNormal,p)() + this->mD;
+      return mNormal.dot(p) + this->mD;
     }
 
     //! Returns the signed distance of the 'point' from the line.
@@ -62,7 +62,7 @@ namespace Ravl2
     //! by the direction of the normal.
     [[nodiscard]] constexpr RealT signedDistance(const Point<RealT, N> &point) const
     {
-      return residuum(point) / norm_l2(mNormal);
+      return residuum(point) / mNormal.norm();
     }
 
     //! Returns the distance of the 'point' from this.
@@ -82,7 +82,7 @@ namespace Ravl2
     //! Normalizes the normal vector have a length of 1.
     inline auto &makeUnitNormal()
     {
-      RealT mag = RealT(norm_l2(mNormal)());
+      RealT mag = RealT(mNormal.norm());
       mNormal /= mag;
       mD /= mag;
       return (*this);
@@ -111,14 +111,14 @@ namespace Ravl2
   extern template class VectorOffset<float, 2>;
   extern template class VectorOffset<float, 3>;
   
-  template <typename RealT,size_t N>
+  template <typename RealT,IndexSizeT N>
   std::ostream &operator<<(std::ostream &outS, const VectorOffset<RealT,N> &plane)
   {
     outS << plane.normal() << ' ' << plane.offset();
     return (outS);
   }
   
-  template <typename RealT,size_t N>
+  template <typename RealT,IndexSizeT N>
   std::istream &operator>>(std::istream &inS, VectorOffset<RealT,N> &plane)
   {
     Vector<RealT,N> norm;
@@ -131,7 +131,7 @@ namespace Ravl2
 }// namespace Ravl2
 
 #if FMT_VERSION >= 90000
-template <typename RealT, size_t N>
+template <typename RealT, Ravl2::IndexSizeT N>
 struct fmt::formatter<Ravl2::VectorOffset<RealT, N>> : fmt::ostream_formatter {
 };
 #endif

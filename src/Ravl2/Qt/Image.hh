@@ -147,7 +147,7 @@ namespace Ravl2
       assert(newRng[0].size() * ssize_t(sizeof(DataT)) % 4 == 0);
       // Adjust the range to match the new bytes per line
       Array<DataT, 2> newArray(newRng);
-      copy(array, clip(newArray, array.range()));
+      copy(array, clipUnsafe(newArray, array.range()));
       // Check we've achieved the correct bytes per line
       assert((newArray.stride(0) * ssize_t(sizeof(DataT))) % 4 == 0);
       return toQImage<DataT, CopyModeT::Never>(newArray);

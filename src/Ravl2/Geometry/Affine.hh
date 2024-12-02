@@ -37,6 +37,10 @@ namespace Ravl2
         mT(T)
     {}
 
+    //! Get the identity transformation.
+    [[nodiscard]] inline static constexpr Affine identity()
+    { return Affine(Matrix<DataT, N, N>::Identity(), Vector<DataT, N>::Zero()); }
+
     //! Access the translation component of the transformation.
     [[nodiscard]] inline constexpr Vector<DataT, N> &Translation() { return mT; }
 
@@ -67,21 +71,21 @@ namespace Ravl2
 
     //! Transform Vector,  scale, Rotate, translate.
     // Take a vector and put it though the transformation.
-    [[nodiscard]] constexpr auto operator()(PointT pnt) const
+    [[nodiscard]] constexpr PointT operator()(PointT pnt) const
     {
-      return PointT(xt::linalg::dot(mSR, pnt) + mT);
+      return mSR * pnt + mT;
     }
 
     //! Compose this transform with 'In'
     [[nodiscard]] inline constexpr auto operator()(const Affine &in) const
     {
-      return Affine(xt::linalg::dot(mSR, in.SRMatrix()), xt::linalg::dot(mSR, in.Translation()) + mT);
+      return Affine(mSR * in.SRMatrix(), mSR * in.Translation() + mT);
     }
 
     //! @brief Divide this transform by 'in'
     [[nodiscard]] inline constexpr auto divideBy(const Affine &in) const
     {
-      Matrix<DataT, N, N> invSr = xt::linalg::inv(in.SRMatrix());
+      Matrix<DataT, N, N> invSr = *Ravl2::inverse(in.SRMatrix());
       return Affine(mSR * invSr, invSr * (mT - in.Translation()));
     }
 
@@ -93,8 +97,8 @@ namespace Ravl2
     }
 
   protected:
-    Matrix<DataT, N, N> mSR = xt::eye<DataT>(N);//!< Scale/rotate.
-    Vector<DataT, N> mT = xt::zeros<DataT>({N});//!< Translate.
+    Matrix<DataT, N, N> mSR = Matrix<DataT, N, N>::Identity();//!< Scale/rotate.
+    Vector<DataT, N> mT = Vector<DataT,N>::Zero();//!< Translate.
   };
 
   /////////////////////////////////////////////////
@@ -103,11 +107,11 @@ namespace Ravl2
   template <typename DataT, unsigned N>
   void constexpr Affine<DataT, N>::scale(const Vector<DataT, N> &xy)
   {
-    mSR = xt::linalg::dot(mSR, xt::diag(xy));
+    mSR = mSR * Eigen::DiagonalWrapper(xy);
   }
 
   template <typename DataT, unsigned N>
-  inline constexpr void Affine<DataT, N>::translate(const Vector<DataT, N> &T)
+  constexpr void Affine<DataT, N>::translate(const Vector<DataT, N> &T)
   {
     mT += T;
   }
@@ -121,7 +125,7 @@ namespace Ravl2
       return std::nullopt;
     }
     ret.mSR = inv.value();
-    ret.mT = xt::linalg::dot(ret.mSR, mT) * -1;
+    ret.mT = ret.mSR * mT * -1;
     return ret;
   }
 
@@ -141,22 +145,14 @@ namespace Ravl2
   template <typename DataT, unsigned N>
   constexpr bool Affine<DataT, N>::isReal() const
   {
-    for(auto x : mSR) {
-      if(std::isinf(x) || std::isnan(x))
-        return false;
-    }
-    for(auto x : mT) {
-      if(std::isinf(x) || std::isnan(x))
-        return false;
-    }
-    return true;
+    return Eigen::isfinite(mSR.array()).all() && Eigen::isfinite(mT.array()).all();
   }
 
   template <typename DataT>
   inline constexpr Affine<DataT, 2> affineFromScaleAngleTranslation(const Vector<DataT, 2> &scale, DataT angle, const Vector<DataT, 2> &translation)
   {
-    Matrix<DataT, 2, 2> SR = {{std::cos(angle) * scale[1], -std::sin(angle) * scale[0]},
-                              {std::sin(angle) * scale[1], std::cos(angle) * scale[0]}};
+    Matrix<DataT, 2, 2> SR( {{std::cos(angle) * scale[1], -std::sin(angle) * scale[0]},
+                              {std::sin(angle) * scale[1], std::cos(angle) * scale[0]}});
     return Affine<DataT, 2>(SR, translation);
   }
 
@@ -171,7 +167,7 @@ namespace Ravl2
   template <typename DataT, unsigned N>
   Affine<DataT, N> toAffine(ScaleTranslate<DataT, N> const &st)
   {
-    return Affine<DataT, N>(xt::diag(st.scaleVector()), st.translation());
+    return Affine<DataT, N>(Eigen::DiagonalWrapper(st.scaleVector()), st.translation());
   }
 
   //! @brief Compose transforms

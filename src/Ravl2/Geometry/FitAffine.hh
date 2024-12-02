@@ -19,9 +19,7 @@ namespace Ravl2
    requires std::is_floating_point_v<RealT> && (N > 0)
   Affine<RealT,N> meanScaleToAffine(const Point<RealT,N> &mean, RealT scale)
   {
-    Matrix<RealT,N,N> normMat = xt::zeros<RealT>({N,N});
-    for(unsigned i = 0; i < N; i++)
-      normMat(i,i) = scale;
+    Matrix<RealT,N,N> normMat = Matrix<RealT,N,N>::Identity() * scale;
     return Affine<RealT,N>(normMat,-mean * scale);
   }
 
@@ -43,8 +41,9 @@ namespace Ravl2
     Vector<RealT, 3> b({p1b[0], p2b[0], p3b[0]});
     Vector<RealT, 3> c({p1b[1], p2b[1], p3b[1]});
 
-    auto sab = xt::linalg::solve(A, b);
-    auto sac = xt::linalg::solve(A, c);
+    Eigen::ColPivHouseholderQR<Matrix3f> dec(A);
+    auto sab = dec.solve(b);
+    auto sac = dec.solve(c);
 
     affine.Translation()[0] = sab[2];
     affine.Translation()[1] = sac[2];
@@ -69,12 +68,12 @@ namespace Ravl2
     auto [fromMean,fromScale] =  meanAndScale<RealT,N>(from);
     auto [toMean,toScale] =  meanAndScale<RealT,N>(to);
 
-    Tensor<RealT,2> A({samples,N+1});
+    MatrixT<RealT> A(samples,N+1);
     std::array<VectorT<RealT>,N> eqs;
     for(auto &eq : eqs) {
-      eq = xt::empty<RealT>({samples});
+      eq = VectorT<RealT>(samples);
     }
-    size_t i = 0;
+    IndexT i = 0;
 
     auto toIt = to.begin();
     auto toEnd = to.end();
@@ -82,37 +81,43 @@ namespace Ravl2
     auto frEnd = from.end();
 
     for(;toIt != toEnd && frIt!=frEnd;++toIt,++frIt,++i) {
-      Point<RealT,N> p1 = normalisePoint<RealT>(*toIt,toMean,toScale);
-      Point<RealT,N> p2 = normalisePoint<RealT>(*frIt,fromMean,fromScale);
+      Point<RealT,N> p1 = normalisePoint<RealT,N>(*toIt,toMean,toScale);
+      Point<RealT,N> p2 = normalisePoint<RealT,N>(*frIt,fromMean,fromScale);
 
-      for(size_t j = 0; j < N; j++) {
+      for(IndexT j = 0; j < IndexT(N); j++) {
 	A(i,j) = p2[j];
       }
       A(i,N) = 1;
 
-      for(size_t j = 0; j < N; ++j) {
-	eqs[j](i) = p1[j];
+      for(IndexT j = 0; j < IndexT(N); ++j) {
+	eqs[unsigned(j)](i) = p1[j];
       }
     }
     Matrix<RealT,N,N> sr;
     Vector<RealT,N> tr;
     RealT residual = 0;
-    if(A.shape(0) == A.shape(1)) {
-      for(size_t j = 0; j < N; j++) {
-	auto solA = xt::linalg::solve(A, eqs[j]);
-	for(size_t k = 0; k < N; k++) {
-	  sr(j, k) = solA[k];
-	}
-	tr[j] = solA[N];
+    if(A.rows() == A.cols()) {
+      auto sol = A.colPivHouseholderQr();
+      for(IndexT j = 0; j < IndexT(N); j++) {
+        //auto solA = xt::linalg::solve(A, eqs[j]);
+        auto solA = sol.solve(eqs[unsigned(j)]);
+	//SPDLOG_INFO("solA {}: {}",j, solA);
+        for(IndexT k = 0; k < IndexT(N); k++) {
+          sr(j, k) = solA[k];
+        }
+        tr[j] = solA[N];
       }
+      //SPDLOG_INFO("sr:{} tr:{}", sr, tr);
     } else {
-      for(size_t j = 0; j < N; j++) {
-	auto [solA, residualA, rankA, sA] = xt::linalg::lstsq(A, eqs[j]);
-	for(size_t k = 0; k < N; k++) {
+      auto sol = A.bdcSvd(Eigen::ComputeThinU | Eigen::ComputeThinV);
+      for(IndexT j = 0; j < IndexT(N); j++) {
+	//auto [solA, residualA, rankA, sA] = xt::linalg::lstsq(A, eqs[j]);
+        auto solA = sol.solve(eqs[unsigned(j)]);
+	for(IndexT k = 0; k < IndexT(N); k++) {
 	  sr(j, k) = solA[k];
 	}
-	tr[j] = solA[N];
-	residual += xt::sum(residualA)();
+	tr[j] = solA[IndexT(N)];
+	//residual += xt::sum(residualA)();
       }
     }
 

@@ -22,7 +22,7 @@ namespace Ravl2
     constexpr void normalise()
     {
       // Calculate the magnitude
-      auto const mag = float(xt::norm_l2(m_vec)());
+      auto const mag = RealT(m_vec.norm());
       // If the magnitude is non-zero, then normalise the quaternion
       assert(!isNearZero(mag));
       m_vec /= mag;
@@ -42,11 +42,11 @@ namespace Ravl2
     [[nodiscard]]
     constexpr bool isNormalised() const
     {
-      auto const mag = float(xt::norm_l2(m_vec)());
-      return isNearZero(mag - 1.0f, 1e-6f);
+      auto const mag = RealT(m_vec.norm());
+      return isNearZero(mag - RealT(1.0), RealT(1e-6));
     }
 
-    explicit constexpr Quaternion(const Vector4f &vec)
+    explicit constexpr Quaternion(const Vector<RealT,4> &vec)
         : m_vec(vec)
     {}
 
@@ -67,19 +67,19 @@ namespace Ravl2
     //! Create a quaternion from an axis angle representation
     //! @param angle The angle of rotation in radians
     //! @param axis The axis of rotation
-    [[nodiscard]] static constexpr Quaternion fromAngleAxis(RealT angle, const Vector3f &axis)
+    [[nodiscard]] static Quaternion fromAngleAxis(RealT angle, const Vector<RealT,3> &axis)
     {
       auto s = std::sin(angle / 2);
-      Vector4f vec {std::cos(angle / 2), axis[0] * s, axis[1] * s, axis[2] * s};
-      vec /= float(xt::norm_l2(vec)());
+      Vector<RealT,4> vec {std::cos(angle / 2), axis[0] * s, axis[1] * s, axis[2] * s};
+      vec /= vec.norm();
       return Quaternion(vec);
     }
 
     //! Create a quaternion from a rotation matrix
-    [[nodiscard]] static constexpr Quaternion fromMatrix(const Matrix<RealT, 3, 3> &m)
+    [[nodiscard]] static Quaternion fromMatrix(const Matrix<RealT, 3, 3> &m)
     {
       RealT trace = m(0, 0) + m(1, 1) + m(2, 2);
-      Vector4f q;
+      Vector<RealT,4> q;
       if(trace > 0) {
 	RealT s = 0.5f / std::sqrt(trace + 1.0f);
 	q[0] = 0.25f / s;
@@ -110,26 +110,26 @@ namespace Ravl2
       return Quaternion(q);
     }
 
-    [[nodiscard]] constexpr Vector4f &asVector()
+    [[nodiscard]] constexpr Vector<RealT,4> &asVector()
     {
       return m_vec;
     }
 
     //! Get the vector representation
-    [[nodiscard]] constexpr const Vector4f &asVector() const
+    [[nodiscard]] constexpr const Vector<RealT,4> &asVector() const
     {
       return m_vec;
     }
 
-    //! Rotate vector
+    //! Rotate a vector
     //! Maybe a different precision from the quaternion type.
     template <typename Real2T>
     [[nodiscard]] constexpr Vector<Real2T, 3> rotate(const Vector<Real2T, 3> &v) const
     {
       assert(isNormalised());
       Vector<Real2T, 3> const xyz({Real2T(m_vec[1]), Real2T(m_vec[2]), Real2T(m_vec[3])});
-      Vector<Real2T, 3> const t = 2.0f * xt::linalg::cross(xyz, v);
-      return v + m_vec[0] * t + xt::linalg::cross(xyz, t);
+      Vector<Real2T, 3> const t = 2.0f * cross(xyz, v);
+      return v + m_vec[0] * t + cross(xyz, t);
     }
 
     //! @brief Transform Vector
@@ -183,11 +183,12 @@ namespace Ravl2
     //! Compute the rotation angle from an axis angle representation
     [[nodiscard]] constexpr RealT angle() const
     {
-      float norm = float(xt::norm_l2(m_vec)());
+      auto norm = RealT(m_vec.norm());
       return std::atan2(std::sqrt(sqr(m_vec[1] / norm) + sqr(m_vec[2] / norm) + sqr(m_vec[3] / norm)), m_vec[0] / norm);
     }
 
-    // This assumes the quaternion is normalised.
+    //! Compute a cost that is zero when the quaternion is the identity.
+    //! This assumes the quaternion is normalised.
     [[nodiscard]] constexpr RealT zeroCost() const
     {
       auto lx = m_vec[1];
@@ -217,7 +218,7 @@ namespace Ravl2
     }
 
     //! From XYZ euler angles
-    [[nodiscard]] static constexpr Quaternion fromEulerAngles(const Vector3f &angles)
+    [[nodiscard]] static constexpr Quaternion<RealT> fromEulerAnglesXYZ(const Vector3f &angles)
     {
       // We should simplify this out.
       auto ret = fromAngleAxis(angles[0], {1.0f, 0.0f, 0.0f}) * fromAngleAxis(angles[1], {0.0f, 1.0f, 0.0f}) * fromAngleAxis(angles[2], {0.0f, 0.0f, 1.0f});
@@ -252,7 +253,7 @@ namespace Ravl2
   constexpr Quaternion<RealT> slerp(const Quaternion<RealT> &p1, const Quaternion<RealT> &p2, float t)
   {
     const RealT one = RealT(1.0) - std::numeric_limits<RealT>::epsilon();
-    RealT d = xt::linalg::dot(p1.asVector(), p2.asVector())();
+    RealT d = p1.asVector().dot(p2.asVector());
     RealT absD = std::fabs(d);
 
     RealT scale0;
@@ -311,7 +312,7 @@ namespace Ravl2
   template <typename RealT, typename Real2T>
   [[nodiscard]] constexpr Quaternion<RealT> ApplyAngularVelocity(const Quaternion<RealT> &orientation, const Vector<Real2T, 3> &angularVelocity, Real2T duration)
   {
-    auto rot = Quaternion<RealT>::fromEulerAngles(angularVelocity * duration);
+    auto rot = Quaternion<RealT>::fromEulerAnglesXYZ(angularVelocity * duration);
     return orientation * rot;//add to the starting rotation
   }
 

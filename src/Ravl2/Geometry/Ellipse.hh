@@ -10,6 +10,7 @@
 
 #pragma once
 
+#include <eigen3/Eigen/SVD>
 #include "Ravl2/Types.hh"
 #include "Ravl2/Geometry/Affine.hh"
 #include "Ravl2/Geometry/Conic2.hh"
@@ -68,10 +69,10 @@ namespace Ravl2
     //!param: angle - Angle of major axis.
     constexpr Ellipse(const Point<RealT, 2> &centre, RealT major, RealT minor, RealT angle)
     {
-      p = Affine<RealT, 2>(xt::linalg::dot(Matrix<RealT, 2, 2>({{std::cos(angle), -std::sin(angle)},
-                                                                {std::sin(angle), std::cos(angle)}}),
+      p = Affine<RealT, 2>(Matrix<RealT, 2, 2>({{std::cos(angle), -std::sin(angle)},
+                                                                {std::sin(angle), std::cos(angle)}}) *
                                            Matrix<RealT, 2, 2>({{major, 0},
-                                                                {0, minor}})),
+                                                                {0, minor}}),
                            centre);
     }
 
@@ -121,7 +122,10 @@ namespace Ravl2
       centre = p.Translation();
       ONDEBUG(std::cerr << "SRMatrix:\n"
                         << p.SRMatrix() << std::endl);
-      auto [u, s, vt] = xt::linalg::svd(p.SRMatrix(), true, true);
+      //auto [u, s, vt] = xt::linalg::svd(p.SRMatrix(), true, true);
+      auto svd = p.SRMatrix().jacobiSvd(Eigen::ComputeFullU);
+      auto s = svd.singularValues();
+      auto u = svd.matrixU();
       ONDEBUG(std::cerr << "U:\n"
                         << u << "\nS:" << s << "V:\n"
                         << vt << std::endl);
@@ -141,7 +145,9 @@ namespace Ravl2
     [[nodiscard]]
     constexpr std::tuple<RealT, RealT> size() const
     {
-      auto [u, s, vt] = xt::linalg::svd(p.SRMatrix(), false, false);
+      Eigen::template JacobiSVD<Matrix<RealT, 2, 2> > svd(p.SRMatrix());
+      //auto [u, s, vt] = xt::linalg::svd(p.SRMatrix(), false, false);
+      auto s = svd.singularValues();
       return {s[0], s[1]};
     }
 
@@ -153,7 +159,7 @@ namespace Ravl2
   //! @param  conic - Conic to turn into an Ellipse
   //! @return Ellipse if conic is an conic, otherwise if hyperbola or degenerate std::nullopt.
   template <typename RealT>
-  constexpr std::optional<Ellipse<RealT>> toEllipse(const Conic2<RealT> &conic)
+  std::optional<Ellipse<RealT>> toEllipse(const Conic2<RealT> &conic)
   {
     // Ellipse representation is transformation required to transform unit
     // circle into conic.  This is the inverse of the "square root" of
@@ -167,7 +173,11 @@ namespace Ravl2
                       << euc << "\n Center=" << centre << std::endl);
 
     // Then decompose to get orientation and scale
-    auto [lambda, E] = xt::linalg::eigh(euc);
+    //auto [lambda, E] = xt::linalg::eigh(euc);
+    Eigen::SelfAdjointEigenSolver<Matrix<RealT, 2, 2>> solver(euc);
+    Matrix<RealT,2,2> E = solver.eigenvectors();
+    Vector<RealT,2> lambda = solver.eigenvalues();
+
     // lambda now contains inverted squared *minor* & *major* axes respectively
     // (N.B.: check: E[0][1] *MUST* have same sign as conic orientation)
     ONDEBUG(std::cerr << "Eigen decomp is:\n"
@@ -175,13 +185,13 @@ namespace Ravl2
                       << lambda << std::endl);
 
     Matrix<RealT, 2, 2> scale(
-      {{0, RealT(1) / std::sqrt(lambda[0])},
-       {RealT(1) / std::sqrt(lambda[1]), 0}});
+      {{0, RealT(1 / RealT(std::sqrt(lambda[0])) )},
+       {RealT(1 / std::sqrt(lambda[1])), 0}});
     // Columns are swapped in order to swap x & y to compensate for eigenvalue
     // ordering.  I.e. so that [1,0] on unit circle gets mapped to
     // end of major axis rather than minor axis.
 
-    auto ret = Ellipse<RealT>(xt::linalg::dot(E, scale), centre);
+    auto ret = Ellipse<RealT>(E * scale, centre);
     ONDEBUG(std::cerr << "Ellipse:\n"
                       << ret << std::endl);
     ONDEBUG(std::cerr << "[1,0] on unit circle goes to " << ret.Projection()(toVector<RealT>(1, 0)) << " on conic" << std::endl);
@@ -194,13 +204,17 @@ namespace Ravl2
   template <typename RealT>
   [[nodiscard]] constexpr Ellipse<RealT> ellipseMeanCovariance(const Matrix<RealT, 2, 2> &covar, const Point<RealT, 2> &mean, RealT stdDev = 1.0)
   {
-    auto [dv, E] = xt::linalg::eigh(covar);
+    //auto [dv, E] = xt::linalg::eigh(covar);
+    Eigen::SelfAdjointEigenSolver<Eigen::Matrix<RealT, 2, 2>> solver(covar);
+
+    Matrix<RealT,2,2> E = solver.eigenvectors();
+    Vector<RealT,2> dv = solver.eigenvalues();
     ONDEBUG(std::cerr << "l: " << dv << "\nE\n"
                       << E << std::endl);
     Matrix<RealT, 2, 2> d(
       {{stdDev * std::sqrt(dv[0]), 0},
        {0, stdDev * std::sqrt(dv[1])}});
-    Matrix<RealT, 2, 2> sr = xt::linalg::dot(E, d);
+    Matrix<RealT, 2, 2> sr = E * d;
     return Ellipse(sr, mean);
   }
 

@@ -16,7 +16,7 @@ TEST_CASE("Projective2")
 
   //SPDLOG_INFO("Projection: {}", proj);
   // Check homography
-  CHECK(sumOfSqr(proj.homography() - xt::eye(3)) < 0.001);
+  CHECK(sumOfSqr(proj.homography() - Matrix<RealT,3,3>::Identity()) < 0.001);
 
   std::vector<Point<RealT,2>> ipnt;
   ipnt.push_back(toPoint<RealT>(1, 1));
@@ -38,7 +38,7 @@ TEST_CASE("Projective2")
 
   // Check projection multiplication
   Projection<RealT, 2> proj2(Projection<RealT, 2>::identity(14, 3)); // Another arbitrary unit projection
-  CHECK(xt::sum(xt::abs((proj * proj2)(ipnt[1]) - ipnt[1]))() < 0.001);
+  CHECK(((proj * proj2)(ipnt[1]) - ipnt[1]).cwiseAbs().sum() < 0.001);
 
   // Check affine constructor, using arbitrary projective scale values
   auto affine = affineFromScaleAngleTranslation<RealT>(toVector<RealT>(3, 1),0, toVector<RealT>(2, 2));

@@ -155,7 +155,7 @@ namespace Ravl2
     faces.reserve(faceInd.size()/3);
     vertices.reserve(v.size());
 
-    Vector<RealT,3> zero = toVector<RealT>()(0,0,0);
+    Vector<RealT,3> zero = toVector<RealT>(0,0,0);
     for(auto it : v) {
       vertices.push_back(Vertex<RealT>(it,zero));
     }
@@ -183,7 +183,7 @@ namespace Ravl2
     faces.reserve(faceInd.size());
 
     // Create the vertices from the vertex positions v
-    Vector<RealT,3> zero = toVector<RealT>()(0,0,0);
+    Vector<RealT,3> zero = toVector<RealT>(0,0,0);
     for(auto it : v) {
       vertices.push_back(Vertex<RealT>(it,zero));
     }

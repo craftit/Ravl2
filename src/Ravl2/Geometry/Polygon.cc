@@ -5,6 +5,7 @@
 // see http://www.gnu.org/copyleft/lesser.html
 // file-header-ends-here
 
+#include "Ravl2/Geometry/Geometry.hh"
 #include "Ravl2/Geometry/Polygon.hh"
 #include "Ravl2/Geometry/PolyApprox.hh"
 #include "Ravl2/Geometry/Moments2.hh"
@@ -31,7 +32,7 @@ namespace Ravl2
       this->push_back(toPoint<RealT>(range[0].max(), range[1].min()));
     }
   }
-
+  
   template <typename RealT>
   RealT Polygon<RealT>::area() const
   {
@@ -55,8 +56,8 @@ namespace Ravl2
     for(auto ptr = this->begin(); ptr != this->end(); ++ptr) {
       auto pNext = nextDataCrc(*this, ptr);
       // Look out for degenerate polygons
-      assert(squaredEuclidDistance(pLast, pNext) > std::numeric_limits<RealT>::epsilon());
-      assert(squaredEuclidDistance(pLast, *ptr) > std::numeric_limits<RealT>::epsilon());
+      assert((pLast - pNext).cwiseAbs().sum() > std::numeric_limits<RealT>::epsilon());
+      assert((pLast - *ptr).cwiseAbs().sum() > std::numeric_limits<RealT>::epsilon());
       if(Line2PP<RealT>(pLast, pNext).IsPointInsideOn(*ptr, orientation))
         return false;
       pLast = *ptr;
@@ -171,7 +172,7 @@ namespace Ravl2
   template <typename RealT>
   void Polygon<RealT>::addBack(const Point<RealT, 2> &pnt)
   {
-    if(this->empty() || squaredEuclidDistance(pnt, this->back()) > std::numeric_limits<RealT>::epsilon())
+    if(this->empty() || squaredEuclidDistance<RealT,2>(pnt, this->back()) > std::numeric_limits<RealT>::epsilon())
       this->push_back(pnt);
   }
 
@@ -211,7 +212,7 @@ namespace Ravl2
     // Avoid generating degenerate polygons.
     if(!ret.empty()) {
       // Check first and last are different.
-      if(squaredEuclidDistance(ret.front(), ret.back()) < std::numeric_limits<RealT>::epsilon()) {
+      if(squaredEuclidDistance<RealT,2>(ret.front(), ret.back()) < std::numeric_limits<RealT>::epsilon()) {
         ret.pop_back();
       }
     }
@@ -259,7 +260,7 @@ namespace Ravl2
     }
     if(!ret.empty()) {
       // Check first and last are different.
-      if(squaredEuclidDistance(ret.front(), ret.back()) < std::numeric_limits<RealT>::epsilon()) {
+      if(squaredEuclidDistance<RealT,2>(ret.front(), ret.back()) < std::numeric_limits<RealT>::epsilon()) {
         ret.pop_back();
       }
     }

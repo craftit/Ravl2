@@ -120,8 +120,8 @@ namespace Ravl2
   {
     Vector<RealT, 2> n1(perpendicular(this->direction()));
     Vector<RealT, 2> n2(perpendicular(l.direction()));
-    RealT d1 = -dot(n1, this->FirstPoint())();
-    RealT d2 = -dot(n2, l.FirstPoint())();
+    RealT d1 = -n1.dot(this->FirstPoint());
+    RealT d2 = -n2.dot(l.FirstPoint());
     RealT det = cross(n1, n2);
     if(isNearZero(det))
       return Point<RealT, 2>({0.0, 0.0});
@@ -137,8 +137,8 @@ namespace Ravl2
     RealT det = cross(n1, n2);
     if(isNearZero(det))
       return false;
-    RealT d1 = -dot(n1, (this->FirstPoint()))();
-    RealT d2 = -dot(n2, l.FirstPoint())();
+    RealT d1 = -n1.dot(this->FirstPoint());
+    RealT d2 = -n2.dot(l.FirstPoint());
     here[0] = (n1[1] * d2 - n2[1] * d1) / det;
     here[1] = (n2[0] * d1 - n1[0] * d2) / det;
     return true;
@@ -168,7 +168,7 @@ namespace Ravl2
   RealT Line2PP<RealT>::ParIntersection(const Line2PP &l) const
   {
     auto u2P = toPoint<RealT>(l.point[0][1] - l.point[1][1], l.point[1][0] - l.point[0][0]);// u2p = l.direction().Perpendicular();
-    return (dot((l.FirstPoint() - this->FirstPoint()), u2P) / dot(this->direction(), u2P))();
+    return ((l.FirstPoint() - this->FirstPoint()).dot(u2P) / this->direction().dot(u2P));
   }
 
   template <typename RealT>

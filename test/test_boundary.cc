@@ -137,7 +137,7 @@ TEST_CASE("CrackCode properties")
     for(int i =0;i < 5;i++) {
       BoundaryVertex start({5, 5});
       CrackC edge(start, CrackCode(i));
-      auto m1 = ((toPoint<float>(edge.rightPixel()) + toPoint<float>(edge.leftPixel())) / 2.0f) + Point<float,2>({0.5, 0.5});
+      Point<float,2> m1 = ((toPoint<float>(edge.rightPixel()) + toPoint<float>(edge.leftPixel())) * 0.5f) + Point<float,2>({0.5, 0.5});
       CHECK(isNearZero<float>(euclidDistance(m1,edge.MidPoint<float>()),1e-5f));
     }
   }

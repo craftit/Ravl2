@@ -21,7 +21,7 @@ namespace Ravl2
   //! Generate a Sobol sequence.
   //! Re-implementation from numerical recipies 2nd edition. pg 312
 
-  template<typename RealT, size_t N, size_t bits = (sizeof(RealT) * 8 - 2)>
+  template<typename RealT, IndexSizeT N, IndexSizeT bits = (sizeof(RealT) * 8 - 2)>
    requires std::is_floating_point<RealT>::value && (bits > 0) && (N <= 6)
   class SobolSequence
   {
@@ -32,7 +32,7 @@ namespace Ravl2
     //! Goto first point in sequence.
     constexpr bool reset()
     {
-      work = xt::zeros<unsigned>({N});
+      work = Vector<unsigned, N>::Zero();
       done = false;
       s = 0;
       next();
@@ -48,20 +48,20 @@ namespace Ravl2
     {
       if(done)
 	return false;
-      size_t b = 0;
-      size_t k = s++;
+      IndexT b = 0;
+      IndexT k = s++;
       // Find the least unset bit from sequence position.
-      for(; b <= bits; b++) {
+      for(; b <= IndexT(bits); b++) {
 	if(!(k & 1))
 	  break;
 	k >>= 1;
       }
       //cerr << "b:" << b << " " << s << "\n";
-      if(b == bits) {
+      if(b == IndexT(bits)) {
 	done = true;
 	return false;
       }
-      for(size_t i = 0; i < N; i++) {
+      for(IndexT i = 0; i < IndexT(N); i++) {
 	work[i] ^= vx(b,i);
 	result[i] = RealT(work[i]) * frac;
       }
@@ -100,16 +100,16 @@ namespace Ravl2
 	// Work out direction numbers.
 	int shift = bits - 1;
 	for(size_t i = 0; i < bits; i++) {
-	  vx(i, k) = seq[i] << (shift--);
+	  vx(int(i), int(k)) = seq[i] << (shift--);
 	}
       }
       next();
     }
 
-    size_t s = 0;        // Position in sequence.
+    IndexT s = 0;        // Position in sequence.
     bool done = false;
     const RealT frac = 1.0 / (1 << bits);
-    Vector<unsigned, N> work = xt::zeros<unsigned>({N});
+    Vector<unsigned, N> work = Vector<unsigned, N>::Zero();
     Point<RealT, N> result;
     Matrix<unsigned, bits, N> vx;
   };

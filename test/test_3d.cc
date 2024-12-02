@@ -1,6 +1,7 @@
 
 #include "checks.hh"
 
+#include "Ravl2/IO/Cereal.hh"
 #include "Ravl2/3D/PinholeCamera0.hh"
 #include "Ravl2/3D/TriMesh.hh"
 #include "Ravl2/3D/MeshShapes.hh"
@@ -15,7 +16,7 @@ TEST_CASE("PinholeCamera0")
 
   SECTION("Cereal")
   {
-    Matrix<float,3,3> rot  = xt::eye<float>(3);
+    Matrix<float,3,3> rot  = Matrix<float,3,3>::Identity();
     Vector<float,3> trans =  {5,6,7};
     PinholeCamera0<float> cam(1.0f, 2.0f, 3.0f, 4.0f, rot, trans, IndexRange<2>({{0, 100},{0, 100}}));
     std::stringstream ss;
@@ -32,8 +33,8 @@ TEST_CASE("PinholeCamera0")
       EXPECT_FLOAT_EQ(cam.cy(), cam2.cy());
       EXPECT_FLOAT_EQ(cam.fx(), cam2.fx());
       EXPECT_FLOAT_EQ(cam.fy(), cam2.fy());
-      EXPECT_TRUE(xt::allclose(cam.R(), cam2.R()));
-      EXPECT_TRUE(xt::allclose(cam.t(), cam2.t()));
+      EXPECT_TRUE(cam.R().isApprox(cam2.R()));
+      EXPECT_TRUE(cam.t().isApprox(cam2.t()));
     }
   }
   
@@ -48,10 +49,10 @@ TEST_CASE("PinholeCamera0")
     auto cam = PinholeCamera0<float>::fromFrame(frame,0.2f,distance);
     Vector<float, 2> pix;
     cam.project(pix,toVector<float>(0.0,0.1,distance));
-    SPDLOG_INFO("Pix {}", pix);
+    //SPDLOG_INFO("Pix {}", pix);
     EXPECT_FLOAT_EQ(pix[1], float(frame.max(1)));
     cam.project(pix,toVector<float>(0.0,-0.1,distance));
-    SPDLOG_INFO("Pix {}", pix);
+    //SPDLOG_INFO("Pix {}", pix);
     EXPECT_FLOAT_EQ(pix[1], float(frame.min(1)));
   }
   
@@ -65,10 +66,10 @@ TEST_CASE("PinholeCamera0")
     EXPECT_FLOAT_EQ(pix[0], 0);
     EXPECT_FLOAT_EQ(pix[1], 0);
     cam.project(pix,toVector<float>(0.0,0.1,distance));
-    SPDLOG_INFO("Pix {}", pix);
+    //SPDLOG_INFO("Pix {}", pix);
     EXPECT_FLOAT_EQ(pix[1], float(frame.max(1)));
     cam.project(pix,toVector<float>(0.0,-0.1,distance));
-    SPDLOG_INFO("Pix {}", pix);
+    //SPDLOG_INFO("Pix {}", pix);
     EXPECT_FLOAT_EQ(pix[1], float(frame.min(1)));
   }
   

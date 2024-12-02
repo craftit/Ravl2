@@ -20,7 +20,7 @@ namespace Ravl2
     return cv::Point_<RealT>(point[1], point[0]);
   }
 
-  template <typename RealT, int N, size_t M = N>
+  template <typename RealT, int N, IndexSizeT M = N>
   cv::Vec<RealT, N> toCvVec(const Vector<RealT, M> &vec)
   {
     cv::Vec<RealT, N> result;
@@ -30,7 +30,7 @@ namespace Ravl2
     return result;
   }
 
-  template <typename RealT, size_t N, size_t M>
+  template <typename RealT, IndexSizeT N, IndexSizeT M>
   cv::Mat toCvMat(const Matrix<RealT, N, M> &mat)
   {
     cv::Mat result(N, M, cv::DataType<RealT>::type);
@@ -43,7 +43,7 @@ namespace Ravl2
   }
 
   //! Convert to fixed size cv matrix
-  template <typename RealT, unsigned N, unsigned M>
+  template <typename RealT, IndexSizeT N, IndexSizeT M>
   auto toCvMatx(const Matrix<RealT, N, M> &mat)
   {
     cv::Matx<RealT, int(N), int(M)> result;
@@ -56,7 +56,7 @@ namespace Ravl2
   }
 
   //! To matrix
-  template <typename RealT, unsigned N, unsigned M>
+  template <typename RealT, IndexSizeT N, IndexSizeT M>
   Matrix<RealT, N, M> toMatrix(const cv::Mat &mat)
   {
     Matrix<RealT, N, M> result;
@@ -73,7 +73,7 @@ namespace Ravl2
   }
 
   //! Fixed size matrix conversions
-  template <typename RealT, unsigned N, unsigned M>
+  template <typename RealT, IndexSizeT N, IndexSizeT M>
   Matrix<RealT, N, M> toMatrix(const cv::Matx<RealT, int(N), int(M)> &mat)
   {
     Matrix<RealT, N, M> result;
@@ -86,7 +86,7 @@ namespace Ravl2
   }
 
   //! To Vector
-  template <typename RealT, unsigned N>
+  template <typename RealT, IndexSizeT N>
   Vector<RealT, N> toVector(const cv::Vec<RealT, int(N)> &vec)
   {
     Vector<RealT, N> result;
@@ -139,6 +139,7 @@ namespace Ravl2
   }
 
   // Provide some common instantiations
+#if 0
   extern template cv::Vec<float, 2> toCvVec(const Vector<float, 2> &vec);
   extern template cv::Vec<float, 3> toCvVec(const Vector<float, 3> &vec);
   extern template cv::Vec<double, 2> toCvVec(const Vector<double, 2> &vec);
@@ -148,5 +149,6 @@ namespace Ravl2
   extern template cv::Mat toCvMat(const Matrix<double, 3, 3> &mat);
   extern template cv::Mat toCvMat(const Matrix<float, 4, 4> &mat);
   extern template cv::Mat toCvMat(const Matrix<double, 4, 4> &mat);
+#endif
 
 }// namespace Ravl2

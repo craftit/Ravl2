@@ -164,7 +164,7 @@ namespace Ravl2
     void UpdateCenterExtent();
   protected:
     std::vector<std::shared_ptr<DObject3D> > parts;
-    Vector<float,3> center = toVector<float>(0,0,0);
+    Vector<float,3> center = Vector<float,3>::Zero();
     float extent = 1.0f;
     bool mUpdateNeeded = true;
   };

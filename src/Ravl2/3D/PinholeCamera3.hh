@@ -106,7 +106,7 @@ namespace Ravl2
       Rx[1] = uz[1];
       Rx[2] = 1.0;
       // TMul(this->m_R, Rx, x);
-      x = xt::linalg::dot(xt::transpose(this->m_R), Rx);
+      x = this->m_R.transpose() * Rx;
     }
 
     //! Transform from a simple pinhole model point to a distorted image point
@@ -144,7 +144,7 @@ namespace Ravl2
     }
 
   protected:
-    //: Apply radial distortion
+    //! Apply radial distortion
     Vector<RealT, 2> distort0(const Vector<RealT, 2> &z) const
     {
       Vector<RealT, 2> ret = z;
@@ -159,7 +159,7 @@ namespace Ravl2
       return ret;
     }
 
-    //: Remove radial distortion
+    //! Remove radial distortion
     Vector<RealT, 2> undistort0(const Vector<RealT, 2> &z) const
     {
       Vector<RealT, 2> ret = z;

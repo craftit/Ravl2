@@ -321,6 +321,38 @@ TEST_CASE("ArrayAccessIter1")
   CHECK_EQ(sum,45);
 }
 
+TEST_CASE("clip")
+{
+  using namespace Ravl2;
+  Ravl2::Array<int, 2> val(Ravl2::IndexRange<2>({10, 10}));
+
+  for(auto a: val.range()) {
+    val[a] = a[0] * 10 + a[1];
+  }
+
+  IndexRange<2> subRange = val.range().shrink(1);
+
+  auto unsafeClipped = clipUnsafe(val, subRange);
+  int count = 0;
+  int sum = 0;
+  for(auto a : unsafeClipped) {
+    count++;
+    sum += a;
+  }
+
+  auto safe = clip(val, subRange);
+  int count2 = 0;
+  int sum2 = 0;
+  for(auto a : safe) {
+    count2++;
+    sum2 += a;
+  }
+
+  CHECK_EQ(count, count2);
+  CHECK_EQ(sum, sum2);
+}
+
+
 TEST_CASE("ArrayIter2")
 {
   SECTION("1x2")
@@ -453,7 +485,7 @@ TEST_CASE("ArrayIter2")
       val[a] = at++;
     }
     Ravl2::IndexRange<2> win = val.range().shrink(1);
-    for(auto it = clip(val,win).begin();it.valid();++it)
+    for(auto it = clipUnsafe(val,win).begin();it.valid();++it)
     {
       CHECK(it(0,0) == *it);
       CHECK(it(0,-1) == (*it)-1);
@@ -540,7 +572,7 @@ TEST_CASE("ArrayIter2View")
   //SPDLOG_INFO("Strides: {} {} ", matrix.strides()[0], matrix.strides()[1]);
 
   Ravl2::IndexRange<2> win({2, 2});
-  auto view = clip(matrix,win);
+  auto view = clipUnsafe(matrix,win);
   //auto view = matrix.view(win);
 
   int targetSum = 0;
@@ -593,7 +625,7 @@ TEST_CASE("ShiftView")
   for(auto si : scanRange)
   {
     Ravl2::IndexRange<2> rng = kernel.range() + si;
-    auto view = clip(matrix,rng);
+    auto view = clipUnsafe(matrix,rng);
     //auto view = matrix.view(rng);
 
     int sum1 = 0;
@@ -646,7 +678,7 @@ TEST_CASE("ZipN")
   SECTION("Relative")
   {
     auto win = a.range().shrink(1);
-    auto it = zip(clip(a,win),clip(b,win));
+    auto it = zip(clipUnsafe(a,win),clipUnsafe(b,win));
     for(; it.valid(); ++it) {
       CHECK(it.iter<0>()(0,0) == it.data<0>());
       CHECK(it.at<0>(0,0) == it.data<0>());
@@ -777,7 +809,7 @@ TEST_CASE("AnotherIterTest")
 		     }
 		    );
   assert(!nrng.empty());
-  auto subArray = clip(narray, nrng);
+  auto subArray = clipUnsafe(narray, nrng);
   auto cit = subArray.begin();
   CHECK(cit.valid());
   int area = nrng.area();

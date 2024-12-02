@@ -193,6 +193,7 @@ namespace Ravl2
 
   //! Convert a parameter list of RealT to a point
   template <typename... DataT, unsigned N = sizeof...(DataT)>
+    requires std::conjunction_v<std::is_convertible<DataT, int>...>
   constexpr inline Index<N> toIndex(DataT... data)
   {
     return Index<N>({int(data)...});

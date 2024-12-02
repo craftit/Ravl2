@@ -1,9 +1,11 @@
 
 #include <numbers>
+#include <random>
 #include <catch2/catch_test_macros.hpp>
 #include <spdlog/spdlog.h>
 #include <cereal/archives/json.hpp>
 
+#include "Ravl2/IO/Cereal.hh"
 #include "Ravl2/Math.hh"
 #include "Ravl2/Angle.hh"
 #include "Ravl2/Geometry/Geometry.hh"
@@ -338,17 +340,17 @@ TEST_CASE("Circle")
 
   SECTION("Fit 3 points.")
   {
-    Circle2dC<float> circle2;
-    EXPECT_TRUE(circle2.Fit(pnts[0], pnts[1], pnts[2]));
+    Circle<float> circle2;
+    EXPECT_TRUE(circle2.fit(pnts[0], pnts[1], pnts[2]));
     SPDLOG_TRACE("Center={} Radius={}", circle2.Centre(), circle2.Radius());
-    float sqrMag = xt::sum(xt::square(Point<float, 2>(circle2.Centre() - Point<float, 2>({1, 2}))))[0];
+    float sqrMag = Point<float, 2>(circle2.Centre() - Point<float, 2>({1, 2})).squaredNorm();
     CHECK(sqrMag < 0.01f);
     CHECK(std::abs(circle2.Radius() - 2) < 0.01f);
   }
 
   SECTION("Fit N points.")
   {
-    Circle2dC<float> circle;
+    Circle<float> circle;
     auto residual = Ravl2::fit(circle, pnts);
     CHECK(residual.has_value());
     SPDLOG_TRACE("Center={} Radius={} Residual={}", circle.Centre(), circle.Radius(), residual.value());
@@ -552,7 +554,7 @@ TEST_CASE("Planes")
     points.push_back(toPoint<RealT>(1,2,1));
     points.push_back(toPoint<RealT>(2,1,2));
     VectorOffset<RealT,3> plane;
-    CHECK(fit(plane,points));
+    CHECK(fit<RealT,3>(plane,points));
 
     for(auto pnt: points) {
       RealT dist = plane.distance(pnt);
@@ -623,14 +625,14 @@ TEST_CASE("FitSimilarity")
 
   Vector<RealT,3> rotAngle = toVector<RealT>(randomAngle(rng),randomAngle(rng),randomAngle(rng));
   Vector<RealT,3> offset = toVector<RealT>(randomTranslation(rng),randomTranslation(rng),randomTranslation(rng));
-  Matrix<RealT,3,3> rot = Quaternion<RealT>::fromEulerAngles(rotAngle).toMatrix();
+  Matrix<RealT,3,3> rot = Quaternion<RealT>::fromEulerAnglesXYZ(rotAngle).toMatrix();
 
   RealT scale = 0.75;
 
   std::vector<Point<RealT,3>> transformedPoints;
   transformedPoints.reserve(points.size());
   for(auto p : points) {
-    transformedPoints.push_back(xt::linalg::dot(rot ,p) * scale  + offset);
+    transformedPoints.push_back((rot * p) * scale  + offset);
   }
 
   //! Fit a rigid transform between the two point sets.
@@ -640,7 +642,7 @@ TEST_CASE("FitSimilarity")
     Matrix<RealT, 3, 3> fittedRotation;
     RealT fittedScaling = -1;
 
-    CHECK(fitSimilarity<RealT>(
+    CHECK(fitSimilarity<RealT,3>(
       fittedRotation,
       fittedTranslation,
       fittedScaling,
@@ -658,8 +660,8 @@ TEST_CASE("FitSimilarity")
     SPDLOG_INFO("Fitted Scaling={} ", fittedScaling);
 #endif
     CHECK(std::abs(fittedScaling - scale) < 0.0001f);
-    CHECK(xt::sum(xt::abs(fittedRotation - rot))() < 0.0001f);
-    CHECK(xt::sum(xt::abs(fittedTranslation - offset))() < 0.0001f);
+    CHECK((fittedRotation - rot).cwiseAbs().sum() < 0.0001f);
+    CHECK((fittedTranslation - offset).cwiseAbs().sum() < 0.0001f);
   }
 
 
@@ -672,8 +674,8 @@ TEST_CASE("FitSimilarity")
 
     for(auto p : points) {
       Point<RealT, 3> affP = aff(p);
-      Point<RealT, 3> rotP = xt::linalg::dot(rot, p) * scale + offset;
-      CHECK(xt::sum(xt::square(affP - rotP))() < 0.0001f);
+      Point<RealT, 3> rotP = (rot * p) * scale + offset;
+      CHECK((affP - rotP).cwiseAbs().sum() < 0.0001f);
     }
   }
 
@@ -701,14 +703,14 @@ TEST_CASE("FitIsometry")
 
   Vector<RealT,3> rotAngle = toVector<RealT>(randomAngle(rng),randomAngle(rng),randomAngle(rng));
   Vector<RealT,3> offset = toVector<RealT>(randomTranslation(rng),randomTranslation(rng),randomTranslation(rng));
-  Matrix<RealT,3,3> rot = Quaternion<RealT>::fromEulerAngles(rotAngle).toMatrix();
+  Matrix<RealT,3,3> rot = Quaternion<RealT>::fromEulerAnglesXYZ(rotAngle).toMatrix();
 
   RealT scale = 1.0f;
 
   std::vector<Point<RealT,3>> transformedPoints;
   transformedPoints.reserve(points.size());
   for(auto p : points) {
-    transformedPoints.push_back(xt::linalg::dot(rot ,p) * scale  + offset);
+    transformedPoints.push_back((rot * p) * scale  + offset);
   }
 
   //! Fit a rigid transform between the two point sets.
@@ -718,7 +720,7 @@ TEST_CASE("FitIsometry")
     Matrix<RealT, 3, 3> fittedRotation;
     RealT fittedScaling = -1;
 
-    CHECK(fitSimilarity<RealT>(
+    CHECK(fitSimilarity<RealT,3>(
       fittedRotation,
       fittedTranslation,
       fittedScaling,
@@ -735,8 +737,8 @@ TEST_CASE("FitIsometry")
     SPDLOG_INFO("Fitted Scaling={} ", fittedScaling);
 #endif
     CHECK(std::abs(fittedScaling - scale) < 0.0001f);
-    CHECK(xt::sum(xt::abs(fittedRotation - rot))() < 0.0001f);
-    CHECK(xt::sum(xt::abs(fittedTranslation - offset))() < 0.0001f);
+    CHECK((fittedRotation - rot).cwiseAbs().sum() < 0.0001f);
+    CHECK((fittedTranslation - offset).cwiseAbs().sum() < 0.0001f);
   }
 
 
@@ -749,8 +751,8 @@ TEST_CASE("FitIsometry")
 
     for(auto p : points) {
       Point<RealT, 3> affP = aff(p);
-      Point<RealT, 3> rotP = xt::linalg::dot(rot, p) * scale + offset;
-      CHECK(xt::sum(xt::square(affP - rotP))() < 0.0001f);
+      Point<RealT, 3> rotP = (rot * p) * scale + offset;
+      CHECK((affP - rotP).cwiseAbs().sum() < 0.0001f);
     }
   }
 

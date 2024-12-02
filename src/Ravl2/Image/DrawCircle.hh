@@ -64,7 +64,7 @@ namespace Ravl2
     }
     auto step = std::numbers::pi_v<CoordT> / (radius + 2.0f);
     Polygon<CoordT> poly;
-    Circle2dC<float> circle(center, radius);
+    Circle<float> circle(center, radius);
     for(CoordT a = 0; a < 2.0f * std::numbers::pi_v<CoordT>; a += step)
       poly.push_back(circle.Value(a));
     // Fill in...
@@ -84,7 +84,7 @@ namespace Ravl2
     }
     auto step = std::numbers::pi_v<CoordT> / (radius + CoordT(2.0));
     Polygon<CoordT> poly;
-    Circle2dC<float> circle(center, radius);
+    Circle<float> circle(center, radius);
     for(CoordT a = 0; a < 2.0f * std::numbers::pi_v<CoordT>; a += step)
       poly.push_back(circle.Value(a));
     // Fill in...

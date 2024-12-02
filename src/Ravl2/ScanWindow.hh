@@ -101,7 +101,7 @@ namespace Ravl2
     constexpr ScanWindow(const Ravl2::ArrayAccess<DataT, N> &img, const IndexRange<N> &window)
         : mWindowRange(window),
           mArea(img.range() - window),
-          mAt(mArea, img.origin_address(), img.strides())
+          mAt(img.origin_address(), mArea, img.strides())
     {
       assert(!mArea.empty());
     }
@@ -109,7 +109,7 @@ namespace Ravl2
     constexpr ScanWindow(const Ravl2::ArrayView<DataT, N> &img, const IndexRange<N> &window)
         : mWindowRange(window),
           mArea(img.range() - window),
-          mAt(mArea, img.origin_address(), img.strides())
+          mAt(img.origin_address(), mArea, img.strides())
     {
       assert(!mArea.empty());
     }
@@ -142,7 +142,7 @@ namespace Ravl2
     //! Get the current window
     [[nodiscard]] inline constexpr ArrayAccess<DataT, N> window() const
     {
-      return ArrayAccess<DataT, N>(mWindowRange, &(*mAt), mAt.strides());
+      return ArrayAccess<DataT, N>(&(*mAt), mWindowRange,  mAt.strides());
     }
 
     //! Window range, this is the range in the image that the window is currently on

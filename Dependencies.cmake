@@ -26,8 +26,7 @@ function(RAVL2_setup_dependencies)
 
   find_package(fmt QUIET)
   find_package(spdlog QUIET)
-  find_package(xtensor QUIET)
-  find_package(xtensor-blas QUIET)
+  find_package(Eigen3 3.4 QUIET)
   find_package(Catch2 3 QUIET)
   find_package(CLI11 QUIET)
   find_package(nlohmann_json QUIET)
@@ -81,49 +80,19 @@ function(RAVL2_setup_dependencies)
     message(STATUS "Found native CLI11::CLI11")
   endif()
 
-  if(NOT TARGET xtl)
+  if(NOT TARGET Eigen3::Eigen)
     cpmaddpackage(
             NAME
-            xtl
-            GITHUB_REPOSITORY
-            "xtensor-stack/xtl"
+            eigen
+            GITLAB_REPOSITORY
+            "libeigen/eigen"
             VERSION
-            0.7.7
+            3.4.0
             GIT_TAG
-            "0.7.7"
+            "3.4.0"
     )
   else()
-    message(STATUS "Found native xtl")
-  endif()
-
-  if(NOT TARGET xtensor)
-    cpmaddpackage(
-            NAME
-            xtensor
-            GITHUB_REPOSITORY
-            "xtensor-stack/xtensor"
-            VERSION
-            0.23.10
-            GIT_TAG
-            "0.23.10"
-            )
-  else()
-    message(STATUS "Found native xtensor")
-  endif()
-
-  if(NOT TARGET xtensor-blas)
-    cpmaddpackage(
-            NAME
-            xtensor-blas
-            GITHUB_REPOSITORY
-            "xtensor-stack/xtensor-blas"
-            VERSION
-            0.17.1
-            GIT_TAG
-            "0.17.1"
-            )
-  else ()
-    message(STATUS "Found native xtensor-blas")
+    message(STATUS "Found native Eigen3::Eigen")
   endif()
 
   if(NOT TARGET nlohmann_json::nlohmann_json)

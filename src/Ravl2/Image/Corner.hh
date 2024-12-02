@@ -81,7 +81,7 @@ namespace Ravl2
     //! City block distance from another pixel.
     auto distance(const Point<float, 2> &oth) const
     {
-      float d = xt::sum(xt::abs(mLocation - oth))();
+      float d = (mLocation - oth).cwiseAbs().sum();
       return d;
     }
 
@@ -105,7 +105,9 @@ namespace Ravl2
 
   inline float Corner::distance(const Corner &Oth) const
   {
-    return xt::sum(xt::abs(mLocation - Oth.mLocation))() + xt::sum(xt::abs(mGrad - Oth.mGrad))() + std::abs(RealT(mLevel) - RealT(Oth.mLevel));
+    return (mLocation - Oth.mLocation).cwiseAbs().sum() +
+           (mGrad - Oth.mGrad).cwiseAbs().sum() +
+	   std::abs(RealT(mLevel) - RealT(Oth.mLevel));
   }
 
 }// namespace Ravl2

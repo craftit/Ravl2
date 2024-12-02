@@ -37,6 +37,10 @@ add_test(NAME cli.has_help COMMAND intro --help)
 add_test(NAME cli.version_matches COMMAND intro --version)
 set_tests_properties(cli.version_matches PROPERTIES PASS_REGULAR_EXPRESSION "${PROJECT_VERSION}")
 
+add_executable(test_call test_calls.cc)
+target_link_libraries(test_call PRIVATE ravl2::RAVL2_warnings ravl2::RAVL2_options ravl2::Ravl2Core Catch2::Catch2WithMain)
+
+
 add_executable(tests
         test_index.cc
         test_core.cc
@@ -62,6 +66,7 @@ add_executable(tests
         checks.hh
         test_warpScale.cc
         test_projective.cc
+        test_eigen.cc
 )
 target_link_libraries(
   tests
@@ -75,7 +80,8 @@ target_link_libraries(
           ravl2::Ravl2x3D
           ravl2::Ravl2OpenCV
           ravl2::Ravl2Optimise
-          Catch2::Catch2WithMain)
+          Catch2::Catch2WithMain
+          Eigen3::Eigen)
 
 if(WIN32 AND BUILD_SHARED_LIBS)
   add_custom_command(

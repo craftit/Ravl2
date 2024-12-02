@@ -22,9 +22,9 @@ namespace Ravl2
       return std::nullopt;
     }
     // ---------- Compute parameters ----------------------
-    typename MatrixT<RealT>::shape_type sh = {samples, 6};
-    Tensor<RealT, 2> A(sh);
-    size_t i = 0;
+    //typename MatrixT<RealT>::shape_type sh = {};
+    MatrixT<RealT> A(samples, 6);
+    IndexT i = 0;
 
     auto [mean, scale] = normalise<RealT, 2>(points, [&i, &A](const Point<RealT, 2> &p) {
       A(i, 0) = sqr(p[0]);
@@ -50,7 +50,7 @@ namespace Ravl2
        {0, 0, 1}});
 
     // Matrix<RealT,3,3> nC = Hi.TMul(Cr.C()) * Hi;
-    Matrix<RealT, 3, 3> nC = xt::linalg::dot(xt::linalg::dot(xt::transpose(Hi), Cr.C()), Hi);
+    Matrix<RealT, 3, 3> nC = Hi.transpose() * Cr.C() * Hi;
     conic = Conic2(nC);
     return 0;
   }
