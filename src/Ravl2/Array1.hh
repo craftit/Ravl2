@@ -44,7 +44,7 @@ namespace Ravl2
         : mPtr(array)
     {}
 
-    constexpr explicit ArrayIter([[maybe_unused]] IndexRange<1> &rng, DataT *array)
+    constexpr explicit ArrayIter(DataT *array, [[maybe_unused]] IndexRange<1> &rng)
         : mPtr(array)
     {}
 
@@ -230,14 +230,14 @@ namespace Ravl2
     constexpr static unsigned dimensions = 1;
     constexpr ArrayAccess() = default;
 
-    constexpr ArrayAccess(const IndexRange<1> *rng, DataT *data, [[maybe_unused]] const int *strides)
+    constexpr ArrayAccess(DataT *data, const IndexRange<1> *rng, const int *strides)
         : m_ranges(rng),
           m_data(data)
     {
       assert(*strides == 1);
     }
 
-    constexpr ArrayAccess(const IndexRange<1> &rng, DataT *data, [[maybe_unused]] const int *strides)
+    constexpr ArrayAccess(DataT *data, const IndexRange<1> &rng, const int *strides)
         : m_ranges(&rng),
           m_data(data)
     {

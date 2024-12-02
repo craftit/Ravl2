@@ -19,7 +19,7 @@ namespace Ravl2
     constexpr SlaveIter() = default;
 
     constexpr SlaveIter(const IndexRange<1> *rng, ElementT *data, const int *strides) noexcept
-        : mAccess(rng, data, strides)
+        : mAccess(data, rng, strides)
     {
       static_assert(N > 1);
       assert(data != nullptr);
