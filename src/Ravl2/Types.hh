@@ -123,7 +123,7 @@ struct fmt::formatter<Eigen::Matrix<_Scalar, _Rows, _Cols, _Options, _MaxRows, _
   }
 
   template<typename FormatContext>
-  auto format(Eigen::Matrix<_Scalar, _Rows, _Cols, _Options, _MaxRows, _MaxCols> const& mat, FormatContext& ctx)
+  auto format(Eigen::Matrix<_Scalar, _Rows, _Cols, _Options, _MaxRows, _MaxCols> const& mat, FormatContext& ctx) const
   {
     if constexpr(_Rows == 1 && _Cols == 1)
       return fmt::format_to(ctx.out(), "{}", mat(0,0));
