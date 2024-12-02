@@ -105,27 +105,9 @@ namespace Ravl2
 
 }// namespace Ravl2
 
-//template <typename T>
-//requires std::is_base_of_v<Eigen::DenseBase<T>, T>
-//struct fmt::formatter<T> : ostream_formatter {};
-
 template <typename T>
 requires std::is_base_of_v<Eigen::DenseBase<T>, T>
-class fmt::formatter<T> {
-public:
-  constexpr auto parse (format_parse_context& ctx) { return ctx.begin(); }
-  template <typename Context>
-  auto format (T const& mat, Context& ctx) const {
-    std::ostringstream oss;
-    if(mat.cols() == 1) {
-      oss << mat.transpose();
-      return format_to(ctx.out(), "[{}]", oss.str());
-    } else {
-      oss << mat;
-    }
-    return format_to(ctx.out(), "{}", oss.str());
-  }
-};
+struct fmt::formatter<T> : ostream_formatter {};
 
 template <typename T>
 struct fmt::formatter<Eigen::WithFormat<T>> : ostream_formatter {};
