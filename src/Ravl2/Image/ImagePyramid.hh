@@ -38,7 +38,7 @@ namespace Ravl2
     }
 
     //! Access the scale and translation of the image.
-    //! @return Transform to map a point from the original image to the level image.
+    //! @return Transform to map a point from the level image to the original image.
     [[nodiscard]] const auto &transformFrom() const
     {
       return mTransformFrom;
@@ -82,6 +82,8 @@ namespace Ravl2
     {}
 
     //! Access a level in the pyramid.
+    //! Each level contains the Transform to map a point from the original image to
+    //! the level image and the image at that level.
     //! @param index The index of the level to access.
     //! @return The level at the given index.
     [[nodiscard]] constexpr const PyramidLevel<ImageT, TransformT> &level(size_t index) const

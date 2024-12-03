@@ -9,6 +9,7 @@
 
 #include "Ravl2/Geometry/Geometry.hh"
 #include "Ravl2/Math/LinearAlgebra.hh"
+#include "Ravl2/Geometry/ScaleTranslate.hh"
 
 namespace Ravl2
 {
@@ -37,6 +38,12 @@ namespace Ravl2
         mT(T)
     {}
 
+    //! Construct from a scale and a translation vector.
+    inline constexpr Affine(const ScaleTranslate<DataT, N> &st) noexcept
+      : mSR(Eigen::DiagonalWrapper(st.scaleVector())),
+        mT(st.translation())
+    {}
+    
     //! Get the identity transformation.
     [[nodiscard]] inline static constexpr Affine identity()
     { return Affine(Matrix<DataT, N, N>::Identity(), Vector<DataT, N>::Zero()); }

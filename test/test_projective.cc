@@ -48,6 +48,20 @@ TEST_CASE("Projective2")
   CHECK(sumOfSqr(result - direct) < 0.001);
 }
 
+TEST_CASE("ConvertToProjection")
+{
+  using namespace Ravl2;
+  SECTION("Scaled")
+  {
+    ScaleTranslate<float, 2> st1(toVector<float>(2, 2), toVector<float>(1, 2));
+    Projection<float, 2> a1 = toProjection(st1);
+    Point<float, 2> p = toPoint<float>(3, 4);
+    Point<float, 2> pnt1 = a1(p);
+    Point<float, 2> pnt2 = st1(p);
+    CHECK(euclidDistance(pnt1, pnt2) < 0.001f);
+  }
+}
+
 TEST_CASE("FitProjection")
 {
   using namespace Ravl2;

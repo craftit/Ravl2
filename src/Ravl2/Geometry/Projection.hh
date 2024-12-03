@@ -68,6 +68,20 @@ namespace Ravl2
       trans(N, N) = oz / iz;
     }
 
+    //! Construct from a scale /translation
+    inline explicit constexpr Projection(const ScaleTranslate<RealT, N> &st, RealT Oz = 1, RealT Iz = 1)
+     :  iz(Iz),
+        oz(Oz)
+    {
+      for(IndexT i = 0; i < IndexT(N); i++) {
+        trans(i, i) = st.scaleVector()[i];
+        trans(i, N) = st.translation()[i] / iz;
+        trans(i, N) = st.translation()[i] / iz;
+        trans(N, i) = 0;
+      }
+      trans(N, N) = oz / iz;
+    }
+    
     //! project a point through the transform.
     [[nodiscard]] constexpr Point<RealT, N> project(const Point<RealT, N> &pnt) const
     {
@@ -112,7 +126,21 @@ namespace Ravl2
       Matrix<RealT, N + 1, N + 1> transform = trans * diag * oth.trans;
       return Projection<RealT, N>(transform, oz, oth.iz);
     }
-
+    
+    //! Combine two transforms
+    //! @param: oth - the other transform to be combined with this one
+    //! @return: the result of cascading this transform with the other one.<br>
+    //! Note that the iz and oz values of the two transforms are combined
+    //! for the resulting one.
+    [[nodiscard]] constexpr Projection<RealT, N> operator()(const Projection<RealT, N> &oth) const
+    {
+      Matrix<RealT, N + 1, N + 1> diag = Matrix<RealT, N + 1, N + 1>::Identity();
+      diag(N, N) = iz / oth.oz;
+      Matrix<RealT, N + 1, N + 1> transform = trans * diag * oth.trans;
+      return Projection<RealT, N>(transform, oz, oth.iz);
+    }
+    
+    
     //! Invert transform.
     [[nodiscard]] constexpr Projection inverse() const
     {
@@ -215,7 +243,49 @@ namespace Ravl2
     RealT iz = 1;
     RealT oz = 1;
   };
-
+  
+  //! @brief Convert ScaleTranslate to projection.
+  template <typename DataT, unsigned N>
+  Projection<DataT, N> toProjection(ScaleTranslate<DataT, N> const &st)
+  {
+    return Projection<DataT, N>(st);
+  }
+  
+  //! @brief Convert ScaleTranslate to projection.
+  template <typename DataT, unsigned N>
+  Projection<DataT, N> toProjection(Affine<DataT, N> const &affine)
+  {
+    return Projection<DataT, N>(affine);
+  }
+  
+  //! @brief Compose transforms
+  template <typename DataT, unsigned N>
+  Projection<DataT, N> operator*(const Projection<DataT, N> &lhs, const ScaleTranslate<DataT, N> &rhs)
+  {
+    return lhs(toProjection(rhs));
+  }
+  
+  //! @brief Compose transforms
+  template <typename DataT, unsigned N>
+  Projection<DataT, N> operator*(const ScaleTranslate<DataT, N> &lhs, const Projection<DataT, N> &rhs)
+  {
+    return toProjection(lhs)(rhs);
+  }
+  
+  template <typename DataT, unsigned N>
+  Projection<DataT, N> operator*(const Projection<DataT, N> &lhs, const Affine<DataT, N> &rhs)
+  {
+    return lhs(toProjection(rhs));
+  }
+  
+  //! @brief Compose transforms
+  template <typename DataT, unsigned N>
+  Projection<DataT, N> operator*(const Affine<DataT, N> &lhs, const Projection<DataT, N> &rhs)
+  {
+    return toProjection(lhs)(rhs);
+  }
+  
+  
   //! Read from a stream.
   template <typename RealT, unsigned N>
   std::istream &operator>>(std::istream &s, Projection<RealT, N> &proj)
