@@ -73,7 +73,7 @@ function(RAVL2_setup_dependencies)
   if(NOT TARGET Catch2::Catch2WithMain)
     cpmaddpackage("gh:catchorg/Catch2@3.3.2")
   else()
-    message(STATUS "Found native Catch2::Catch2WithMain")
+    message(STATUS "Found native Catch2::Catch2")
   endif()
 
   if(NOT TARGET CLI11::CLI11)
