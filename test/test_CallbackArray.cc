@@ -2,7 +2,7 @@
 // Created by charles galambos on 06/10/2023.
 //
 
-#include "checks.hh"
+#include "Ravl2/Catch2checks.hh"
 #include "Ravl2/CallbackArray.hh"
 
 TEST_CASE("CallbackArray")

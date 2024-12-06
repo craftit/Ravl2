@@ -1,5 +1,5 @@
 
-#include "checks.hh"
+#include "Ravl2/Catch2checks.hh"
 
 #include "Ravl2/Image/BilinearInterpolation.hh"
 #include "Ravl2/Image/WarpScale.hh"

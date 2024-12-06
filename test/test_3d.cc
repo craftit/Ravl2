@@ -1,5 +1,5 @@
 
-#include "checks.hh"
+#include "Ravl2/Catch2checks.hh"
 
 #include "Ravl2/IO/Cereal.hh"
 #include "Ravl2/3D/PinholeCamera0.hh"

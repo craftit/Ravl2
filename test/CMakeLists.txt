@@ -63,7 +63,6 @@ add_executable(tests
         test_ThreadedQueue.cc
         test_warpScale.cc
         test_optimise.cc
-        checks.hh
         test_warpScale.cc
         test_projective.cc
         test_eigen.cc

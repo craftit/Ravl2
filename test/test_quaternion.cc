@@ -3,7 +3,7 @@
 //
 
 #include <random>
-#include "checks.hh"
+#include "Ravl2/Catch2checks.hh"
 #include "Ravl2/Geometry/Quaternion.hh"
 #include "Ravl2/Geometry/Isometry3.hh"
 #include "Ravl2/Geometry/FitSimilarity.hh"
