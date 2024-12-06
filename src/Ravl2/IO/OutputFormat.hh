@@ -24,9 +24,9 @@ namespace Ravl2
           m_sourceType(sourceType)
     {}
 
-    std::string m_url;     //! The URL of the file.
-    std::string m_filename;//! The name of the file, with the extension but without the protocol.
-    std::string m_protocol;//! The protocol used to save the file. http, file, etc.
+    std::string m_url;     //!< The URL of the file.
+    std::string m_filename;//!< The name of the file, with the extension but without the protocol.
+    std::string m_protocol;//!< The protocol used to save the file. http, file, etc.
     std::string m_extension;
     nlohmann::json m_formatHint;
     const std::type_info &m_sourceType;
@@ -136,6 +136,14 @@ namespace Ravl2
   class OutputFormatMap
   {
   public:
+    OutputFormatMap() = default;
+   
+    //! Delete copy constructor.
+    OutputFormatMap(const OutputFormatMap &) = delete;
+    OutputFormatMap &operator=(const OutputFormatMap &) = delete;
+    OutputFormatMap(OutputFormatMap &&) = delete;
+    OutputFormatMap &operator=(OutputFormatMap &&) = delete;
+    
     //! Add a format to the map.
     //! @param format - The format to add.
     //! @return True if the format was added.
@@ -149,6 +157,6 @@ namespace Ravl2
     std::unordered_map<std::string, std::vector<std::shared_ptr<OutputFormat>>> m_formatByExtension;
   };
 
-  OutputFormatMap &outputFormatMap();
+  [[nodiscard]] OutputFormatMap &outputFormatMap();
 
 }// namespace Ravl2

@@ -10,14 +10,20 @@ namespace Ravl2
   bool OutputFormatMap::add(std::shared_ptr<OutputFormat> format)
   {
     auto extensions = splitStrings(format->extension(), ',');
+    SPDLOG_TRACE("Adding format: '{}' Ext:'{}' ({}) Map:{}", format->name(), format->extension(),extensions.size(), static_cast<void *>(this));
     std::lock_guard lock(m_mutex);
-    SPDLOG_TRACE("Adding format: '{}' Ext:'{}'  Map:{}", format->name(), format->extension(), static_cast<void *>(this));
     if(extensions.empty()) {
       m_formatByExtension[""].push_back(std::move(format));
       return true;
     }
-    for(auto &ext : extensions)
-      m_formatByExtension[ext].push_back(format);
+    for(const auto &ext : extensions) {
+      auto it = m_formatByExtension.find(ext);
+      if(it == m_formatByExtension.end()) {
+        m_formatByExtension.emplace(ext, std::vector<std::shared_ptr<OutputFormat>>{format});
+      } else {
+       it->second.push_back(format);
+      }
+    }
     return true;
   }
 

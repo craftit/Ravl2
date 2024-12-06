@@ -11,13 +11,13 @@ namespace Ravl2
   bool InputFormatMap::add(std::shared_ptr<InputFormat> format)
   {
     SPDLOG_TRACE("Adding format: '{}' Ext:'{}'  Map:{}", format->name(), format->extension(), static_cast<void *>(this));
-    auto extensions = splitStrings(format->extension(), ',');
+    std::vector<std::string> extensions = splitStrings(format->extension(), ',');
     std::lock_guard lock(m_mutex);
     if(extensions.empty()) {
       m_formatByExtension[""].push_back(std::move(format));
       return true;
     }
-    for(auto &ext : extensions) {
+    for(auto const &ext : extensions) {
       SPDLOG_TRACE("Adding format: '{}' Ext:'{}' ", format->name(), ext);
       m_formatByExtension[ext].push_back(format);
     }
