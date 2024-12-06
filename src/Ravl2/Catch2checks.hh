@@ -15,6 +15,9 @@
 #define EXPECT_FALSE(a) CHECK_FALSE(a)
 #define EXPECT_EQ(a, b) CHECK((a) == (b))
 #define EXPECT_GT(a, b) CHECK((a) > (b))
+#define EXPECT_LE(a, b) CHECK((a) <= (b))
+#define EXPECT_LT(a, b) CHECK((a) < (b))
+#define EXPECT_GE(a, b) CHECK((a) >= (b))
 #define EXPECT_NE(a, b) CHECK_FALSE((a) == (b))
 #define ASSERT_TRUE(a) REQUIRE(a)
 #define ASSERT_FALSE(a) REQUIRE_FALSE(a)
@@ -22,5 +25,6 @@
 #define ASSERT_NE(a, b) REQUIRE_FALSE((a) == (b))
 #define ASSERT_FLOAT_EQ(a, b) REQUIRE(Ravl2::isNearZero((a) -(b),1e-6f))
 #define EXPECT_FLOAT_EQ(a, b) CHECK(Ravl2::isNearZero((a) -(b),1e-6f))
+#define EXPECT_DOUBLE_EQ(a, b) CHECK(Ravl2::isNearZero((a) -(b),1e-6))
 #define EXPECT_NEAR(a, b, tol) CHECK(Ravl2::isNearZero((a) -(b),tol))
 
