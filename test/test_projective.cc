@@ -3,7 +3,7 @@
 //
 
 #include <spdlog/spdlog.h>
-#include "catch2checks.hh"
+#include "Ravl2/Catch2checks.hh"
 #include "Ravl2/Geometry/Projection.hh"
 #include "Ravl2/Geometry/FitProjection.hh"
 #include "Ravl2/Geometry/Polygon.hh"

@@ -2,7 +2,7 @@
 #include <numbers>
 #include "Ravl2/IO/Cereal.hh"
 
-#include "catch2checks.hh"
+#include "Ravl2/Catch2checks.hh"
 #include "Ravl2/Array.hh"
 #include "Ravl2/Image/DrawPolygon.hh"
 #include "Ravl2/Image/DrawCross.hh"

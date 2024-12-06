@@ -1,7 +1,7 @@
 #include <random>
 #include <vector>
 
-#include "catch2checks.hh"
+#include "Ravl2/Catch2checks.hh"
 #include <cereal/archives/json.hpp>
 
 #include "Ravl2/Index.hh"
