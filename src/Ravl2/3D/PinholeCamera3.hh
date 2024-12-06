@@ -223,6 +223,16 @@ namespace Ravl2
     RealT m_k2 = 0;//!< Second radial distortion coefficient
   };
 
+  template<class RealT>
+  std::ostream &operator<<(std::ostream &s,const PinholeCamera3<RealT> &v) {
+    s << static_cast<const PinholeCamera0<RealT>&>(v);
+    s << " k:"  << v.k1() << ' ' << v.k2();
+    return s;
+  }
+
   extern template class PinholeCamera3<float>;
 
 };// namespace Ravl2
+
+template <typename RealT>
+struct fmt::formatter<Ravl2::PinholeCamera3<RealT>> : fmt::ostream_formatter {};

@@ -208,6 +208,17 @@ namespace Ravl2
     RealT m_k5 = 0;   // 5th order radial distortion
   };
 
+  template<class RealT>
+  std::ostream &operator<<(std::ostream &s,const PinholeCamera2<RealT> &v) {
+    s << static_cast<const PinholeCamera0<RealT>&>(v);
+    s << ' ' << v.sizeX() << ' ' << v.sizeY() << ' ' << v.k3() << ' ' << v.k5();
+    return s;
+  }
+
   extern template class PinholeCamera2<float>;
 
 };// namespace Ravl2
+
+template <typename RealT>
+struct fmt::formatter<Ravl2::PinholeCamera2<RealT>> : fmt::ostream_formatter {};
+

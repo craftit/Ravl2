@@ -50,7 +50,8 @@ namespace Ravl2
                    const IndexRange<2> &frame,
                    const Isometry3<RealT> &pose = Isometry3<RealT>()
                    )
-      : m_cx(centre[0]), m_cy(centre[1]),
+      : m_cx(centre[0]),
+        m_cy(centre[1]),
         m_fx(f),
         m_fy(f),
         m_R(pose.rotation().toMatrix()),
@@ -361,7 +362,17 @@ namespace Ravl2
     return LinePV<RealT,3>(camera.origin(),dir);
   }
   
-  
+  template<class RealT>
+  std::ostream &operator<<(std::ostream &s,const PinholeCamera0<RealT> &v) {
+    s << " c:" << v.cx() << ' ' << v.cy() << " f:" << v.fx() << ' ' << v.fy() << " r:" <<  Eigen::WithFormat(v.R(), Ravl2::defaultEigenFormat()) << " t:" << Eigen::WithFormat(v.t(), Ravl2::defaultEigenFormat()) << " r:" << v.range();
+    return s;
+  }
+
   extern template class PinholeCamera0<float>;
   extern template class PinholeCameraImpl<PinholeCamera0<float>>;
+
 };// namespace Ravl2
+
+
+template <typename RealT>
+struct fmt::formatter<Ravl2::PinholeCamera0<RealT>> : fmt::ostream_formatter {};

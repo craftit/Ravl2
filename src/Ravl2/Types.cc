@@ -61,7 +61,7 @@ namespace Ravl2
 
   const Eigen::IOFormat &defaultEigenFormat()
   {
-    static Eigen::IOFormat ioFmt(Eigen::StreamPrecision,0," "," ","[","]","(",")");
+    static Eigen::IOFormat ioFmt(Eigen::StreamPrecision,0," ","","[","]","(",")");
     return ioFmt;
   }
 
