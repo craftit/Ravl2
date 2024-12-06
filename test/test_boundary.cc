@@ -6,7 +6,7 @@
 // file-header-ends-here
 //! author="Radek Marik and Charles Galambos"
 
-#include "checks.hh"
+#include "catch2checks.hh"
 #include "Ravl2/Image/Segmentation/CrackCode.hh"
 #include "Ravl2/Image/Segmentation/Crack.hh"
 #include "Ravl2/Image/Segmentation/Boundary.hh"

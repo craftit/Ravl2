@@ -2,7 +2,7 @@
 // Created by Charles Galambos on 15/05/2021.
 //
 
-#include "checks.hh"
+#include "catch2checks.hh"
 #include <algorithm>
 #include <cstdlib>
 #include "Ravl2/RankedScoreArray.hh"

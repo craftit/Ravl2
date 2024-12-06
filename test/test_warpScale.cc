@@ -2,7 +2,7 @@
 // Created by charles galambos on 02/09/2024.
 //
 
-#include "checks.hh"
+#include "catch2checks.hh"
 #include "Ravl2/Image/WarpScale.hh"
 #include "Ravl2/Image/SummedAreaTable.hh"
 #include "Ravl2/ArrayIterZip.hh"

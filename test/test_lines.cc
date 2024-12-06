@@ -9,7 +9,7 @@
 
 #include <numbers>
 #include <random>
-#include "checks.hh"
+#include "catch2checks.hh"
 #include <cereal/archives/json.hpp>
 #include <spdlog/spdlog.h>
 

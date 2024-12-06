@@ -2,7 +2,7 @@
 // Created by Charles Galambos on 22/07/2021.
 //
 
-#include "checks.hh"
+#include "catch2checks.hh"
 #include "Ravl2/Configuration.hh"
 
 class TestClass

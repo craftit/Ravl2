@@ -3,7 +3,7 @@
 //
 
 #include <thread>
-#include "checks.hh"
+#include "catch2checks.hh"
 #include "Ravl2/ThreadedQueue.hh"
 
 // Check basic TQueue functionality in a single threaded environment

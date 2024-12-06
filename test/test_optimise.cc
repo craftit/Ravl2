@@ -1,5 +1,5 @@
 
-#include "checks.hh"
+#include "catch2checks.hh"
 #include "Ravl2/Optimise/OptimiseBrent.hh"
 #include "Ravl2/Optimise/OptimisePowell.hh"
 #include "Ravl2/Optimise/BracketMinimum.hh"
