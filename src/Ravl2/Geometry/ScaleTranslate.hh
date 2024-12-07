@@ -97,6 +97,12 @@ namespace Ravl2
       return Range<DataT,N>((mS.array() * In.min().array()).matrix() + mT, (mS.array() * In.max().array()).matrix() + mT);
     }
 
+    //! Transform a point
+    Vector<DataT, N> constexpr operator*(const Vector<DataT, N> &in) const
+    {
+      return (*this)(in);
+    }
+
     //! Serialization support
     template <class Archive>
     void serialize(Archive &ar)
@@ -169,11 +175,6 @@ namespace Ravl2
   }
 
 
-  template <typename DataT, unsigned N>
-  Vector<DataT, N> constexpr operator*(const ScaleTranslate<DataT, N> &st,const Vector<DataT, N> &in)
-  {
-    return st(in);
-  }
 
   template <typename DataT, unsigned N>
   [[nodiscard]] constexpr ScaleTranslate<DataT, N> operator*(const ScaleTranslate<DataT, N> &st,const ScaleTranslate<DataT, N> &in)

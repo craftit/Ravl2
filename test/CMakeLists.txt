@@ -97,13 +97,13 @@ endif()
 catch_discover_tests(
   tests
   TEST_PREFIX
-  "unittests."
+  "ravl2_unittests."
   REPORTER
   XML
   OUTPUT_DIR
   .
   OUTPUT_PREFIX
-  "unittests."
+  "ravl2_unittests."
   OUTPUT_SUFFIX
   .xml)
 
@@ -119,13 +119,13 @@ target_link_libraries(
 catch_discover_tests(
   constexpr_tests
   TEST_PREFIX
-  "constexpr."
+  "ravl2_constexpr."
   REPORTER
   XML
   OUTPUT_DIR
   .
   OUTPUT_PREFIX
-  "constexpr."
+  "ravl2_constexpr."
   OUTPUT_SUFFIX
   .xml)
 
@@ -143,12 +143,12 @@ target_compile_definitions(relaxed_constexpr_tests PRIVATE -DCATCH_CONFIG_RUNTIM
 catch_discover_tests(
   relaxed_constexpr_tests
   TEST_PREFIX
-  "relaxed_constexpr."
+  "ravl2_relaxed_constexpr."
   REPORTER
   XML
   OUTPUT_DIR
   .
   OUTPUT_PREFIX
-  "relaxed_constexpr."
+  "ravl2_relaxed_constexpr."
   OUTPUT_SUFFIX
   .xml)
