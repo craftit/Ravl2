@@ -15,8 +15,9 @@
 
 #include "Ravl2/Geometry/Line2Iter.hh"
 #include "Ravl2/Math.hh"
-#include "Ravl2/Geometry/LinePP.hh"
 #include "Ravl2/Geometry/Line2ABC.hh"
+#include "Ravl2/Geometry/LinePP.hh"
+#include "Ravl2/Geometry/LinePV.hh"
 #include "Ravl2/Geometry/Range.hh"
 #include "Ravl2/Geometry/FitLine.hh"
 
@@ -69,6 +70,22 @@ TEST_CASE("LinePP")
 {
   using namespace Ravl2;
   using RealT = float;
+
+  SECTION("Creation")
+  {
+    Line2PP<RealT> line1(toPoint<RealT>(0, 0), toPoint<RealT>(1, 1));
+    CHECK(line1.P1() == toPoint<RealT>(0, 0));
+    CHECK(line1.P2() == toPoint<RealT>(1, 1));
+    Line2PP<RealT> line2 = Line2PP<RealT>::fromPoints(toPoint<RealT>(0, 0), toPoint<RealT>(1, 1));
+    CHECK(line2.P1() == toPoint<RealT>(0, 0));
+    CHECK(line2.P2() == toPoint<RealT>(1, 1));
+    Line2PP<RealT> line3 = Line2PP<RealT>::fromStartAndDirection(toPoint<RealT>(0, 0), toVector<RealT>(1, 1));
+    CHECK(line3.P1() == toPoint<RealT>(0, 0));
+    CHECK(line3.P2() == toPoint<RealT>(1, 1));
+    auto line4 = toLine(toPoint<RealT>(0, 0), toPoint<RealT>(1, 1));
+    CHECK(line4.P1() == toPoint<RealT>(0, 0));
+    CHECK(line4.P2() == toPoint<RealT>(1, 1));
+  }
 
   SECTION("Orientation and intersection")
   {

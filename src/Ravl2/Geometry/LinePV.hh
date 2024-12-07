@@ -31,72 +31,72 @@ namespace Ravl2
         : mPoint(a), mDirection(v)
     {}
 
-    //: Creates the line passing through the points 'first' and
-    //: second.
+    //! Creates the line passing through the points 'first' and
+    //! second.
     [[nodiscard]] static LinePV<RealT, N> fromPoints(const Point<RealT, N> &first, const Point<RealT, N> &second)
     {
       return LinePV<RealT, N>(first, second - first);
     }
 
-    //: Returns the point of the line.
+    //! Returns the point of the line.
     [[nodiscard]] inline const Point<RealT, N> &FirstPoint() const
     {
       return mPoint;
     }
 
-    //: Returns the point which is the end point of the direction
-    //: vector placed in the first point of the line.
+    //! Returns the point which is the end point of the direction
+    //! vector placed in the first point of the line.
     [[nodiscard]] inline Point<RealT, N> SecondPoint() const
     {
       return mPoint + mDirection;
     }
 
-    //: Returns the point which is in the middle of the FirstPoint()
-    //: and the SecondPoint() of the line segment.
+    //! Returns the point which is in the middle of the FirstPoint()
+    //! and the SecondPoint() of the line segment.
     [[nodiscard]] inline Point<RealT, N> MiddlePoint() const
     {
       return PointT(0.5);
     }
 
-    //: Returns the point FirstPoint() + lambda * direction.
+    //! Returns the point FirstPoint() + lambda * direction.
     // Obsolete, use Point(l)
     [[nodiscard]] Point<RealT, N> PointT(RealT lambda) const
     {
       return mPoint + mDirection * lambda;
     }
 
-    //: Returns the point FirstPoint() + lambda * direction.
+    //! Returns the point FirstPoint() + lambda * direction.
     [[nodiscard]] Point<RealT, N> at(RealT lambda) const
     {
       return mPoint + mDirection * lambda;
     }
 
-    //: Return the parameter of the closest point on the line to 'pnt'.
+    //! Return the parameter of the closest point on the line to 'pnt'.
     // Use at() to get to the corresponding point on the line.
     [[nodiscard]] RealT ParClosest(const Point<RealT, N> &pnt) const
     {
       return (mDirection.dot(pnt - mPoint)) / sum(mDirection.array() * mDirection.array());
     }
 
-    //: Returns the direction vector of this line.
+    //! Returns the direction vector of this line.
     [[nodiscard]] inline const Vector<RealT, N> &lineDirection() const
     {
       return mDirection;
     }
 
-    //: Returns the direction vector of this line.
+    //! Returns the direction vector of this line.
     [[nodiscard]] inline const Vector<RealT, N> &Direction() const
     {
       return mDirection;
     }
 
-    //: Make the direction part of the line a unit vector.
+    //! Make the direction part of the line a unit vector.
     void MakeDirectionUnitDirection()
     {
       mDirection /= mDirection.norm();
     }
 
-    //: Returns the shortest distance between the lines.
+    //! Returns the shortest distance between the lines.
     [[nodiscard]] RealT distance(const LinePV<RealT, N> &line) const
     {
       if constexpr(N == 3) {
@@ -113,7 +113,7 @@ namespace Ravl2
       }
     }
 
-    //: Returns the distance of the point 'p' from this line.
+    //! Returns the distance of the point 'p' from this line.
     [[nodiscard]] RealT distance(const Point<RealT, N> &p) const
     {
       if constexpr(N == 3) {
@@ -137,14 +137,15 @@ namespace Ravl2
     Vector<RealT, N> mDirection;// the direction of the line
   };
 
-#if 0
-LinePV<RealT,N> LinePV<RealT,N>::ProjectionInto(const PlaneABCD3dC & p) const {
-  return LinePV<RealT,N>(FirstPoint(),
-                   Direction() - Direction().ProjectionInto(p.Normal()));
-}
-#endif
+  //! Transform a line by a point transformation
+  template <typename RealT, unsigned int N,typename TransformT>
+    requires PointTransform<TransformT, RealT, N>
+  [[nodiscard]] constexpr inline LinePV<RealT, N> operator*(const TransformT &trans, const LinePV<RealT, N> &line)
+  {
+    return LinePV<RealT, N>::fromPoints(trans(line.FirstPoint()),trans(line.SecondPoint()));
+  }
 
-  // Saves the 'line' into the output stream.
+  //! Saves the 'line' into the output stream.
   template <typename RealT, unsigned int N>
   std::ostream &operator<<(std::ostream &outS, const LinePV<RealT, N> &line)
   {
@@ -152,7 +153,7 @@ LinePV<RealT,N> LinePV<RealT,N>::ProjectionInto(const PlaneABCD3dC & p) const {
     return outS;
   }
 
-  // Sets the 'line' according to data read from the input stream.
+  //! Sets the 'line' according to data read from the input stream.
   template <typename RealT, unsigned int N>
   std::istream &operator>>(std::istream &inS, LinePV<RealT, N> &line)
   {

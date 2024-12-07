@@ -21,6 +21,7 @@ add_library (Ravl2Geometry
         Range.hh Range.cc
         Projection.cc Projection.hh
         Transform.cc Transform.hh
+        Translate.cc Translate.hh
         FitLine.cc FitLine.hh
         Conic2.cc Conic2.hh
         FitConic.hh

@@ -7,11 +7,13 @@
 
 #pragma once
 
+#include "Ravl2/Geometry/Translate.hh"
 #include "Ravl2/Geometry/Geometry.hh"
 #include "Ravl2/Geometry/Range.hh"
 
 namespace Ravl2
 {
+
 
   //! Scale and translation
 
@@ -30,7 +32,16 @@ namespace Ravl2
     inline constexpr ScaleTranslate(const ScaleTranslate &Oth) = default;
 
     //! Construct from scale and a translation vector.
-    inline constexpr ScaleTranslate(const Vector<DataT, N> &scale, const Vector<DataT, N> &translate);
+    inline constexpr ScaleTranslate(const Vector<DataT, N> &scale, const Vector<DataT, N> &translate)
+      : mS(scale),
+        mT(translate)
+    {}
+
+    //! Construct from a translation .
+    inline constexpr ScaleTranslate(const Translate<DataT, N> &translate)
+      : mS(Vector<DataT, N>::Ones()),
+        mT(translate.translation())
+    {}
 
     //! Construct an identity transform.
     [[nodiscard]] static constexpr ScaleTranslate identity()
@@ -51,16 +62,6 @@ namespace Ravl2
 
     //! Generate an inverse transformation.
     [[nodiscard]] constexpr ScaleTranslate<DataT, N> inverse(void) const;
-
-    //! Transform Vector,  Scale, Rotate, Translate.
-    // Take a vector and put it though the transformation.
-    [[nodiscard]] constexpr inline Vector<DataT, N> operator*(const Vector<DataT, N> &In) const;
-
-    //! Compose this transform with 'In'
-    [[nodiscard]] constexpr inline ScaleTranslate<DataT, N> operator*(const ScaleTranslate &in) const;
-
-    //! Compose this transform with 'In's
-    [[nodiscard]] constexpr inline Range<DataT,N> operator*(const Range<DataT,N> &in) const;
 
     //! Return 'In' / 'Out'
     [[nodiscard]] constexpr inline ScaleTranslate<DataT, N> operator/(const ScaleTranslate &in) const;
@@ -110,18 +111,33 @@ namespace Ravl2
 
   //! Generate an inverse transformation.
   template <typename DataT, unsigned N>
-  [[nodiscard]] constexpr ScaleTranslate<DataT, N> inverse(const ScaleTranslate<DataT, N> &In)
+  [[nodiscard]] constexpr ScaleTranslate<DataT, N> inverse(const ScaleTranslate<DataT, N> &in)
   {
-    return In.inverse();
+    return in.inverse();
+  }
+
+  //! Construct a scale translate transform.
+  template <typename DataT, unsigned N>
+  [[nodiscard]] constexpr ScaleTranslate<DataT, N> scaleTranslate(const Vector<DataT, N> &scale, const Vector<DataT, N> &translate)
+  {
+    return ScaleTranslate<DataT, N>(scale, translate);
+  }
+
+  //! Construct a scale translate transform.
+  template <typename DataT, unsigned N>
+  [[nodiscard]] constexpr ScaleTranslate<DataT, N> scale(const Vector<DataT, N> &scale)
+  {
+    return ScaleTranslate<DataT, N>(scale, Vector<DataT, N>::Zero());
+  }
+
+  //! Convert a translation to a scale translate.
+  template <typename DataT, unsigned N>
+  [[nodiscard]] constexpr ScaleTranslate<DataT, N> toScaleTranslate(const Translate<DataT, N> &translate)
+  {
+    return ScaleTranslate<DataT, N>(translate);
   }
 
   /////////////////////////////////////////////////
-
-  template <typename DataT, unsigned N>
-  inline constexpr ScaleTranslate<DataT, N>::ScaleTranslate(const Vector<DataT, N> &SR, const Vector<DataT, N> &T)
-      : mS(SR),
-        mT(T)
-  {}
 
   template <typename DataT, unsigned N>
   constexpr void ScaleTranslate<DataT, N>::scale(const Vector<DataT, N> &xy)
@@ -146,28 +162,29 @@ namespace Ravl2
   }
 
   template <typename DataT, unsigned N>
-  Vector<DataT, N> constexpr ScaleTranslate<DataT, N>::operator*(const Vector<DataT, N> &in) const
-  {
-    return (mS.array() * in.array()).matrix() + mT;
-  }
-
-  template <typename DataT, unsigned N>
-  [[nodiscard]] constexpr ScaleTranslate<DataT, N> ScaleTranslate<DataT, N>::operator*(const ScaleTranslate<DataT, N> &In) const
-  {
-    return ScaleTranslate(mS.array() * In.scaleVector().array(), (mS.array() * In.translation().array()).matrix() + mT);
-  }
-
-  template <typename DataT, unsigned N>
-  [[nodiscard]] constexpr Range<DataT, N> ScaleTranslate<DataT, N>::operator*(const Range<DataT, N> &In) const
-  {
-    return (*this)(In);
-  }
-
-  template <typename DataT, unsigned N>
   constexpr ScaleTranslate<DataT, N> ScaleTranslate<DataT, N>::operator/(const ScaleTranslate<DataT, N> &in) const
   {
     Vector<DataT, N> invScale = in.scaleVector().cwiseInverse();
     return ScaleTranslate(mS.array() * invScale.array(), invScale.array() * (mT - in.translation()).array());
+  }
+
+
+  template <typename DataT, unsigned N>
+  Vector<DataT, N> constexpr operator*(const ScaleTranslate<DataT, N> &st,const Vector<DataT, N> &in)
+  {
+    return st(in);
+  }
+
+  template <typename DataT, unsigned N>
+  [[nodiscard]] constexpr ScaleTranslate<DataT, N> operator*(const ScaleTranslate<DataT, N> &st,const ScaleTranslate<DataT, N> &in)
+  {
+    return st(in);
+  }
+
+  template <typename DataT, unsigned N>
+  [[nodiscard]] constexpr Range<DataT, N> operator*(const ScaleTranslate<DataT, N> &st, const Range<DataT, N> &in)
+  {
+    return st(in);
   }
 
   template <typename DataT, unsigned N>

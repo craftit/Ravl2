@@ -82,6 +82,19 @@ namespace Ravl2
       trans(N, N) = oz / iz;
     }
 
+    //! Construct from a scale /translation
+    inline explicit constexpr Projection(const Translate<RealT, N> &st, RealT Oz = 1, RealT Iz = 1)
+        : trans(Matrix<RealT,N+1,N+1>::Zero()),
+          iz(Iz),
+          oz(Oz)
+    {
+      for(IndexT i = 0; i < IndexT(N); i++) {
+        trans(i, i) = 1;
+        trans(i, N) = st.translation()[i] / iz;
+      }
+      trans(N, N) = oz / iz;
+    }
+
     //! Returns identity projection
     static constexpr Projection<RealT, N> identity(RealT oz = 1, RealT iz = 1)
     {
@@ -233,7 +246,14 @@ namespace Ravl2
     RealT iz = 1;
     RealT oz = 1;
   };
-  
+
+  //! @brief Convert ScaleTranslate to projection.
+  template <typename DataT, unsigned N>
+  Projection<DataT, N> toProjection(Translate<DataT, N> const &translate)
+  {
+    return Projection<DataT, N>(translate);
+  }
+
   //! @brief Convert ScaleTranslate to projection.
   template <typename DataT, unsigned N>
   Projection<DataT, N> toProjection(ScaleTranslate<DataT, N> const &st)
@@ -247,7 +267,8 @@ namespace Ravl2
   {
     return Projection<DataT, N>(affine);
   }
-  
+
+
   //! @brief Compose transforms
   template <typename DataT, unsigned N>
   Projection<DataT, N> operator*(const Projection<DataT, N> &lhs, const Projection<DataT, N> &rhs)
@@ -262,6 +283,12 @@ namespace Ravl2
     return lhs(toProjection(rhs));
   }
 
+  template <typename DataT, unsigned N>
+  Projection<DataT, N> operator*(const Projection<DataT, N> &lhs, const Translate<DataT, N> &rhs)
+  {
+    return lhs(toProjection(rhs));
+  }
+
 
   //! @brief Compose transforms
   template <typename DataT, unsigned N>
@@ -269,7 +296,14 @@ namespace Ravl2
   {
     return toProjection(lhs)(rhs);
   }
-  
+
+  //! @brief Compose transforms
+  template <typename DataT, unsigned N>
+  Projection<DataT, N> operator*(const Translate<DataT, N> &lhs, const Projection<DataT, N> &rhs)
+  {
+    return toProjection(lhs)(rhs);
+  }
+
   template <typename DataT, unsigned N>
   Projection<DataT, N> operator*(const Projection<DataT, N> &lhs, const Affine<DataT, N> &rhs)
   {
