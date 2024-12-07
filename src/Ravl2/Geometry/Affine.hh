@@ -103,7 +103,7 @@ namespace Ravl2
       ar(cereal::make_nvp("SR", mSR), cereal::make_nvp("T", mT));
     }
 
-  protected:
+  private:
     Matrix<DataT, N, N> mSR = Matrix<DataT, N, N>::Identity();//!< Scale/rotate.
     Vector<DataT, N> mT = Vector<DataT,N>::Zero();//!< Translate.
   };
