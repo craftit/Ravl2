@@ -213,13 +213,6 @@ namespace Ravl2
     std::array<Point<RealT, N>, 2> point;
   };
 
-  //! Construct a line from two points
-  template <typename RealT, unsigned int N>
-  [[nodiscard]] constexpr inline LinePP<RealT, N> makeLine(const Point<RealT, N> &start, const Point<RealT, N> &end)
-  {
-    return LinePP<RealT, N>(start, end);
-  }
-
   //! Transform a line by a point transformation
   template <typename RealT, unsigned int N,typename TransformT>
    requires PointTransform<TransformT, RealT, N>
