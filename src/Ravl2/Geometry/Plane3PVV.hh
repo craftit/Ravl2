@@ -198,7 +198,7 @@ namespace Ravl2
     const Point<RealT, 3> &p = plane.origin();
     const Vector<RealT, 3> &v1 = plane.vector1();
     const Vector<RealT, 3> &v2 = plane.vector2();
-    outS << p << ' ' << v1 << ' ' << v2;
+    outS << Eigen::WithFormat(p,Ravl2::defaultEigenFormat()) << ' ' << Eigen::WithFormat(v1,Ravl2::defaultEigenFormat()) << ' ' << Eigen::WithFormat(v2,Ravl2::defaultEigenFormat());
     return (outS);
   }
 

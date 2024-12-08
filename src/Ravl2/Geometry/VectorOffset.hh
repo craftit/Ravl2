@@ -114,7 +114,7 @@ namespace Ravl2
   template <typename RealT,IndexSizeT N>
   std::ostream &operator<<(std::ostream &outS, const VectorOffset<RealT,N> &plane)
   {
-    outS << plane.normal() << ' ' << plane.offset();
+    outS << Eigen::WithFormat(plane.normal(),Ravl2::defaultEigenFormat()) << ' ' << plane.offset();
     return (outS);
   }
   
