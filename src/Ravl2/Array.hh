@@ -490,7 +490,9 @@ namespace Ravl2
     explicit constexpr ArrayView(const IndexRange<N> &range, const std::array<int, N> &strides)
         : m_range(range),
           m_strides(strides)
-    {}
+    {
+      assert(m_strides[N-1] == 1);
+    }
 
     explicit constexpr ArrayView(const IndexRange<N> &range)
         : m_range(range)
@@ -501,13 +503,16 @@ namespace Ravl2
         : m_data(data),
           m_range(range),
           m_strides(strides)
-    {}
+    {
+      assert(m_strides[N-1] == 1);
+    }
 
     explicit constexpr ArrayView(DataT *data, const IndexRange<N> &range, const int *strides)
         : m_data(data),
           m_range(range)
     {
-      memccpy(m_strides.data(), strides, sizeof(int), N);
+      memcpy(m_strides.data(), strides, sizeof(int) * N);
+      assert(m_strides[N-1] == 1);
     }
 
     //! Create an empty array
@@ -522,6 +527,7 @@ namespace Ravl2
         m_strides[i] = array.stride(i);
         m_range[i] = array.range(i);
       }
+      assert(m_strides[N-1] == 1);
     }
 
     template <typename ArrayT>
@@ -536,6 +542,7 @@ namespace Ravl2
         if(!array.range(i).contains(range[i]))
           throw std::out_of_range("requested range is outside that of the original array");
       }
+      assert(m_strides[N-1] == 1);
     }
 
     //! Access address of origin element
