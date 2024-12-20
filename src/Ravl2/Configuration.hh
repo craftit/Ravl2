@@ -528,7 +528,19 @@ namespace Ravl2
       }
       return std::any_cast<DataT>(value);
     }
-    
+
+    //! Get an integer from the configuration file.
+    [[nodiscard]] int getInt(const std::string_view &name, const std::string_view &description, int defaultValue, int min, int max)
+    { return getNumber<int>(name, description, defaultValue, min, max); }
+
+    //! Get an unsigned integer from the configuration file.
+    [[nodiscard]] unsigned getUnsigned(const std::string_view &name, const std::string_view &description, unsigned defaultValue, unsigned min, unsigned max)
+    { return getNumber<unsigned>(name, description, defaultValue, min, max); }
+
+    //! Get a float from the configuration file.
+    [[nodiscard]] float getFloat(const std::string_view &name, const std::string_view &description, float defaultValue, float min, float max)
+    { return getNumber<float>(name, description, defaultValue, min, max); }
+
     template <typename DataT>
     [[nodiscard]] std::vector<DataT> getNumericVector(const std::string_view &name, const std::string_view &description, DataT defaultValue, DataT min, DataT max,size_t size)
     {
