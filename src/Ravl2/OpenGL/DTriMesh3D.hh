@@ -14,7 +14,6 @@
 #include "Ravl2/3D/TriMesh.hh"
 
 namespace Ravl2 {
-  using namespace Ravl2;
 
   //: Draw a TriMesh
 

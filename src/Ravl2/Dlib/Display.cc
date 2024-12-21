@@ -63,9 +63,6 @@ namespace Ravl2
       auto strm = std::make_shared<StreamOutputCall<Ravl2::Array<uint8_t,2>>>([filename = ctx.m_filename](const Ravl2::Array<uint8_t,2> &img, std::streampos pos) -> std::streampos {
         (void)pos;
         getDLibDisplayWindow(filename)->queue([img](DLibIO::DisplayWindow &win) {
-          using namespace Ravl2::DLibIO;
-          //DLibArray dimg(img);
-          //win.display(dimg);
           win.display(toDlib(img));
         });
         registerDLibAtExitWait();

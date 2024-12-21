@@ -3,8 +3,7 @@
 
 namespace Ravl2
 {
-
-  using namespace DLibIO;
+  using DLibIO::DlibArray2d;
 
   // Check that the DlibArray2d concept is satisfied by dlib::array2d.
   static_assert(DlibArray2d<dlib::array2d<float>>, "dlib::array2d<float> does not satisfy DlibArray2d concept");

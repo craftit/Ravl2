@@ -206,93 +206,95 @@ TEST_CASE("IndexRange", "[IndexRange]")
 }
 
 
-TEST_CASE("IndexRangeSet", "[IndexRangeSet]")
+namespace Ravl2
 {
-  using namespace Ravl2;
-  SECTION("Basic 2d RangeSet operations")
+  TEST_CASE("IndexRangeSet", "[IndexRangeSet]")
   {
-    IndexRange<2> rect1({{0, 1}, {0, 1}});
-    IndexRange<2> rect2({{1, 2}, {1, 2}});
-    //cout << "R1:" << rect1 << " Area:" << rect1.area() << "\n";
-    //cout << "R2:" << rect2 << " Area:" << rect2.area() << "\n";
+    SECTION("Basic 2d RangeSet operations")
+    {
+      IndexRange<2> rect1({{0, 1}, {0, 1}});
+      IndexRange<2> rect2({{1, 2}, {1, 2}});
+      //cout << "R1:" << rect1 << " Area:" << rect1.area() << "\n";
+      //cout << "R2:" << rect2 << " Area:" << rect2.area() << "\n";
 
-    IndexRangeSet<2> t1 = IndexRangeSet<2>::subtract(rect1, rect2);
-    CHECK(t1.area() == 3);
+      IndexRangeSet<2> t1 = IndexRangeSet<2>::subtract(rect1, rect2);
+      CHECK(t1.area() == 3);
 
-    IndexRangeSet<2> t2 = IndexRangeSet<2>::subtract(rect2, rect1);
-    CHECK(t2.area() == 3);
+      IndexRangeSet<2> t2 = IndexRangeSet<2>::subtract(rect2, rect1);
+      CHECK(t2.area() == 3);
 
-    IndexRange<2> rect3({{0, 1}, {2, 3}});
+      IndexRange<2> rect3({{0, 1}, {2, 3}});
 
-    IndexRangeSet<2> t3 = IndexRangeSet<2>::subtract(rect2, rect3);
-    CHECK(t3.area() == 3);
+      IndexRangeSet<2> t3 = IndexRangeSet<2>::subtract(rect2, rect3);
+      CHECK(t3.area() == 3);
 
-    IndexRangeSet<2> t4 = IndexRangeSet<2>::subtract(rect3, rect2);
-    CHECK(t4.area() == 3);
-  }
+      IndexRangeSet<2> t4 = IndexRangeSet<2>::subtract(rect3, rect2);
+      CHECK(t4.area() == 3);
+    }
 
-  SECTION("Random 1d RangeSet operations")
-  {
-    // Add a random set of 1d ranges.
-    std::random_device rd;
-    // Use catch2 random number generator.
-    std::mt19937 gen(rd());
-    int maxRange = 30;
-    std::uniform_int_distribution<> dis(0, maxRange);
-    for(int k = 0;k < 100;k++) {
-      IndexRangeSet<1> rngSet;
-      std::vector<bool> done(size_t(maxRange), false);
-      for(int i = 0;i < 100;i++) {
-        int start = dis(gen);
-        int finish = dis(gen);
-        if(start > finish) {
-          std::swap(start,finish);
-        }
-        IndexRange<1> rng(start,finish);
-        for(auto ind : rng)
-          done[size_t(ind)] = true;
-        //SPDLOG_TRACE("Adding {} ",ind);
-
-        // Add to set.
-        rngSet = rngSet.add(rng);
-
-        // Did it work ?
-        CHECK(rngSet.contains(IndexRange<1>(rng)));
-
-        // Check invariants.
-        auto end = rngSet.end();
-        for(auto it = rngSet.begin();it != end;it++) {
-          CHECK(it->min() <= it->max());
-          for(auto it2 = it+1;it2 != end;it2++) {
-            CHECK_FALSE(it->overlaps(*it2));
+    SECTION("Random 1d RangeSet operations")
+    {
+      // Add a random set of 1d ranges.
+      std::random_device rd;
+      // Use catch2 random number generator.
+      std::mt19937 gen(rd());
+      int maxRange = 30;
+      std::uniform_int_distribution<> dis(0, maxRange);
+      for(int k = 0;k < 100;k++) {
+        IndexRangeSet<1> rngSet;
+        std::vector<bool> done(size_t(maxRange), false);
+        for(int i = 0;i < 100;i++) {
+          int start = dis(gen);
+          int finish = dis(gen);
+          if(start > finish) {
+            std::swap(start,finish);
           }
-        }
+          IndexRange<1> rng(start,finish);
+          for(auto ind : rng)
+            done[size_t(ind)] = true;
+          //SPDLOG_TRACE("Adding {} ",ind);
 
-        // Check logically correct.
-        for(int j = 0;j < maxRange;j++) {
-          CHECK(rngSet.contains(IndexRange<1>(j)) == done[size_t(j)]);
+          // Add to set.
+          rngSet = rngSet.add(rng);
+
+          // Did it work ?
+          CHECK(rngSet.contains(IndexRange<1>(rng)));
+
+          // Check invariants.
+          auto end = rngSet.end();
+          for(auto it = rngSet.begin();it != end;it++) {
+            CHECK(it->min() <= it->max());
+            for(auto it2 = it+1;it2 != end;it2++) {
+              CHECK_FALSE(it->overlaps(*it2));
+            }
+          }
+
+          // Check logically correct.
+          for(int j = 0;j < maxRange;j++) {
+            CHECK(rngSet.contains(IndexRange<1>(j)) == done[size_t(j)]);
+          }
         }
       }
     }
-  }
-  SECTION("IndexRangeSet 2 Cereal IO")
-  {
-    IndexRangeSet<2> rangeSet;
-    rangeSet = rangeSet.add(IndexRange<2>({{4,6},{7,9}}));
-    rangeSet = rangeSet.add(IndexRange<2>({{1,3},{4,6}}));
-
-    std::stringstream ss;
+    SECTION("IndexRangeSet 2 Cereal IO")
     {
-      cereal::JSONOutputArchive oarchive(ss);
-      oarchive(rangeSet);
-    }
-    //SPDLOG_INFO("RangeSet: {}", ss.str());
-    {
-      cereal::JSONInputArchive iarchive(ss);
-      IndexRangeSet<2> rangeSet2;
-      iarchive(rangeSet2);
-      CHECK(rangeSet == rangeSet2);
-    }
-  }
+      IndexRangeSet<2> rangeSet;
+      rangeSet = rangeSet.add(IndexRange<2>({{4,6},{7,9}}));
+      rangeSet = rangeSet.add(IndexRange<2>({{1,3},{4,6}}));
 
+      std::stringstream ss;
+      {
+        cereal::JSONOutputArchive oarchive(ss);
+        oarchive(rangeSet);
+      }
+      //SPDLOG_INFO("RangeSet: {}", ss.str());
+      {
+        cereal::JSONInputArchive iarchive(ss);
+        IndexRangeSet<2> rangeSet2;
+        iarchive(rangeSet2);
+        CHECK(rangeSet == rangeSet2);
+      }
+    }
+
+  }
 }

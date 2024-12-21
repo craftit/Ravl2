@@ -24,7 +24,6 @@ static void glfw_error_callback(int error, const char* description)
 
 int main(int argc,char **argv)
 {
-  using namespace Ravl2;
 
   CLI::App app{"OpenGL window example program"};
 

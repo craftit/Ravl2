@@ -9,7 +9,6 @@
 
 namespace Ravl2
 {
-  using namespace Ravl2;
 
   bool DPinholeCamera03DBodyC::GUIRender([[maybe_unused]] Canvas3D &c3d) const
   {

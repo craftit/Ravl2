@@ -19,10 +19,9 @@
 #include "Ravl2/IO/InputSequence.hh"
 
 int main(int nargs,char **argv) {
-  using namespace Ravl2;
   using RealT = float;
 
-  initOpenCVImageIO();
+  Ravl2::initOpenCVImageIO();
 
   CLI::App app{"Corner detection example program"};
 
@@ -36,7 +35,7 @@ int main(int nargs,char **argv) {
   bool invert = false;
   bool verbose = false;
   bool useMasks = false;
-  std::string fn = findFileResource("data","lena.jpg",verbose);
+  std::string fn = Ravl2::findFileResource("data","lena.jpg",verbose);
   std::string ofn = "display://Boundaries";
 
   app.add_option("--ms", minSize, "Minimum region size. ");
@@ -69,12 +68,12 @@ int main(int nargs,char **argv) {
 
   using ImageT = Ravl2::Array<uint8_t,2>;
 
-  StreamOutputProxy<ImageT> outputStream  = openOutputStream<ImageT>(ofn);
+  Ravl2::StreamOutputProxy<ImageT> outputStream  = Ravl2::openOutputStream<ImageT>(ofn);
   if(!outputStream.valid()) {
     return 1;
   }
 
-  StreamInputProxy<ImageT> inputStream = openInputStream<ImageT>(fn);
+  Ravl2::StreamInputProxy<ImageT> inputStream = Ravl2::openInputStream<ImageT>(fn);
   if(!inputStream.valid()) {
     return 1;
   }
@@ -82,7 +81,7 @@ int main(int nargs,char **argv) {
   SegmentExtremaC<uint8_t> lst(minSize,minMargin,limit);
 
   int numberOfFrames = 0;
-  IndexRange<2> imgRange;
+  Ravl2::IndexRange<2> imgRange;
   std::chrono::steady_clock::duration totalTime {};
   while(true)
   {

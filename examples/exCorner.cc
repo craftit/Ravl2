@@ -19,9 +19,7 @@
 
 int main(int argc,char **argv)
 {
-  using namespace Ravl2;
-
-  initOpenCVImageIO();
+  Ravl2::initOpenCVImageIO();
 
   CLI::App app{"Corner detection example program"};
 
