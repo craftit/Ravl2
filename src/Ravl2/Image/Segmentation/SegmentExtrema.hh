@@ -20,99 +20,6 @@
 namespace Ravl2
 {
 
-  //! Extrema threshold information.
-
-  class ExtremaThreshold
-  {
-  public:
-    int mThresh;   //!< Threshold value.
-    int mPos;      //!< Start of margin.  (mThresh = pos + margin/2)
-    int mMargin;   //!< Measure of stability.
-    uint32_t mArea;//!< Expected area of region.
-  };
-
-  //! Extremal region
-
-  class ExtremaRegion
-  {
-  public:
-    //! Constructor.
-    ExtremaRegion() = default;
-
-    //! Destructor.
-    ~ExtremaRegion()
-    {
-      if(mHist != nullptr)
-        delete[] mHist;
-    }
-
-    ExtremaRegion(const ExtremaRegion &) = delete;
-    ExtremaRegion &operator=(const ExtremaRegion &) = delete;
-
-    ExtremaRegion(ExtremaRegion &&other) {
-      mMerge = other.mMerge;
-      mHist = other.mHist;
-      mTotal = other.mTotal;
-      mThresh = std::move(other.mThresh);
-      mMaxValue = other.mMaxValue;
-      mMinValue = other.mMinValue;
-      mMinat = other.mMinat;
-      mClosed = other.mClosed;
-      other.mHist = nullptr;
-#ifndef NDEBUG
-      other.mMerge = nullptr;
-      other.mTotal = 0;
-      other.mMaxValue = 0;
-      other.mMinValue = 0;
-      other.mMinat = {};
-      other.mClosed = nullptr;
-#endif
-    }
-
-    ExtremaRegion &operator=(ExtremaRegion &&other) {
-      if(this != &other) {
-        mMerge = other.mMerge;
-        mHist = other.mHist;
-        mTotal = other.mTotal;
-        mThresh = std::move(other.mThresh);
-        mMaxValue = other.mMaxValue;
-        mMinValue = other.mMinValue;
-        mMinat = other.mMinat;
-        mClosed = other.mClosed;
-        other.mHist = nullptr;
-#ifndef NDEBUG
-        other.mMerge = nullptr;
-        other.mTotal = 0;
-        other.mMaxValue = 0;
-        other.mMinValue = 0;
-        other.mMinat = {};
-        other.mClosed = nullptr;
-#endif
-      }
-      return *this;
-    }
-
-    ExtremaRegion *mMerge = nullptr;//!< Region to merge with.
-    uint32_t *mHist = nullptr;       //!< Histogram of pixels values at level.
-    uint32_t mTotal = 0;
-
-    std::vector<ExtremaThreshold> mThresh;//!< thresholds
-
-    int mMaxValue = 0;
-    int mMinValue = 0;
-    Index<2> mMinat {};
-    ExtremaRegion *mClosed = nullptr;
-  };
-
-  //: Extremal pixel list.
-
-  class ExtremaChainPixel
-  {
-  public:
-    ExtremaRegion *mRegion;
-    ExtremaChainPixel *mNext;
-  };
-
   //: Common parts to segmenting extrema.
 
   class SegmentExtremaBase
@@ -179,13 +86,108 @@ namespace Ravl2
       return mLimitMaxValue;
     }
 
+
+  protected:
+
+    //! Extrema threshold information.
+
+    class ExtremaThreshold
+    {
+    public:
+      int mThresh;   //!< Threshold value.
+      int mPos;      //!< Start of margin.  (mThresh = pos + margin/2)
+      int mMargin;   //!< Measure of stability.
+      uint32_t mArea;//!< Expected area of region.
+    };
+
+    //! Extremal region
+
+    class ExtremaRegion
+    {
+    public:
+      //! Constructor.
+      ExtremaRegion() = default;
+
+      //! Destructor.
+      ~ExtremaRegion()
+      {
+        if(mHist != nullptr)
+          delete[] mHist;
+      }
+
+      ExtremaRegion(const ExtremaRegion &) = delete;
+      ExtremaRegion &operator=(const ExtremaRegion &) = delete;
+
+      ExtremaRegion(ExtremaRegion &&other) {
+        mMerge = other.mMerge;
+        mHist = other.mHist;
+        mTotal = other.mTotal;
+        mThresh = std::move(other.mThresh);
+        mMaxValue = other.mMaxValue;
+        mMinValue = other.mMinValue;
+        mMinat = other.mMinat;
+        mClosed = other.mClosed;
+        other.mHist = nullptr;
+#ifndef NDEBUG
+        other.mMerge = nullptr;
+        other.mTotal = 0;
+        other.mMaxValue = 0;
+        other.mMinValue = 0;
+        other.mMinat = {};
+        other.mClosed = nullptr;
+#endif
+      }
+
+      ExtremaRegion &operator=(ExtremaRegion &&other) {
+        if(this != &other) {
+          mMerge = other.mMerge;
+          mHist = other.mHist;
+          mTotal = other.mTotal;
+          mThresh = std::move(other.mThresh);
+          mMaxValue = other.mMaxValue;
+          mMinValue = other.mMinValue;
+          mMinat = other.mMinat;
+          mClosed = other.mClosed;
+          other.mHist = nullptr;
+#ifndef NDEBUG
+          other.mMerge = nullptr;
+          other.mTotal = 0;
+          other.mMaxValue = 0;
+          other.mMinValue = 0;
+          other.mMinat = {};
+          other.mClosed = nullptr;
+#endif
+        }
+        return *this;
+      }
+
+      ExtremaRegion *mMerge = nullptr;//!< Region to merge with.
+      uint32_t *mHist = nullptr;       //!< Histogram of pixels values at level.
+      uint32_t mTotal = 0;
+
+      std::vector<ExtremaThreshold> mThresh;//!< thresholds
+
+      int mMaxValue = 0;
+      int mMinValue = 0;
+      Index<2> mMinat {};
+      ExtremaRegion *mClosed = nullptr;
+    };
+
+
+    //: Extremal pixel list.
+
+    class ExtremaChainPixel
+    {
+    public:
+      ExtremaRegion *mRegion;
+      ExtremaChainPixel *mNext;
+    };
+
     //! Access level set array.
     [[nodiscard]] Array<ExtremaChainPixel *, 1> &levelSets()
     {
       return mLevels;
     }
-
-  protected:
 
     //! Find the labels around the pixel 'pix'
     // put the results into 'labelArray' which must be at least 4 labels long.

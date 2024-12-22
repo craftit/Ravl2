@@ -64,7 +64,7 @@ namespace Ravl2
   // This looks at the region assosciated with a given pixel,
   // and resolves any merged regions to the current label.
 
-  inline ExtremaRegion *SegmentExtremaBase::findLabel(ExtremaChainPixel *pix)
+  inline SegmentExtremaBase::ExtremaRegion *SegmentExtremaBase::findLabel(ExtremaChainPixel *pix)
   {
     ExtremaRegion *lab = pix->mRegion;
     if(lab == nullptr || lab->mMerge == nullptr)
