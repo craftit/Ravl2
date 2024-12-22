@@ -43,7 +43,7 @@ namespace Ravl2
     // Allocate ExtremaChainPixel image.
     mPixs = Array<ExtremaChainPixel, 2>(imgRect);
     mOrigin = &(mPixs[rect.min()]);
-    stride = mPixs.stride(0);
+    mStride = mPixs.stride(0);
 
     // Put a frame of zero labels around the edge.
     ExtremaChainPixel zeroPix {nullptr, nullptr};
@@ -96,7 +96,7 @@ namespace Ravl2
     if(l1 != nullptr) {
       labelArray[n++] = l1;
     }
-    ExtremaRegion *l2 = findLabel(pix + stride);
+    ExtremaRegion *l2 = findLabel(pix + mStride);
     if(l2 != nullptr && l2 != l1) {
       labelArray[n++] = l2;
     }
@@ -104,7 +104,7 @@ namespace Ravl2
     if(l3 != nullptr && l3 != l1 && l3 != l2) {
       labelArray[n++] = l3;
     }
-    ExtremaRegion *l4 = findLabel(pix - stride);
+    ExtremaRegion *l4 = findLabel(pix - mStride);
     if(l4 != nullptr && l4 != l1 && l4 != l2 && l4 != l3) {
       labelArray[n++] = l4;
     }
@@ -137,8 +137,8 @@ namespace Ravl2
 #endif
 
     auto offset = pix - mOrigin;
-    region.mMinat = toIndex((offset / stride) + 1, (offset % stride) + 1) + mPixs.range().min();
-    ONDEBUG(SPDLOG_INFO("Region mMinat={} level={} Pix={} Offset={} Stride={} origin={}", region.mMinat, level, static_cast<void *>(pix), offset, stride, static_cast<void *>(mOrigin)));
+    region.mMinat = toIndex((offset / mStride) + 1, (offset % mStride) + 1) + mPixs.range().min();
+    ONDEBUG(SPDLOG_INFO("Region mMinat={} level={} Pix={} Offset={} Stride={} origin={}", region.mMinat, level, static_cast<void *>(pix), offset, mStride, static_cast<void *>(mOrigin)));
     RavlAssert(&mPixs[region.mMinat] == pix);
     region.mMinValue = level;
     region.mMaxValue = mValueRange.max();

@@ -126,7 +126,7 @@ namespace Ravl2
     //! \param nlimitMaxValue - Maximum pixel value.
     //! \param maxRegionSize - Maximum region size.
     SegmentExtremaBase(uint32_t minRegionSize, int nMinMargin, int nlimitMaxValue = 255, size_t maxRegionSize = 0)
-        : stride(0),
+        : mStride(0),
           mLabelAlloc(1),
           mOrigin(nullptr),
           mMinSize(minRegionSize),
@@ -186,8 +186,6 @@ namespace Ravl2
     }
 
   protected:
-    //! Find matching label.
-    static ExtremaRegion *findLabel(ExtremaChainPixel *lab);
 
     //! Find the labels around the pixel 'pix'
     // put the results into 'labelArray' which must be at least 4 labels long.
@@ -206,10 +204,14 @@ namespace Ravl2
     //! Generate thresholds
     void thresholds();
 
+    //! Find matching label.
+    static ExtremaRegion *findLabel(ExtremaChainPixel *lab);
+
     Array<ExtremaChainPixel, 2> mPixs;
     Array<ExtremaChainPixel *, 1> mLevels;
+
     std::vector<ExtremaRegion> mRegionMap;
-    int stride = 0;// Image stride.
+    int mStride = 0;// Image stride.
     unsigned mLabelAlloc = 0;
     IndexRange<1> mValueRange;            // Range of pixel values.
     ExtremaChainPixel *mOrigin = nullptr;// Origin of image.
@@ -220,6 +222,8 @@ namespace Ravl2
     size_t mMaxSize = 0;
     int mMinMargin = 0;
     const int mLimitMaxValue = 0;// Maximum image value that will be encountered.
+
+  private:
 
     struct HistStackC {
       HistStackC(int nmax, uint32_t *nstack)
