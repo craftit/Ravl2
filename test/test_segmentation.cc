@@ -82,7 +82,7 @@ namespace Ravl2
       auto rng = img.range().shrink(2);
       fill(clip(img, rng), uint8_t(10));
 
-      SegmentExtremaC<PixelT> segmentExtrema(8);
+      SegmentExtrema<PixelT> segmentExtrema(8);
 
       std::vector<Boundary> boundaries = segmentExtrema.apply(img);
 
@@ -117,7 +117,7 @@ namespace Ravl2
       DrawFilledFrame(img,ByteT(64),IndexRange<2>({{20,30},{40,50}}));
       DrawFilledFrame(img,ByteT(196),IndexRange<2>({{40,50},{40,50}}));
 
-      SegmentExtremaC<ByteT> segExt(5);
+      SegmentExtrema<ByteT> segExt(5);
       std::vector<Boundary> bnd = segExt.apply(img);
       SPDLOG_TRACE("Bounds: {}", bnd.size());
       CHECK(bnd.size() == 2);
