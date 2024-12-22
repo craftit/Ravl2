@@ -71,14 +71,5 @@ namespace Ravl2
     return targetRange.shrinkMax(CoordTypeT(1) + (std::numeric_limits<CoordTypeT>::epsilon() * 4096));
   }
 
-  //! @brief Compute the bounds we can actually interpolate over
-  //! @param targetRange The range iterate over in a grid
-  //! @param interpolator The interpolator to use
-  //! @return The range of real points we can sample from
-  template <typename CoordTypeT, unsigned N, typename SamplerT>
-  Range<CoordTypeT, N> interpolationBounds(const IndexRange<N> &indexRange, [[maybe_unused]] const SamplerT &interpolator)
-  {
-    return toRange<CoordTypeT>(indexRange);
-  }
 
 }// namespace Ravl2

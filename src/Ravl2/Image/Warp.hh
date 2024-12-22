@@ -12,6 +12,16 @@
 
 namespace Ravl2
 {
+  //! @brief Compute the bounds we can actually interpolate over
+  //! This is a genetic method, used when we don't know the interpolator
+  //! @param targetRange The range iterate over in a grid
+  //! @param interpolator The interpolator to use
+  //! @return The range of real points we can sample from
+  template <typename CoordTypeT, unsigned N, typename SamplerT>
+  Range<CoordTypeT, N> interpolationBounds(const IndexRange<N> &indexRange, [[maybe_unused]] const SamplerT &interpolator)
+  {
+    return toRange<CoordTypeT>(indexRange);
+  }
 
   //! @brief Assignment pixel operation
   //! This operation is used to assign the pixel value from the source to the target
