@@ -196,7 +196,7 @@ namespace Ravl2
   template <typename DataT, unsigned N>
   inline std::ostream &operator<<(std::ostream &os, const Affine<DataT, N> &aff)
   {
-    os << "Affine(" << aff.SRMatrix() << "," << aff.Translation() << ")";
+    os << "Affine(SR=" << Eigen::WithFormat(aff.SRMatrix(), Ravl2::defaultEigenFormat()) << ",T=" << Eigen::WithFormat(aff.Translation(), Ravl2::defaultEigenFormat()) << ")";
     return os;
   }
 
