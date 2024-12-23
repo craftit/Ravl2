@@ -68,6 +68,7 @@ add_executable(tests
         test_warpScale.cc
         test_projective.cc
         test_eigen.cc
+        test_planes.cc
 )
 target_link_libraries(
   tests

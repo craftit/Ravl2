@@ -1,10 +1,10 @@
 
 #include <numbers>
 #include <random>
-#include <catch2/catch_test_macros.hpp>
 #include <spdlog/spdlog.h>
 #include <cereal/archives/json.hpp>
 
+#include "Ravl2/Catch2checks.hh"
 #include "Ravl2/IO/Cereal.hh"
 #include "Ravl2/Math.hh"
 #include "Ravl2/Angle.hh"
@@ -25,14 +25,6 @@
 #include "Ravl2/Geometry/FitAffine.hh"
 #include "Ravl2/Math/FastFourierTransform.hh"
 
-#define CHECK_EQ(a,b) CHECK((a) == (b))
-#define CHECK_NE(a,b) CHECK_FALSE((a) == (b))
-#define EXPECT_TRUE(a) CHECK(a)
-#define EXPECT_EQ(a,b) CHECK((a) == (b))
-#define EXPECT_NE(a,b) CHECK_FALSE((a) == (b))
-#define ASSERT_EQ(a,b) REQUIRE((a) == (b))
-#define ASSERT_NE(a,b) REQUIRE_FALSE((a) == (b))
-#define ASSERT_FLOAT_EQ(a,b) REQUIRE(Ravl2::isNearZero((a) -(b)))
 
 namespace Ravl2
 {
@@ -48,11 +40,11 @@ namespace Ravl2
       moments.addPixel(Index<2>(1, 1));
 
       auto principal_axis = moments.principalAxisSize();
-      ASSERT_FLOAT_EQ(principal_axis[0], 0.25);
-      ASSERT_FLOAT_EQ(principal_axis[1], 0.25);
-      ASSERT_FLOAT_EQ(Moments2<double>::elongatedness(principal_axis), 0.0);
-      ASSERT_FLOAT_EQ(moments.centroid()[0], 0.5);
-      ASSERT_FLOAT_EQ(moments.centroid()[1], 0.5);
+      ASSERT_DOUBLE_EQ(principal_axis[0], 0.25);
+      ASSERT_DOUBLE_EQ(principal_axis[1], 0.25);
+      ASSERT_DOUBLE_EQ(Moments2<double>::elongatedness(principal_axis), 0.0);
+      ASSERT_DOUBLE_EQ(moments.centroid()[0], 0.5);
+      ASSERT_DOUBLE_EQ(moments.centroid()[1], 0.5);
     }
     SECTION("Shift")
     {
@@ -112,12 +104,12 @@ namespace Ravl2
         cereal::JSONInputArchive iarchive(ss);
         Moments2<double> moments2;
         iarchive(moments2);
-        ASSERT_FLOAT_EQ(moments2.M00(), 1);
-        ASSERT_FLOAT_EQ(moments2.M10(), 2);
-        ASSERT_FLOAT_EQ(moments2.M01(), 3);
-        ASSERT_FLOAT_EQ(moments2.M20(), 4);
-        ASSERT_FLOAT_EQ(moments2.M11(), 5);
-        ASSERT_FLOAT_EQ(moments2.M02(), 6);
+        ASSERT_DOUBLE_EQ(moments2.M00(), 1);
+        ASSERT_DOUBLE_EQ(moments2.M10(), 2);
+        ASSERT_DOUBLE_EQ(moments2.M01(), 3);
+        ASSERT_DOUBLE_EQ(moments2.M20(), 4);
+        ASSERT_DOUBLE_EQ(moments2.M11(), 5);
+        ASSERT_DOUBLE_EQ(moments2.M02(), 6);
       }
     }
   }
@@ -521,88 +513,7 @@ namespace Ravl2
   }
 
 
-  TEST_CASE("Planes")
-  {
-    using RealT = float;
-    std::mt19937 rng(static_cast<std::mt19937::result_type>(random()));
-    std::uniform_real_distribution<RealT> random1(-1.0, 1.0);
-    std::normal_distribution<RealT> randomGauss(0.0, 1.0);
-    auto randomValue = [&random1,&rng](RealT scale) -> RealT
-    { return (random1(rng)* scale); };
 
-
-    SECTION("VectorOffset")
-    {
-
-      for(int i =0 ;i < 100;i++) {
-        auto pntOnPlane = toPoint<RealT>(randomValue(10),randomValue(10),randomValue(10));
-        VectorOffset<RealT,3> plane(toVector<RealT>(randomValue(10),randomValue(10),randomValue(10)),pntOnPlane);
-
-        // Check point on plane has zero distance.
-        CHECK(plane.distance(pntOnPlane) < 0.00001f);
-
-        auto testPoint = toPoint<RealT>(randomValue(10),randomValue(10),randomValue(10));
-
-        auto closestPoint = plane.projection(testPoint);
-        RealT distance = euclidDistance(closestPoint, testPoint);
-        CHECK(std::abs(distance - plane.distance(testPoint)) < 0.00001f);
-      }
-    }
-
-    SECTION("Fit VectorOffset")
-    {
-      std::vector<Point<RealT,3>> points;
-      points.push_back(toPoint<RealT>(1,1,1));
-      points.push_back(toPoint<RealT>(1,2,1));
-      points.push_back(toPoint<RealT>(2,1,2));
-      VectorOffset<RealT,3> plane;
-      CHECK(fit<RealT,3>(plane,points));
-
-      for(auto pnt: points) {
-        RealT dist = plane.distance(pnt);
-        CHECK(dist < 1e-6f);
-      }
-    }
-
-    SECTION("Fit PlanePVV3")
-    {
-#if 0
-      for(int i =0 ;i < 100;i++) {
-
-        PlanePVV3dC<RealT> plane(toPoint<RealT>(randomValue(10),randomValue(10),randomValue(10)),
-                          toVector<RealT>(randomValue(10),randomValue(10),randomValue(10)),
-                          toVector<RealT>(randomValue(10),randomValue(10),randomValue(10))
-        );
-
-        auto testPoint = toPoint<RealT>(randomValue(10),randomValue(10),randomValue(10));
-
-        auto closestPoint = plane.ClosestPoint(testPoint);
-        RealT distance = euclidDistance(closestPoint,testPoint);
-        CHECK(std::abs(distance - plane.distance(testPoint)) < 1e-6f);
-
-        // Check 'ProjectionOnto'
-        auto pCloesestPoint = plane.Projection(testPoint);
-        CHECK(euclidDistance(closestPoint,plane.at(pCloesestPoint)) < 1e-6f);
-      }
-#endif
-    }
-
-
-#if 0
-    SECTION( "Fit PointVectorVector")
-    {
-      PlanePVV3dC plane;
-      if(!FitPlane(points,plane))
-        return __LINE__;
-
-      for(int i =0;i < 3;i++) {
-        if(plane.EuclideanDistance(points[i]) > 0.001)
-          return __LINE__;
-      }
-    }
-
-#endif
-  }
 
 
   TEST_CASE("FitSimilarity")

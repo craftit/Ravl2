@@ -24,6 +24,7 @@
 #define ASSERT_EQ(a, b) REQUIRE((a) == (b))
 #define ASSERT_NE(a, b) REQUIRE_FALSE((a) == (b))
 #define ASSERT_FLOAT_EQ(a, b) REQUIRE(Ravl2::isNearZero((a) -(b),1e-6f))
+#define ASSERT_DOUBLE_EQ(a, b) REQUIRE(Ravl2::isNearZero((a) -(b),1e-6))
 #define EXPECT_FLOAT_EQ(a, b) CHECK(Ravl2::isNearZero((a) -(b),1e-6f))
 #define EXPECT_DOUBLE_EQ(a, b) CHECK(Ravl2::isNearZero((a) -(b),1e-6))
 #define EXPECT_NEAR(a, b, tol) CHECK(Ravl2::isNearZero((a) -(b),tol))

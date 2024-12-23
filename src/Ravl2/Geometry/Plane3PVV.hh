@@ -14,6 +14,8 @@
 #include "Ravl2/Types.hh"
 #include "Ravl2/Geometry/Plane3ABCD.hh"
 
+#include <opencv2/core/matx.hpp>
+
 namespace Ravl2
 {
 
@@ -157,7 +159,7 @@ namespace Ravl2
     //! @param t1 first coordinate.
     //! @param t2 second coordinate.
     //! @return The 3d point.
-    inline  constexpr Point<RealT, 3> at(const RealT t1, const RealT t2) const
+    [[nodiscard]] constexpr Point<RealT, 3> at(const RealT t1, const RealT t2) const
     {
       return mOrigin + (mVector1 * t1) + (mVector2 * t2);
     }
@@ -166,10 +168,28 @@ namespace Ravl2
     //! Returns the point of the plane: point + t1 * mVector1 + t2 * mVector2.
     //! @param par The 2d position on the plane.
     //! @return The 3d point.
-    inline constexpr Point<RealT, 3> at(const Point<RealT, 2> &par) const
+    [[nodiscard]] constexpr Point<RealT, 3> at(const Point<RealT, 2> &par) const
     {
       return mOrigin + mVector1 * par[0] + mVector2 * par[1];
     }
+
+    //! @brief Create the projective matrix of of a point on the plane to a 3d point.
+    //! The matrix is 3x3 and is used to map a 2d point on the plane to a 3d point.
+    //! @return The projective matrix.
+    [[nodiscard]] Matrix<RealT, 4, 3> projectiveMatrix() const
+    {
+      Matrix<RealT, 4, 3> a;
+      a.fill(0);
+      Vector<RealT,3> norm = normal();
+      a.template block<3, 1>(0, 0) = mVector1;
+      a.template block<3, 1>(0, 1) = mVector2;
+      a.template block<3, 1>(0, 2) = norm;
+      a(3, 0) = -mVector1.dot(mOrigin);
+      a(3, 1) = -mVector2.dot(mOrigin);
+      a(3, 2) = -norm.dot(mOrigin);
+      return a;
+    }
+
 
     //! IO Handling
     template <class Archive>

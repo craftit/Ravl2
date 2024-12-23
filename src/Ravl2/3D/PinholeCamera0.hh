@@ -79,12 +79,12 @@ namespace Ravl2
     //! The camera is placed at the centre of the frame with the given focal length.
     explicit PinholeCamera0(const IndexRange<2> &frame, float f, const Isometry3<RealT> &pose = Isometry3<RealT>())
       : m_cx(RealT(frame.range(0).min())+RealT(frame.range(0).size()-1)/RealT(2.0)),
-	m_cy(RealT(frame.range(1).min())+RealT(frame.range(1).size()-1)/RealT(2.0)),
-	m_fx(f),
-	m_fy(f),
+	    m_cy(RealT(frame.range(1).min())+RealT(frame.range(1).size()-1)/RealT(2.0)),
+	    m_fx(f),
+	    m_fy(f),
         m_R(pose.rotation().toMatrix()),
         m_t(pose.translation()),
-  	m_frame(frame)
+  	    m_frame(frame)
     {}
     
     //! Construct a camera that fills the image at the given distance
@@ -113,7 +113,6 @@ namespace Ravl2
       return PinholeCamera0(f,{0,0},frame,Isometry3<float>(Quaternion<float>::identity(),{0,0,distance}));
     }
     
-  public:
     //! centre of projection, x co-ordinate
     [[nodiscard]] RealT &cx()
     {
@@ -205,7 +204,7 @@ namespace Ravl2
       m_R = pose.rotation().toMatrix();
       m_t = pose.translation();
     }
-  public:
+
     //! project 3D point in space to 2D image point
     //!  Projects according to:<br>
     //!    z[0] = cx + fx*( (R*x + t)[0] / (R*x + t)[2] )<br>
@@ -219,14 +218,40 @@ namespace Ravl2
       z[1] = m_cy + m_fy * Rx[1] / Rx[2];
     }
 
+    //! Return the intrinsic matrix
+    [[nodiscard]] Eigen::Matrix3f intrinsicMatrix() const
+    {
+      return Eigen::Matrix3f({
+           {fx(), 0, cx()},
+           {0, fy(), cy()},
+           {0, 0, 1}
+          });
+    }
+
+    //! Return the extrinsic matrix
+    [[nodiscard]] Eigen::Matrix<float, 3, 4> extrinsicMatrix() const
+    {
+      Eigen::Matrix<float, 3, 4> Rt;
+      Rt.block<3, 3>(0, 0) = m_R;
+      Rt.block<3, 1>(0, 3) = m_t;
+      return Rt;
+    }
+
+    //! Get the combined projection matrix
+    [[nodiscard]] Matrix<RealT, 3, 4> projectionMatrix() const
+    {
+      return intrinsicMatrix() * extrinsicMatrix();
+    }
+
     //: project 3D point in space to 2D image point
     // The same as project(...) but checks that the point
     // is not degenerate.
     bool projectCheck(Vector<RealT, 2> &z, const Vector<RealT, 3> &x) const
     {
       Vector<RealT, 3> Rx =  m_R * x + m_t;
-      if(isNearZero(Rx[2], RealT(1e-3)))
+      if(isNearZero(Rx[2], RealT(1e-3))) {
         return false;
+      }
       z[0] = m_cx + m_fx * Rx[0] / Rx[2];
       z[1] = m_cy + m_fy * Rx[1] / Rx[2];
       return true;
@@ -254,7 +279,6 @@ namespace Ravl2
       Rx[0] = (z[0] - m_cx) / m_fx;
       Rx[1] = (z[1] - m_cy) / m_fy;
       Rx[2] = 1.0;
-      //TMul(m_R,Rx,x);
       x = m_R.transpose() * Rx;
     }
 
