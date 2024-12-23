@@ -79,12 +79,12 @@ namespace Ravl2
     //! The camera is placed at the centre of the frame with the given focal length.
     explicit PinholeCamera0(const IndexRange<2> &frame, float f, const Isometry3<RealT> &pose = Isometry3<RealT>())
       : m_cx(RealT(frame.range(0).min())+RealT(frame.range(0).size()-1)/RealT(2.0)),
-	    m_cy(RealT(frame.range(1).min())+RealT(frame.range(1).size()-1)/RealT(2.0)),
-	    m_fx(f),
-	    m_fy(f),
+        m_cy(RealT(frame.range(1).min())+RealT(frame.range(1).size()-1)/RealT(2.0)),
+        m_fx(f),
+        m_fy(f),
         m_R(pose.rotation().toMatrix()),
         m_t(pose.translation()),
-  	    m_frame(frame)
+        m_frame(frame)
     {}
     
     //! Construct a camera that fills the image at the given distance
@@ -216,6 +216,18 @@ namespace Ravl2
       Vector<RealT, 3> Rx = m_R * x + m_t;
       z[0] = m_cx + m_fx * Rx[0] / Rx[2];
       z[1] = m_cy + m_fy * Rx[1] / Rx[2];
+    }
+
+    //! project 3D point in space to 2D image point
+    //!  Projects according to:<br>
+    //!    z[0] = cx + fx*( (R*x + t)[0] / (R*x + t)[2] )<br>
+    //!    z[1] = cy + fy*( (R*x + t)[1] / (R*x + t)[2] )<br>
+    //!  Can result in a divide-by-zero for degenerate points.
+    //!  See projectCheck if this is to be avoided.
+    Point<RealT, 2> project(const Vector<RealT, 3> &x) const
+    {
+      Vector<RealT, 3> Rx = m_R * x + m_t;
+      return Point<RealT, 2>({m_cx + m_fx * Rx[0] / Rx[2], m_cy + m_fy * Rx[1] / Rx[2]});
     }
 
     //! Return the intrinsic matrix

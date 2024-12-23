@@ -74,6 +74,26 @@ namespace Ravl2
       EXPECT_FLOAT_EQ(pix[1], float(frame.min(1)));
     }
 
+    SECTION("Check Projective Matrix")
+    {
+      IndexRange<2> frame = {{0, 640},{0, 480}};
+      float f = 1.5;
+
+      auto cam = PinholeCamera0<float>(frame, f, Isometry3<float>::fromEulerXYZTranslation({0.0f,0.1f,0.05f},{0.0f,0.0f,7.0f}));
+      //auto cam = PinholeCamera0<float>::fromFrame(frame,0.2f,distance);
+
+      auto mat = cam.projectionMatrix();
+      SPDLOG_INFO("Mat: {}", mat);
+
+      Vector<float, 3> pnt = {1,2,3};
+      Vector<float, 3> pPix = mat * toHomogeneous(pnt);
+      Vector<float, 2> pix = cam.project(pnt);
+
+      SPDLOG_INFO("Pnt: {}  Proj: {}  Pix: {}", pnt, fromHomogeneous(pPix), pix);
+
+      CHECK(euclidDistance(fromHomogeneous(pPix),pix) < 0.001f);
+
+    }
 
   }
 
