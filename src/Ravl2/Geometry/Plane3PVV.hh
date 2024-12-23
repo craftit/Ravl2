@@ -179,14 +179,12 @@ namespace Ravl2
     [[nodiscard]] Matrix<RealT, 4, 3> projectiveMatrix() const
     {
       Matrix<RealT, 4, 3> a;
-      a.fill(0);
-      Vector<RealT,3> norm = normal();
       a.template block<3, 1>(0, 0) = mVector1;
       a.template block<3, 1>(0, 1) = mVector2;
-      a.template block<3, 1>(0, 2) = norm;
-      a(3, 0) = -mVector1.dot(mOrigin);
-      a(3, 1) = -mVector2.dot(mOrigin);
-      a(3, 2) = -norm.dot(mOrigin);
+      a.template block<3, 1>(0, 2) = mOrigin;
+      a(3, 0) = 0;
+      a(3, 1) = 0;
+      a(3, 2) = 1;
       return a;
     }
 

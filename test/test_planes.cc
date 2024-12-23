@@ -55,34 +55,24 @@ namespace Ravl2
       }
     }
 
-    SECTION("Fit PlanePVV3")
+    SECTION("PlanePVV3 Project")
     {
-      for(int i =0 ;i < 1;i++) {
+      Plane3PVV<RealT> plane(toPoint<RealT>(1,2,3),
+                             toVector<RealT>(4,5,6),
+                             toVector<RealT>(7,8,9)
+                      );
 
-        Plane3PVV<RealT> plane(toPoint<RealT>(randomValue(10),randomValue(10),randomValue(10)),
-                          toVector<RealT>(randomValue(10),randomValue(10),randomValue(10)),
-                          toVector<RealT>(randomValue(10),randomValue(10),randomValue(10))
-        );
+      auto projMat = plane.projectiveMatrix();
+      //SPDLOG_INFO("ProjMat:{}", projMat);
 
-        auto testPoint = toPoint<RealT>(randomValue(10),randomValue(10),randomValue(10));
+      auto testPnt2 = toPoint<RealT>(10,11);
+      auto pnt3 = plane.at(testPnt2);
 
-        auto projMat = plane.projectiveMatrix();
-        auto closestPoint = plane.closestPoint(testPoint);
-        
-        Point<float,4> projPoint = projMat * toHomogeneous(testPoint);
-        auto ppnt = fromHomogeneous(projPoint);
-        SPDLOG_INFO("TestPoint:{} ClosestPoint:{} ProjPoint:{}", testPoint, closestPoint, ppnt);
+      Point<RealT,4> projPoint = projMat * toHomogeneous(testPnt2);
+      auto projPnt3 = fromHomogeneous(projPoint);
 
-#if 0
-
-        RealT distance = euclidDistance(closestPoint,testPoint);
-        CHECK(std::abs(distance - plane.distance(testPoint)) < 1e-5f);
-
-        // Check 'ProjectionOnto'
-        auto pCloesestPoint = plane.projection(testPoint);
-        CHECK(euclidDistance(closestPoint,plane.at(pCloesestPoint)) < 1e-5f);
-#endif
-      }
+      //SPDLOG_INFO("Pnt3:{}", projPnt3);
+      CHECK(euclidDistance(pnt3, projPnt3) < 1e-6f);
     }
 
   }

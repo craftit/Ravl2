@@ -305,7 +305,7 @@ namespace Ravl2
   template <typename RealT, int N>
   [[nodiscard]] constexpr inline Point<RealT, N - 1> fromHomogeneous(const Point<RealT, N> &pnt)
   {
-    return pnt.template head<N - 1>() / pnt[N];
+    return pnt.template head<N - 1>() / pnt[N-1];
   }
 
 
