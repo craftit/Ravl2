@@ -122,7 +122,7 @@ namespace Ravl2
     }
 
     auto fromNorm = meanScaleToAffine<RealT,2>(fromMean,fromScale);
-    auto toNorm = *inverse(meanScaleToAffine<RealT,2>(toMean,toScale));
+    auto toNorm = inverse(meanScaleToAffine<RealT,2>(toMean,toScale));
 
     // Compose result
     affine = toNorm(Affine<RealT,N>(sr,tr))(fromNorm);

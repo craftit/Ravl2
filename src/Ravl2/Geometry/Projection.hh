@@ -205,6 +205,10 @@ namespace Ravl2
       return ret;
     }
 
+    //! Get as a projective matrix
+    [[nodiscard]] constexpr Matrix<RealT, N + 1, N + 1> projectiveMatrix() const
+    { return homography(); }
+
     //! Get an affine approximation of this projective transform around the origin.
     //! @return: the affine approximation
     [[nodiscard]] constexpr Affine<RealT, N> affineApproximation() const
@@ -232,6 +236,13 @@ namespace Ravl2
     [[nodiscard]] constexpr inline bool IsValid() const
     {
       return !isNearZero(trans.cwiseAbs().sum()) && trans.array().isFinite().all();
+    }
+
+    //! Are all the values in the transform real.
+    //! Used to detect nan and inf values.
+    [[nodiscard]] constexpr bool isReal() const
+    {
+      return Eigen::isfinite(trans.array()).all() && std::isfinite(iz) && std::isfinite(oz);
     }
 
     //! Serialization support

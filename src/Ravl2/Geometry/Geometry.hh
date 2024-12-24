@@ -18,6 +18,17 @@ namespace Ravl2
     { a(pnt) } -> std::convertible_to<Point<RealT, N>>;
   };
 
+  //! Define the concept of a transform
+  //! It is any class/function that takes a point and returns a point
+  template <typename TransformT, typename RealT = typename TransformT::value_type, unsigned N = TransformT::dimension>
+  concept GeometryTransform = requires(TransformT a, Point<RealT, N> pnt) {
+    { a(pnt) } -> std::convertible_to<Point<RealT, N>>;
+    { a.inverse() } -> std::convertible_to<TransformT>;
+    { a.projectiveMatrix() } -> std::convertible_to<Matrix<RealT, N+1, N+1>>;
+    { TransformT::identity() } -> std::convertible_to<TransformT>;
+    { a.isReal() } -> std::convertible_to<bool>;
+  };
+
   //! Operator to transform a point
   template <typename TransformT, typename RealT = typename TransformT::value_type, unsigned N = TransformT::dimension>
    requires PointTransform<TransformT, RealT, N>

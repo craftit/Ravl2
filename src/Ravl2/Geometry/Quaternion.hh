@@ -160,6 +160,17 @@ namespace Ravl2
       return m;
     }
 
+    //! Generate a projective matrix.
+    [[nodiscard]] constexpr Matrix<RealT, 4, 4> projectiveMatrix() const
+    {
+      Matrix<RealT, 4, 4> ret;
+      ret.template block<3, 3>(0, 0) = toMatrix();
+      ret.template block<3, 1>(0, 3) = Vector<RealT, 3>::Zero();
+      ret.template block<1, 3>(3, 0) = Vector<RealT, 3>::Zero();
+      ret(3, 3) = 1;
+      return ret;
+    }
+
     [[nodiscard]] constexpr RealT w() const
     {
       return m_vec[0];
@@ -224,6 +235,13 @@ namespace Ravl2
       auto ret = fromAngleAxis(angles[0], {1.0f, 0.0f, 0.0f}) * fromAngleAxis(angles[1], {0.0f, 1.0f, 0.0f}) * fromAngleAxis(angles[2], {0.0f, 0.0f, 1.0f});
       ret.normalise();
       return ret;
+    }
+
+    //! Check quaternion is real
+    [[nodiscard]]
+    constexpr bool isReal() const
+    {
+      return Eigen::isfinite(m_vec.array()).all();
     }
 
   private:

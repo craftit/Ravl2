@@ -197,14 +197,30 @@ namespace Ravl2
 
     SECTION("Inverse")
     {
-      Affine<float, 2>
+      Affine<float, 2> const
         a1 = affineFromScaleAngleTranslation(toVector<float>(2, 2), std::numbers::pi_v<float> / 2, toVector<float>(1, 2));
-      auto a2 = a1.inverse();
-      CHECK(a2.has_value());
-      Point<float, 2> p = toPoint<float>(3, 4);
-      Point<float, 2> pnt = a1(a2.value()(p));
+      auto const a2 = a1.inverse();
+      Point<float, 2> const p = toPoint<float>(3, 4);
+      Point<float, 2> const pnt = a1(a2(p));
       CHECK(euclidDistance(pnt, p) < 0.001f);
     }
+
+    SECTION("projectiveMatrix")
+    {
+      using RealT = float;
+      Affine<RealT, 2> const
+        a1 = affineFromScaleAngleTranslation<RealT>(toVector<RealT>(2, 2), std::numbers::pi_v<RealT> / 2, toVector<RealT>(1, 2));
+
+      auto const projMat = a1.projectiveMatrix();
+      SPDLOG_INFO("ProjMat:{}", projMat);
+      auto const testPnt = toPoint<RealT>(2,3);
+      auto const pnt = a1(testPnt);
+      Point<RealT,3> const projPoint = projMat * toHomogeneous(testPnt);
+      auto const projPnt = fromHomogeneous(projPoint);
+      SPDLOG_INFO("Pnt:{} projPnt:{} ", pnt, projPnt);
+      CHECK(euclidDistance(pnt, projPnt) < 1e-6f);
+    }
+
     SECTION("Cereal")
     {
       Affine<float, 2>
@@ -491,6 +507,22 @@ namespace Ravl2
       ScaleTranslate<float, 2> a2(toVector<float>(2, 1), toVector<float>(1, 2));
       CHECK(euclidDistance(a2(toPoint<float>(1, 1)), toPoint<float>(3, 3)) < 0.001f);
     }
+
+    SECTION("projectiveMatrix")
+    {
+      using RealT = float;
+      ScaleTranslate<float, 2> a1(toVector<RealT>(1, 2), toVector<RealT>(3, 4));
+
+      auto const projMat = a1.projectiveMatrix();
+      SPDLOG_INFO("ProjMat:{}", projMat);
+      auto const testPnt = toPoint<RealT>(2,3);
+      auto const pnt = a1(testPnt);
+      Point<RealT,3> const projPoint = projMat * toHomogeneous(testPnt);
+      auto const projPnt = fromHomogeneous(projPoint);
+      SPDLOG_INFO("Pnt:{} projPnt:{} ", pnt, projPnt);
+      CHECK(euclidDistance(pnt, projPnt) < 1e-6f);
+    }
+
     SECTION( "Cereal. ")
     {
       ScaleTranslate<float, 2> a1(toVector<float>(1, 2), toVector<float>(3, 4));
@@ -512,6 +544,50 @@ namespace Ravl2
     }
   }
 
+  TEST_CASE("Translate")
+  {
+    SECTION( "Basic ops ")
+    {
+      Translate<float, 2> a1(toVector<float>(1, 2));
+      CHECK(euclidDistance(a1(toPoint<float>(0, 0)), toPoint<float>(1, 2)) < 0.001f);
+      CHECK(euclidDistance(a1(toPoint<float>(1, 1)), toPoint<float>(2, 3)) < 0.001f);
+      Translate<float, 2> a2(toVector<float>(2, 1));
+      CHECK(euclidDistance(a2(toPoint<float>(1, 1)), toPoint<float>(3, 2)) < 0.001f);
+    }
+
+    SECTION("projectiveMatrix")
+    {
+      using RealT = float;
+      Translate<float, 2> a1(toVector<RealT>(1, 2));
+
+      auto const projMat = a1.projectiveMatrix();
+      //SPDLOG_INFO("ProjMat:{}", projMat);
+      auto const testPnt = toPoint<RealT>(2,3);
+      auto const pnt = a1(testPnt);
+      Point<RealT,3> const projPoint = projMat * toHomogeneous(testPnt);
+      auto const projPnt = fromHomogeneous(projPoint);
+      //SPDLOG_INFO("Pnt:{} projPnt:{} ", pnt, projPnt);
+      CHECK(euclidDistance(pnt, projPnt) < 1e-6f);
+    }
+
+    SECTION( "Cereal. ")
+    {
+      Translate<float, 2> a1(toVector<float>(1, 2));
+      std::stringstream ss;
+      {
+        cereal::JSONOutputArchive oarchive(ss);
+        oarchive(a1);
+      }
+      //SPDLOG_INFO("Translate<float, 2>: {}", ss.str());
+      {
+        cereal::JSONInputArchive iarchive(ss);
+        Translate<float, 2> a2;
+        iarchive(a2);
+        CHECK(isNearZero(a1.translation()[0] - a2.translation()[0]));
+        CHECK(isNearZero(a1.translation()[1] - a2.translation()[1]));
+      }
+    }
+  }
 
 
 

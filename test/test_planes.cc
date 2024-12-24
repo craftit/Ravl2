@@ -57,20 +57,17 @@ namespace Ravl2
 
     SECTION("PlanePVV3 Project")
     {
-      Plane3PVV<RealT> plane(toPoint<RealT>(1,2,3),
+      Plane3PVV<RealT> const plane(toPoint<RealT>(1,2,3),
                              toVector<RealT>(4,5,6),
                              toVector<RealT>(7,8,9)
                       );
 
-      auto projMat = plane.projectiveMatrix();
+      auto const projMat = plane.projectiveMatrix();
       //SPDLOG_INFO("ProjMat:{}", projMat);
-
-      auto testPnt2 = toPoint<RealT>(10,11);
-      auto pnt3 = plane.at(testPnt2);
-
-      Point<RealT,4> projPoint = projMat * toHomogeneous(testPnt2);
-      auto projPnt3 = fromHomogeneous(projPoint);
-
+      auto const testPnt2 = toPoint<RealT>(10,11);
+      auto const pnt3 = plane.at(testPnt2);
+      Point<RealT,4> const projPoint = projMat * toHomogeneous(testPnt2);
+      auto const projPnt3 = fromHomogeneous(projPoint);
       //SPDLOG_INFO("Pnt3:{}", projPnt3);
       CHECK(euclidDistance(pnt3, projPnt3) < 1e-6f);
     }

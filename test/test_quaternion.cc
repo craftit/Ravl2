@@ -199,6 +199,18 @@ namespace Ravl2
 
         //SPDLOG_INFO("q: {} q2: {}", q, q2);
         CHECK((q.asVector() - q2.asVector()).cwiseAbs().sum() < 1e-5f);
+
+        // Check projective matrix
+        {
+          auto const projMat = q.projectiveMatrix();
+          //SPDLOG_INFO("ProjMat:{}", projMat);
+          auto const testPnt = toPoint<RealT>(2,3,4);
+          auto const pnt = q(testPnt);
+          Point<RealT,4> const projPoint = projMat * toHomogeneous(testPnt);
+          auto const projPnt = fromHomogeneous(projPoint);
+          SPDLOG_INFO("Pnt:{}", projPnt);
+          CHECK(euclidDistance(pnt, projPnt) < 1e-6f);
+        }
       }
 
     }
@@ -211,7 +223,7 @@ namespace Ravl2
 
     SECTION("transform")
     {
-      Isometry3<RealT> test
+      Isometry3<RealT> const test
         (Quaternion<RealT>::fromEulerAnglesXYZ({RealT(std::numbers::pi / 4.0), RealT(std::numbers::pi / 5.0),
                                                                    RealT(std::numbers::pi / 6.0)}), Vector3f{1, 2, 3}
         );
@@ -223,6 +235,24 @@ namespace Ravl2
       EXPECT_NEAR(testVec[0], restored[0], RealT(1e-5));
       EXPECT_NEAR(testVec[1], restored[1], RealT(1e-5));
       EXPECT_NEAR(testVec[2], restored[2], RealT(1e-5));
+
+    }
+
+    SECTION("projectiveMatrix")
+    {
+      Isometry3<RealT> const test
+      (Quaternion<RealT>::fromEulerAnglesXYZ({RealT(std::numbers::pi / 4.0), RealT(std::numbers::pi / 5.0),
+                                                             RealT(std::numbers::pi / 6.0)}), Vector3f{1, 2, 3}
+        );
+
+      auto const projMat = test.projectiveMatrix();
+      //SPDLOG_INFO("ProjMat:{}", projMat);
+      auto const testPnt = toPoint<RealT>(2,3,4);
+      auto const pnt = test(testPnt);
+      Point<RealT,4> const projPoint = projMat * toHomogeneous(testPnt);
+      auto const projPnt = fromHomogeneous(projPoint);
+      //SPDLOG_INFO("Pnt:{}", projPnt);
+      CHECK(euclidDistance(pnt, projPnt) < 1e-6f);
     }
 
     SECTION("Fit from points")
@@ -249,7 +279,7 @@ namespace Ravl2
       std::vector<Point<RealT,3>> transformedPoints;
       transformedPoints.reserve(points.size());
       for(auto p : points) {
-        transformedPoints.push_back((rot * p) + offset);
+        transformedPoints.emplace_back((rot * p) + offset);
       }
 
       Isometry3<RealT> isometry3;

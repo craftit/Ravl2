@@ -84,6 +84,24 @@ namespace Ravl2
       return Isometry3<RealT>(inv, inv.template rotate<RealT>(-m_translation));
     }
 
+    //! Generate a projective matrix.
+    [[nodiscard]] Matrix<RealT, 4, 4> projectiveMatrix() const
+    {
+      Matrix<RealT, 4, 4> ret;
+      ret.template block<3, 3>(0, 0) = m_rotation.toMatrix();
+      ret.template block<3, 1>(0, 3) = m_translation;
+      ret.template block<1, 3>(3, 0) = Vector<RealT, 3>::Zero();
+      ret(3, 3) = 1;
+      return ret;
+    }
+
+    //! Are all the values in the transform real.
+    //! Used to detect nan and inf values.
+    [[nodiscard]] constexpr bool isReal() const
+    {
+      return m_rotation.isReal() && m_translation.array().isFinite().all();
+    }
+
   private:
     Quaternion<RealT> m_rotation = Quaternion<RealT>::identity();
     Vector<RealT, 3> m_translation = {0, 0, 0};

@@ -103,6 +103,18 @@ namespace Ravl2
       return (*this)(in);
     }
 
+    //! Generate a projective matrix.
+    [[nodiscard]] Matrix<DataT, N+1, N+1> projectiveMatrix() const
+    {
+      Matrix<DataT, N+1, N+1> ret = Matrix<DataT, N+1, N+1>::Zero();
+      for(IndexT i = 0; i < IndexT(N); i++) {
+        ret(i, i) = mS[i];
+        ret(i, N) = mT[i];
+      }
+      ret(N, N) = 1;
+      return ret;
+    }
+
     //! Serialization support
     template <class Archive>
     void serialize(Archive &ar)

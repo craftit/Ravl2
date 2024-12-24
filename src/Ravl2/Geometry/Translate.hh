@@ -24,11 +24,10 @@ namespace Ravl2
 
     //! Construct no-change transform.
     //! Scale = 1, Translate = 0.
-    inline constexpr Translate() = default;
+    constexpr Translate() = default;
 
     //! Copy constructor.
-    inline constexpr Translate(const Translate &Oth) = default;
-
+    constexpr Translate(const Translate &Oth) = default;
 
     //! Construct from scale and a translation vector.
     constexpr explicit Translate(const Vector<DataT, N> &translate)
@@ -55,6 +54,14 @@ namespace Ravl2
       return Translate<DataT, N>(mT * -1);
     }
 
+    //! Generate a projective matrix.
+    [[nodiscard]] Matrix<DataT, N+1, N+1> projectiveMatrix() const
+    {
+      Matrix<DataT, N+1, N+1> ret = Matrix<DataT, N+1, N+1>::Identity();
+      ret.template block<N,1>(0,N) = mT;
+      return ret;
+    }
+
     //! Is the transform real.
     [[nodiscard]] constexpr bool isReal() const
     {
@@ -73,13 +80,13 @@ namespace Ravl2
     }
 
     //! Compose this transform with 'In'
-    [[nodiscard]] constexpr inline auto operator()(const Translate &In) const
+    [[nodiscard]] constexpr auto operator()(const Translate &In) const
     {
       return Translate(In.translation() + mT);
     }
 
     //! Transform a range.
-    [[nodiscard]] constexpr inline auto operator()(const Range<DataT,N> &In) const
+    [[nodiscard]] constexpr auto operator()(const Range<DataT,N> &In) const
     {
       return Range<DataT,N>(In.min() + mT, In.max() + mT);
     }

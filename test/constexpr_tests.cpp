@@ -4,8 +4,12 @@
 #include "Ravl2/Array.hh"
 #include "Ravl2/ArrayIterZip.hh"
 #include "Ravl2/Geometry/Geometry.hh"
+#include "Ravl2/Geometry/Translate.hh"
+#include "Ravl2/Geometry/Affine.hh"
+#include "Ravl2/Geometry/ScaleTranslate.hh"
 #include "Ravl2/Geometry/Isometry3.hh"
 #include "Ravl2/ScanWindow.hh"
+#include "Ravl2/Geometry/Projection.hh"
 #include "Ravl2/IO/Load.hh"
 #include "Ravl2/IO/InputSequence.hh"
 
@@ -74,6 +78,15 @@ namespace Ravl2
     static_assert(sizeof(Vector3d) == 3*sizeof(double),"Vector3d is not packed");
     static_assert(sizeof(Matrix3f) == 9*sizeof(float),"Matrix3f is not packed");
     static_assert(sizeof(Vector<uint8_t,3>) == 3*sizeof(uint8_t),"Vector<uint8_t,3> is not packed");
+
+    static_assert(GeometryTransform<Affine<float,2> >, "Affine<float,2> does not satisfy GeometryTransform");
+    static_assert(GeometryTransform<Translate<float,2> >, "Translate<float,2> does not satisfy GeometryTransform");
+    static_assert(GeometryTransform<ScaleTranslate<float,2> >, "ScaleTranslate<float,2> does not satisfy GeometryTransform");
+    static_assert(GeometryTransform<Isometry3<float>>, "Isometry3<float> does not satisfy GeometryTransform");
+    static_assert(GeometryTransform<Projection<float,2>>, "Projection<float> does not satisfy GeometryTransform");
+    static_assert(GeometryTransform<Quaternion<float>>, "Quaternion<float> does not satisfy GeometryTransform");
+
+
   }
 }
 

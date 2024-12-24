@@ -62,7 +62,7 @@ namespace Ravl2
     inline constexpr void translate(const Vector<DataT, N> &T);
 
     //! Generate an inverse transformation.
-    [[nodiscard]] constexpr std::optional<Affine<DataT, N> > inverse() const;
+    [[nodiscard]] constexpr Affine<DataT, N> inverse() const;
 
     //! Get Scale/Rotate matrix.
     [[nodiscard]] constexpr Matrix<DataT, N, N> &SRMatrix() { return mSR; }
@@ -103,6 +103,19 @@ namespace Ravl2
       ar(cereal::make_nvp("SR", mSR), cereal::make_nvp("T", mT));
     }
 
+    //! Generate a projective matrix.
+    [[nodiscard]] Matrix<DataT, N+1, N+1> projectiveMatrix() const
+    {
+      Matrix<DataT, N+1, N+1> ret;
+      ret.template block<N, N>(0, 0) = mSR;
+      ret.template block<N, 1>(0, N) = mT;
+      for(unsigned i = 0; i < N; i++) {
+        ret(N,i) = 0;
+      }
+      ret(N, N) = 1;
+      return ret;
+    }
+
   private:
     Matrix<DataT, N, N> mSR = Matrix<DataT, N, N>::Identity();//!< Scale/rotate.
     Vector<DataT, N> mT = Vector<DataT,N>::Zero();//!< Translate.
@@ -124,12 +137,12 @@ namespace Ravl2
   }
 
   template <typename DataT, unsigned N>
-  constexpr std::optional<Affine<DataT, N> > Affine<DataT, N>::inverse() const
+  constexpr Affine<DataT, N> Affine<DataT, N>::inverse() const
   {
     Affine<DataT, N> ret;
     auto inv = Ravl2::inverse(mSR);
     if(!inv.has_value()) {
-      return std::nullopt;
+      throw std::runtime_error("Affine::inverse() failed to compute inverse of SR matrix");
     }
     ret.mSR = inv.value();
     ret.mT = ret.mSR * mT * -1;
@@ -156,7 +169,7 @@ namespace Ravl2
   }
 
   template <typename DataT>
-  inline constexpr Affine<DataT, 2> affineFromScaleAngleTranslation(const Vector<DataT, 2> &scale, DataT angle, const Vector<DataT, 2> &translation)
+  constexpr Affine<DataT, 2> affineFromScaleAngleTranslation(const Vector<DataT, 2> &scale, DataT angle, const Vector<DataT, 2> &translation)
   {
     Matrix<DataT, 2, 2> SR( {{std::cos(angle) * scale[1], -std::sin(angle) * scale[0]},
                               {std::sin(angle) * scale[1], std::cos(angle) * scale[0]}});
@@ -165,7 +178,7 @@ namespace Ravl2
 
   //! @brief Computer inverse of affine transformation.
   template <typename DataT, unsigned N>
-  constexpr std::optional<Affine<DataT, N> > inverse(const Affine<DataT, N> &aff)
+  constexpr Affine<DataT, N> inverse(const Affine<DataT, N> &aff)
   {
     return aff.inverse();
   }
@@ -194,7 +207,7 @@ namespace Ravl2
 
   //! @brief Send to output stream.
   template <typename DataT, unsigned N>
-  inline std::ostream &operator<<(std::ostream &os, const Affine<DataT, N> &aff)
+  std::ostream &operator<<(std::ostream &os, const Affine<DataT, N> &aff)
   {
     os << "Affine(SR=" << Eigen::WithFormat(aff.SRMatrix(), Ravl2::defaultEigenFormat()) << ",T=" << Eigen::WithFormat(aff.Translation(), Ravl2::defaultEigenFormat()) << ")";
     return os;
