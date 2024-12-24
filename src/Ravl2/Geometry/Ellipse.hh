@@ -83,19 +83,19 @@ namespace Ravl2
     }
 
     //! Access as projection from unit circle centered on the origin
-    [[nodiscard]] constexpr const Affine<RealT, 2> &Projection() const
+    [[nodiscard]] constexpr const Affine<RealT, 2> &projection() const
     {
       return p;
     }
 
     //! Centre of the ellipse.
-    [[nodiscard]] constexpr Point<RealT, 2> Centre() const
+    [[nodiscard]] constexpr Point<RealT, 2> centre() const
     {
-      return p.Translation();
+      return p.translation();
     }
 
     //! Is point on the curve ?
-    [[nodiscard]] constexpr bool IsOnCurve(const Point<RealT, 2> &pnt, RealT tolerance = std::numeric_limits<RealT>::epsilon()) const
+    [[nodiscard]] constexpr bool isOnCurve(const Point<RealT, 2> &pnt, RealT tolerance = std::numeric_limits<RealT>::epsilon()) const
     {
       Point<RealT, 2> mp = (inverse(p))(pnt);
       RealT d = sumOfSqr(mp) - 1;
@@ -114,9 +114,9 @@ namespace Ravl2
     //!param: major - Size of major axis.
     //!param: minor - Size of minor axis
     //!param: angle - Angle of major axis.
-    constexpr bool EllipseParameters(Point<RealT, 2> &centre, RealT &major, RealT &minor, RealT &angle) const
+    constexpr bool ellipseParameters(Point<RealT, 2> &centre, RealT &major, RealT &minor, RealT &angle) const
     {
-      centre = p.Translation();
+      centre = p.translation();
       ONDEBUG(std::cerr << "SRMatrix:\n"
                         << p.SRMatrix() << std::endl);
       //auto [u, s, vt] = xt::linalg::svd(p.SRMatrix(), true, true);
@@ -215,6 +215,14 @@ namespace Ravl2
     return Ellipse(sr, mean);
   }
 
+  //! Transform ellipse.
+
+  template<PointTransform TransformT,typename RealT = typename TransformT::value_type>
+  [[nodiscard]] constexpr Ellipse<RealT> operator*(const TransformT &lhs, const Ellipse<RealT> &rhs)
+  {
+    return Ellipse<RealT>(lhs * rhs.projection());
+  }
+
   //:-
   //! docentry="Ravl.API.Math.Geometry.2D"
 
@@ -222,7 +230,7 @@ namespace Ravl2
   template <typename RealT>
   std::ostream &operator<<(std::ostream &s, const Ellipse<RealT> &obj)
   {
-    s << obj.Projection();
+    s << obj.projection();
     return s;
   }
 

@@ -173,7 +173,7 @@ namespace Ravl2
       return mOrigin + mVector1 * par[0] + mVector2 * par[1];
     }
 
-    //! @brief Create the projective matrix of of a point on the plane to a 3d point.
+    //! @brief Create the projective matrix of of a 2d point on the plane to a 3d point.
     //! The matrix is 3x3 and is used to map a 2d point on the plane to a 3d point.
     //! @return The projective matrix.
     [[nodiscard]] Matrix<RealT, 4, 3> projectiveMatrix() const

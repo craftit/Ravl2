@@ -46,8 +46,8 @@ namespace Ravl2
     //! <p> This constructor assumes that the values of the last column of "transform" have already been set to correspond to the value of "iz".</p>
     constexpr explicit Projection(const Matrix<RealT, N+1, N+1> &transform, RealT Oz = 1, RealT Iz = 1)
       : trans(transform),
-	      iz(Iz),
-	      oz(Oz)
+	iz(Iz),
+	oz(Oz)
     {}
 
     //! Construct a projective transform from an affine one
@@ -63,14 +63,14 @@ namespace Ravl2
         for(IndexT j = 0; j < IndexT(N); j++) {
           trans(i, j) = affineTransform.SRMatrix()(i, j);
         }
-        trans(i, N) = affineTransform.Translation()[i] / iz;
+        trans(i, N) = affineTransform.translation()[i] / iz;
         trans(N, i) = 0;
       }
       trans(N, N) = oz / iz;
     }
 
     //! Construct from a scale /translation
-    inline explicit constexpr Projection(const ScaleTranslate<RealT, N> &st, RealT Oz = 1, RealT Iz = 1)
+    explicit constexpr Projection(const ScaleTranslate<RealT, N> &st, RealT Oz = 1, RealT Iz = 1)
      : trans(Matrix<RealT,N+1,N+1>::Zero()),
        iz(Iz),
        oz(Oz)
@@ -83,7 +83,7 @@ namespace Ravl2
     }
 
     //! Construct from a scale /translation
-    inline explicit constexpr Projection(const Translate<RealT, N> &st, RealT Oz = 1, RealT Iz = 1)
+    explicit constexpr Projection(const Translate<RealT, N> &st, RealT Oz = 1, RealT Iz = 1)
         : trans(Matrix<RealT,N+1,N+1>::Zero()),
           iz(Iz),
           oz(Oz)
@@ -94,6 +94,14 @@ namespace Ravl2
       }
       trans(N, N) = oz / iz;
     }
+
+    //! Construct from a transform
+    template<GeometryTransform TransformT>
+    explicit constexpr Projection(const TransformT &transform)
+      : trans(transform.projectiveMatrix()),
+        iz(1),
+        oz(1)
+    {}
 
     //! Returns identity projection
     static constexpr Projection<RealT, N> identity(RealT oz = 1, RealT iz = 1)
@@ -213,23 +221,10 @@ namespace Ravl2
     //! @return: the affine approximation
     [[nodiscard]] constexpr Affine<RealT, N> affineApproximation() const
     {
-#if 1
-      Matrix<RealT,N+1,N+1> htrans = homography();
-      RealT t1 = htrans(0,2) / htrans(2,2);
-      RealT t2 = htrans(1,2) / htrans(2,2);
-      RealT h1 = htrans(0,0) / htrans(2,2)  - t1 * htrans(2,0);
-      RealT h2 = htrans(0,1) / htrans(2,2) - t1 * htrans(2,1);
-      RealT h3 = htrans(1,0) / htrans(2,2) - t2 * htrans(2,0);
-      RealT h4 = htrans(1,1) / htrans(2,2) - t2 * htrans(2,1);
-      return Affine<RealT,N>(Matrix<RealT,2,2>({{h1,h2},{h3,h4}}), Vector<RealT,2>({t1,t2}));
-#else
-      // N dimensional affine approximation
       Matrix<RealT, N+1, N+1> h = homography();
       h /= h(N, N);
-      auto htrans = h.template block<N, N>(0, 0);
-      Vector<RealT, N> t = h.template block<N, 1>(0, N);
-      return Affine<RealT, N>(htrans, t);
-#endif
+      return Affine<RealT, N>(h.template block<N, N>(0, 0),
+                          h.template block<N, 1>(0, N));
     }
 
     //! True if not the zero projection and Matrix<RealT,3,3> is "real"

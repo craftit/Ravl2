@@ -45,8 +45,8 @@ namespace Ravl2
     auto sab = dec.solve(b);
     auto sac = dec.solve(c);
 
-    affine.Translation()[0] = sab[2];
-    affine.Translation()[1] = sac[2];
+    affine.translation()[0] = sab[2];
+    affine.translation()[1] = sac[2];
     affine.SRMatrix() = Matrix<RealT,2,2>({{sab[0], sab[1]},{sac[0], sac[1]}});
 
     return true;

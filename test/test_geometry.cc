@@ -235,8 +235,8 @@ namespace Ravl2
         cereal::JSONInputArchive iarchive(ss);
         Affine<float, 2> a2;
         iarchive(a2);
-        CHECK(isNearZero(a1.Translation()[0] - a2.Translation()[0]));
-        CHECK(isNearZero(a1.Translation()[1] - a2.Translation()[1]));
+        CHECK(isNearZero(a1.translation()[0] - a2.translation()[0]));
+        CHECK(isNearZero(a1.translation()[1] - a2.translation()[1]));
         CHECK(isNearZero(a1.SRMatrix()(0,0) - a2.SRMatrix()(0,0)));
         CHECK(isNearZero(a1.SRMatrix()(0,1) - a2.SRMatrix()(0,1)));
         CHECK(isNearZero(a1.SRMatrix()(1,0) - a2.SRMatrix()(1,0)));
@@ -421,7 +421,7 @@ namespace Ravl2
       auto ellipse = optEllipse.value();
       for(auto p : pnts) {
         //SPDLOG_INFO("Point {} is on curve: {} ", p, ellipse.residue(p));
-        CHECK(ellipse.IsOnCurve(p, 1e-4f));
+        CHECK(ellipse.isOnCurve(p, 1e-4f));
       }
 #endif
     }
@@ -436,7 +436,7 @@ namespace Ravl2
       //SPDLOG_INFO("Ellipse: {}", ellipse);
       Point<RealT,2> centre;
       RealT min,maj,ang;
-      ellipse.EllipseParameters(centre,maj,min,ang);
+      ellipse.ellipseParameters(centre,maj,min,ang);
       //SPDLOG_INFO("Parameters={} {} {} {} ", centre, maj, min, ang);
 
       CHECK((std::abs(maj - RealT(2))) < 0.0000001f);

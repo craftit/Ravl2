@@ -49,10 +49,10 @@ namespace Ravl2
     { return Affine(Matrix<DataT, N, N>::Identity(), Vector<DataT, N>::Zero()); }
 
     //! Access the translation component of the transformation.
-    [[nodiscard]] inline constexpr Vector<DataT, N> &Translation() { return mT; }
+    [[nodiscard]] inline constexpr Vector<DataT, N> &translation() { return mT; }
 
     //! Constant access to the translation component of the transformation.
-    [[nodiscard]] inline constexpr const Vector<DataT, N> &Translation() const { return mT; }
+    [[nodiscard]] inline constexpr const Vector<DataT, N> &translation() const { return mT; }
 
     //! In place Scaling along the X & Y axis by value given in the vector.
     //! If all values 1, then no effect.
@@ -86,14 +86,14 @@ namespace Ravl2
     //! Compose this transform with 'In'
     [[nodiscard]] inline constexpr auto operator()(const Affine &in) const
     {
-      return Affine(mSR * in.SRMatrix(), mSR * in.Translation() + mT);
+      return Affine(mSR * in.SRMatrix(), mSR * in.translation() + mT);
     }
 
     //! @brief Divide this transform by 'in'
     [[nodiscard]] inline constexpr auto divideBy(const Affine &in) const
     {
       Matrix<DataT, N, N> invSr = *Ravl2::inverse(in.SRMatrix());
-      return Affine(mSR * invSr, invSr * (mT - in.Translation()));
+      return Affine(mSR * invSr, invSr * (mT - in.translation()));
     }
 
     //! Serialization support
@@ -209,7 +209,7 @@ namespace Ravl2
   template <typename DataT, unsigned N>
   std::ostream &operator<<(std::ostream &os, const Affine<DataT, N> &aff)
   {
-    os << "Affine(SR=" << Eigen::WithFormat(aff.SRMatrix(), Ravl2::defaultEigenFormat()) << ",T=" << Eigen::WithFormat(aff.Translation(), Ravl2::defaultEigenFormat()) << ")";
+    os << "Affine(SR=" << Eigen::WithFormat(aff.SRMatrix(), Ravl2::defaultEigenFormat()) << ",T=" << Eigen::WithFormat(aff.translation(), Ravl2::defaultEigenFormat()) << ")";
     return os;
   }
 
