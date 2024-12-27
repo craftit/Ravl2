@@ -24,7 +24,7 @@ add_library (Ravl2Geometry
         Translate.cc Translate.hh
         FitLine.cc FitLine.hh
         Conic2.cc Conic2.hh
-        FitConic.hh
+        FitConic.cc FitConic.hh
         Ellipse.cc Ellipse.hh
         VectorOffset.cc VectorOffset.hh
         FitVectorOffset.hh FitVectorOffset.cc
@@ -37,7 +37,6 @@ add_library (Ravl2Geometry
         FitAffine.cc FitAffine.hh
         FitSimilarity.cc FitSimilarity.hh
         PolyApprox.hh PolyApprox.cc
-
 )
 
 add_library(ravl2::Ravl2Geometry ALIAS Ravl2Geometry)
