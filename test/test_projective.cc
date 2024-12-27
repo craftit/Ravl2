@@ -146,8 +146,8 @@ namespace Ravl2
           errFitted += error2;
           SPDLOG_INFO("Pnt: {} -> True: {} Approx:{} ({}) Fitted:{} ({}) ", p, pnt, pnt2, error, pnt3,error2);
         }
-        errApprox /= ipnts.size();
-        errFitted /= ipnts.size();
+        errApprox /= RealT(ipnts.size());
+        errFitted /= RealT(ipnts.size());
         SPDLOG_INFO("Approx: {}  Fitted:{} ", errApprox, errFitted);
         CHECK(errApprox < 0.26);
         CHECK(errFitted < 0.1);
