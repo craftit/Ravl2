@@ -514,6 +514,13 @@ namespace Ravl2
       return m_range;
     }
 
+    //! Access range of array
+    [[nodiscard]] constexpr const IndexRange<1> &range([[maybe_unused]] unsigned n) const
+    {
+      assert(n == 0);
+      return m_range;
+    }
+
     //! Inplace clipping of the array bounds.
     //! This clips the array to be within the given range.
     //! Returns false if the resulting array is empty.

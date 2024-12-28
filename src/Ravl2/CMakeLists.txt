@@ -69,6 +69,7 @@ add_library(Ravl2Core
     IO/InputStreamContainer.cc IO/InputStreamContainer.hh
     IO/OutputSequence.hh IO/OutputSequence.cc
     ThreadedQueue.cc ThreadedQueue.hh
+    Eigen.cc Eigen.hh
     Catch2checks.hh
 )
 

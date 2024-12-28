@@ -59,7 +59,7 @@ namespace Ravl2
       assert(init.size() > 0);
       if(init.size() == 1) {
         m_min = 0;
-        m_max = init.begin()[0] + 1;
+        m_max = init.begin()[0] - 1;
       }
       if(init.size() > 1) {
         m_min = init.begin()[0];
