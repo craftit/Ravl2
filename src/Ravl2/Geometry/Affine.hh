@@ -116,6 +116,12 @@ namespace Ravl2
       return ret;
     }
 
+    //! Check if the transform is approximately the identity.
+    [[nodiscard]]
+    bool isApproxIdentity(float tolerance = 1e-3f) const
+    {
+      return mSR.isApprox(Matrix<DataT, N, N>::Identity(), tolerance) && mT.isZero(tolerance);
+    }
   private:
     Matrix<DataT, N, N> mSR = Matrix<DataT, N, N>::Identity();//!< Scale/rotate.
     Vector<DataT, N> mT = Vector<DataT,N>::Zero();//!< Translate.
