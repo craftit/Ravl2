@@ -133,6 +133,13 @@ namespace Ravl2
       return mEdges;
     }
 
+    //! Get Begin iterator
+    [[nodiscard]] auto begin() const
+    { return mEdges.begin(); }
+
+    //! Get End iterator
+    [[nodiscard]] auto end() const
+    { return mEdges.end(); }
   private:
     //! Orientation of the boundary.
     BoundaryOrientationT orientation = BoundaryOrientationT::INSIDE_LEFT;
