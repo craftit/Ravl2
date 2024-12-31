@@ -51,20 +51,20 @@ namespace Ravl2
     return std::span(t);
   }
 
-  template <typename RealT, IndexSizeT N>
+  template <typename RealT, int N>
   auto dot(const Vector<RealT, N> &a, const Vector<RealT, N> &b)
   {
     return a.dot(b);
   }
 
-  template <typename RealT, IndexSizeT N, IndexSizeT M>
+  template <typename RealT, int N, int M>
   auto dot(const Matrix<RealT, N, M> &a, const Vector<RealT, N> &b)
   {
     return a * b;
   }
 
 
-  template <typename RealT, IndexSizeT N>
+  template <typename RealT, int N>
   auto sum(const Vector<RealT, N> &a)
   {
     return a.sum();
