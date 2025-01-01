@@ -232,7 +232,9 @@ namespace Ravl2
     [[nodiscard]] static constexpr Quaternion<RealT> fromEulerAnglesXYZ(const Vector3f &angles)
     {
       // We should simplify this out.
-      auto ret = fromAngleAxis(angles[0], {1.0f, 0.0f, 0.0f}) * fromAngleAxis(angles[1], {0.0f, 1.0f, 0.0f}) * fromAngleAxis(angles[2], {0.0f, 0.0f, 1.0f});
+      auto ret = fromAngleAxis(angles[0], {1.0f, 0.0f, 0.0f}) *
+                 fromAngleAxis(angles[1], {0.0f, 1.0f, 0.0f}) *
+                 fromAngleAxis(angles[2], {0.0f, 0.0f, 1.0f});
       ret.normalise();
       return ret;
     }
@@ -338,7 +340,7 @@ namespace Ravl2
   constexpr std::string toString(const Quaternion<RealT> &val)
   {
     auto angles = val.eulerAngles();
-    return fmt::format("Q: {} {} {}", angles[0], angles[1], angles[2]);
+    return fmt::format("Q: {} {} {} deg.", Ravl2::rad2deg(angles[0]), Ravl2::rad2deg(angles[1]), Ravl2::rad2deg(angles[2]));
   }
 
   extern template class Quaternion<float>;
