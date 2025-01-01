@@ -111,13 +111,9 @@ namespace Ravl2
     //! Returns true iff the point 'p' is an internal point of this polygon.
     [[nodiscard]] bool contains(const Point<RealT, 2> &p) const;
 
-    //! Returns the perimeter length of this polygon.
-    [[nodiscard]] RealT perimeter() const;
-
     //! Returns the centroid of this polygon.
     //! This computes the centroid of the area covered by the polygon
-    [[nodiscard]]
-    Point<RealT, 2> centroid() const;
+    [[nodiscard]] Point<RealT, 2> centroid() const;
 
     //! Returns true if the polygon is self intersecting, ie do any sides cross
     [[nodiscard]] bool isSelfIntersecting() const;

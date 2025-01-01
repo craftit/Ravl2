@@ -319,20 +319,6 @@ namespace Ravl2
   }
 
   template <typename RealT>
-  RealT Polygon<RealT>::perimeter() const
-  {
-    RealT perimeter = 0.0;
-    if(!this->empty()) {
-      auto pLast = this->back();
-      for(auto ptr : *this) {
-        perimeter += euclidDistance(pLast, ptr);
-        pLast = ptr;
-      }
-    }
-    return perimeter;
-  }
-
-  template <typename RealT>
   RealT Polygon<RealT>::overlap(const Polygon &poly) const
   {
     if(this->empty() || poly.empty())

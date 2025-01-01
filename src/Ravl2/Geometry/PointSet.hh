@@ -74,6 +74,21 @@ namespace Ravl2
       return *this;
     }
 
+    //! The assumes the points form a closed boundary.
+    //! That is, they are in order and the last point is connected to the first.
+    [[nodiscard]] RealT perimeter() const
+    {
+      RealT perimeter = 0;
+      if(!this->empty()) {
+        auto pLast = this->back();
+        for(auto ptr : *this) {
+          perimeter += euclidDistance(pLast, ptr);
+          pLast = ptr;
+        }
+      }
+      return perimeter;
+    }
+
   protected:
     static constexpr RealT pCot(const Point<RealT, 2> &oPointA, const Point<RealT, 2> &oPointB, const Point<RealT, 2> &oPointC)
     {

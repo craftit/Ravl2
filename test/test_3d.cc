@@ -50,26 +50,27 @@ namespace Ravl2
       auto cam = PinholeCamera0<float>::fromFrame(frame,0.2f,distance);
       Vector<float, 2> pix;
       cam.project(pix,toVector<float>(0.0,0.1,distance));
-      //SPDLOG_INFO("Pix {}", pix);
+      SPDLOG_INFO("Pix {}", pix);
       EXPECT_FLOAT_EQ(pix[1], float(frame.max(1)));
       cam.project(pix,toVector<float>(0.0,-0.1,distance));
-      //SPDLOG_INFO("Pix {}", pix);
+      SPDLOG_INFO("Pix {}", pix);
       EXPECT_FLOAT_EQ(pix[1], float(frame.min(1)));
     }
 
     SECTION("Construct Frame Origin")
     {
       IndexRange<2> frame = {{-50, 50},{-50, 50}};
-      float distance = 1.5;
-      auto cam = PinholeCamera0<float>::fromFrame(frame,0.2f,distance);
+      const float distance = 1.5;
+      const float horizontalSize = 0.2f;
+      auto cam = PinholeCamera0<float>::fromFrameOrigin(frame,horizontalSize,distance);
       Vector<float, 2> pix;
       cam.project(pix,toVector<float>(0,0,distance));
       EXPECT_FLOAT_EQ(pix[0], 0);
       EXPECT_FLOAT_EQ(pix[1], 0);
-      cam.project(pix,toVector<float>(0.0,0.1,distance));
+      cam.project(pix,toVector<float>(0.0,horizontalSize/2,distance));
       //SPDLOG_INFO("Pix {}", pix);
       EXPECT_FLOAT_EQ(pix[1], float(frame.max(1)));
-      cam.project(pix,toVector<float>(0.0,-0.1,distance));
+      cam.project(pix,toVector<float>(0.0,-horizontalSize/2,distance));
       //SPDLOG_INFO("Pix {}", pix);
       EXPECT_FLOAT_EQ(pix[1], float(frame.min(1)));
     }

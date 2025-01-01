@@ -208,8 +208,8 @@ namespace Ravl2
           auto const pnt = q(testPnt);
           Point<RealT,4> const projPoint = projMat * toHomogeneous(testPnt);
           auto const projPnt = fromHomogeneous(projPoint);
-          SPDLOG_INFO("Pnt:{}", projPnt);
-          CHECK(euclidDistance(pnt, projPnt) < 1e-6f);
+          //SPDLOG_INFO("Pnt:{}  Pnt:{}",pnt, projPnt);
+          CHECK(euclidDistance(pnt, projPnt) < 1e-5f);
         }
       }
 

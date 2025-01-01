@@ -90,26 +90,26 @@ namespace Ravl2
     //! Construct a camera that fills the image at the given distance
     //! with the camera at the origin looking along the z-axis
     //! @param frame - the image frame for the camera
-    //! @param horizontalSize - the size of the image in the x direction
+    //! @param horizontalSize - the size of the image in the x direction (frame.range(1))
     //! @param distance - the distance from the camera to the image plane
     static PinholeCamera0 fromFrame(const IndexRange<2> &frame,
                                     float horizontalSize,
                                     float distance)
     {
-      float f = float(frame.range(0).size()-1) * distance * 2.0f / (horizontalSize);
+      float f = float(frame.range(1).size()-1) * distance * 2 / (horizontalSize);
       return PinholeCamera0(frame,f,Isometry3<float>(Quaternion<float>::identity(),{0,0,distance}));
     }
     
     //! Construct a camera that fills the image at the given distance
     //! with the camera at the origin looking along the z-axis, at pixel 0,0
     //! @param frame - the image frame for the camera
-    //! @param horizontalSize - the size of the image in the x direction
+    //! @param horizontalSize - the size of the image in the x direction  (frame.range(1))
     //! @param distance - the distance from the camera to the image plane
     static PinholeCamera0 fromFrameOrigin(const IndexRange<2> &frame,
                                     float horizontalSize,
                                     float distance)
     {
-      float f = float(frame.range(0).size()-1) * distance / (horizontalSize);
+      float f = float(frame.range(1).size()-1) * distance * 2/ (horizontalSize);
       return PinholeCamera0(f,{0,0},frame,Isometry3<float>(Quaternion<float>::identity(),{0,0,distance}));
     }
     
