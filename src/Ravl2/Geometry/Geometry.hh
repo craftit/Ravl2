@@ -58,6 +58,7 @@ namespace Ravl2
   }
 
   template <typename RealT, int N, int M>
+    requires (N > 1) && (M > 1)
   auto dot(const Matrix<RealT, N, M> &a, const Vector<RealT, N> &b)
   {
     return a * b;
