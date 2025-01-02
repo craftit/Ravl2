@@ -465,6 +465,16 @@ namespace Ravl2
     using value_type = DataT;
     constexpr static unsigned dimensions = N;
 
+    //! Given strides and range compute the offset to the origin from the start of the data.
+    [[nodiscard]] static constexpr int compute_origin_offset(const IndexRange<N> &range, const std::array<int, N> &strides)
+    {
+      int off = 0;
+      for(unsigned i = 0; i < N; i++) {
+        off -= range[i].min() * strides[i];
+      }
+      return off;
+    }
+
   protected:
     //! Generate strides
     constexpr void make_strides(const IndexRange<N> &range)
@@ -479,13 +489,7 @@ namespace Ravl2
     }
 
     [[nodiscard]] constexpr int compute_origin_offset(const IndexRange<N> &range) const
-    {
-      int off = 0;
-      for(unsigned i = 0; i < N; i++) {
-        off -= range[i].min() * m_strides[i];
-      }
-      return off;
-    }
+    { return compute_origin_offset(range,m_strides); }
 
     explicit constexpr ArrayView(const IndexRange<N> &range, const std::array<int, N> &strides)
         : m_range(range),

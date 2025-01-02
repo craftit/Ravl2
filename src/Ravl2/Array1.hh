@@ -421,6 +421,12 @@ namespace Ravl2
     using value_type = DataT;
     constexpr static unsigned dimensions = 1;
 
+    //! Given strides and range compute the offset to the origin from the start of the data.
+    [[nodiscard]] static constexpr int compute_origin_offset(const IndexRange<1> &range)
+    {
+      return - range.min();
+    }
+
     //! Create an sub array with the requested 'range'
     //! Range must be entirely contained in the original array.
     constexpr ArrayView(Array<DataT, 1> &original, const IndexRange<1> &range)
