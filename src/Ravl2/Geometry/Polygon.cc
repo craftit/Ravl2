@@ -18,15 +18,14 @@ namespace Ravl2
   Polygon<RealT>::Polygon(const Range<RealT, 2> &range, BoundaryOrientationT orientation)
   {
     this->reserve(4);
+    this->push_back(range.min());
     if(orientation == BoundaryOrientationT::INSIDE_LEFT) {
       // Clockwise
-      this->push_back(range.min());
       this->push_back(toPoint<RealT>(range[0].max(), range[1].min()));
       this->push_back(range.max());
       this->push_back(toPoint<RealT>(range[0].min(), range[1].max()));
     } else {
       // Counterclockwise
-      this->push_back(range.min());
       this->push_back(toPoint<RealT>(range[0].min(), range[1].max()));
       this->push_back(range.max());
       this->push_back(toPoint<RealT>(range[0].max(), range[1].min()));

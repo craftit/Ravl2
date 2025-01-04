@@ -61,6 +61,17 @@ namespace Ravl2
         : PointSet<RealT, 2>(std::move(points))
     {}
 
+    //! Construct from a fixed array of points
+    template <size_t N>
+    constexpr explicit Polygon(const std::array<Point<RealT, 2>, N> &points)
+      : PointSet<RealT, 2>(points)
+    {}
+
+    //! From initializer list
+    Polygon(std::initializer_list<Point<RealT,2>> list)
+      : PointSet<RealT,2>(list)
+    {}
+
     //! Constructor creates a rectangular polygon of the range
     //! @param: range - the range defining the rectangle for the polygon
     //! @param: orientation - the orientation of the boundary
@@ -179,6 +190,15 @@ namespace Ravl2
     return Polygon<RealT>(range, orientation);
   }
 
+  //! Convert a range to a polygon.
+  //! @param: points - Fixed size array of points
+  //! @param: orientation - the orientation of the boundary
+  //! If BoundaryOrientationT::INSIDE_LEFT makes a counter clockwise polygon, with a positive area.
+  template <typename RealT,size_t N>
+  [[nodiscard]] inline Polygon<RealT> toPolygon(const std::array<Point<RealT, 2>, N> &points)
+  {
+    return Polygon<RealT>(points);
+  }
 
   //! Convert an IndexRange to a polygon
   //! @param: range - the range defining the rectangle for the polygon

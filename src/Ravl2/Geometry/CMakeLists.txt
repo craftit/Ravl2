@@ -37,6 +37,7 @@ add_library (Ravl2Geometry
         FitAffine.cc FitAffine.hh
         FitSimilarity.cc FitSimilarity.hh
         PolyApprox.hh PolyApprox.cc
+        Quad.cc Quad.hh
 )
 
 add_library(ravl2::Ravl2Geometry ALIAS Ravl2Geometry)
