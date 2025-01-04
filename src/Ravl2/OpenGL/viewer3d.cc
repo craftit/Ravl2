@@ -156,10 +156,9 @@ int main(int argc,char **argv)
     window->swapBuffers();
   }
 
+#endif
   // Run the main loop
   window->runMainLoop();
-
-#endif
 
   return 0;
 }

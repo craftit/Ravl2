@@ -4,11 +4,11 @@ find_package(fmt REQUIRED)
 find_package(spdlog REQUIRED)
 find_package(cereal REQUIRED)
 
-
 find_package(BLAS REQUIRED)
 find_package(LAPACK REQUIRED)
 find_package(dlib QUIET)
 find_package(Qt5 QUIET)
+find_package(OpenGL QUIET)
 
 add_subdirectory(Optimise)
 add_subdirectory(Geometry)
