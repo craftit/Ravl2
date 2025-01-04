@@ -42,7 +42,7 @@ namespace Ravl2
     constexpr Ellipse() = default;
 
     //! Create from conic parameters.
-    //!param: conicParams - Conic parameters a to f, where a * sqr(row) + b * row * col + c * sqr(col) + d * row + e * col + f = 0
+    //! @pa conicParams - Conic parameters a to f, where a * sqr(row) + b * row * col + c * sqr(col) + d * row + e * col + f = 0
     constexpr explicit Ellipse(const Vector<RealT, 6> &conicParams)
     {
       Conic2<RealT> conic(conicParams);
@@ -50,23 +50,23 @@ namespace Ravl2
     }
 
     //! Construct from affine transform from unit circle centered on the origin
-    //!param: np - Transform from unit circle centered on the origin
+    //! @param np - Transform from unit circle centered on the origin
     constexpr explicit Ellipse(const Affine<RealT, 2> &np)
         : p(np)
     {}
 
     //! Construct from affine transform from unit circle centered on the origin
-    //!param: sr - scale rotation matrix.
-    //!param: off - offset from origin
+    //! @param sr - scale rotation matrix.
+    //! @param off - offset from origin
     constexpr Ellipse(const Matrix<RealT, 2, 2> &sr, const Vector<RealT, 2> &off)
         : p(sr, off)
     {}
 
     //! Create an new ellipse
-    //!param: centre - Centre of ellipse.
-    //!param: major - Size of major axis. (at given angle)
-    //!param: minor - Size of minor axis.
-    //!param: angle - Angle of major axis.
+    //! @param centre - Centre of ellipse.
+    //! @param major - Size of major axis. (at given angle)
+    //! @param minor - Size of minor axis.
+    //! @param angle - Angle of major axis.
     constexpr Ellipse(const Point<RealT, 2> &centre, RealT major, RealT minor, RealT angle)
     {
       p = Affine<RealT, 2>(Matrix<RealT, 2, 2>({{std::cos(angle), -std::sin(angle)},
@@ -110,10 +110,10 @@ namespace Ravl2
     }
 
     //! @brief Compute various ellipse parameters.
-    //!param: centre - Centre of ellipse.
-    //!param: major - Size of major axis.
-    //!param: minor - Size of minor axis
-    //!param: angle - Angle of major axis.
+    //! @param: centre - Centre of ellipse.
+    //! @param: major - Size of major axis.
+    //! @param: minor - Size of minor axis
+    //! @param: angle - Angle of major axis.
     constexpr bool ellipseParameters(Point<RealT, 2> &centre, RealT &major, RealT &minor, RealT &angle) const
     {
       centre = p.translation();
@@ -146,6 +146,24 @@ namespace Ravl2
       //auto [u, s, vt] = xt::linalg::svd(p.SRMatrix(), false, false);
       auto s = svd.singularValues();
       return {s[0], s[1]};
+    }
+
+    //! @brief Compute the area of the ellipse.
+    //! @return Area of the ellipse.
+    [[nodiscard]]
+    constexpr RealT area() const
+    {
+      auto [major, minor] = size();
+      return std::numbers::pi_v<RealT> * major * minor;
+    }
+
+    //! @brief Compute the approximate perimeter of the ellipse.
+    //! @return Perimeter of the ellipse.
+    [[nodiscard]] constexpr RealT approxPerimeter() const
+    { // Approximation from Ramanujan
+      auto [major, minor] = size();
+      RealT h = sqr(major - minor) / sqr(major + minor);
+      return std::numbers::pi_v<RealT> * (major + minor) * (1 + 3 * h / (10 + std::sqrt(4 - 3 * h)));
     }
 
   protected:

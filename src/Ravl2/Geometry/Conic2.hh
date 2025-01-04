@@ -15,11 +15,7 @@
 #include "Ravl2/Types.hh"
 #include "Ravl2/Geometry/Line2ABC.hh"
 
-//#include "Ravl2/LeastSquares.hh"
-//#include "Ravl2/Ellipse2d.hh"
-//#include "Ravl2/Eigen.hh"
-
-#define DODEBUG 1
+#define DODEBUG 0
 #if DODEBUG
 #define ONDEBUG(x) x
 #else

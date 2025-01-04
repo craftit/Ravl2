@@ -89,10 +89,10 @@ add_executable(viewer3d viewer3d.cc)
 target_link_libraries (viewer3d PUBLIC Ravl2Image Ravl2OpenGL CLI11::CLI11)
 
 if(BUILD_IMGUIGLFW)
-target_link_libraries(viewer3d PRIVATE imgui)
-add_library (Ravl2ImGUI
-        ImGui.cc ImGui.hh
-)
+    target_link_libraries(viewer3d PRIVATE imgui)
+    add_library (Ravl2ImGUI
+            ImGui.cc ImGui.hh
+    )
 endif ()
 
 
