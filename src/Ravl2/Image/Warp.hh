@@ -7,6 +7,7 @@
 #include "Ravl2/Array.hh"
 #include "Ravl2/Math.hh"
 #include "Ravl2/Geometry/Affine.hh"
+#include "Ravl2/Geometry/Projection.hh"
 #include "Ravl2/Geometry/Range.hh"
 #include "Ravl2/Image/BilinearInterpolation.hh"
 
@@ -45,9 +46,10 @@ namespace Ravl2
   //! @param transform The point-to-point mapping to use
   //! @return The range of pixels the transformed points will sample from
   template <typename TransformT, unsigned N, typename CoordTypeT = float>
+   requires PointTransform<TransformT, CoordTypeT, N>
   Range<CoordTypeT, N> projectedBounds(const TransformT &transform, const IndexRange<N> &targetRange)
   {
-    Range<CoordTypeT, N> transformedRange;
+    Range<CoordTypeT, N> transformedRange = Range<CoordTypeT,N>::mostEmpty();
     for(unsigned i = 0; i < (1u << N); i++) {
       Point<CoordTypeT, N> pnt;
       for(unsigned j = 0; j < N; j++) {
@@ -151,27 +153,32 @@ namespace Ravl2
             SamplerT &&sampler = SamplerT())
   {
     // Get the range of pixels the transformed points will sample from
+    // Check if it is a projective transform
     auto realSourceRange = interpolationBounds<CoordTypeT>(source.range(), sampler);
-    auto realSampleRange = projectedBounds(transform, target.range());
-    if(realSourceRange.contains(realSampleRange)) {
-      // Iterate over the target image, no need for bounds check.
-      for(auto it = target.begin(); it.valid();) {
-        do {
-          // Get the point in the target image
-          auto targetIndex = it.index();
+    if constexpr (!std::is_same_v<TransformT,Projection<CoordTypeT,N>>) {
+      auto realSampleRange = projectedBounds(transform, target.range());
+      if(realSourceRange.contains(realSampleRange)) {
+        // Iterate over the target image, no need for bounds check.
+        for(auto it = target.begin(); it.valid();) {
+          do {
+            // Get the point in the target image
+            auto targetIndex = it.index();
 
-          // Get the point in the source image
-          auto sourcePoint = transform(toPoint<CoordTypeT>(targetIndex));
+            // Get the point in the source image
+            auto sourcePoint = transform(toPoint<CoordTypeT>(targetIndex));
+            assert(realSampleRange.contains(sourcePoint));
 
-          // Get the pixel value from the source image
-          auto sourcePixel = sampler(source, sourcePoint);
+            // Get the pixel value from the source image
+            auto sourcePixel = sampler(source, sourcePoint);
 
-          // Assign the pixel value to the target image
-          operation(*it, sourcePixel);
-        } while(it.next());
+            // Assign the pixel value to the target image
+            operation(*it, sourcePixel);
+          } while(it.next());
+        }
+        return true;
       }
-      return true;
-    } else {
+    }
+    {
       if constexpr(wrapMode == WarpWrapMode::Stop) {
         return false;
       } else {

@@ -1,5 +1,6 @@
 
 #include "Ravl2/Catch2checks.hh"
+#include "Ravl2/Geometry/Projection.hh"
 
 #include "Ravl2/Image/BilinearInterpolation.hh"
 #include "Ravl2/Image/WarpScale.hh"
@@ -72,6 +73,43 @@ namespace Ravl2
 
   }
 
+  TEST_CASE("WarpBounds")
+  {
+    SECTION("Projection")
+    {
+      Ravl2::IndexRange<2> rng({{-8, 7}, {-12, 9}});
+      // ([-592.402  128.055        0] [-691.364  149.244  170.722] [-2.92932 0.632021        1]) iz=1 oz=1
+      Matrix<float, 3, 3> projMat({{-592.402f, 128.055f,0.0f}, {-691.364f, 149.244f, 170.722f}, {-2.92932f, 0.632021f, 1.0f}});
+      Ravl2::Projection<float,2> projection(projMat);
+      auto bounds = Ravl2::projectedBounds(projection, rng);
+      SPDLOG_INFO("Bounds:{}", bounds);
+
+      auto checkPnt = [&](const Ravl2::Point2f &pnt) {
+        auto projPnt = projection(pnt);
+        SPDLOG_INFO("Pnt:{} Proj:{}", pnt, projPnt);
+        CHECK(bounds.contains(projPnt));
+      };
+      checkPnt(Ravl2::toPoint<float>(-8,-12));
+      checkPnt(Ravl2::toPoint<float>(7,9));
+      checkPnt(Ravl2::toPoint<float>(7,-12));
+      checkPnt(Ravl2::toPoint<float>(-8,9));
+
+#if 0
+      checkPnt(Ravl2::toPoint<float>(0,0));
+      checkPnt(Ravl2::toPoint<float>(0,0));
+
+      CHECK(bounds.contains(projection(Ravl2::toPoint<float>(7,9))));
+
+      for(auto ind : rng) {
+        auto projPnt = projection(Ravl2::toPoint<float>(ind));
+        if(!bounds.contains(projPnt)) {
+          SPDLOG_INFO("Ind:{} Proj:{}", ind, projPnt);
+        }
+        CHECK(bounds.contains(projPnt));
+      }
+#endif
+    }
+  }
 
   TEST_CASE("PeakDetection")
   {

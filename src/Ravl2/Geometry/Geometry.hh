@@ -195,7 +195,7 @@ namespace Ravl2
   //! Convert a point to the closest integer index
   template <IndexSizeT N, typename RealT>
     requires std::is_floating_point<RealT>::value
-  [[nodiscard]] constexpr inline Index<N> toIndex(const Point<RealT, N> &pnt)
+  [[nodiscard]] constexpr Index<N> toIndex(const Point<RealT, N> &pnt)
   {
     Index<N> ret;
     for(unsigned i = 0; i < N; i++) {
@@ -207,7 +207,7 @@ namespace Ravl2
   //! Get the closest integer index from an integer point
   template <IndexSizeT N, typename NumberT>
     requires std::is_integral<NumberT>::value
-  [[nodiscard]] constexpr inline Index<unsigned (N)> toIndex(const Point<NumberT, N> &pnt)
+  [[nodiscard]] constexpr Index<unsigned (N)> toIndex(const Point<NumberT, N> &pnt)
   {
     Index<unsigned (N)> ret;
     for(unsigned i = 0; i < N; i++) {
@@ -219,7 +219,7 @@ namespace Ravl2
   //! Convert an index to a point
   template <typename RealT, unsigned N>
     requires std::is_convertible<int, RealT>::value
-  [[nodiscard]] constexpr inline Point<RealT, N> toPoint(const Index<N> &idx)
+  [[nodiscard]] constexpr Point<RealT, N> toPoint(const Index<N> &idx)
   {
     Point<RealT, N> ret;
     for(unsigned i = 0; i < N; i++) {
@@ -251,7 +251,7 @@ namespace Ravl2
   //! Convert a parameter list of RealT to a point
   template <typename RealT, typename... DataT, IndexSizeT N = sizeof...(DataT)>
     requires(std::is_convertible_v<DataT, RealT> && ...)
-  [[nodiscard]] constexpr inline Vector<RealT, N> toVector(DataT... data)
+  [[nodiscard]] constexpr Vector<RealT, N> toVector(DataT... data)
   {
     return Vector<RealT, N>({RealT(data)...});
   }
@@ -270,7 +270,7 @@ namespace Ravl2
 
   //! Linear interpolation between two points
   template <typename RealT, IndexSizeT N>
-  [[nodiscard]] constexpr inline Point<RealT, N> lerp(const Point<RealT, N> &a, const Point<RealT, N> &b, RealT t)
+  [[nodiscard]] constexpr Point<RealT, N> lerp(const Point<RealT, N> &a, const Point<RealT, N> &b, RealT t)
   {
     Point<RealT, N> ret;
     for(unsigned i = 0; i < N; i++) {
@@ -305,7 +305,7 @@ namespace Ravl2
 
   //! Convert to homogeneous coordinates
   template <typename RealT, int N>
-  [[nodiscard]] constexpr inline Point<RealT, N + 1> toHomogeneous(const Point<RealT, N> &pnt)
+  [[nodiscard]] constexpr Point<RealT, N + 1> toHomogeneous(const Point<RealT, N> &pnt)
   {
     Point<RealT, N + 1> ret;
     ret.template head<N>() = pnt;
@@ -315,7 +315,7 @@ namespace Ravl2
 
   //! Convert from homogeneous coordinates
   template <typename RealT, int N>
-  [[nodiscard]] constexpr inline Point<RealT, N - 1> fromHomogeneous(const Point<RealT, N> &pnt)
+  [[nodiscard]] constexpr Point<RealT, N - 1> fromHomogeneous(const Point<RealT, N> &pnt)
   {
     return pnt.template head<N - 1>() / pnt[N-1];
   }
