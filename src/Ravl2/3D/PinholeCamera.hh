@@ -114,7 +114,7 @@ namespace Ravl2
     {}
     
     //! Destructor.
-    virtual ~PinholeCameraImpl() = default;
+    ~PinholeCameraImpl() override = default;
     
     //! Make a copy of body.
     std::shared_ptr<PinholeCamera<RealT> > copy() const final

@@ -34,7 +34,7 @@ namespace Ravl2
     using ValueT = RealT;
     
     //! Default constructor
-    inline PinholeCamera0() = default;
+    PinholeCamera0() = default;
 
     //! Data constructor
     PinholeCamera0(const RealT &cx, const RealT &cy,
@@ -224,7 +224,7 @@ namespace Ravl2
     //!    z[1] = cy + fy*( (R*x + t)[1] / (R*x + t)[2] )<br>
     //!  Can result in a divide-by-zero for degenerate points.
     //!  See projectCheck if this is to be avoided.
-    Point<RealT, 2> project(const Vector<RealT, 3> &x) const
+    [[nodiscard]] Point<RealT, 2> project(const Vector<RealT, 3> &x) const
     {
       Vector<RealT, 3> Rx = m_R * x + m_t;
       return Point<RealT, 2>({m_cx + m_fx * Rx[0] / Rx[2], m_cy + m_fy * Rx[1] / Rx[2]});

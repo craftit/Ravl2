@@ -46,9 +46,13 @@ namespace Ravl2
     //! <p> This constructor assumes that the values of the last column of "transform" have already been set to correspond to the value of "iz".</p>
     constexpr explicit Projection(const Matrix<RealT, N+1, N+1> &transform, RealT Oz = 1, RealT Iz = 1)
       : trans(transform),
-	iz(Iz),
-	oz(Oz)
+	    iz(Iz),
+	    oz(Oz)
     {}
+
+    //! Create a null projection, all points are mapped to the origin.
+    static constexpr auto null()
+    { return Projection(Matrix<RealT, N+1, N+1>::Zero(), 1, 1); }
 
     //! Construct a projective transform from an affine one
     //! @param: affineTransform - the 2D affine transform
