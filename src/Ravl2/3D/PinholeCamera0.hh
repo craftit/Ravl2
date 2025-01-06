@@ -88,7 +88,7 @@ namespace Ravl2
     {}
     
     //! Construct a camera that fills the image at the given distance
-    //! with the camera at the origin looking along the -ve z-axis
+    //! with the camera at the origin looking along the +ve z-axis
     //! @param frame - the image frame for the camera
     //! @param horizontalSize - the size of the image in the x direction (frame.range(1))
     //! @param distance - the distance from the camera to the image plane
@@ -97,11 +97,11 @@ namespace Ravl2
                                     float distance)
     {
       float f = float(frame.range(1).size()-1) * distance * 2 / (horizontalSize);
-      return PinholeCamera0(frame,f,Isometry3<float>(Quaternion<float>::identity(),{0,0,-distance}));
+      return PinholeCamera0(frame,f,Isometry3<float>(Quaternion<float>::identity(),{0,0,distance}));
     }
     
     //! Construct a camera that fills the image at the given distance
-    //! with the camera at the origin looking along the -ve z-axis, at pixel 0,0
+    //! with the camera at the origin looking along the +ve z-axis, at pixel 0,0
     //! @param frame - the image frame for the camera
     //! @param horizontalSize - the size of the image in the x direction  (frame.range(1))
     //! @param distance - the distance from the camera to the image plane
@@ -110,7 +110,7 @@ namespace Ravl2
                                     float distance)
     {
       float f = float(frame.range(1).size()-1) * distance * 2/ (horizontalSize);
-      return PinholeCamera0(f,{0,0},frame,Isometry3<float>(Quaternion<float>::identity(),{0,0,-distance}));
+      return PinholeCamera0(f,{0,0},frame,Isometry3<float>(Quaternion<float>::identity(),{0,0,distance}));
     }
     
     //! centre of projection, x co-ordinate
