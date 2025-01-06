@@ -42,7 +42,11 @@ namespace Ravl2 {
     const CostDomain &domain)
   {
     // Find the domain limits along the direction vector.
-    
+    assert(dir.size() == P.size());
+    if(P.size() != domain.min().size() || P.size() != domain.max().size()) {
+      SPDLOG_ERROR("Parameter vector and domain must be the same size ({} and {})",P.size(),domain.min().size());
+      throw std::runtime_error("Parameter vector and domain must be the same size");
+    }
     RealT min = -std::numeric_limits<RealT>::min();
     RealT max = std::numeric_limits<RealT>::max();
     for(IndexT i = 0;i < P.size();i++) {
