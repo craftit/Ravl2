@@ -108,7 +108,7 @@ namespace Ravl2
   };
 
   template <typename RealT>
-  inline Vector<RealT, 3> operator*(const Isometry3<RealT> &iso, const Vector<RealT, 3> &v)
+  Vector<RealT, 3> operator*(const Isometry3<RealT> &iso, const Vector<RealT, 3> &v)
   {
     return iso.transform(v);
   }

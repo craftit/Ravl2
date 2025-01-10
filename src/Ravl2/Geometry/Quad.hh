@@ -13,7 +13,7 @@ namespace Ravl2
 
   //! 4 points in 2D space.
 
-  template<typename RealT,IndexSizeT N,BoundaryOrientationT orientation = BoundaryOrientationT::INSIDE_LEFT>
+  template<typename RealT,unsigned N,BoundaryOrientationT orientation = BoundaryOrientationT::INSIDE_LEFT>
    requires (N > 1)
   class Quad
       : public std::array<Point<RealT,N>,4>
@@ -23,7 +23,7 @@ namespace Ravl2
     Quad() = default;
 
     //! Construct a rectangle from a range.
-    Quad(const Range<RealT,2> &range)
+    explicit Quad(const Range<RealT,2> &range)
     {
       auto makePoint = [](const Point<RealT,2> &p) -> Point<RealT,N>
       {
@@ -89,21 +89,21 @@ namespace Ravl2
   };
 
   //! Convert a range to a quad
-  template <typename RealT,IndexSizeT N,BoundaryOrientationT orientation = BoundaryOrientationT::INSIDE_LEFT>
+  template <typename RealT,unsigned N,BoundaryOrientationT orientation = BoundaryOrientationT::INSIDE_LEFT>
   [[nodiscard]] inline Quad<RealT,N> toQuad(const Range<RealT, N> &range)
   {
     return Quad<RealT,N>(range);
   }
 
   //! Convert an index range to a quad
-  template <typename RealT,IndexSizeT N,BoundaryOrientationT orientation = BoundaryOrientationT::INSIDE_LEFT>
+  template <typename RealT,unsigned N,BoundaryOrientationT orientation = BoundaryOrientationT::INSIDE_LEFT>
   [[nodiscard]] inline Quad<RealT,N> toQuad(const IndexRange<N> &range)
   {
     return Quad<RealT,N>(toRange<RealT>(range));
   }
 
   //! Put a polygon through a transformation
-  template <typename RealT,IndexSizeT N,typename TransformT>
+  template <typename RealT,unsigned N,typename TransformT>
     requires PointTransform<TransformT,RealT,N>
   [[nodiscard]] Quad<RealT,N> operator*(const TransformT &transform, const Quad<RealT,N> &quad)
   {

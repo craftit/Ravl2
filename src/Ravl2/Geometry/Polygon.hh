@@ -185,7 +185,7 @@ namespace Ravl2
   //! @param: orientation - the orientation of the boundary
   //! If BoundaryOrientationT::INSIDE_LEFT makes a counter clockwise polygon, with a positive area.
   template <typename RealT>
-  [[nodiscard]] inline Polygon<RealT> toPolygon(const Range<RealT, 2> &range, BoundaryOrientationT orientation = BoundaryOrientationT::INSIDE_LEFT)
+  [[nodiscard]] Polygon<RealT> toPolygon(const Range<RealT, 2> &range, BoundaryOrientationT orientation = BoundaryOrientationT::INSIDE_LEFT)
   {
     return Polygon<RealT>(range, orientation);
   }
@@ -195,7 +195,7 @@ namespace Ravl2
   //! @param: orientation - the orientation of the boundary
   //! If BoundaryOrientationT::INSIDE_LEFT makes a counter clockwise polygon, with a positive area.
   template <typename RealT,size_t N>
-  [[nodiscard]] inline Polygon<RealT> toPolygon(const std::array<Point<RealT, 2>, N> &points)
+  [[nodiscard]] Polygon<RealT> toPolygon(const std::array<Point<RealT, 2>, N> &points)
   {
     return Polygon<RealT>(points);
   }
@@ -205,7 +205,7 @@ namespace Ravl2
   //! @param: orientation - the orientation of the boundary
   //! If BoundaryOrientationT::INSIDE_LEFT makes a counter clockwise polygon, with a positive area.
   template <typename RealT>
-  [[nodiscard]] inline Polygon<RealT> toPolygon(const IndexRange<2> &range, BoundaryOrientationT orientation = BoundaryOrientationT::INSIDE_LEFT)
+  [[nodiscard]] Polygon<RealT> toPolygon(const IndexRange<2> &range, BoundaryOrientationT orientation = BoundaryOrientationT::INSIDE_LEFT)
   {
     return Polygon<RealT>(toRange<RealT>(range), orientation);
   }
