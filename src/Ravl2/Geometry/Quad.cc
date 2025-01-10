@@ -7,7 +7,9 @@
 namespace Ravl2
 {
   // Instantiate the class for float and double
-  template class Quad<float>;
-  template class Quad<double>;
+  template class Quad<float,2>;
+  template class Quad<double,2>;
+  template class Quad<float,3>;
+  template class Quad<double,3>;
 
 }// namespace Ravl2

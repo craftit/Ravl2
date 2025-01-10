@@ -13,32 +13,46 @@ namespace Ravl2
 
   //! 4 points in 2D space.
 
-  template<typename RealT>
+  template<typename RealT,IndexSizeT N,BoundaryOrientationT orientation = BoundaryOrientationT::INSIDE_LEFT>
+   requires (N > 1)
   class Quad
-    : std::array<Point<RealT,2>,4>
+      : public std::array<Point<RealT,N>,4>
   {
   public:
     //! Default constructor, points are not initialised.
     Quad() = default;
 
     //! Construct a rectangle from a range.
-    Quad(const Range<RealT,2> &range,BoundaryOrientationT orientation = BoundaryOrientationT::INSIDE_LEFT)
+    Quad(const Range<RealT,2> &range)
     {
-      (*this)[0] = range.origin();
-      (*this)[2] = range.max();
-      if(orientation == BoundaryOrientationT::INSIDE_LEFT) {
+      auto makePoint = [](const Point<RealT,2> &p) -> Point<RealT,N>
+      {
+        if constexpr (N == 2) {
+          return p;
+        } else {
+          Point<RealT,N> ret {};
+          for(unsigned i = 0; i < 2; i++) {
+            ret[i] = p[i];
+          }
+          return ret;
+        }
+      };
+
+      (*this)[0] = makePoint(range.origin());
+      (*this)[2] = makePoint(range.max());
+      if constexpr(orientation == BoundaryOrientationT::INSIDE_LEFT) {
         // Clockwise
-        (*this)[1] = toPoint<RealT>(range.max(0),range.min(1));
-        (*this)[3] = toPoint<RealT>(range.min(0),range.max(1));
+        (*this)[1] = makePoint(toPoint<RealT>(range.max(0),range.min(1)));
+        (*this)[3] = makePoint(toPoint<RealT>(range.min(0),range.max(1)));
       } else {
         // Counterclockwise
-        (*this)[1] = toPoint<RealT>(range.min(0),range.max(1));
-        (*this)[3] = toPoint<RealT>(range.max(0),range.min(1));
+        (*this)[1] = makePoint(toPoint<RealT>(range.min(0),range.max(1)));
+        (*this)[3] = makePoint(toPoint<RealT>(range.max(0),range.min(1)));
       }
     }
 
     //! Construct a quad from 4 points
-    Quad(const Point<RealT,2> &p0, const Point<RealT,2> &p1, const Point<RealT,2> &p2, const Point<RealT,2> &p3)
+    Quad(const Point<RealT,N> &p0, const Point<RealT,N> &p1, const Point<RealT,N> &p2, const Point<RealT,N> &p3)
     {
       (*this)[0] = p0;
       (*this)[1] = p1;
@@ -47,42 +61,64 @@ namespace Ravl2
     }
 
     //! From initializer list
-    Quad(std::initializer_list<Point<RealT,2>> list)
+    Quad(std::initializer_list<Point<RealT,N>> list)
     {
-      if(list.size() != 4)
-            throw std::invalid_argument("Quad<RealT> initializer list must have 4 points");
+      if(list.size() != 4) {
+        throw std::invalid_argument("Quad<RealT> initializer list must have 4 points");
+      }
       std::copy(list.begin(),list.end(),this->begin());
     }
 
     //! Access the first point
-    [[nodiscard]] const Point<RealT,2> &p0() const
+    [[nodiscard]] const Point<RealT,N> &p0() const
     { return (*this)[0]; }
 
     //! Access the second point
-    [[nodiscard]] const Point<RealT,2> &p1() const
+    [[nodiscard]] const Point<RealT,N> &p1() const
     { return (*this)[1]; }
 
     //! Access the third point
-    [[nodiscard]] const Point<RealT,2> &p2() const
+    [[nodiscard]] const Point<RealT,N> &p2() const
     { return (*this)[2]; }
 
     //! Access the fourth point
-    [[nodiscard]] const Point<RealT,2> &p3() const
+    [[nodiscard]] const Point<RealT,N> &p3() const
     { return (*this)[3]; }
 
 
   };
 
-  template <typename RealT>
-  [[nodiscard]] inline Quad<RealT> toQuad(const Range<RealT, 2> &range, BoundaryOrientationT orientation = BoundaryOrientationT::INSIDE_LEFT)
+  //! Convert a range to a quad
+  template <typename RealT,IndexSizeT N,BoundaryOrientationT orientation = BoundaryOrientationT::INSIDE_LEFT>
+  [[nodiscard]] inline Quad<RealT,N> toQuad(const Range<RealT, N> &range)
   {
-    return Quad<RealT>(range, orientation);
+    return Quad<RealT,N>(range);
   }
 
+  //! Convert an index range to a quad
+  template <typename RealT,IndexSizeT N,BoundaryOrientationT orientation = BoundaryOrientationT::INSIDE_LEFT>
+  [[nodiscard]] inline Quad<RealT,N> toQuad(const IndexRange<N> &range)
+  {
+    return Quad<RealT,N>(toRange<RealT>(range));
+  }
+
+  //! Put a polygon through a transformation
+  template <typename RealT,IndexSizeT N,typename TransformT>
+    requires PointTransform<TransformT,RealT,N>
+  [[nodiscard]] Quad<RealT,N> operator*(const TransformT &transform, const Quad<RealT,N> &quad)
+  {
+    Quad<RealT,N> ret;
+    for(unsigned i = 0; i < 4; i++) {
+      ret[i] = transform(quad[i]);
+    }
+    return ret;
+  }
 
   // Instantiate the class for float and double
-  extern template class Quad<float>;
-  extern template class Quad<double>;
+  extern template class Quad<float,2>;
+  extern template class Quad<double,2>;
+  extern template class Quad<float,3>;
+  extern template class Quad<double,3>;
 
 }// namespace Ravl2
 

@@ -122,7 +122,7 @@ namespace Ravl2
       m_camera.project(z, x);
     }
 
-    //: project a set of 3D point to a 2D image point
+    //! project a set of 3D point to a 2D image point
     void project(std::span<Vector<RealT, 2> > z,std::span<const Vector<RealT, 3> > x) const final
     {
       assert(z.size() == x.size());

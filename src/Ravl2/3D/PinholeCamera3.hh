@@ -75,6 +75,19 @@ namespace Ravl2
       z[1] = this->m_cy + this->m_fy * zd[1];
     }
 
+    //! project a set of 3D point to a 2D image point
+    void project(std::span<Vector<RealT, 2> > z,std::span<const Vector<RealT, 3> > x) const
+    {
+      assert(z.size() == x.size());
+      if(z.size() != x.size()) {
+        throw std::runtime_error("Size mismatch");
+      }
+      for(size_t i = 0; i < z.size(); i++)
+      {
+        project(z[i], x[i]);
+      }
+    }
+
     //! project 3D point in space to 2D image point
     //! The same as project(...) but checks that the point
     //! is not degenerate and in front of the camera.
