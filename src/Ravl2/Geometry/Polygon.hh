@@ -88,7 +88,8 @@ namespace Ravl2
     
     //! @return: the signed area of this polygon
     //! @param: type - the orientation of the boundary inverts sign.
-    [[nodiscard]] RealT area() const;
+    [[nodiscard]] RealT area() const
+    { return Ravl2::area(*this); }
 
     //! @brief Test if the polygon is convex
     //! @return: true if the polygon is convex

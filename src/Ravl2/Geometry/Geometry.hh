@@ -36,6 +36,16 @@ namespace Ravl2
   {
     return a(pnt);
   }
+
+  //! Concept of an array of N-d points
+  template <typename DataT, IndexSizeT N, typename RealT = typename DataT::value_type::value_type>
+  concept PointArray = requires(DataT a) {
+    { a.size() } -> std::convertible_to<size_t>;
+    { a[0] } -> std::convertible_to<Point<RealT,N> >;
+    { a.empty() } -> std::convertible_to<bool>;
+    { a.begin() } -> std::convertible_to<typename DataT::iterator>;
+    { a.end() } -> std::convertible_to<typename DataT::iterator>;
+  };
   
   //! Get a perpendicular vector in 2d space
   template <typename DataT>
@@ -159,7 +169,7 @@ namespace Ravl2
     return sum;
   }
 
-  //! Compute twice the area contained by the three 2d points.
+  //! @brief Compute twice the area contained by the three 2d points.
   //! Area of triangle (*this, second, third) is equal to the area
   //! of the triangle which the first point represents the origin
   //! of the coordinate system. In fact the points 'aa' and 'bb'
@@ -175,6 +185,26 @@ namespace Ravl2
   {
     return (second[0] - first[0]) * (third[1] - first[1]) - (second[1] - first[1]) * (third[0] - first[0]);
   }
+
+  //! @brief Compute the area of a polygon from a container of  2d points
+  //! Assumes the points are in order and the last point is connected to the first.
+  //! @param points The points of the polygon
+  //! @return The area of the polygon
+  template <typename PointContainerT, typename RealT = PointContainerT::value_type::value_type>
+   requires PointArray<PointContainerT,2,RealT>
+  RealT area(const PointContainerT &points)
+  {
+    RealT sum = 0;
+    if(!points.empty()) {
+      auto pLast = points.back();
+      for(auto const &ptr : points) {
+        sum += pLast[0] * ptr[1] - ptr[0] * pLast[1];
+        pLast = ptr;
+      }
+    }
+    return sum * RealT(0.5);
+  }
+
 
   //! Cross product of two 2d vectors
   template <typename RealT>

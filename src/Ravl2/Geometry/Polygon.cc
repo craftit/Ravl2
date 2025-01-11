@@ -31,20 +31,6 @@ namespace Ravl2
       this->push_back(toPoint<RealT>(range[0].max(), range[1].min()));
     }
   }
-  
-  template <typename RealT>
-  RealT Polygon<RealT>::area() const
-  {
-    RealT sum = 0.0;
-    if(!this->empty()) {
-      auto pLast = this->back();
-      for(auto ptr : *this) {
-        sum += pLast[0] * ptr[1] - ptr[0] * pLast[1];
-        pLast = ptr;
-      }
-    }
-    return sum * RealT(0.5);
-  }
 
   template <typename RealT>
   [[nodiscard]] bool Polygon<RealT>::isConvex(BoundaryOrientationT orientation) const

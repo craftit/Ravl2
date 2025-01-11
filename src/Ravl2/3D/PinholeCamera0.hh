@@ -96,7 +96,7 @@ namespace Ravl2
                                     float horizontalSize,
                                     float distance)
     {
-      float f = -float(frame.range(1).size()-1) * distance * 2 / (horizontalSize);
+      float f = float(frame.range(1).size()-1) * distance * 2 / (horizontalSize);
       return PinholeCamera0(frame,f,Isometry3<float>(Quaternion<float>::identity(),{0,0,distance}));
     }
     
@@ -109,7 +109,7 @@ namespace Ravl2
                                     float horizontalSize,
                                     float distance)
     {
-      float f = -float(frame.range(1).size()-1) * distance * 2/ (horizontalSize);
+      float f = float(frame.range(1).size()-1) * distance * 2/ (horizontalSize);
       return PinholeCamera0(f,{0,0},frame,Isometry3<float>(Quaternion<float>::identity(),{0,0,distance}));
     }
     

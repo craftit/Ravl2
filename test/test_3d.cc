@@ -90,7 +90,7 @@ namespace Ravl2
       Vector<float, 3> pPix = mat * toHomogeneous(pnt);
       Vector<float, 2> pix = cam.project(pnt);
 
-      SPDLOG_INFO("Pnt: {}  Proj: {}  Pix: {}", pnt, fromHomogeneous(pPix), pix);
+      SPDLOG_INFO("Pnt: {}  Proj: {}  Pix: {}  Dist:{} ", pnt, fromHomogeneous(pPix), pix, euclidDistance(fromHomogeneous(pPix),pix));
 
       CHECK(euclidDistance(fromHomogeneous(pPix),pix) < 0.001f);
 
