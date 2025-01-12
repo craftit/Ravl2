@@ -57,7 +57,7 @@ namespace Ravl2
     RealT y = 0.0;
     if(!this->empty()) {
       auto pLast = this->back();
-      for(auto ptr : *this) {
+      for(auto &ptr : *this) {
         RealT temp = pLast[0] * ptr[1] - ptr[0] * pLast[1];
         x += (pLast[0] + ptr[0]) * temp;
         y += (pLast[1] + ptr[1]) * temp;
