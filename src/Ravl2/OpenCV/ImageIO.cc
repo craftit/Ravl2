@@ -96,7 +96,7 @@ namespace Ravl2
       int readMode = cv::IMREAD_UNCHANGED;
       if(ctx.m_targetType == typeid(Array<uint8_t, 2>) ) {
         readMode = cv::IMREAD_GRAYSCALE;
-      } else if(ctx.m_targetType == typeid(Array<uint16_t, 2>) || ctx.m_targetType == typeid(Array<int16_t, 2>)
+      } else if(ctx.m_targetType == typeid(Array<uint16_t, 2>) || ctx.m_targetType == typeid(Array<int16_t, 2>) || ctx.m_targetType == typeid(Array<PixelZ16, 2>)
          || ctx.m_targetType == typeid(Array<int8_t, 2>)
          || ctx.m_targetType == typeid(Array<int32_t, 2>)
          || ctx.m_targetType == typeid(Array<float, 2>) || ctx.m_targetType == typeid(Array<double, 2>)) {
