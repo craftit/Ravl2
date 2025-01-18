@@ -60,7 +60,7 @@ namespace Ravl2
     static SummedAreaTable2C<DataT> BuildTable(const Array<InT, 2> &in)
     {
       SummedAreaTable2C<DataT> ret(in.range().expand(1), in.range());
-      Vector<DataT, 2> zero {};
+      Vector<DataT, 2> zero  = Vector<DataT, 2>::Zero();
       DrawFrame(ret, zero, ret.range());// We only really need the top row and left column cleared.
 
       Array2dSqr2Iter2C<Vector<DataT, 2>, InT> it(clipUnsafe(ret,in.range()), in);

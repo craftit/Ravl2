@@ -27,7 +27,7 @@ namespace Ravl2
 
 #define RavlAlwaysAssert(cond)                  \
   {                                             \
-    if(cond) {                                  \
+    if(!(cond)) {                               \
       SPDLOG_CRITICAL("Assert failed: " #cond); \
       abort();                                  \
     }                                           \
