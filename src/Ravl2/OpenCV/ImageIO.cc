@@ -161,7 +161,7 @@ namespace Ravl2
     //! Saving images.
 
     [[maybe_unused]] bool g_regFmt1 = outputFormatMap().add(std::make_shared<OutputFormatCall>("OpenCV", "png,jpg,jpeg,bmp,tiff", "file", -1, [](const ProbeOutputContext &ctx) -> std::optional<StreamOutputPlan> {
-      //! If we are looking for a cv::Mat, we can just read the file directly.
+      //! If we are looking for a cv::Mat, we can just write the file directly.
       if(ctx.m_sourceType == typeid(cv::Mat)) {
         auto strm = std::make_unique<StreamOutputCall<cv::Mat>>([filename = ctx.m_filename](const cv::Mat &img, std::streampos pos) -> std::streampos {
           if(pos != 0) {
@@ -172,6 +172,20 @@ namespace Ravl2
         });
         return StreamOutputPlan {std::move(strm), {}, 1.0f};
       }
+      std::optional<ConversionChain> convChain = typeConverterMap().find(typeid(cv::Mat), ctx.m_sourceType);
+      if(convChain.has_value()) {
+        auto strm = std::make_unique<StreamOutputCall<cv::Mat>>([filename = ctx.m_filename](const cv::Mat &img, std::streampos pos) -> std::streampos {
+          if(pos != 0) {
+            throw std::runtime_error("OpenCV output format does not support seeking.");
+          }
+          cv::imwrite(filename, img);
+          return 0;
+        });
+        return StreamOutputPlan {std::move(strm), convChain.value(), convChain.value().conversionLoss()};
+      } else {
+        SPDLOG_TRACE("No conversion chain found for {} <- {}", typeName(typeid(cv::Mat)), typeName(ctx.m_sourceType));
+      }
+
       return std::nullopt;
     }));
 
