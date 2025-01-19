@@ -149,7 +149,7 @@ namespace Ravl2
   template <typename RealT, unsigned int N>
   std::ostream &operator<<(std::ostream &outS, const LinePV<RealT, N> &line)
   {
-    outS << line.FirstPoint() << ' ' << line.SecondPoint();
+    outS << "{ P:" << Eigen::WithFormat(line.FirstPoint(),defaultEigenFormat()) << " V:" << Eigen::WithFormat(line.lineDirection(),defaultEigenFormat()) << " }";
     return outS;
   }
 
@@ -169,3 +169,12 @@ namespace Ravl2
   extern template class LinePV<float, 3>;
 
 }// namespace Ravl2
+
+#if FMT_VERSION >= 90000
+template <>
+struct fmt::formatter<Ravl2::LinePV<float, 2>> : fmt::ostream_formatter {
+};
+template <>
+struct fmt::formatter<Ravl2::LinePV<float, 3>> : fmt::ostream_formatter {
+};
+#endif

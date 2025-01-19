@@ -224,7 +224,7 @@ namespace Ravl2
   template <typename RealT, unsigned int N>
   inline std::ostream &operator<<(std::ostream &s, const LinePP<RealT, N> &dat)
   {
-    s << dat.P1() << ' ' << dat.P2();
+    s << "{ P1:" << Eigen::WithFormat(dat.FirstPoint(),defaultEigenFormat()) << " P2:" << Eigen::WithFormat(dat.SecondPoint(),defaultEigenFormat()) << " }";
     return s;
   }
 
