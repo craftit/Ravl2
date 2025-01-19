@@ -138,12 +138,11 @@ namespace Ravl2
       a(0, 1) = mVector2[0];
       a(1, 1) = mVector2[1];
       a(2, 1) = mVector2[2];
-      Point<RealT, 3> tmp = pointOnPlane;
-      tmp -= mOrigin;
+      Point<RealT, 3> tmp = pointOnPlane - mOrigin;
+      // colPiv is slower, but more stable.
+      //return a.colPivHouseholderQr().solve(tmp);
       // This is quick, but requires a full matrix.
-      auto sol = a.householderQr().solve(tmp);
-      //SPDLOG_INFO("Sol: {} {} {} {}  Residual: {} ", sol(0,0), sol(0,1),sol(1,0),sol(1,1), residual(0,0));
-      return toPoint<RealT>(sol(0), sol(1));
+      return a.householderQr().solve(tmp);
     }
     
     //! Returns the coordinates (t1,t2) of the point of intersection
