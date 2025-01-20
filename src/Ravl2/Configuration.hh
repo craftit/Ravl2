@@ -171,7 +171,7 @@ namespace Ravl2
     {}
   };
 
-  ConfigFactory &defaultConfigFactory();
+  ConfigFactory &defaultConfigFactory() noexcept;
 
   //! @brief A constraint on a parameter, this checks the value is correct in some way.
 

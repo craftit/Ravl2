@@ -15,7 +15,7 @@
 namespace Ravl2
 {
 
-  ConfigFactory &defaultConfigFactory()
+  ConfigFactory &defaultConfigFactory() noexcept
   {
     static std::shared_ptr<ConfigFactory> factory = std::make_shared<ConfigFactory>();
     return *factory;
