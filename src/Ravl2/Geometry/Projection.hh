@@ -15,6 +15,7 @@
 #include "Ravl2/Geometry/Affine.hh"
 #include "Ravl2/Geometry/Geometry.hh"
 #include "Ravl2/Math/LinearAlgebra.hh"
+#include "VectorOffset.hh"
 
 namespace Ravl2
 {
@@ -130,12 +131,10 @@ namespace Ravl2
     [[nodiscard]] constexpr Point<RealT, N> project(const Point<RealT, N> &pnt) const
     {
       Vector<RealT, N + 1> vi;
-      for(IndexT i = 0; i < IndexT(N); i++) {
-        vi[i] = pnt[i];
-      }
+      vi.template block<N, 1>(0, 0) = pnt;
       vi[N] = iz;
       Vector<RealT, N+1> vo = trans * vi;
-      return ((oz * vo.array()) / vo[N]).head(N);
+      return (oz * vo.array().head(N)) / vo[N];
     }
 
     //! project a point through the transform.
@@ -251,6 +250,11 @@ namespace Ravl2
       ar(cereal::make_nvp("transform", trans), cereal::make_nvp("iz", iz), cereal::make_nvp("oz", oz));
     }
 
+    //! Line/Plane at infinity
+    [[maybe_unused]] VectorOffset<RealT, N> atInfinity() const
+    {
+      return VectorOffset<RealT, N>(trans.template block<N,1>(0,N), -trans(N, N)/oz);
+    }
   private:
     Matrix<RealT, N + 1, N + 1> trans = Matrix<RealT, N + 1, N + 1>::Identity();
     RealT iz = 1;

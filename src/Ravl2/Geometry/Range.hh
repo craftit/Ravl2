@@ -115,6 +115,12 @@ namespace Ravl2
       return Range<RealT, 1>(std::numeric_limits<RealT>::max(), std::numeric_limits<RealT>::min());
     }
 
+    //! @brief Create the range which creates the largest positive area.
+    static constexpr auto largest()
+    {
+      return Range<RealT, 1>(std::numeric_limits<RealT>::min(), std::numeric_limits<RealT>::max());
+    }
+
     //! Returns true if the minimum limit is smaller than or equal to the maximum value
     [[nodiscard]] inline constexpr bool IsValid() const
     {
@@ -458,6 +464,16 @@ namespace Ravl2
       Range ret;
       for(unsigned i = 0; i < N; ++i) {
         ret[i] = Range<RealT, 1>::mostEmpty();
+      }
+      return ret;
+    }
+
+    //! @brief Create the largest possible range.
+    static constexpr auto largest()
+    {
+      Range ret;
+      for(unsigned i = 0; i < N; ++i) {
+        ret[i] = Range<RealT, 1>::largest();
       }
       return ret;
     }

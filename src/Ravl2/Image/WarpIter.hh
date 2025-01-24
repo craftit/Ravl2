@@ -63,11 +63,12 @@ namespace Ravl2 {
     //! @return true if we're on the same row.
     bool next()
     {
-      if(!iter().next()) {
+      if(!iter().next()) [[unlikely]] {
         derived().tNextRow();
         return false;
       }
       // Fast path.
+      [[likely]]
       derived().tNext();
       return true;
     }
@@ -81,14 +82,14 @@ namespace Ravl2 {
 
     //! Access the current element.
     //! This returns the type reference by the iterator.
-    [[nodiscard]] auto operator*() const
+    [[nodiscard]] auto &operator*() const
     {
       return *iter();
     }
 
     //! Access the current element.
     //! This returns the type reference by the iterator.
-    [[nodiscard]] auto operator*()
+    [[nodiscard]] auto &operator*()
     {
       return *iter();
     }

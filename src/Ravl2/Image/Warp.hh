@@ -7,9 +7,12 @@
 #include "Ravl2/Array.hh"
 #include "Ravl2/Math.hh"
 #include "Ravl2/Geometry/Affine.hh"
+#include "Ravl2/Geometry/Line2ABC.hh"
+#include "Ravl2/Geometry/Line2PP.hh"
 #include "Ravl2/Geometry/Projection.hh"
 #include "Ravl2/Geometry/Range.hh"
 #include "Ravl2/Image/BilinearInterpolation.hh"
+#include "Ravl2/Image/WarpIter.hh"
 
 namespace Ravl2
 {
@@ -59,6 +62,31 @@ namespace Ravl2
     }
     return transformedRange;
   }
+
+  //! @brief Get the range of pixels the transformed points will sample from
+  //! @param targetRange The range to iterate over in a grid
+  //! @param transform The point-to-point mapping to use
+  //! @return The range of pixels the transformed points will sample from
+  template <typename CoordTypeT = float>
+  Range<CoordTypeT, 2> projectedBounds(const Projection<CoordTypeT,2> &transform, const IndexRange<2> &targetRange)
+  {
+    Range<CoordTypeT, 2> transformedRange = Range<CoordTypeT,2>::mostEmpty();
+
+    Line2ABC<CoordTypeT> line(transform.atInfinity());
+    if(intersects(line, toRange<CoordTypeT>(targetRange))) {
+      return Range<CoordTypeT,2>::largest();
+    }
+
+    for(unsigned i = 0; i < 4; i++) {
+      Point<CoordTypeT, 2> pnt;
+      pnt[0] = CoordTypeT((i & 1) ? targetRange.max(0) : targetRange.min(0));
+      pnt[1] = CoordTypeT((i & 2) ? targetRange.max(1) : targetRange.min(1));
+      transformedRange.involve(transform(pnt));
+    }
+
+    return transformedRange;
+  }
+
 
   //! @brief Wrap a point coordinate to the source image
   //! @param sourcePoint The point to wrap
@@ -155,17 +183,15 @@ namespace Ravl2
     // Get the range of pixels the transformed points will sample from
     // Check if it is a projective transform
     auto realSourceRange = interpolationBounds<CoordTypeT>(source.range(), sampler);
-    if constexpr (!std::is_same_v<TransformT,Projection<CoordTypeT,N>>) {
+    {
       auto realSampleRange = projectedBounds(transform, target.range());
       if(realSourceRange.contains(realSampleRange)) {
         // Iterate over the target image, no need for bounds check.
-        for(auto it = target.begin(); it.valid();) {
+        for(auto it = beginWarp(target,transform); it.valid();) {
           do {
-            // Get the point in the target image
-            auto targetIndex = it.index();
+            // Get the pixel value from the source image
+            auto sourcePoint = it.warpedIndex();
 
-            // Get the point in the source image
-            auto sourcePoint = transform(toPoint<CoordTypeT>(targetIndex));
             assert(realSampleRange.contains(sourcePoint));
 
             // Get the pixel value from the source image
@@ -184,14 +210,12 @@ namespace Ravl2
       } else {
         // Iterate over the target image
         // We could project the polygon and iterate over that.
-        for(auto it = target.begin(); it.valid();) {
+        for(auto it = beginWarp(target,transform); it.valid();) {
           do {
-            // Get the point in the target image
-            auto targetIndex = it.index();
-
             // Get the point in the source image
-            auto sourcePoint = transform(toPoint<CoordTypeT>(targetIndex));
+            auto sourcePoint = it.warpedIndex();
 
+            // Check if the source point is within the source image
             if constexpr(wrapMode == WarpWrapMode::Clamp) {
               // Clamp the point to the source image
               sourcePoint = clamp(sourcePoint, realSourceRange);
