@@ -278,8 +278,9 @@ namespace Ravl2
     {
       for(unsigned i = N - 2; i > 0; --i) {
         ++mIndex[i];
-        if(mIndex[i] <= m_access.range(i).max())
+        if(mIndex[i] <= m_access.range(i).max()) [[likely]] {
           return;
+        }
         mIndex[i] = m_access.range(i).min();
       }
       // On the last index we don't need to update
@@ -302,7 +303,7 @@ namespace Ravl2
     constexpr inline ArrayIter<DataT, N> &operator++()
     {
       mPtr++;
-      if(mPtr == mEnd) {
+      if(mPtr == mEnd) [[unlikely]] {
         nextRow();
       }
       return *this;
@@ -321,7 +322,7 @@ namespace Ravl2
     constexpr inline bool next()
     {
       mPtr++;
-      if(mPtr == mEnd) {
+      if(mPtr == mEnd) [[unlikely]] {
         nextRow();
         return false;
       }

@@ -48,8 +48,8 @@ namespace Ravl2
 
       auto iter = Ravl2::beginWarp(rng, transform);
       CHECK(iter.valid());
-      size_t count = 0;
-      size_t rows = 0;
+      int count = 0;
+      int rows = 0;
       while(iter.valid()) {
         do {
           auto groundTruth = transform(Ravl2::toPoint<float>(iter.index()));
@@ -71,8 +71,8 @@ namespace Ravl2
 
       auto iter = Ravl2::beginWarp(rng, affine);
       CHECK(iter.valid());
-      size_t count = 0;
-      size_t rows = 0;
+      int count = 0;
+      int rows = 0;
       while(iter.valid()) {
         do {
           auto groundTruth = affine(Ravl2::toPoint<float>(iter.index()));
@@ -94,8 +94,8 @@ namespace Ravl2
 
       auto iter = Ravl2::beginWarp(rng, projection);
       CHECK(iter.valid());
-      size_t count = 0;
-      size_t rows = 0;
+      int count = 0;
+      int rows = 0;
       while(iter.valid()) {
         do {
           auto groundTruth = projection(Ravl2::toPoint<float>(iter.index()));

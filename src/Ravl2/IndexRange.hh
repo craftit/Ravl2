@@ -539,8 +539,9 @@ namespace Ravl2
       m_at[N - 1] = m_range->min()[N - 1];
       for(unsigned i = N - 2; i > 0; --i) {
         ++m_at[i];
-        if(m_at[i] <= m_range->max()[i])
+        if(m_at[i] <= m_range->max()[i]) [[likely]] {
           return true;
+        }
         m_at[i] = m_range->min()[i];
       }
       ++m_at[0];
@@ -552,7 +553,7 @@ namespace Ravl2
     constexpr inline bool next()
     {
       ++m_at[N - 1];
-      if(m_at[N - 1] <= m_range->max()[N - 1]) {
+      if(m_at[N - 1] <= m_range->max()[N - 1]) [[likely]] {
         return true;
       }
       nextRow();
@@ -564,7 +565,7 @@ namespace Ravl2
     {
       for(unsigned i = N - 1; i > 0; --i) {
         ++m_at[i];
-        if(m_at[i] <= m_range->max()[i]) {
+        if(m_at[i] <= m_range->max()[i]) [[likely]] {
           return *this;
         }
         m_at[i] = m_range->min()[i];
