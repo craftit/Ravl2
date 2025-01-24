@@ -395,6 +395,12 @@ namespace Ravl2
         : m_at(at)
     {}
 
+    //! Access as index
+    [[nodiscard]] constexpr int index() const
+    {
+      return m_at;
+    }
+
     //! Access index.
     constexpr int operator*() const
     {

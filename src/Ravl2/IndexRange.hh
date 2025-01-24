@@ -552,8 +552,9 @@ namespace Ravl2
     constexpr inline bool next()
     {
       ++m_at[N - 1];
-      if(m_at[N - 1] <= m_range->max()[N - 1])
+      if(m_at[N - 1] <= m_range->max()[N - 1]) {
         return true;
+      }
       nextRow();
       return false;
     }
@@ -563,8 +564,9 @@ namespace Ravl2
     {
       for(unsigned i = N - 1; i > 0; --i) {
         ++m_at[i];
-        if(m_at[i] <= m_range->max()[i])
+        if(m_at[i] <= m_range->max()[i]) {
           return *this;
+        }
         m_at[i] = m_range->min()[i];
       }
       ++m_at[0];

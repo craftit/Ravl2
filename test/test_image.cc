@@ -13,6 +13,7 @@
 #include "Ravl2/Image/ZigZagIter.hh"
 #include "Ravl2/Image/DCT2d.hh"
 #include "Ravl2/Image/Warp.hh"
+#include "Ravl2/Image/WarpIter.hh"
 
 namespace Ravl2
 {
@@ -34,6 +35,83 @@ namespace Ravl2
     auto value2 = interpolateBilinear(img, std::array<float, 2>({1.5f, 1.5f}));
     ASSERT_FLOAT_EQ(0.25f,value2);
   }
+
+  TEST_CASE("WarpIter")
+  {
+    SECTION("Shift")
+    {
+      Ravl2::IndexRange<2> const rng { 12, 10 };
+
+      auto transform = [](const Ravl2::Point2f &p) -> Ravl2::Point2f {
+        return p + Ravl2::toPoint<float>(1, 1);
+      };
+
+      auto iter = Ravl2::beginWarp(rng, transform);
+      CHECK(iter.valid());
+      size_t count = 0;
+      size_t rows = 0;
+      while(iter.valid()) {
+        do {
+          auto groundTruth = transform(Ravl2::toPoint<float>(iter.index()));
+          SPDLOG_TRACE("Index:{} Pnt:{} GT:{}", iter.index(), iter.point(), groundTruth);
+          CHECK(Ravl2::isNearZero(Ravl2::euclidDistance(groundTruth,iter.warpedIndex())));
+          count++;
+        } while(iter.next());
+        rows++;
+      }
+      CHECK(count == rng.area());
+      CHECK(rows == rng.size(0));
+    }
+
+    SECTION("Affine")
+    {
+      Ravl2::IndexRange<2> const rng { 12, 10 };
+      Ravl2::Affine<float,2> affine = Ravl2::Affine<float,2>::identity();
+      affine.scale(Ravl2::toVector<float>(1,2));
+
+      auto iter = Ravl2::beginWarp(rng, affine);
+      CHECK(iter.valid());
+      size_t count = 0;
+      size_t rows = 0;
+      while(iter.valid()) {
+        do {
+          auto groundTruth = affine(Ravl2::toPoint<float>(iter.index()));
+          SPDLOG_TRACE("Index:{} Pnt:{} GT:{}", iter.index(), iter.warpedIndex(), groundTruth);
+          CHECK(Ravl2::isNearZero(Ravl2::euclidDistance(groundTruth,iter.warpedIndex())));
+          count++;
+        } while(iter.next());
+        rows++;
+      }
+      CHECK(count == rng.area());
+      CHECK(rows == rng.size(0));
+    }
+
+    SECTION("Projective")
+    {
+      Ravl2::IndexRange<2> const rng { 12, 10 };
+      Matrix<float, 3, 3> const projMat({{-592.402f, 128.055f,0.0f}, {-691.364f, 149.244f, 170.722f}, {-2.92932f, 0.632021f, 1.0f}});
+      Ravl2::Projection<float,2> const projection(projMat);
+
+      auto iter = Ravl2::beginWarp(rng, projection);
+      CHECK(iter.valid());
+      size_t count = 0;
+      size_t rows = 0;
+      while(iter.valid()) {
+        do {
+          auto groundTruth = projection(Ravl2::toPoint<float>(iter.index()));
+          float const norm = groundTruth.norm();
+          SPDLOG_TRACE("Index:{} Pnt:{} GT:{}  Dist:{} ", iter.index(), iter.point(), groundTruth, Ravl2::euclidDistance(groundTruth,iter.point())/norm);
+          CHECK(Ravl2::isNearZero(Ravl2::euclidDistance(groundTruth,iter.warpedIndex())/norm, 1e-5f));
+          count++;
+        } while(iter.next());
+        rows++;
+      }
+      CHECK(count == rng.area());
+      CHECK(rows == rng.size(0));
+    }
+  }
+
+
 
   TEST_CASE("Warp")
   {

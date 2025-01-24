@@ -32,6 +32,8 @@ add_library (Ravl2Image
         SummedAreaTable2.hh
         SummedAreaTable2.cc
         MatchNormalisedCorrelation.cc MatchNormalisedCorrelation.hh
+        WarpIter.cc
+        WarpIter.hh
 )
 
 add_library(ravl2::Ravl2Image ALIAS Ravl2Image)
