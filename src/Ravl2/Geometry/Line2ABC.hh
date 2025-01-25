@@ -181,6 +181,7 @@ namespace Ravl2
   bool intersects(const Line2ABC<RealT> &line, const Range<RealT, 2> &rng1)
   {
     Point<RealT, 2> here;
+    // This could be faster...
     Line2ABC<RealT> lineMin1({0, 1}, rng1.range(1).min());
     if(line.intersection(lineMin1, here)) {
       if(rng1.range(0).contains(here(0)))

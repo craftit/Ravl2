@@ -225,9 +225,9 @@ namespace Ravl2
   //! Convert a point to the closest integer index
   template <int N, typename RealT>
     requires std::is_floating_point<RealT>::value
-  [[nodiscard]] constexpr Index<N> toIndex(const Point<RealT, N> &pnt)
+  [[nodiscard]] constexpr Index<unsigned(N)> toIndex(const Point<RealT, N> &pnt)
   {
-    Index<N> ret;
+    Index<unsigned(N)> ret;
     for(unsigned i = 0; i < N; i++) {
       ret[i] = intRound(pnt[i]);
     }
