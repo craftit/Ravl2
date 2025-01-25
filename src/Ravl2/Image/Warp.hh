@@ -70,20 +70,19 @@ namespace Ravl2
   template <typename CoordTypeT = float>
   Range<CoordTypeT, 2> projectedBounds(const Projection<CoordTypeT,2> &transform, const IndexRange<2> &targetRange)
   {
-    Range<CoordTypeT, 2> transformedRange = Range<CoordTypeT,2>::mostEmpty();
-
     Line2ABC<CoordTypeT> line(transform.atInfinity());
     if(intersects(line, toRange<CoordTypeT>(targetRange))) {
       return Range<CoordTypeT,2>::largest();
     }
 
-    for(unsigned i = 0; i < 4; i++) {
+    Range<CoordTypeT, 2> transformedRange = Range<CoordTypeT,2>::mostEmpty();
+    for(unsigned i = 0; i < (1u << 2); i++) {
       Point<CoordTypeT, 2> pnt;
-      pnt[0] = CoordTypeT((i & 1) ? targetRange.max(0) : targetRange.min(0));
-      pnt[1] = CoordTypeT((i & 2) ? targetRange.max(1) : targetRange.min(1));
+      for(unsigned j = 0; j < 2; j++) {
+        pnt[j] = CoordTypeT((i & (1u << j)) ? targetRange.max(j) : targetRange.min(j));
+      }
       transformedRange.involve(transform(pnt));
     }
-
     return transformedRange;
   }
 
@@ -192,7 +191,7 @@ namespace Ravl2
             // Get the pixel value from the source image
             auto sourcePoint = it.warpedIndex();
 
-            assert(realSampleRange.contains(sourcePoint));
+            assert(realSourceRange.contains(sourcePoint));
 
             // Get the pixel value from the source image
             auto sourcePixel = sampler(source, sourcePoint);
