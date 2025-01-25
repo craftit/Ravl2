@@ -343,6 +343,17 @@ namespace Ravl2
       archive(cereal::make_nvp("frame", m_frame));
     }
 
+    //! Access the camera frame
+    [[nodiscard]] const IndexRange<2> &frame() const
+    {
+      return m_frame;
+    }
+
+    //! Access the near plane z distance for scene culling.
+    [[nodiscard]] RealT nearPlane() const
+    {
+      return RealT(1e-3);
+    }
   protected:
     RealT m_cx = 0;
     RealT m_cy = 0;
