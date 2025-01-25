@@ -223,7 +223,7 @@ namespace Ravl2
   }
 
   //! Convert a point to the closest integer index
-  template <IndexSizeT N, typename RealT>
+  template <int N, typename RealT>
     requires std::is_floating_point<RealT>::value
   [[nodiscard]] constexpr Index<N> toIndex(const Point<RealT, N> &pnt)
   {
