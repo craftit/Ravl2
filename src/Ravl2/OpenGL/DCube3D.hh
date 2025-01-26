@@ -46,7 +46,7 @@ namespace Ravl2
 
   protected:
     Vector<float,3> diag = {1, 1, 1};
-    PixelRGB8 colour = {1, 0, 0};
+    PixelRGB8 colour = {255, 128, 128};
   };
 
 

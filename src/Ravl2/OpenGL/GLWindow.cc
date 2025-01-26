@@ -30,7 +30,7 @@ namespace Ravl2
       }
     }
 
-#if 0
+#if 1
     void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
     {
       GLWindow *theWindow = reinterpret_cast<GLWindow *>(glfwGetWindowUserPointer(window));
@@ -88,9 +88,9 @@ namespace Ravl2
     if (mWindow != nullptr) {
       glfwSetWindowUserPointer(mWindow, this);
       
-//      glfwSetCursorPosCallback(mWindow, cursor_position_callback);
-//      glfwSetMouseButtonCallback(mWindow, mouse_button_callback);
-//      glfwSetKeyCallback(mWindow, key_callback);
+      glfwSetCursorPosCallback(mWindow, cursor_position_callback);
+      glfwSetMouseButtonCallback(mWindow, mouse_button_callback);
+      glfwSetKeyCallback(mWindow, key_callback);
       
       glfwMakeContextCurrent(mWindow);
       glfwSwapInterval(1);// Enable vsync
@@ -110,6 +110,7 @@ namespace Ravl2
   void GLWindow::makeCurrent()
   {
     if (mWindow == nullptr) {
+      SPDLOG_WARN("Window is null");
       return;
     }
     glfwMakeContextCurrent(mWindow);
@@ -138,6 +139,18 @@ namespace Ravl2
     SPDLOG_INFO("Key: {} Scancode: {} Action: {} Mods: {}", key, scancode, action, mods);
     //      if (key == GLFW_KEY_E && action == GLFW_PRESS)
     //        activate_airship();
+    int changed = mMouseButtonState ^ mods;
+    mMouseButtonState = mods;
+    if (changed & GLFW_MOD_SHIFT) {
+      SPDLOG_INFO("Shift key changed");
+    }
+    if (changed & GLFW_MOD_ALT) {
+      SPDLOG_INFO("Alt key changed");
+}
+    if (changed & GLFW_MOD_CONTROL) {
+      SPDLOG_INFO("Ctrl key changed");
+    }
+
   }
   
   //! Handle cursor position events
@@ -145,13 +158,16 @@ namespace Ravl2
   {
     (void)xpos;
     (void)ypos;
-    //SPDLOG_INFO("Cursor position: {} {}", xpos, ypos);
+    SPDLOG_INFO("Cursor position: {} {}", xpos, ypos);
+
   
   }
   
   //! Handle mouse button events
   void GLWindow::mouseButtonCallback(int button, int action, int mods)
   {
+    int changed = mKeyModState ^ mods;
+    mKeyModState = mods;
     SPDLOG_INFO("Button: {} Action: {} Mods: {}", button, action, mods);
   }
   
@@ -165,10 +181,9 @@ namespace Ravl2
   }
 
   //! Add a function to be called on each frame render
-  void GLWindow::addFrameRender(std::function<void()> &&f)
+  CallbackHandle GLWindow::addFrameRender(std::function<void()> &&f)
   {
-    std::lock_guard lock(mMutex);
-    mFrameRender.push_back(std::move(f));
+    return mFrameRender.add(std::move(f));
   }
 
   void GLWindow::runMainLoop()
@@ -194,12 +209,7 @@ namespace Ravl2
 	func();
       }
       {
-	std::lock_guard lock(mMutex);
-	for(auto &f : mFrameRender) {
-	  if(f) {
-	    f();
-	  }
-	}
+        mFrameRender.call();
       }
     }
 

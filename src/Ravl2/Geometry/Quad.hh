@@ -114,6 +114,15 @@ namespace Ravl2
     return ret;
   }
 
+  template <typename RealT, unsigned N>
+  std::ostream &operator<<(std::ostream &s, const Quad<RealT, N> &dat)
+  {
+    for(auto it : dat) {
+      s << ' ' << Eigen::WithFormat(it, defaultEigenFormat()) << std::endl;
+    }
+    return s;
+  }
+
   // Instantiate the class for float and double
   extern template class Quad<float,2>;
   extern template class Quad<double,2>;
@@ -122,3 +131,8 @@ namespace Ravl2
 
 }// namespace Ravl2
 
+#if FMT_VERSION >= 90000
+ template<typename RealT,unsigned N>
+struct fmt::formatter<Ravl2::Quad<RealT,N>> : fmt::ostream_formatter {
+};
+#endif

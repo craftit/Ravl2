@@ -16,7 +16,7 @@ namespace Ravl2
   bool DCube3D::GUIRender(Canvas3D &c3d) const
   {
     (void)c3d;
-    //cerr << "DCube3D::Render(), Called. \n";
+    //std::cerr << "DCube3D::Render(), Called. \n";
 
     GLColour(colour);
     Vector<float,3> p1 = diag/2;

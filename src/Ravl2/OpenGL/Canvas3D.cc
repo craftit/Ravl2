@@ -18,11 +18,6 @@
 
 #include "Ravl2/OpenGL/GLContext.hh"
 
-
-#ifndef VISUAL_CPP
-#include <GL/glx.h>
-#endif
-
 #define DODEBUG 0
 #if DODEBUG
 #define ONDEBUG(x) x

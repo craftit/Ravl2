@@ -28,7 +28,7 @@ namespace Ravl2 {
     // Position of eye. (0,0,-1)
     // Centre of object (0,0,0)
     // Up direction.  (Y Axis.)
-    DViewPoint3DBodyC(RealT nFov = 90,
+    explicit DViewPoint3DBodyC(RealT nFov = 90,
 		      Point<RealT,3> nEye = toPoint<RealT>(0, 0, 10),    // Position of eye.
 		      Point<RealT,3> nCentre = toPoint<RealT>(0, 0, 0), // Centre of object to look at.
 		      Vector<RealT,3> nUp = toVector<RealT>(0,1,0),   // Up direction.

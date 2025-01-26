@@ -24,7 +24,7 @@ namespace Ravl2 {
     using RealT = float;
 
     //: Constructor.
-    DTriMesh3D(const std::shared_ptr<TriMesh<RealT> > &oTriMesh);
+    explicit DTriMesh3D(const std::shared_ptr<TriMesh<RealT> > &oTriMesh);
 
     //: Render object.
     bool GUIRender(Canvas3D &c3d) const override;

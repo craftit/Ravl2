@@ -1,9 +1,12 @@
 
+#include "DCube3D.hh"
+
 #include <spdlog/spdlog.h>
 #include <CLI/CLI.hpp>
 
 #include "Ravl2/OpenGL/GLWindow.hh"
 #include "Ravl2/OpenGL/Canvas3D.hh"
+#include "Ravl2/OpenGL/View3D.hh"
 
 #define USE_OPENGL3 1
 
@@ -43,8 +46,22 @@ int main(int argc,char **argv)
 
   window->makeCurrent();
 
-  
+  Ravl2::CallbackSet callbacks;
 #if 1
+  int display_w = 0;
+  int display_h = 0;
+  glfwGetFramebufferSize(window->getGLFWwindow(), &display_w, &display_h);
+  Ravl2::View3D view(display_w, display_h, false, false);
+  view.setContext(window);
+  window->makeCurrent();
+  view.GUIInitGL();
+  auto cube = std::make_shared<Ravl2::DCube3D>();
+  view.add(cube);
+  view.GUIAdjustView();
+
+  callbacks += window->addFrameRender([&view]() {
+    view.GUIRefresh();
+  });
 
 #else
 

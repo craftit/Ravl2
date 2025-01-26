@@ -23,7 +23,7 @@ namespace Ravl2
   ///////////////////////////////////////////////////////
   //: Rotate objects
   class DTransform3DBodyC
-    : public DObjectSet3DBodyC
+    : public DObjectSet3D
   {
   public:
     //: Rotation Constructor.

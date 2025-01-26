@@ -37,7 +37,7 @@ namespace Ravl2
     //: Get center of object.
     // defaults to 0,0,0
 
-    float GUIExtent() const override
+    [[nodiscard]] float GUIExtent() const override
     { return 1; }
     //: Get extent of object.
     // defaults to 1

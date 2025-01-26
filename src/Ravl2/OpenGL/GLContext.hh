@@ -8,6 +8,7 @@
 #include <vector>
 #include <GLFW/glfw3.h>
 #include "Ravl2/Types.hh"
+#include "Ravl2/CallbackArray.hh"
 
 namespace Ravl2
 {
@@ -49,6 +50,7 @@ namespace Ravl2
     virtual void put(std::function<void()> &&f) = 0;
 
   protected:
+
   };
 
 }

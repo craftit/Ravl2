@@ -39,7 +39,7 @@ namespace Ravl2
     Canvas3D(int x, int y, bool autoConfigure = true);
     
     //! Create a 3D canvas
-    Canvas3D(const std::shared_ptr<GLContext> &context, bool autoConfigure = true);
+    explicit Canvas3D(const std::shared_ptr<GLContext> &context, bool autoConfigure = true);
     
     //! We don't want to copy this object.
     Canvas3D(const Canvas3D &) = delete;
@@ -49,100 +49,104 @@ namespace Ravl2
 
     virtual ~Canvas3D() = default;
 
-    //: Call before using any GL commands.
+    //! Set the context.
+    void setContext(const std::shared_ptr<GLContext> &context)
+    { m_glContext = context; }
+
+    //!  Call before using any GL commands.
     // This is needed to select correct gl context for the canvas 3d widget
     // Should only be called by GUI thread.
     bool GUIBeginGL();
 
-    //: Call after finished with GL
+    //!  Call after finished with GL
     // Should only be called by GUI thread.
     bool GUIEndGL();
 
-    //: swap buffers.
+    //!  swap buffers.
     bool GUISwapBuffers();
 
-    //: clears the buffers
+    //!  clears the buffers
     // depth buffer and colour buffer is cleared
     bool GUIClearBuffers();
 
-    //: Process OpenGL requests. (renders obj on the 3d canvas)
+    //!  Process OpenGL requests. (renders obj on the 3d canvas)
     bool GUIProcessReq(DObject3D &obj);
 
-    //: Put render instruction into pipe.
+    //!  Put render instruction into pipe.
     bool put(std::shared_ptr<DObject3D> r);
 
-    //: Enable or disable texturing
+    //!  Enable or disable texturing
     bool SetTextureMode(bool bTexture)
     { m_bTexture = bTexture; return true; }
 
-    //: Enable or disable lighting
+    //!  Enable or disable lighting
     bool SetLightingMode(bool bLighting);
 
-    //: Set rendering mode
-    bool SetRenderMode(Canvas3DRenderMode& eRenderMode)
+    //!  Set rendering mode
+    bool SetRenderMode(Canvas3DRenderMode eRenderMode)
     { m_eRenderMode = eRenderMode; return true; }
 
-    //: Is texturing enabled?
-    [[nodiscard]] bool GetTextureMode(void) const
+    //!  Is texturing enabled?
+    [[nodiscard]] bool GetTextureMode() const
     { return m_bTexture; }
 
-    //: Is lighting enabled?
-    [[nodiscard]] bool GetLightingMode(void) const
+    //!  Is lighting enabled?
+    [[nodiscard]] bool GetLightingMode() const
     { return m_bLighting; }
 
-    //: Get rendering mode
-    [[nodiscard]] Canvas3DRenderMode GetRenderMode(void) const
+    //!  Get rendering mode
+    [[nodiscard]] Canvas3DRenderMode GetRenderMode() const
     { return m_eRenderMode; }
 
-    //: Setup lighting
-    bool GUIDoLighting() const {
+    //!  Setup lighting
+    void GUIDoLighting() const
+    {
       if (m_bLighting) glEnable(GL_LIGHTING);
       else glDisable(GL_LIGHTING);
-      return true;
     }
 
-    //: Do we have non power of two textures?
+    //!  Do we have non power of two textures?
     [[nodiscard]] bool HaveExtNonPowerOfTwoTexture() const
     { return m_glExtNonPowerOfTwoTexture; }
 
-    //: Get opengl context.
-    GLContext &GUIGLContext() {
+    //!  Get opengl context.
+    GLContext &GUIGLContext() const
+    {
       return *m_glContext;
     }
 
     bool SaveToImage(Ravl2::Array<PixelRGB8,2> &img);
-    //: Write contents of widget to an image.
+    //!  Write contents of widget to an image.
   protected:
     
     //bool SaveToImageInternal(Ravl2::Array<PixelRGB8,2> *img,SemaphoreRC &done);
-    //: Write contents of widget to an image.
+    //!  Write contents of widget to an image.
     
     virtual bool CBConfigureEvent();
-    //: Handle configure event
+    //!  Handle configure event
     
     // Size of view port.
     // Only needed for widget creation
     int sx = 100;
     int sy = 100;
 
-    Canvas3DRenderMode m_eRenderMode = C3D_SMOOTH; //: Rendering mode
+    Canvas3DRenderMode m_eRenderMode = C3D_SMOOTH; //!  Rendering mode
 
-    //: Texture mode
-    // true = use texture when rendering.
+    //!  Texture mode
+    //! true = use texture when rendering.
     bool m_bTexture = false;
 
-    //: Lighting mode
-    // true = Use lighting when rendering.
+    //!  Lighting mode
+    //! true = Use lighting when rendering.
     bool m_bLighting = true;
 
-    bool m_autoConfigure = true;  //: Handle viewport configure events internally.
+    bool m_autoConfigure = true;  //! Handle viewport configure events internally.
     
     bool m_glExtNonPowerOfTwoTexture = false; // Do we have non power of two textures ?
     bool m_initDone = false;
     
     std::shared_ptr<GLContext> m_glContext;
-  private:
-    //: Never do this.
+
   };
 
 

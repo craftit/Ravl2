@@ -16,12 +16,12 @@ namespace Ravl2 {
 
   //: Setup a light in a 3D world.
 
-  class DLight3DBodyC
+  class DLight3D
     : public DObject3D
   {
   public:
     //: Constructor.
-    DLight3DBodyC(const PixelRGB8 &nCol, const Vector<float,3> &nPos, int nn)
+    DLight3D(const PixelRGB32F &nCol, const Vector<float,3> &nPos, int nn = 0)
       : n(nn),
 	colour(nCol),
 	pos(nPos),
@@ -46,7 +46,7 @@ namespace Ravl2 {
     [[nodiscard]] GLenum LightNo(int no) const;
 
     int n = 0;           //!< Number of light. 0-7
-    PixelRGB8 colour; //!< Colour of light.
+    PixelRGB32F colour; //!< Colour of light.
     Vector<float,3> pos;    //!< Position of light.
     bool spot = false;        //!< Spot light ?
     Vector<float,3> dir;    //!< Direction of spot light.

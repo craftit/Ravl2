@@ -38,7 +38,7 @@ namespace Ravl2
   /// DObjectSet3DBodyC ///////////////////////////////////////////////
 
   //: Render object.
-  bool DObjectSet3DBodyC::GUIRender(Canvas3D &c3d) const
+  bool DObjectSet3D::GUIRender(Canvas3D &c3d) const
   {
     //cerr << "DObjectSet3DBodyC::GUIRender\n";
     for(auto &x: parts)
@@ -48,7 +48,7 @@ namespace Ravl2
 
   //: Get center of object.
   // defaults to 0,0,0
-  Vector<float,3> DObjectSet3DBodyC::GUICenter() const
+  Vector<float,3> DObjectSet3D::GUICenter() const
   {
     assert(!mUpdateNeeded);
     return center;
@@ -56,20 +56,20 @@ namespace Ravl2
 
   //: Get extent of object.
   // defaults to 1
-  float DObjectSet3DBodyC::GUIExtent() const
+  float DObjectSet3D::GUIExtent() const
   {
     assert(!mUpdateNeeded);
     return extent;
   }
   
   //: Add object into list.
-  void DObjectSet3DBodyC::GUIAdd(const std::shared_ptr<DObject3D> &obj) {
+  void DObjectSet3D::GUIAdd(const std::shared_ptr<DObject3D> &obj) {
     parts.push_back(obj);
     center = (center * (parts.size() - 1) + obj->GUICenter()) / parts.size();
     mUpdateNeeded = true;
   }
   
-  void DObjectSet3DBodyC::UpdateCenterExtent()
+  void DObjectSet3D::UpdateCenterExtent()
   {
     center = toVector<float>(0,0,0);
     for(auto &x: parts) {

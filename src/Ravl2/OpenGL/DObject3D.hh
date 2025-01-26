@@ -50,7 +50,7 @@ namespace Ravl2
 
     //: Set current colour.
     template<typename PixelT>
-    static inline
+    static
     void GLColour(const PixelT &colour)
     { glColor3f(get<ImageChannel::Red,float>(colour),
 		get<ImageChannel::Green,float>(colour),
@@ -58,26 +58,26 @@ namespace Ravl2
     }
 
     //! Set a colour.
-    static inline
+    static
     void GLColour(const PixelRGB8 &colour)
     { glColor3ub(colour.get<ImageChannel::Red>(), colour.get<ImageChannel::Green>(), colour.get<ImageChannel::Blue>()); }
 
     //: Set a vertex.
-    static inline
+    static
     void GLVertex(const Point<float,3> &v)
       { glVertex3f(v[0], v[1], v[2]); }
 
     //: Set a vertex.
-    static inline
+    static
     void GLVertex(const Point<double,3> &v)
     { glVertex3d(v[0], v[1], v[2]); }
 
-    static inline
+    static
     void GLNormal(const Vector<float,3> &v)
     { glNormal3f(v[0], v[1], v[2]); }
     //: Set a vertex.
 
-    static inline
+    static
     void GLTexCoord(const Point<float,2> &p)
     { glTexCoord2f(p[1], p[0]); }
     //: Set a texture coordinate
@@ -118,12 +118,12 @@ namespace Ravl2
     
     //: Get center of object.
     // defaults to 0,0,0
-    Vector<float,3> GUICenter() const override
+    [[nodiscard]] Vector<float,3> GUICenter() const override
     { return center; }
     
     //: Get extent of object.
     // defaults to 1
-    float GUIExtent() const override
+    [[nodiscard]] float GUIExtent() const override
     { return extent; }
 
   protected:
@@ -139,12 +139,12 @@ namespace Ravl2
   ////////////////////////////////////
 
   //: Body of an  object set in a 3D world.
-  class DObjectSet3DBodyC
+  class DObjectSet3D
       : public DObject3D
   {
   public:
     //: Default constructor.
-    DObjectSet3DBodyC() = default;
+    DObjectSet3D() = default;
     
     //: Render object.
     bool GUIRender(Canvas3D &c3d) const override;
