@@ -58,6 +58,7 @@ add_library (Ravl2OpenGL
   View3D.cc View3D.hh
         MouseEvent.cc
         MouseEvent.hh
+        testCube.cc
 )
 
 add_library(ravl2::Ravl2OpenGL ALIAS Ravl2OpenGL)
@@ -92,6 +93,9 @@ endif()
 
 add_executable(viewer3d viewer3d.cc)
 target_link_libraries (viewer3d PUBLIC Ravl2Image Ravl2OpenGL CLI11::CLI11)
+
+add_executable(test3d testCube.cc)
+target_link_libraries (test3d PUBLIC Ravl2Image Ravl2OpenGL CLI11::CLI11)
 
 if(BUILD_IMGUIGLFW)
     target_link_libraries(viewer3d PRIVATE imgui)

@@ -26,8 +26,8 @@ static std::string GLGetString(GLenum Name)
 namespace Ravl2 {
 
   //: Default constructor.
-  View3D::View3D(int sx,int sy,bool enableLighting,bool enableTexture)
-    : Canvas3D(sx,sy),
+  View3D::View3D(int sx_,int sy_,bool enableLighting,bool enableTexture)
+    : Canvas3D(sx_,sy_),
       m_bTextureStatus(enableTexture),
       m_bLightingStatus(enableLighting)
   {
@@ -37,6 +37,8 @@ namespace Ravl2 {
   bool View3D::GUIInitGL()
   {
     ONDEBUG(SPDLOG_INFO("View3DBodyC::InitGL(), Called. "));
+
+#if 0
     // Set up culling
     GUISetCullMode();
     // Enable depth testing
@@ -51,6 +53,35 @@ namespace Ravl2 {
 
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
+#else
+    /* Enable a single OpenGL light. */
+    static GLfloat light_diffuse[] = {1.0, 0.0, 0.0, 1.0};  /* Red diffuse light. */
+    static GLfloat light_position[] = {1.0, 1.0, 1.0, 0.0};  /* Infinite light location. */
+
+    glLightfv(GL_LIGHT0, GL_DIFFUSE, light_diffuse);
+    glLightfv(GL_LIGHT0, GL_POSITION, light_position);
+    glEnable(GL_LIGHT0);
+    glEnable(GL_LIGHTING);
+
+    /* Use depth buffering for hidden surface elimination. */
+    glEnable(GL_DEPTH_TEST);
+
+    /* Setup the view of the cube. */
+    glMatrixMode(GL_PROJECTION);
+    gluPerspective( /* field of view in degree */ 40.0,
+                   /* aspect ratio */ 1.0,
+                   /* Z near */ 1.0, /* Z far */ 10.0);
+    glMatrixMode(GL_MODELVIEW);
+    gluLookAt(0.0, 0.0, 5.0,  /* eye is at (0,0,5) */
+              0.0, 0.0, 0.0,      /* center is at (0,0,0) */
+              0.0, 1.0, 0.);      /* up is in positive Y direction */
+
+    /* Adjust cube position to be aesthetic angle. */
+    glTranslatef(0.0, 0.0, -1.0);
+    glRotatef(60, 1.0, 0.0, 0.0);
+    glRotatef(-20, 0.0, 0.0, 1.0);
+
+#endif
 
     //glLightModeli(GL_LIGHT_MODEL_LOCAL_VIEWER, GL_TRUE);
 
@@ -68,6 +99,7 @@ namespace Ravl2 {
   bool View3D::setup(GLWindow &window)
   {
     //mCallbacks += window.mouseButtonCallback();
+    return true;
   }
 
 #if 0
@@ -234,8 +266,8 @@ namespace Ravl2 {
     glFrustum(-extHor, extHor, -extVer, extVer, fNear, fFar);
     
     //setup view point
-    gluLookAt(GLdouble(m_viewPoint[0]),   GLdouble(m_viewPoint[1]),   GLdouble(m_viewPoint.z()),
-              GLdouble(lookAt[0]),        GLdouble(lookAt[1]),        GLdouble(lookAt.z()),
+    gluLookAt(GLdouble(m_viewPoint[0]),   GLdouble(m_viewPoint[1]),   GLdouble(m_viewPoint[2]),
+              GLdouble(lookAt[0]),        GLdouble(lookAt[1]),        GLdouble(lookAt[2]),
               0.,                1.,                0.);
     //FTensor<RealT,2><4, 4> projectionMat;
     //glGetDoublev(GL_PROJECTION_MATRIX, &(projectionMat(0,0)));
@@ -447,6 +479,9 @@ namespace Ravl2 {
     GUIBeginGL();
 
     GUIClearBuffers();
+#if 0
+    scene->GUIRender(*this);
+#else
     // Render scene
     {
       std::shared_lock lockHold(viewLock);
@@ -464,6 +499,7 @@ namespace Ravl2 {
         glPopMatrix();
       }
     }
+#endif
 
     // show scene
     GUISwapBuffers();   

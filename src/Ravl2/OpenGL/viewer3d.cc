@@ -8,7 +8,7 @@
 #include "Ravl2/OpenGL/Canvas3D.hh"
 #include "Ravl2/OpenGL/View3D.hh"
 
-#define USE_OPENGL3 1
+#define USE_OPENGL3 0
 
 #if 0
 #include "imgui.h"
@@ -57,7 +57,7 @@ int main(int argc,char **argv)
   view.GUIInitGL();
   auto cube = std::make_shared<Ravl2::DCube3D>();
   view.add(cube);
-  view.GUIAdjustView();
+  //view.GUIAdjustView();
 
   callbacks += window->addFrameRender([&view]() {
     view.GUIRefresh();

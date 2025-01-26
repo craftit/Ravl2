@@ -26,9 +26,9 @@ namespace Ravl2
     //: Constructor.
     explicit DCube3D(
       const Vector<float,3> &nDiag,
-      const PixelRGB8 &col = {1, 0, 0})
-      : diag(nDiag),
-      colour(col)
+      const PixelRGB8 &col = {255, 128, 128})
+      : mDiag(nDiag),
+          mColour(col)
       {}
 
     //: Render object.
@@ -45,8 +45,8 @@ namespace Ravl2
     { return 1; }
 
   protected:
-    Vector<float,3> diag = {1, 1, 1};
-    PixelRGB8 colour = {255, 128, 128};
+    Vector<float,3> mDiag = {1, 1, 1};
+    PixelRGB8 mColour = {255, 128, 128};
   };
 
 

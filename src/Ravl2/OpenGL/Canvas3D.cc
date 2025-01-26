@@ -70,8 +70,9 @@ namespace Ravl2
   bool Canvas3D::GUIClearBuffers()
   {
     GLenum whichBuffers(GL_COLOR_BUFFER_BIT);
-    if(glIsEnabled(GL_DEPTH_TEST) )
+    if(glIsEnabled(GL_DEPTH_TEST) ) {
       whichBuffers |= (GL_DEPTH_BUFFER_BIT);
+    }
     glClear(whichBuffers);
     //glMatrixMode(GL_MODELVIEW);
     //glLoadIdentity();

@@ -18,9 +18,9 @@ namespace Ravl2
     (void)c3d;
     //std::cerr << "DCube3D::Render(), Called. \n";
 
-    GLColour(colour);
-    Vector<float,3> p1 = diag/2;
-    Vector<float,3> p7 = -diag/2;
+    GLColour(mColour);
+    Vector<float,3> p1 = mDiag /2;
+    Vector<float,3> p7 = -mDiag /2;
 
     Vector<float,3> p2 ( {p1[0], p7[1], p1[2]} );
     Vector<float,3> p3 ( {p7[0], p7[1], p1[2]} );
@@ -76,6 +76,7 @@ namespace Ravl2
       GLVertex(p6);
     }
     glEnd();
+
     return true;
   }
 }
