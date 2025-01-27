@@ -29,21 +29,16 @@ namespace Ravl2
     DObject3D() = default;
 
     //! Destructor.
-    // Make sure display list is free'd
     virtual ~DObject3D() = default;
 
     //! Render object. Make sure you called Canvas3DC::GUIBeginGL just before
     virtual bool GUIRender(Canvas3D &c3d) const = 0;
 
     //! Get center of object.
-    // defaults to 0,0,0
     [[nodiscard]] virtual Vector<float,3> GUICenter() const = 0;
-    //  { return Vector<RealT,3>(0,0,0); }
 
     //! Get extent of object.
-    // defaults to 1
     [[nodiscard]] virtual float GUIExtent() const = 0;
-    //  { return 1; }
 
     //! Render, checking for display lists.
     bool GUIRenderDL(Canvas3D &c3d);
@@ -65,7 +60,7 @@ namespace Ravl2
     //! Set a vertex.
     static
     void GLVertex(const Point<float,3> &v)
-      { glVertex3f(v[0], v[1], v[2]); }
+    { glVertex3f(v[0], v[1], v[2]); }
 
     //! Set a vertex.
     static

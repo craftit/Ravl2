@@ -46,11 +46,11 @@ namespace Ravl2 {
     [[nodiscard]] GLenum LightNo(int no) const;
 
     int n = 0;           //!< Number of light. 0-7
-    PixelRGB32F colour; //!< Colour of light.
-    Vector<float,3> pos;    //!< Position of light.
-    bool spot = false;        //!< Spot light ?
-    Vector<float,3> dir;    //!< Direction of spot light.
-    float  ang = 0;       //!< angle of light.
+    PixelRGB32F colour;  //!< Colour of light.
+    Vector<float,3> pos; //!< Position of light.
+    bool spot = false;   //!< Spot light ?
+    Vector<float,3> dir; //!< Direction of spot light.
+    float  ang = 0;      //!< angle of light.
   };
 
 }
