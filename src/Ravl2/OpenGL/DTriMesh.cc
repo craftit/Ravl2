@@ -63,7 +63,13 @@ namespace Ravl2
 
   bool DTriMesh::GUIInit(Canvas3D &c3d)
   {
-    (void)c3d;
+    mShaderProgram = c3d.getShaderProgram("triMesh", [&]() {
+      // vertex shader
+      std::string vertex_source = R"(
+      )";
+
+      return std::make_shared<GLShaderProgram>(vertex_source, "");
+    });
 
     return true;
   }

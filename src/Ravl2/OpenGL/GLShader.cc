@@ -182,7 +182,7 @@ namespace Ravl2
   {
     assert(mVertexArray.empty());
     mVertexArray = std::vector<GLuint>(size, 0);
-    glGenVertexArrays(size, mVertexArray.data());
+    glGenVertexArrays(GLsizei(size), mVertexArray.data());
   }
 
   //! Bind the vertex array.
@@ -230,7 +230,71 @@ namespace Ravl2
     glVertexAttribPointer(index, size, type, normalized, stride, pointer);
   }
 
+  // ------------------------------------------------------------
+
+  //! Destructor.
+  GLTexture::~GLTexture()
+  {
+    if(!mTextures.empty()) {
+      glDeleteTextures(GLsizei(mTextures.size()), mTextures.data());
+    }
+    mTextures.clear();
+  }
+
+  //! Create the texture.
+  void GLTexture::generate(size_t size)
+  {
+    assert(mTextures.empty());
+    mTextures = std::vector<GLuint>(size, 0);
+    glGenTextures(GLsizei(size), mTextures.data());
+  }
+
+  //! Bind the texture.
+  void GLTexture::bind(GLenum target, size_t ind) const
+  {
+    assert(!mTextures.empty());
+    glBindTexture(target, mTextures.at(ind));
+  }
+
+  void GLTexture::setData(size_t ind, GLenum target, GLint level, GLint internalFormat, GLsizei width, GLsizei height, GLint border, GLenum format, GLenum type, const void *data)
+  {
+    assert(!mTextures.empty());
+    glBindTexture(target, mTextures.at(ind));
+    glTexImage2D(target, level, internalFormat, width, height, border, format, type, data);
+    glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
+  }
+
+  //! Set texture data from a grey scale array.
+  void GLTexture::setArray(size_t ind,const Array<uint8_t,2> &data)
+  {
+    glBindTexture(GL_TEXTURE_2D, mTextures.at(ind));
+    glPixelStorei(GL_UNPACK_ROW_LENGTH, data.stride(0) * GLint(sizeof(uint8_t)));
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, GLsizei(data.range().size(1)), GLsizei(data.range().size(0)), 0, GL_LUMINANCE, GL_UNSIGNED_BYTE, addressOfMin(data));
+    // Restore the default row length to 0, as it may affect other operations. 0=use the width of the image.
+    glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
+  }
+
+  //! Set texture data from a colour array.
+  void GLTexture::setArray(size_t ind,const Array<PixelBGR8,2> &data)
+  {
+    glBindTexture(GL_TEXTURE_2D, mTextures.at(ind));
+    glPixelStorei(GL_UNPACK_ROW_LENGTH, data.stride(0) * GLint(sizeof(PixelBGR8)));
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_BGR, GLsizei(data.range().size(1)), GLsizei(data.range().size(0)), 0, GL_BGR, GL_UNSIGNED_BYTE, addressOfMin(data));
+    // Restore the default row length to 0, as it may affect other operations. 0=use the width of the image.
+    glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
+  }
+
+  //! Set texture data from a colour + alpha array.
+  void GLTexture::setArray(size_t ind,const Array<PixelBGRA8,2> &data)
+  {
+    glBindTexture(GL_TEXTURE_2D, mTextures.at(ind));
+    glPixelStorei(GL_UNPACK_ROW_LENGTH, data.stride(0) * GLint(sizeof(PixelBGRA8)));
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_BGRA, GLsizei(data.range().size(1)), GLsizei(data.range().size(0)), 0, GL_BGRA, GL_UNSIGNED_BYTE, addressOfMin(data));
+    // Restore the default row length to 0, as it may affect other operations. 0=use the width of the image.
+    glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
+  }
 
 
+} // namespace Ravl2
 
-}// namespace Ravl2
+

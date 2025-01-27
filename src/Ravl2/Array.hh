@@ -624,7 +624,7 @@ namespace Ravl2
     //! Element by element call operator access
     template <IndexType... IndexDataT, unsigned IndexN = sizeof...(IndexDataT)>
       requires (IndexN <= N)
-    constexpr inline auto& operator()(IndexDataT... data)
+    constexpr auto& operator()(IndexDataT... data)
     {
       return operator[](Index<IndexN>({int(data)...}));
     }
@@ -632,7 +632,7 @@ namespace Ravl2
     //! Element by element call operator access
     template <IndexType... IndexDataT, unsigned IndexN = sizeof...(IndexDataT)>
      requires (IndexN <= N)
-    constexpr inline const auto &operator()(IndexDataT... data) const
+    constexpr const auto &operator()(IndexDataT... data) const
     {
       return operator[](Index<IndexN>({int(data)...}));
     }
@@ -641,7 +641,7 @@ namespace Ravl2
     template<unsigned M>
       requires(M <= N)
     [[nodiscard]]
-    constexpr inline auto operator()(Index<M> ind) const
+    constexpr auto operator()(Index<M> ind) const
     {
       return operator[](ind);
     }
@@ -650,7 +650,7 @@ namespace Ravl2
     template<unsigned M>
       requires(M <= N)
     [[nodiscard]]
-    constexpr inline auto& operator()(Index<M> ind)
+    constexpr auto& operator()(Index<M> ind)
     {
       return operator[](ind);
     }

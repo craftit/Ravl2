@@ -131,6 +131,11 @@ namespace Ravl2
     [[nodiscard]] const glm::mat4 &projectionViewMatrix() const
     { return mMatProjectionView; }
 
+    //! Get a shader program
+    template<typename CreateProgramT>
+    std::shared_ptr<GLShaderProgram > getShaderProgram(const std::string &name, CreateProgramT createProgram)
+    { return m_glContext->getShaderProgram(name, createProgram); }
+
   protected:
 
     //!  Handle configure event

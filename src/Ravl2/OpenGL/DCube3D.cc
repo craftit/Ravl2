@@ -29,7 +29,10 @@ namespace Ravl2
     if(mShaderProgram)
       return true;
 
-    std::string vertex_source = R"(
+    // create shader if it doesn't exist
+    mShaderProgram = c3d.getShaderProgram("cube", [&]() {
+      // vertex shader
+      std::string vertex_source = R"(
 #version 330
 uniform mat4 ViewProjection; // the projection matrix uniform
 layout(location = 0) in vec4 vposition;
@@ -41,7 +44,7 @@ void main() {
 }
 )";
 
-    std::string fragment_source = R"(
+      std::string fragment_source = R"(
 #version 330
 in vec4 fcolor;
 layout(location = 0) out vec4 FragColor;
@@ -49,9 +52,11 @@ void main() {
    FragColor = fcolor;
 }
 )";
+      auto program = std::make_shared<GLShaderProgram>(vertex_source, fragment_source);
+      program->link();
+      return program;
+    });
 
-    // create shader
-    mShaderProgram = std::make_shared<GLShaderProgram>(vertex_source, fragment_source);
     mShaderProgram->use();
 
     mViewProjectionLocation = mShaderProgram->getUniformLocation("ViewProjection");

@@ -11,6 +11,7 @@
 #pragma once
 
 #include "Ravl2/OpenGL/DObject3D.hh"
+#include "Ravl2/OpenGL/GLShader.hh"
 #include "Ravl2/3D/TriMesh.hh"
 
 namespace Ravl2 {
@@ -43,6 +44,11 @@ namespace Ravl2 {
 
     std::shared_ptr<TriMesh<RealT> > model;
     bool mUseMeshColour = true;
+
+    std::shared_ptr<GLShaderProgram> mShaderProgram;
+    std::shared_ptr<GLVertexBuffer> mVertexBuffer;
+    GLVertexArray mVertexArray;
+
     Vector<RealT,3> center = {0,0,0};
     RealT extent = 1.0;
   };

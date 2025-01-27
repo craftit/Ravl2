@@ -11,7 +11,9 @@
 #endif
 
 #include <GL/gl.h>
-#include <GL/glext.h>
+#include "Ravl2/Array.hh"
+#include "Ravl2/Pixel/Pixel.hh"
+#include "Ravl2/Pixel/Colour.hh"
 
 
 namespace Ravl2
@@ -140,7 +142,7 @@ namespace Ravl2
 
   //! Vertex array object.
   //! The main goal of this class to manage the OpenGL objects life cycle and dependencies.
-  
+
   class GLVertexArray
   {
   public:
@@ -189,6 +191,60 @@ namespace Ravl2
     std::vector<std::shared_ptr<GLVertexBuffer>> mBuffers;
   };
 
+
+  //! Texture object.
+  //! The main goal of this class to manage the OpenGL objects life cycle.
+
+  class GLTexture
+  {
+  public:
+    GLTexture() = default;
+
+    //! Disable copy constructor.
+    GLTexture(const GLTexture&) = delete;
+    GLTexture& operator=(const GLTexture&) = delete;
+    GLTexture(GLTexture&&) = delete;
+    GLTexture& operator=(GLTexture&&) = delete;
+
+    //! Destructor.
+    ~GLTexture();
+
+    //! Create the texture.
+    void generate(size_t size = 1);
+
+    //! Bind the texture.
+    void bind(GLenum target, size_t ind = 0) const;
+
+    //! Set the texture data.
+    void setData(size_t ind,
+                  GLenum target, GLint level, GLint internalFormat,
+                     GLsizei width, GLsizei height, GLint border,
+                     GLenum format, GLenum type, const void *data);
+
+    //! Set texture data from a grey scale array.
+    void setArray(size_t ind,const Array<uint8_t,2> &data);
+
+    //! Set texture data from a colour array.
+    void setArray(size_t ind,const Array<PixelBGR8,2> &data);
+
+    //! Set texture data from a colour + alpha array.
+    void setArray(size_t ind,const Array<PixelBGRA8,2> &data);
+
+    //! Get the texture object.
+    [[nodiscard]] GLuint texture(size_t ind = 0) const
+    {
+      return mTextures.at(ind);
+    }
+
+    //! Get the number of textures.
+    [[nodiscard]] size_t size() const
+    {
+      return mTextures.size();
+    }
+
+  private:
+    std::vector<GLuint> mTextures;
+  };
 
 
 }// namespace Ravl2

@@ -6,9 +6,14 @@
 #endif
 
 #include <vector>
+#include <map>
+#include <functional>
+#include <memory>
+#include <mutex>
 #include <GLFW/glfw3.h>
 #include "Ravl2/Types.hh"
 #include "Ravl2/CallbackArray.hh"
+#include "Ravl2/OpenGL/GLShader.hh"
 
 namespace Ravl2
 {
@@ -48,6 +53,22 @@ namespace Ravl2
     //! Put a function on the queue to be executed in the main thread
     virtual void put(std::function<void()> &&f) = 0;
 
+    template<typename CreateProgramT>
+    std::shared_ptr<GLShaderProgram > getShaderProgram(const std::string &name, CreateProgramT createProgram)
+    {
+      std::lock_guard lock(mMutex);
+      auto it = mShaderPrograms.find(name);
+      if(it == mShaderPrograms.end()) {
+        auto program = createProgram();
+        mShaderPrograms[name] = program;
+        return program;
+      }
+      return it->second;
+    }
+
+  private:
+    std::mutex mMutex;
+    std::map<std::string,std::shared_ptr<GLShaderProgram > > mShaderPrograms;
   };
 
 }

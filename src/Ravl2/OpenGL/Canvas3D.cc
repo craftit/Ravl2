@@ -97,6 +97,7 @@ namespace Ravl2
     ONDEBUG(std::cerr << "Canvas3D::CBConfigureEvent, Called. ");
     if(!GUIBeginGL())
       return false;
+    mViewSize = {height,width};
     if(m_autoConfigure) {
 #if 0
       ONDEBUG(std::cerr << "Reshape. " << widget->allocation.width << " " << widget->allocation.height << "\n");
