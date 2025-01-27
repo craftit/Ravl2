@@ -41,7 +41,7 @@ namespace Ravl2 {
     [[nodiscard]] float GUIExtent() const override
       { return 1; }
 
-  protected:
+  private:
     //! Convert Light number.
     [[nodiscard]] GLenum LightNo(int no) const;
 

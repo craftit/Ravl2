@@ -13,10 +13,7 @@ namespace Ravl2 {
   
   static Point<float,2> TexPnt(float v1,float v2)
   { return toPoint<float>(v1,v2); }
-  
-  static Point<float,3> World3d(float a1,float a2,float a3)
-  { return toPoint<float>(a1,a2,a3); }
-  
+
   //: Create a flat plane
   
   TriMesh<float> createTriMeshPlane(float size) {
@@ -24,10 +21,10 @@ namespace Ravl2 {
     
     std::vector<Vertex<float>> vertex(4);
     Vector<float,3> norm = toPoint<float>(0,0,1);
-    vertex[0] = Vertex<float>(World3d(-hSize,-hSize,0),norm);
-    vertex[1] = Vertex<float>(World3d(-hSize, hSize,0),norm);
-    vertex[2] = Vertex<float>(World3d( hSize, hSize,0),norm);
-    vertex[3] = Vertex<float>(World3d( hSize,-hSize,0),norm);
+    vertex[0] = Vertex<float>(toPoint<float>(-hSize,-hSize,0),norm);
+    vertex[1] = Vertex<float>(toPoint<float>(-hSize, hSize,0),norm);
+    vertex[2] = Vertex<float>(toPoint<float>( hSize, hSize,0),norm);
+    vertex[3] = Vertex<float>(toPoint<float>( hSize,-hSize,0),norm);
     
     std::vector<Tri<float>> tri(2);
     tri[0] = Tri<float>(vertex[0],vertex[2],vertex[1],TexPnt(0,0),TexPnt(1,1),TexPnt(0,1));
@@ -45,15 +42,15 @@ namespace Ravl2 {
   {
     float hSize = size/2.0f;
     std::vector<Vertex<float>> vertex(8);
-    vertex[0] = Vertex<float>(World3d( hSize, hSize,-hSize) + origin);
-    vertex[1] = Vertex<float>(World3d( hSize,-hSize,-hSize) + origin);
-    vertex[2] = Vertex<float>(World3d(-hSize,-hSize,-hSize) + origin);
-    vertex[3] = Vertex<float>(World3d(-hSize, hSize,-hSize) + origin);
+    vertex[0] = Vertex<float>(toPoint<float>( hSize, hSize,-hSize) + origin);
+    vertex[1] = Vertex<float>(toPoint<float>( hSize,-hSize,-hSize) + origin);
+    vertex[2] = Vertex<float>(toPoint<float>(-hSize,-hSize,-hSize) + origin);
+    vertex[3] = Vertex<float>(toPoint<float>(-hSize, hSize,-hSize) + origin);
     
-    vertex[4] = Vertex<float>(World3d( hSize, hSize,hSize) + origin);
-    vertex[5] = Vertex<float>(World3d( hSize,-hSize,hSize) + origin);
-    vertex[6] = Vertex<float>(World3d(-hSize,-hSize,hSize) + origin);
-    vertex[7] = Vertex<float>(World3d(-hSize, hSize,hSize) + origin);
+    vertex[4] = Vertex<float>(toPoint<float>( hSize, hSize,hSize) + origin);
+    vertex[5] = Vertex<float>(toPoint<float>( hSize,-hSize,hSize) + origin);
+    vertex[6] = Vertex<float>(toPoint<float>(-hSize,-hSize,hSize) + origin);
+    vertex[7] = Vertex<float>(toPoint<float>(-hSize, hSize,hSize) + origin);
     
     std::vector<Tri<float>> tri(12);
     unsigned tn = 0;
@@ -140,7 +137,7 @@ namespace Ravl2 {
     // ----- Put in top fan. -----
     
     auto topVert = vn;
-    vertex[vn++] = Vertex<float>(World3d(0,radius,0));
+    vertex[vn++] = Vertex<float>(toPoint<float>(0,radius,0));
     
     float layerAngle = layerStep;
     
@@ -148,7 +145,7 @@ namespace Ravl2 {
     float ls = std::sin(layerAngle);
     
     vLastLayer[0] = vn;
-    vertex[vn++] = Vertex<float>(World3d(ls * sliceSin[0],lc,ls  * sliceCos[0]));
+    vertex[vn++] = Vertex<float>(toPoint<float>(ls * sliceSin[0],lc,ls  * sliceCos[0]));
     
     float texRow0 = 0;
     float texRow1 = texRowSize;
@@ -162,7 +159,7 @@ namespace Ravl2 {
                        TexPnt(texRow0,texCol0 + texColSize/2.0f),TexPnt(texRow1,texCol0),TexPnt(texRow1,texCol1));
       
       vLastLayer[s] = vn;
-      vertex[vn++] = Vertex<float>(World3d(ls * sliceSin[s],lc,ls  * sliceCos[s]));
+      vertex[vn++] = Vertex<float>(toPoint<float>(ls * sliceSin[s],lc,ls  * sliceCos[s]));
     }
 
     {
@@ -184,7 +181,7 @@ namespace Ravl2 {
       unsigned lastTopVert = vLastLayer[0];
       unsigned lastBotVert = vn;
       unsigned firstVirt = vn;
-      vertex[vn++] = Vertex<float>(World3d(ls * sliceSin[0],lc,ls  * sliceCos[0]));
+      vertex[vn++] = Vertex<float>(toPoint<float>(ls * sliceSin[0],lc,ls  * sliceCos[0]));
       
       texRow0 = float(l) * texRowSize;
       texRow1 = texRow0 + texRowSize;
@@ -204,7 +201,7 @@ namespace Ravl2 {
 	lastTopVert = vLastLayer[s];
 	lastBotVert = vn;
 	vLastLayer[s] = vn;
-	vertex[vn++] = Vertex<float>(World3d(ls * sliceSin[s],lc,ls  * sliceCos[s]));
+	vertex[vn++] = Vertex<float>(toPoint<float>(ls * sliceSin[s],lc,ls  * sliceCos[s]), toVector<float>(0,0,0));
       }
       
       float texCol0 = 0;
@@ -223,7 +220,7 @@ namespace Ravl2 {
     // ---- Put in bottom fan ----
     
     auto botVert = vn;
-    vertex[vn++] = Vertex<float>(World3d(0,-radius,0));
+    vertex[vn++] = Vertex<float>(toPoint<float>(0,-radius,0));
     
     // Put together face.
     texRow0 = 1.0f-texRowSize;

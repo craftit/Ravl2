@@ -53,8 +53,8 @@ add_library (Ravl2OpenGL
   DTransform.cc DTransform.hh
   GLContext.cc GLContext.hh
   Canvas3D.cc Canvas3D.hh
-  DTriMesh3D.cc DTriMesh3D.hh
-  DTexTriMesh3D.cc DTexTriMesh3D.hh
+        DTriMesh.cc DTriMesh.hh
+        DTexTriMesh.cc DTexTriMesh.hh
   DViewPoint3D.cc DViewPoint3D.hh
   View3D.cc View3D.hh
         MouseEvent.cc

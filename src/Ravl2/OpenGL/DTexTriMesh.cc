@@ -6,7 +6,7 @@
 // file-header-ends-here
 //////////////////////////////////////////
 
-#include "Ravl2/OpenGL/DTexTriMesh3D.hh"
+#include "Ravl2/OpenGL/DTexTriMesh.hh"
 #include "Ravl2/OpenGL/Canvas3D.hh"
 #include "Ravl2/Image/WarpScale.hh"
 #include "GL/gl.h"
@@ -22,34 +22,23 @@
 
 namespace Ravl2 {
 
-  DTexTriMesh3DBodyC::DTexTriMesh3DBodyC(const std::shared_ptr<TexTriMesh<RealT> > &oTexTriMesh)
-    :  DTriMesh3D(oTexTriMesh),
+  DTexTriMesh::DTexTriMesh(const std::shared_ptr<TexTriMesh<RealT> > &oTexTriMesh)
+    : DTriMesh(oTexTriMesh),
        tmodel(oTexTriMesh),
        texNames(0)
   {}
-  //: Constructor.
 
-  DTexTriMesh3DBodyC::~DTexTriMesh3DBodyC()
+  DTexTriMesh::~DTexTriMesh()
   {
     // Make sure textures are free'd in an appropriate context.
     if(m_glContext && texNames.size() > 0)
       m_glContext->FreeTextures(texNames);
   }
-  
-//  static int PowerOfTwo(int Val)
-//  {
-//    Val--;
-//    for(int i = 31; i > 0; i--)
-//      if(Val >> i)
-//        return 1 << (i+1);
-//    return 0;
-//  }
-  
-  //: Render object.
-  bool DTexTriMesh3DBodyC::GUIRender(Canvas3D &canvas) const
+
+  bool DTexTriMesh::GUIRender(Canvas3D &canvas) const
   {
     (void)canvas;
-    ONDEBUG(std::cerr << "DTexTriMesh3DBodyC::GUIRender\n");
+    ONDEBUG(std::cerr << "DTexTriMesh::GUIRender\n");
     if(!tmodel)
       return false;
 #if 0

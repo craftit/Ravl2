@@ -17,14 +17,16 @@ namespace Ravl2 {
 
   //! Draw a TriMesh
 
-  class DTriMesh3D
-    : public DObject3D
+  class DTriMesh : public DObject3D
   {
   public:
     using RealT = float;
 
     //! Constructor.
-    explicit DTriMesh3D(const std::shared_ptr<TriMesh<RealT> > &oTriMesh);
+    explicit DTriMesh(const std::shared_ptr<TriMesh<RealT> > &oTriMesh);
+
+    //! Register object with OpenGL.
+    bool GUIInit(Canvas3D &c3d) override;
 
     //! Render object.
     bool GUIRender(Canvas3D &c3d) const override;
