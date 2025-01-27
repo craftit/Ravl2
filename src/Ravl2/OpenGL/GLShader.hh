@@ -95,36 +95,101 @@ namespace Ravl2
     GLuint mProgram = 0;
   };
 
-  //! Vertex array object.
+  //! Vertex buffer object.
+  //! The main goal of this class to manage the OpenGL objects life cycle.
 
-  class GLVertexArray
+  class GLVertexBuffer
   {
   public:
-    GLVertexArray();
+    GLVertexBuffer() = default;
 
-    ~GLVertexArray();
+    //! Disable copy constructor.
+    GLVertexBuffer(const GLVertexBuffer&) = delete;
+    GLVertexBuffer& operator=(const GLVertexBuffer&) = delete;
+    GLVertexBuffer(GLVertexBuffer&&) = delete;
+    GLVertexBuffer& operator=(GLVertexBuffer&&) = delete;
 
-    //! Bind the vertex array.
-    void bind();
+    //! Destructor.
+    ~GLVertexBuffer();
 
-    //! Unbind the vertex array.
-    void unbind();
+    //! Create the buffer.
+    void generate(size_t size = 1);
 
-    //! Check if the vertex array is bound.
-    [[nodiscard]] bool isBound() const
+    //! Bind the buffer.
+    void bind(GLenum target, size_t ind = 0) const;
+
+    //! Unbind the buffer.
+    void unbind() const;
+
+    //! Get the buffer object.
+    [[nodiscard]] GLuint buffer(size_t ind = 0) const
     {
-      return mVertexArray != 0;
+      return mBuffers.at(ind);
     }
 
-    //! Get the vertex array object.
-    [[nodiscard]] GLuint vertexArray() const
+    //! Get the number of buffers.
+    [[nodiscard]] size_t size() const
     {
-      return mVertexArray;
+      return mBuffers.size();
     }
 
   private:
-    GLuint mVertexArray = 0;
+    std::vector<GLuint> mBuffers;
   };
+
+
+  //! Vertex array object.
+  //! The main goal of this class to manage the OpenGL objects life cycle and dependencies.
+  
+  class GLVertexArray
+  {
+  public:
+    GLVertexArray() = default;
+
+    //! Disable copy constructor.
+    GLVertexArray(const GLVertexArray&) = delete;
+    GLVertexArray& operator=(const GLVertexArray&) = delete;
+    GLVertexArray(GLVertexArray&&) = delete;
+    GLVertexArray& operator=(GLVertexArray&&) = delete;
+
+    //! Destructor.
+    ~GLVertexArray();
+
+    //! Create the vertex array.
+    void generate(size_t size = 1);
+
+    //! Bind the vertex array.
+    void bind(size_t ind) const;
+
+    //! Unbind the vertex array.
+    void unbind() const;
+
+    //! Get the vertex array object.
+    [[nodiscard]] GLuint vertexArray(size_t ind) const
+    {
+      return mVertexArray.at(ind);
+    }
+
+    //! Add data from a buffer to the vertex array.
+    void addBuffer(const std::shared_ptr<GLVertexBuffer> &buffer,
+                       GLuint index, GLint size, GLenum type,
+                       GLboolean normalized, GLsizei stride, const void *pointer);
+
+    //! Add a buffer to the vertex array.
+    void addBuffer(const std::shared_ptr<GLVertexBuffer> &buffer);
+
+    //! Get the number of arrays.
+    [[nodiscard]] size_t size() const
+    {
+      return mVertexArray.size();
+    }
+
+  private:
+    std::vector<GLuint> mVertexArray;
+    std::vector<std::shared_ptr<GLVertexBuffer>> mBuffers;
+  };
+
+
 
 }// namespace Ravl2
 

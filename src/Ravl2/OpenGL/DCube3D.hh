@@ -54,9 +54,10 @@ namespace Ravl2
     GLint mViewProjectionLocation = 0;
     Vector<float,3> mDiag = {1, 1, 1};
     PixelRGB8 mColour = {255, 128, 128};
-    GLuint mVao = 0;
-    GLuint mVbo = 0;
-    GLuint mIbo = 0;
+
+    std::shared_ptr<GLVertexBuffer> mVertexBuffer;
+    GLVertexArray mVertexArray;
+
   };
 
 

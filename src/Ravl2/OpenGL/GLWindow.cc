@@ -71,6 +71,14 @@ namespace Ravl2
         theWindow->scrollCallback(xOffset, yOffset);
       }
     }
+
+    void window_size_callback(GLFWwindow* window, int width, int height)
+    {
+      GLWindow *theWindow = reinterpret_cast<GLWindow *>(glfwGetWindowUserPointer(window));
+      if (theWindow != nullptr) {
+        theWindow->windowSizeCallback(width, height);
+      }
+    }
 #endif
   }
   
@@ -109,6 +117,7 @@ namespace Ravl2
       glfwSetMouseButtonCallback(mWindow, mouse_button_callback);
       glfwSetKeyCallback(mWindow, key_callback);
       glfwSetScrollCallback(mWindow, scroll_callback);
+      glfwSetWindowSizeCallback(mWindow, window_size_callback);
       
       glfwMakeContextCurrent(mWindow);
       glfwSwapInterval(1);// Enable vsync
@@ -154,20 +163,9 @@ namespace Ravl2
   //! Handle key events
   void GLWindow::keyCallback(int key, int scancode, int action, int mods)
   {
-    SPDLOG_INFO("Key: {} Scancode: {} Action: {} Mods: {}", key, scancode, action, mods);
-    //      if (key == GLFW_KEY_E && action == GLFW_PRESS)
-    //        activate_airship();
-    int changed = mKeyModState ^ mods;
+    //SPDLOG_INFO("Key: {} Scancode: {} Action: {} Mods: {}", key, scancode, action, mods);
     mKeyModState = mods;
-    if (changed & GLFW_MOD_SHIFT) {
-      SPDLOG_INFO("Shift key changed");
-    }
-    if (changed & GLFW_MOD_ALT) {
-      SPDLOG_INFO("Alt key changed");
-    }
-    if (changed & GLFW_MOD_CONTROL) {
-      SPDLOG_INFO("Ctrl key changed");
-    }
+    mKeyCB.call(key, scancode, action, mods);
   }
   
   //! Handle cursor position events
@@ -186,7 +184,7 @@ namespace Ravl2
   //! Handle mouse button events
   void GLWindow::mouseButtonCallback(int button, int action, int mods)
   {
-    SPDLOG_INFO("Button: {} Action: {} Mods: {}", button, action, mods);
+    //SPDLOG_INFO("Button: {} Action: {} Mods: {}", button, action, mods);
 
     mMouseButtonCB.call(button, action, mods);
 
@@ -200,11 +198,16 @@ namespace Ravl2
   //! Handle mouse button events
   void GLWindow::scrollCallback(double offsetX, double offsetY)
   {
-    SPDLOG_INFO("Scroll: {} {}", offsetX, offsetY);
+    //SPDLOG_INFO("Scroll: {} {}", offsetX, offsetY);
     mScrollCB.call(offsetX, offsetY);
   }
 
-  
+  //! Handle window size callback
+  void GLWindow::windowSizeCallback(int width, int height)
+  {
+    mWindowSizeCB.call(width, height);
+  }
+
 
   //! Put a function on the queue to be executed in the main thread
   void GLWindow::put(std::function<void()> &&func)

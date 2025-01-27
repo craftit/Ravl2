@@ -29,7 +29,7 @@ namespace Ravl2
     if(mShaderProgram)
       return true;
 
-    std::string vertex_source =R"(
+    std::string vertex_source = R"(
 #version 330
 uniform mat4 ViewProjection; // the projection matrix uniform
 layout(location = 0) in vec4 vposition;
@@ -56,147 +56,92 @@ void main() {
 
     mViewProjectionLocation = mShaderProgram->getUniformLocation("ViewProjection");
 
-   // generate and bind the mVao
-   glGenVertexArrays(1, &mVao);
-   glBindVertexArray(mVao);
+    // generate and bind the mVao
+    mVertexArray.generate(1);
+    mVertexArray.bind(0);
 
-   // generate and bind the vertex buffer object
-   glGenBuffers(1, &mVbo);
-   glBindBuffer(GL_ARRAY_BUFFER, mVbo);
+    mVertexBuffer = std::make_shared<GLVertexBuffer>();
+    mVertexBuffer->generate(2);
 
-   // data for a cube
-   static GLfloat vertexData[] = {
-     //  X     Y     Z           R     G     B
-     // face 0:
-     1.0f, 1.0f, 1.0f,       1.0f, 0.0f, 0.0f, // vertex 0
-     -1.0f, 1.0f, 1.0f,       1.0f, 0.0f, 0.0f, // vertex 1
-     1.0f,-1.0f, 1.0f,       1.0f, 0.0f, 0.0f, // vertex 2
-     -1.0f,-1.0f, 1.0f,       1.0f, 0.0f, 0.0f, // vertex 3
+    mVertexBuffer->bind(GL_ARRAY_BUFFER, 0);
 
-                                          // face 1:
-     1.0f, 1.0f, 1.0f,       0.0f, 1.0f, 0.0f, // vertex 0
-     1.0f,-1.0f, 1.0f,       0.0f, 1.0f, 0.0f, // vertex 1
-     1.0f, 1.0f,-1.0f,       0.0f, 1.0f, 0.0f, // vertex 2
-     1.0f,-1.0f,-1.0f,       0.0f, 1.0f, 0.0f, // vertex 3
+    // data for a cube
+    static GLfloat vertexData[] = {
+      //  X     Y     Z           R     G     B
+      // face 0:
+      1.0f, 1.0f, 1.0f, 1.0f, 0.0f, 0.0f,  // vertex 0
+      -1.0f, 1.0f, 1.0f, 1.0f, 0.0f, 0.0f, // vertex 1
+      1.0f, -1.0f, 1.0f, 1.0f, 0.0f, 0.0f, // vertex 2
+      -1.0f, -1.0f, 1.0f, 1.0f, 0.0f, 0.0f,// vertex 3
 
-     // face 2:
-     1.0f, 1.0f, 1.0f,       0.0f, 0.0f, 1.0f, // vertex 0
-     1.0f, 1.0f,-1.0f,       0.0f, 0.0f, 1.0f, // vertex 1
-     -1.0f, 1.0f, 1.0f,       0.0f, 0.0f, 1.0f, // vertex 2
-     -1.0f, 1.0f,-1.0f,       0.0f, 0.0f, 1.0f, // vertex 3
+      // face 1:
+      1.0f, 1.0f, 1.0f, 0.0f, 1.0f, 0.0f,  // vertex 0
+      1.0f, -1.0f, 1.0f, 0.0f, 1.0f, 0.0f, // vertex 1
+      1.0f, 1.0f, -1.0f, 0.0f, 1.0f, 0.0f, // vertex 2
+      1.0f, -1.0f, -1.0f, 0.0f, 1.0f, 0.0f,// vertex 3
 
-     // face 3:
-     1.0f, 1.0f,-1.0f,       1.0f, 1.0f, 0.0f, // vertex 0
-     1.0f,-1.0f,-1.0f,       1.0f, 1.0f, 0.0f, // vertex 1
-     -1.0f, 1.0f,-1.0f,       1.0f, 1.0f, 0.0f, // vertex 2
-     -1.0f,-1.0f,-1.0f,       1.0f, 1.0f, 0.0f, // vertex 3
+      // face 2:
+      1.0f, 1.0f, 1.0f, 0.0f, 0.0f, 1.0f,  // vertex 0
+      1.0f, 1.0f, -1.0f, 0.0f, 0.0f, 1.0f, // vertex 1
+      -1.0f, 1.0f, 1.0f, 0.0f, 0.0f, 1.0f, // vertex 2
+      -1.0f, 1.0f, -1.0f, 0.0f, 0.0f, 1.0f,// vertex 3
 
-     // face 4:
-     -1.0f, 1.0f, 1.0f,       0.0f, 1.0f, 1.0f, // vertex 0
-     -1.0f, 1.0f,-1.0f,       0.0f, 1.0f, 1.0f, // vertex 1
-     -1.0f,-1.0f, 1.0f,       0.0f, 1.0f, 1.0f, // vertex 2
-     -1.0f,-1.0f,-1.0f,       0.0f, 1.0f, 1.0f, // vertex 3
+      // face 3:
+      1.0f, 1.0f, -1.0f, 1.0f, 1.0f, 0.0f,  // vertex 0
+      1.0f, -1.0f, -1.0f, 1.0f, 1.0f, 0.0f, // vertex 1
+      -1.0f, 1.0f, -1.0f, 1.0f, 1.0f, 0.0f, // vertex 2
+      -1.0f, -1.0f, -1.0f, 1.0f, 1.0f, 0.0f,// vertex 3
 
-     // face 5:
-     1.0f,-1.0f, 1.0f,       1.0f, 0.0f, 1.0f, // vertex 0
-     -1.0f,-1.0f, 1.0f,       1.0f, 0.0f, 1.0f, // vertex 1
-     1.0f,-1.0f,-1.0f,       1.0f, 0.0f, 1.0f, // vertex 2
-     -1.0f,-1.0f,-1.0f,       1.0f, 0.0f, 1.0f, // vertex 3
-   }; // 6 faces with 4 vertices with 6 components (floats)
+      // face 4:
+      -1.0f, 1.0f, 1.0f, 0.0f, 1.0f, 1.0f,  // vertex 0
+      -1.0f, 1.0f, -1.0f, 0.0f, 1.0f, 1.0f, // vertex 1
+      -1.0f, -1.0f, 1.0f, 0.0f, 1.0f, 1.0f, // vertex 2
+      -1.0f, -1.0f, -1.0f, 0.0f, 1.0f, 1.0f,// vertex 3
 
-   // fill with data
-   glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat)*6*4*6, vertexData, GL_STATIC_DRAW);
+      // face 5:
+      1.0f, -1.0f, 1.0f, 1.0f, 0.0f, 1.0f,  // vertex 0
+      -1.0f, -1.0f, 1.0f, 1.0f, 0.0f, 1.0f, // vertex 1
+      1.0f, -1.0f, -1.0f, 1.0f, 0.0f, 1.0f, // vertex 2
+      -1.0f, -1.0f, -1.0f, 1.0f, 0.0f, 1.0f,// vertex 3
+    };// 6 faces with 4 vertices with 6 components (floats)
 
+    // fill with data
+    glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * 6 * 4 * 6, vertexData, GL_STATIC_DRAW);
 
-   // set up generic attrib pointers
-   glEnableVertexAttribArray(0);
-   glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6*sizeof(GLfloat), (char*)0 + 0*sizeof(GLfloat));
+    // set up generic attrib pointers
 
-   glEnableVertexAttribArray(1);
-   glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6*sizeof(GLfloat), (char*)0 + 3*sizeof(GLfloat));
+    mVertexArray.addBuffer(mVertexBuffer, 0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (char *)0 + 0 * sizeof(GLfloat));
 
+    mVertexArray.addBuffer(mVertexBuffer, 1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (char *)0 + 3 * sizeof(GLfloat));
 
-   // generate and bind the index buffer object
-   glGenBuffers(1, &mIbo);
-   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mIbo);
+    // generate and bind the index buffer object
+    mVertexBuffer->bind(GL_ELEMENT_ARRAY_BUFFER, 1);
 
-   static GLuint indexData[] = {
-     // face 0:
-     0,1,2,      // first triangle
-     2,1,3,      // second triangle
-     // face 1:
-     4,5,6,      // first triangle
-     6,5,7,      // second triangle
-     // face 2:
-     8,9,10,     // first triangle
-     10,9,11,    // second triangle
-     // face 3:
-     12,13,14,   // first triangle
-     14,13,15,   // second triangle
-     // face 4:
-     16,17,18,   // first triangle
-     18,17,19,   // second triangle
-     // face 5:
-     20,21,22,   // first triangle
-     22,21,23,   // second triangle
-   };
+    static GLuint indexData[] = {
+      // face 0:
+      0, 1, 2,// first triangle
+      2, 1, 3,// second triangle
+      // face 1:
+      4, 5, 6,// first triangle
+      6, 5, 7,// second triangle
+      // face 2:
+      8, 9, 10, // first triangle
+      10, 9, 11,// second triangle
+      // face 3:
+      12, 13, 14,// first triangle
+      14, 13, 15,// second triangle
+      // face 4:
+      16, 17, 18,// first triangle
+      18, 17, 19,// second triangle
+      // face 5:
+      20, 21, 22,// first triangle
+      22, 21, 23,// second triangle
+    };
 
-   // fill with data
-   glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(GLuint)*6*2*3, indexData, GL_STATIC_DRAW);
+    // fill with data
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(GLuint) * 6 * 2 * 3, indexData, GL_STATIC_DRAW);
 
-#if 0
-    // Suggested by copilot....
-
-    // set uniform
-    mShaderProgram->SetUniform("ViewProjection", c3d.ViewProjection());
-
-    // set colour
-    mShaderProgram->SetUniform("vcolor", mColour);
-
-    // set vertex data
-    mShaderProgram->SetVertexData("vposition", 3, GL_FLOAT, GL_FALSE, 0, 0);
-    mShaderProgram->SetVertexData("vcolor", 3, GL_FLOAT, GL_FALSE, 0, 0);
-
-    // set up vertex buffer object
-    GLuint mVbo;
-    glGenBuffers(1, &mVbo);
-    glBindBuffer(GL_ARRAY_BUFFER, mVbo);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(mDiag), mDiag.data(), GL_STATIC_DRAW);
-
-    // set up vertex array object
-    GLuint mVao;
-    glGenVertexArrays(1, &mVao);
-    glBindVertexArray(mVao);
-    glEnableVertexAttribArray(0);
-    glEnableVertexAttribArray(1);
-
-    // set up vertex attributes
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, 0);
-
-    // set up element buffer object
-    GLuint ebo;
-    glGenBuffers(1, &ebo);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(mDiag), mDiag.data(), GL_STATIC_DRAW);
-
-    // set up uniform buffer object
-    GLuint ubo;
-    glGenBuffers(1, &ubo);
-    glBindBuffer(GL_UNIFORM_BUFFER, ubo);
-    glBufferData(GL_UNIFORM_BUFFER, sizeof(mDiag), mDiag.data(), GL_STATIC_DRAW);
-
-    // set up texture buffer object
-    GLuint tbo;
-    glGenBuffers(1, &tbo);
-    glBindBuffer(GL_TEXTURE_BUFFER, tbo);
-    glBufferData(GL_TEXTURE_BUFFER, sizeof(mDiag), mDiag.data(), GL_STATIC_DRAW);
-
-    // set up transform feedback object
-    GLuint tfo;
-    glGenTransformFeedbacks(1, &tfo);
-    glBindTransformFeedback(GL_TRANSFORM_FEEDBACK, tfo);
-#endif
+    mVertexArray.unbind();
 
     return true;
   }
@@ -282,11 +227,11 @@ void main() {
     // set the uniform
     glUniformMatrix4fv(mViewProjectionLocation, 1, GL_FALSE, glm::value_ptr(c3d.projectionViewMatrix()));
 
-    // bind the mVao
-    glBindVertexArray(mVao);
+    // bind the Vao
+    mVertexArray.bind(0);
 
     // draw
-    glDrawElements(GL_TRIANGLES, 6*6, GL_UNSIGNED_INT, 0);
+    glDrawElements(GL_TRIANGLES, 6 * 6, GL_UNSIGNED_INT, 0);
 
     // check for errors
     {
@@ -296,7 +241,10 @@ void main() {
       }
     }
 
+    mVertexArray.unbind();
+
+
 #endif
     return true;
   }
-}
+}// namespace Ravl2

@@ -27,16 +27,10 @@
 
 namespace Ravl2
 {
+  Canvas3D::Canvas3D(int sizeX,int sizeY)
+    : mViewSize({sizeY,sizeX})
+  {}
 
-  //: Create a 3D canvas
-  Canvas3D::Canvas3D(int x, int y, bool autoConfigure)
-    : sx(x),
-      sy(y),
-      m_autoConfigure(autoConfigure)
-  {
-    ONDEBUG(std::cerr << "Canvas3D::Canvas3D(), Called.\n");
-  }
-  
   //! Create a 3D canvas
   Canvas3D::Canvas3D(const std::shared_ptr<GLContext> &context, bool autoConfigure)
    : m_autoConfigure(autoConfigure),
@@ -74,8 +68,6 @@ namespace Ravl2
       whichBuffers |= (GL_DEPTH_BUFFER_BIT);
     }
     glClear(whichBuffers);
-    //glMatrixMode(GL_MODELVIEW);
-    //glLoadIdentity();
     return true;
   }
 
@@ -101,13 +93,13 @@ namespace Ravl2
   }
 
   //: Handle configure event
-  bool Canvas3D::CBConfigureEvent() {
+  bool Canvas3D::CBConfigureEvent(int width, int height) {
     ONDEBUG(std::cerr << "Canvas3D::CBConfigureEvent, Called. ");
     if(!GUIBeginGL())
       return false;
     if(m_autoConfigure) {
-      ONDEBUG(std::cerr << "Reshape. " << widget->allocation.width << " " << widget->allocation.height << "\n");
 #if 0
+      ONDEBUG(std::cerr << "Reshape. " << widget->allocation.width << " " << widget->allocation.height << "\n");
       glViewport(0, 0, widget->allocation.width, widget->allocation.height);
 #endif
     }

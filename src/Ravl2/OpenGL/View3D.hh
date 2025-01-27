@@ -106,6 +106,9 @@ namespace Ravl2 {
     //! Handle mouse wheel.
     void scroll(double xOffset, double yOffset);
 
+    //!  Handle configure event
+   bool CBConfigureEvent(int width, int height) override;
+
     //! Resets the camera position.
     //void GUIResetCamera();
 
@@ -146,6 +149,8 @@ namespace Ravl2 {
     void SendSlaveSignal();
 
     Vector<RealT,2> m_vRotation = {0,0};  //!< Rotation parameters
+
+
 
     bool sceneComplete = false; //!< Is the scene complete?
     std::shared_ptr<DObjectSet3D> scene; //!< List of current render instructions.

@@ -108,6 +108,12 @@ namespace Ravl2
       return mMouseEventCB.add(std::move(f));
     }
 
+    //! Add a window size callback
+    CallbackHandle addWindowSizeCallback(std::function<void(int width, int height)> &&f)
+    {
+      return mWindowSizeCB.add(std::move(f));
+    }
+
     //! Handle key events
     void keyCallback(int key, int scancode, int action, int mods);
     
@@ -120,12 +126,15 @@ namespace Ravl2
     //! Handle mouse button events
     void scrollCallback(double offsetX, double offsetY);
 
+    //! Handle window size callback
+    void windowSizeCallback(int width, int height);
   private:
     CallbackArray<std::function<void(const MouseEvent &event)>> mMouseEventCB;
     CallbackArray<std::function<void(double xpos, double ypos)>> mCursorPositionCB;
     CallbackArray<std::function<void(double xoffset, double yoffset)>> mScrollCB;
     CallbackArray<std::function<void(int key, int scancode, int action, int mods)>> mKeyCB;
     CallbackArray<std::function<void(int button, int action, int mods)>> mMouseButtonCB;
+    CallbackArray<std::function<void(int width, int height)>> mWindowSizeCB;
 
     int mKeyModState = 0;
     int mMouseButtonState = 0;

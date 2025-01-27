@@ -140,4 +140,97 @@ namespace Ravl2
     return glGetUniformLocation(mProgram, name.c_str());
   }
 
+  // ------------------------------------------------------------
+
+  GLVertexBuffer::~GLVertexBuffer()
+  {
+    if(!mBuffers.empty()) {
+      glDeleteBuffers(GLsizei(mBuffers.size()), mBuffers.data());
+    }
+  }
+
+  void GLVertexBuffer::generate(size_t size)
+  {
+    assert(mBuffers.empty());
+    mBuffers = std::vector<GLuint>(size, 0);
+    glGenBuffers(GLsizei(size), mBuffers.data());
+  }
+
+  void GLVertexBuffer::bind(GLenum target, size_t ind) const
+  {
+    assert(!mBuffers.empty());
+    glBindBuffer(target, mBuffers.at(ind));
+  }
+
+  void GLVertexBuffer::unbind() const
+  {
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+  }
+
+  // ------------------------------------------------------------
+
+  GLVertexArray::~GLVertexArray()
+  {
+    if(!mVertexArray.empty()) {
+      glDeleteVertexArrays(int(mVertexArray.size()), mVertexArray.data());
+    }
+    mVertexArray.clear();
+  }
+
+  //! Create the vertex array.
+  void GLVertexArray::generate(size_t size)
+  {
+    assert(mVertexArray.empty());
+    mVertexArray = std::vector<GLuint>(size, 0);
+    glGenVertexArrays(size, mVertexArray.data());
+  }
+
+  //! Bind the vertex array.
+  void GLVertexArray::bind(size_t ind) const
+  {
+    assert(!mVertexArray.empty());
+    glBindVertexArray(mVertexArray.at(ind));
+  }
+
+  //! Unbind the vertex array.
+  void GLVertexArray::unbind() const
+  {
+    glBindVertexArray(0);
+  }
+
+  //! Add a buffer to the vertex array.
+  void GLVertexArray::addBuffer(const std::shared_ptr<GLVertexBuffer> &buffer)
+  {
+    // Check we have a valid buffer
+    assert(buffer != nullptr);
+
+    // Check it's not already in the list
+    if(std::find(mBuffers.begin(), mBuffers.end(), buffer) != mBuffers.end()) {
+      return;
+    }
+    // Add buffer to the list used by the vertex array
+    mBuffers.push_back(buffer);
+  }
+
+
+  //! Add data from a buffer to the vertex array.
+  void GLVertexArray::addBuffer(const std::shared_ptr<GLVertexBuffer> &buffer,
+                                 GLuint index, GLint size, GLenum type,
+                                 GLboolean normalized, GLsizei stride, const void *pointer)
+  {
+    assert(buffer != nullptr);
+    assert(!mVertexArray.empty());
+
+    // Add buffer to the list used by the vertex array
+    addBuffer(buffer);
+
+    glEnableVertexAttribArray(index);
+
+    // Set up the vertex attributes
+    glVertexAttribPointer(index, size, type, normalized, stride, pointer);
+  }
+
+
+
+
 }// namespace Ravl2

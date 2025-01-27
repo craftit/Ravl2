@@ -72,6 +72,7 @@ namespace Ravl2
   //: Render object.
   bool DTriMesh::GUIRender(Canvas3D &canvas) const
   {
+    (void) canvas;
     if(!model)
       return true; // Don't do anything.
 

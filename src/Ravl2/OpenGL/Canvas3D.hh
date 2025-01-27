@@ -37,8 +37,8 @@ namespace Ravl2
   {
   public:
     //! Create a 3D canvas
-    Canvas3D(int x, int y, bool autoConfigure = true);
-    
+    Canvas3D(int sizeX,int sizeY);
+
     //! Create a 3D canvas
     explicit Canvas3D(const std::shared_ptr<GLContext> &context, bool autoConfigure = true);
     
@@ -134,21 +134,17 @@ namespace Ravl2
   protected:
 
     //!  Handle configure event
-    virtual bool CBConfigureEvent();
+    virtual bool CBConfigureEvent(int width, int height);
 
     glm::mat4 mMatProjection; //!< Projection matrix
     glm::mat4 mMatModelView;  //!< Model view matrix
     glm::mat4 mMatProjectionView;  //!< Model view matrix
 
+    Index<2> mViewSize { 128, 128 }; //!< Size of the view
   private:
+
     //!  Write contents of widget to an image.
     //bool SaveToImageInternal(Ravl2::Array<PixelRGB8,2> *img,SemaphoreRC &done);
-
-
-    // Size of view port.
-    // Only needed for widget creation
-    int sx = 100;
-    int sy = 100;
 
     Canvas3DRenderMode m_eRenderMode = C3D_SMOOTH; //!<  Rendering mode
 
@@ -163,8 +159,7 @@ namespace Ravl2
     bool m_autoConfigure = true;  //! Handle viewport configure events internally.
     
     bool m_glExtNonPowerOfTwoTexture = false; // Do we have non power of two textures ?
-    bool m_initDone = false;
-    
+
     std::shared_ptr<GLContext> m_glContext;
 
   };

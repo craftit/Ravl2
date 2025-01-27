@@ -106,7 +106,12 @@ namespace Ravl2 {
     glEnable(GL_DEPTH_TEST);
 
     // calculate ViewProjection matrix
-    mMatProjection = glm::perspective(90.0f, 4.0f / 3.0f, 0.1f, 100.f);
+    float aspectRatio = 1.0f;
+    if(mViewSize[0] != 0 && mViewSize[1] != 0) {
+      aspectRatio = float(mViewSize[1]) / float(mViewSize[0]);
+    }
+
+    mMatProjection = glm::perspective(90.0f, aspectRatio, 0.1f, 100.f);
 
     // translate the world/view position
     mMatModelView = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, -5.0f));
@@ -127,6 +132,15 @@ namespace Ravl2 {
     initDone = true;
     return true;
   }
+
+  //!  Handle configure event
+  bool View3D::CBConfigureEvent(int width, int height)
+  {
+    mViewSize = {height, width};
+    GUIAdjustView();
+    return true;
+  }
+
 
   //! Setup widget.
   bool View3D::setup(GLWindow &window)
@@ -268,7 +282,22 @@ namespace Ravl2 {
   bool View3D::GUIAdjustView()
   {
     ONDEBUG(SPDLOG_INFO("View3D::AdjustView(), Called. "));
+#if 1
+    // calculate ViewProjection matrix
+    float aspectRatio = 1.0f;
+    if(mViewSize[0] != 0 && mViewSize[1] != 0) {
+      aspectRatio = float(mViewSize[1]) / float(mViewSize[0]);
+    }
 
+    mMatProjection = glm::perspective(90.0f, aspectRatio, 0.1f, 100.f);
+
+    // translate the world/view position
+    mMatModelView = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, -5.0f));
+
+    // Compose things.
+    mMatProjectionView = mMatProjection * mMatModelView;
+
+#else
     //lock scene
     std::shared_lock lockHold(viewLock);
 
@@ -325,7 +354,7 @@ namespace Ravl2 {
     //FTensor<RealT,2><4, 4> projectionMat;
     //glGetDoublev(GL_PROJECTION_MATRIX, &(projectionMat(0,0)));
     //cerr << "pMat:\n" << projectionMat << std::endl;
-
+#endif
     return true;
   }
 
