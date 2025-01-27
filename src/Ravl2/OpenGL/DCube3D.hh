@@ -12,6 +12,7 @@
 
 #include "Ravl2/Pixel/Pixel.hh"
 #include "Ravl2/OpenGL/DObject3D.hh"
+#include "Ravl2/OpenGL/GLShader.hh"
 
 namespace Ravl2
 {
@@ -29,8 +30,11 @@ namespace Ravl2
       const Vector<float,3> &nDiag,
       const PixelRGB8 &col = {255, 128, 128})
       : mDiag(nDiag),
-          mColour(col)
-      {}
+        mColour(col)
+    {}
+
+    //! Register object with OpenGL.
+    bool GUIInit(Canvas3D &c3d) override;
 
     //! Render object.
     bool GUIRender(Canvas3D &c3d) const override;
@@ -41,13 +45,18 @@ namespace Ravl2
     { return Vector<float,3>({0, 0, 0}); }
 
     //! Get extent of object.
-    // defaults to 1
+    //! defaults to 1
     [[nodiscard]] float GUIExtent() const override
-    { return 1; }
+    { return std::max(mDiag[0], std::max(mDiag[1], mDiag[2])); }
 
-  protected:
+  private:
+    std::shared_ptr<GLShaderProgram> mShaderProgram;
+    GLint mViewProjectionLocation = 0;
     Vector<float,3> mDiag = {1, 1, 1};
     PixelRGB8 mColour = {255, 128, 128};
+    GLuint mVao = 0;
+    GLuint mVbo = 0;
+    GLuint mIbo = 0;
   };
 
 

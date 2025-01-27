@@ -11,6 +11,7 @@
 
 #pragma once
 
+#include <glm/glm.hpp>
 #include "Ravl2/OpenGL/DObject3D.hh"
 #include "Ravl2/OpenGL/DTransform.hh"
 #include "Ravl2/OpenGL/DViewPoint3D.hh"
@@ -115,22 +116,41 @@ namespace Ravl2
       return *m_glContext;
     }
 
+    //!  Write contents of widget to an image.
     bool SaveToImage(Ravl2::Array<PixelRGB8,2> &img);
-    //!  Write contents of widget to an image.
+
+    //! Access to the projection matrix
+    [[nodiscard]] const glm::mat4 &projectionMatrix() const
+    { return mMatProjection; }
+
+    //! Access to the model view matrix
+    [[nodiscard]] const glm::mat4 &modelViewMatrix() const
+    { return mMatModelView; }
+
+    //! Access to the model view matrix
+    [[nodiscard]] const glm::mat4 &projectionViewMatrix() const
+    { return mMatProjectionView; }
+
   protected:
-    
-    //bool SaveToImageInternal(Ravl2::Array<PixelRGB8,2> *img,SemaphoreRC &done);
-    //!  Write contents of widget to an image.
-    
-    virtual bool CBConfigureEvent();
+
     //!  Handle configure event
-    
+    virtual bool CBConfigureEvent();
+
+    glm::mat4 mMatProjection; //!< Projection matrix
+    glm::mat4 mMatModelView;  //!< Model view matrix
+    glm::mat4 mMatProjectionView;  //!< Model view matrix
+
+  private:
+    //!  Write contents of widget to an image.
+    //bool SaveToImageInternal(Ravl2::Array<PixelRGB8,2> *img,SemaphoreRC &done);
+
+
     // Size of view port.
     // Only needed for widget creation
     int sx = 100;
     int sy = 100;
 
-    Canvas3DRenderMode m_eRenderMode = C3D_SMOOTH; //!  Rendering mode
+    Canvas3DRenderMode m_eRenderMode = C3D_SMOOTH; //!<  Rendering mode
 
     //!  Texture mode
     //! true = use texture when rendering.

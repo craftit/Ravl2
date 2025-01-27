@@ -31,6 +31,10 @@ namespace Ravl2
     //! Destructor.
     virtual ~DObject3D() = default;
 
+    //! Initialize object.
+    //! Register object with OpenGL, setup shaders, etc.
+    virtual bool GUIInit(Canvas3D &c3d);
+
     //! Render object. Make sure you called Canvas3DC::GUIBeginGL just before
     virtual bool GUIRender(Canvas3D &c3d) const = 0;
 
@@ -98,12 +102,11 @@ namespace Ravl2
   ////////////////////////////////////
   //! Body for OpenGL code invocation class.
 
-  class DOpenGLBodyC
-    : public DObject3D
+  class DOpenGLDirect : public DObject3D
   {
   public:
     //! Constructor.
-    DOpenGLBodyC(const std::function<void(Canvas3D &)> &se,
+    DOpenGLDirect(const std::function<void(Canvas3D &)> &se,
                  const Vector<float,3> &ncenter = toVector<float>(0,0,0),
                  float nextent = 1)
       : sigEvent(se),

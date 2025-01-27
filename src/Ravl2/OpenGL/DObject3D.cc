@@ -10,6 +10,14 @@
 namespace Ravl2
 {
 
+  //! Initialize object.
+  //! Register object with OpenGL, setup shaders, etc.
+  bool DObject3D::GUIInit(Canvas3D &c3d)
+  {
+    (void)c3d;
+    return true;
+  }
+
 
   //: Render, checking for display lists.
   bool DObject3D::GUIRenderDL(Canvas3D &c3d) {
@@ -35,7 +43,7 @@ namespace Ravl2
   }
 
 
-  /// DObjectSet3DBodyC ///////////////////////////////////////////////
+  /// DObjectSet3D ///////////////////////////////////////////////
 
   //: Render object.
   bool DObjectSet3D::GUIRender(Canvas3D &c3d) const
@@ -87,12 +95,12 @@ namespace Ravl2
   }
   
   
-  //// DOpenGLBodyC ////////////////////////////////////////////////////////
+  //// DOpenGLDirect ////////////////////////////////////////////////////////
   
   //: Render object.
-  bool DOpenGLBodyC::GUIRender(Canvas3D &c3d) const
+  bool DOpenGLDirect::GUIRender(Canvas3D &c3d) const
   {
-    //cerr << "DOpenGLBodyC::GUIRender\n";
+    //cerr << "DOpenGLDirect::GUIRender\n";
     if(sigEvent)
       sigEvent(c3d);
     return true;

@@ -14,8 +14,9 @@
 #include "Ravl2/OpenGL/Canvas3D.hh"
 #include "Ravl2/OpenGL/DObject3D.hh"
 
-
 namespace Ravl2 {
+
+
 
   class MouseEvent;
   class GLWindow;

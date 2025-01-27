@@ -6,6 +6,9 @@
 // file-header-ends-here
 ///////////////////////////////////////////////////
 
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+
 #include <GL/glu.h>
 #include "Ravl2/OpenGL/View3D.hh"
 #include "Ravl2/OpenGL/GLWindow.hh"
@@ -26,6 +29,21 @@ static std::string GLGetString(GLenum Name)
 
 
 namespace Ravl2 {
+
+  //! Convert ravl vector to glm vector.
+  template <typename RealT>
+  [[nodiscard]] glm::vec<3, RealT> toGLM(const Vector<RealT, 3> &vec)
+  {
+    return glm::vec<3, RealT>(vec(0), vec(1), vec(2));
+  }
+
+  //! Convert ravl point to glm vector.
+  template <typename RealT>
+  [[nodiscard]] glm::vec<2, RealT> toGLM(const Point<RealT, 2> &point)
+  {
+    return glm::vec<2, RealT>(point(0), point(1));
+  }
+
 
   //: Default constructor.
   View3D::View3D(int sx_,int sy_,bool enableLighting,bool enableTexture)
@@ -55,7 +73,7 @@ namespace Ravl2 {
 
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
-#else
+#elif 0
     /* Enable a single OpenGL light. */
     static GLfloat light_diffuse[] = {1.0, 0.0, 0.0, 1.0};  /* Red diffuse light. */
     static GLfloat light_position[] = {1.0, 1.0, 1.0, 0.0};  /* Infinite light location. */
@@ -82,6 +100,19 @@ namespace Ravl2 {
     glTranslatef(0.0, 0.0, -1.0);
     glRotatef(60, 1.0, 0.0, 0.0);
     glRotatef(-20, 0.0, 0.0, 1.0);
+
+#else
+    /* Use depth buffering for hidden surface elimination. */
+    glEnable(GL_DEPTH_TEST);
+
+    // calculate ViewProjection matrix
+    mMatProjection = glm::perspective(90.0f, 4.0f / 3.0f, 0.1f, 100.f);
+
+    // translate the world/view position
+    mMatModelView = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, -5.0f));
+
+    // Compose things.
+    mMatProjectionView = mMatProjection * mMatModelView;
 
 #endif
 
@@ -205,6 +236,7 @@ namespace Ravl2 {
   {
     ONDEBUG(SPDLOG_INFO("View3D::add(), Called. "));
     (void) id;
+    obj->GUIInit(*this);
     {
       std::lock_guard lockHold(viewLock);
       if(sceneComplete || !scene) {
@@ -496,7 +528,18 @@ namespace Ravl2 {
     GUIBeginGL();
 
     GUIClearBuffers();
-#if 0
+#if 1
+
+    auto view = mMatModelView;
+
+    view = glm::translate(view, -toGLM(m_sceneCenter));
+    view = glm::rotate(view, deg2rad(m_vRotation[0]), glm::vec3(1.0f, 0.0f, 0.0f));
+    view = glm::rotate(view, deg2rad(m_vRotation[1]), glm::vec3(0.0f, 1.0f, 0.0f));
+    view = glm::translate(view, toGLM(m_sceneCenter));
+
+    // Compose things.
+    mMatProjectionView = mMatProjection * view;
+
     scene->GUIRender(*this);
 #else
     // Render scene

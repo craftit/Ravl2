@@ -7,6 +7,7 @@ pkg_check_modules(GLFW REQUIRED glfw3)
 find_package(OpenGL REQUIRED)
 find_package(GLUT REQUIRED)
 find_package(GLU REQUIRED)
+find_package(glm CONFIG REQUIRED)
 
 set(BUILD_IMGUIGLFW OFF CACHE BOOL "Build imgui with glfw")
 
@@ -59,12 +60,14 @@ add_library (Ravl2OpenGL
         MouseEvent.cc
         MouseEvent.hh
         testCube.cc
+        GLShader.cc
+        GLShader.hh
 )
 
 add_library(ravl2::Ravl2OpenGL ALIAS Ravl2OpenGL)
 
 target_link_libraries(Ravl2OpenGL PRIVATE RAVL2_options RAVL2_warnings)
-target_link_libraries(Ravl2OpenGL PUBLIC Ravl2x3D OpenGL::GLU OpenGL::GL GLUT::GLUT ${OPENGL_LIBRARIES} ${GLUT_LIBRARIES} ${GLU_LIBRARIES} ${GLFW_LIBRARIES})
+target_link_libraries(Ravl2OpenGL PUBLIC Ravl2x3D OpenGL::GLU OpenGL::GL GLUT::GLUT ${OPENGL_LIBRARIES} ${GLUT_LIBRARIES} ${GLU_LIBRARIES} ${GLFW_LIBRARIES} glm::glm)
 
 target_include_directories(Ravl2OpenGL ${WARNING_GUARD} PUBLIC
         $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src>
