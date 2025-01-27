@@ -23,7 +23,7 @@ typedef struct _GdkVisual GdkVisual;
 namespace Ravl2
 {
 
-  //: 3D Canvas Rendering modes
+  //! 3D Canvas Rendering modes
   enum Canvas3DRenderMode {
     C3D_POINT,
     C3D_WIRE,
@@ -31,7 +31,7 @@ namespace Ravl2
     C3D_SMOOTH
   };
 
-  //: 3D Canvas body.
+  //! 3D Canvas body.
   class Canvas3D 
   {
   public:

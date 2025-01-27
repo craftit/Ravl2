@@ -8,6 +8,8 @@
 
 #include <GL/glu.h>
 #include "Ravl2/OpenGL/View3D.hh"
+#include "Ravl2/OpenGL/GLWindow.hh"
+#include "Ravl2/OpenGL/MouseEvent.hh"
 
 #define DODEBUG 1
 #if DODEBUG
@@ -15,7 +17,7 @@
 static std::string GLGetString(GLenum Name)
 {
   const char *ptr = reinterpret_cast<const char *>(glGetString(Name));
-  std::string res = ptr != NULL ? ptr : "NULL";
+  std::string res = ptr != nullptr ? ptr : "NULL";
   return res;
 }
 #else
@@ -99,6 +101,23 @@ namespace Ravl2 {
   bool View3D::setup(GLWindow &window)
   {
     //mCallbacks += window.mouseButtonCallback();
+    mCallbacks += window.addMouseEventCallback([&](const MouseEvent &event) {
+      switch(event.eventType())
+      {
+        case MouseEventTypeT::MouseMove:
+          MouseMove(event);
+          break;
+        case MouseEventTypeT::MousePress:
+          MousePress(event);
+          break;
+        case MouseEventTypeT::MouseRelease:
+          MouseRelease(event);
+          break;
+        case MouseEventTypeT::MouseWheel:
+          MouseWheel(event);
+          break;
+      }
+    });
     return true;
   }
 
@@ -304,12 +323,10 @@ namespace Ravl2 {
   }
 
   //: Handle button press.
-  bool View3D::MousePress(MouseEvent &me)
+  bool View3D::MousePress(MouseEvent const &me)
   {
-    (void) me;
-#if 0
-    ONDEBUG(SPDLOG_INFO("View3DBodyC::MousePress(), Called. '" << me.HasChanged(0) << " " << me.HasChanged(1) << " " << me.HasChanged(2) <<"' "));
-    ONDEBUG(SPDLOG_INFO("View3DBodyC::MousePress(),         '" << me.IsPressed(0) << " " << me.IsPressed(1) << " " << me.IsPressed(2) <<"' "));
+    ONDEBUG(SPDLOG_INFO("View3DBodyC::MousePress(), Called. {}  {}  {} ",me.HasChanged(0), me.HasChanged(1), me.HasChanged(2)));
+    ONDEBUG(SPDLOG_INFO("View3DBodyC::MousePress(),         {}  {}  {} ",me.IsPressed(0), me.IsPressed(1), me.IsPressed(2)));
     if(me.HasChanged(0))
     {
       //save reference position
@@ -319,47 +336,37 @@ namespace Ravl2 {
     if(me.HasChanged(2))
     {
       ONDEBUG(SPDLOG_INFO("Show menu. "));
-      backMenu.Popup();
+      //backMenu.Popup();
     }
-#endif
-
     return true;
   }
 
   //: Handle button release.
-  bool View3D::MouseRelease(MouseEvent &me)
+  bool View3D::MouseRelease(MouseEvent const &me)
   {
-    (void) me;
-#if 0
-    ONDEBUG(SPDLOG_INFO("View3DBodyC::MouseRelease(), Called. '" << me.HasChanged(0) << " " << me.HasChanged(1) << " " << me.HasChanged(2) <<"' "));
-    ONDEBUG(SPDLOG_INFO("View3DBodyC::MouseRelease(),         '" << me.IsPressed(0) << " " << me.IsPressed(1) << " " << me.IsPressed(2) <<"' "));
+    ONDEBUG(SPDLOG_INFO("View3DBodyC::MouseRelease(), Called. '", me.HasChanged(0), me.HasChanged(1), me.HasChanged(2)));
+    ONDEBUG(SPDLOG_INFO("View3DBodyC::MouseRelease(),         '", me.IsPressed(0), me.IsPressed(1), me.IsPressed(2)));
     if(me.HasChanged(0))
     {
       m_bIsDragging = false;
     }
-#endif
     return true;
   }
 
   //: Handle mouse move.
-  bool View3D::MouseMove(MouseEvent &me)
+  bool View3D::MouseMove(MouseEvent const &me)
   {
-    (void) me;
-#if 0
-    //ONDEBUG(SPDLOG_INFO("View3DBodyC::MouseMove(), Called. '" << me.HasChanged(0) << " " << me.HasChanged(1) << " " << me.HasChanged(2) <<"' "));
-    //ONDEBUG(SPDLOG_INFO("View3DBodyC::MouseMove(),         '" << me.IsPressed(0) << " " << me.IsPressed(1) << " " << me.IsPressed(2) <<"' "));
-    //cerr << "View3DBodyC::MouseMove(), Called. \n";
+    //ONDEBUG(SPDLOG_INFO("View3DBodyC::MouseMove(), Called. '", me.HasChanged(0), me.HasChanged(1), me.HasChanged(2) <<"' "));
+    //ONDEBUG(SPDLOG_INFO("View3DBodyC::MouseMove(),         '", me.IsPressed(0), me.IsPressed(1), me.IsPressed(2) <<"' "));
 
     // Calculate change
     Index<2> change = me.At() - m_lastMousePos;
     m_lastMousePos = me.At();
-    //cerr << "change:" << change << std::endl;
 
     // Rotate when button 0 pressed
     if(me.IsPressed(0) && m_bIsDragging)
     {
-      //cerr << "rotation\n";
-
+      SPDLOG_INFO("Rotation");
       if(change[0] == 0 && change[1] == 0)
         return true;
       m_vRotation[0] += change[0];
@@ -373,7 +380,7 @@ namespace Ravl2 {
 
     // Translate when button 1 pressed
     else if (me.IsPressed(1) && m_bIsDragging) {
-      SPDLOG_INFO("translation\n";
+      SPDLOG_INFO("translation");
 
       // Calculate individual translations
       // X & Y in GTK coords; hence also Y is inverted
@@ -385,7 +392,6 @@ namespace Ravl2 {
       // Make slaved views move
       SendSlaveSignal();
     }
-#endif
     return true;
   }
 
@@ -397,6 +403,13 @@ namespace Ravl2 {
   }
 
   //: Handle mouse wheel.
+  bool View3D::MouseWheel(MouseEvent const &me)
+  {
+    (void) me;
+    SPDLOG_INFO("Mouse wheel event.");
+    return false;
+  }
+
 #if 0
   bool View3DBodyC::MouseWheel(GdkEvent *event)
   {
@@ -451,7 +464,7 @@ namespace Ravl2 {
   {
     if(GUIBeginGL())
     {
-      ONDEBUG(SPDLOG_INFO("Reshape. " << widget->allocation.width << " " << widget->allocation.height << ""));
+      ONDEBUG(SPDLOG_INFO("Reshape. {} {}  ",widget->allocation.width, widget->allocation.height));
       glViewport(0, 0, widget->allocation.width, widget->allocation.height);
 
       //CalcViewParams(m_bAutoFit);
@@ -479,7 +492,7 @@ namespace Ravl2 {
     GUIBeginGL();
 
     GUIClearBuffers();
-#if 0
+#if 1
     scene->GUIRender(*this);
 #else
     // Render scene

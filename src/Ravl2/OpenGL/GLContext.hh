@@ -49,8 +49,6 @@ namespace Ravl2
     //! Put a function on the queue to be executed in the main thread
     virtual void put(std::function<void()> &&f) = 0;
 
-  protected:
-
   };
 
 }

@@ -14,13 +14,13 @@
 
 namespace Ravl2 {
 
-  //: Setup a light in a 3D world.
+  //! Setup a light in a 3D world.
 
   class DLight3D
     : public DObject3D
   {
   public:
-    //: Constructor.
+    //! Constructor.
     DLight3D(const PixelRGB32F &nCol, const Vector<float,3> &nPos, int nn = 0)
       : n(nn),
 	colour(nCol),
@@ -28,21 +28,21 @@ namespace Ravl2 {
 	spot(false)
     {}
 
-    //: Render object.
+    //! Render object.
     bool GUIRender(Canvas3D &c3d) const override;
 
-    //: Get center of object.
+    //! Get center of object.
     // defaults to 0,0,0
     [[nodiscard]] Vector<float,3> GUICenter() const override
       { return Vector<float,3>({0, 0, 0}); }
 
-    //: Get extent of object.
+    //! Get extent of object.
     // defaults to 1
     [[nodiscard]] float GUIExtent() const override
       { return 1; }
 
   protected:
-    //: Convert Light number.
+    //! Convert Light number.
     [[nodiscard]] GLenum LightNo(int no) const;
 
     int n = 0;           //!< Number of light. 0-7

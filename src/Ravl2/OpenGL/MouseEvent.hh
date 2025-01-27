@@ -1,16 +1,21 @@
-//
-// Created by charles galambos on 26/01/2025.
-//
 
 #pragma once
 
-#include <GL/glut.h>
 #include "Ravl2/Types.hh"
 
 namespace Ravl2 {
 
-  //! userlevel=Normal
-  //: Mouse event information.
+  //! Mouse event types.
+
+  enum class MouseEventTypeT
+  {
+    MousePress,
+    MouseRelease,
+    MouseMove,
+    MouseWheel
+  };
+
+  //! Mouse event information.
   
   class MouseEvent {
   public:
@@ -19,40 +24,44 @@ namespace Ravl2 {
     MouseEvent() = default;
 
     //! Constructor.
-    explicit MouseEvent(RealT col,RealT row,int state = 0,int changed = 0,size_t time = 0);
+    explicit MouseEvent(MouseEventTypeT eventType,RealT col,RealT row,int buttonState,int buttonChanged,int keyModState);
 
-    //: Get row number of position.
+    //! Get event type
+    [[nodiscard]] MouseEventTypeT eventType() const
+    { return mType; }
+
+    //! Get row number of position.
     [[nodiscard]] RealT Row() const { return y; }
 
-    //: Get column number of position.
+    //! Get column number of position.
     [[nodiscard]] RealT Col() const { return x; }
 
-    //: Get position.
+    //! Get position.
     // Position of mouse click in RAVL co-ordinates (row, col).
     [[nodiscard]] Index<2> At() const { return toIndex(y,x); }
-
-    //: Test if a button is pressed.
+    
+    //! Test if a button is pressed.
     [[nodiscard]] bool IsPressed(int buttonNo = 0) const;
 
     [[nodiscard]] bool IsDoublePressed() const
     { return m_doublePress; }
 
-    //: Has button changed state ?
+    //! Has button changed state ?
     [[nodiscard]] bool HasChanged(int buttonNo = 0) const;
 
-    //: Maximum buttons available.
+    //! Maximum buttons available.
     [[nodiscard]] static int MaxButtons() { return 5; }
 
-    //: Is shift down ?
+    //! Is shift down ?
     [[nodiscard]] bool IsShift() const;
 
-    //: Is control down ?
+    //! Is control down ?
     [[nodiscard]] bool IsCntrl() const;
 
-    //: Is the caps lock key down ?
+    //! Is the caps lock key down ?
     [[nodiscard]] bool IsLock() const;
 
-    //: Is the alt key pressed?
+    //! Is the alt key pressed?
     [[nodiscard]] bool IsAlt() const;
 
     //! Forth modifier key.
@@ -81,6 +90,7 @@ namespace Ravl2 {
     [[nodiscard]] size_t Time() const
     { return time; }
   protected:
+    MouseEventTypeT mType = MouseEventTypeT::MousePress;
     RealT x = 0;
     RealT y = 0;   // Current position in GTK coords.
     int mKeyModifiers = 0; // Key modifiers.
@@ -91,6 +101,6 @@ namespace Ravl2 {
   };
   
   std::ostream &operator<<(std::ostream &,const MouseEvent &me);
-  //: Print description of mouse event to stream.
+  //! Print description of mouse event to stream.
 
 } // Ravl2

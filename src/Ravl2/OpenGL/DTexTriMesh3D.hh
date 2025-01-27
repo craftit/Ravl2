@@ -26,7 +26,7 @@ namespace Ravl2
     DTexTriMesh3DBodyC(const std::shared_ptr<TexTriMesh<RealT> > &oTexTriMesh);
     //: Constructor.
 
-    ~DTexTriMesh3DBodyC();
+    ~DTexTriMesh3DBodyC() override;
     //: Destructor
 
     bool GUIRender(Canvas3D &c3d) const override;

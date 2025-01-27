@@ -94,16 +94,16 @@ namespace Ravl2 {
 
   protected:
     //! Handle button press.
-    bool MousePress(MouseEvent &me);
+    bool MousePress(MouseEvent const &me);
 
     //! Handle button release.
-    bool MouseRelease(MouseEvent &me);
+    bool MouseRelease(MouseEvent const &me);
 
     //! Handle mouse move.
-    bool MouseMove(MouseEvent &me);
+    bool MouseMove(MouseEvent const &me);
 
     //! Handle mouse wheel.
-    //bool MouseWheel(GdkEvent *event);
+    bool MouseWheel(MouseEvent const &me);
 
     //! Resets the camera position.
     //void GUIResetCamera();

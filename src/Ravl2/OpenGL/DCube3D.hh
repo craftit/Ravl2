@@ -16,14 +16,15 @@
 namespace Ravl2
 {
 
-  //: Body of a  object set in a 3D world.
+  //! Body of a  object set in a 3D world.
+
   class DCube3D
     : public DObject3D
   {
   public:
     DCube3D() = default;
 
-    //: Constructor.
+    //! Constructor.
     explicit DCube3D(
       const Vector<float,3> &nDiag,
       const PixelRGB8 &col = {255, 128, 128})
@@ -31,15 +32,15 @@ namespace Ravl2
           mColour(col)
       {}
 
-    //: Render object.
+    //! Render object.
     bool GUIRender(Canvas3D &c3d) const override;
 
-    //: Get center of object.
+    //! Get center of object.
     // defaults to 0,0,0
     [[nodiscard]] Vector<float,3> GUICenter() const override
     { return Vector<float,3>({0, 0, 0}); }
 
-    //: Get extent of object.
+    //! Get extent of object.
     // defaults to 1
     [[nodiscard]] float GUIExtent() const override
     { return 1; }

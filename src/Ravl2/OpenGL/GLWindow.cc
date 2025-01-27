@@ -51,7 +51,7 @@ namespace Ravl2
     {
       GLWindow *theWindow = reinterpret_cast<GLWindow *>(glfwGetWindowUserPointer(window));
       if (theWindow != nullptr) {
-            theWindow->mouseButtonCallback(button, action, mods);
+        theWindow->mouseButtonCallback(button, action, mods);
       }
     }
 #endif
@@ -73,8 +73,8 @@ namespace Ravl2
     mGlsl_version = "#version 150";
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 2);
-    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);  // 3.2+ only
-    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);            // Required on Mac
+    // glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);  // 3.2+ only
+    //glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);            // Required on Mac
 #else
     // GL 3.0 + GLSL 130
     mGlsl_version = "#version 130";
@@ -139,18 +139,17 @@ namespace Ravl2
     SPDLOG_INFO("Key: {} Scancode: {} Action: {} Mods: {}", key, scancode, action, mods);
     //      if (key == GLFW_KEY_E && action == GLFW_PRESS)
     //        activate_airship();
-    int changed = mMouseButtonState ^ mods;
-    mMouseButtonState = mods;
+    int changed = mKeyModState ^ mods;
+    mKeyModState = mods;
     if (changed & GLFW_MOD_SHIFT) {
       SPDLOG_INFO("Shift key changed");
     }
     if (changed & GLFW_MOD_ALT) {
       SPDLOG_INFO("Alt key changed");
-}
+    }
     if (changed & GLFW_MOD_CONTROL) {
       SPDLOG_INFO("Ctrl key changed");
     }
-
   }
   
   //! Handle cursor position events
@@ -159,24 +158,30 @@ namespace Ravl2
     (void)xpos;
     (void)ypos;
     SPDLOG_INFO("Cursor position: {} {}", xpos, ypos);
-
-  
+    mCursorPositionCB.call(xpos, ypos);
+    mMouseLastX = float(xpos);
+    mMouseLastY = float(ypos);
+    MouseEvent event(MouseEventTypeT::MouseMove, mMouseLastX, mMouseLastY, mMouseButtonState,0, mKeyModState);
+    mMouseEventCB.call(event);
   }
   
   //! Handle mouse button events
   void GLWindow::mouseButtonCallback(int button, int action, int mods)
   {
-    int changed = mKeyModState ^ mods;
-    mKeyModState = mods;
     SPDLOG_INFO("Button: {} Action: {} Mods: {}", button, action, mods);
+
+    int const changed = mMouseButtonState ^ mods;
+    mMouseButtonState = mods;
+    mMouseButtonCB.call(button, action, mods);
+    MouseEvent event((action == GLFW_PRESS) ? MouseEventTypeT::MousePress : MouseEventTypeT::MouseRelease, mMouseLastX, mMouseLastY, mMouseButtonState, changed,mKeyModState);
+    mMouseEventCB.call(event);
   }
   
-  
-  
+
   //! Put a function on the queue to be executed in the main thread
-  void GLWindow::put(std::function<void()> &&f)
+  void GLWindow::put(std::function<void()> &&func)
   {
-    mQueue.push(std::move(f));
+    mQueue.push(std::move(func));
     glfwPostEmptyEvent();
   }
 
