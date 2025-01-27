@@ -26,7 +26,7 @@ namespace Ravl2
     //! @param  pos - position of vertex.
     //! @param  norm - Direction of surface normal at vertex.
     Vertex(const Point<RealT,3> &pos,const Vector<RealT,3> &norm)
-      : at(pos),
+      : mAt(pos),
 	mNormal(norm)
     {}
     
@@ -34,16 +34,16 @@ namespace Ravl2
     //! @param  pos - position of vertex.
     // The surface normal is left undefined.
     explicit Vertex(const Point<RealT,3> &pos)
-      : at(pos)
+      : mAt(pos)
     {}
     
     //! Access position of vertex.
     [[nodiscard]] Vector<RealT,3> &position()
-    { return at; }
+    { return mAt; }
     
     //! Access position of vertex.
     [[nodiscard]] const Vector<RealT,3> &position() const
-    { return at; }
+    { return mAt; }
     
     //! Access normal at vertex.
     [[nodiscard]] Vector<RealT,3> &normal()
@@ -66,12 +66,12 @@ namespace Ravl2
     template <class Archive>
     constexpr void serialize(Archive &archive)
     {
-      archive(cereal::make_nvp("at", at));
+      archive(cereal::make_nvp("at", mAt));
       archive(cereal::make_nvp("normal", mNormal));
     }
 
   private:
-    Vector<RealT,3> at;        // Position of vertex.
+    Vector<RealT,3> mAt;        // Position of vertex.
     Vector<RealT,3> mNormal;    // Normal to vertex.
   };
 
