@@ -33,12 +33,12 @@ namespace Ravl2 {
       m_bTextureStatus(enableTexture),
       m_bLightingStatus(enableLighting)
   {
-    ONDEBUG(SPDLOG_INFO("View3DBodyC::View3DBodyC(), Called. "));
+    ONDEBUG(SPDLOG_INFO("View3D::View3D(), Called. "));
   }
 
   bool View3D::GUIInitGL()
   {
-    ONDEBUG(SPDLOG_INFO("View3DBodyC::InitGL(), Called. "));
+    ONDEBUG(SPDLOG_INFO("View3D::InitGL(), Called. "));
 
 #if 0
     // Set up culling
@@ -113,35 +113,37 @@ namespace Ravl2 {
         case MouseEventTypeT::MouseRelease:
           MouseRelease(event);
           break;
-        case MouseEventTypeT::MouseWheel:
-          MouseWheel(event);
-          break;
       }
+    });
+
+    mCallbacks += window.addScrollCallback([&](double xOffset, double yOffset) {
+      scroll(xOffset, yOffset);
     });
     return true;
   }
 
+
 #if 0
   //: Setup widget.
-  bool View3DBodyC::Create(GtkWidget *Parent)
+  bool View3D::Create(GtkWidget *Parent)
   {
-    ONDEBUG(SPDLOG_INFO("View3DBodyC::Create(), Called. "));
+    ONDEBUG(SPDLOG_INFO("View3D::Create(), Called. "));
 
-    ConnectRef(Signal("button_press_event"),   *this, &View3DBodyC::MousePress);
-    ConnectRef(Signal("button_release_event"), *this, &View3DBodyC::MouseRelease);
-    ConnectRef(Signal("motion_notify_event"),  *this, &View3DBodyC::MouseMove);
-    ConnectRef(Signal("scroll_event"),         *this, &View3DBodyC::MouseWheel);
-    ConnectRef(Signal("expose_event"),         *this, &View3DBodyC::Refresh);
-    ConnectRef(m_sRotationRx,                  *this, &View3DBodyC::SlaveRotation);
+    ConnectRef(Signal("button_press_event"),   *this, &View3D::MousePress);
+    ConnectRef(Signal("button_release_event"), *this, &View3D::MouseRelease);
+    ConnectRef(Signal("motion_notify_event"),  *this, &View3D::MouseMove);
+    ConnectRef(Signal("scroll_event"),         *this, &View3D::MouseWheel);
+    ConnectRef(Signal("expose_event"),         *this, &View3D::Refresh);
+    ConnectRef(m_sRotationRx,                  *this, &View3D::SlaveRotation);
 
     if(!Canvas3D::Create(Parent))
     {
       // Get this sorted out early.
-      SPDLOG_INFO("View3DBodyC::Create(), ERROR: Canvas3D create failed. \n";
+      SPDLOG_INFO("View3D::Create(), ERROR: Canvas3D create failed. \n";
       return false;
     }
 
-    ONDEBUG(SPDLOG_INFO("View3DBodyC::Create(), Setting up canvas initialisation. "));
+    ONDEBUG(SPDLOG_INFO("View3D::Create(), Setting up canvas initialisation. "));
 
     // Setup render options
     m_oRenderOpts[0] = MenuCheckItemC("Points", false);
@@ -149,7 +151,7 @@ namespace Ravl2 {
     m_oRenderOpts[2] = MenuCheckItemC("Flat",   false);
     m_oRenderOpts[3] = MenuCheckItemC("Smooth", true);
     for(int i=0; i<4; i++) {
-      ConnectRef(m_oRenderOpts[i].SigSelected(), *this, &View3DBodyC::SelectRenderMode, i);
+      ConnectRef(m_oRenderOpts[i].SigSelected(), *this, &View3D::SelectRenderMode, i);
     }
 
     MenuC renderMenu("Render",
@@ -163,25 +165,25 @@ namespace Ravl2 {
                     );
 
     MenuC facesMenu("Faces",
-                    MenuCheckItemR("Front", m_bFront, *this, &View3DBodyC::GUIFrontFaces) +
-                    MenuCheckItemR("Back",  m_bBack,  *this, &View3DBodyC::GUIBackFaces)
+                    MenuCheckItemR("Front", m_bFront, *this, &View3D::GUIFrontFaces) +
+                    MenuCheckItemR("Back",  m_bBack,  *this, &View3D::GUIBackFaces)
                    );
 
     backMenu = MenuC("back",
-                     MenuItemR("Center",           *this, &View3DBodyC::GUICenter) +
-                     MenuItemR("Fit",              *this, &View3DBodyC::GUIFit) +
-                     MenuItemR("Upright",          *this, &View3DBodyC::GUIResetRotation) +
-                     //MenuCheckItemR("Auto Center", *this, &View3DBodyC::GUIAutoCenter) +
-                     //MenuCheckItemR("Auto Fit",    *this, &View3DBodyC::GUIAutoFit) +
+                     MenuItemR("Center",           *this, &View3D::GUICenter) +
+                     MenuItemR("Fit",              *this, &View3D::GUIFit) +
+                     MenuItemR("Upright",          *this, &View3D::GUIResetRotation) +
+                     //MenuCheckItemR("Auto Center", *this, &View3D::GUIAutoCenter) +
+                     //MenuCheckItemR("Auto Fit",    *this, &View3D::GUIAutoFit) +
                      MenuItemSeparator() +		      
-		                 MenuCheckItemR("Master",m_bMaster,*this,&View3DBodyC::Master) +
-		                 MenuCheckItemR("Slave",m_bSlave,*this,&View3DBodyC::Slave) +
+		                 MenuCheckItemR("Master",m_bMaster,*this,&View3D::Master) +
+		                 MenuCheckItemR("Slave",m_bSlave,*this,&View3D::Slave) +
                      MenuItemSeparator() +
                      renderMenu +
                      facesMenu
                     );
 
-    ONDEBUG(SPDLOG_INFO("View3DBodyC::Create(), Doing setup. "));
+    ONDEBUG(SPDLOG_INFO("View3D::Create(), Doing setup. "));
 
     SetTextureMode(m_bTextureStatus);
     SetLightingMode(m_bLightingStatus);
@@ -193,7 +195,7 @@ namespace Ravl2 {
     //Put(DLight3DC(RealRGBValueC(1, 1, 1), Point<RealT,3>(0, 0, 10)));
     Manager.Queue(Trigger(View3DC(*this), &View3DC::GUIAdjustView));
 
-    ONDEBUG(SPDLOG_INFO("View3DBodyC::Create(), Done. "));
+    ONDEBUG(SPDLOG_INFO("View3D::Create(), Done. "));
     return true;
   }
 #endif
@@ -201,7 +203,7 @@ namespace Ravl2 {
   //: ADD object into the view.
   bool View3D::add(const std::shared_ptr<DObject3D> &obj, int id)
   {
-    ONDEBUG(SPDLOG_INFO("View3DBodyC::add(), Called. "));
+    ONDEBUG(SPDLOG_INFO("View3D::add(), Called. "));
     (void) id;
     {
       std::lock_guard lockHold(viewLock);
@@ -212,7 +214,7 @@ namespace Ravl2 {
       scene->GUIAdd(obj);
     }
 
-    ONDEBUG(SPDLOG_INFO("View3DBodyC::add(), Done. "));
+    ONDEBUG(SPDLOG_INFO("View3D::add(), Done. "));
     return true;
   }
 
@@ -233,7 +235,7 @@ namespace Ravl2 {
   //: adjust view point
   bool View3D::GUIAdjustView()
   {
-    ONDEBUG(SPDLOG_INFO("View3DBodyC::AdjustView(), Called. "));
+    ONDEBUG(SPDLOG_INFO("View3D::AdjustView(), Called. "));
 
     //lock scene
     std::shared_lock lockHold(viewLock);
@@ -244,7 +246,7 @@ namespace Ravl2 {
     
     Vector<RealT,3> lookAt = m_sceneCenter; // Vector<RealT,3>(0,0,0)
     GLdouble dist = GLdouble(euclidDistance(lookAt,m_viewPoint));
-    //cerr << "View3DBodyC::GUIAdjustView :" << lookAt << "  dist:" << dist << std::endl;
+    //cerr << "View3D::GUIAdjustView :" << lookAt << "  dist:" << dist << std::endl;
     if(dist <= 0)
       dist = 0.01;
     //if(dist <= m_sceneExtent)
@@ -298,7 +300,7 @@ namespace Ravl2 {
   //: Fit object to view
   bool View3D::GUIFit()
   {
-    ONDEBUG(SPDLOG_INFO("View3DBodyC::GUIFit(), Called. "));
+    ONDEBUG(SPDLOG_INFO("View3D::GUIFit(), Called. "));
     CalcViewParams(true);
     GUIAdjustView();
     GUIRefresh();
@@ -307,7 +309,7 @@ namespace Ravl2 {
 
   //: Center output.
   bool View3D::GUICenter() {
-    ONDEBUG(SPDLOG_INFO("View3DBodyC::GUICenter(), Called. "));
+    ONDEBUG(SPDLOG_INFO("View3D::GUICenter(), Called. "));
     GUIAdjustView();
     GUIRefresh();
     return true;
@@ -315,7 +317,7 @@ namespace Ravl2 {
 
   //: Center output.
   bool View3D::GUIResetRotation() {
-    ONDEBUG(SPDLOG_INFO("View3DBodyC::GUIResetRotation(), Called. "));
+    ONDEBUG(SPDLOG_INFO("View3D::GUIResetRotation(), Called. "));
     m_vRotation = Vector<RealT,2>(0,0);
     GUIRefresh();
     SendSlaveSignal();
@@ -325,8 +327,8 @@ namespace Ravl2 {
   //: Handle button press.
   bool View3D::MousePress(MouseEvent const &me)
   {
-    ONDEBUG(SPDLOG_INFO("View3DBodyC::MousePress(), Called. {}  {}  {} ",me.HasChanged(0), me.HasChanged(1), me.HasChanged(2)));
-    ONDEBUG(SPDLOG_INFO("View3DBodyC::MousePress(),         {}  {}  {} ",me.IsPressed(0), me.IsPressed(1), me.IsPressed(2)));
+    ONDEBUG(SPDLOG_INFO("View3D::MousePress(), Called. {}  {}  {} ",me.HasChanged(0), me.HasChanged(1), me.HasChanged(2)));
+    ONDEBUG(SPDLOG_INFO("View3D::MousePress(),         {}  {}  {} ",me.IsPressed(0), me.IsPressed(1), me.IsPressed(2)));
     if(me.HasChanged(0))
     {
       //save reference position
@@ -344,8 +346,8 @@ namespace Ravl2 {
   //: Handle button release.
   bool View3D::MouseRelease(MouseEvent const &me)
   {
-    ONDEBUG(SPDLOG_INFO("View3DBodyC::MouseRelease(), Called.  {} {} {} ", me.HasChanged(0), me.HasChanged(1), me.HasChanged(2)));
-    ONDEBUG(SPDLOG_INFO("View3DBodyC::MouseRelease(),          {} {} {} ", me.IsPressed(0), me.IsPressed(1), me.IsPressed(2)));
+    ONDEBUG(SPDLOG_INFO("View3D::MouseRelease(), Called.  {} {} {} ", me.HasChanged(0), me.HasChanged(1), me.HasChanged(2)));
+    ONDEBUG(SPDLOG_INFO("View3D::MouseRelease(),          {} {} {} ", me.IsPressed(0), me.IsPressed(1), me.IsPressed(2)));
     if(me.HasChanged(0))
     {
       m_bIsDragging = false;
@@ -356,8 +358,8 @@ namespace Ravl2 {
   //: Handle mouse move.
   bool View3D::MouseMove(MouseEvent const &me)
   {
-    //ONDEBUG(SPDLOG_INFO("View3DBodyC::MouseMove(), Called. '", me.HasChanged(0), me.HasChanged(1), me.HasChanged(2) <<"' "));
-    //ONDEBUG(SPDLOG_INFO("View3DBodyC::MouseMove(),         '", me.IsPressed(0), me.IsPressed(1), me.IsPressed(2) <<"' "));
+    //ONDEBUG(SPDLOG_INFO("View3D::MouseMove(), Called. '", me.HasChanged(0), me.HasChanged(1), me.HasChanged(2) <<"' "));
+    //ONDEBUG(SPDLOG_INFO("View3D::MouseMove(),         '", me.IsPressed(0), me.IsPressed(1), me.IsPressed(2) <<"' "));
 
     // Calculate change
     Index<2> change = me.At() - m_lastMousePos;
@@ -369,8 +371,8 @@ namespace Ravl2 {
       //SPDLOG_INFO("Rotation");
       if(change[0] == 0 && change[1] == 0)
         return true;
-      m_vRotation[0] += change[0];
-      m_vRotation[1] += change[1];
+      m_vRotation[0] += float(change[0]);
+      m_vRotation[1] += float(change[1]);
       if (m_vRotation[0] > 90) m_vRotation[0] = 90;
       if (m_vRotation[0] < -90) m_vRotation[0] = -90;
       //GUIRefresh();
@@ -403,17 +405,21 @@ namespace Ravl2 {
   }
 
   //: Handle mouse wheel.
-  bool View3D::MouseWheel(MouseEvent const &me)
+  void View3D::scroll(double xOffset, double yOffset)
   {
-    (void) me;
-    SPDLOG_INFO("Mouse wheel event.");
-    return false;
-  }
+    (void) xOffset;
+    ONDEBUG(SPDLOG_INFO("View3D::MouseWheel, Called."));
+
+    if(isNearZero(yOffset))
+      return;
+    if(yOffset > 0) {
+      m_viewPoint = m_viewPoint / 1.2;
+    } else {
+      m_viewPoint = m_viewPoint * 1.2;
+    }
+    GUIAdjustView();
 
 #if 0
-  bool View3DBodyC::MouseWheel(GdkEvent *event)
-  {
-    ONDEBUG(SPDLOG_INFO("View3DBodyC::MouseWheel, Called."));
     GdkEventScroll &scrollEvent = (GdkEventScroll &) *event;
     bool shiftKey = (scrollEvent.state & GDK_SHIFT_MASK) != 0;
     //bool ctrlKey  = (scrollEvent.state & GDK_CONTROL_MASK) != 0;
@@ -443,10 +449,8 @@ namespace Ravl2 {
       break;
     }
     //cout << "vp:" << m_viewPoint << std::endl;
-
-    return true;
-  }
 #endif
+  }
 
   //: Rotation slaving function
   bool View3D::SlaveRotation(Vector<RealT,2>& rotation)
@@ -460,7 +464,7 @@ namespace Ravl2 {
 
 #if 0
   //: Handle configure event
-  bool View3DBodyC::CBConfigureEvent(GdkEvent *event)
+  bool View3D::CBConfigureEvent(GdkEvent *event)
   {
     if(GUIBeginGL())
     {
@@ -483,11 +487,11 @@ namespace Ravl2 {
   {
     if(!initDone)
     {
-      ONDEBUG(SPDLOG_INFO("View3DBodyC::GUIRefresh(), Called. Returning: {} ",initDone));
+      ONDEBUG(SPDLOG_INFO("View3D::GUIRefresh(), Called. Returning: {} ",initDone));
       return false;
     }
 
-    //ONDEBUG(SPDLOG_INFO("View3DBodyC::GUIRefresh(), Called. {} ",static_cast<void *>(this)));
+    //ONDEBUG(SPDLOG_INFO("View3D::GUIRefresh(), Called. {} ",static_cast<void *>(this)));
 
     GUIBeginGL();
 
@@ -576,7 +580,7 @@ namespace Ravl2 {
 
   void View3D::GUISetCullMode()
   {
-    ONDEBUG(SPDLOG_INFO("View3DBodyC::SetCullMode(), Called. "));
+    ONDEBUG(SPDLOG_INFO("View3D::SetCullMode(), Called. "));
 
     GUIBeginGL();
     if(m_bFront) {

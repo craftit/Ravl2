@@ -11,8 +11,7 @@ namespace Ravl2 {
   {
     MousePress,
     MouseRelease,
-    MouseMove,
-    MouseWheel
+    MouseMove
   };
 
   //! Mouse event information.
@@ -89,7 +88,8 @@ namespace Ravl2 {
     //! Time of event (from gdk)
     [[nodiscard]] size_t Time() const
     { return time; }
-  protected:
+
+  private:
     MouseEventTypeT mType = MouseEventTypeT::MousePress;
     RealT x = 0;
     RealT y = 0;   // Current position in GTK coords.
@@ -99,8 +99,9 @@ namespace Ravl2 {
     size_t time = 0;  // Time of event.
     bool m_doublePress = false;
   };
-  
-  std::ostream &operator<<(std::ostream &,const MouseEvent &me);
+
+
   //! Print description of mouse event to stream.
+  std::ostream &operator<<(std::ostream &,const MouseEvent &me);
 
 } // Ravl2

@@ -83,6 +83,12 @@ namespace Ravl2
       return mCursorPositionCB.add(std::move(f));
     }
 
+    //! Add a cursor position callback
+    CallbackHandle addScrollCallback(std::function<void(double xoffset, double yoffset)> &&f)
+    {
+      return mScrollCB.add(std::move(f));
+    }
+
     //! Add a key callback
     CallbackHandle addKeyCallback(std::function<void(int key, int scancode, int action, int mods)> &&f)
     {
@@ -94,6 +100,7 @@ namespace Ravl2
     {
       return mMouseButtonCB.add(std::move(f));
     }
+
 
     //! Add mouse event callback
     CallbackHandle addMouseEventCallback(std::function<void(const MouseEvent &event)> &&f)
@@ -110,9 +117,13 @@ namespace Ravl2
     //! Handle mouse button events
     void mouseButtonCallback(int button, int action, int mods);
 
+    //! Handle mouse button events
+    void scrollCallback(double offsetX, double offsetY);
+
   private:
     CallbackArray<std::function<void(const MouseEvent &event)>> mMouseEventCB;
     CallbackArray<std::function<void(double xpos, double ypos)>> mCursorPositionCB;
+    CallbackArray<std::function<void(double xoffset, double yoffset)>> mScrollCB;
     CallbackArray<std::function<void(int key, int scancode, int action, int mods)>> mKeyCB;
     CallbackArray<std::function<void(int button, int action, int mods)>> mMouseButtonCB;
 

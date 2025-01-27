@@ -103,7 +103,7 @@ namespace Ravl2 {
     bool MouseMove(MouseEvent const &me);
 
     //! Handle mouse wheel.
-    bool MouseWheel(MouseEvent const &me);
+    void scroll(double xOffset, double yOffset);
 
     //! Resets the camera position.
     //void GUIResetCamera();
@@ -115,11 +115,11 @@ namespace Ravl2 {
     // Reads value from the appropriate render mode menu item, and updates the other menu options appropriately.
     bool SelectRenderMode(int& iOption);
 
-    //! Enable or disable frontfaces
+    //! Enable or disable front faces
     bool GUIFrontFaces(bool& bFront)
       { m_bFront = bFront; GUISetCullMode(); return true; }
 
-    //! Enable or disable backfaces
+    //! Enable or disable back faces
     bool GUIBackFaces(bool& bBack)
       { m_bBack = bBack; GUISetCullMode(); return true; }
 
@@ -155,7 +155,7 @@ namespace Ravl2 {
     //RealT fov;
     //bool enablerefresh; // Are we allowed to refresh
 
-    bool initDone = false; //!< Has initalization been completed ?
+    bool initDone = false; //!< Has initialization been completed ?
 
     //view settings (these are parameters of the camera)
     GLdouble m_sceneExtent = 1.0;

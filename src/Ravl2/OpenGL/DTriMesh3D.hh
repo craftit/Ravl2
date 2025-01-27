@@ -15,7 +15,7 @@
 
 namespace Ravl2 {
 
-  //: Draw a TriMesh
+  //! Draw a TriMesh
 
   class DTriMesh3D
     : public DObject3D
@@ -23,22 +23,22 @@ namespace Ravl2 {
   public:
     using RealT = float;
 
-    //: Constructor.
+    //! Constructor.
     explicit DTriMesh3D(const std::shared_ptr<TriMesh<RealT> > &oTriMesh);
 
-    //: Render object.
+    //! Render object.
     bool GUIRender(Canvas3D &c3d) const override;
 
-    //: Get center of object.
+    //! Get center of object.
     // defaults to 0,0,0
     [[nodiscard]] Vector<float,3> GUICenter() const override;
 
-    //: Get extent of object.
+    //! Get extent of object.
     // defaults to 1
     float GUIExtent() const override;
 
   protected:
-    //: Compute center and extent of mesh.
+    //! Compute center and extent of mesh.
     void ComputeInfo();
 
     std::shared_ptr<TriMesh<RealT> > model;

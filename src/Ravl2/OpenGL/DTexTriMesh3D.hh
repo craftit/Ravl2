@@ -18,19 +18,19 @@
 namespace Ravl2
 {
 
-  //: Draw a TexTriMesh
+  //! Draw a TexTriMesh
   class DTexTriMesh3DBodyC
     : public DTriMesh3D
   {
   public:
     DTexTriMesh3DBodyC(const std::shared_ptr<TexTriMesh<RealT> > &oTexTriMesh);
-    //: Constructor.
+    //! Constructor.
 
     ~DTexTriMesh3DBodyC() override;
-    //: Destructor
+    //! Destructor
 
     bool GUIRender(Canvas3D &c3d) const override;
-    //: Render object.
+    //! Render object.
 
   protected:
     std::shared_ptr<TexTriMesh<float> > tmodel;

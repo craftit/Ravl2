@@ -13,15 +13,15 @@
 namespace Ravl2
 {
 
-  //: OpenGL Context
+  //! OpenGL Context
   
   class GLContext
   {
   public:
-    //: Constructor.
+    //! Constructor.
     GLContext() = default;
 
-    //: Destructor.
+    //! Destructor.
     virtual ~GLContext() = default;
 
     //! Delete the copy constructor
@@ -29,18 +29,17 @@ namespace Ravl2
     GLContext& operator=(const GLContext&) = delete;
     GLContext(GLContext&&) = delete;
     GLContext& operator=(GLContext&&) = delete;
-
-
-    //: Do we have a valid context.
+    
+    //! Do we have a valid context.
     [[nodiscard]] virtual bool IsReady() const;
 
     //! Swap the front and back buffers
     virtual void swapBuffers();
 
-    //: Switch to GL context.
+    //! Switch to GL context.
     virtual bool Begin();
 
-    //: Flag that we're finished with the context.
+    //! Flag that we're finished with the context.
     virtual void End();
 
     //! Thread safe freeing of textures.

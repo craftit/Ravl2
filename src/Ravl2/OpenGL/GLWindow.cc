@@ -5,6 +5,15 @@
 #include <spdlog/spdlog.h>
 #include "Ravl2/OpenGL/GLWindow.hh"
 
+#define DODEBUG 0
+#if DODEBUG
+#define ONDEBUG(x) x
+#else
+#define ONDEBUG(x)
+#endif
+#define ONDEBUGX(x) x
+
+
 namespace Ravl2
 {
   namespace
@@ -54,6 +63,14 @@ namespace Ravl2
         theWindow->mouseButtonCallback(button, action, mods);
       }
     }
+
+    void scroll_callback(GLFWwindow* window, double xOffset, double yOffset)
+    {
+      GLWindow *theWindow = reinterpret_cast<GLWindow *>(glfwGetWindowUserPointer(window));
+      if (theWindow != nullptr) {
+        theWindow->scrollCallback(xOffset, yOffset);
+      }
+    }
 #endif
   }
   
@@ -77,6 +94,7 @@ namespace Ravl2
     //glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);            // Required on Mac
 #else
     // GL 3.0 + GLSL 130
+    //mGlsl_version = "#version 150";
     mGlsl_version = "#version 130";
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
@@ -91,6 +109,7 @@ namespace Ravl2
       glfwSetCursorPosCallback(mWindow, cursor_position_callback);
       glfwSetMouseButtonCallback(mWindow, mouse_button_callback);
       glfwSetKeyCallback(mWindow, key_callback);
+      glfwSetScrollCallback(mWindow, scroll_callback);
       
       glfwMakeContextCurrent(mWindow);
       glfwSwapInterval(1);// Enable vsync
@@ -178,6 +197,14 @@ namespace Ravl2
     MouseEvent event((action == GLFW_PRESS) ? MouseEventTypeT::MousePress : MouseEventTypeT::MouseRelease, mMouseLastX, mMouseLastY, newState, changedMask ,mKeyModState);
     mMouseEventCB.call(event);
   }
+
+  //! Handle mouse button events
+  void GLWindow::scrollCallback(double offsetX, double offsetY)
+  {
+    SPDLOG_INFO("Scroll: {} {}", offsetX, offsetY);
+    mScrollCB.call(offsetX, offsetY);
+  }
+
   
 
   //! Put a function on the queue to be executed in the main thread
