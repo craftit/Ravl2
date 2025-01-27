@@ -157,7 +157,7 @@ namespace Ravl2
   {
     (void)xpos;
     (void)ypos;
-    SPDLOG_INFO("Cursor position: {} {}", xpos, ypos);
+    //SPDLOG_INFO("Cursor position: {} {}", xpos, ypos);
     mCursorPositionCB.call(xpos, ypos);
     mMouseLastX = float(xpos);
     mMouseLastY = float(ypos);
@@ -170,10 +170,12 @@ namespace Ravl2
   {
     SPDLOG_INFO("Button: {} Action: {} Mods: {}", button, action, mods);
 
-    int const changed = mMouseButtonState ^ mods;
-    mMouseButtonState = mods;
     mMouseButtonCB.call(button, action, mods);
-    MouseEvent event((action == GLFW_PRESS) ? MouseEventTypeT::MousePress : MouseEventTypeT::MouseRelease, mMouseLastX, mMouseLastY, mMouseButtonState, changed,mKeyModState);
+
+    int const changedMask = 1 << button;
+    int const newState = (action == GLFW_PRESS) ? (mMouseButtonState | changedMask) : (mMouseButtonState & ~(changedMask));
+    mMouseButtonState = newState;
+    MouseEvent event((action == GLFW_PRESS) ? MouseEventTypeT::MousePress : MouseEventTypeT::MouseRelease, mMouseLastX, mMouseLastY, newState, changedMask ,mKeyModState);
     mMouseEventCB.call(event);
   }
   

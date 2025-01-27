@@ -53,6 +53,7 @@ int main(int argc,char **argv)
   glfwGetFramebufferSize(window->getGLFWwindow(), &display_w, &display_h);
   Ravl2::View3D view(display_w, display_h, false, false);
   view.setContext(window);
+  view.setup(*window);
   window->makeCurrent();
   view.GUIInitGL();
   auto cube = std::make_shared<Ravl2::DCube3D>();

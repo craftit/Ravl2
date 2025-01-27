@@ -344,8 +344,8 @@ namespace Ravl2 {
   //: Handle button release.
   bool View3D::MouseRelease(MouseEvent const &me)
   {
-    ONDEBUG(SPDLOG_INFO("View3DBodyC::MouseRelease(), Called. '", me.HasChanged(0), me.HasChanged(1), me.HasChanged(2)));
-    ONDEBUG(SPDLOG_INFO("View3DBodyC::MouseRelease(),         '", me.IsPressed(0), me.IsPressed(1), me.IsPressed(2)));
+    ONDEBUG(SPDLOG_INFO("View3DBodyC::MouseRelease(), Called.  {} {} {} ", me.HasChanged(0), me.HasChanged(1), me.HasChanged(2)));
+    ONDEBUG(SPDLOG_INFO("View3DBodyC::MouseRelease(),          {} {} {} ", me.IsPressed(0), me.IsPressed(1), me.IsPressed(2)));
     if(me.HasChanged(0))
     {
       m_bIsDragging = false;
@@ -366,21 +366,21 @@ namespace Ravl2 {
     // Rotate when button 0 pressed
     if(me.IsPressed(0) && m_bIsDragging)
     {
-      SPDLOG_INFO("Rotation");
+      //SPDLOG_INFO("Rotation");
       if(change[0] == 0 && change[1] == 0)
         return true;
       m_vRotation[0] += change[0];
       m_vRotation[1] += change[1];
       if (m_vRotation[0] > 90) m_vRotation[0] = 90;
       if (m_vRotation[0] < -90) m_vRotation[0] = -90;
-      GUIRefresh();
+      //GUIRefresh();
       // Make slaved views move
       SendSlaveSignal();
     }
 
     // Translate when button 1 pressed
     else if (me.IsPressed(1) && m_bIsDragging) {
-      SPDLOG_INFO("translation");
+      //SPDLOG_INFO("translation");
 
       // Calculate individual translations
       // X & Y in GTK coords; hence also Y is inverted
@@ -487,12 +487,12 @@ namespace Ravl2 {
       return false;
     }
 
-    ONDEBUG(SPDLOG_INFO("View3DBodyC::GUIRefresh(), Called. {} ",static_cast<void *>(this)));
+    //ONDEBUG(SPDLOG_INFO("View3DBodyC::GUIRefresh(), Called. {} ",static_cast<void *>(this)));
 
     GUIBeginGL();
 
     GUIClearBuffers();
-#if 1
+#if 0
     scene->GUIRender(*this);
 #else
     // Render scene
