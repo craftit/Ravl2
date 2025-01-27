@@ -22,36 +22,36 @@ namespace Ravl2
     //! Default constructor.
     Vertex() = default;
 
+    //! Constructor from position and normal
+    //! @param  pos - position of vertex.
+    //! @param  norm - Direction of surface normal at vertex.
     Vertex(const Point<RealT,3> &pos,const Vector<RealT,3> &norm)
       : at(pos),
 	mNormal(norm)
     {}
-    //: Constructor from position and normal
-    //! @param  pos - position of vertex.
-    //! @param  norm - Direction of surface normal at vertex.
     
+    //! Constructor from position
+    //! @param  pos - position of vertex.
+    // The surface normal is left undefined.
     explicit Vertex(const Point<RealT,3> &pos)
       : at(pos)
     {}
-    //: Constructor from position
-    //! @param  pos - position of vertex.
-    // The surface normal is left undefined.
     
+    //! Access position of vertex.
     [[nodiscard]] Vector<RealT,3> &position()
     { return at; }
-    //: Access position of vertex.
     
+    //! Access position of vertex.
     [[nodiscard]] const Vector<RealT,3> &position() const
     { return at; }
-    //: Access position of vertex.
     
+    //! Access normal at vertex.
     [[nodiscard]] Vector<RealT,3> &normal()
     { return mNormal; }
-    //: Access normal at vertex.
 
+    //! Access normal at vertex.
     [[nodiscard]] const Vector<RealT,3> &normal() const
     { return mNormal; }
-    //: Access normal at vertex.
 
     //! Make unit normal.
     void makeUnitNormal()
@@ -70,7 +70,7 @@ namespace Ravl2
       archive(cereal::make_nvp("normal", mNormal));
     }
 
-  protected:
+  private:
     Vector<RealT,3> at;        // Position of vertex.
     Vector<RealT,3> mNormal;    // Normal to vertex.
   };
