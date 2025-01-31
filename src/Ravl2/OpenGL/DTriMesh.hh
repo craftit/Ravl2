@@ -10,7 +10,7 @@
 
 #pragma once
 
-#include "Ravl2/OpenGL/DObject3D.hh"
+#include "Ravl2/OpenGL/DObject.hh"
 #include "Ravl2/OpenGL/GLShader.hh"
 #include "Ravl2/3D/TriMesh.hh"
 
@@ -18,7 +18,7 @@ namespace Ravl2 {
 
   //! Draw a TriMesh
 
-  class DTriMesh : public DObject3D
+  class DTriMesh : public DObject
   {
   public:
     using RealT = float;

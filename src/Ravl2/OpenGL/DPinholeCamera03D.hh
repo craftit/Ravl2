@@ -10,7 +10,7 @@
 
 #pragma once
 
-#include "Ravl2/OpenGL/DObject3D.hh"
+#include "Ravl2/OpenGL/DObject.hh"
 #include "Ravl2/IndexRange.hh"
 #include "Ravl2/3D/PinholeCamera0.hh"
 
@@ -19,7 +19,7 @@ namespace Ravl2
 
   //! Use PinholeCamera0C class to set OpenGL viewpoint
   class DPinholeCamera03DBodyC
-    : public DObject3D
+    : public DObject
   {
   public:
     //! Constructor.

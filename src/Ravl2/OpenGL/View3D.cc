@@ -246,7 +246,7 @@ namespace Ravl2 {
 #endif
   
   //: ADD object into the view.
-  bool View3D::add(const std::shared_ptr<DObject3D> &obj, int id)
+  bool View3D::add(const std::shared_ptr<DObject> &obj, int id)
   {
     ONDEBUG(SPDLOG_INFO("View3D::add(), Called. "));
     (void) id;

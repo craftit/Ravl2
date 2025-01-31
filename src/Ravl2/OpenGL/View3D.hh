@@ -12,7 +12,7 @@
 #include <mutex>
 #include <shared_mutex>
 #include "Ravl2/OpenGL/Canvas3D.hh"
-#include "Ravl2/OpenGL/DObject3D.hh"
+#include "Ravl2/OpenGL/DObject.hh"
 
 namespace Ravl2 {
 
@@ -48,7 +48,7 @@ namespace Ravl2 {
     //! Add object to scene
     //! If ID!=0, the object is assigned this id number, and
     //! can be accessed using it.
-    bool add(const std::shared_ptr<DObject3D> &obj, int id = 0);
+    bool add(const std::shared_ptr<DObject> &obj, int id = 0);
 
     //! Make the scene complete.
     //! If more objects are add()ed after this, a new scene will be started

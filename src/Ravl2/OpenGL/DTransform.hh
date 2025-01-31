@@ -10,7 +10,7 @@
 
 #pragma once
 
-#include "Ravl2/OpenGL/DObject3D.hh"
+#include "Ravl2/OpenGL/DObject.hh"
 #include "Ravl2/Pixel/Pixel.hh"
 
 #define DTransform3D_RESET       0x0001

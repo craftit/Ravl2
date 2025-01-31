@@ -72,7 +72,7 @@ namespace Ravl2
   }
 
   //: Process OpenGL requests.
-  bool Canvas3D::GUIProcessReq(DObject3D &obj) {
+  bool Canvas3D::GUIProcessReq(DObject &obj) {
     ONDEBUG(std::cerr << "Canvas3D::GUIProcessReq(), Called. \n");
     if(!GUIBeginGL()) {
       std::cerr << "Canvas3D::GUIProcessReq(), Failed to BeginGL(). \n";
@@ -84,7 +84,7 @@ namespace Ravl2
   }
 
   //: Put render instruction into pipe.
-  bool Canvas3D::put(std::shared_ptr<DObject3D> r) {
+  bool Canvas3D::put(std::shared_ptr<DObject> r) {
     m_glContext->put([this,r]() {
       GUIProcessReq(*r);
       return true;

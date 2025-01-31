@@ -31,8 +31,9 @@ namespace Ravl2 {
   DTexTriMesh::~DTexTriMesh()
   {
     // Make sure textures are free'd in an appropriate context.
-    if(m_glContext && texNames.size() > 0)
+    if(m_glContext && texNames.size() > 0) {
       m_glContext->FreeTextures(texNames);
+    }
   }
 
   bool DTexTriMesh::GUIRender(Canvas3D &canvas) const

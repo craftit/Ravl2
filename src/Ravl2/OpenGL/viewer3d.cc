@@ -8,9 +8,10 @@
 #include "Ravl2/OpenGL/Canvas3D.hh"
 #include "Ravl2/OpenGL/View3D.hh"
 
-#define USE_OPENGL3 0
+#define USE_OPENGL3 1
+#define USE_IMGUI 1
 
-#if 0
+#if USE_IMGUI
 #include "imgui.h"
 #include "backends/imgui_impl_glfw.h"
 #if USE_OPENGL3
@@ -47,7 +48,7 @@ int main(int argc,char **argv)
   window->makeCurrent();
 
   Ravl2::CallbackSet callbacks;
-#if 1
+#if !USE_IMGUI
   int display_w = 0;
   int display_h = 0;
   glfwGetFramebufferSize(window->getGLFWwindow(), &display_w, &display_h);

@@ -22,14 +22,14 @@ namespace Ravl2
   class Canvas3D;
 
   //! Display object base class in a 3D world.
-  class DObject3D
+  class DObject
   {
   public:
     //! Default constructor.
-    DObject3D() = default;
+    DObject() = default;
 
     //! Destructor.
-    virtual ~DObject3D() = default;
+    virtual ~DObject() = default;
 
     //! Initialize object.
     //! Register object with OpenGL, setup shaders, etc.
@@ -102,7 +102,7 @@ namespace Ravl2
   ////////////////////////////////////
   //! Body for OpenGL code invocation class.
 
-  class DOpenGLDirect : public DObject3D
+  class DOpenGLDirect : public DObject
   {
   public:
     //! Constructor.
@@ -138,7 +138,7 @@ namespace Ravl2
 
   //! Body of an  object set in a 3D world.
   class DObjectSet3D
-      : public DObject3D
+      : public DObject
   {
   public:
     //! Default constructor.
@@ -146,7 +146,11 @@ namespace Ravl2
     
     //! Render object.
     bool GUIRender(Canvas3D &c3d) const override;
-    
+
+    //! Initialize object.
+    //! Register object with OpenGL, setup shaders, etc.
+    bool GUIInit(Canvas3D &c3d) override;
+
     //! Get center of object.
     // defaults to 0,0,0
     [[nodiscard]] Vector<float,3> GUICenter() const override;
@@ -156,12 +160,12 @@ namespace Ravl2
     [[nodiscard]] float GUIExtent() const override;
     
     //! Add object into list.
-    void GUIAdd(const std::shared_ptr<DObject3D> &obj);
+    void GUIAdd(const std::shared_ptr<DObject> &obj);
 
     //! Update the center and extent of the object.
     void UpdateCenterExtent();
   protected:
-    std::vector<std::shared_ptr<DObject3D> > parts;
+    std::vector<std::shared_ptr<DObject> > parts;
     Vector<float,3> center = Vector<float,3>::Zero();
     float extent = 1.0f;
     bool mUpdateNeeded = true;

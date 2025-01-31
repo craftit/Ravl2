@@ -10,14 +10,14 @@
 
 #pragma once
 
-#include "Ravl2/OpenGL/DObject3D.hh"
+#include "Ravl2/OpenGL/DObject.hh"
 
 namespace Ravl2 {
 
   //! Setup a light in a 3D world.
 
   class DLight3D
-    : public DObject3D
+    : public DObject
   {
   public:
     //! Constructor.

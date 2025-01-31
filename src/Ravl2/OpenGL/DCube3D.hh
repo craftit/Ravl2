@@ -11,7 +11,7 @@
 #pragma once
 
 #include "Ravl2/Pixel/Pixel.hh"
-#include "Ravl2/OpenGL/DObject3D.hh"
+#include "Ravl2/OpenGL/DObject.hh"
 #include "Ravl2/OpenGL/GLShader.hh"
 
 namespace Ravl2
@@ -20,7 +20,7 @@ namespace Ravl2
   //! Body of a  object set in a 3D world.
 
   class DCube3D
-    : public DObject3D
+    : public DObject
   {
   public:
     DCube3D() = default;

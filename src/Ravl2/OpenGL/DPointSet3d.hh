@@ -8,7 +8,7 @@
 //! author="Joel Mitchelson"
 //! date="31/1/2002"
 
-#include "Ravl2/OpenGL/DObject3D.hh"
+#include "Ravl2/OpenGL/DObject.hh"
 #include "Ravl2/Geometry/PointSet.hh"
 
 namespace Ravl2
@@ -16,7 +16,7 @@ namespace Ravl2
 
   //! Draw a Point Set
 
-  class DPointSet : public DObject3D
+  class DPointSet : public DObject
   {
   public:
     using RealT = float;

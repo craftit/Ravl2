@@ -10,7 +10,7 @@
 
 #pragma once
 
-#include "Ravl2/OpenGL/DObject3D.hh"
+#include "Ravl2/OpenGL/DObject.hh"
 
 namespace Ravl2 {
 
@@ -19,7 +19,7 @@ namespace Ravl2 {
   //! models.  If you wish to configures these aspects yours self you
   //! should do so after using this class. (Or not use it at all.)
 
-  class DViewPoint3DBodyC : public DObject3D
+  class DViewPoint3DBodyC : public DObject
   {
   public:
     using RealT = float;

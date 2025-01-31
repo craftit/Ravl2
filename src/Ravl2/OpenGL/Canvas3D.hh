@@ -12,7 +12,7 @@
 #pragma once
 
 #include <glm/glm.hpp>
-#include "Ravl2/OpenGL/DObject3D.hh"
+#include "Ravl2/OpenGL/DObject.hh"
 #include "Ravl2/OpenGL/DTransform.hh"
 #include "Ravl2/OpenGL/DViewPoint3D.hh"
 #include "Ravl2/OpenGL/DLight3D.hh"
@@ -71,10 +71,10 @@ namespace Ravl2
     bool GUIClearBuffers();
 
     //!  Process OpenGL requests. (renders obj on the 3d canvas)
-    bool GUIProcessReq(DObject3D &obj);
+    bool GUIProcessReq(DObject &obj);
 
     //!  Put render instruction into pipe.
-    bool put(std::shared_ptr<DObject3D> r);
+    bool put(std::shared_ptr<DObject> r);
 
     //!  Enable or disable texturing
     bool SetTextureMode(bool bTexture)
