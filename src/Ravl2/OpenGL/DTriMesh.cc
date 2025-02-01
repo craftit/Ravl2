@@ -21,14 +21,14 @@
 namespace Ravl2
 {
 
-  //: Constructor.
+  //! Constructor.
   DTriMesh::DTriMesh(const std::shared_ptr<TriMesh<RealT> > &oTriMesh)
     : model(oTriMesh)
   {
     ComputeInfo();
   }
 
-  //: Compute center and extent of mesh.
+  //! Compute center and extent of mesh.
   void DTriMesh::ComputeInfo()
   {
     if(!model)
@@ -45,7 +45,7 @@ namespace Ravl2
   }
 
 
-  //: Get center of object.
+  //! Get center of object.
   // defaults to 0,0,0
   Vector<float,3> DTriMesh::GUICenter() const
   {
@@ -53,7 +53,7 @@ namespace Ravl2
     return center;
   }
 
-  //: Get extent of object.
+  //! Get extent of object.
   // defaults to 1
   float DTriMesh::GUIExtent() const
   {
@@ -75,7 +75,7 @@ namespace Ravl2
   }
 
 
-  //: Render object.
+  //! Render object.
   bool DTriMesh::GUIRender(Canvas3D &canvas) const
   {
     (void) canvas;

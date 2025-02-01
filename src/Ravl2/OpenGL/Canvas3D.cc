@@ -37,14 +37,14 @@ namespace Ravl2
      m_glContext(context)
   {}
   
-  //: Call before using any GL commands.
+  //! Call before using any GL commands.
   bool Canvas3D::GUIBeginGL()
   {
     assert(m_glContext);
     return m_glContext->Begin();
   }
 
-  //: Call after finished with GL
+  //! Call after finished with GL
   bool Canvas3D::GUIEndGL()
   {
     assert(m_glContext);
@@ -52,7 +52,7 @@ namespace Ravl2
     return true;
   }
 
-  //: swap buffers.
+  //! swap buffers.
   bool Canvas3D::GUISwapBuffers()
   {
     assert(m_glContext);
@@ -60,7 +60,7 @@ namespace Ravl2
     return true;
   }
 
-  //: clear buffers (make sure you called GUIBeginGL before)
+  //! clear buffers (make sure you called GUIBeginGL before)
   bool Canvas3D::GUIClearBuffers()
   {
     GLenum whichBuffers(GL_COLOR_BUFFER_BIT);
@@ -71,7 +71,7 @@ namespace Ravl2
     return true;
   }
 
-  //: Process OpenGL requests.
+  //! Process OpenGL requests.
   bool Canvas3D::GUIProcessReq(DObject &obj) {
     ONDEBUG(std::cerr << "Canvas3D::GUIProcessReq(), Called. \n");
     if(!GUIBeginGL()) {
@@ -83,7 +83,7 @@ namespace Ravl2
     return true;
   }
 
-  //: Put render instruction into pipe.
+  //! Put render instruction into pipe.
   bool Canvas3D::put(std::shared_ptr<DObject> r) {
     m_glContext->put([this,r]() {
       GUIProcessReq(*r);
@@ -92,7 +92,7 @@ namespace Ravl2
     return true;
   }
 
-  //: Handle configure event
+  //! Handle configure event
   bool Canvas3D::CBConfigureEvent(int width, int height) {
     ONDEBUG(std::cerr << "Canvas3D::CBConfigureEvent, Called. ");
     if(!GUIBeginGL())
@@ -109,8 +109,8 @@ namespace Ravl2
     return true;
   }
 
-  //: Enable or disable lighting
-  //: Put End Of Stream marker.
+  //! Enable or disable lighting
+  //! Put End Of Stream marker.
   bool Canvas3D::SetLightingMode(bool bLighting) {
     m_bLighting = bLighting;
     m_glContext->put([this,bLighting]() {
@@ -121,7 +121,7 @@ namespace Ravl2
     return true;
   }
   
-  //: Write contents of widget to an image.
+  //! Write contents of widget to an image.
 
 #if 0
   bool Canvas3D::SaveToImageInternal(Ravl2::Array<PixelRGB8,2> *img,SemaphoreRC &done) {
@@ -144,7 +144,7 @@ namespace Ravl2
   }
 #endif
 
-  //: Write contents of screen to an image.
+  //! Write contents of screen to an image.
   
   bool Canvas3D::SaveToImage(Ravl2::Array<PixelRGB8,2> &img) {
 #if 0
