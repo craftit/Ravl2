@@ -318,6 +318,7 @@ namespace Ravl2
   using PixelRGBA16 = Pixel<uint16_t, ImageChannel::Red, ImageChannel::Green, ImageChannel::Blue, ImageChannel::Alpha>;
   using PixelRGB32F = Pixel<float, ImageChannel::Red, ImageChannel::Green, ImageChannel::Blue>;
   using PixelRGBA32F = Pixel<float, ImageChannel::Red, ImageChannel::Green, ImageChannel::Blue, ImageChannel::Alpha>;
+  using PixelRGBA64F = Pixel<double, ImageChannel::Red, ImageChannel::Green, ImageChannel::Blue, ImageChannel::Alpha>;
   using PixelBGR8 = Pixel<uint8_t, ImageChannel::Blue, ImageChannel::Green, ImageChannel::Red>;
   using PixelBGRA8 = Pixel<uint8_t, ImageChannel::Blue, ImageChannel::Green, ImageChannel::Red, ImageChannel::Alpha>;
   using PixelYUV8 = Pixel<uint8_t, ImageChannel::Luminance, ImageChannel::ChrominanceU, ImageChannel::ChrominanceV>;
