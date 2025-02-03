@@ -147,6 +147,9 @@ namespace Ravl2
   {
     // If the channel is normalized then we need to scale the value to the correct range.
     if constexpr(PixelTypeTraits<CompT, channel>::isNormalized) {
+// turn off warning about promotion to double.
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdouble-promotion"
       //SPDLOG_INFO("Normalized channel {} -> {}  Type:{} <- {} ",toString(channel), (PixelTypeTraits<CompT, channel>::max - PixelTypeTraits<CompT, channel>::min) / (PixelTypeTraits<PixelValueTypeT, channel>::max - PixelTypeTraits<PixelValueTypeT, channel>::min), typeid(CompT).name(), typeid(PixelValueTypeT).name());
       // If the channel is normalized then we need to scale the value to the correct range.
       auto raw = (pixel - PixelTypeTraits<PixelValueTypeT, channel>::offset) * (PixelTypeTraits<CompT, channel>::max - PixelTypeTraits<CompT, channel>::min) / (PixelTypeTraits<PixelValueTypeT, channel>::max - PixelTypeTraits<PixelValueTypeT, channel>::min) + PixelTypeTraits<CompT, channel>::offset;
@@ -160,6 +163,7 @@ namespace Ravl2
       }
       // If we're converting to an integer type then we need to clamp the value.
       return CompT(std::clamp(raw, decltype(raw)(PixelTypeTraits<CompT, channel>::min), decltype(raw)(PixelTypeTraits<CompT, channel>::max)));
+#pragma GCC diagnostic pop
     }
     // If the channel is not normalized then we can just return the value.
     return CompT(pixel);

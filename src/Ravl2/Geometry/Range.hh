@@ -53,6 +53,14 @@ namespace Ravl2
       return (mMax - mMin);
     }
 
+    //! Get size of given dimension
+    [[nodiscard]] constexpr RealT size(unsigned n) const noexcept
+    {
+      (void) n;
+      assert(n == 0);
+      return (mMax - mMin);
+    }
+
     //! Returns this object.
     [[nodiscard]] inline constexpr const Range<RealT, 1> &range() const
     {
@@ -425,8 +433,26 @@ namespace Ravl2
       return ret;
     }
 
+    //! Get size of given dimension
+    [[nodiscard]] constexpr RealT size(unsigned n) const noexcept
+    {
+      assert(n < N);
+      return mRanges[n].size();
+    }
+
+    //! Get the size as a vector.
+    [[nodiscard]] constexpr Vector<RealT, N> size() const
+    {
+      Vector<RealT, N> ret;
+      for(unsigned i = 0; i < N; ++i) {
+        ret[i] = mRanges[i].size();
+      }
+      return ret;
+    }
+
+
     //! Returns the area of the image rectangle expressed in number of indexes.
-    [[nodiscard]] inline constexpr RealT area() const
+    [[nodiscard]] constexpr RealT area() const
     {
       RealT area = 1;
       for(unsigned i = 0; i < N; ++i) {
