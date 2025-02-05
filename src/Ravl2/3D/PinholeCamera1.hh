@@ -176,7 +176,7 @@ namespace Ravl2
               cereal::make_nvp("k1", this->m_k1));
     }
 
-  protected:
+  private:
     RealT m_k1 = 0;
   };
 

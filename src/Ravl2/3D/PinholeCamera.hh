@@ -23,22 +23,22 @@ namespace Ravl2
   class PinholeCamera
   {
   public:
-    //: Default constructor.
+    //! Default constructor.
     PinholeCamera() = default;
 
-    //: Destructor.
+    //! Destructor.
     virtual ~PinholeCamera() = default;
 
-    //: Make a copy of body.
+    //! Make a copy of body.
     virtual std::shared_ptr<PinholeCamera<RealT> > copy() const = 0;
     
-    //: project a 3D point to a 2D image point
+    //! project a 3D point to a 2D image point
     virtual void project(Vector<RealT, 2> &z, const Vector<RealT, 3> &x) const = 0;
 
-    //: project a set of 3D point to a 2D image point
+    //! project a set of 3D point to a 2D image point
     virtual void project(std::span<Vector<RealT, 2> > z,std::span<const Vector<RealT, 3> > x) const = 0;
 
-    //: project 3D point in space to 2D image point checking for degeneracy
+    //! project 3D point in space to 2D image point checking for degeneracy
     virtual bool projectCheck(Vector<RealT, 2> &z, const Vector<RealT, 3> &x) const = 0;
     
     //:Inverse projection up to a scale factor
@@ -48,23 +48,23 @@ namespace Ravl2
     //:The Jacobian matrix of the projection funtion
     virtual void projectJacobian(Matrix<RealT, 2, 3> &Jz, const Vector<RealT, 3> &x) const = 0;
     
-    //: origin of the camera in world co-ordinates
+    //! origin of the camera in world co-ordinates
     [[nodiscard]] virtual Vector<RealT, 3> origin() const = 0;
     
-    //: Look direction for the camera in the world co-ordinate frame
+    //! Look direction for the camera in the world co-ordinate frame
     [[nodiscard]] virtual Vector<RealT, 3> direction() const = 0;
     
-    //: Image frame for the camera
+    //! Image frame for the camera
     [[nodiscard]] virtual const IndexRange<2> &range() const = 0;
     
-    //: Set the image frame for the camera
+    //! Set the image frame for the camera
     virtual void setRange(const IndexRange<2> &frame) = 0;
     
-    //: Transform from a camera point to a point in a simple pinhole model
+    //! Transform from a camera point to a point in a simple pinhole model
     // This should be provided in derived classes.
     [[nodiscard]] virtual Vector<RealT, 2> undistort(const Vector<RealT, 2> &z) const = 0;
     
-    //: Transform from a simple pinhole model point to a distorted image point
+    //! Transform from a simple pinhole model point to a distorted image point
     // This should be provided in derived classes.
     [[nodiscard]] virtual Vector<RealT, 2> distort(const Vector<RealT, 2> &z) const = 0;
     
@@ -76,19 +76,19 @@ namespace Ravl2
     }
 
 #if 0
-    //: Return an undistorted image for a simple pinhole model
+    //! Return an undistorted image for a simple pinhole model
     template<class PixelT>
     Array<PixelT,2> undistortImage(const Array<PixelT,2>& img, bool resize = false) const;
 
-    //: Return an undistorted image for a simple pinhole model filling empty pixels with bg value
+    //! Return an undistorted image for a simple pinhole model filling empty pixels with bg value
     template<class PixelT>
     Array<PixelT,2> UndistortImage(const Array<PixelT,2>& img, const PixelT bg, bool resize = false) const;
 
-    //: Return a distorted image for a simple pinhole model
+    //! Return a distorted image for a simple pinhole model
     template<class PixelT>
     Array<PixelT,2> DistortImage(const Array<PixelT,2>& img, bool resize = false) const;
 
-    //: Return a distorted image for a simple pinhole model filling empty pixels with bg value
+    //! Return a distorted image for a simple pinhole model filling empty pixels with bg value
     template<class PixelT>
     Array<PixelT,2> DistortImage(const Array<PixelT,2>& img, const PixelT bg, bool resize = false) const;
 #endif
@@ -244,7 +244,7 @@ namespace Ravl2
      return ret;
   }
   
-  //: Derive undistort an image using the 1st order radial distortion model
+  //! Derive undistort an image using the 1st order radial distortion model
 
   template<class PixelT> Array<PixelT,2>
   PinholeCamera::UndistortImage(const Array<PixelT,2>& img, const PixelT bg, bool resize) const
@@ -287,7 +287,7 @@ namespace Ravl2
 
      return ret;
   }
-  //: Derive undistort an image using the 1st order radial distortion model filling empty pixels with bg value
+  //! Derive undistort an image using the 1st order radial distortion model filling empty pixels with bg value
 
   template<class PixelT> Array<PixelT,2>
   PinholeCamera::DistortImage(const Array<PixelT,2>& img, bool resize) const
@@ -328,7 +328,7 @@ namespace Ravl2
 
      return ret;
   }
-  //: Derive distort an image using the 1st order radial distortion model
+  //! Derive distort an image using the 1st order radial distortion model
 
   template<class PixelT> Array<PixelT,2>
   PinholeCamera::DistortImage(const Array<PixelT,2>& img, const PixelT bg, bool resize) const
@@ -371,6 +371,6 @@ namespace Ravl2
 
      return ret;
   }
-  //: Derive distort an image using the 1st order radial distortion model filling empty pixels with bg value
+  //! Derive distort an image using the 1st order radial distortion model filling empty pixels with bg value
 #endif
 };// namespace Ravl2

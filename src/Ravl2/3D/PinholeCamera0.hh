@@ -354,6 +354,7 @@ namespace Ravl2
     {
       return RealT(1e-3);
     }
+
   protected:
     RealT m_cx = 0;
     RealT m_cy = 0;

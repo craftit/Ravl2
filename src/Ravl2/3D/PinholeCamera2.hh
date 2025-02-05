@@ -201,7 +201,7 @@ namespace Ravl2
       return rd;
     }
 
-  protected:
+  private:
     RealT m_sizex = 1;// x pixel size
     RealT m_sizey = 1;// y pixel size
     RealT m_k3 = 0;   // 3rd order radial distortion

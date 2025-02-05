@@ -230,7 +230,7 @@ namespace Ravl2
       return rd;
     }
 
-  protected:
+  private:
     RealT m_k1 = 0;//!< First radial distortion coefficient
     RealT m_k2 = 0;//!< Second radial distortion coefficient
   };
