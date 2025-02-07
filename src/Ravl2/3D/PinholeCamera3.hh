@@ -52,6 +52,19 @@ namespace Ravl2
           m_k2(k2)
     {}
 
+    //! Construct camera from another coordinate system
+    template <CameraCoordinateSystemT CoordSys>
+    static PinholeCamera3<RealT> fromParameters(const RealT &cx, const RealT &cy,
+                                                const RealT &fx, const RealT &fy,
+                                                const Matrix<RealT, 3, 3> &R,
+                                                const Vector<RealT, 3> &t,
+                                                const IndexRange<2> &frame,
+                                                const RealT &k1, const RealT &k2
+                                                )
+    {
+      return PinholeCamera3<RealT>(PinholeCamera0<RealT>::template fromParameters<CoordSys>(cx, cy, fx, fy, R, t, frame), k1, k2);
+    }
+
     //: First radial distortion coefficient
     [[nodiscard]] const RealT &k1() const
     {
