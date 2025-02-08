@@ -106,19 +106,13 @@ namespace Ravl2
     return std::sqrt(sum);
   }
 
-  template <typename RealT, IndexSizeT N>
+  template <typename RealT, int N>
   [[nodiscard]] constexpr RealT squaredEuclidDistance(const Point<RealT, N> &a, const Point<RealT, N> &b)
   { return (a - b).squaredNorm(); }
 
-  template <typename RealT, IndexSizeT N>
+  template <typename RealT, int N>
   [[nodiscard]] constexpr auto euclidDistance(const Point<RealT, N> &a, const Point<RealT, N> &b)
-  {
-    RealT sum = 0;
-    for(unsigned i = 0; i < N; i++) {
-      sum += sqr(a(i) - b(i));
-    }
-    return std::sqrt(sum);
-  }
+  { return (a - b).norm(); }
 
   template <typename Pnt1T>
   [[nodiscard]] constexpr auto norm(Pnt1T a)

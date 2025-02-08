@@ -38,6 +38,8 @@ add_library (Ravl2Geometry
         FitSimilarity.cc FitSimilarity.hh
         PolyApprox.hh PolyApprox.cc
         Quad.cc Quad.hh
+        NSphere.cc
+        NSphere.hh
 )
 
 add_library(ravl2::Ravl2Geometry ALIAS Ravl2Geometry)
