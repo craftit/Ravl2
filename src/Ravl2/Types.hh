@@ -32,7 +32,7 @@ namespace Ravl2
 
   //! Is the inside of a boundary on the left or right side of the boundary?
   //! This is used for pixel boundaries and polygons.
-  enum class BoundaryOrientationT
+  enum class BoundaryOrientationT : uint8_t
   {
     INSIDE_LEFT,
     INSIDE_RIGHT
@@ -89,21 +89,29 @@ namespace Ravl2
   //std::string toString(const VectorT &v);
 
   template <typename DataT>
-  inline bool is16ByteAligned(const DataT *data)
+  [[nodiscard]] bool is16ByteAligned(const DataT *data)
   {
     return (reinterpret_cast<uintptr_t>(data) & static_cast<uintptr_t>(0xf)) == 0;
+  }
+
+  //! Check there are no nan's or infinities in an eigen matrix
+  template <typename DataT, int N, int M>
+  [[nodiscard]] bool isFinite(const Eigen::Matrix<DataT, N, M> &mat)
+  {
+    return mat.array().isFinite().all();
   }
 
   //! This is a hack to prevent the compiler optimizing away benchmark code
   void doNothing();
 
   //! Get a human-readable name for a type.
-  std::string typeName(const std::type_info &type);
+  [[nodiscard]] std::string typeName(const std::type_info &type);
 
   //! Get a human-readable name for a type.
-  std::string typeName(const std::type_index &type);
+  [[nodiscard]] std::string typeName(const std::type_index &type);
 
-  const Eigen::IOFormat &defaultEigenFormat();
+  //! Default formatting for converting Eigen matrices to strings
+  [[nodiscard]] const Eigen::IOFormat &defaultEigenFormat();
 }// namespace Ravl2
 
 template <typename T>
