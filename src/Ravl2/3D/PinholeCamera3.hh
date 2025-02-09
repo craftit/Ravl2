@@ -54,12 +54,12 @@ namespace Ravl2
 
     //! Construct camera from another coordinate system
     template <CameraCoordinateSystemT CoordSys>
-    static PinholeCamera3<RealT> fromParameters(const RealT &cx, const RealT &cy,
-                                                const RealT &fx, const RealT &fy,
+    static PinholeCamera3<RealT> fromParameters(RealT cx, RealT cy,
+                                                RealT fx, RealT fy,
                                                 const Matrix<RealT, 3, 3> &R,
                                                 const Vector<RealT, 3> &t,
                                                 const IndexRange<2> &frame,
-                                                const RealT &k1, const RealT &k2
+                                                RealT k1, RealT k2
                                                 )
     {
       return PinholeCamera3<RealT>(PinholeCamera0<RealT>::template fromParameters<CoordSys>(cx, cy, fx, fy, R, t, frame), k1, k2);
@@ -108,7 +108,7 @@ namespace Ravl2
     {
       // Distortion-free projection
       Vector<RealT, 3> Rx = (this->m_R * x) + this->m_t;
-      if(isNearZero(Rx[2],RealT(1e-4))) {
+      if(Rx[2] < this->mNearPlane) {
         return false;
       }
       Vector<RealT, 2> zd = distort0(toVector<RealT>(Rx[0] / Rx[2], Rx[1] / Rx[2]));
@@ -211,7 +211,7 @@ namespace Ravl2
      * Function undist2dist: 
      *    ... given the distance between optical center and ideal projected point
      *    Pu, this function calculates the distance to a Point Pd (distorted),
-     *    which describes a (real) projection with radial lensdistortion (set by
+     *    which describes a (real) projection with radial lens distortion (set by
      *    parameters k1 & k2). The function performs an iterative search ...
      * PROVIDED BY BBC UNDER IVIEW PROJECT
      */

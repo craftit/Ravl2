@@ -17,6 +17,7 @@
 #include "Ravl2/Geometry/LinePV.hh"
 #include "Ravl2/IndexRange.hh"
 #include "Ravl2/3D/PinholeCamera.hh"
+#include "Ravl2/Geometry/Plane3ABCD.hh"
 #include "Ravl2/IO/Cereal.hh"
 
 namespace Ravl2
@@ -115,11 +116,11 @@ namespace Ravl2
 
     //! Construct from another coordinate system
     template <CameraCoordinateSystemT CoordSys>
-    static PinholeCamera0 fromParameters(const RealT &cx, const RealT &cy,
-                                    const RealT &fx, const RealT &fy,
-                                    const Matrix<RealT, 3, 3> &R,
-                                    const Vector<RealT, 3> &t,
-                                    const IndexRange<2> &frame)
+    static PinholeCamera0 fromParameters(RealT cx, RealT cy,
+                                         RealT fx, RealT fy,
+                                          const Matrix<RealT, 3, 3> &R,
+                                          const Vector<RealT, 3> &t,
+                                          const IndexRange<2> &frame)
     {
       if constexpr(CoordSys == CameraCoordinateSystemT::OpenGL) {
         static_assert(false, "OpenGL untested");
@@ -128,7 +129,7 @@ namespace Ravl2
       } else  if constexpr(CoordSys == CameraCoordinateSystemT::OpenCV) {
         Eigen::Matrix<RealT, 3, 3> swapXY({{0, 1, 0},{ 1, 0, 0}, {0, 0, 1}});
         auto rot = swapXY * R;
-        return PinholeCamera0(cy, cx, fy, fx, rot, t, frame);
+        return PinholeCamera0(cy, cx, fy, fx, rot, swapXY * t, frame);
       } else  if constexpr(CoordSys == CameraCoordinateSystemT::Native) {
         // Do nothing
       } else {
@@ -285,6 +286,7 @@ namespace Ravl2
     [[nodiscard]] Eigen::Matrix3f intrinsicMatrix() const
     {
       if constexpr (CoordSys == CameraCoordinateSystemT::OpenGL) {
+        static_assert(false, "OpenGL untested");
         // Needs checking
         return Eigen::Matrix3f({
            {m_fx, 0, m_cx},
@@ -342,13 +344,13 @@ namespace Ravl2
       return intrinsicMatrix<CoordSys>() * extrinsicMatrix<CoordSys>();
     }
 
-    //: project 3D point in space to 2D image point
+    //! project 3D point in space to 2D image point
     // The same as project(...) but checks that the point
     // is not degenerate.
     bool projectCheck(Vector<RealT, 2> &z, const Vector<RealT, 3> &x) const
     {
       Vector<RealT, 3> Rx =  m_R * x + m_t;
-      if(isNearZero(Rx[2], RealT(1e-3))) {
+      if(Rx[2] < mNearPlane) {
         return false;
       }
       z[0] = m_cx + m_fx * Rx[0] / Rx[2];
@@ -419,8 +421,9 @@ namespace Ravl2
 
     //! Serialization support
     template <class Archive>
-    constexpr void serialize(Archive &archive)
+    constexpr void serialize(Archive &archive, std::uint32_t const version)
     {
+      (void) version;
       archive(cereal::make_nvp("cx", m_cx));
       archive(cereal::make_nvp("cy", m_cy));
       archive(cereal::make_nvp("fx", m_fx));
@@ -428,6 +431,7 @@ namespace Ravl2
       archive(cereal::make_nvp("R", m_R));
       archive(cereal::make_nvp("t", m_t));
       archive(cereal::make_nvp("frame", m_frame));
+      archive(cereal::make_nvp("nearPlane", mNearPlane));
     }
 
     //! Access the camera frame
@@ -450,20 +454,44 @@ namespace Ravl2
     Matrix<RealT, 3, 3> m_R = Matrix<RealT, 3, 3>::Identity();
     Vector<RealT, 3> m_t = Vector<RealT,3>::Zero();
     IndexRange<2> m_frame;
+    RealT mNearPlane = 1e-2f;
   };
 
   //! Unproject a 2D image point to a 3D point in space
   //! The depth is the distance along the camera ray from the camera origin.
   //! @param camera - the camera model
-  //! @param z - the image point
+  //! @param pix - the image point
   //! @param depth - the distance along the camera ray from the camera origin
   //! @return the 3D point in space
   template<typename RealT,typename CameraT>
-  Point<RealT,3> unproject(const CameraT &camera, const Point<RealT,2> &z, RealT depth)
+  Point<RealT,3> unproject(const CameraT &camera, const Point<RealT,2> &pix, RealT depth)
   {
     Vector<RealT,3> dir;
-    camera.projectInverseDirection(dir,z);
-    return camera.origin() + (depth*dir);
+    camera.projectInverseDirection(dir, pix);
+    return camera.origin() + ((depth/ dir.norm()) *dir);
+  }
+
+  //! Unproject a 2D image point to a 3D point in space
+  //! The depth is the distance along the camera direction from the camera origin. As is commonly used
+  //! in depth images.
+  //! @param camera - the camera model
+  //! @param pix - the image point
+
+
+  template<typename RealT,typename CameraT>
+  Point<RealT,3> unprojectZDepth(const CameraT &camera, const Point<RealT,2> &pix, RealT cameraZ)
+  {
+    Vector<RealT,3> dir;
+    camera.projectInverseDirection(dir, pix);
+    auto camDir = camera.direction();
+#if 0
+    // Is the camera looking along the z-axis?
+    if((camDir[0] == 0) && (camDir[1] == 0) && (camDir[2] == 1)) {
+    }
+#endif
+    // Otherwise we need to find the intersection of the camera ray with the plane at cameraZ
+    Plane3ABCD<RealT> plane(camDir,-cameraZ/camDir.norm());
+    return plane.intersection(LinePV<RealT,3>(Point<float,3>::Zero(),dir)) + camera.origin();
   }
 
   //! Create a ray from a pixel in the world
