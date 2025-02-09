@@ -345,8 +345,8 @@ namespace Ravl2
     }
 
     //! project 3D point in space to 2D image point
-    // The same as project(...) but checks that the point
-    // is not degenerate.
+    //! The same as project(...) but checks that the point
+    //! is not degenerate.
     bool projectCheck(Vector<RealT, 2> &z, const Vector<RealT, 3> &x) const
     {
       Vector<RealT, 3> Rx =  m_R * x + m_t;
@@ -381,6 +381,16 @@ namespace Ravl2
       Rx[1] = (z[1] - m_cy) / m_fy;
       Rx[2] = 1.0;
       x = m_R.transpose() * Rx;
+    }
+
+    //! Inverse projection given a z coordinate in the camera frame
+    [[nodiscard]] Point<RealT, 3> unprojectZ(const Vector<RealT, 2> &pix,RealT z) const
+    {
+      Vector<RealT, 3> Rx;
+      Rx[0] = ((pix[0] - m_cx) * z)/ m_fx;
+      Rx[1] = ((pix[1] - m_cy) * z)/ m_fy;
+      Rx[2] = z;
+      return m_R.transpose() * (Rx - m_t);
     }
 
     //! origin of the camera in world co-ordinates.
@@ -472,27 +482,14 @@ namespace Ravl2
   }
 
   //! Unproject a 2D image point to a 3D point in space
-  //! The depth is the distance along the camera direction from the camera origin. As is commonly used
-  //! in depth images.
+  //! The z position is the distance along the camera z axis from the camera origin.
   //! @param camera - the camera model
   //! @param pix - the image point
-
-
+  //! @param z - the distance along the camera ray from the camera origin
+  //! @return the 3D point in space
   template<typename RealT,typename CameraT>
-  Point<RealT,3> unprojectZDepth(const CameraT &camera, const Point<RealT,2> &pix, RealT cameraZ)
-  {
-    Vector<RealT,3> dir;
-    camera.projectInverseDirection(dir, pix);
-    auto camDir = camera.direction();
-#if 0
-    // Is the camera looking along the z-axis?
-    if((camDir[0] == 0) && (camDir[1] == 0) && (camDir[2] == 1)) {
-    }
-#endif
-    // Otherwise we need to find the intersection of the camera ray with the plane at cameraZ
-    Plane3ABCD<RealT> plane(camDir,-cameraZ/camDir.norm());
-    return plane.intersection(LinePV<RealT,3>(Point<float,3>::Zero(),dir)) + camera.origin();
-  }
+  Point<RealT,3> unprojectZ(const CameraT &camera, const Point<RealT,2> &pix, RealT z)
+  { return camera.unprojectZ(pix,z); }
 
   //! Create a ray from a pixel in the world
   //! The ray is defined by the camera origin and the direction

@@ -134,6 +134,21 @@ namespace Ravl2
       x = this->m_R.transpose() * Rx;
     }
 
+    //! Inverse projection given a z coordinate in the camera frame
+    [[nodiscard]] Point<RealT, 3> unprojectZ(const Vector<RealT, 2> &pix,RealT z) const
+    {
+      Vector<RealT, 2> zd;
+      zd[0] = (pix[0] - this->m_cx) / this->m_fx;
+      zd[1] = (pix[1] - this->m_cy) / this->m_fy;
+      Vector<RealT, 2> uz = undistort0(zd);
+      Vector<RealT, 3> Rx;
+      Rx[0] = uz[0] * z;
+      Rx[1] = uz[1] * z;
+      Rx[2] = z;
+      return this->m_R.transpose() * (Rx - this->m_t);
+    }
+
+
     //! Transform from a simple pinhole model point to a distorted image point
     [[nodiscard]] Vector<RealT, 2> distort(const Vector<RealT, 2> &z) const
     {

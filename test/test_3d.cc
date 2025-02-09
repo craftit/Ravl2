@@ -37,6 +37,10 @@ namespace Ravl2
         CHECK((euclidDistance(cam.origin(), pnt3n) - 1.5f) < 0.001f);
       }
 
+      auto camDir = cam.direction();
+      camDir.normalize();
+      auto cameraOrigin = cam.origin();
+
       // Do some tests with the camera
       for(float z = -1.0f; z < 1.0f; z += 0.1f) {
         for(float y = -1.0f; y < 1.0f; y += 0.1f) {
@@ -59,6 +63,12 @@ namespace Ravl2
                   SPDLOG_INFO("Pnt: {}  Origin:{}  Proj: {}  Dist: {}   At:{} ", pnt, cam.origin(), pix, dist, pnt3);
                 }
                 REQUIRE(isNearZero(euclidDistance(pnt,pnt3),1e-4f));
+
+                // Check unprojectZ is sane
+                auto unPnt3 = cam.unprojectZ(pix,2.5f);
+                CHECK(projectRay(cam,pix).distance(unPnt3) < 1e-5f);
+                // We should project to the same z along the camera direction
+                CHECK(isNearZero((unPnt3 - cameraOrigin).dot(camDir) - 2.5f, 1e-4f));
               }
             }
           }
@@ -112,9 +122,12 @@ namespace Ravl2
       SPDLOG_INFO("Pix {}", pix);
       EXPECT_FLOAT_EQ(pix[1], float(frame.min(1)));
 
-//      Point<float,3> pnt3 = unprojectZDepth(cam, {50,50}, 1.5f);
-//      CHECK(isNearZero(pnt3[2] - 1.5f, 1e-4f));
-//      SPDLOG_INFO("ZDepth: Pnt3: {}", pnt3);
+      {
+        Point<float,2> pix2 = {50,50};
+        auto unPnt3 = cam.unprojectZ(pix2,2.5f);
+        CHECK(projectRay(cam,pix2).distance(unPnt3) < 1e-5f);
+        CHECK(isNearZero((unPnt3[2] - cam.origin()[2]) - 2.5f, 1e-4f));
+      }
 
       testCamera(cam);
     }
