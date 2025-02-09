@@ -453,7 +453,7 @@ namespace Ravl2
     //! Access the near plane z distance for scene culling.
     [[nodiscard]] RealT nearPlane() const
     {
-      return RealT(1e-3);
+      return mNearPlane;
     }
 
   protected:
