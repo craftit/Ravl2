@@ -43,7 +43,15 @@ namespace Ravl2
     requires std::is_integral_v<RealT>
   constexpr IntT intFloor(RealT x)
   {
-    return x;
+    return static_cast<IntT>(x);
+  }
+
+  //! Returns the value x rounded to the nearest integer.
+  template <typename RealT, typename IntT = int>
+    requires std::is_integral_v<RealT>
+  constexpr IntT intRound(RealT x)
+  {
+    return static_cast<IntT>(x);
   }
 
   //! Returns the smallest integral  value  greater  than  or equal  to  'x'.

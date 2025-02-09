@@ -18,7 +18,7 @@
 #include <cereal/types/array.hpp>
 #include <cereal/archives/json.hpp>
 
-#include "Ravl2/Sentinel.hh"
+#include "Ravl2/Math.hh"
 
 namespace Ravl2
 {
@@ -194,9 +194,9 @@ namespace Ravl2
   //! Convert a parameter list of RealT to a point
   template <typename... DataT, unsigned N = sizeof...(DataT)>
     requires std::conjunction_v<std::is_convertible<DataT, int>...>
-  constexpr inline Index<N> toIndex(DataT... data)
+  constexpr Index<N> toIndex(DataT... data)
   {
-    return Index<N>({int(data)...});
+    return Index<N>({intRound(data)...});
   }
 
   //! Serialization support

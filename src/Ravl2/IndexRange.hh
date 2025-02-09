@@ -4,10 +4,12 @@
 
 #pragma once
 
+#include "Ravl2/Sentinel.hh"
 #include "Ravl2/IndexRange1.hh"
 
 namespace Ravl2
 {
+  template <unsigned N> class IndexRangeIterator;
 
   //! N-dimensional range of index's
   //! The range is inclusive of all values.

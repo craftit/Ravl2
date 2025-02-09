@@ -228,8 +228,18 @@ namespace Ravl2
     return ret;
   }
 
+  template <int N, typename RealT>
+  [[nodiscard]] constexpr Index<unsigned(N)> toIndex(const Eigen::Array<RealT, N, 1> &pnt)
+  {
+    Index<unsigned(N)> ret;
+    for(unsigned i = 0; i < N; i++) {
+      ret[i] = intRound(pnt[i]);
+    }
+    return ret;
+  }
+
   //! Get the closest integer index from an integer point
-  template <IndexSizeT N, typename NumberT>
+  template <int N, typename NumberT>
     requires std::is_integral<NumberT>::value
   [[nodiscard]] constexpr Index<unsigned (N)> toIndex(const Point<NumberT, N> &pnt)
   {

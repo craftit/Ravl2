@@ -69,6 +69,7 @@ add_executable(tests
         test_projective.cc
         test_eigen.cc
         test_planes.cc
+        test_spatialhash.cc
 )
 target_link_libraries(
   tests

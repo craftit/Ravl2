@@ -71,6 +71,8 @@ add_library(Ravl2Core
     ThreadedQueue.cc ThreadedQueue.hh
     Eigen.cc Eigen.hh
     Catch2checks.hh
+        SpatialHash.cc
+        SpatialHash.hh
 )
 
 add_library(ravl2::Ravl2Core ALIAS Ravl2Core)
