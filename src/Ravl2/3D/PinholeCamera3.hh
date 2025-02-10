@@ -117,6 +117,16 @@ namespace Ravl2
       return true;
     }
 
+    //! Test if a point is in frame
+    [[nodiscard]] bool isInView(const Vector<RealT, 3> &pnt) const
+    {
+      Point<float,2> pix;
+      if(!projectCheck(pix,pnt)) {
+        return false;
+      }
+      return this->m_frame.contains(toIndex(pix));
+    }
+
     //! Inverse projection up to a scale factor.
     //! origin + lambda*projectInverseDirection is the camera ray
     //! corresponding to image point z.

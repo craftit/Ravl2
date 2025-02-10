@@ -23,7 +23,7 @@
 namespace Ravl2
 {
 
-  enum class CameraCoordinateSystemT
+  enum class CameraCoordinateSystemT : uint8_t
   {
     Native, //!< As OpenCV but image coordinates are swapped
     OpenCV,
@@ -135,6 +135,7 @@ namespace Ravl2
       } else {
         static_assert(false, "Unknown coordinate system");
       }
+      return PinholeCamera0(cy, cx, fy, fx, R, t, frame);
     }
 
 
@@ -356,6 +357,16 @@ namespace Ravl2
       z[0] = m_cx + m_fx * Rx[0] / Rx[2];
       z[1] = m_cy + m_fy * Rx[1] / Rx[2];
       return true;
+    }
+
+    //! Test if a point is in frame
+    [[nodiscard]] bool isInView(const Vector<RealT, 3> &pnt) const
+    {
+      Point<float,2> pix;
+      if(!projectCheck(pix,pnt)) {
+        return false;
+      }
+      return m_frame.contains(toIndex(pix));
     }
 
     //! The Jacobian matrix of the projection function.

@@ -227,7 +227,8 @@ struct std::hash<Ravl2::Index<N>> {
   {
     std::size_t ret = std::size_t(s[0]);
     for(unsigned i = 1; i < N; i++) {
-      ret ^= std::size_t(s[i]) << i;
+      // Based on boosts's hash_combine
+      ret ^=  std::size_t(s[i]) + 0x9e3779b9 + (ret << 6) + (ret >> 2);
     }
     return ret;
   }
