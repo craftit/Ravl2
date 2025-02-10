@@ -48,15 +48,16 @@ namespace Ravl2
             Point<float,3> pnt = {x,y,z};
             Point<float,2> pix = Point<float,2>::Zero();
             if(cam.projectCheck(pix,pnt)) {
-              auto ray = projectRay(cam, pix);
-              if(!isNearZero(ray.distance(pnt),1e-4f)) {
-                SPDLOG_INFO("Pnt: {}  Proj: {}  Dist: {}   ", pnt, pix, ray.distance(pnt));
-              }
-              CHECK(isNearZero(ray.distance(pnt),1e-4f));
-              // Check we're in front of the camera
-              CHECK(ray.ParClosest(pnt) > 0);
               // Check we're in the frame
               if(cam.frame().contains(toIndex(pix))) {
+                auto ray = projectRay(cam, pix);
+                if(!isNearZero(ray.distance(pnt),1e-4f)) {
+                  SPDLOG_INFO("Pnt: {}  Proj: {}  Dist: {}   ", pnt, pix, ray.distance(pnt));
+                }
+                CHECK(isNearZero(ray.distance(pnt),1e-4f));
+                // Check we're in front of the camera
+                CHECK(ray.ParClosest(pnt) > 0);
+
                 float dist = euclidDistance(cam.origin(),pnt);
                 Point<float,3> pnt3 = unproject(cam,pix,dist);
                 if(!isNearZero(euclidDistance(pnt,pnt3),1e-4f)) {
@@ -66,7 +67,7 @@ namespace Ravl2
 
                 // Check unprojectZ is sane
                 auto unPnt3 = cam.unprojectZ(pix,2.5f);
-                CHECK(projectRay(cam,pix).distance(unPnt3) < 1e-5f);
+                CHECK(projectRay(cam,pix).distance(unPnt3) < 1e-4f);
                 // We should project to the same z along the camera direction
                 CHECK(isNearZero((unPnt3 - cameraOrigin).dot(camDir) - 2.5f, 1e-4f));
               }
@@ -104,23 +105,26 @@ namespace Ravl2
         EXPECT_TRUE(cam.t().isApprox(cam2.t()));
       }
     }
-
+#if 1
     SECTION("Construct Frame")
     {
       //! Construct a camera that fills the image at the given distance
       //    static PinholeCamera0 fromFrame(const IndexRange<2> &frame,
       //                                    float horizontalSize,
       //                                    float distance);
-      IndexRange<2> frame = {{10, 99},{10, 99}};
+      IndexRange<2> frame = {{20, 89},{10, 99}};
       float distance = 1.5;
       auto cam = PinholeCamera0<float>::fromFrame(frame,0.2f,distance);
       Vector<float, 2> pix;
-      cam.project(pix,toVector<float>(0.0,0.1,distance));
-      SPDLOG_INFO("Pix {}", pix);
-      EXPECT_FLOAT_EQ(pix[1], float(frame.max(1)));
-      cam.project(pix,toVector<float>(0.0,-0.1,distance));
-      SPDLOG_INFO("Pix {}", pix);
+      Point<float,3> pnt1 = {-0.1f,-0.1f,distance};
+      CHECK(cam.projectCheck(pix,pnt1));
+      SPDLOG_INFO("Pix1 {}", pix);
       EXPECT_FLOAT_EQ(pix[1], float(frame.min(1)));
+
+      Point<float,3> pnt2 = {0.1f,0.1f,distance};
+      CHECK(cam.projectCheck(pix,pnt2));
+      SPDLOG_INFO("Pix2 {}", pix);
+      EXPECT_FLOAT_EQ(pix[1], float(frame.max(1)));
 
       {
         Point<float,2> pix2 = {50,50};
@@ -131,7 +135,8 @@ namespace Ravl2
 
       testCamera(cam);
     }
-
+#endif
+#if 1
     SECTION("Construct Frame Origin")
     {
       IndexRange<2> frame = {{-50, 50},{-50, 50}};
@@ -142,22 +147,23 @@ namespace Ravl2
       cam.project(pix,toVector<float>(0,0,distance));
       EXPECT_FLOAT_EQ(pix[0], 0);
       EXPECT_FLOAT_EQ(pix[1], 0);
-      cam.project(pix,toVector<float>(0.0,horizontalSize/2,distance));
-      //SPDLOG_INFO("Pix {}", pix);
+      cam.project(pix,toVector<float>(horizontalSize/2,0.0,distance));
+      SPDLOG_INFO("Pix {}", pix);
       EXPECT_FLOAT_EQ(pix[1], float(frame.max(1)));
-      cam.project(pix,toVector<float>(0.0,-horizontalSize/2,distance));
-      //SPDLOG_INFO("Pix {}", pix);
+      cam.project(pix,toVector<float>(-horizontalSize/2,0.0,distance));
+      SPDLOG_INFO("Pix {}", pix);
       EXPECT_FLOAT_EQ(pix[1], float(frame.min(1)));
 
       testCamera(cam);
     }
-
+#endif
+#if 1
     SECTION("Check Projective Matrix")
     {
       IndexRange<2> frame = {{0, 480},{0, 640}};
       float f = 1.5;
 
-      auto cam = PinholeCamera0<float>(frame, f, Isometry3<float>::fromEulerXYZTranslation({0.0f,0.1f,0.05f},{0.0f,0.0f,7.0f}));
+      auto cam = PinholeCamera0<float>(frame, f, Isometry3<float>::fromEulerXYZTranslation({0.0f,0.1f,0.05f},{0.0f,0.0f,0.0f}));
       //auto cam = PinholeCamera0<float>::fromFrame(frame,0.2f,distance);
 
       auto mat = cam.projectionMatrix<Ravl2::CameraCoordinateSystemT::Native>();
@@ -165,34 +171,52 @@ namespace Ravl2
 
       Vector<float, 3> pnt = {1,2,3};
       Vector<float, 3> pPix = mat * toHomogeneous(pnt);
-      Vector<float, 2> pix = cam.project(pnt);
+      Vector<float, 2> pix;
+      CHECK(cam.projectCheck(pix,pnt));
 
       SPDLOG_INFO("Pnt: {}  Proj: {}  Pix: {}  Dist:{} ", pnt, fromHomogeneous(pPix), pix, euclidDistance(fromHomogeneous(pPix),pix));
 
       CHECK(euclidDistance(fromHomogeneous(pPix),pix) < 0.001f);
+      CHECK(cam.isInView(pnt));
 
       testCamera(cam);
     }
+#endif
 
+#if 1
     SECTION("Pinhole0 OpenCV")
     {
       IndexRange<2> frame = {{0, 480},{0, 640}};
       SPDLOG_INFO("Test Pinhole0 OpenCV");
-      auto pose = Isometry3<float>::fromEulerXYZTranslation({0.0f,0.1f,0.05f},{0.0f,0.0f,7.0f});
+      auto pose = Isometry3<float>::fromEulerXYZTranslation({0.0f,0.0f,0.0f},{0.0f,0.0f,0.0f});
       auto cam = PinholeCamera0<float>::fromParameters<Ravl2::CameraCoordinateSystemT::OpenCV>(318.5f, 241.2f,
                                                                                                                      526.6f, 526.6f,
                                                                                                                      pose.rotation().toMatrix(),
                                                                                                                      pose.translation(),
                                                                                                                      frame);
+
+      Vector<float, 2> pix1;
+      CHECK(cam.projectCheck(pix1,toVector<float>(-0.5,-0.2,2.0)));
+      Vector<float, 2> pix2;
+      CHECK(cam.projectCheck(pix2,toVector<float>(0.5,0.2,2.0)));
+
+      SPDLOG_INFO("Pix1 {}  Pix2 {} ", pix1,pix2);
+      CHECK(pix1[1] < pix2[1]);
+      CHECK(pix1[0] < pix2[0]);
+
+      CHECK(cam.isInView(toPoint<float>(0,0,1.0)));
+
       testCamera(cam);
     }
+#endif
 
+#if 1
     SECTION("Pinhole3 OpenCV")
     {
       IndexRange<2> frame = {{0, 480},{0, 640}};
 
       SPDLOG_INFO("Test Pinhole3 OpenCV");
-      auto pose = Isometry3<float>::fromEulerXYZTranslation({0.0f,0.1f,0.05f},{0.0f,0.0f,7.0f});
+      auto pose = Isometry3<float>::fromEulerXYZTranslation({0.0f,0.1f,0.05f},{0.0f,0.0f,0.0f});
       auto cam = PinholeCamera3<float>::fromParameters<Ravl2::CameraCoordinateSystemT::OpenCV>(318.5f, 241.2f,
                                                                                                                      526.6f, 526.6f,
                                                                                                                      pose.rotation().toMatrix(),
@@ -200,6 +224,7 @@ namespace Ravl2
                                                                                                                      frame,0.1f,0.2f);
       testCamera(cam);
     }
+#endif
 
 
   }

@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include <optional>
 #include "Ravl2/Types.hh"
 #include "Ravl2/IndexRange.hh"
 #include "Ravl2/Geometry/Geometry.hh"

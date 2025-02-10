@@ -30,6 +30,21 @@ namespace Ravl2
     OpenGL
   };
 
+  //! CRTP base class for pinhole camera models
+  template<class ImplT, typename RealT = typename ImplT::ValueT>
+  class PinholeCameraBase
+  {
+  public:
+    PinholeCameraBase() = default;
+
+
+
+
+  protected:
+  };
+
+
+
   //! @brief Simple pinhole camera model with no lens distortion
   //!  Projects 2D image points z from 3D points x according to:<br>
   //!    z[0] = cx + fx*( (R*x + t)[0] / (R*x + t)[2] )<br>
@@ -37,6 +52,7 @@ namespace Ravl2
 
   template <typename RealT>
   class PinholeCamera0
+    : public PinholeCameraBase<PinholeCamera0<RealT>, RealT>
   {
   public:
     using ValueT = RealT;
@@ -114,6 +130,10 @@ namespace Ravl2
         m_frame(frame)
     {}
 
+
+  protected:
+  public:
+
     //! Construct from another coordinate system
     template <CameraCoordinateSystemT CoordSys>
     static PinholeCamera0 fromParameters(RealT cx, RealT cy,
@@ -122,20 +142,29 @@ namespace Ravl2
                                           const Vector<RealT, 3> &t,
                                           const IndexRange<2> &frame)
     {
+#if 0
       if constexpr(CoordSys == CameraCoordinateSystemT::OpenGL) {
-        static_assert(false, "OpenGL untested");
         Matrix<RealT, 3, 3> rot = R * Matrix<RealT, 3, 3>::fromDiagonal({1, -1, 1});
         return PinholeCamera0(cx, RealT(frame.range(1).size()) - cy, fx, fy, rot, t, frame);
-      } else  if constexpr(CoordSys == CameraCoordinateSystemT::OpenCV) {
-        Eigen::Matrix<RealT, 3, 3> swapXY({{0, 1, 0},{ 1, 0, 0}, {0, 0, 1}});
-        auto rot = swapXY * R;
-        return PinholeCamera0(cy, cx, fy, fx, rot, swapXY * t, frame);
-      } else  if constexpr(CoordSys == CameraCoordinateSystemT::Native) {
-        // Do nothing
+      } else
+#endif
+      if constexpr(CoordSys == CameraCoordinateSystemT::OpenCV || CoordSys == CameraCoordinateSystemT::Native) {
+        Eigen::Matrix<RealT, 3, 3> const mOpenCVRot {{0, 1, 0},{ 1, 0, 0}, {0, 0, 1}} ;
+        auto rot = mOpenCVRot * R;
+        return PinholeCamera0(cy, cx, fy, fx, rot, t, frame);
       } else {
-        static_assert(false, "Unknown coordinate system");
+        static_assert(false, "Unsupported coordinate system");
       }
       return PinholeCamera0(cy, cx, fy, fx, R, t, frame);
+    }
+
+    template <CameraCoordinateSystemT CoordSys>
+    static PinholeCamera0 fromParameters(RealT f,
+                                         const Point<RealT,2> &centre,
+                                         Isometry3<RealT> pose,
+                                         const IndexRange<2> &frame)
+    {
+      return fromParameters<CoordSys>(centre[0], centre[1], f, f, pose.rotation().toMatrix(), pose.translation(), frame);
     }
 
 
@@ -148,8 +177,11 @@ namespace Ravl2
                                     float horizontalSize,
                                     float distance)
     {
-      float f = float(frame.range(1).size()-1) * distance * 2 / (horizontalSize);
-      return PinholeCamera0(frame,f,Isometry3<float>(Quaternion<float>::identity(),{0,0,distance}));
+      RealT f = RealT(frame.range(1).size()-1) * distance  / (horizontalSize);
+      RealT cx = (RealT(frame.range(0).min())+RealT(frame.range(0).size()-1)/RealT(2.0));
+      RealT cy = (RealT(frame.range(1).min())+RealT(frame.range(1).size()-1)/RealT(2.0));
+      return fromParameters<CameraCoordinateSystemT::Native>(f,{cx,cy},Isometry3<float>(Quaternion<float>::identity(),{0,0,0}),frame);
+      //return PinholeCamera0(frame,f,Isometry3<float>(Quaternion<float>::identity(),{0,0,distance}));
     }
     
     //! Construct a camera that fills the image at the given distance
@@ -161,8 +193,8 @@ namespace Ravl2
                                     float horizontalSize,
                                     float distance)
     {
-      float f = float(frame.range(1).size()-1) * distance * 2/ (horizontalSize);
-      return PinholeCamera0(f,{0,0},frame,Isometry3<float>(Quaternion<float>::identity(),{0,0,distance}));
+      float f = float(frame.range(1).size()-1) * distance / (horizontalSize);
+      return fromParameters<CameraCoordinateSystemT::Native>(f,{0,0},Isometry3<float>(Quaternion<float>::identity(),{0,0,0}),frame);
     }
     
     //! centre of projection, x co-ordinate
@@ -294,20 +326,18 @@ namespace Ravl2
            {0, -m_fy, m_cy},
            {0, 0, -1}
           });
-      } else if constexpr( CoordSys == CameraCoordinateSystemT::OpenCV) {
+      } else if constexpr( CoordSys == CameraCoordinateSystemT::OpenCV ) {
         return Eigen::Matrix3f({
            {m_fy, 0, m_cy},
            {0, m_fx, m_cx},
            {0, 0, 1}
           });
       } else if constexpr( CoordSys == CameraCoordinateSystemT::Native) {
-        return Eigen::Matrix3f({
-           {m_fx, 0, m_cx},
-           {0, m_fy, m_cy},
-           {0, 0, 1}
-          });
+        return Eigen::Matrix3f({{m_fx, 0, m_cx},
+                                {0, m_fy, m_cy},
+                                {0, 0, 1}});
       } else {
-        static_assert(false, "Unknown coordinate system");
+        static_assert(false, "Unhandled coordinate system");
       }
     }
 
@@ -315,21 +345,16 @@ namespace Ravl2
     template<CameraCoordinateSystemT CoordSys>
     [[nodiscard]] Eigen::Matrix<float, 3, 4> extrinsicMatrix() const
     {
-      if constexpr (CoordSys == CameraCoordinateSystemT::Native) {
-        Eigen::Matrix<float, 3, 4> Rt;
-        Rt.block<3, 3>(0, 0) = m_R;
-        Rt.block<3, 1>(0, 3) = m_t;
-        return Rt;
-      } else if constexpr (CoordSys == CameraCoordinateSystemT::OpenGL) {
+      if constexpr (CoordSys == CameraCoordinateSystemT::OpenGL) {
         static_assert(false, "OpenGL untested");
         Eigen::Matrix<float, 3, 4> Rt;
         Rt.block<3, 3>(0, 0) = m_R;
         Rt.block<3, 1>(0, 3) = m_t;
         return Rt;
-      } else if constexpr (CoordSys == CameraCoordinateSystemT::OpenCV) {
+      } else if constexpr (CoordSys == CameraCoordinateSystemT::OpenCV || CoordSys == CameraCoordinateSystemT::Native) {
         Eigen::Matrix<float, 3, 4> Rt;
-        Eigen::Matrix<RealT, 3, 3> swapXY({{0, 1, 0},{ 1, 0, 0}, {0, 0, 1}});
-        Rt.block<3, 3>(0, 0) = m_R * swapXY;
+        //Eigen::Matrix<RealT, 3, 3> swapXY({{0, 1, 0},{ 1, 0, 0}, {0, 0, 1}});
+        Rt.block<3, 3>(0, 0) = m_R;
         Rt.block<3, 1>(0, 3) = m_t;
         return Rt;
       } else {
