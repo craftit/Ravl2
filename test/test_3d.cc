@@ -124,13 +124,23 @@ namespace Ravl2
       Point<float,3> pnt2 = {0.1f,0.1f,distance};
       CHECK(cam.projectCheck(pix,pnt2));
       SPDLOG_INFO("Pix2 {}", pix);
-      EXPECT_FLOAT_EQ(pix[1], float(frame.max(1)));
+      EXPECT_FLOAT_EQ(pix[1], float(frame.max(1)+1));
 
       {
         Point<float,2> pix2 = {50,50};
         auto unPnt3 = cam.unprojectZ(pix2,2.5f);
         CHECK(projectRay(cam,pix2).distance(unPnt3) < 1e-5f);
         CHECK(isNearZero((unPnt3[2] - cam.origin()[2]) - 2.5f, 1e-4f));
+      }
+      {
+        Point<float,2> pix2 = toPoint<float>(toRange<float>(frame).center());
+        auto unPnt3 = cam.unprojectZ(pix2,2.5f);
+        SPDLOG_INFO(" UnPnt3: {} ", unPnt3);
+        CHECK(isNearZero(unPnt3[0]));
+        CHECK(isNearZero(unPnt3[1]));
+        Point<float,2> pix2r;
+        CHECK(cam.projectCheck(pix2r,unPnt3));
+        CHECK(isNearZero(euclidDistance(pix2,pix2r),1e-4f));
       }
 
       testCamera(cam);

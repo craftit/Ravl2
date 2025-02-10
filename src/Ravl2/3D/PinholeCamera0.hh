@@ -177,10 +177,10 @@ namespace Ravl2
                                     float horizontalSize,
                                     float distance)
     {
-      RealT f = RealT(frame.range(1).size()-1) * distance  / (horizontalSize);
-      RealT cx = (RealT(frame.range(0).min())+RealT(frame.range(0).size()-1)/RealT(2.0));
-      RealT cy = (RealT(frame.range(1).min())+RealT(frame.range(1).size()-1)/RealT(2.0));
-      return fromParameters<CameraCoordinateSystemT::Native>(f,{cx,cy},Isometry3<float>(Quaternion<float>::identity(),{0,0,0}),frame);
+      Range<float,2> range = toRange<float>(frame);
+      RealT f = range.size(1) * distance  / (horizontalSize);
+      Point<float,2> centre = range.center();
+      return fromParameters<CameraCoordinateSystemT::Native>(f,{centre[0],centre[1]},Isometry3<float>(Quaternion<float>::identity(),{0,0,0}),frame);
       //return PinholeCamera0(frame,f,Isometry3<float>(Quaternion<float>::identity(),{0,0,distance}));
     }
     
