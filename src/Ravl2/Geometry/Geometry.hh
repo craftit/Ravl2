@@ -61,6 +61,20 @@ namespace Ravl2
     return std::span(t);
   }
 
+  //! Convert to a span
+  template <typename RealT, int N>
+  [[nodiscard]] constexpr auto span(Vector<RealT, N> &b)
+  {
+    return std::span(b.data(), N);
+  }
+
+  //! Convert to a span
+  template <typename RealT, int N>
+  [[nodiscard]] constexpr auto span(const Vector<RealT, N> &b)
+  {
+    return std::span<RealT const>(b.data(), N);
+  }
+
   template <typename RealT, int N>
   auto dot(const Vector<RealT, N> &a, const Vector<RealT, N> &b)
   {
