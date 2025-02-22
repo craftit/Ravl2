@@ -142,7 +142,7 @@ namespace Ravl2
     //! Some handles may be invalid, so they need to be checked before calling.
     [[nodiscard]] std::vector<FuncT> calls() const
     {
-      std::lock_guard<std::mutex> lock(m_mutexAccess);
+      std::lock_guard lock(m_mutexAccess);
       std::vector<FuncT> ret;
       ret.reserve(m_callbacks.size());
       for(auto &cb : m_callbacks) {
@@ -156,7 +156,7 @@ namespace Ravl2
 
     CallbackHandle add(const FuncT &callback)
     {
-      std::lock_guard<std::mutex> lock(m_mutexAccess);
+      std::lock_guard lock(m_mutexAccess);
       m_versionCount++;
       // Free slot anywhere?
       for(size_t i = 0; i < m_callbacks.size(); i++) {
@@ -174,7 +174,7 @@ namespace Ravl2
     //! Move in a new call back to the list.
     CallbackHandle add(FuncT &&callback)
     {
-      std::lock_guard<std::mutex> lock(m_mutexAccess);
+      std::lock_guard lock(m_mutexAccess);
       m_versionCount++;
       // Free slot anywhere?
       for(size_t i = 0; i < m_callbacks.size(); i++) {
@@ -194,7 +194,7 @@ namespace Ravl2
     //! Remove a callback by id
     void remove(size_t id, size_t version) override
     {
-      std::lock_guard<std::mutex> lock(m_mutexAccess);
+      std::lock_guard lock(m_mutexAccess);
       assert(id < m_callbacks.size());
       auto &cb = m_callbacks[id];
       if(cb.m_version == version) {
@@ -205,7 +205,7 @@ namespace Ravl2
     //! Remove all callbacks
     void clear()
     {
-      std::lock_guard<std::mutex> lock(m_mutexAccess);
+      std::lock_guard lock(m_mutexAccess);
       for(auto &cb : m_callbacks) {
         cb.m_callback = FuncT();
       }
