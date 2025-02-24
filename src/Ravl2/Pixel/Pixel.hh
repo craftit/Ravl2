@@ -312,8 +312,10 @@ namespace Ravl2
 
   //! Define some common formats to save typing
   using PixelY8 = Pixel<uint8_t, ImageChannel::Luminance>;
+  using PixelI8 = Pixel<uint8_t, ImageChannel::Intensity>;
+  using PixelYA8 = Pixel<uint8_t, ImageChannel::Luminance, ImageChannel::Alpha>;
   using PixelY16 = Pixel<uint16_t, ImageChannel::Luminance>;
-  using PixelY32F = Pixel<uint16_t, ImageChannel::Luminance>;
+  using PixelY32F = Pixel<float, ImageChannel::Luminance>;
   using PixelZ16 = Pixel<uint16_t, ImageChannel::Depth>;
   using PixelZ32F = Pixel<float, ImageChannel::Depth>;
   using PixelRGB8 = Pixel<uint8_t, ImageChannel::Red, ImageChannel::Green, ImageChannel::Blue>;
@@ -339,6 +341,7 @@ namespace Ravl2
   extern template class Pixel<float, ImageChannel::Luminance, ImageChannel::ChrominanceU, ImageChannel::ChrominanceV>;
 
   // Also about arrays based on the pixel types
+  extern template class Array<PixelI8,2>;
   extern template class Array<PixelY8,2>;
   extern template class Array<PixelY16,2>;
   extern template class Array<PixelZ16, 2>;

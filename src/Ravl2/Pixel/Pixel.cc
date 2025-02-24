@@ -101,6 +101,7 @@ namespace Ravl2
 
 
   // Also about arrays based on the pixel types
+  template class Array<PixelI8,2>;
   template class Array<PixelY8,2>;
   template class Array<PixelY16,2>;
   template class Array<PixelZ16, 2>;

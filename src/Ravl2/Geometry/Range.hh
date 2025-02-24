@@ -385,7 +385,7 @@ namespace Ravl2
     }
 
     //! Create an 2d range from corner points.
-    constexpr Range(const Vector<RealT, N> &org, const Vector<RealT, N> &end)
+    constexpr Range(const Point<RealT, N> &org, const Point<RealT, N> &end)
     {
       for(unsigned i = 0; i < N; ++i) {
         mRanges[i] = Range<RealT, 1>(org[i], end[i]);
