@@ -85,7 +85,15 @@ namespace Ravl2
     [[nodiscard]] const Point<RealT,N> &p3() const
     { return (*this)[3]; }
 
-
+    //! Interpolate a position in the quad from a 2d coordinate.
+    //! The point has a value from 0 to 1 in each dimension.
+    [[nodiscard]] Point<RealT,N> interpolate(const Point<RealT,2> &p) const
+    {
+      return p0() * (1 - p[0]) * (1 - p[1]) +
+               p1() * p[0] * (1 - p[1]) +
+               p2() * p[0] * p[1] +
+               p3() * (1 - p[0]) * p[1];
+    }
   };
 
   //! Convert a range to a quad
