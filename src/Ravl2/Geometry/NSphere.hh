@@ -71,9 +71,23 @@ namespace Ravl2 {
     RealT mRadius = 0;
   };
 
+  template<typename RealT, IndexSizeT N>
+  std::ostream &operator<<(std::ostream &os, const NSphere<RealT,N> &sphere)
+  {
+    os << "C:" << Eigen::WithFormat(sphere.center(),defaultEigenFormat()) << " R:" << sphere.radius();
+    return os;
+  }
+
   // Let everyone know there's an implementation already generated for common cases
   extern template class NSphere<float,2>;
   extern template class NSphere<float,3>;
 
 
 } // Ravl2
+
+#if FMT_VERSION >= 90000
+template <typename RealT, Ravl2::IndexSizeT N>
+struct fmt::formatter<Ravl2::NSphere<RealT,N>> : fmt::ostream_formatter {
+};
+#endif
+
