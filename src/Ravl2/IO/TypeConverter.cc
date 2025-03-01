@@ -121,28 +121,40 @@ namespace Ravl2
     [[maybe_unused]] bool g_reg = registerConversion([](float val) { return double(val); }, 1.0f);
 
     int32_t func(int16_t x)
-    {
-      return x;
-    }
+    { return x; }
     [[maybe_unused]] bool g_reg2 = registerConversion(func, 1.0f);
 
     int64_t func2(const int32_t &x)
-    {
-      return x;
-    }
+    { return x; }
     [[maybe_unused]] bool g_reg3 = registerConversion(func2, 1.0f);
 
     float func3(const double &x)
-    {
-      return float(x);
-    }
+    {  return float(x); }
     [[maybe_unused]] bool g_reg4 = registerConversion(func3, 0.5f);
 
     double func4(const float &x)
-    {
-      return double(x);
-    }
+    { return double(x); }
     [[maybe_unused]] bool g_reg5 = registerConversion(func4, 1.0f);
+
+    size_t func5(const int &x)
+    {
+      if(x < 0) {
+        SPDLOG_WARN("Negative value {} converted to 0", x);
+        return 0;
+      }
+      return size_t(x);
+    }
+    [[maybe_unused]] bool g_reg6 = registerConversion(func5, 0.5f);
+
+    unsigned func6(const int &x)
+    {
+      if(x < 0) {
+        SPDLOG_WARN("Negative value {} converted to 0", x);
+        return 0;
+      }
+      return unsigned(x);
+    }
+    [[maybe_unused]] bool g_reg7 = registerConversion(func6, 0.5f);
 
   }// namespace
 
