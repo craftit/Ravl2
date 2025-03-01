@@ -95,7 +95,7 @@ namespace Ravl2
     if(fromType == to) {
       return from;
     }
-    auto converters = find(fromType, to);
+    auto converters = find(to, fromType);
     if(!converters.has_value()) {
       return std::nullopt;
     }

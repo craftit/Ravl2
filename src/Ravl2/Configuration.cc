@@ -268,17 +268,18 @@ namespace Ravl2
       m_fieldType = &m_value.type();
       m_value = std::move(v);
     } else {
-      if(*m_fieldType != m_value.type()) {
-        auto optValue = typeConverterMap().convert(*m_fieldType, m_value);
+      //SPDLOG_INFO("Setting value of {}, has update:{}  type:{}  from:{} ", name(), hasUpdate(), typeName(*m_fieldType), typeName(v.type()));
+      if(*m_fieldType != v.type()) {
+        auto optValue = typeConverterMap().convert(*m_fieldType, v);
         if(!optValue) {
           SPDLOG_ERROR("Failed to convert {} to {} ", m_value.type().name(), m_fieldType->name());
           return false;
         }
+        assert(optValue->type() == *m_fieldType);
         m_value = std::move(*optValue);
       } else {
         m_value = std::move(v);
       }
-      //SPDLOG_INFO("Setting value of {}, has update:{} ", name(), hasUpdate());
     }
     if(mUpdate) {
       return mUpdate(m_value);

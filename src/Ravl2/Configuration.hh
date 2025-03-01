@@ -613,8 +613,8 @@ namespace Ravl2
         value = m_node->initNumber(name, description, DataT(defaultValue), DataT(min), DataT(max));
       }
       if(update) {
-        m_node->setUpdate(name, [update](std::any &value) {
-          return update(std::any_cast<DataT>(value));
+        m_node->setUpdate(name, [update](std::any &newValue) {
+          return update(std::any_cast<DataT>(newValue));
         });
       }
       return std::any_cast<DataT>(value);
@@ -698,8 +698,8 @@ namespace Ravl2
         value = m_node->initString(name, description, defaultValue);
       }
       if(update) {
-        m_node->setUpdate(name, [update](std::any &value) {
-          return update(std::any_cast<std::string>(value));
+        m_node->setUpdate(name, [update](std::any &newValue) {
+          return update(std::any_cast<std::string>(newValue));
         });
       }
       return std::any_cast<std::string>(value);
@@ -713,8 +713,8 @@ namespace Ravl2
         value = m_node->initBool(name, description, defaultValue);
       }
       if(update) {
-        m_node->setUpdate(name, [update](std::any &value) {
-          return update(std::any_cast<bool>(value));
+        m_node->setUpdate(name, [update](std::any &newValue) {
+          return update(std::any_cast<bool>(newValue));
         });
       }
 
