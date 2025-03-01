@@ -8,6 +8,8 @@
 
 #pragma once
 
+#include "Image/Segmentation/Crack.hh"
+
 #include <memory>
 #include <any>
 #include <set>
@@ -38,7 +40,7 @@ namespace Ravl2
 
   //! Create an object from a string.
   template <typename DataT>
-  inline DataT fromString(const std::string &text)
+  DataT fromString(const std::string &text)
   {
     DataT val;
     std::istringstream is(text);
@@ -118,6 +120,7 @@ namespace Ravl2
 
     //! Register a named type.
     template <typename DataT>
+     requires (std::is_constructible<DataT, Configuration &>::value && std::is_copy_constructible<DataT>::value)
     bool registerDirectType(std::string_view name) noexcept
     {
       try {
@@ -136,10 +139,42 @@ namespace Ravl2
       return true;
     }
 
+    template <typename DataT>
+       requires (std::is_constructible<DataT, Configuration &>::value && !std::is_copy_constructible<DataT>::value)
+    bool registerDirectType(std::string_view name) noexcept
+    {
+      try {
+        add(typeid(std::shared_ptr<DataT>), name,
+            [](Configuration &config) {
+              return std::any(std::make_shared<DataT>(config));
+            });
+        add(typeid(std::shared_ptr<DataT>), "default",
+            [](Configuration &config) {
+              return std::any(std::make_shared<DataT>(config));
+            });
+      } catch(std::error_code &e) {
+        SPDLOG_ERROR("Error registering type '{}' : {}", name, e.message());
+        return false;
+      }
+      return true;
+    }
+
     // Check a type is registered
-    template <typename DataT,
-              std::enable_if_t<!std::is_abstract<typename DataT::element_type>::value, bool> = true,
-              std::enable_if_t<std::is_constructible<typename DataT::element_type, Configuration &>::value, bool> = true>
+    template <typename DataT>
+     requires (!std::is_copy_constructible<DataT>::value &&
+       std::is_constructible<DataT, Configuration &>::value &&
+       !std::is_abstract<DataT>::value)
+    void checkRegistered(DataT &)
+    {
+      auto &entry = m_map[std::type_index(typeid(std::shared_ptr<DataT>))].m_constructors["default"];
+      if(entry) return;
+      entry = [](Configuration &config) { return std::make_shared<DataT>(config); };
+    }
+
+    // Check a type is registered
+    template <typename DataT>
+     requires (std::is_constructible<typename DataT::element_type, Configuration &>::value &&
+       !std::is_abstract<typename DataT::element_type>::value)
     void checkRegistered(DataT &)
     {
       auto &entry = m_map[std::type_index(typeid(DataT))].m_constructors["default"];
@@ -148,14 +183,26 @@ namespace Ravl2
     }
 
     // Check a type is registered
-    template <typename DataT,
-              std::enable_if_t<!std::is_abstract<DataT>::value, bool> = true,
-              std::enable_if_t<std::is_constructible<DataT, Configuration &>::value, bool> = true>
+    template <typename DataT>
+      requires (std::is_constructible<DataT, Configuration &>::value &&
+                std::is_copy_constructible<DataT>::value &&
+                !std::is_abstract<DataT>::value )
     void checkRegistered(DataT &)
     {
       auto &entry = m_map[std::type_index(typeid(DataT))].m_constructors["default"];
       if(entry) return;
-      entry = [](Configuration &config) { return DataT(config); };
+      entry = [](Configuration &config) { return std::any(DataT(config)); };
+    }
+
+    template <typename DataT,
+          std::enable_if_t<!std::is_abstract<DataT>::value, bool> = true,
+          std::enable_if_t<std::is_constructible<DataT, Configuration &>::value, bool> = true>
+    requires (std::is_constructible<typename DataT::element_type, Configuration &>::value && !std::is_copy_constructible<DataT>::value)
+    void checkRegistered(DataT &)
+    {
+      auto &entry = m_map[std::type_index(typeid(DataT))].m_constructors["default"];
+      if(entry) return;
+      entry = [](Configuration &config) { return std::make_shared<DataT>(config); };
     }
 
     // Check a type is registered
@@ -236,7 +283,7 @@ namespace Ravl2
     ConfigNode();
 
     //! Create a new node with a source file
-    ConfigNode(const std::string_view &filename);
+    explicit ConfigNode(const std::string_view &filename);
 
     //! Make destructor virtual
     virtual ~ConfigNode() = default;
@@ -252,7 +299,9 @@ namespace Ravl2
           m_description(description),
           m_value(value),
           m_parent(&parent)
-    {}
+    {
+      m_fieldType = &m_value.type();
+    }
 
     ConfigNode(ConfigNode &parent, std::string &&name, std::string &&description, std::any &&value)
         : m_factory(parent.factory().shared_from_this()),
@@ -260,7 +309,9 @@ namespace Ravl2
           m_description(std::move(description)),
           m_value(std::move(value)),
           m_parent(&parent)
-    {}
+    {
+      m_fieldType = &m_value.type();
+    }
 
     //! Access name of node.
     [[nodiscard]] const std::string &name() const
@@ -281,24 +332,10 @@ namespace Ravl2
     }
 
     //! Access the parent node.
-    [[nodiscard]] const ConfigNode &rootNode() const
-    {
-      const ConfigNode *node = this;
-      while(node->m_parent != nullptr) {
-        node = node->m_parent;
-      }
-      return *node;
-    }
+    [[nodiscard]] const ConfigNode &rootNode() const;
 
     //! Access the parent node.
-    [[nodiscard]] ConfigNode &rootNode()
-    {
-      ConfigNode *node = this;
-      while(node->m_parent != nullptr) {
-        node = node->m_parent;
-      }
-      return *node;
-    }
+    [[nodiscard]] ConfigNode &rootNode();
 
     //! Get path to this node.
     [[nodiscard]] std::string path() const;
@@ -438,6 +475,17 @@ namespace Ravl2
     //! Get value.
     [[nodiscard]] std::any getValue(const std::string_view &name, const std::type_info &type);
 
+    //! Get existing value from node.
+    template <typename T>
+    [[nodiscard]] T get()
+    {
+      if(!m_value.has_value()) {
+        SPDLOG_ERROR("No value found for field '{}' ", name());
+        throw std::runtime_error("No value found");
+      }
+      return std::any_cast<T>(m_value);
+    }
+
     //! Set child value.
     virtual std::shared_ptr<ConfigNode> setChild(std::string &&name, std::string &&description, std::any &&value);
 
@@ -456,13 +504,46 @@ namespace Ravl2
     [[nodiscard]] ConfigNode *child(std::string_view name, std::string_view description);
 
     //! Set value held in node.
-    void setValue(std::any &&v)
+    bool setValue(std::any &&v);
+
+    //! Set value held in node.
+    template <typename DataT>
+    bool setValue(DataT v)
     {
-      m_value = std::move(v);
+      return setValue(std::any(v));
     }
 
     //! Check all subfields are used.
     virtual void checkAllFieldsUsed() const;
+
+    //! Set update function
+    void setUpdate(std::string_view const &name, std::function<bool(std::any &update)> update)
+    {
+      auto child = m_children.find(name);
+      if(child == m_children.end()) {
+        SPDLOG_ERROR("No child '{}' found for update ", name);
+        throw std::runtime_error("No child found for update");
+      }
+      if(child->second->mUpdate) {
+        SPDLOG_ERROR("Update function already set for {} ", path());
+        throw std::runtime_error("Update function already set");
+      }
+      child->second->mUpdate = std::move(update);
+    }
+
+    //! Test if update provided
+    [[nodiscard]] bool hasUpdate() const
+    {
+      return mUpdate != nullptr;
+    }
+
+    //! Access children
+    std::map<std::string_view, std::shared_ptr<ConfigNode>> &children()
+    { return m_children; };
+
+    //! Access node type
+    [[nodiscard]] const std::type_info &fieldType() const
+    { if(m_fieldType != nullptr) return *m_fieldType; return typeid(void); }
 
   protected:
     std::shared_ptr<ConfigFactory> m_factory;
@@ -470,9 +551,11 @@ namespace Ravl2
     std::string m_name;
     std::string m_description;
     std::any m_value;
-    std::set<std::string, std::less<>> m_usedFields;
-    std::map<std::string_view, std::shared_ptr<ConfigNode>> m_children;
+    std::type_info const *m_fieldType = nullptr;
+    std::set<std::string, std::less<>> m_usedFields {};
+    std::map<std::string_view, std::shared_ptr<ConfigNode>> m_children {};
     ConfigNode *m_parent = nullptr;
+    std::function<bool(std::any &update)> mUpdate;
   };
 
   //! Configuration handle
@@ -480,6 +563,9 @@ namespace Ravl2
   class Configuration
   {
   public:
+    //! Default constructor
+    Configuration() = default;
+
     //! Load configuration from a file.
     explicit Configuration(const std::string_view &filename);
 
@@ -519,27 +605,32 @@ namespace Ravl2
 
     template <typename DataT,typename ParamT = DataT>
      requires std::is_convertible_v<ParamT,DataT>
-    [[nodiscard]] DataT getNumber(const std::string_view &name, const std::string_view &description, DataT defaultValue, ParamT min, ParamT max)
+    [[nodiscard]] DataT getNumber(const std::string_view &name, const std::string_view &description, DataT defaultValue, ParamT min, ParamT max,std::function<bool(DataT)> update = {})
     {
       assert(m_node);
       std::any value = m_node->getValue(name, typeid(DataT));
       if(!value.has_value()) {
         value = m_node->initNumber(name, description, DataT(defaultValue), DataT(min), DataT(max));
       }
+      if(update) {
+        m_node->setUpdate(name, [update](std::any &value) {
+          return update(std::any_cast<DataT>(value));
+        });
+      }
       return std::any_cast<DataT>(value);
     }
 
     //! Get an integer from the configuration file.
-    [[nodiscard]] int getInt(const std::string_view &name, const std::string_view &description, int defaultValue, int min, int max)
-    { return getNumber<int>(name, description, defaultValue, min, max); }
+    [[nodiscard]] int getInt(const std::string_view &name, const std::string_view &description, int defaultValue, int min, int max,std::function<bool(int)> update = {})
+    { return getNumber<int>(name, description, defaultValue, min, max,update); }
 
     //! Get an unsigned integer from the configuration file.
-    [[nodiscard]] unsigned getUnsigned(const std::string_view &name, const std::string_view &description, unsigned defaultValue, unsigned min, unsigned max)
-    { return getNumber<unsigned>(name, description, defaultValue, min, max); }
+    [[nodiscard]] unsigned getUnsigned(const std::string_view &name, const std::string_view &description, unsigned defaultValue, unsigned min, unsigned max, std::function<bool(unsigned)> update = {})
+    { return getNumber<unsigned>(name, description, defaultValue, min, max,update); }
 
     //! Get a float from the configuration file.
-    [[nodiscard]] float getFloat(const std::string_view &name, const std::string_view &description, float defaultValue, float min, float max)
-    { return getNumber<float>(name, description, defaultValue, min, max); }
+    [[nodiscard]] float getFloat(const std::string_view &name, const std::string_view &description, float defaultValue, float min, float max, std::function<bool(float)> update = {})
+    { return getNumber<float>(name, description, defaultValue, min, max,update); }
 
     template <typename DataT>
     [[nodiscard]] std::vector<DataT> getNumericVector(const std::string_view &name, const std::string_view &description, DataT defaultValue, DataT min, DataT max,size_t size)
@@ -568,7 +659,7 @@ namespace Ravl2
         SPDLOG_ERROR("Expected {} elements in point, got {} ", N, vec.size());
         throw std::runtime_error("Wrong number of elements in point");
       }
-      for(int i = 0; i < int(N); i++) {
+      for(int i = 0; i < N; i++) {
         ret[i] = RealT(vec[size_t(i)]);
       }
       return ret;
@@ -598,24 +689,35 @@ namespace Ravl2
       }
       return ret;
     }
-    
-    [[nodiscard]] std::string getString(const std::string_view &name, const std::string_view &description, const std::string_view &defaultValue)
+
+    [[nodiscard]] std::string getString(const std::string_view &name, const std::string_view &description, const std::string_view &defaultValue,std::function<bool(const std::string &)> update = {})
     {
       assert(m_node);
       std::any value = m_node->getValue(name, typeid(std::string));
       if(!value.has_value()) {
         value = m_node->initString(name, description, defaultValue);
       }
+      if(update) {
+        m_node->setUpdate(name, [update](std::any &value) {
+          return update(std::any_cast<std::string>(value));
+        });
+      }
       return std::any_cast<std::string>(value);
     }
 
-    [[nodiscard]] bool getBool(const std::string_view &name, const std::string_view &description, bool defaultValue)
+    [[nodiscard]] bool getBool(const std::string_view &name, const std::string_view &description, bool defaultValue,std::function<bool(bool)> update = {})
     {
       assert(m_node);
       std::any value = m_node->getValue(name, typeid(bool));
       if(!value.has_value()) {
         value = m_node->initBool(name, description, defaultValue);
       }
+      if(update) {
+        m_node->setUpdate(name, [update](std::any &value) {
+          return update(std::any_cast<bool>(value));
+        });
+      }
+
       return std::any_cast<bool>(value);
     }
 
@@ -628,6 +730,14 @@ namespace Ravl2
         value = m_node->init(name, description, defaultValue);
       }
       return std::any_cast<T>(value);
+    }
+
+    //! Get existing value from node.
+    template <typename T>
+    [[nodiscard]] T get()
+    {
+      assert(m_node);
+      return m_node->get<T>();
     }
 
     //! @brief Compulsory component
@@ -722,7 +832,20 @@ namespace Ravl2
     {
       return m_node != nullptr;
     }
-    
+
+    //! Get the node.
+    [[nodiscard]] const ConfigNode &node() const
+    {
+      assert(m_node);
+      return *m_node;
+    }
+
+    //! Get the node.
+    [[nodiscard]] ConfigNode &node()
+    {
+      assert(m_node);
+      return *m_node;
+    }
   protected:
     std::shared_ptr<ConfigNode> m_node;
   };

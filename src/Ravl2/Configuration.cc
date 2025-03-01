@@ -4,6 +4,7 @@
 
 #include "Ravl2/Configuration.hh"
 #include "Ravl2/StringUtils.hh"
+#include "Ravl2/IO/TypeConverter.hh"
 
 #define DODEBUG 0
 #if DODEBUG
@@ -29,11 +30,29 @@ namespace Ravl2
   {}
   
   ConfigNode::ConfigNode(const std::string_view &filename)
-    : m_factory(defaultConfigFactory().shared_from_this()),
-      m_filename(filename),
-      m_name("root")
+      : m_factory(defaultConfigFactory().shared_from_this()),
+        m_filename(filename),
+        m_name("root")
   {}
-  
+
+  const ConfigNode &ConfigNode::rootNode() const
+  {
+    const ConfigNode *node = this;
+    while(node->m_parent != nullptr) {
+      node = node->m_parent;
+    }
+    return *node;
+  }
+
+  ConfigNode &ConfigNode::rootNode()
+  {
+    ConfigNode *node = this;
+    while(node->m_parent != nullptr) {
+      node = node->m_parent;
+    }
+    return *node;
+  }
+
   //! Get path to this node.
   std::string ConfigNode::path() const
   {
@@ -142,8 +161,9 @@ namespace Ravl2
   {
     flagAsUsed(name);
     auto x = m_children.find(name);
-    if(x == m_children.end())
+    if(x == m_children.end()) {
       return {};
+    }
     assert(x->second->value().type() == type);
     return x->second->value();
   }
@@ -157,9 +177,14 @@ namespace Ravl2
 
   std::string ConfigNode::rootPathString() const
   {
-    if(m_parent == nullptr)
-      return m_name;
-    return m_parent->rootPathString() + '.' + m_name;
+    std::string ret;
+    ret.reserve(256);
+    auto at = this;
+    while(at->m_parent != nullptr) {
+      ret = at->m_name + '.' + ret;
+      at = at->m_parent;
+    }
+    return ret;
   }
 
   void ConfigNode::checkAllFieldsUsed() const
@@ -168,7 +193,7 @@ namespace Ravl2
 
   ConfigNode *ConfigNode::followPath(std::string_view pathstr, const std::type_info &type)
   {
-    std::vector<std::string_view> thePath = split(pathstr, '.');
+    std::vector<std::string_view> const thePath = split(pathstr, '.');
     return followPath(thePath, type);
   }
 
@@ -236,5 +261,29 @@ namespace Ravl2
     flagAsUsed(name);
     return it->second.get();
   }
-  
+
+  bool ConfigNode::setValue(std::any &&v)
+  {
+    if(m_fieldType == nullptr || *m_fieldType == typeid(void)) {
+      m_fieldType = &m_value.type();
+      m_value = std::move(v);
+    } else {
+      if(*m_fieldType != m_value.type()) {
+        auto optValue = typeConverterMap().convert(*m_fieldType, m_value);
+        if(!optValue) {
+          SPDLOG_ERROR("Failed to convert {} to {} ", m_value.type().name(), m_fieldType->name());
+          return false;
+        }
+        m_value = std::move(*optValue);
+      } else {
+        m_value = std::move(v);
+      }
+      //SPDLOG_INFO("Setting value of {}, has update:{} ", name(), hasUpdate());
+    }
+    if(mUpdate) {
+      return mUpdate(m_value);
+    }
+    return true;
+  }
+
 }// namespace Ravl2

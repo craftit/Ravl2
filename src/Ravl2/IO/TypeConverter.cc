@@ -131,6 +131,19 @@ namespace Ravl2
       return x;
     }
     [[maybe_unused]] bool g_reg3 = registerConversion(func2, 1.0f);
+
+    float func3(const double &x)
+    {
+      return float(x);
+    }
+    [[maybe_unused]] bool g_reg4 = registerConversion(func3, 0.5f);
+
+    double func4(const float &x)
+    {
+      return double(x);
+    }
+    [[maybe_unused]] bool g_reg5 = registerConversion(func4, 1.0f);
+
   }// namespace
 
   std::any ConversionChain::convert(const std::any &from) const
