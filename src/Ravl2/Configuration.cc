@@ -272,7 +272,7 @@ namespace Ravl2
       if(*m_fieldType != v.type()) {
         auto optValue = typeConverterMap().convert(*m_fieldType, v);
         if(!optValue) {
-          SPDLOG_ERROR("Failed to convert {} to {} ", m_value.type().name(), m_fieldType->name());
+          SPDLOG_ERROR("Failed to convert {} to {} ", typeName(v.type()), typeName(*m_fieldType));
           return false;
         }
         assert(optValue->type() == *m_fieldType);

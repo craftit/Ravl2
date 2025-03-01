@@ -156,6 +156,33 @@ namespace Ravl2
     }
     [[maybe_unused]] bool g_reg7 = registerConversion(func6, 0.5f);
 
+    int32_t func7(const int64_t &x)
+    {
+      if(x < std::numeric_limits<int32_t>::min() || x > std::numeric_limits<int32_t>::max()) {
+        SPDLOG_WARN("Value {} out of range for int32_t", x);
+        return 0;
+      }
+      return int32_t(x);
+    }
+    [[maybe_unused]] bool g_reg8 = registerConversion(func7, 0.5f);
+
+    int32_t func8(const float &x)
+    {
+      if(x < float(std::numeric_limits<int32_t>::min()) || x > float(std::numeric_limits<int32_t>::max())) {
+        SPDLOG_WARN("Value {} out of range for int32_t", x);
+        return 0;
+      }
+      return int32_t(x);
+    }
+    [[maybe_unused]] bool g_reg9 = registerConversion(func8, 0.5f);
+
+    float func9(const long &x)
+    {
+      return float(x);
+    }
+    [[maybe_unused]] bool g_reg10 = registerConversion(func9, 0.8f);
+
+
   }// namespace
 
   std::any ConversionChain::convert(const std::any &from) const
