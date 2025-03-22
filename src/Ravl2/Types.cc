@@ -2,6 +2,7 @@
 // Created by charles on 05/08/24.
 //
 #include "Ravl2/Types.hh"
+#include "nlohmann/json.hpp"
 #include <spdlog/spdlog.h>
 #include <cxxabi.h>
 
@@ -50,12 +51,24 @@ namespace Ravl2
 
   std::string typeName(const std::type_info &type)
   {
+    if(type == typeid(nlohmann::json)) {
+      return "nlohmann::json";
+    }
+    if(type == typeid(std::string)) {
+      return "std::string";
+    }
     return demangle(type.name());
   }
 
   //! Get a human-readable name for a type.
   std::string typeName(const std::type_index &type)
   {
+    if(type == typeid(nlohmann::json)) {
+      return "nlohmann::json";
+    }
+    if(type == typeid(std::string)) {
+      return "std::string";
+    }
     return demangle(type.name());
   }
 
