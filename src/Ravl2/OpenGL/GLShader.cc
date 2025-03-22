@@ -263,6 +263,8 @@ namespace Ravl2
     glTexImage2D(target, level, internalFormat, width, height, border, format, type, data);
     glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
   }
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wuseless-cast"
 
   //! Set texture data from a grey scale array.
   void GLTexture::setArray(size_t ind,const Array<uint8_t,2> &data)
@@ -293,6 +295,7 @@ namespace Ravl2
     // Restore the default row length to 0, as it may affect other operations. 0=use the width of the image.
     glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
   }
+#pragma GCC diagnostic pop
 
 
 } // namespace Ravl2

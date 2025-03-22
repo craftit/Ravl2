@@ -110,6 +110,13 @@ namespace Ravl2
   //! Get a human-readable name for a type.
   [[nodiscard]] std::string typeName(const std::type_index &type);
 
+  //! Demangle a C++ symbol name
+  [[nodiscard]] std::string demangle(const char *name);
+
+
+  //! Register an alternative name for a type.
+  bool registerTypeName(const std::type_info &type, const std::string &name);
+
   //! Default formatting for converting Eigen matrices to strings
   [[nodiscard]] const Eigen::IOFormat &defaultEigenFormat();
 }// namespace Ravl2

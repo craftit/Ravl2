@@ -49,27 +49,41 @@ namespace Ravl2
     return demangled;
   }
 
-  std::string typeName(const std::type_info &type)
+  namespace {
+    std::unordered_map<std::type_index,std::string> &typeNameMap()
+    {
+      static std::unordered_map<std::type_index, std::string> map;
+      return map;
+    }
+  }
+
+  //! Register an alternative name for a type.
+  bool registerTypeName(const std::type_info &type, const std::string &name)
   {
-    if(type == typeid(nlohmann::json)) {
-      return "nlohmann::json";
+    auto at = typeNameMap().find(type);
+    if(at != typeNameMap().end()) {
+      //std::("Type '{}' already has a name '{}' ,  requested '{}' ", demangle(type.name()), at->second, name);
+      std::cerr << "Type '" << demangle(type.name()) << "' already has a name '" << at->second << "', requested '" << name << "'\n";
+      return false;
     }
-    if(type == typeid(std::string)) {
-      return "std::string";
-    }
-    return demangle(type.name());
+    typeNameMap()[type] = name;
+    return true;
   }
 
   //! Get a human-readable name for a type.
   std::string typeName(const std::type_index &type)
   {
-    if(type == typeid(nlohmann::json)) {
-      return "nlohmann::json";
-    }
-    if(type == typeid(std::string)) {
-      return "std::string";
+    const auto &typeMap = typeNameMap();
+    auto at = typeMap.find(type);
+    if(at != typeMap.end()) {
+      return at->second;
     }
     return demangle(type.name());
+  }
+
+  std::string typeName(const std::type_info &type)
+  {
+    return typeName(std::type_index(type));
   }
 
   const Eigen::IOFormat &defaultEigenFormat()
@@ -78,6 +92,11 @@ namespace Ravl2
     return ioFmt;
   }
 
+  namespace {
+    [[maybe_unused]] bool reg1 = registerTypeName(typeid(std::string),"std::string");
+    [[maybe_unused]] bool reg2 = registerTypeName(typeid(nlohmann::json),"nlohmann::json");
+    [[maybe_unused]] bool reg3 = registerTypeName(typeid(std::vector<std::string>),"std::vector<std::string>");
+  }
 
   void doNothing()
   {}
