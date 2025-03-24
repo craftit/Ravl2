@@ -49,13 +49,12 @@ namespace Ravl2
                                       int min,
                                       int max)
   {
-    std::string const tname(name);// jsoncpp doesn't support string_view.
     // Just use the default value?
-    if(m_json.find(tname) == m_json.end()) {
-      m_json[tname] = defaultValue;
+    if(m_json.find(name) == m_json.end()) {
+      m_json[name] = defaultValue;
       return ConfigNode::initNumber(name, description, defaultValue, min, max);
     }
-    json const value = m_json[tname];
+    json const value = m_json[name];
     if(!value.is_number()) {
       SPDLOG_ERROR("Expected a number for field {}.{}  got '{}'  ", rootPathString(), name, value.dump());
       throw std::runtime_error("Expected a number in field.");
@@ -75,13 +74,12 @@ namespace Ravl2
 				      unsigned min,
 				      unsigned max)
   {
-    std::string const tname(name);// jsoncpp doesn't support string_view.
     // Just use the default value?
-    if(m_json.find(tname) == m_json.end()) {
-      m_json[tname] = defaultValue;
+    if(m_json.find(name) == m_json.end()) {
+      m_json[name] = defaultValue;
       return ConfigNode::initNumber(name, description, defaultValue, min, max);
     }
-    json const value = m_json[tname];
+    json const value = m_json[name];
     if(!value.is_number()) {
       SPDLOG_ERROR("Expected a number for field {}.{}  got '{}'  ", rootPathString(), name, value.dump());
       throw std::runtime_error("Expected a number in field.");
@@ -102,13 +100,12 @@ namespace Ravl2
                                       float min,
                                       float max)
   {
-    std::string const tname(name);// jsoncpp doesn't support string_view.
     // Just use the default value?
-    if(m_json.find(tname) == m_json.end()) {
-      m_json[tname] = static_cast<double>(defaultValue);
+    if(m_json.find(name) == m_json.end()) {
+      m_json[name] = static_cast<double>(defaultValue);
       return ConfigNode::initNumber(name, description, defaultValue, min, max);
     }
-    json const value = m_json[tname];
+    json const value = m_json[name];
     if(!value.is_number()) {
       SPDLOG_ERROR("Expected a number for field {}.{}  got '{}'  ", rootPathString(), name, value.dump());
       throw std::runtime_error("Expected a number in field.");
@@ -128,13 +125,12 @@ namespace Ravl2
                                       double min,
                                       double max)
   {
-    std::string const tname(name);// jsoncpp doesn't support string_view.
     // Just use the default value?
-    if(m_json.find(tname) == m_json.end()) {
-      m_json[tname] = static_cast<double>(defaultValue);
+    if(m_json.find(name) == m_json.end()) {
+      m_json[name] = static_cast<double>(defaultValue);
       return ConfigNode::initNumber(name, description, defaultValue, min, max);
     }
-    json const value = m_json[tname];
+    json const value = m_json[name];
     if(!value.is_number()) {
       SPDLOG_ERROR("Expected a number for field {}.{}  got '{}'  ", rootPathString(), name, value.dump());
       throw std::runtime_error("Expected a number in field.");
@@ -151,13 +147,12 @@ namespace Ravl2
   std::any
   ConfigNodeJSON::initNumber(const std::string_view &name, const std::string_view &description, size_t defaultValue, size_t min, size_t max)
   {
-    std::string const tname(name);
     // Just use the default value?
-    if(m_json.find(tname) == m_json.end()) {
-      m_json[tname] = defaultValue;
+    if(m_json.find(name) == m_json.end()) {
+      m_json[name] = defaultValue;
       return ConfigNode::initNumber(name, description, defaultValue, min, max);
     }
-    json const value = m_json[tname];
+    json const value = m_json[name];
     if(!value.is_number()) {
       SPDLOG_ERROR("Expected a number for field {}.{}  got '{}'  ", rootPathString(), name, value.dump());
       throw std::runtime_error("Expected a number in field.");
@@ -215,13 +210,12 @@ namespace Ravl2
                                       const std::string_view &defaultValue)
   {
     ONDEBUG(SPDLOG_INFO("initString for {} ", name));
-    std::string const tname(name);// jsoncpp doesn't support string_view.
     // Just use the default value?
-    if(m_json.find(tname) == m_json.end()) {
-      m_json[tname] = std::string(defaultValue);
+    if(m_json.find(name) == m_json.end()) {
+      m_json[name] = std::string(defaultValue);
       return ConfigNode::initString(name, description, defaultValue);
     }
-    json const value = m_json[tname];
+    json const value = m_json[name];
     if(!value.is_string()) {
       SPDLOG_ERROR("Expected a string for field {}.{}  got '{}'  ", rootPathString(), name, value.dump());
       throw std::runtime_error("Expected a string in field.");
@@ -234,14 +228,12 @@ namespace Ravl2
                                     const std::string_view &description,
                                     bool defaultValue)
   {
-    std::string tname(name);// jsoncpp doesn't support string_view.
-
     // Just use the default value?
-    if(m_json.find(tname) == m_json.end()) {
-      m_json[tname] = defaultValue;
+    if(m_json.find(name) == m_json.end()) {
+      m_json[name] = defaultValue;
       return ConfigNode::initBool(name, description, defaultValue);
     }
-    json value = m_json[tname];
+    json value = m_json[name];
     if(!value.is_boolean()) {
       SPDLOG_ERROR("Expected a bool for field {}.{}  got '{}'  ", rootPathString(), name, value.dump());
       throw std::runtime_error("Expected a bool in field.");
