@@ -77,7 +77,7 @@ namespace Ravl2
       if(it == m_map.end()) {
         SPDLOG_ERROR("Type '{}' unknown when constructing '{}' ", type.name(), name);
         for(auto &a : m_map) {
-          SPDLOG_ERROR("  Known type: {}", a.first.name());
+          SPDLOG_ERROR("  Known type: {}", Ravl2::typeName(a.first));
         }
         throw std::runtime_error("type unknown");
       }
