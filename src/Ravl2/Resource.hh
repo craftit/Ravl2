@@ -25,4 +25,9 @@ namespace Ravl2
   //! @return String containing the resource paths
   [[nodiscard]] std::string dumpResourcePaths();
 
+  //! Load environment variables from a file
+  //! @param path Path to the file
+  //! @return true if the file was loaded successfully
+  bool loadEnvFile(std::string_view path);
+
 }// namespace Ravl2

@@ -16,6 +16,60 @@
 namespace Ravl2
 {
 
+  std::any ConfigFactory::create(const std::type_info &type, std::string_view name, Configuration &config)
+  {
+    if(type == typeid(void)) {
+      return {};
+    }
+    std::any obj;
+    auto it = m_map.find(type);
+    if(it != m_map.end()) {
+      auto it2 = it->second.m_constructors.find(name);
+      if(it2 != it->second.m_constructors.end()) {
+        obj = it2->second(config);
+      }
+      // SPDLOG_ERROR("Type '{}' unknown when constructing '{}' ", Ravl2::typeName(type), name);
+      // for(auto &a : m_map) {
+      //   SPDLOG_ERROR("  Known type: {}", Ravl2::typeName(a.first));
+      // }
+      // throw std::runtime_error("type unknown");
+    }
+    if(!obj.has_value()) {
+      auto directIt = m_name2factory.find(std::string(name));
+      if(directIt == m_name2factory.end()) {
+        SPDLOG_ERROR("No constructor for '{}' of type {} ", name, typeName(type));
+        throw std::runtime_error("type unknown");
+      }
+      obj = directIt->second(config);
+    }
+
+    auto result = typeConverterMap().convert(type, obj);
+    if(!result.has_value()) {
+      SPDLOG_ERROR("Failed to convert type '{}' to type '{}' ", typeName(obj.type()), typeName(type));
+      throw std::runtime_error("type unknown");
+    }
+    return *result;
+  }
+
+  bool ConfigFactory::add(const std::type_info &type, std::string_view name, const std::function<std::any(Configuration &)> &func)
+  {
+    auto &entry = m_map[std::type_index(type)].m_constructors[std::string(name)];
+    if(entry) {
+      SPDLOG_ERROR("Constructor '{}' already exists for type '{}'", name, type.name());
+      throw std::runtime_error("type already exists");
+    }
+    if(name != "default") {
+      auto &entry2 = m_map[std::type_index(type)].m_constructors["default"];
+      if(entry2) {
+        SPDLOG_ERROR("Constructor 'default' already exists for type '{}'", type.name());
+        throw std::runtime_error("type already exists");
+      }
+      m_name2factory[std::string(name)] = func;
+    }
+    entry = func;
+    return true;
+  }
+
   ConfigFactory &defaultConfigFactory() noexcept
   {
     static std::shared_ptr<ConfigFactory> factory = std::make_shared<ConfigFactory>();

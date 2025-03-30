@@ -8,8 +8,6 @@
 
 #pragma once
 
-#include "Image/Segmentation/Crack.hh"
-
 #include <memory>
 #include <any>
 #include <set>
@@ -22,6 +20,7 @@
 #include <spdlog/spdlog.h>
 #include "Ravl2/Assert.hh"
 #include "Ravl2/Types.hh"
+#include "Ravl2/IO/TypeConverter.hh"
 
 namespace Ravl2
 {
@@ -59,6 +58,7 @@ namespace Ravl2
       std::map<std::string, std::function<std::any(Configuration &)>, std::less<>> m_constructors;
     };
     std::unordered_map<std::type_index, Entry> m_map;
+    std::unordered_map<std::string,  std::function<std::any(Configuration &)>> m_name2factory;
 
   public:
     ConfigFactory() = default;
@@ -68,38 +68,10 @@ namespace Ravl2
     ConfigFactory &operator=(const ConfigFactory &) = delete;
     ConfigFactory &operator=(ConfigFactory &&) = delete;
 
-    [[nodiscard]] std::any create(const std::type_info &type, std::string_view name, Configuration &config)
-    {
-      if(type == typeid(void)) {
-        return {};
-      }
-      auto it = m_map.find(type);
-      if(it == m_map.end()) {
-        SPDLOG_ERROR("Type '{}' unknown when constructing '{}' ", type.name(), name);
-        for(auto &a : m_map) {
-          SPDLOG_ERROR("  Known type: {}", Ravl2::typeName(a.first));
-        }
-        throw std::runtime_error("type unknown");
-      }
-      auto it2 = it->second.m_constructors.find(name);
-      if(it2 == it->second.m_constructors.end()) {
-        SPDLOG_ERROR("No constructor for '{}' of type {} ", name, type.name());
-        throw std::runtime_error("type unknown");
-      }
-      return it2->second(config);
-    }
+    [[nodiscard]] std::any create(const std::type_info &type, std::string_view name, Configuration &config);
 
     //! Register a type with a constructor function
-    bool add(const std::type_info &type, std::string_view name, const std::function<std::any(Configuration &)> &func)
-    {
-      auto &entry = m_map[std::type_index(type)].m_constructors[std::string(name)];
-      if(entry) {
-        SPDLOG_ERROR("Constructor '{}' already exists for type '{}'", name, type.name());
-        throw std::runtime_error("type already exists");
-      }
-      entry = func;
-      return true;
-    }
+    bool add(const std::type_info &type, std::string_view name, const std::function<std::any(Configuration &)> &func);
 
     //! Register a named type.
     template <typename BaseDataT, typename DataT>
@@ -108,9 +80,11 @@ namespace Ravl2
       try {
         add(typeid(std::shared_ptr<BaseDataT>), name,
             [](Configuration &config) {
-              return std::any(std::dynamic_pointer_cast<BaseDataT>(std::make_shared<DataT>(config)));
+              return std::any(std::make_shared<DataT>(config));
             });
-
+        registerConversion([](const std::shared_ptr<DataT> &derived) -> std::shared_ptr<BaseDataT> {
+          return std::dynamic_pointer_cast<BaseDataT>(derived);
+        } , 1.0f);
       } catch(std::error_code &e) {
         SPDLOG_ERROR("Error registering type '{}' : {}", name, e.message());
         return false;

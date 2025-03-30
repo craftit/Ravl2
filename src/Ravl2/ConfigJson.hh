@@ -88,7 +88,10 @@ namespace Ravl2
     //! Get value as string
     [[nodiscard]] std::string asString(const std::string_view &name) const override
     {
-      return m_json[std::string(name)].template get<std::string>();
+      auto &val = m_json[std::string(name)];
+      if(val.is_string())
+        return val.get<std::string>();
+      return nlohmann::to_string(val);
     }
 
     //! Set child value.

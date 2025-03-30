@@ -70,9 +70,8 @@ add_library(Ravl2Core
     IO/OutputSequence.hh IO/OutputSequence.cc
     ThreadedQueue.cc ThreadedQueue.hh
     Eigen.cc Eigen.hh
+    SpatialHash.cc SpatialHash.hh
     Catch2checks.hh
-        SpatialHash.cc
-        SpatialHash.hh
 )
 
 add_library(ravl2::Ravl2Core ALIAS Ravl2Core)

@@ -20,14 +20,15 @@ namespace Ravl2
   bool loadEnvFile(std::string_view path)
   {
     // Check file exists
-    if(!std::filesystem::exists(path))
+    if(!std::filesystem::exists(path)) {
       return false;
+    }
     std::ifstream file(path.data());
     if(!file.is_open()) {
       SPDLOG_ERROR("Failed to open env file {}", path);
       return false;
     }
-    SPDLOG_TRACE("Loading env file '{}'", path);
+    SPDLOG_INFO("Loading env file '{}'", path);
     nlohmann::json config;
     file >> config;
     file.close();
