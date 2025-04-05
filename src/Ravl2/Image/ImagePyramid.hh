@@ -222,7 +222,7 @@ namespace Ravl2
       auto sampleImg = clipUnsafe(newImage,sampleRange);
       assert(sampleImg.range().area() > 0);
       //SPDLOG_INFO("SampleImg:{} ", sampleImg.range());
-      subImg.template sampleGrid(sampleImg, invScale, toVector<float>(0,0));
+      subImg.sampleGrid(sampleImg, invScale, toVector<float>(0,0));
       if(pad > 0) {
         // If we've padded the image then we need to set the padding to zero.
         mirrorEdges(newImage, pad);
