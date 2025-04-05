@@ -58,6 +58,18 @@ namespace Ravl2
   using VectorViewT = std::span<float>;
   using ConstVectorViewT = std::span<const float>;
 
+  template< typename RealT>
+  std::span<RealT> span(VectorT<RealT> &data)
+  {
+    return std::span<RealT>(data.data(), static_cast<std::size_t>(data.size()));
+  }
+
+  template< typename RealT>
+  std::span<RealT> span(const VectorT<RealT> &data)
+  {
+    return std::span<const RealT>(data.data(), static_cast<std::size_t>(data.size()));
+  }
+
   template <typename DataT, IndexSizeT N>
   using Point = Eigen::Matrix<DataT, N, 1>;
 
