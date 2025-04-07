@@ -21,6 +21,7 @@ namespace Ravl2
 
   template <typename RealT = float>
   class PinholeCamera
+    : public  std::enable_shared_from_this<PinholeCamera<RealT> >
   {
   public:
     //! Default constructor.
@@ -202,8 +203,14 @@ namespace Ravl2
     CameraT m_camera;
   };
 
+  // Make a camera from a camera model
+  template <typename CameraT,typename RealT = typename CameraT::ValueT>
+  std::shared_ptr<PinholeCamera<RealT> > makePinholeCamera(const CameraT &camera)
+  {
+    return std::make_shared<PinholeCameraImpl<CameraT,RealT>>(camera);
+  }
+
 #if 0
-  
   template <typename RealT>
   template<class PixelT>
   Array<PixelT,2> PinholeCamera<RealT>::undistortImage(const Array<PixelT,2>& img, bool resize) const

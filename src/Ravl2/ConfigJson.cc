@@ -354,7 +354,7 @@ namespace Ravl2
     std::string theName(name);
     json childJson = m_json[theName];
     if(childJson.is_null()) {
-      SPDLOG_WARN("Failed to find child node '{}' in {} ", name, rootPathString());
+      ONDEBUG(SPDLOG_WARN("Failed to find child node '{}' in {} ", name, rootPathString()));
     }
     return std::make_shared<ConfigNodeJSON>(*this, std::move(theName), std::move(description), std::move(value), childJson);
   }

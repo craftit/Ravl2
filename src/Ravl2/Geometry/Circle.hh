@@ -47,21 +47,21 @@ namespace Ravl2
     }
 
     //! Fit a circle from 3 points on its circumference
-    //! Returns false if the points are collinear.
-    constexpr bool fit(const Point<RealT, 2> &p0, const Point<RealT, 2> &p1, const Point<RealT, 2> &p2)
+    //! Fails if the points are collinear.
+    constexpr static std::optional<Circle<RealT>> fit(const Point<RealT, 2> &p0, const Point<RealT, 2> &p1, const Point<RealT, 2> &p2)
     {
       Vector<RealT, 2> a1({p1[1] - p0[1], p0[0] - p1[0]});
       Vector<RealT, 2> a2({p2[1] - p1[1], p1[0] - p2[0]});
       RealT d = a2[0] * a1[1] - a2[1] * a1[0];
       if(isNearZero(d))
-        return false;
+        return std::nullopt; // Points are collinear.
       Vector<RealT, 2> np1 = (p0 + p1) / 2.0;
       Vector<RealT, 2> np2 = (p1 + p2) / 2.0;
       RealT m = (a1[0] * (np2[1] - np1[1]) - a1[1] * (np2[0] - np1[0])) / d;
       a2 *= m;
-      this->mCentre = np2 + a2;
-      this->mRadius = euclidDistance<RealT, 2>(this->mCentre, p0);
-      return true;
+      Point<RealT,2> centre = np2 + a2;
+      RealT radius = euclidDistance<RealT, 2>(centre, p0);
+      return Circle<RealT>(centre, radius);
     }
 
     //! Constant access to radius.

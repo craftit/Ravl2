@@ -355,8 +355,9 @@ namespace Ravl2
 
     SECTION("Fit 3 points.")
     {
-      Circle<float> circle2;
-      EXPECT_TRUE(circle2.fit(pnts[0], pnts[1], pnts[2]));
+      auto res = Circle<float>::fit(pnts[0], pnts[1], pnts[2]);
+      EXPECT_TRUE(res.has_value());
+      Circle<float> circle2 = res.value();
       SPDLOG_TRACE("Center={} Radius={}", circle2.Centre(), circle2.Radius());
       float sqrMag = Point<float, 2>(circle2.Centre() - Point<float, 2>({1, 2})).squaredNorm();
       CHECK(sqrMag < 0.01f);
