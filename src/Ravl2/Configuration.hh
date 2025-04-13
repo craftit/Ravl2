@@ -25,27 +25,6 @@
 namespace Ravl2
 {
 
-  //! Get value from any container with boolean return value indicating success
-  template <typename OutT>
-  bool anyGet(const std::any &x, OutT &value)
-  {
-    try {
-      value = std::any_cast<OutT>(x);
-    } catch(std::bad_any_cast &) {
-      return false;
-    }
-    return true;
-  }
-
-  //! Create an object from a string.
-  template <typename DataT>
-  DataT fromString(const std::string &text)
-  {
-    DataT val;
-    std::istringstream is(text);
-    is >> val;
-    return val;
-  }
 
   class Configuration;
 

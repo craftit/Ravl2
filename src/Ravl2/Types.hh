@@ -9,6 +9,7 @@
 #endif
 
 #include <span>
+#include <any>
 #include <fmt/ostream.h>
 #include <eigen3/Eigen/Dense>
 #include <eigen3/Eigen/Geometry>
@@ -125,6 +126,27 @@ namespace Ravl2
   //! Demangle a C++ symbol name
   [[nodiscard]] std::string demangle(const char *name);
 
+  //! Get value from any container with boolean return value indicating success
+  template <typename OutT>
+  bool anyGet(const std::any &x, OutT &value)
+  {
+    try {
+      value = std::any_cast<OutT>(x);
+    } catch(std::bad_any_cast &) {
+      return false;
+    }
+    return true;
+  }
+
+  //! Create an object from a string.
+  template <typename DataT>
+  DataT fromString(const std::string &text)
+  {
+    DataT val;
+    std::istringstream is(text);
+    is >> val;
+    return val;
+  }
 
   //! Register an alternative name for a type.
   bool registerTypeName(const std::type_info &type, const std::string &name);
