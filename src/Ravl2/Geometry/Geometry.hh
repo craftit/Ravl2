@@ -49,7 +49,7 @@ namespace Ravl2
   
   //! Get a perpendicular vector in 2d space
   template <typename DataT>
-  [[nodiscard]] inline constexpr Vector<DataT, 2> perpendicular(const Vector<DataT, 2> &v)
+  [[nodiscard]] constexpr Vector<DataT, 2> perpendicular(const Vector<DataT, 2> &v)
   {
     return {-v(1), v(0)};
   }
@@ -110,7 +110,7 @@ namespace Ravl2
   }
 
   //! Compute the l2 norm of a vector
-  template <typename RealT, IndexSizeT N>
+  template <typename RealT, int N>
   [[nodiscard]] RealT norm_l2(const Vector<RealT, N> &v)
   {
     RealT sum = 0;
@@ -128,7 +128,13 @@ namespace Ravl2
   [[nodiscard]] constexpr auto euclidDistance(const Point<RealT, N> &a, const Point<RealT, N> &b)
   { return (a - b).norm(); }
 
-  template <typename Pnt1T>
+  //! Define types that can be used as an index
+  template <typename DataT>
+  concept VectorWithNorm = requires(DataT data){
+    { data.norm() } -> std::convertible_to<typename DataT::value_type>;
+  };
+
+  template <VectorWithNorm Pnt1T>
   [[nodiscard]] constexpr auto norm(Pnt1T a)
   { return a.norm(); }
 

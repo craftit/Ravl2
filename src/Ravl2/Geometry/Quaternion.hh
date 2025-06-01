@@ -229,12 +229,13 @@ namespace Ravl2
     }
 
     //! From XYZ euler angles
-    [[nodiscard]] static constexpr Quaternion<RealT> fromEulerAnglesXYZ(const Vector3f &angles)
+    template <typename Real2T>
+    [[nodiscard]] static constexpr Quaternion<RealT> fromEulerAnglesXYZ(const Vector<Real2T, 3> &angles)
     {
       // We should simplify this out.
-      auto ret = fromAngleAxis(angles[0], {1.0f, 0.0f, 0.0f}) *
-                 fromAngleAxis(angles[1], {0.0f, 1.0f, 0.0f}) *
-                 fromAngleAxis(angles[2], {0.0f, 0.0f, 1.0f});
+      auto ret = fromAngleAxis(static_cast<RealT>(angles[0]), {1.0f, 0.0f, 0.0f}) *
+                 fromAngleAxis(static_cast<RealT>(angles[1]), {0.0f, 1.0f, 0.0f}) *
+                 fromAngleAxis(static_cast<RealT>(angles[2]), {0.0f, 0.0f, 1.0f});
       ret.normalise();
       return ret;
     }
@@ -268,9 +269,9 @@ namespace Ravl2
   //! @param p2 Second quaternion, given at t=1
   //! @param t The interpolation parameter
   //! @return The interpolated quaternion
-  template <typename RealT>
+  template <typename RealT,typename ScaleT>
   [[nodiscard]]
-  constexpr Quaternion<RealT> slerp(const Quaternion<RealT> &p1, const Quaternion<RealT> &p2, float t)
+  constexpr Quaternion<RealT> slerp(const Quaternion<RealT> &p1, const Quaternion<RealT> &p2, ScaleT t)
   {
     const RealT one = RealT(1.0) - std::numeric_limits<RealT>::epsilon();
     RealT d = p1.asVector().dot(p2.asVector());
