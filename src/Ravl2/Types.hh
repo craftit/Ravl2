@@ -93,6 +93,7 @@ namespace Ravl2
 
   using Matrix2f = Matrix<float, 2, 2>;
   using Matrix3f = Matrix<float, 3, 3>;
+  using Matrix3d = Matrix<double, 3, 3>;
 
   //! Convert to a string
   [[nodiscard]] std::string toString(Vector3f v);

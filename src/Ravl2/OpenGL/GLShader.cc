@@ -264,7 +264,9 @@ namespace Ravl2
     glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
   }
 #pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wuseless-cast"
+#ifndef __clang__
+  #pragma GCC diagnostic ignored "-Wuseless-cast"
+#endif
 
   //! Set texture data from a grey scale array.
   void GLTexture::setArray(size_t ind,const Array<uint8_t,2> &data)

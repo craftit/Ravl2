@@ -240,6 +240,13 @@ namespace Ravl2
       return ret;
     }
 
+    //! From XYZ euler angles
+    template <typename Real2T>
+    [[nodiscard]] static constexpr Quaternion<RealT> fromEulerAnglesXYZ(Real2T angleX, Real2T angleY, Real2T angleZ)
+    {
+      return fromEulerAnglesXYZ(Vector<Real2T, 3>{angleX, angleY, angleZ});
+    }
+
     //! Check quaternion is real
     [[nodiscard]]
     constexpr bool isReal() const
@@ -273,6 +280,7 @@ namespace Ravl2
   [[nodiscard]]
   constexpr Quaternion<RealT> slerp(const Quaternion<RealT> &p1, const Quaternion<RealT> &p2, ScaleT t)
   {
+    const RealT it = static_cast<RealT>(t);
     const RealT one = RealT(1.0) - std::numeric_limits<RealT>::epsilon();
     RealT d = p1.asVector().dot(p2.asVector());
     RealT absD = std::fabs(d);
@@ -281,15 +289,15 @@ namespace Ravl2
     RealT scale1;
 
     if(absD >= one) {
-      scale0 = RealT(1) - t;
-      scale1 = t;
+      scale0 = RealT(1) - it;
+      scale1 = it;
     } else {
       // theta is the angle between the 2 quaternions
       RealT theta = std::acos(absD);
       RealT sinTheta = std::sin(theta);
 
-      scale0 = std::sin((RealT(1) - t) * theta) / sinTheta;
-      scale1 = std::sin((t * theta)) / sinTheta;
+      scale0 = std::sin((RealT(1) - it) * theta) / sinTheta;
+      scale1 = std::sin((it * theta)) / sinTheta;
     }
     if(d < RealT(0)) scale1 = -scale1;
 
@@ -333,7 +341,7 @@ namespace Ravl2
   template <typename RealT, typename Real2T>
   [[nodiscard]] constexpr Quaternion<RealT> ApplyAngularVelocity(const Quaternion<RealT> &orientation, const Vector<Real2T, 3> &angularVelocity, Real2T duration)
   {
-    auto rot = Quaternion<RealT>::fromEulerAnglesXYZ(angularVelocity * duration);
+    auto rot = Quaternion<RealT>::fromEulerAnglesXYZ((angularVelocity * duration).eval());
     return orientation * rot;//add to the starting rotation
   }
 

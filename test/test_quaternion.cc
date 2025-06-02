@@ -127,11 +127,11 @@ namespace Ravl2
     {
 
       // Setup a zero rotation
-      Quaternion<RealT> const qZero = Quaternion<RealT>::fromEulerAnglesXYZ({0.0, 0.0, 0.0});
+      Quaternion<RealT> const qZero = Quaternion<RealT>::fromEulerAnglesXYZ(0.0, 0.0, 0.0);
       EXPECT_FLOAT_EQ(qZero.angle(),0);
 
       // Setup a 45 degree rotation about the x axis
-      Quaternion<RealT> const q1 = Quaternion<RealT>::fromEulerAnglesXYZ({RealT(std::numbers::pi / 4.0), 0.0, 0.0});
+      Quaternion<RealT> const q1 = Quaternion<RealT>::fromEulerAnglesXYZ((std::numbers::pi / 4.0), 0.0, 0.0);
       EXPECT_FLOAT_EQ(q1.angle(),RealT(std::numbers::pi/8.0));
       auto angles1 = q1.eulerAngles();
       EXPECT_FLOAT_EQ(angles1[0],RealT(std::numbers::pi/4.0));
@@ -139,7 +139,7 @@ namespace Ravl2
       EXPECT_FLOAT_EQ(angles1[2],0);
 
       // Setup a 45 degree rotation about the y axis
-      Quaternion<RealT> const q2 = Quaternion<RealT>::fromEulerAnglesXYZ({0.0, RealT(std::numbers::pi / 4.0), 0.0});
+      Quaternion<RealT> const q2 = Quaternion<RealT>::fromEulerAnglesXYZ(0.0f, RealT(std::numbers::pi / 4.0), 0.0f);
       EXPECT_FLOAT_EQ(q1.angle(),RealT(std::numbers::pi/8.0));
       auto angles2 = q2.eulerAngles();
       EXPECT_FLOAT_EQ(angles2[0],0);
@@ -147,7 +147,7 @@ namespace Ravl2
       EXPECT_FLOAT_EQ(angles2[2],0);
 
       // Setup a 45 degree rotation about the z axis
-      Quaternion<RealT> const q3 = Quaternion<RealT>::fromEulerAnglesXYZ({0.0, 0.0, RealT(std::numbers::pi / 4.0)});
+      Quaternion<RealT> const q3 = Quaternion<RealT>::fromEulerAnglesXYZ(0.0f, 0.0f, RealT(std::numbers::pi / 4.0));
       EXPECT_FLOAT_EQ(q1.angle(),RealT(std::numbers::pi/8.0));
       auto angles3 = q3.eulerAngles();
       EXPECT_FLOAT_EQ(angles3[0],0);
@@ -155,7 +155,7 @@ namespace Ravl2
       EXPECT_FLOAT_EQ(angles3[2],RealT(std::numbers::pi/4.0));
 
       // Setup a combined rotation
-      Quaternion<RealT> const q4 = Quaternion<RealT>::fromEulerAnglesXYZ({RealT(std::numbers::pi / 4.0), RealT(std::numbers::pi / 5.0), RealT(std::numbers::pi / 6.0)});
+      Quaternion<RealT> const q4 = Quaternion<RealT>::fromEulerAnglesXYZ(RealT(std::numbers::pi / 4.0), RealT(std::numbers::pi / 5.0), RealT(std::numbers::pi / 6.0));
       auto angles4 = q4.eulerAngles();
       EXPECT_FLOAT_EQ(angles4[0],RealT(std::numbers::pi/4.0));
       EXPECT_FLOAT_EQ(angles4[1],RealT(std::numbers::pi/5.0));
@@ -224,8 +224,8 @@ namespace Ravl2
     SECTION("transform")
     {
       Isometry3<RealT> const test
-        (Quaternion<RealT>::fromEulerAnglesXYZ({RealT(std::numbers::pi / 4.0), RealT(std::numbers::pi / 5.0),
-                                                                   RealT(std::numbers::pi / 6.0)}), Vector3f{1, 2, 3}
+        (Quaternion<RealT>::fromEulerAnglesXYZ(RealT(std::numbers::pi / 4.0), RealT(std::numbers::pi / 5.0),
+                                                                   RealT(std::numbers::pi / 6.0)), Vector3f{1, 2, 3}
         );
 
       Vector<RealT, 3> testVec{3, 2, 1};
@@ -241,8 +241,8 @@ namespace Ravl2
     SECTION("projectiveMatrix")
     {
       Isometry3<RealT> const test
-      (Quaternion<RealT>::fromEulerAnglesXYZ({RealT(std::numbers::pi / 4.0), RealT(std::numbers::pi / 5.0),
-                                                             RealT(std::numbers::pi / 6.0)}), Vector3f{1, 2, 3}
+      (Quaternion<RealT>::fromEulerAnglesXYZ(RealT(std::numbers::pi / 4.0), RealT(std::numbers::pi / 5.0),
+                                                             RealT(std::numbers::pi / 6.0)), Vector3f{1, 2, 3}
         );
 
       auto const projMat = test.projectiveMatrix();
