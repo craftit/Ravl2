@@ -10,6 +10,8 @@
 #include <numbers>
 #include <random>
 #include "Ravl2/Catch2checks.hh"
+#include <catch2/catch_test_macros.hpp>
+#include <catch2/matchers/catch_matchers_floating_point.hpp>
 #include <cereal/archives/json.hpp>
 #include <spdlog/spdlog.h>
 
@@ -257,6 +259,28 @@ namespace Ravl2
         CHECK(dist < 5);
       }
       a += step;
+    }
+  }
+
+  TEST_CASE("Line2ABC Construction")
+  {
+    Vector2d const p1({0, 0});
+    Vector2d const p2({2, 0});
+    Vector2d const p3({6, 3});
+    { std::array<Line2ABC<double>,4> l =
+      {
+        Line2ABC<double>::fromPoints(p1, p2),
+        Line2ABC<double>::fromNormal(Vector2d({0, 1}), p2),
+        Line2ABC<double>::fromDirection(p1, Vector2d({1, 0})),
+        Line2ABC<double> (0, 1, 0)
+      };
+      for(size_t i = 0; i < 4; ++i) {
+        //	SPDLOG_INFO("Line {} : {} {} {} ", i, l[i].A(), l[i].B(), l[i].C());
+        //	SPDLOG_INFO("Line {} : Normal= {} {}  ", i, l[i].UnitNormal()(0), l[i].UnitNormal()(1));
+        CHECK(isNearZero(euclidDistance(l[i].unitNormal(),Vector2d({0, 1})),0.001));
+        CHECK_THAT(l[i].signedDistance(p3), Catch::Matchers::WithinRel(3.0,0.001));
+        CHECK(isNearZero(euclidDistance(l[i].projection(p3),Vector2d({6, 0})),0.001));
+      }
     }
   }
 }
