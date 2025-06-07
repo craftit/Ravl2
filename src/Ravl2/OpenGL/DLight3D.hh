@@ -24,9 +24,8 @@ namespace Ravl2 {
     DLight3D(const PixelRGB32F &nCol, const Vector<float,3> &nPos, int nn = 0)
       : n(nn),
 	colour(nCol),
-	pos(nPos),
-	spot(false)
-    {}
+	pos(nPos)
+   {}
 
     //! Render object.
     bool GUIRender(Canvas3D &c3d) const override;
@@ -48,9 +47,9 @@ namespace Ravl2 {
     int n = 0;           //!< Number of light. 0-7
     PixelRGB32F colour;  //!< Colour of light.
     Vector<float,3> pos; //!< Position of light.
-    bool spot = false;   //!< Spot light ?
+    //bool spot = false;   //!< Spot light ?
     Vector<float,3> dir; //!< Direction of spot light.
-    float  ang = 0;      //!< angle of light.
+    //float  ang = 0;      //!< angle of light.
   };
 
 }

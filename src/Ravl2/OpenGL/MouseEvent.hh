@@ -93,7 +93,7 @@ namespace Ravl2 {
     MouseEventTypeT mType = MouseEventTypeT::MousePress;
     RealT x = 0;
     RealT y = 0;   // Current position in GTK coords.
-    int mKeyModifiers = 0; // Key modifiers.
+    //int mKeyModifiers = 0; // Key modifiers.
     int state = 0;  // Current state.
     int change = 0; // Change flags.
     size_t time = 0;  // Time of event.
