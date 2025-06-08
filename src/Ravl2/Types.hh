@@ -154,6 +154,25 @@ namespace Ravl2
 
   //! Default formatting for converting Eigen matrices to strings
   [[nodiscard]] const Eigen::IOFormat &defaultEigenFormat();
+
+  template<typename T>
+  struct is_eigen_type {
+    static constexpr bool value = std::is_base_of_v<Eigen::MatrixBase<typename T::PlainObject>, T>;
+  };
+
+
+  //! Set a value to zero in for either an eigen matrix or a vector, or double
+  template <typename T>
+  void setZero(T &val)
+  {
+    if constexpr(is_eigen_type<T>::value) {
+      val = T::Zero();
+    } else if constexpr(std::is_arithmetic_v<T>) {
+      val = T(0);
+    } else {
+      static_assert(is_eigen_type<T>::value || std::is_arithmetic_v<T>, "Unsupported type for setZero");
+    }
+  }
 }// namespace Ravl2
 
 template <typename T>
