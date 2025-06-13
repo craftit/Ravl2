@@ -4,6 +4,7 @@
 
 #include <shared_mutex>
 #include "Ravl2/IO/TypeConverter.hh"
+#include <map>
 
 namespace Ravl2
 {

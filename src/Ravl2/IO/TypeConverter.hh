@@ -10,8 +10,6 @@
 #include <unordered_map>
 #include <memory>
 #include <vector>
-#include <deque>
-#include <map>
 #include <optional>
 #include <tuple>
 #include <type_traits>
@@ -24,7 +22,7 @@
 namespace Ravl2
 {
 
-  //! Base class for a type conversions.
+  //! Base class for a type conversion.
   //! The 'loss' is a value between 0 and 1 that represents the loss of bits in the conversion. 0.5 would represent a 50% loss of bits.
 
   class TypeConverter
@@ -240,7 +238,7 @@ namespace Ravl2
     //! Find a convertion mChain with a best first search.
     [[nodiscard]] std::optional<ConversionChain> find(const std::type_info &to, const std::type_info &from);
 
-    //! Find a convertion mChain to one of set of possible types with a best first search.
+    //! Find a convertion mChain to one of a set of possible types with a best first search.
     [[nodiscard]] std::optional<ConversionChain> find(const std::unordered_set<std::type_index> &to, const std::type_info &from);
 
     //! Find a convertion mChain to one of set of possible types with a best first search.
@@ -250,7 +248,7 @@ namespace Ravl2
     [[nodiscard]] std::optional<std::any> convert(const std::type_info &to, const std::any &from);
 
   private:
-    //! Find a convertion mChain to one of set of possible types with a best first search.
+    //! Find a convertion mChain to one of a set of possible types with a best first search.
     [[nodiscard]] std::optional<ConversionChain> findInternal(const std::unordered_set<std::type_index> &to, const std::unordered_set<std::type_index> &from);
 
     std::shared_mutex m_mutex;
@@ -370,6 +368,22 @@ namespace Ravl2
     auto x = typeConverterMap().convert(typeid(ToT), from);
     if(!x.has_value()) {
       SPDLOG_WARN("Don't know how to convert {} to {}", typeName(typeid(FromT)), typeName(typeid(ToT)));
+      throw std::runtime_error("Failed to convert type");
+    }
+    return std::any_cast<ToT>(x.value());
+  }
+
+  //! Convert from a std::any to another using the default type converter map.
+  //! This mechanism is intended for use with file formats where code may not have access to the types.
+  template <typename ToT>
+  ToT typeConvert(const std::any &from)
+  {
+    if(from.type() == typeid(ToT)) {
+      return std::any_cast<ToT>(from);
+    }
+    auto x = typeConverterMap().convert(typeid(ToT), from);
+    if(!x.has_value()) {
+      SPDLOG_WARN("Don't know how to convert {} to {}", typeName(from.type()), typeName(typeid(ToT)));
       throw std::runtime_error("Failed to convert type");
     }
     return std::any_cast<ToT>(x.value());
