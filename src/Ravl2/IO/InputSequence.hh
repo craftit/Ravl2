@@ -162,7 +162,7 @@ namespace Ravl2
       auto strmPtr = std::make_shared<StreamInputCall<ObjectT>>([plan = inStreamPlan.value()](std::streampos pos) -> ObjectT {
         return std::any_cast<ObjectT>(plan.mConversion(plan.mStream->anyNext(pos)));
       },
-                                                                inStreamPlan->mStream->beginOffset(), inStreamPlan->mStream->endOffset());
+        inStreamPlan->mStream->beginOffset(), inStreamPlan->mStream->endOffset());
 
       return StreamInputProxy<ObjectT>(std::dynamic_pointer_cast<StreamInput<ObjectT>>(strmPtr));
     }

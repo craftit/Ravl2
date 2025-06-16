@@ -31,7 +31,7 @@ namespace Ravl2
 
     virtual ~StreamInputBase() = default;
 
-    //! Get type name of the object.
+    //! Get the type name of the object.
     [[nodiscard]] std::string typeName() const;
 
     //! @brief Get the type of the object.
