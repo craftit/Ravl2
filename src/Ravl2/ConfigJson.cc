@@ -3,6 +3,8 @@
 //
 
 #include "Ravl2/ConfigJson.hh"
+#include "Ravl2/IO/Load.hh"
+#include "Ravl2/Resource.hh"
 #include <fstream>
 
 #define DODEBUG 0
@@ -242,19 +244,52 @@ namespace Ravl2
     return x->value();
   }
 
+  std::any ConfigNodeJSON::loadFile(std::string tname, const std::string_view &description, const std::type_info &type, std::string path)
+  {
+    if(path.empty()) {
+      SPDLOG_ERROR("Failed to follow path '{}' from '{}'  Parent:{} ", path, rootPathString(), !m_parent);
+      throw std::runtime_error("Failed to follow path ");
+    }
+    std::string filename = path;
+    std::string::size_type pos = path.find(':');
+    if(pos != std::string::npos) {
+      std::string section = path.substr(0, pos);
+      std::string resourceName = path.substr(pos + 1);
+      filename = findFileResource(section, resourceName,true);
+      if(filename.empty()) {
+        SPDLOG_ERROR("Failed to find file '{}'   {} : {} ", path,section,resourceName);
+        throw std::runtime_error("Failed to find file.");
+      }
+    } else {
+
+    }
+    std::any anObj;
+    if(!ioLoad(anObj, path, type)) {
+      SPDLOG_ERROR("Failed to load file '{}' ", filename);
+      throw std::runtime_error("Failed to load file.");
+    }
+    std::shared_ptr<ConfigNode> node = std::make_shared<ConfigNodeJSON>(*this,
+                                            std::move(tname),
+                                            std::string(description),
+                                            std::move(anObj),
+                                            path);
+    m_children.emplace(node->name(), node);
+    return true;
+  }
+
   std::any ConfigNodeJSON::initObject(const std::string_view &name,
                                       const std::string_view &description,
                                       const std::type_info &type,
                                       const std::string_view &defaultType)
   {
     ONDEBUG(SPDLOG_INFO("initObject {} for handle type '{}'  with default type '{}'  ", name, type.name(), defaultType));
-    // Check if the 'name' is actually a path seperated by dots.
+    // Check if the 'name' is actually a path separated by dots.
 
     std::string tname(name);
     json jvalue;
     std::shared_ptr<ConfigNode> node;
     if(m_json.find(tname) == m_json.end()) {
-      // Try and use string as path if string has a dot in it.
+      // Try and use string as a path if string has a dot in it.
       if(tname.find('.') != std::string::npos) {
         jvalue = tname;
       } else {
@@ -267,6 +302,12 @@ namespace Ravl2
     if(jvalue.is_string()) {
       std::string path = jvalue.template get<std::string>();
       ONDEBUG(SPDLOG_INFO("Following path {} ", path));
+      // Does the path start with '@' ?
+      if(path[0] == '@') {
+        // Yes, so it's a file name we want to load
+        path = path.substr(1);
+        return loadFile(tname, description, type, path);
+      }
       ConfigNode *aNode = nullptr;
       // We have to start from the parent, else we'll just find this entry again.
       if(m_parent != nullptr) {

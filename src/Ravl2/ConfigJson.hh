@@ -61,11 +61,14 @@ namespace Ravl2
     //! Initialise a string field
     std::any initBool(const std::string_view &name, const std::string_view &description, bool defaultValue) override;
 
+    //! Load the node from a file.
+    std::any loadFile(std::string tname, const std::string_view &description, const std::type_info &type, std::string path);
+
     //! Initialise an object field
     //! @param name Name of the field
     //! @param description Description of the field
     //! @param type Type of the object
-    //! @param defaultValue Default value of the field
+    //! @param defaultType Default type of the field
     //! @return The value of the field
     std::any initObject(const std::string_view &name,
                         const std::string_view &description,
