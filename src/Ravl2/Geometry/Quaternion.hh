@@ -254,6 +254,13 @@ namespace Ravl2
       return Eigen::isfinite(m_vec.array()).all();
     }
 
+    //! Serialize the quaternion
+    template <class Archive>
+    void serialize(Archive &archive)
+    {
+      archive(m_vec[0], m_vec[1], m_vec[2], m_vec[3]);
+    }
+
   private:
     Vector<RealT, 4> m_vec {1.0, 0, 0, 0};
   };
