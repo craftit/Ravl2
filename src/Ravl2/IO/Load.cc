@@ -55,6 +55,9 @@ namespace Ravl2
     if(protocol == "file") {
       std::unique_ptr<std::istream> tmpStrm = std::make_unique<std::ifstream>(rawFilename);
       if(!tmpStrm->good()) {
+        if(verbose) {
+          SPDLOG_ERROR("Failed to open file: '{}'", rawFilename);
+        }
         return std::nullopt;
       }
       ctx.m_data = std::vector<uint8_t>(256);

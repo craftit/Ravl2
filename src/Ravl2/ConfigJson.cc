@@ -251,6 +251,7 @@ namespace Ravl2
       throw std::runtime_error("Failed to follow path ");
     }
     std::string filename = path;
+    // FIXME: This may interact poorly with URL's.
     std::string::size_type pos = path.find(':');
     if(pos != std::string::npos) {
       std::string section = path.substr(0, pos);
@@ -264,7 +265,7 @@ namespace Ravl2
 
     }
     std::any anObj;
-    if(!ioLoad(anObj, path, type)) {
+    if(!ioLoad(anObj, filename, type, Ravl2::defaultLoadFormatHint(true))) {
       SPDLOG_ERROR("Failed to load file '{}' ", filename);
       throw std::runtime_error("Failed to load file.");
     }
@@ -274,7 +275,7 @@ namespace Ravl2
                                             std::move(anObj),
                                             path);
     m_children.emplace(node->name(), node);
-    return true;
+    return node->value();
   }
 
   std::any ConfigNodeJSON::initObject(const std::string_view &name,
