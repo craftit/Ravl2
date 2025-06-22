@@ -256,7 +256,7 @@ namespace Ravl2
     if(pos != std::string::npos) {
       std::string section = path.substr(0, pos);
       std::string resourceName = path.substr(pos + 1);
-      filename = findFileResource(section, resourceName,true);
+      filename = findFileResource(section, resourceName,false);
       if(filename.empty()) {
         SPDLOG_ERROR("Failed to find file '{}'   {} : {} ", path,section,resourceName);
         throw std::runtime_error("Failed to find file.");
@@ -265,7 +265,7 @@ namespace Ravl2
 
     }
     std::any anObj;
-    if(!ioLoad(anObj, filename, type, Ravl2::defaultLoadFormatHint(true))) {
+    if(!ioLoad(anObj, filename, type, Ravl2::defaultLoadFormatHint(false))) {
       SPDLOG_ERROR("Failed to load file '{}' ", filename);
       throw std::runtime_error("Failed to load file.");
     }
