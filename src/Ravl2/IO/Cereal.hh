@@ -459,6 +459,9 @@ namespace Ravl2
       auto it = m_streamInputFactory.find(header.typeName);
       if(it == m_streamInputFactory.end()) {
 	SPDLOG_WARN("Unknown object type '{}' in format '{}' Archive:{} ", header.typeName, typeName(typeid(*this)),static_cast<void*>(this));
+        for(const auto &pair : m_streamInputFactory) {
+          SPDLOG_INFO("  Known type: '{}'", pair.first);
+        }
 	return std::nullopt;
       }
       auto newStream = it->second(ctx);

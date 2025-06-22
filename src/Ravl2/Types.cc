@@ -60,13 +60,14 @@ namespace Ravl2
   //! Register an alternative name for a type.
   bool registerTypeName(const std::type_info &type, const std::string &name)
   {
-    auto at = typeNameMap().find(type);
-    if(at != typeNameMap().end()) {
+    std::unordered_map<std::type_index,std::string> &typeMap = typeNameMap();
+    auto at = typeMap.find(type);
+    if(at != typeMap.end()) {
       //std::("Type '{}' already has a name '{}' ,  requested '{}' ", demangle(type.name()), at->second, name);
       std::cerr << "Type '" << demangle(type.name()) << "' already has a name '" << at->second << "', requested '" << name << "'\n";
       return false;
     }
-    typeNameMap()[type] = name;
+    typeMap[type] = name;
     return true;
   }
 
