@@ -57,7 +57,7 @@ namespace Ravl2
       if(m_queue.size() >= m_maxSize) {
         return false;
       }
-      m_queue.push(std::move(data));
+      m_queue.emplace(std::move(data));
       m_conditionPop.notify_one();
       return true;
     }
@@ -71,6 +71,18 @@ namespace Ravl2
         m_conditionPush.wait(lock);
       }
       m_queue.push(data);
+      m_conditionPop.notify_one();
+    }
+
+    //! @brief Add an element to the queue, blocking if the queue is full.
+    //! @param data the element to add to the queue
+    void push(const DataT &&data)
+    {
+      std::unique_lock<std::mutex> lock(m_mutex);
+      while(m_queue.size() >= m_maxSize) {
+        m_conditionPush.wait(lock);
+      }
+      m_queue.emplace(std::move(data));
       m_conditionPop.notify_one();
     }
 
@@ -124,7 +136,7 @@ namespace Ravl2
           }
         }
       }
-      data = m_queue.front();
+      data = std::move(m_queue.front());
       m_queue.pop();
       m_conditionPush.notify_one();
       return true;
