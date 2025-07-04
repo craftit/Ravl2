@@ -285,7 +285,7 @@ namespace Ravl2
 	m_isFirst = false;
       }
       ObjectT obj;
-      m_archive(cereal::make_nvp(fmt::format("body{}",size_t(pos)),obj));
+      m_archive(cereal::make_nvp(fmt::format("body{}", static_cast<std::size_t>(pos)),obj));
       if constexpr(std::is_same_v<ArchiveT, cereal::BinaryInputArchive>) {
 	pos = m_stream->tellg();
       } else {
