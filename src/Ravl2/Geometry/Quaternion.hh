@@ -122,7 +122,7 @@ namespace Ravl2
     }
 
     //! Rotate a vector
-    //! Maybe a different precision from the quaternion type.
+    //! Maybe at a different precision from the quaternion type.
     template <typename Real2T>
     [[nodiscard]] constexpr Vector<Real2T, 3> rotate(const Vector<Real2T, 3> &v) const
     {

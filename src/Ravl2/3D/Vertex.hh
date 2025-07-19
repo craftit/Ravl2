@@ -34,7 +34,8 @@ namespace Ravl2
     //! @param  pos - position of vertex.
     // The surface normal is left undefined.
     explicit Vertex(const Point<RealT,3> &pos)
-      : mAt(pos)
+      : mAt(pos),
+        mNormal(std::nan(""),std::nan(""),std::nan(""))
     {}
     
     //! Access position of vertex.
