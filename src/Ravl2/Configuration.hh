@@ -591,7 +591,7 @@ namespace Ravl2
       assert(m_node);
       std::any value = m_node->getValue(name, typeid(std::vector<DataT>));
       if(!value.has_value()) {
-        value = m_node->initVector(name, description, float(defaultValue), float(min), float(max),size);
+        value = m_node->initVector(name, description, static_cast<float>(defaultValue), static_cast<float>(min), static_cast<float>(max),size);
       }
       return std::any_cast<std::vector<DataT> >(value);
     }
@@ -604,7 +604,7 @@ namespace Ravl2
       assert(m_node);
       std::any value = m_node->getValue(name, typeid(std::vector<float>));
       if(!value.has_value()) {
-        value = m_node->initVector(name, description, float(defaultValue),float(min), float(max),N);
+        value = m_node->initVector(name, description, static_cast<float>(defaultValue), static_cast<float>(min), static_cast<float>(max),N);
       }
       auto vec = std::any_cast<std::vector<float>>(value);
       Point<RealT,N> ret;
@@ -613,7 +613,7 @@ namespace Ravl2
         throw std::runtime_error("Wrong number of elements in point");
       }
       for(int i = 0; i < N; i++) {
-        ret[i] = RealT(vec[size_t(i)]);
+        ret[i] = RealT(vec[static_cast<size_t>(i)]);
       }
       return ret;
     }
@@ -627,7 +627,7 @@ namespace Ravl2
       assert(m_node);
       std::any value = m_node->getValue(name, typeid(std::vector<float>));
       if(!value.has_value()) {
-        value = m_node->initVector(name, description, float(defaultValue),float(min), float(max),N * M);
+        value = m_node->initVector(name, description, static_cast<float>(defaultValue), static_cast<float>(min), static_cast<float>(max),N * M);
       }
       auto vec = std::any_cast<std::vector<float>>(value);
       Matrix<RealT,N,M> ret;
@@ -637,7 +637,7 @@ namespace Ravl2
       }
       for(size_t i = 0; i < N; i++) {
         for(size_t j = 0; j < M; j++) {
-          ret(int(i),int(j)) = RealT(vec[i * M + j]);
+          ret(static_cast<int>(i), static_cast<int>(j)) = RealT(vec[i * M + j]);
         }
       }
       return ret;

@@ -294,7 +294,7 @@ namespace Ravl2
       if(tname.find('.') != std::string::npos) {
         jvalue = tname;
       } else {
-        SPDLOG_ERROR("Expected an object for {}{} of type '{}' ", rootPathString(), name, typeName(type));
+        SPDLOG_ERROR("Expected an object for {}{} of type '{}' in file '{}' ", rootPathString(), name, typeName(type),filename());
         throw std::runtime_error("Expected a object in field.");
       }
     } else {
