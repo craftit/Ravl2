@@ -196,9 +196,13 @@ namespace Ravl2
     }
 
     mGP.fit(Xmat, yvec);
+
+    // Invalidate prediction and EI caches since the GP model changed
+    mPredictionsCacheValid = false;
+    mEICacheValid = false;
   }
 
-  //! Predict function value at a point using surrogate model
+  //! Predict function value at a point using a surrogate model
   //!
   //! @param x Point to predict
   //! @return Predicted function value
@@ -211,9 +215,86 @@ namespace Ravl2
     return mean[0];
   }
 
-  //! Select next batch of points to evaluate
+  //! Generate or retrieve cached candidate points
+  //! @param domain Domain of the function
+  //! @param nCandidates Number of candidates to generate
+  const std::vector<VectorT<BayesianOptimise::RealT>>& BayesianOptimise::State::getCandidates(
+      const CostDomain<RealT> &domain, size_t nCandidates) {
+
+    if(!mCandidatesCacheValid || mCandidatesCache.size() != nCandidates) {
+      mCandidatesCache.clear();
+      mCandidatesCache.reserve(nCandidates);
+
+      // Generate random candidates
+      const auto nDims = static_cast<Eigen::Index>(domain.dim());
+      for(size_t i = 0; i < nCandidates; ++i) {
+        VectorT<RealT> x(nDims);
+        for(Eigen::Index d = 0; d < nDims; ++d) {
+          std::uniform_real_distribution<RealT> dist(domain.min(d), domain.max(d));
+          x[d] = dist(mGen);
+        }
+        mCandidatesCache.push_back(x);
+      }
+      mCandidatesCacheValid = true;
+      // Invalidate dependent caches
+      mPredictionsCacheValid = false;
+      mEICacheValid = false;
+    }
+
+    return mCandidatesCache;
+  }
+
+  //! Compute or retrieve cached GP predictions
+  //! @param candidates Candidate points to predict
+  void BayesianOptimise::State::computePredictions(const std::vector<VectorT<RealT>>& candidates) {
+    if(!mPredictionsCacheValid) {
+      const size_t nCandidates = candidates.size();
+      const auto nDims = candidates[0].size();
+
+      // Convert candidates to matrix format
+      typename GaussianProcess<RealT>::Matrix Xtest(static_cast<Eigen::Index>(nCandidates), nDims);
+      for(size_t i = 0; i < nCandidates; ++i) {
+        Xtest.row(static_cast<Eigen::Index>(i)) = candidates[i].transpose();
+      }
+
+      // Predict with the surrogate model
+      mGP.predict(Xtest, mMeanCache, mVarianceCache);
+      mPredictionsCacheValid = true;
+      // Invalidate EI cache since predictions changed
+      mEICacheValid = false;
+    }
+  }
+
+  //! Compute or retrieve cached Expected Improvement scores
+  //! @param bestY Current best function value
+  void BayesianOptimise::State::computeExpectedImprovement(RealT bestY) {
+    if(!mEICacheValid || std::abs(mLastBestY - bestY) > std::numeric_limits<RealT>::epsilon()) {
+      const size_t nCandidates = static_cast<size_t>(mMeanCache.size());
+      mEICache.clear();
+      mEICache.reserve(nCandidates);
+
+      // Calculate expected improvement for each candidate
+      for(size_t i = 0; i < nCandidates; ++i) {
+        const auto mu = mMeanCache[static_cast<Eigen::Index>(i)];
+        const auto sigma = std::sqrt(std::max(mVarianceCache[static_cast<Eigen::Index>(i)], RealT(1e-9)));
+        const auto z = static_cast<double>((bestY - mu) / sigma);
+        const auto ei = sigma > 0 ?
+                    static_cast<double>(bestY - mu) * std::erfc(-z/std::sqrt(2))/2 +
+                    static_cast<double>(sigma) * std::exp(-0.5*z*z)/std::sqrt(2*M_PI) : 0;
+        mEICache.emplace_back(static_cast<RealT>(ei), i);
+      }
+
+      // Sort by EI (descending) - this is expensive, so we cache it
+      std::sort(mEICache.rbegin(), mEICache.rend());
+
+      mEICacheValid = true;
+      mLastBestY = bestY;
+    }
+  }
+
+  //! Select next batch of points to evaluate with intelligent caching
   //!
-  //! Uses Expected Improvement acquisition function to select promising points.
+  //! Uses cached Expected Improvement acquisition function to select promising points.
   //!
   //! @param domain Domain of the function
   //! @param batchSize Number of points to select
@@ -223,53 +304,22 @@ namespace Ravl2
       size_t batchSize)
   {
     const size_t nCandidates = 100 * batchSize;
-    std::vector<VectorT<RealT>> candidates;
-    candidates.reserve(nCandidates);
 
-    // Generate random candidates
-    const auto nDims = static_cast<Eigen::Index>(domain.dim());
-    for(size_t i = 0; i < nCandidates; ++i) {
-      VectorT<RealT> x(nDims);
-      for(Eigen::Index d = 0; d < nDims; ++d) {
-        std::uniform_real_distribution<RealT> dist(domain.min(d), domain.max(d));
-        x[d] = dist(mGen);
-      }
-      candidates.push_back(x);
-    }
+    // Get cached candidates (generates new ones if cache is invalid)
+    const auto& candidates = getCandidates(domain, nCandidates);
 
-    // Convert candidates to a matrix format
-    typename GaussianProcess<RealT>::Matrix Xtest(static_cast<Eigen::Index>(nCandidates), nDims);
-    for(size_t i = 0; i < nCandidates; ++i) {
-      Xtest.row(static_cast<Eigen::Index>(i)) = candidates[i].transpose();
-    }
+    // Compute cached GP predictions
+    computePredictions(candidates);
 
-    // Predict with the surrogate model
-    VectorT<RealT> mean, var;
-    mGP.predict(Xtest, mean, var);
+    // Compute cached Expected Improvement scores
     const RealT bestY = getBestY();
+    computeExpectedImprovement(bestY);
 
-    // Calculate expected improvement for each candidate
-    std::vector<std::pair<RealT, size_t>> ei_scores;
-    ei_scores.reserve(nCandidates);
-
-    for(size_t i = 0; i < nCandidates; ++i) {
-      const auto mu = mean[static_cast<Eigen::Index>(i)];
-      const auto sigma = std::sqrt(std::max(var[static_cast<Eigen::Index>(i)], RealT(1e-9)));
-      const auto z = static_cast<double>((bestY - mu) / sigma);
-      const auto ei = sigma > 0 ?
-                  static_cast<double>(bestY - mu) * std::erfc(-z/std::sqrt(2))/2 +
-                  static_cast<double>(sigma) * std::exp(-0.5*z*z)/std::sqrt(2*M_PI) : 0;
-      ei_scores.emplace_back(static_cast<RealT>(ei), i);
-    }
-
-    // Sort by EI (descending)
-    std::sort(ei_scores.rbegin(), ei_scores.rend());
-
-    // Select the top candidates
+    // Select the top candidates from cached, sorted EI scores
     std::vector<VectorT<RealT>> batch;
     batch.reserve(batchSize);
-    for(size_t i = 0; i < batchSize && i < ei_scores.size(); ++i) {
-      batch.push_back(candidates[ei_scores[i].second]);
+    for(size_t i = 0; i < batchSize && i < mEICache.size(); ++i) {
+      batch.push_back(candidates[mEICache[i].second]);
     }
 
     return batch;

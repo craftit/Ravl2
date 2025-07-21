@@ -27,7 +27,7 @@ public:
   explicit BayesianOptimise(bool verbose)
     : Optimise(verbose) {}
 
-  //! Programmatic constructor with common parameters
+  //! Programmatic constructor with common parameters.
   //! @param maxIters Maximum number of optimization iterations
   //! @param batchSize Number of points to evaluate in parallel (default: 1)
   //! @param maxThreads Maximum number of threads for parallel evaluation (0 = single-threaded, default: 0)
@@ -164,6 +164,9 @@ private:
     void addPoint(const VectorT<RealT> &x, RealT y) {
       mX.push_back(x);
       mY.push_back(y);
+      // Invalidate caches when new data is added
+      mCandidatesCacheValid = false;
+      mPredictionsCacheValid = false;
     }
 
     //! Get the best (minimum) function value found so far
@@ -172,6 +175,30 @@ private:
       return mY.empty() ? std::numeric_limits<RealT>::max() :
              *std::min_element(mY.begin(), mY.end());
     }
+
+  private:
+    // Caching infrastructure for performance optimization
+    std::vector<VectorT<RealT>> mCandidatesCache; //!< Cached candidate points
+    VectorT<RealT> mMeanCache;                    //!< Cached GP mean predictions
+    VectorT<RealT> mVarianceCache;                //!< Cached GP variance predictions
+    std::vector<std::pair<RealT, size_t>> mEICache; //!< Cached EI scores with indices
+    bool mCandidatesCacheValid = false;           //!< Whether candidates cache is valid
+    bool mPredictionsCacheValid = false;          //!< Whether predictions cache is valid
+    bool mEICacheValid = false;                   //!< Whether EI cache is valid
+    RealT mLastBestY = std::numeric_limits<RealT>::max(); //!< Last bestY used for EI calculation
+
+    //! Generate or retrieve cached candidate points
+    //! @param domain Domain of the function
+    //! @param nCandidates Number of candidates to generate
+    const std::vector<VectorT<RealT>>& getCandidates(const CostDomain<RealT> &domain, size_t nCandidates);
+
+    //! Compute or retrieve cached GP predictions
+    //! @param candidates Candidate points to predict
+    void computePredictions(const std::vector<VectorT<RealT>>& candidates);
+
+    //! Compute or retrieve cached Expected Improvement scores
+    //! @param bestY Current best function value
+    void computeExpectedImprovement(RealT bestY);
   };
 };
 
