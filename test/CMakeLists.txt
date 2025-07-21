@@ -71,6 +71,7 @@ add_executable(tests
         test_planes.cc
         test_spatialhash.cc
         test_BayesianOptimise.cc
+        test_RandomSearchOptimise.cc
 )
 target_link_libraries(
   tests

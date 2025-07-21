@@ -6,12 +6,15 @@
 
 namespace Ravl2
 {
-  float quadratic(const VectorT<float> &x) {
-    double sum = 0.0f;
-    for(int i = 0; i < x.size(); ++i) {
-      sum += std::pow(x[i] - 1.0f, 2);
+  namespace
+  {
+    float quadratic(const VectorT<float> &x) {
+      double sum = 0.0;
+      for(int i = 0; i < x.size(); ++i) {
+        sum += std::pow(x[i] - 1.0f, 2);
+      }
+      return static_cast<float>(sum);
     }
-    return static_cast<float>(sum);
   }
 
   TEST_CASE("BayesianOptimise finds minimum of quadratic function", "[BayesianOptimise]")

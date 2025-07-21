@@ -69,8 +69,8 @@ namespace Ravl2
     { return static_cast<size_t>(mMin.size()); }
 
     //! Dimensions of the cost function
-    [[nodiscard]] size_t dim () const
-    { return static_cast<size_t>(mMin.size()); }
+    [[nodiscard]] Eigen::Index dim () const
+    { return mMin.size(); }
   private:
     VectorType mMin;
     VectorType mMax;
