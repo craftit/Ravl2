@@ -14,6 +14,7 @@ namespace Ravl2 {
 //!
 //! Implements Bayesian optimization to find global minima of expensive functions
 //! by building a probabilistic surrogate model of the objective function.
+
 class BayesianOptimise : public Optimise {
 public:
   /// Real number type used for calculations
