@@ -1,6 +1,8 @@
 #include "GaussianProcess.hh"
 #include <cmath>
 #include <stdexcept>
+#include <spdlog/spdlog.h>
+#include <cassert>
 
 namespace Ravl2
 {
@@ -22,9 +24,11 @@ namespace Ravl2
   void GaussianProcess<RealT>::fit(const Matrix &X, const Vector &y)
   {
     if(X.rows() == 0 || y.size() == 0) {
+      SPDLOG_ERROR("GaussianProcess::fit() called with empty data: X.rows()={}, y.size()={}", X.rows(), y.size());
       throw std::invalid_argument("Cannot fit GP with empty data");
     }
     if(X.rows() != y.size()) {
+      SPDLOG_ERROR("GaussianProcess::fit() called with mismatched dimensions: X.rows()={}, y.size()={}", X.rows(), y.size());
       throw std::invalid_argument("Number of input points must match number of target values");
     }
 
@@ -55,7 +59,7 @@ namespace Ravl2
   template<typename RealT>
   void GaussianProcess<RealT>::predict(const Matrix &Xtest, Vector &mean, Vector &variance) const
   {
-    if(mX.rows() == 0) throw std::runtime_error("GP not fitted.");
+    assert(mX.rows() > 0 && "GaussianProcess::predict() called on unfitted model - must call fit() first");
     Matrix K_s = compute_kernel_matrix(mX, Xtest);    // n_train x n_test
     Matrix K_ss = compute_kernel_matrix(Xtest, Xtest);// n_test x n_test
     mean = K_s.transpose() * mK_inv * mY;

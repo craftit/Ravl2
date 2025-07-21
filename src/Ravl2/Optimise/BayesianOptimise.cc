@@ -7,6 +7,7 @@
 #include <atomic>
 #include <mutex>
 #include <stdexcept>
+#include <cassert>
 
 namespace Ravl2
 {
@@ -74,15 +75,18 @@ namespace Ravl2
 
     // Input validation
     if(domain.dim() == 0) {
+      SPDLOG_ERROR("BayesianOptimise::minimiseBatch() called with empty domain: domain.dim()={}", domain.dim());
       throw std::invalid_argument("Domain must have at least one dimension");
     }
     if(!func) {
+      SPDLOG_ERROR("BayesianOptimise::minimiseBatch() called with null function pointer");
       throw std::invalid_argument("Function cannot be null");
     }
 
-    // Validate starting points have correct dimension
+    // Validate starting points have the correct dimension
     for(const auto& point : startPoints) {
       if(point.size() != static_cast<Eigen::Index>(domain.dim())) {
+        SPDLOG_ERROR("BayesianOptimise::minimiseBatch() starting point dimension mismatch: point.size()={}, domain.dim()={}", point.size(), domain.dim());
         throw std::invalid_argument("Starting point dimension doesn't match domain dimension");
       }
     }
@@ -171,20 +175,18 @@ namespace Ravl2
     if(mX.empty() || mY.empty()) return;
 
     // Ensure consistent data sizes
-    if(mX.size() != mY.size()) {
-      throw std::runtime_error("Mismatch between number of X points and Y values");
-    }
+    assert(mX.size() == mY.size() && "Mismatch between number of X points and Y values");
 
     // Convert vector of vectors to matrix efficiently
     const auto nSamples = static_cast<Eigen::Index>(mX.size());
     const auto nFeatures = mX[0].size();
 
     // Validate all vectors have the same dimension
+#ifndef NDEBUG
     for(size_t i = 1; i < mX.size(); ++i) {
-      if(mX[i].size() != nFeatures) {
-        throw std::runtime_error("Inconsistent input vector dimensions");
-      }
+      assert(mX[i].size() == nFeatures && "Inconsistent input vector dimensions");
     }
+#endif
 
     typename GaussianProcess<RealT>::Matrix Xmat(nSamples, nFeatures);
     VectorT<RealT> yvec(nSamples);
