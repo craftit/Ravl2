@@ -127,8 +127,8 @@ namespace Ravl2
       // Determine batch size for this iteration
       size_t currentBatchSize = std::min(mBatchSize, mMaxEvals - evaluationsUsed);
 
-      // Generate sampling points
-      std::vector<VectorT<RealT>> batch = generateSamplingPoints(domain, currentBatchSize, gen);
+      // Generate sampling points using current evaluation count as offset for deterministic patterns
+      std::vector<VectorT<RealT>> batch = generateSamplingPoints(domain, currentBatchSize, gen, evaluationsUsed);
 
       // Evaluate the batch
       std::vector<RealT> values = evaluateBatch(batch, func);
@@ -171,15 +171,16 @@ namespace Ravl2
   std::vector<VectorT<RandomSearchOptimise::RealT>> RandomSearchOptimise::generateSamplingPoints(
       const CostDomain<RealT> &domain,
       size_t numPoints,
-      std::mt19937 &gen) const {
+      std::mt19937 &gen,
+      size_t offset) const {
 
     switch (mPatternType) {
       case PatternType::Random:
         return generateRandomPoints(domain, numPoints, gen);
       case PatternType::Grid:
-        return generateGridPoints(domain, numPoints);
+        return generateGridPoints(domain, numPoints, offset);
       case PatternType::Sobol:
-        return generateSobolPoints(domain, numPoints);
+        return generateSobolPoints(domain, numPoints, offset);
       default:
         {
           SPDLOG_ERROR("Unknown pattern type: {}", static_cast<int>(mPatternType));
@@ -214,7 +215,8 @@ namespace Ravl2
   //! Generate grid sampling points
   std::vector<VectorT<RandomSearchOptimise::RealT>> RandomSearchOptimise::generateGridPoints(
       const CostDomain<RealT> &domain,
-      size_t numPoints) const {
+      size_t numPoints,
+      size_t offset) const {
 
     Eigen::Index dims = domain.dim();
     if (dims == 0) {
@@ -226,24 +228,27 @@ namespace Ravl2
     pointsPerDim = std::max(pointsPerDim, Eigen::Index(2)); // At least 2 points per dimension
 
     std::vector<VectorT<RealT>> points;
+    points.reserve(numPoints);
 
-    // Generate all combinations
-    std::function<void(VectorT<RealT>&, Eigen::Index)> generateRecursive =
-        [&](VectorT<RealT>& currentPoint, Eigen::Index dim) {
-          if (dim == dims) {
-            points.push_back(currentPoint);
-            return;
-          }
+    // Generate points starting from offset
+    size_t totalGridPoints = static_cast<size_t>(std::pow(pointsPerDim, dims));
 
-          for (Eigen::Index i = 0; i < pointsPerDim; ++i) {
-            RealT t = (pointsPerDim == 1) ? 0.5 : static_cast<RealT>(i) / (pointsPerDim - 1);
-            currentPoint[dim] = domain.min(dim) + t * (domain.max(dim) - domain.min(dim));
-            generateRecursive(currentPoint, dim + 1);
-          }
-        };
+    for (size_t pointIdx = 0; pointIdx < numPoints; ++pointIdx) {
+      size_t currentIndex = (offset + pointIdx) % totalGridPoints;
+      VectorT<RealT> point(dims);
 
-    VectorT<RealT> currentPoint(dims);
-    generateRecursive(currentPoint, 0);
+      // Convert linear index to multi-dimensional coordinates
+      Eigen::Index temp = currentIndex;
+      for (Eigen::Index dim = 0; dim < dims; ++dim) {
+        Eigen::Index coord = temp % pointsPerDim;
+        temp /= pointsPerDim;
+
+        RealT t = (pointsPerDim == 1) ? 0.5 : static_cast<RealT>(coord) / (pointsPerDim - 1);
+        point[dim] = domain.min(dim) + t * (domain.max(dim) - domain.min(dim));
+      }
+
+      points.push_back(point);
+    }
 
     return points;
   }
@@ -251,7 +256,8 @@ namespace Ravl2
   //! Generate Sobol sequence points (simplified implementation)
   std::vector<VectorT<RandomSearchOptimise::RealT>> RandomSearchOptimise::generateSobolPoints(
       const CostDomain<RealT> &domain,
-      size_t numPoints) const {
+      size_t numPoints,
+      size_t offset) const {
 
     // Simple Sobol-like sequence using van der Corput sequence for each dimension
     std::vector<VectorT<RealT>> points;
@@ -271,11 +277,13 @@ namespace Ravl2
     // Use different prime bases for each dimension
     std::vector<size_t> bases = {2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47};
 
-    for (Eigen::Index i = 0; i < Eigen::Index(numPoints); ++i) {
+    // Generate points starting from offset
+    for (size_t i = 0; i < numPoints; ++i) {
       VectorT<RealT> point(domain.size());
       for (Eigen::Index j = 0; j < domain.dim(); ++j) {
         size_t base = bases[static_cast<size_t>(j) % bases.size()];
-        double u = vanDerCorput(static_cast<size_t>(i + 1), base); // +1 to avoid 0
+        // Use offset + i + 1 to continue the sequence from the specified starting point
+        double u = vanDerCorput(offset + i + 1, base);
         point[j] = domain.min(j) + static_cast<RealT>(u) * (domain.max(j) - domain.min(j));
       }
       points.push_back(point);

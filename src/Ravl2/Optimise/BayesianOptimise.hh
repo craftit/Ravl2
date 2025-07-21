@@ -40,47 +40,16 @@ public:
   //! @param tolerance Convergence tolerance for early stopping (default: 1e-6)
   //! @param minItersBeforeConvergence Minimum iterations before checking convergence (default: 5)
   explicit BayesianOptimise(
-      size_t maxIters,
-      size_t batchSize = 1,
-      size_t maxThreads = 0,
-      bool verbose = false,
-      RealT gpLengthScale = static_cast<RealT>(1.0),
-      RealT gpNoise = static_cast<RealT>(1e-6),
-      bool fixedSeed = true,
-      unsigned seed = 42,
-      RealT tolerance = static_cast<RealT>(1e-6),
-      size_t minItersBeforeConvergence = 5
-  ) : Optimise(verbose),
-      mBatchSize(batchSize),
-      mMaxIters(maxIters),
-      mMaxThreads(maxThreads),
-      mFixedSeed(fixedSeed),
-      mSeed(seed),
-      mGPLengthScale(gpLengthScale),
-      mGPNoise(gpNoise),
-      mTolerance(tolerance),
-      mMinItersBeforeConvergence(minItersBeforeConvergence)
-  {
-    // Parameter validation
-    if(maxIters == 0) {
-      throw std::invalid_argument("maxIters must be greater than 0");
-    }
-    if(batchSize == 0) {
-      throw std::invalid_argument("batchSize must be greater than 0");
-    }
-    if(gpLengthScale <= 0) {
-      throw std::invalid_argument("gpLengthScale must be positive");
-    }
-    if(gpNoise <= 0) {
-      throw std::invalid_argument("gpNoise must be positive");
-    }
-    if(tolerance <= 0) {
-      throw std::invalid_argument("tolerance must be positive");
-    }
-    if(minItersBeforeConvergence >= maxIters) {
-      throw std::invalid_argument("minItersBeforeConvergence must be less than maxIters");
-    }
-  }
+    size_t maxIters,
+    size_t batchSize = 1,
+    size_t maxThreads = 0,
+    bool verbose = false,
+    RealT gpLengthScale = static_cast<RealT>(1.0),
+    RealT gpNoise = static_cast<RealT>(1e-6),
+    bool fixedSeed = true,
+    unsigned seed = 42,
+    RealT tolerance = static_cast<RealT>(1e-6),
+    size_t minItersBeforeConvergence = 5);
 
   //! Constructor from configuration
   //! @param config Configuration object containing optimization parameters
@@ -108,6 +77,22 @@ public:
       const std::vector<VectorT<RealT>> &startPoints
   ) const;
 
+  //! Setters for configuration parameters
+  void setBatchSize(size_t batchSize) { mBatchSize = batchSize; }
+  void setMaxIters(size_t maxIters) { mMaxIters = maxIters; }
+  void setAdaptiveLengthScale(bool adaptive) { mAdaptiveLengthScale = adaptive; }
+  void setMaxThreads(size_t maxThreads) { mMaxThreads = maxThreads; }
+  void setFixedSeed(bool fixedSeed) { mFixedSeed = fixedSeed; }
+  void setSeed(unsigned seed) { mSeed = seed; }
+  void setGPLengthScale(RealT lengthScale) { mGPLengthScale = lengthScale; }
+  void setGPNoise(RealT noise) { mGPNoise = noise; }
+  void setTolerance(RealT tolerance) { mTolerance = tolerance; }
+  void setMinItersBeforeConvergence(size_t minIters) { mMinItersBeforeConvergence = minIters; }
+  void setExplorationWeight(RealT weight) { mExplorationWeight = weight; }
+  void setLocalSearchRadius(RealT radius) { mLocalSearchRadius = radius; }
+  void setNumLocalCandidates(size_t numCandidates) { mNumLocalCandidates = numCandidates; }
+
+
 private:
 
   size_t mBatchSize = 1; //!< Size of the batch for parallel evaluations
@@ -119,6 +104,10 @@ private:
   RealT mGPNoise = RealT(1e-6); //!< Noise parameter for Gaussian Process
   RealT mTolerance = RealT(1e-6); //!< Convergence tolerance for early stopping
   size_t mMinItersBeforeConvergence = 5; //!< Minimum iterations before checking convergence
+  RealT mExplorationWeight = RealT(0.1); //!< Weight for exploration vs exploitation (0=pure exploitation, 1=pure exploration)
+  RealT mLocalSearchRadius = RealT(0.1); //!< Radius for local search around best points (fraction of domain size)
+  size_t mNumLocalCandidates = 0; //!< Number of candidates to generate around best points (0=auto: batchSize*2)
+  bool mAdaptiveLengthScale = false; //!< Whether to adapt GP length scale during optimization
 
   //! Evaluate function on a batch of points, possibly in parallel
   //! @param batch Vector of points to evaluate
@@ -142,8 +131,9 @@ private:
     //! @param seed Seed value if using fixed seed
     //! @param gpLengthScale Length scale parameter for GP kernel
     //! @param gpNoise Noise parameter for GP
-    State(bool fixedSeed, unsigned seed, RealT gpLengthScale, RealT gpNoise)
-      : mGP(gpLengthScale, gpNoise), mGen(fixedSeed ? seed : std::random_device{}()) {}
+    State(bool fixedSeed, unsigned seed, RealT gpLengthScale, RealT gpNoise,bool verbose)
+      : mGP(gpLengthScale, gpNoise), mGen(fixedSeed ? seed : std::random_device{}()), mVerbose(verbose)
+    {}
 
     //! Fit the surrogate model to current data points
     void fitSurrogate();
@@ -158,6 +148,20 @@ private:
     //! @param batchSize Number of points to select
     //! @return Vector of points to evaluate next
     std::vector<VectorT<RealT>> selectBatch(const CostDomain<RealT> &domain, size_t batchSize);
+
+    //! Select the next batch of points with improved exploration
+    //! @param domain Domain of the function
+    //! @param batchSize Number of points to select
+    //! @param explorationWeight Weight for exploration vs exploitation
+    //! @param localSearchRadius Radius for local search around best points
+    //! @param numLocalCandidates Number of candidates to generate around best points
+    //! @return Vector of points to evaluate next
+    std::vector<VectorT<RealT>> selectBatchImproved(
+        const CostDomain<RealT> &domain,
+        size_t batchSize,
+        RealT explorationWeight,
+        RealT localSearchRadius,
+        size_t numLocalCandidates);
 
     //! Add a new evaluated point to the state
     //! @param x Point coordinates
@@ -177,8 +181,27 @@ private:
              *std::min_element(mY.begin(), mY.end());
     }
 
+    //! Get the best point found so far
+    //! @return Best point or empty vector if no points evaluated
+    VectorT<RealT> getBestX() const {
+      if(mY.empty()) return VectorT<RealT>();
+      auto minIt = std::min_element(mY.begin(), mY.end());
+      return mX[static_cast<std::size_t>(std::distance(mY.begin(), minIt))];
+    }
+
+    //! Adapt GP length scale based on optimization progress
+    //! @param domain Domain of the function
+    //! @param adaptiveLengthScale Whether to enable adaptive scaling
+    void adaptLengthScale(const CostDomain<RealT> &domain, bool adaptiveLengthScale);
+
+    //! Set the verbose mode for outputting progress information
+    //! @param verbose Whether to output progress information
+    void setVerbose(bool verbose) {
+      mVerbose = verbose;
+    }
   private:
     // Caching infrastructure for performance optimization
+    bool mVerbose = false; //!< Whether to output progress information
     std::vector<VectorT<RealT>> mCandidatesCache; //!< Cached candidate points
     VectorT<RealT> mMeanCache;                    //!< Cached GP mean predictions
     VectorT<RealT> mVarianceCache;                //!< Cached GP variance predictions

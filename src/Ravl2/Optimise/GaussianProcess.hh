@@ -6,7 +6,7 @@
 namespace Ravl2
 {
 
-  //! Multi-dimensional Gaussian Process surrogate model for Bayesian Optimization
+  //! Multidimensional Gaussian Process surrogate model for Bayesian Optimization
   //!
   //! Implements a Gaussian Process with squared exponential kernel for
   //! modeling unknown functions. Used as a surrogate model in Bayesian optimization.
@@ -22,7 +22,7 @@ namespace Ravl2
 
     //! Constructor
     //! @param length_scale Length scale parameter for the squared exponential kernel
-    //! @param noise Noise parameter to ensure numerical stability
+    //! @param noise Expected noise on measurements, added to the diagonal of the kernel matrix for numerical stability
     explicit GaussianProcess(RealT length_scale = RealT(1.0), RealT noise = RealT(1e-6));
 
     //! Fit the GP to training data
@@ -40,6 +40,20 @@ namespace Ravl2
     //! @param x_new New input point
     //! @param y_new New target value
     void add_observation(const Vector &x_new, RealT y_new);
+
+    //! Get the current length scale parameter
+    //! @return Current length scale value
+    RealT getLengthScale() const { return mLengthScale; }
+
+    //! Set the length scale parameter
+    //! @param length_scale New length scale value
+    //! @note This invalidates the current model and requires refitting
+    void setLengthScale(RealT length_scale) {
+      mLengthScale = length_scale;
+      // Clear fitted data to force refitting with new parameters
+      mK.resize(0, 0);
+      mK_inv.resize(0, 0);
+    }
 
   private:
     Matrix mX;        //!< Training input points

@@ -12,7 +12,9 @@ namespace Ravl2
   //! @param noise Noise parameter to ensure numerical stability
   template<typename RealT>
   GaussianProcess<RealT>::GaussianProcess(RealT length_scale, RealT noise)
-      : mLengthScale(length_scale), mNoise(noise) {}
+    : mLengthScale(length_scale),
+      mNoise(noise)
+  {}
 
   //! Fit the Gaussian Process to training data
   //!

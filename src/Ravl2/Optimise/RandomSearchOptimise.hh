@@ -107,11 +107,13 @@ private:
   //! @param domain Domain to sample from
   //! @param numPoints Number of points to generate
   //! @param gen Random number generator
+  //! @param offset Starting offset for deterministic patterns (Grid/Sobol)
   //! @return Vector of sampling points
   std::vector<VectorT<RealT>> generateSamplingPoints(
       const CostDomain<RealT> &domain,
       size_t numPoints,
-      std::mt19937 &gen
+      std::mt19937 &gen,
+      size_t offset = 0
   ) const;
 
   //! Generate random sampling points
@@ -128,19 +130,23 @@ private:
   //! Generate grid sampling points
   //! @param domain Domain to sample from
   //! @param numPoints Target number of points (actual number may differ)
+  //! @param offset Starting offset in the grid sequence
   //! @return Vector of grid points
   std::vector<VectorT<RealT>> generateGridPoints(
       const CostDomain<RealT> &domain,
-      size_t numPoints
+      size_t numPoints,
+      size_t offset = 0
   ) const;
 
   //! Generate Sobol sequence points
   //! @param domain Domain to sample from
   //! @param numPoints Number of points to generate
+  //! @param offset Starting offset in the Sobol sequence
   //! @return Vector of Sobol sequence points
   std::vector<VectorT<RealT>> generateSobolPoints(
       const CostDomain<RealT> &domain,
-      size_t numPoints
+      size_t numPoints,
+      size_t offset = 0
   ) const;
 
   //! Evaluate function on a batch of points, possibly in parallel
