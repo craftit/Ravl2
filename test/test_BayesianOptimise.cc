@@ -7,11 +7,11 @@
 namespace Ravl2
 {
   float quadratic(const VectorT<float> &x) {
-    float sum = 0.0f;
+    double sum = 0.0f;
     for(int i = 0; i < x.size(); ++i) {
-      sum += std::powf(x[i] - 1.0f, 2);
+      sum += std::pow(x[i] - 1.0f, 2);
     }
-    return sum;
+    return static_cast<float>(sum);
   }
 
   TEST_CASE("BayesianOptimise finds minimum of quadratic function", "[BayesianOptimise]")
@@ -63,13 +63,13 @@ namespace Ravl2
     REQUIRE(!emptyResults.empty());
     SPDLOG_INFO("Empty start points produced {} evaluations", emptyResults.size());
 
-    // Verify we got some improvement over worst case
+    // Verify we got some improvement over the worst case
     float worstInResults = 0.0f;
     for(const auto &r : emptyResults) {
       worstInResults = std::max(worstInResults, std::get<1>(r));
     }
     SPDLOG_INFO("Worst result value: {}", worstInResults);
-    REQUIRE(worstInResults < 4.0f); // Worst case would be at corners (0,0) or (2,2) = 2
+    REQUIRE(worstInResults < 4.0f); // The worst case would be at corners (0,0) or (2,2) = 2
   }
 
   TEST_CASE("BayesianOptimise Configuration constructor", "[BayesianOptimise]")
@@ -91,7 +91,7 @@ namespace Ravl2
 
     // Simple 1D quadratic: (x-1)^2
     auto func1D = [](const VectorT<float> &x) -> float {
-      return std::powf(x[0] - 1.0f, 2);
+      return static_cast<float>(std::pow(x[0] - 1.0f, 2));
     };
 
     SPDLOG_INFO("Running 1D optimization with configured parameters");

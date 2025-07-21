@@ -278,7 +278,7 @@ namespace Ravl2
       // Calculate expected improvement for each candidate
       for(size_t i = 0; i < nCandidates; ++i) {
         const auto mu = mMeanCache[static_cast<Eigen::Index>(i)];
-        const auto sigma = std::sqrt(std::max(mVarianceCache[static_cast<Eigen::Index>(i)], RealT(1e-9)));
+        const auto sigma = std::sqrt(std::max(mVarianceCache[static_cast<Eigen::Index>(i)], static_cast<RealT>(1e-9)));
         const auto z = static_cast<double>((bestY - mu) / sigma);
         const auto ei = sigma > 0 ?
                     static_cast<double>(bestY - mu) * std::erfc(-z/std::sqrt(2))/2 +
@@ -294,7 +294,7 @@ namespace Ravl2
     }
   }
 
-  //! Select next batch of points to evaluate with intelligent caching
+  //! Select the next batch of points to evaluate with intelligent caching
   //!
   //! Uses cached Expected Improvement acquisition function to select promising points.
   //!

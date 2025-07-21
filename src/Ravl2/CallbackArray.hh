@@ -58,8 +58,8 @@ namespace Ravl2
           m_version(version)
     {}
 
-    //! Remove callback from list if handle is valid, otherwise take no action.
-    //! The handle will be changed to an invalid environment after call back is removed.
+    //! Remove callback from a list if the handle is valid, otherwise take no action.
+    //! The handle will be changed to an invalid environment after a call back is removed.
     void remove()
     {
       if(m_cb == nullptr)
@@ -211,7 +211,7 @@ namespace Ravl2
       }
     }
 
-    //! Call set of methods.
+    //! Call a set of methods.
     //! Returns true if at least one method was called.
     template <typename... Args>
     bool call(Args &&...args) const
@@ -227,7 +227,7 @@ namespace Ravl2
       return ret;
     }
 
-    //! Test if callback list is empty
+    //! Test if the callback list is empty
     [[nodiscard]] bool empty() const
     {
       std::lock_guard<std::mutex> lock(m_mutexAccess);
