@@ -39,7 +39,7 @@ namespace Ravl2 {
   std::tuple<OptimisePowell::RealT,OptimisePowell::RealT> OptimisePowell::SetupLimits(
     const VectorT<RealT> &dir,
     const VectorT<RealT> &P,
-    const CostDomain &domain)
+    const CostDomain<RealT> &domain)
   {
     // Find the domain limits along the direction vector.
     assert(dir.size() == P.size());
@@ -73,7 +73,7 @@ namespace Ravl2 {
   //
   //VectorT<RealT> OptimisePowell::MinimalX (const CostC &domain, RealT startCost, RealT &minimumCost) const
   std::tuple<VectorT<OptimisePowell::RealT>,OptimisePowell::RealT> OptimisePowell::minimise (
-    const CostDomain &domain,
+    const CostDomain<RealT> &domain,
     const std::function<RealT(const VectorT<RealT> &)> &func,
     const VectorT<RealT> &start
   ) const

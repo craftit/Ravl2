@@ -13,7 +13,7 @@ namespace Ravl2
 {
 
   //! Vertex in a mesh.
-  // This holds a position and a normal.
+  //! This holds a position and a normal vector.
 
   template<class RealT>
   class Vertex
@@ -35,7 +35,9 @@ namespace Ravl2
     // The surface normal is left undefined.
     explicit Vertex(const Point<RealT,3> &pos)
       : mAt(pos),
-        mNormal(std::nan(""),std::nan(""),std::nan(""))
+        mNormal(static_cast<RealT>(std::nan("")),
+          static_cast<RealT>(std::nan("")),
+          static_cast<RealT>(std::nan("")))
     {}
     
     //! Access position of vertex.

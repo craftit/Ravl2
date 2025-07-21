@@ -7,7 +7,8 @@ add_library (Ravl2Optimise
   OptimiseBrent.hh OptimiseBrent.cc
   BracketMinimum.cc BracketMinimum.hh
   OptimisePowell.cc OptimisePowell.hh
-
+  GaussianProcess.cc  GaussianProcess.hh
+  BayesianOptimise.cc BayesianOptimise.hh
 )
 
 add_library(ravl2::Ravl2Optimise ALIAS Ravl2Optimise)

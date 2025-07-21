@@ -7,68 +7,17 @@
 #include <functional>
 #include "Ravl2/Types.hh"
 #include "Ravl2/Configuration.hh"
+#include "CostDomain.hh"
 
 namespace Ravl2
 {
-  //! Cost function domain, this provides information on the minimum and maximum values of the cost function
-
-  class CostDomain
-  {
-  public:
-    using RealT = float;
-
-    //! Construct a default domain
-    CostDomain() = default;
-
-    //! Construct from minimum and maximum values
-    CostDomain(const VectorT<RealT> &min,
-	       const VectorT<RealT> &max)
-      : mMin(min),
-	mMax(max)
-    {}
-
-    CostDomain(const std::initializer_list<RealT> &min,
-               const std::initializer_list<RealT> &max)
-      : mMin(min.size()),
-        mMax(max.size())
-    {
-      std::copy(min.begin(), min.end(), mMin.begin());
-      std::copy(max.begin(), max.end(), mMax.begin());
-    }
-
-    //! Construct from minimum and maximum values
-//    CostDomain(VectorT<RealT> &&min,
-//	       VectorT<RealT> &&max)
-//      : mMin(std::move(min)),
-//	mMax(std::move(max))
-//    {}
-    //! Access the minimum value of for the arguments of the cost function
-    [[nodiscard]] const VectorT<RealT> &min () const
-    { return mMin; }
-
-    //! Access the maximum value of for the arguments of the cost function
-    [[nodiscard]] const VectorT<RealT> &max () const
-    { return mMax; }
-
-    //! Access mid point of the domain
-    [[nodiscard]] VectorT<RealT> mid () const
-    { return (mMin + mMax) / 2; }
-
-    //! Get the number of dimensions
-    [[nodiscard]] size_t size () const
-    { return size_t(mMin.size()); }
-  private:
-    VectorT<RealT> mMin;
-    VectorT<RealT> mMax;
-  };
-
 
   //! Base class for optimisation algorithms that do not require gradients
 
   class Optimise
   {
   public:
-    using RealT = CostDomain::RealT;
+    using RealT = float; //!< The type of the real numbers used in the optimisation
 
     Optimise() = default;
 
@@ -89,7 +38,7 @@ namespace Ravl2
     //! @return  A tuple with the X value which gives the minimum cost, and the minimum cost value
 
     [[nodiscard]] virtual std::tuple<VectorT<RealT>,RealT> minimise (
-      				const CostDomain &domain,
+      				const CostDomain<RealT> &domain,
 				const std::function<RealT(const VectorT<RealT> &)> &func,
 				const VectorT<RealT> &start = VectorT<RealT>()
 				) const = 0;

@@ -5,7 +5,7 @@
 
 namespace Ravl2
 {
-  //! Helper to change logging level for a scope
+  //! Helper to change the logging level for a scope
   class SetSPDLogLevel
   {
   public:
