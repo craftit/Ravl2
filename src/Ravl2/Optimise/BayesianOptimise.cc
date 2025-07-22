@@ -456,7 +456,7 @@ namespace Ravl2
     return results;
   }
 
-  //! Select the next batch of points with improved exploration around best minima
+  //! Select the next batch of points with improved exploration around the best minima
   //!
   //! This method implements several improvements over the basic EI approach:
   //! 1. Mixed acquisition function combining EI with Upper Confidence Bound (UCB)
@@ -504,7 +504,7 @@ namespace Ravl2
       allCandidates.push_back(x);
     }
 
-    // 2. Generate local candidates around best points
+    // 2. Generate local candidates around the best points
     // Find the top few best points to search around
     std::vector<std::pair<RealT, size_t>> sortedPoints;
     for(size_t i = 0; i < mY.size(); ++i) {
@@ -587,8 +587,8 @@ namespace Ravl2
       batch.push_back(allCandidates[acquisitionScores[0].second]);
     }
 
-    // For remaining candidates, enforce minimum distance to avoid clustering
-    const RealT minDistance = static_cast<RealT>(0.05); // 5% of average domain range
+    // For remaining candidates, enforce a minimum distance to avoid clustering
+    const RealT minDistance = static_cast<RealT>(0.02); // 2% of the average domain range
     RealT avgDomainRange = static_cast<RealT>(0.0);
     for(Eigen::Index d = 0; d < nDims; ++d) {
       avgDomainRange += (domain.max(d) - domain.min(d));

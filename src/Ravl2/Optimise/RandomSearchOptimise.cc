@@ -238,7 +238,7 @@ namespace Ravl2
       VectorT<RealT> point(dims);
 
       // Convert linear index to multi-dimensional coordinates
-      Eigen::Index temp = currentIndex;
+      Eigen::Index temp = static_cast<Eigen::Index>(currentIndex);
       for (Eigen::Index dim = 0; dim < dims; ++dim) {
         Eigen::Index coord = temp % pointsPerDim;
         temp /= pointsPerDim;
