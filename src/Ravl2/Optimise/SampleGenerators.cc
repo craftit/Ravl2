@@ -280,7 +280,7 @@ std::vector<VectorT<AcquisitionSampleGenerator::RealT>> AcquisitionSampleGenerat
     candidates.push_back(point);
   }
 
-  // Strategy 3: Local search around best points (15% of candidates)
+  // Strategy 3: Local search around the best points (15% of candidates)
   if (!mY.empty()) {
     size_t localCandidates = numCandidates - globalCandidates - randomCandidates;
     size_t numLocalActual = mNumLocalCandidates > 0 ? mNumLocalCandidates : localCandidates;

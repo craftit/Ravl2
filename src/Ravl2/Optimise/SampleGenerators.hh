@@ -60,7 +60,6 @@ public:
   explicit RandomSampleGenerator(Configuration &config);
 
   //! Generate random sample points
-  //! @param domain Domain to sample from
   //! @param numPoints Number of points to generate
   //! @return Vector of random points
   std::vector<VectorT<RealT>> generatePoints(size_t numPoints) override;
@@ -107,7 +106,6 @@ public:
   explicit GridSampleGenerator(Configuration &config);
 
   //! Generate grid sample points
-  //! @param domain Domain to sample from
   //! @param numPoints Target number of points (actual number may differ)
   //! @return Vector of grid points
   std::vector<VectorT<RealT>> generatePoints(size_t numPoints) override;
