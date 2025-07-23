@@ -287,7 +287,10 @@ namespace Ravl2
       "verbose": false,
       "fixedSeed": true,
       "seed": 123,
-      "gridPointsPerDim": 8
+      "sampleGenerator": {
+        "_type": "Grid",
+        "pointsPerDim": 8
+      }
     })";
 
     SPDLOG_INFO("Testing Configuration constructor with custom parameters");

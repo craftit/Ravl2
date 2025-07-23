@@ -2,6 +2,7 @@
 
 #include "CostDomain.hh"
 #include "Optimise.hh"
+#include "GaussianProcess.hh"
 #include <vector>
 #include <random>
 #include <memory>
@@ -145,7 +146,6 @@ public:
   explicit SobolSampleGenerator(Configuration &config);
 
   //! Generate Sobol sequence points
-  //! @param domain Domain to sample from
   //! @param numPoints Number of points to generate
   //! @return Vector of Sobol sequence points
   std::vector<VectorT<RealT>> generatePoints(size_t numPoints) override;
@@ -167,6 +167,89 @@ private:
 
   size_t mPosition = 0; //!< Current position in the Sobol sequence
   CostDomain<RealT> mDomain; //!< Current domain
+};
+
+//! Acquisition function sample generator for Bayesian optimization
+//!
+//! Generates candidate points and selects the best ones based on an acquisition function
+//! (Expected Improvement). Uses multiple strategies including random sampling around
+//! best points and quasi-random exploration.
+class AcquisitionSampleGenerator : public SampleGenerator {
+public:
+  //! Constructor
+  //! @param explorationWeight Weight for exploration vs exploitation (default: 0.1)
+  //! @param localSearchRadius Radius for local search around best points (default: 0.1)
+  //! @param numLocalCandidates Number of candidates around best points (default: 0 = auto)
+  //! @param candidateMultiplier Multiplier for number of candidates vs requested points (default: 100)
+  //! @param fixedSeed Whether to use fixed random seed (default: true)
+  //! @param seed Random seed value (default: 42)
+  explicit AcquisitionSampleGenerator(
+    RealT explorationWeight = static_cast<RealT>(0.1),
+    RealT localSearchRadius = static_cast<RealT>(0.1),
+    size_t numLocalCandidates = 0,
+    size_t candidateMultiplier = 100,
+    bool fixedSeed = true,
+    unsigned seed = 42);
+
+  //! Construct from configuration
+  //! @param config Configuration object containing generator parameters
+  explicit AcquisitionSampleGenerator(Configuration &config);
+
+  //! Generate points using acquisition function
+  //! @param numPoints Number of points to generate
+  //! @return Vector of points selected by acquisition function
+  std::vector<VectorT<RealT>> generatePoints(size_t numPoints) override;
+
+  //! Clone this generator
+  std::shared_ptr<SampleGenerator> clone() const override;
+
+  //! Set evaluation data for acquisition function
+  //! @param X Evaluated points
+  //! @param Y Function values
+  //! @param gp Gaussian Process model
+  void setEvaluationData(const std::vector<VectorT<RealT>>& X,
+                        const std::vector<RealT>& Y,
+                        const GaussianProcess<RealT>* gp);
+
+  //! Set parameters
+  void setExplorationWeight(RealT weight) { mExplorationWeight = weight; }
+  void setLocalSearchRadius(RealT radius) { mLocalSearchRadius = radius; }
+  void setNumLocalCandidates(size_t num) { mNumLocalCandidates = num; }
+  void setCandidateMultiplier(size_t mult) { mCandidateMultiplier = mult; }
+
+  void reset(const CostDomain<RealT> &domain) override { mDomain = domain; reset(); }
+  void reset() override {
+    mRandomGen.seed(mFixedSeed ? mSeed : std::random_device{}());
+    mSobolGen.reset(mDomain);
+    mPosition = 0;
+  }
+  void skip(size_t n) override { mPosition += n; }
+  size_t getCurrentPosition() const override { return mPosition; }
+
+private:
+  RealT mExplorationWeight;
+  RealT mLocalSearchRadius;
+  size_t mNumLocalCandidates;
+  size_t mCandidateMultiplier;
+  bool mFixedSeed;
+  unsigned mSeed;
+  size_t mPosition = 0;
+
+  CostDomain<RealT> mDomain;
+  std::mt19937 mRandomGen;
+  SobolSampleGenerator mSobolGen;
+
+  // Evaluation data for acquisition function
+  std::vector<VectorT<RealT>> mX;
+  std::vector<RealT> mY;
+  const GaussianProcess<RealT>* mGP = nullptr;
+
+  //! Generate candidate points using multiple strategies
+  std::vector<VectorT<RealT>> generateCandidates(size_t numCandidates);
+
+  //! Compute Expected Improvement for candidates
+  std::vector<std::pair<RealT, size_t>> computeExpectedImprovement(
+    const std::vector<VectorT<RealT>>& candidates, RealT bestY);
 };
 
 } // namespace Ravl2
