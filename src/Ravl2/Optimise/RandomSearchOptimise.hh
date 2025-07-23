@@ -1,11 +1,13 @@
 #pragma once
 
 #include "Optimise.hh"
+#include "SampleGenerators.hh"
 #include <vector>
 #include <tuple>
 #include <functional>
 #include <random>
 #include <limits>
+#include <memory>
 
 namespace Ravl2 {
 
@@ -54,6 +56,20 @@ public:
   //! @param config Configuration object containing optimization parameters
   explicit RandomSearchOptimise(Configuration &config);
 
+  //! Constructor with custom sample generator
+  //! @param maxEvals Maximum number of function evaluations
+  //! @param sampleGenerator Custom sample generator to use
+  //! @param batchSize Number of points to evaluate in parallel (default: 1)
+  //! @param maxThreads Maximum number of threads for parallel evaluation (0 = single-threaded, default: 0)
+  //! @param verbose Whether to output progress information (default: false)
+  explicit RandomSearchOptimise(
+      size_t maxEvals,
+      std::shared_ptr<SampleGenerator> sampleGenerator,
+      size_t batchSize = 1,
+      size_t maxThreads = 0,
+      bool verbose = false
+  );
+
   //! Find minimum of a function
   //! @param domain Domain of the function to minimize
   //! @param func Function to minimize
@@ -78,76 +94,24 @@ public:
 
   // Setters for configuration
   void setMaxEvals(size_t maxEvals) { mMaxEvals = maxEvals; }
-  void setPatternType(PatternType type) { mPatternType = type; }
+  void setPatternType(PatternType type);
   void setBatchSize(size_t batchSize) { mBatchSize = batchSize; }
   void setMaxThreads(size_t maxThreads) { mMaxThreads = maxThreads; }
-  void setFixedSeed(bool fixedSeed) { mFixedSeed = fixedSeed; }
-  void setSeed(unsigned seed) { mSeed = seed; }
-  void setGridPointsPerDim(size_t gridPointsPerDim) { mGridPointsPerDim = gridPointsPerDim; }
+  void setSampleGenerator(std::shared_ptr<SampleGenerator> generator) { mSampleGenerator = generator; }
 
   // Getters for configuration
   size_t getMaxEvals() const { return mMaxEvals; }
   PatternType getPatternType() const { return mPatternType; }
   size_t getBatchSize() const { return mBatchSize; }
   size_t getMaxThreads() const { return mMaxThreads; }
-  bool getFixedSeed() const { return mFixedSeed; }
-  unsigned getSeed() const { return mSeed; }
-  size_t getGridPointsPerDim() const { return mGridPointsPerDim; }
+  const SampleGenerator* getSampleGenerator() const { return mSampleGenerator.get(); }
 
 private:
   size_t mMaxEvals = 100; //!< Maximum number of function evaluations
   PatternType mPatternType = PatternType::Random; //!< Type of sampling pattern
   size_t mBatchSize = 1; //!< Size of the batch for parallel evaluations
   size_t mMaxThreads = 0; //!< Maximum number of threads for parallel evaluation (0 = single-threaded)
-  bool mFixedSeed = true; //!< Whether to use a fixed random seed for reproducibility
-  unsigned mSeed = 42; //!< Random seed value if fixed seed is enabled
-  size_t mGridPointsPerDim = 10; //!< Number of points per dimension for grid sampling
-
-  //! Generate sampling points according to the specified pattern
-  //! @param domain Domain to sample from
-  //! @param numPoints Number of points to generate
-  //! @param gen Random number generator
-  //! @param offset Starting offset for deterministic patterns (Grid/Sobol)
-  //! @return Vector of sampling points
-  std::vector<VectorT<RealT>> generateSamplingPoints(
-      const CostDomain<RealT> &domain,
-      size_t numPoints,
-      std::mt19937 &gen,
-      size_t offset = 0
-  ) const;
-
-  //! Generate random sampling points
-  //! @param domain Domain to sample from
-  //! @param numPoints Number of points to generate
-  //! @param gen Random number generator
-  //! @return Vector of random points
-  std::vector<VectorT<RealT>> generateRandomPoints(
-      const CostDomain<RealT> &domain,
-      size_t numPoints,
-      std::mt19937 &gen
-  ) const;
-
-  //! Generate grid sampling points
-  //! @param domain Domain to sample from
-  //! @param numPoints Target number of points (actual number may differ)
-  //! @param offset Starting offset in the grid sequence
-  //! @return Vector of grid points
-  std::vector<VectorT<RealT>> generateGridPoints(
-      const CostDomain<RealT> &domain,
-      size_t numPoints,
-      size_t offset = 0
-  ) const;
-
-  //! Generate Sobol sequence points
-  //! @param domain Domain to sample from
-  //! @param numPoints Number of points to generate
-  //! @param offset Starting offset in the Sobol sequence
-  //! @return Vector of Sobol sequence points
-  std::vector<VectorT<RealT>> generateSobolPoints(
-      const CostDomain<RealT> &domain,
-      size_t numPoints,
-      size_t offset = 0
-  ) const;
+  std::shared_ptr<SampleGenerator> mSampleGenerator; //!< Sample point generator
 
   //! Evaluate function on a batch of points, possibly in parallel
   //! @param batch Vector of points to evaluate

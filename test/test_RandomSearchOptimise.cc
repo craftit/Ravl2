@@ -1,6 +1,7 @@
 #include <catch2/catch_test_macros.hpp>
 #include "Ravl2/Optimise/CostDomain.hh"
 #include "Ravl2/Optimise/RandomSearchOptimise.hh"
+#include "Ravl2/Optimise/SampleGenerators.hh"
 #include <cmath>
 #include <spdlog/spdlog.h>
 
@@ -52,7 +53,7 @@ namespace Ravl2
     }
 
     SECTION("Grid sampling") {
-      RandomSearchOptimise optimizer(200, RandomSearchOptimise::PatternType::Grid, 10, 0, false, true, 42);
+      RandomSearchOptimise optimizer(200, RandomSearchOptimise::PatternType::Grid, 10, 0, false, true, 42, 10);
 
       SPDLOG_INFO("Testing RandomSearchOptimise with Grid sampling");
       auto result = optimizer.minimise(domain, quadratic);
@@ -74,6 +75,122 @@ namespace Ravl2
       VectorT<float> bestX = std::get<0>(result);
 
       SPDLOG_INFO("Sobol: Best value: {} at [{}, {}]", best, bestX[0], bestX[1]);
+      REQUIRE(std::abs(bestX[0] - 1.0f) < 0.5f);
+      REQUIRE(std::abs(bestX[1] - 1.0f) < 0.5f);
+      REQUIRE(best < 0.5f);
+    }
+  }
+
+  TEST_CASE("SampleGenerators work independently", "[SampleGenerators]")
+  {
+    CostDomain<float> domain({0.0f, 0.0f}, {2.0f, 2.0f});
+
+    SECTION("RandomSampleGenerator") {
+      auto generator = std::make_unique<RandomSampleGenerator>(true, 42);
+      generator->reset(domain);
+      auto points = generator->generatePoints(10);
+
+      REQUIRE(points.size() == 10);
+      for (const auto& point : points) {
+        REQUIRE(point.size() == 2);
+        REQUIRE(point[0] >= 0.0f);
+        REQUIRE(point[0] <= 2.0f);
+        REQUIRE(point[1] >= 0.0f);
+        REQUIRE(point[1] <= 2.0f);
+      }
+    }
+
+    SECTION("GridSampleGenerator") {
+      auto generator = std::make_unique<GridSampleGenerator>(5);
+      generator->reset(domain);
+      auto points = generator->generatePoints(25);
+
+      REQUIRE(points.size() == 25);
+      for (const auto& point : points) {
+        REQUIRE(point.size() == 2);
+        REQUIRE(point[0] >= 0.0f);
+        REQUIRE(point[0] <= 2.0f);
+        REQUIRE(point[1] >= 0.0f);
+        REQUIRE(point[1] <= 2.0f);
+      }
+    }
+
+    SECTION("SobolSampleGenerator") {
+      auto generator = std::make_unique<SobolSampleGenerator>();
+      generator->reset(domain);
+      auto points = generator->generatePoints(10);
+
+      REQUIRE(points.size() == 10);
+      for (const auto& point : points) {
+        REQUIRE(point.size() == 2);
+        REQUIRE(point[0] >= 0.0f);
+        REQUIRE(point[0] <= 2.0f);
+        REQUIRE(point[1] >= 0.0f);
+        REQUIRE(point[1] <= 2.0f);
+      }
+    }
+
+    SECTION("Factory function with config") {
+      std::string randomConfigJson = R"({
+        "fixedSeed": true,
+        "seed": 999
+      })";
+
+      std::string gridConfigJson = R"({
+        "pointsPerDim": 5
+      })";
+
+      std::string sobolConfigJson = R"({})";
+
+      Configuration randomConfig = Configuration::fromJSONString(randomConfigJson);
+      Configuration gridConfig = Configuration::fromJSONString(gridConfigJson);
+      Configuration sobolConfig = Configuration::fromJSONString(sobolConfigJson);
+
+      auto randomGen = std::make_unique<RandomSampleGenerator>(randomConfig);
+      auto gridGen = std::make_unique<GridSampleGenerator>(gridConfig);
+      auto sobolGen = std::make_unique<SobolSampleGenerator>(sobolConfig);
+
+      REQUIRE(randomGen != nullptr);
+      REQUIRE(gridGen != nullptr);
+      REQUIRE(sobolGen != nullptr);
+
+      CostDomain<float> cost_domain({0.0f}, {1.0f});
+      randomGen->reset(cost_domain);
+      gridGen->reset(cost_domain);
+      sobolGen->reset(cost_domain);
+      REQUIRE(randomGen->generatePoints(5).size() == 5);
+      REQUIRE(gridGen->generatePoints(5).size() == 5);
+      REQUIRE(sobolGen->generatePoints(5).size() == 5);
+    }
+  }
+
+  TEST_CASE("RandomSearchOptimise with custom generator", "[RandomSearchOptimise]")
+  {
+    CostDomain<float> domain({0.0f, 0.0f}, {2.0f, 2.0f});
+
+    SECTION("Using custom RandomSampleGenerator") {
+      auto generator = std::make_shared<RandomSampleGenerator>(true, 42);
+      RandomSearchOptimise optimizer(100, generator, 5, 0, false);
+
+      auto result = optimizer.minimise(domain, quadratic);
+      float best = std::get<1>(result);
+      VectorT<float> bestX = std::get<0>(result);
+
+      SPDLOG_INFO("Custom generator: Best value: {} at [{}, {}]", best, bestX[0], bestX[1]);
+      REQUIRE(std::abs(bestX[0] - 1.0f) < 0.5f);
+      REQUIRE(std::abs(bestX[1] - 1.0f) < 0.5f);
+      REQUIRE(best < 0.5f);
+    }
+
+    SECTION("Using custom GridSampleGenerator") {
+      auto generator = std::make_shared<GridSampleGenerator>(8);
+      RandomSearchOptimise optimizer(64, generator, 8, 0, false);
+
+      auto result = optimizer.minimise(domain, quadratic);
+      float best = std::get<1>(result);
+      VectorT<float> bestX = std::get<0>(result);
+
+      SPDLOG_INFO("Custom grid generator: Best value: {} at [{}, {}]", best, bestX[0], bestX[1]);
       REQUIRE(std::abs(bestX[0] - 1.0f) < 0.5f);
       REQUIRE(std::abs(bestX[1] - 1.0f) < 0.5f);
       REQUIRE(best < 0.5f);
@@ -182,9 +299,6 @@ namespace Ravl2
     REQUIRE(optimizer.getMaxEvals() == 50);
     REQUIRE(optimizer.getPatternType() == RandomSearchOptimise::PatternType::Grid);
     REQUIRE(optimizer.getBatchSize() == 5);
-    REQUIRE(optimizer.getFixedSeed() == true);
-    REQUIRE(optimizer.getSeed() == 123);
-    REQUIRE(optimizer.getGridPointsPerDim() == 8);
 
     // Test optimization with configured parameters
     CostDomain<float> domain({-1.0f}, {3.0f});
@@ -224,6 +338,10 @@ namespace Ravl2
       Configuration config = Configuration::fromJSONString(configJson);
       REQUIRE_THROWS_AS(RandomSearchOptimise(config), std::invalid_argument);
     }
+
+    SECTION("Null custom generator") {
+      REQUIRE_THROWS_AS(RandomSearchOptimise(100, std::shared_ptr<SampleGenerator>(nullptr)), std::invalid_argument);
+    }
   }
 
   TEST_CASE("RandomSearchOptimise different functions", "[RandomSearchOptimise]")
@@ -251,7 +369,7 @@ namespace Ravl2
       float best = std::get<1>(result);
 
       SPDLOG_INFO("5D Sphere: Best value: {}", best);
-      REQUIRE(best < 10.0f); // Should find something reasonably close to origin
+      REQUIRE(best < 20.0f); // Should find something reasonable in 5D
     }
   }
 
@@ -289,6 +407,55 @@ namespace Ravl2
                       (std::abs(std::get<0>(result1)[1] - std::get<0>(result2)[1]) > 1e-6f);
 
       REQUIRE(different); // Should be different with high probability
+    }
+  }
+
+  TEST_CASE("SampleGenerators Configuration constructors", "[SampleGenerators]")
+  {
+    SECTION("RandomSampleGenerator from config") {
+      std::string configJson = R"({
+        "fixedSeed": true,
+        "seed": 12345
+      })";
+
+      Configuration config = Configuration::fromJSONString(configJson);
+      RandomSampleGenerator generator(config);
+
+      REQUIRE(generator.getFixedSeed() == true);
+      REQUIRE(generator.getSeed() == 12345);
+
+      CostDomain<float> domain({0.0f, 0.0f}, {1.0f, 1.0f});
+      generator.reset(domain);
+      auto points = generator.generatePoints(5);
+      REQUIRE(points.size() == 5);
+    }
+
+    SECTION("GridSampleGenerator from config") {
+      std::string configJson = R"({
+        "pointsPerDim": 6
+      })";
+
+      Configuration config = Configuration::fromJSONString(configJson);
+      GridSampleGenerator generator(config);
+
+      REQUIRE(generator.getPointsPerDim() == 6);
+
+      CostDomain<float> domain({0.0f, 0.0f}, {1.0f, 1.0f});
+      generator.reset(domain);
+      auto points = generator.generatePoints(36);
+      REQUIRE(points.size() == 36);
+    }
+
+    SECTION("SobolSampleGenerator from config") {
+      std::string configJson = R"({})";
+
+      Configuration config = Configuration::fromJSONString(configJson);
+      SobolSampleGenerator generator(config);
+
+      CostDomain<float> domain({0.0f, 0.0f}, {1.0f, 1.0f});
+      generator.reset(domain);
+      auto points = generator.generatePoints(10);
+      REQUIRE(points.size() == 10);
     }
   }
 

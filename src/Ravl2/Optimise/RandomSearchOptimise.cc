@@ -16,10 +16,7 @@ namespace Ravl2
       : Optimise(config),
       mMaxEvals(config.getUnsigned("maxEvals","Maximum number of function evaluations", 100, 1, 100000)),
       mBatchSize(config.getUnsigned("batchSize","Batch size for parallel evaluations", 1, 1, 100)),
-      mMaxThreads(config.getUnsigned("maxThreads","Maximum number of threads for parallel evaluation (0 = single-threaded)", 0, 0, 100)),
-      mFixedSeed(config.getBool("fixedSeed", "Use fixed random seed for reproducibility", true)),
-      mSeed(config.getUnsigned("seed", "Random seed value if fixedSeed is true", 42, 0, std::numeric_limits<unsigned>::max())),
-      mGridPointsPerDim(config.getUnsigned("gridPointsPerDim", "Points per dimension for grid sampling", 10, 2, 100))
+      mMaxThreads(config.getUnsigned("maxThreads","Maximum number of threads for parallel evaluation (0 = single-threaded)", 0, 0, 100))
   {
     std::string patternTypeStr = config.getString("patternType", "Sampling pattern type: Random, Grid, or Sobol", "Random");
     if (patternTypeStr == "Random") {
@@ -32,6 +29,11 @@ namespace Ravl2
       SPDLOG_ERROR("Invalid pattern type '{}' in configuration. Must be Random, Grid, or Sobol", patternTypeStr);
       throw std::invalid_argument("Invalid pattern type: " + patternTypeStr + ". Must be Random, Grid, or Sobol");
     }
+
+    // Use the component system to create the sample generator
+    std::shared_ptr<SampleGenerator> generator;
+    config.useComponent("sampleGenerator", "Sample point generator", generator, patternTypeStr);
+    mSampleGenerator = generator;
   }
 
   //! Programmatic constructor
@@ -48,10 +50,7 @@ namespace Ravl2
       mMaxEvals(maxEvals),
       mPatternType(patternType),
       mBatchSize(batchSize),
-      mMaxThreads(maxThreads),
-      mFixedSeed(fixedSeed),
-      mSeed(seed),
-      mGridPointsPerDim(gridPointsPerDim)
+      mMaxThreads(maxThreads)
   {
     // Parameter validation
     if(maxEvals == 0) {
@@ -62,9 +61,64 @@ namespace Ravl2
       SPDLOG_ERROR("Invalid parameter: batchSize must be greater than 0, got {}", batchSize);
       throw std::invalid_argument("batchSize must be greater than 0");
     }
-    if(gridPointsPerDim < 2) {
-      SPDLOG_ERROR("Invalid parameter: gridPointsPerDim must be at least 2, got {}", gridPointsPerDim);
-      throw std::invalid_argument("gridPointsPerDim must be at least 2");
+
+    // Create the appropriate sample generator using direct constructors for programmatic interface
+    switch(patternType) {
+      case PatternType::Random:
+        mSampleGenerator = std::make_shared<RandomSampleGenerator>(fixedSeed, seed);
+        break;
+      case PatternType::Grid:
+        mSampleGenerator = std::make_shared<GridSampleGenerator>(gridPointsPerDim);
+        break;
+      case PatternType::Sobol:
+        mSampleGenerator = std::make_shared<SobolSampleGenerator>();
+        break;
+    }
+  }
+
+  //! Constructor with custom sample generator
+  RandomSearchOptimise::RandomSearchOptimise(
+      size_t maxEvals,
+      std::shared_ptr<SampleGenerator> sampleGenerator,
+      size_t batchSize,
+      size_t maxThreads,
+      bool verbose
+  ) : Optimise(verbose),
+      mMaxEvals(maxEvals),
+      mPatternType(PatternType::Random), // Default value, not used when custom generator is provided
+      mBatchSize(batchSize),
+      mMaxThreads(maxThreads),
+      mSampleGenerator(sampleGenerator)
+  {
+    // Parameter validation
+    if(maxEvals == 0) {
+      SPDLOG_ERROR("Invalid parameter: maxEvals must be greater than 0, got {}", maxEvals);
+      throw std::invalid_argument("maxEvals must be greater than 0");
+    }
+    if(batchSize == 0) {
+      SPDLOG_ERROR("Invalid parameter: batchSize must be greater than 0, got {}", batchSize);
+      throw std::invalid_argument("batchSize must be greater than 0");
+    }
+    if(!mSampleGenerator) {
+      SPDLOG_ERROR("Sample generator cannot be null");
+      throw std::invalid_argument("Sample generator cannot be null");
+    }
+  }
+
+  //! Set pattern type and create corresponding generator
+  void RandomSearchOptimise::setPatternType(PatternType type) {
+    mPatternType = type;
+    // Create appropriate sample generator using direct constructors
+    switch(type) {
+      case PatternType::Random:
+        mSampleGenerator = std::make_shared<RandomSampleGenerator>();
+        break;
+      case PatternType::Grid:
+        mSampleGenerator = std::make_shared<GridSampleGenerator>();
+        break;
+      case PatternType::Sobol:
+        mSampleGenerator = std::make_shared<SobolSampleGenerator>();
+        break;
     }
   }
 
@@ -73,6 +127,14 @@ namespace Ravl2
       const CostDomain<RealT> &domain,
       const std::function<RealT(const VectorT<RealT> &)> &func,
       const VectorT<RealT> &start) const {
+
+    if (!mSampleGenerator) {
+      SPDLOG_ERROR("Sample generator is not initialized");
+      throw std::runtime_error("Sample generator is not initialized");
+    }
+
+    // Set the domain for the generator once at the beginning
+    mSampleGenerator->reset(domain);
 
     if (mVerbose) {
       std::string patternName;
@@ -84,8 +146,6 @@ namespace Ravl2
       SPDLOG_INFO("Starting RandomSearchOptimise with {} sampling, maxEvals={}, batchSize={}",
                    patternName, mMaxEvals, mBatchSize);
     }
-
-    std::mt19937 gen(mFixedSeed ? mSeed : std::random_device{}());
 
     VectorT<RealT> bestPoint;
     RealT bestValue = std::numeric_limits<RealT>::max();
@@ -127,8 +187,8 @@ namespace Ravl2
       // Determine batch size for this iteration
       size_t currentBatchSize = std::min(mBatchSize, mMaxEvals - evaluationsUsed);
 
-      // Generate sampling points using current evaluation count as offset for deterministic patterns
-      std::vector<VectorT<RealT>> batch = generateSamplingPoints(domain, currentBatchSize, gen, evaluationsUsed);
+      // Generate sampling points using the stateful generator
+      std::vector<VectorT<RealT>> batch = mSampleGenerator->generatePoints(currentBatchSize);
 
       // Evaluate the batch
       std::vector<RealT> values = evaluateBatch(batch, func);
@@ -167,130 +227,6 @@ namespace Ravl2
     return {result};
   }
 
-  //! Generate sampling points according to the specified pattern
-  std::vector<VectorT<RandomSearchOptimise::RealT>> RandomSearchOptimise::generateSamplingPoints(
-      const CostDomain<RealT> &domain,
-      size_t numPoints,
-      std::mt19937 &gen,
-      size_t offset) const {
-
-    switch (mPatternType) {
-      case PatternType::Random:
-        return generateRandomPoints(domain, numPoints, gen);
-      case PatternType::Grid:
-        return generateGridPoints(domain, numPoints, offset);
-      case PatternType::Sobol:
-        return generateSobolPoints(domain, numPoints, offset);
-      default:
-        {
-          SPDLOG_ERROR("Unknown pattern type: {}", static_cast<int>(mPatternType));
-          throw std::runtime_error("Unknown pattern type");
-        }
-    }
-  }
-
-  //! Generate random sampling points
-  std::vector<VectorT<RandomSearchOptimise::RealT>> RandomSearchOptimise::generateRandomPoints(
-      const CostDomain<RealT> &domain,
-      size_t numPoints,
-      std::mt19937 &gen) const {
-
-    std::vector<VectorT<RealT>> points;
-    points.reserve(numPoints);
-
-    std::uniform_real_distribution<RealT> dist(0.0, 1.0);
-
-    for (Eigen::Index i = 0; i < Eigen::Index(numPoints); ++i) {
-      VectorT<RealT> point(domain.size());
-      for (Eigen::Index j = 0; j < domain.dim(); ++j) {
-        RealT u = dist(gen);
-        point[j] = domain.min(j) + u * (domain.max(j) - domain.min(j));
-      }
-      points.push_back(point);
-    }
-
-    return points;
-  }
-
-  //! Generate grid sampling points
-  std::vector<VectorT<RandomSearchOptimise::RealT>> RandomSearchOptimise::generateGridPoints(
-      const CostDomain<RealT> &domain,
-      size_t numPoints,
-      size_t offset) const {
-
-    Eigen::Index dims = domain.dim();
-    if (dims == 0) {
-      return {};
-    }
-
-    // Calculate points per dimension to get approximately numPoints total
-    Eigen::Index pointsPerDim = static_cast<Eigen::Index>(std::round(std::pow(numPoints, 1.0 / dims)));
-    pointsPerDim = std::max(pointsPerDim, Eigen::Index(2)); // At least 2 points per dimension
-
-    std::vector<VectorT<RealT>> points;
-    points.reserve(numPoints);
-
-    // Generate points starting from offset
-    size_t totalGridPoints = static_cast<size_t>(std::pow(pointsPerDim, dims));
-
-    for (size_t pointIdx = 0; pointIdx < numPoints; ++pointIdx) {
-      size_t currentIndex = (offset + pointIdx) % totalGridPoints;
-      VectorT<RealT> point(dims);
-
-      // Convert linear index to multi-dimensional coordinates
-      Eigen::Index temp = static_cast<Eigen::Index>(currentIndex);
-      for (Eigen::Index dim = 0; dim < dims; ++dim) {
-        Eigen::Index coord = temp % pointsPerDim;
-        temp /= pointsPerDim;
-
-        RealT t = (pointsPerDim == 1) ? 0.5 : static_cast<RealT>(coord) / (pointsPerDim - 1);
-        point[dim] = domain.min(dim) + t * (domain.max(dim) - domain.min(dim));
-      }
-
-      points.push_back(point);
-    }
-
-    return points;
-  }
-
-  //! Generate Sobol sequence points (simplified implementation)
-  std::vector<VectorT<RandomSearchOptimise::RealT>> RandomSearchOptimise::generateSobolPoints(
-      const CostDomain<RealT> &domain,
-      size_t numPoints,
-      size_t offset) const {
-
-    // Simple Sobol-like sequence using van der Corput sequence for each dimension
-    std::vector<VectorT<RealT>> points;
-    points.reserve(numPoints);
-
-    auto vanDerCorput = [](size_t n, size_t base) -> double {
-      double result = 0.0;
-      double f = 1.0 / base;
-      while (n > 0) {
-        result += f * (n % base);
-        n /= base;
-        f /= base;
-      }
-      return result;
-    };
-
-    // Use different prime bases for each dimension
-    std::vector<size_t> bases = {2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47};
-
-    // Generate points starting from offset
-    for (size_t i = 0; i < numPoints; ++i) {
-      VectorT<RealT> point(domain.size());
-      for (Eigen::Index j = 0; j < domain.dim(); ++j) {
-        size_t base = bases[static_cast<size_t>(j) % bases.size()];
-        // Use offset + i + 1 to continue the sequence from the specified starting point
-        double u = vanDerCorput(offset + i + 1, base);
-        point[j] = domain.min(j) + static_cast<RealT>(u) * (domain.max(j) - domain.min(j));
-      }
-      points.push_back(point);
-    }
-
-    return points;
-  }
 
   //! Evaluate function on a batch of points, possibly in parallel
   std::vector<RandomSearchOptimise::RealT> RandomSearchOptimise::evaluateBatch(
@@ -336,5 +272,10 @@ namespace Ravl2
 
     return results;
   }
+
+  namespace {
+    [[maybe_unused]] bool g_register = defaultConfigFactory().registerNamedType<Optimise, RandomSearchOptimise>("RandomSearchOptimise");
+  }
+
 
 } // namespace Ravl2

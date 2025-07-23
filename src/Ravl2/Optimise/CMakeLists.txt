@@ -8,6 +8,7 @@ add_library (Ravl2Optimise
   GaussianProcess.cc  GaussianProcess.hh
   BayesianOptimise.cc BayesianOptimise.hh
   RandomSearchOptimise.cc RandomSearchOptimise.hh
+  SampleGenerators.cc SampleGenerators.hh
 )
 
 add_library(ravl2::Ravl2Optimise ALIAS Ravl2Optimise)
