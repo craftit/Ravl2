@@ -70,6 +70,21 @@ namespace Ravl2
       return value >= mMin[dim] && value <= mMax[dim];
     }
 
+    //! Check if a point is within the domain
+    [[nodiscard]] bool isInDomain (const VectorType &point) const
+    {
+      if (point.size() != mMin.size() || point.size() != mMax.size()) {
+        SPDLOG_ERROR("Point dimension {} does not match domain dimension {}", point.size(), mMin.size());
+        throw std::invalid_argument("Point dimension does not match domain dimension");
+      }
+      for (Eigen::Index i = 0; i < point.size(); ++i) {
+        if (!isInDomain(i, point[i])) {
+          return false;
+        }
+      }
+      return true;
+    }
+
     //! Access mid-point of the domain
     [[nodiscard]] VectorType mid () const
     { return (mMin + mMax) / RealT(2); }

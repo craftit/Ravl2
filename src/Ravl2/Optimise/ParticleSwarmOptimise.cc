@@ -117,15 +117,7 @@ namespace Ravl2
     // If a starting point is provided, use it for the first particle
     if (start.size() == static_cast<Eigen::Index>(dim)) {
       // Validate that start is within domain bounds
-      bool valid = true;
-      for (Eigen::Index d = 0; d < static_cast<Eigen::Index>(dim); ++d) {
-        if (!domain.isInDomain(d,start[d])) {
-          valid = false;
-          break;
-        }
-      }
-
-      if (valid) {
+      if (domain.isInDomain(start)) {
         swarm[0].position = start;
         swarm[0].bestPosition = start;
       } else if (verbose()) {

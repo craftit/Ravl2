@@ -160,16 +160,8 @@ namespace Ravl2
         throw std::invalid_argument("Start point dimension mismatch with domain");
       }
 
-      // Check if start point is within domain bounds
-      bool withinBounds = true;
-      for (Eigen::Index i = 0; i < start.size(); ++i) {
-        if (start[i] < domain.min(i) || start[i] > domain.max(i)) {
-          withinBounds = false;
-          break;
-        }
-      }
-
-      if (withinBounds) {
+      // Check if the start point is within domain bounds
+      if (domain.isInDomain(start)) {
         RealT startValue = func(start);
         bestPoint = start;
         bestValue = startValue;
