@@ -351,4 +351,8 @@ namespace Ravl2
     }
   }
 
+  namespace {
+    [[maybe_unused]] bool g_register = defaultConfigFactory().registerNamedType<Optimise, BayesianOptimise>("BayesianOptimise");
+  }
+
 } // namespace Ravl2

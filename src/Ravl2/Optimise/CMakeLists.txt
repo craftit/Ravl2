@@ -9,6 +9,7 @@ add_library (Ravl2Optimise
   BayesianOptimise.cc BayesianOptimise.hh
   RandomSearchOptimise.cc RandomSearchOptimise.hh
   SampleGenerators.cc SampleGenerators.hh
+  ParticleSwarmOptimise.cc ParticleSwarmOptimise.hh
 )
 
 add_library(ravl2::Ravl2Optimise ALIAS Ravl2Optimise)

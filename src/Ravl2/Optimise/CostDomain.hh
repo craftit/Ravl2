@@ -60,6 +60,16 @@ namespace Ravl2
       return mMax[dim];
     }
 
+    //! Check if a value for a dimension is within the domain
+    [[nodiscard]] bool isInDomain (Eigen::Index dim, RealT value) const
+    {
+      if (dim >= mMin.size() || dim >= mMax.size()) {
+        SPDLOG_ERROR("Dimension {} out of range for domain with {} dimensions", dim, mMin.size());
+        throw std::out_of_range("Dimension out of range");
+      }
+      return value >= mMin[dim] && value <= mMax[dim];
+    }
+
     //! Access mid-point of the domain
     [[nodiscard]] VectorType mid () const
     { return (mMin + mMax) / RealT(2); }
@@ -71,6 +81,10 @@ namespace Ravl2
     //! Dimensions of the cost function
     [[nodiscard]] Eigen::Index dim () const
     { return mMin.size(); }
+
+    //! Test if domain is empty
+    [[nodiscard]] bool empty () const
+    { return mMin.size() == 0 || mMax.size() == 0; }
   private:
     VectorType mMin;
     VectorType mMax;

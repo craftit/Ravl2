@@ -585,6 +585,11 @@ namespace Ravl2
     [[nodiscard]] float getFloat(const std::string_view &name, const std::string_view &description, float defaultValue, float min, float max, std::function<bool(float)> update = {})
     { return getNumber<float>(name, description, defaultValue, min, max,update); }
 
+    //! Get a float from the configuration file.
+    template<typename RealT>
+    [[nodiscard]] RealT getReal(const std::string_view &name, const std::string_view &description, RealT defaultValue, RealT min, RealT max, std::function<bool(float)> update = {})
+    { return getNumber<RealT>(name, description, defaultValue, min, max,update); }
+
     template <typename DataT>
     [[nodiscard]] std::vector<DataT> getNumericVector(const std::string_view &name, const std::string_view &description, DataT defaultValue, DataT min, DataT max,size_t size)
     {

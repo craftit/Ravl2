@@ -168,7 +168,7 @@ namespace Ravl2 {
         }
       }
       if(mVerbose) {
-	SPDLOG_INFO("Iter {} Cost={}  ", iter, minimumCost);
+				SPDLOG_INFO("Iter {} Cost={}  ", iter, minimumCost);
       }
     }
     return std::make_tuple(P,minimumCost);
