@@ -7,9 +7,121 @@
 #include <tuple>
 #include <functional>
 #include <memory>
+#include <unordered_map>
+#include <string>
 
 namespace Ravl2
 {
+  // Forward declaration for the point hash function
+  template<typename RealT>
+  struct PointHasher;
+
+  // Function evaluation cache to avoid redundant evaluations
+  template<typename RealT>
+  class FunctionCache
+  {
+  public:
+    //! Constructor
+    //! @param tolerance Tolerance for considering two points equal (default: 1e-10)
+    explicit FunctionCache(RealT tolerance = static_cast<RealT>(1e-10))
+        : mTolerance(tolerance) {}
+
+    // Add a point and its function value to the cache
+    void add(const VectorT<RealT> &point, RealT value)
+    {
+      std::lock_guard<std::mutex> lock(mMutex);
+      mCache[point] = value;
+    }
+
+    // Check if a point is in the cache (with tolerance)
+    bool contains(const VectorT<RealT> &point) const
+    {
+      std::lock_guard<std::mutex> lock(mMutex);
+      return findNearestPoint(point).has_value();
+    }
+
+    // Get the function value for a point (with tolerance)
+    std::optional<RealT> get(const VectorT<RealT> &point) const
+    {
+      std::lock_guard<std::mutex> lock(mMutex);
+      auto nearest = findNearestPoint(point);
+      return nearest ? std::optional<RealT>(nearest->second) : std::nullopt;
+    }
+
+    // Get the number of cached evaluations
+    size_t size() const
+    {
+      std::lock_guard<std::mutex> lock(mMutex);
+      return mCache.size();
+    }
+
+    // Clear the cache
+    void clear()
+    {
+      std::lock_guard<std::mutex> lock(mMutex);
+      mCache.clear();
+    }
+
+    // Set tolerance for point matching
+    void setTolerance(RealT tolerance) {
+      std::lock_guard<std::mutex> lock(mMutex);
+      mTolerance = tolerance;
+    }
+
+    RealT getTolerance() const {
+      std::lock_guard<std::mutex> lock(mMutex);
+      return mTolerance;
+    }
+
+  private:
+    mutable std::mutex mMutex;  //!< Mutex for thread-safe access
+    std::unordered_map<VectorT<RealT>, RealT, PointHasher<RealT>> mCache;
+    RealT mTolerance;
+
+    //! Find the nearest cached point within tolerance (must be called with lock held)
+    std::optional<std::pair<VectorT<RealT>, RealT>> findNearestPoint(const VectorT<RealT> &point) const
+    {
+      // First try exact match
+      auto it = mCache.find(point);
+      if (it != mCache.end()) {
+        return std::make_pair(it->first, it->second);
+      }
+
+      // If tolerance is very small, don't do approximate search
+      if (mTolerance <= 0) {
+        return std::nullopt;
+      }
+
+      // Search for approximate match
+      for (const auto &cached : mCache) {
+        if (point.size() == cached.first.size()) {
+          RealT distance = (point - cached.first).norm();
+          if (distance <= mTolerance) {
+            return std::make_pair(cached.first, cached.second);
+          }
+        }
+      }
+      return std::nullopt;
+    }
+  };
+
+  // Hash function for VectorT to enable using it as a key in unordered_map
+  template<typename RealT>
+  struct PointHasher
+  {
+    std::size_t operator()(const VectorT<RealT> &point) const
+    {
+      std::size_t seed = 0;
+      for (int i = 0; i < point.size(); ++i) {
+        // Use bit representation for more reliable hashing
+        // Round to reduce floating point precision issues
+        constexpr RealT scale = static_cast<RealT>(1e6); // 6 decimal places precision
+        auto rounded = static_cast<std::int64_t>(std::round(point[i] * scale));
+        seed ^= std::hash<std::int64_t>{}(rounded) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+      }
+      return seed;
+    }
+  };
 
   //! Acquisition function sample generator for Bayesian optimization
   //!
@@ -194,7 +306,7 @@ namespace Ravl2
       mInitialGenerator = generator;
     }
 
-    //! Set custom sample generator for acquisition-based sampling
+    //! Set a custom sample generator for acquisition-based sampling
     //! @param generator Sample generator to use for acquisition-based sampling
     void setAcquisitionSampleGenerator(std::shared_ptr<SampleGenerator> generator)
     {
@@ -218,17 +330,11 @@ namespace Ravl2
     std::shared_ptr<SampleGenerator> mInitialGenerator;    //!< Generator for initial points
     std::shared_ptr<SampleGenerator> mAcquisitionGenerator;//!< Generator for acquisition-based points
 
-    //! Evaluate function on a batch of points, possibly in parallel
-    //! @param batch Vector of points to evaluate
-    //! @param func Function to evaluate
-    //! @return Vector of function values
-    std::vector<RealT> evaluateBatch(const std::vector<VectorT<RealT>> &batch,
-                                     const std::function<RealT(const VectorT<RealT> &)> &func) const;
 
     //! Internal state class for Bayesian optimization process
     //!
     //! Maintains the current state of the optimization including
-    //! evaluated points, function values, surrogate model, and sample generators.
+    //! evaluated points, function values, surrogate model, sample generators, and function cache.
     class State
     {
     public:
@@ -237,6 +343,8 @@ namespace Ravl2
       GaussianProcess<RealT> mGP;                      //!< Gaussian Process surrogate model
       std::shared_ptr<SampleGenerator> mInitialGen;    //!< Generator for initial points
       std::shared_ptr<SampleGenerator> mAcquisitionGen;//!< Generator for acquisition-based points
+      FunctionCache<RealT> mFunctionCache;             //!< Function evaluation cache
+      std::atomic<size_t> mCacheHits{0};               //!< Number of cache hits (thread-safe)
 
       //! Constructor
       //! @param gpLengthScale Length scale parameter for GP kernel
@@ -251,11 +359,32 @@ namespace Ravl2
           : mGP(gpLengthScale, gpNoise),
             mInitialGen(initialGen->clone()),
             mAcquisitionGen(acquisitionGen->clone()),
+            mFunctionCache(static_cast<RealT>(1e-10)),
             mVerbose(verbose)
       {}
 
-      //! Fit the surrogate model to current data points
+      //! Evaluate function with caching support (thread-safe)
+      //! @param point Point to evaluate
+      //! @param func Function to evaluate
+      //! @return Function value
+      RealT evaluateWithCache(const VectorT<RealT> &point,
+                             const std::function<RealT(const VectorT<RealT> &)> &func);
+
+      //! Get cache statistics
+      //! @return Pair of (cache_hits, cache_size)
+      std::pair<size_t, size_t> getCacheStats() const
+      {
+        return std::make_pair(mCacheHits.load(), mFunctionCache.size());
+      }
+
+      //! Fit the surrogate model to the current data
       void fitSurrogate();
+
+      //! Select the next batch of points to evaluate, filling with new points
+      //! @param domain Domain of the function
+      //! @param batchSize Number of points to select
+      //! @return Vector of points to evaluate next (guaranteed to have batchSize elements if possible)
+      std::vector<VectorT<RealT>> selectBatchWithFill(const CostDomain<RealT> &domain, size_t batchSize);
 
       //! Generate initial points for optimization
       //! @param domain Domain to sample from
@@ -303,6 +432,28 @@ namespace Ravl2
     private:
       bool mVerbose = false;//!< Whether to output progress information
     };
+
+    //! Evaluate function on a batch of points, possibly in parallel, ensuring batch is filled
+    //! @param batch Vector of points to evaluate
+    //! @param func Function to evaluate
+    //! @param state State object containing the function cache
+    //! @param domain Domain for generating additional points if needed
+    //! @return Vector of function values and points actually evaluated
+    std::pair<std::vector<RealT>, std::vector<VectorT<RealT>>> evaluateBatchWithFill(
+        const std::vector<VectorT<RealT>> &batch,
+        const std::function<RealT(const VectorT<RealT> &)> &func,
+        State &state,
+        const CostDomain<RealT> &domain) const;
+
+    //! Evaluate function on a batch of points, possibly in parallel
+    //! @param batch Vector of points to evaluate
+    //! @param func Function to evaluate
+    //! @param state State object containing the function cache
+    //! @return Vector of function values
+    std::vector<RealT> evaluateBatch(
+        const std::vector<VectorT<RealT>> &batch,
+        const std::function<RealT(const VectorT<RealT> &)> &func,
+        State &state) const;
   };
 
 }// namespace Ravl2

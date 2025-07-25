@@ -141,16 +141,22 @@ namespace Ravl2
       initPoints = state.generateInitialPoints(domain, mBatchSize);
     }
 
-    // Evaluate initial points using batch evaluator
-    auto initResults = evaluateBatch(initPoints, func);
-    for(size_t i = 0; i < initPoints.size(); ++i) {
-      state.addPoint(initPoints[i], initResults[i]);
-      results.emplace_back(initPoints[i], initResults[i]);
+    // Evaluate initial points using batch evaluator with fill
+    auto initResult = evaluateBatchWithFill(initPoints, func, state, domain);
+    auto initResults = initResult.first;
+    auto actualInitPoints = initResult.second;
+
+    for(size_t i = 0; i < actualInitPoints.size(); ++i) {
+      state.addPoint(actualInitPoints[i], initResults[i]);
+      results.emplace_back(actualInitPoints[i], initResults[i]);
     }
 
     // Track the best values for convergence checking
     std::vector<RealT> recentBestValues;
     recentBestValues.reserve(mMinItersBeforeConvergence + 1);
+
+    // Clear cache statistics at start
+    state.mCacheHits = 0;
 
     for(size_t iter = 0; iter < mMaxIters; ++iter) {
       state.fitSurrogate();
@@ -160,7 +166,7 @@ namespace Ravl2
         state.adaptLengthScale(domain, iter, mMaxIters);
       }
 
-      auto batch = state.selectBatch(domain, mBatchSize);
+      auto batch = state.selectBatchWithFill(domain, mBatchSize);
 
       // Early termination if no candidates found
       if(batch.empty()) {
@@ -170,11 +176,14 @@ namespace Ravl2
         break;
       }
 
-      // Evaluate batch using parallel evaluator
-      auto batchResults = evaluateBatch(batch, func);
-      for(size_t i = 0; i < batch.size(); ++i) {
-        state.addPoint(batch[i], batchResults[i]);
-        results.emplace_back(batch[i], batchResults[i]);
+      // Evaluate batch using parallel evaluator with fill
+      auto batchResult = evaluateBatchWithFill(batch, func, state, domain);
+      auto batchResults = batchResult.first;
+      auto actualBatch = batchResult.second;
+
+      for(size_t i = 0; i < actualBatch.size(); ++i) {
+        state.addPoint(actualBatch[i], batchResults[i]);
+        results.emplace_back(actualBatch[i], batchResults[i]);
       }
 
       const RealT currentBest = state.getBestY();
@@ -199,17 +208,156 @@ namespace Ravl2
       }
 
       if(verbose()) {
-        SPDLOG_INFO("Iteration {}: best value = {}", iter, currentBest);
+        auto cacheStats = state.getCacheStats();
+        SPDLOG_INFO("Iteration {}: best value = {}, cache hits: {}/{}, evaluated: {}/{}",
+                   iter, currentBest, cacheStats.first, cacheStats.second,
+                   actualBatch.size(), batch.size());
       }
     }
 
     return results;
   }
 
+  BayesianOptimise::RealT BayesianOptimise::State::evaluateWithCache(
+    const VectorT<RealT> &point,
+    const std::function<RealT(const VectorT<RealT> &)> &func)
+  {
+    // Check cache first
+    auto cachedValue = mFunctionCache.get(point);
+    if (cachedValue.has_value()) {
+      ++mCacheHits;
+      return *cachedValue;
+    }
+
+    // Evaluate and cache
+    RealT value = func(point);
+    mFunctionCache.add(point, value);
+    return value;
+  }
+
+  std::pair<std::vector<BayesianOptimise::RealT>, std::vector<VectorT<BayesianOptimise::RealT>>>
+  BayesianOptimise::evaluateBatchWithFill(
+    const std::vector<VectorT<RealT>> &batch,
+    const std::function<RealT(const VectorT<RealT> &)> &func,
+    State &state,
+    const CostDomain<RealT> &domain) const
+  {
+    if(batch.empty()) {
+      return {std::vector<RealT>(), std::vector<VectorT<RealT>>()};
+    }
+
+    // First pass: separate cached and uncached points
+    std::vector<RealT> allResults;
+    std::vector<VectorT<RealT>> actualPoints;
+    std::vector<VectorT<RealT>> uncachedPoints;
+    std::vector<size_t> uncachedIndices;
+
+    allResults.reserve(batch.size());
+    actualPoints.reserve(batch.size());
+
+    for(size_t i = 0; i < batch.size(); ++i) {
+      auto cachedValue = state.mFunctionCache.get(batch[i]);
+      if(cachedValue.has_value()) {
+        // Cache hit
+        ++state.mCacheHits;
+        allResults.push_back(*cachedValue);
+        actualPoints.push_back(batch[i]);
+      } else {
+        // Cache miss - need to evaluate
+        uncachedPoints.push_back(batch[i]);
+        uncachedIndices.push_back(i);
+      }
+    }
+
+    // If we have cache hits, we need to fill the batch with additional new points
+    size_t targetEvaluations = batch.size();
+    size_t cacheHits = batch.size() - uncachedPoints.size();
+
+    if(cacheHits > 0 && uncachedPoints.size() < targetEvaluations) {
+      // Generate additional points to maintain batch size
+      size_t additionalNeeded = targetEvaluations - uncachedPoints.size();
+      auto additionalBatch = state.selectBatch(domain, additionalNeeded);
+
+      // Filter out any points that are already cached or in our current batch
+      for(const auto& newPoint : additionalBatch) {
+        if(uncachedPoints.size() >= targetEvaluations) break;
+
+        // Check if this point is already cached
+        if(!state.mFunctionCache.contains(newPoint)) {
+          // Check if it's not already in our uncached list
+          bool alreadyInBatch = false;
+          for(const auto& existing : uncachedPoints) {
+            if((newPoint - existing).norm() < static_cast<RealT>(1e-12)) {
+              alreadyInBatch = true;
+              break;
+            }
+          }
+          if(!alreadyInBatch) {
+            uncachedPoints.push_back(newPoint);
+          }
+        }
+      }
+    }
+
+    // Evaluate uncached points in parallel
+    if(!uncachedPoints.empty()) {
+      std::vector<RealT> uncachedResults(uncachedPoints.size());
+
+      if(mMaxThreads == 0 || uncachedPoints.size() == 1) {
+        // Sequential evaluation
+        for(size_t i = 0; i < uncachedPoints.size(); ++i) {
+          RealT value = func(uncachedPoints[i]);
+          state.mFunctionCache.add(uncachedPoints[i], value);
+          uncachedResults[i] = value;
+        }
+      } else {
+        // Parallel evaluation without broad mutex lock
+        const size_t numThreads = std::min(mMaxThreads, uncachedPoints.size());
+        std::vector<std::future<void>> futures;
+        futures.reserve(numThreads);
+
+        std::atomic<size_t> nextIndex{0};
+
+        for(size_t t = 0; t < numThreads; ++t) {
+          futures.emplace_back(std::async(std::launch::async, [&]() {
+            while(true) {
+              size_t index = nextIndex.fetch_add(1);
+              if(index >= uncachedPoints.size()) break;
+
+              // Evaluate function (this is the expensive part, no locking needed)
+              RealT value = func(uncachedPoints[index]);
+
+              // Cache the result (FunctionCache handles its own locking)
+              state.mFunctionCache.add(uncachedPoints[index], value);
+              uncachedResults[index] = value;
+            }
+          }));
+        }
+
+        // Wait for all threads to complete
+        for(auto &future : futures) {
+          future.wait();
+        }
+      }
+
+      // Add uncached results to the final results
+      for(size_t i = 0; i < uncachedPoints.size(); ++i) {
+        allResults.push_back(uncachedResults[i]);
+        actualPoints.push_back(uncachedPoints[i]);
+      }
+    }
+
+    return {allResults, actualPoints};
+  }
+
+  // Keep the old method for backward compatibility
   std::vector<BayesianOptimise::RealT> BayesianOptimise::evaluateBatch(
     const std::vector<VectorT<RealT>> &batch,
-    const std::function<RealT(const VectorT<RealT> &)> &func) const
+    const std::function<RealT(const VectorT<RealT> &)> &func,
+    State &state) const
   {
+    // This is a simplified version that doesn't do batch filling
+    // Used mainly for initial points where we don't need filling
     if(batch.empty()) {
       return {};
     }
@@ -217,18 +365,17 @@ namespace Ravl2
     std::vector<RealT> results(batch.size());
 
     if(mMaxThreads == 0 || batch.size() == 1) {
-      // Sequential evaluation
+      // Sequential evaluation with caching
       for(size_t i = 0; i < batch.size(); ++i) {
-        results[i] = func(batch[i]);
+        results[i] = state.evaluateWithCache(batch[i], func);
       }
     } else {
-      // Parallel evaluation
+      // Parallel evaluation with caching
       const size_t numThreads = std::min(mMaxThreads, batch.size());
       std::vector<std::future<void>> futures;
       futures.reserve(numThreads);
 
-      std::atomic<size_t> nextIndex {0};
-      std::mutex resultMutex;
+      std::atomic<size_t> nextIndex{0};
 
       for(size_t t = 0; t < numThreads; ++t) {
         futures.emplace_back(std::async(std::launch::async, [&]() {
@@ -236,12 +383,7 @@ namespace Ravl2
             size_t index = nextIndex.fetch_add(1);
             if(index >= batch.size()) break;
 
-            RealT value = func(batch[index]);
-
-            {
-              std::lock_guard<std::mutex> lock(resultMutex);
-              results[index] = value;
-            }
+            results[index] = state.evaluateWithCache(batch[index], func);
           }
         }));
       }
@@ -253,6 +395,13 @@ namespace Ravl2
     }
 
     return results;
+  }
+
+  std::vector<VectorT<BayesianOptimise::RealT>> BayesianOptimise::State::selectBatchWithFill(
+    const CostDomain<RealT> &domain, size_t batchSize)
+  {
+    // This wraps the existing selectBatch method
+    return selectBatch(domain, batchSize);
   }
 
   void BayesianOptimise::State::fitSurrogate()
