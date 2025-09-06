@@ -8,10 +8,10 @@
 #include <memory>
 #include <map>
 #include <string>
+#include <any>
 #include "Ravl2/Video/VideoTypes.hh"
 
-namespace Ravl2 {
-namespace Video {
+namespace Ravl2::Video {
 
 //! Base class for all media frames (video frames, audio chunks, etc.)
 class Frame {
@@ -20,16 +20,19 @@ public:
   virtual ~Frame() = default;
 
   //! Get the frame's unique identifier
-  StreamItemId id() const { return m_id; }
+  [[nodiscard]] StreamItemId id() const { return m_id; }
 
   //! Get the frame's timestamp
-  MediaTime timestamp() const { return m_timestamp; }
+  [[nodiscard]] MediaTime timestamp() const { return m_timestamp; }
 
   //! Check if this frame is valid
-  virtual bool isValid() const = 0;
+  [[nodiscard]] virtual bool isValid() const = 0;
 
   //! Get the stream type this frame belongs to
-  virtual StreamType streamType() const = 0;
+  [[nodiscard]] virtual StreamType streamType() const = 0;
+
+  //! Access data as std::any
+  [[nodiscard]] virtual std::any frameData() const = 0;
 
 protected:
   //! Constructor with ID and timestamp
@@ -45,5 +48,4 @@ protected:
   MediaTime m_timestamp{0};   //!< Timestamp of when this frame starts.
 };
 
-} // namespace Video
-} // namespace Ravl2
+} // namespace Ravl2::Video

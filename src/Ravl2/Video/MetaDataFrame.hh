@@ -60,6 +60,10 @@ public:
   bool isValid() const override
   { return true; }
 
+  //! Access data
+  [[nodiscard]] std::any frameData() const override
+  { return mData; }
+
 protected:
   //! Constructor with ID and timestamp
   MetaDataFrame(StreamItemId id, MediaTime timestamp)

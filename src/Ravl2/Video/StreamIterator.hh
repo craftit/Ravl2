@@ -171,7 +171,7 @@ public:
     if (typeid(ImageTypeT) != m_iterator->dataType()) {
       throw std::runtime_error("Frame type does not match iterator data type and no conversion available");
     }
-    return currentFrame().frameData();
+    return currentFrame().image();
   }
 
   //! Seek to a specific timestamp

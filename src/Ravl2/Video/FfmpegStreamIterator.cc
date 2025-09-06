@@ -43,6 +43,7 @@ FfmpegStreamIterator::FfmpegStreamIterator(std::shared_ptr<FfmpegMediaContainer>
   if (!m_codecContext) {
     av_frame_free(&m_frame);
     av_packet_free(&m_packet);
+    SPDLOG_WARN("No codec context available for stream {}", streamIndex);
     throw std::runtime_error("No codec context available for stream");
   }
 
@@ -51,8 +52,11 @@ FfmpegStreamIterator::FfmpegStreamIterator(std::shared_ptr<FfmpegMediaContainer>
   if (!result.isSuccess() && result.error() != VideoErrorCode::EndOfStream) {
     av_frame_free(&m_frame);
     av_packet_free(&m_packet);
+    SPDLOG_WARN("Failed to read first frame: {}", toString(result.error()));
     throw std::runtime_error("Failed to read first frame");
   }
+  SPDLOG_INFO("Stream setup. First frame: {}", m_frame->pts);
+
 }
 
 FfmpegStreamIterator::~FfmpegStreamIterator() {
@@ -75,24 +79,43 @@ bool FfmpegStreamIterator::isAtEnd() const {
 VideoResult<void> FfmpegStreamIterator::next() {
   // If we're already at the end, return EndOfStream
   if (m_isAtEnd) {
+    SPDLOG_INFO("Already at end of stream");
     return VideoResult<void>(VideoErrorCode::EndOfStream);
   }
 
   // Reset the last seek operation flag
   m_wasSeekOperation = false;
 
-  // Read the next packet
-  auto result = readNextPacket();
-  if (!result.isSuccess()) {
-    m_isAtEnd = true;
-    return result;
-  }
+  try
+  {
+    while (true)
+    {
+      // Read the next packet
+      auto result = readNextPacket();
+      if (!result.isSuccess()) {
+        SPDLOG_INFO("Failed to read next packet: {}", toString(result.error()));
+        m_isAtEnd = true;
+        return result;
+      }
 
-  // Decode the packet into a frame
-  result = decodeCurrentPacket();
-  if (!result.isSuccess()) {
-    return result;
+      // Decode the packet into a frame
+      result = decodeCurrentPacket();
+      if (result.isSuccess()) {
+        break;
+      }
+      if (result.error() == VideoErrorCode::NeedMoreData){
+        SPDLOG_INFO("Need more data to decode frame");
+        continue;
+      }
+      SPDLOG_INFO("Failed to decode frame: {}", toString(result.error()));
+      return result;
+    }
+  } catch (std::exception& e)
+  {
+    SPDLOG_INFO("Exception caught: {}", e.what());
+    return VideoResult<void>(VideoErrorCode::DecodingError);
   }
+  SPDLOG_INFO("Decoded frame: {}", m_frame->pts);
 
   // Increment the position index
   m_currentPositionIndex++;
@@ -299,6 +322,7 @@ VideoResult<void> FfmpegStreamIterator::readNextPacket() {
   if (!container.isOpen()) {
     return VideoResult<void>(VideoErrorCode::InvalidOperation);
   }
+  SPDLOG_INFO("Reading next packet");
 
   // Read packets until we find one from our stream
   while (true) {
@@ -319,12 +343,15 @@ VideoResult<void> FfmpegStreamIterator::readNextPacket() {
 
     // Check if the packet belongs to our stream
     if (m_packet->stream_index == static_cast<int>(streamIndex())) {
-      return VideoResult<void>(VideoErrorCode::Success);
+      break;
     }
+    SPDLOG_INFO("Skipping packet from stream {}", m_packet->stream_index);
 
     // Free the packet if it's not from our stream
     av_packet_unref(m_packet);
   }
+  SPDLOG_INFO("Read packet from stream {}", m_packet->stream_index);
+  return VideoResult<void>(VideoErrorCode::Success);
 }
 
 VideoResult<void> FfmpegStreamIterator::decodeCurrentPacket() {
@@ -336,6 +363,7 @@ VideoResult<void> FfmpegStreamIterator::decodeCurrentPacket() {
   int result = avcodec_send_packet(m_codecContext, m_packet);
 
   if (result < 0) {
+    SPDLOG_WARN("Error sending packet to decoder: {}", toString(FfmpegMediaContainer::convertFfmpegError(result)));
     return VideoResult<void>(FfmpegMediaContainer::convertFfmpegError(result));
   }
 
@@ -345,16 +373,17 @@ VideoResult<void> FfmpegStreamIterator::decodeCurrentPacket() {
   if (result < 0) {
     // If the decoder needs more data, that's not an error
     if (result == AVERROR(EAGAIN)) {
-      return VideoResult<void>(VideoErrorCode::Success);
-    } else {
-      return VideoResult<void>(FfmpegMediaContainer::convertFfmpegError(result));
+      return VideoResult<void>(VideoErrorCode::NeedMoreData);
     }
+    SPDLOG_WARN("Error receiving frame from decoder: {}", toString(FfmpegMediaContainer::convertFfmpegError(result)));
+    return VideoResult<void>(FfmpegMediaContainer::convertFfmpegError(result));
   }
 
   // Convert the FFmpeg frame to our Frame type
   auto frame = convertPacketToFrame();
 
   if (!frame) {
+    SPDLOG_WARN("Failed to convert packet to frame");
     return VideoResult<void>(VideoErrorCode::DecodingError);
   }
 

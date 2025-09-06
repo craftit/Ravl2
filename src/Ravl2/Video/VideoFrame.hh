@@ -72,7 +72,7 @@ public:
   [[nodiscard]] int height() const override { return m_frameData.range().size(1); }
 
   //! The frame data
-  const Array<PixelT, 2> &frameData() const
+  const Array<PixelT, 2> &image() const
   {
     return m_frameData;
   }
@@ -81,6 +81,12 @@ public:
   [[nodiscard]] bool isValid() const override
   {
     return (m_frameData.range().size(0) > 0 && m_frameData.range().size(1) > 0);
+  }
+
+  //! Access data as std::any
+  [[nodiscard]] std::any frameData() const override
+  {
+    return m_frameData;
   }
 
 protected:

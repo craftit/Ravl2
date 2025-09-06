@@ -29,6 +29,7 @@ using StreamItemId = int64_t;
 //! Error codes for video operations
 enum class VideoErrorCode {
   Success,                //!< Operation completed successfully
+  NeedMoreData,           //!< More data is needed to complete the operation
   EndOfStream,            //!< End of stream reached
   InvalidOperation,       //!< Operation is not valid in the current state
   NotImplemented,         //!< Operation is not yet implemented
@@ -39,6 +40,8 @@ enum class VideoErrorCode {
   UnsupportedFormat,      //!< Format is not supported
   ResourceAllocationError //!< Failed to allocate required resources
 };
+
+std::string_view toString(VideoErrorCode error);
 
 //! Timestamp type for media time points
 using MediaTime = std::chrono::microseconds;

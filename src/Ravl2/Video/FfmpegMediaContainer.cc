@@ -142,7 +142,6 @@ std::size_t FfmpegMediaContainer::streamCount() const {
 }
 
 StreamType FfmpegMediaContainer::streamType(std::size_t streamIndex) const {
-  std::lock_guard<std::mutex> lock(m_mutex);
 
   if (!m_formatContext || streamIndex >= m_streamTypes.size()) {
     return StreamType::Unknown;
@@ -489,9 +488,10 @@ VideoErrorCode FfmpegMediaContainer::convertFfmpegError(int ffmpegError) {
     case AVERROR(EIO):
       return VideoErrorCode::CorruptedData;
     default:
+      break;
   #pragma GCC diagnostic pop
-      return VideoErrorCode::DecodingError;
   }
+  return VideoErrorCode::DecodingError;
 }
 
 } // namespace Ravl2::Video

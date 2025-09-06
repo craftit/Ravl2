@@ -64,6 +64,10 @@ public:
   [[nodiscard]] bool isValid() const override
   { return !m_audioData.empty(); }
 
+  //! Access data
+  [[nodiscard]] std::any frameData() const override
+  { return m_audioData; }
+
 protected:
   //! Constructor with ID and timestamp
   AudioChunk(StreamItemId id, MediaTime timestamp)
