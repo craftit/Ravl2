@@ -78,7 +78,7 @@ int main(int nargs,char **argv) {
     return 1;
   }
   
-  SegmentExtremaC<uint8_t> lst(minSize,minMargin,limit);
+  Ravl2::SegmentExtrema<uint8_t> lst(minSize,minMargin,limit);
 
   int numberOfFrames = 0;
   Ravl2::IndexRange<2> imgRange;
@@ -102,7 +102,7 @@ int main(int nargs,char **argv) {
       std::vector<Ravl2::Array<int,2> > masks = lst.applyMask(pimg);
       numberOfFrames++;
     } else {
-      std::vector<Boundary> bounds;
+      std::vector<Ravl2::Boundary> bounds;
       auto startTime = std::chrono::steady_clock::now();
       bounds = lst.apply(pimg);
       auto endTime = std::chrono::steady_clock::now();

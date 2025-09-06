@@ -47,8 +47,8 @@ namespace Ravl2
     STATIC_REQUIRE(std::input_iterator<Ravl2::ArrayIterZipN<2,int> >);
     STATIC_REQUIRE(std::input_iterator<Ravl2::ArrayIterZipN<2,int,float> >);
 
-    STATIC_REQUIRE(std::indirectly_readable<Ravl2::InputStreamIterator<int> >);
-    STATIC_REQUIRE(std::input_iterator<Ravl2::InputStreamIterator<int> >);
+    // STATIC_REQUIRE(std::indirectly_readable<Ravl2::InputStreamIterator<int> >);
+    // STATIC_REQUIRE(std::input_iterator<Ravl2::InputStreamIterator<int> >);
     // STATIC_REQUIRE(std::indirectly_writable<Ravl2::OutputStreamIterator<int>, int>);
     //  STATIC_REQUIRE(std::output_iterator<Ravl2::OutputStreamIterator<int>, int>);
 

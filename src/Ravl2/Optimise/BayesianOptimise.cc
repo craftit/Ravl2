@@ -122,7 +122,7 @@ namespace Ravl2
 
     // Validate starting points have the correct dimension
     for(const auto &point : startPoints) {
-      if(point.size() != static_cast<Eigen::Index>(domain.dim())) {
+      if(point.size() != domain.dim()) {
         SPDLOG_ERROR("BayesianOptimise::minimiseBatch() starting point dimension mismatch: point.size()={}, domain.dim()={}", point.size(), domain.dim());
         throw std::invalid_argument("Starting point dimension doesn't match domain dimension");
       }
@@ -598,13 +598,13 @@ namespace Ravl2
     candidates.reserve(numCandidates);
 
     // Strategy 1: Sobol sequence for global exploration (60% of candidates)
-    size_t globalCandidates = static_cast<size_t>(0.6 * numCandidates);
+    size_t globalCandidates = static_cast<size_t>(0.6 * static_cast<double>(numCandidates));
     mSobolGen.reset(mDomain);
     auto globalPoints = mSobolGen.generatePoints(globalCandidates);
     candidates.insert(candidates.end(), globalPoints.begin(), globalPoints.end());
 
     // Strategy 2: Random exploration with higher variance (25% of candidates)
-    size_t randomCandidates = static_cast<size_t>(0.25 * numCandidates);
+    size_t randomCandidates = static_cast<size_t>(0.25 * static_cast<double>(numCandidates));
     std::uniform_real_distribution<RealT> uniformDist(0.0, 1.0);
     for(size_t i = 0; i < randomCandidates; ++i) {
       VectorT<RealT> point(mDomain.dim());

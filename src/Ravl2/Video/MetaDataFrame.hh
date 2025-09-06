@@ -14,8 +14,7 @@
 #include "Ravl2/Video/VideoTypes.hh"
 #include "Ravl2/Video/Frame.hh"
 
-namespace Ravl2 {
-namespace Video {
+namespace Ravl2::Video {
 
 //! Base class for metadata frames, regardless of specific data type
 class MetaDataFrameBase : public Frame {
@@ -60,15 +59,17 @@ public:
   //! Get the metadata as a specific type
   template<typename DataT>
   DataT getData() const {
-    // This will throw if the data type doesn't match
-    return getDataImpl<DataT>();
+    if (dataTypeName() != typeid(DataT).name()) {
+      throw std::runtime_error("Data type mismatch when accessing metadata");
+    }
+    return getDataTyped(static_cast<const DataT*>(nullptr));
   }
 
   //! Get the data type name
   virtual std::string dataTypeName() const = 0;
 
   //! Check if the frame has valid data
-  virtual bool isValid() const = 0;
+  virtual bool isValid() const override = 0;
 
 protected:
   //! Constructor with ID and timestamp
@@ -79,9 +80,11 @@ protected:
   //! Default constructor
   MetaDataFrame() = default;
 
-  //! Implementation of getting data for a specific type
+  //! Type-erased template method for getting data
   template<typename DataT>
-  virtual DataT getDataImpl() const = 0;
+  DataT getDataTyped(const DataT*) const {
+    throw std::runtime_error("Unsupported data type");
+  }
 };
 
 //! Template implementation of MetaDataFrame for a specific data type
@@ -109,12 +112,8 @@ public:
   }
 
 protected:
-  //! Implementation of getting data for a specific type
-  template<typename T>
-  T getDataImpl() const override {
-    if (typeid(T) != typeid(DataT)) {
-      throw std::runtime_error("Data type mismatch when accessing metadata");
-    }
+  //! Specialization for the actual data type
+  DataT getDataTyped(const DataT*) const {
     return m_data;
   }
 
@@ -123,70 +122,5 @@ private:
   std::string m_format;     //!< Format identifier for this metadata
 };
 
-//! Convenience type for GPS coordinate data
-struct GPSData {
-  double latitude;
-  double longitude;
-  double altitude;
-  double accuracy;
-  MediaTime timestamp;  // Some sensors might have their own timestamps
-};
 
-//! Convenience type for accelerometer data
-struct AccelerometerData {
-  double x;
-  double y;
-  double z;
-  MediaTime timestamp;
-};
-
-//! Convenience type for gyroscope data
-struct GyroscopeData {
-  double x;
-  double y;
-  double z;
-  MediaTime timestamp;
-};
-
-//! Convenience type for compass/magnetometer data
-struct CompassData {
-  double heading;
-  double accuracy;
-  MediaTime timestamp;
-};
-
-// Create convenience factory methods for common metadata types
-namespace MetaDataFactory {
-
-//! Create a GPS metadata frame
-inline std::shared_ptr<MetaDataFrame> createGPS(double latitude, double longitude, double altitude,
-                                              double accuracy, StreamItemId id, MediaTime timestamp) {
-  GPSData data{latitude, longitude, altitude, accuracy, timestamp};
-  return MetaDataFrame::create<GPSData>(data, "GPS", id, timestamp);
-}
-
-//! Create an accelerometer metadata frame
-inline std::shared_ptr<MetaDataFrame> createAccelerometer(double x, double y, double z,
-                                                        StreamItemId id, MediaTime timestamp) {
-  AccelerometerData data{x, y, z, timestamp};
-  return MetaDataFrame::create<AccelerometerData>(data, "ACCELEROMETER", id, timestamp);
-}
-
-//! Create a gyroscope metadata frame
-inline std::shared_ptr<MetaDataFrame> createGyroscope(double x, double y, double z,
-                                                    StreamItemId id, MediaTime timestamp) {
-  GyroscopeData data{x, y, z, timestamp};
-  return MetaDataFrame::create<GyroscopeData>(data, "GYROSCOPE", id, timestamp);
-}
-
-//! Create a compass metadata frame
-inline std::shared_ptr<MetaDataFrame> createCompass(double heading, double accuracy,
-                                                  StreamItemId id, MediaTime timestamp) {
-  CompassData data{heading, accuracy, timestamp};
-  return MetaDataFrame::create<CompassData>(data, "COMPASS", id, timestamp);
-}
-
-} // namespace MetaDataFactory
-
-} // namespace Video
-} // namespace Ravl2
+} // namespace Ravl2::Video

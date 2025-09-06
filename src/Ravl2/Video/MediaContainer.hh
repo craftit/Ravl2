@@ -15,20 +15,30 @@
 #include "Ravl2/Video/AudioChunk.hh"
 #include "Ravl2/Video/MetaDataFrame.hh"
 
-namespace Ravl2 {
-namespace Video {
+namespace Ravl2::Video {
 
 // Forward declaration
 class StreamIterator;
-
-//! Unified stream properties variant type
-using StreamProperties = std::variant<VideoProperties, AudioProperties, DataProperties>;
 
 //! Class representing a media container (file, memory, network stream)
 class MediaContainer : public std::enable_shared_from_this<MediaContainer> {
 public:
   //! Virtual destructor
   virtual ~MediaContainer() = default;
+
+  //! Open a media container from a file path
+  static VideoResult<std::shared_ptr<MediaContainer>> openFile(const std::string& filePath) {
+    // This is a placeholder implementation
+    // In a real implementation, this would create the appropriate container type based on the file extension
+    return VideoResult<std::shared_ptr<MediaContainer>>(VideoErrorCode::UnsupportedFormat);
+  }
+
+  //! Open a media container from memory
+  static VideoResult<std::shared_ptr<MediaContainer>> openMemory(const uint8_t* data, size_t size) {
+    // This is a placeholder implementation
+    // In a real implementation, this would create an in-memory container
+    return VideoResult<std::shared_ptr<MediaContainer>>(VideoErrorCode::UnsupportedFormat);
+  }
 
   //! Check if the container is open
   virtual bool isOpen() const = 0;
@@ -42,8 +52,14 @@ public:
   //! Get the type of a stream at the specified index
   virtual StreamType streamType(int streamIndex) const = 0;
 
-  //! Get properties for any stream type (unified interface)
-  virtual VideoResult<StreamProperties> streamProperties(int streamIndex) const = 0;
+  //! Get properties for a video stream
+  virtual VideoResult<VideoProperties> videoProperties(int streamIndex) const = 0;
+
+  //! Get properties for an audio stream
+  virtual VideoResult<AudioProperties> audioProperties(int streamIndex) const = 0;
+
+  //! Get properties for a data stream
+  virtual VideoResult<DataProperties> dataProperties(int streamIndex) const = 0;
 
   //! Get total duration of the container (longest stream)
   virtual MediaTime duration() const = 0;
@@ -60,60 +76,6 @@ public:
   //! Check if a specific metadata key exists
   virtual bool hasMetadata(const std::string& key) const = 0;
 
-  //! Convenience method for getting video properties (uses streamProperties internally)
-  VideoResult<VideoProperties> videoProperties(int streamIndex) const {
-    auto result = streamProperties(streamIndex);
-    if (!result.isSuccess()) {
-      return VideoResult<VideoProperties>(result.error());
-    }
-
-    if (streamType(streamIndex) != StreamType::Video) {
-      return VideoResult<VideoProperties>(VideoErrorCode::InvalidOperation);
-    }
-
-    try {
-      return VideoResult<VideoProperties>(std::get<VideoProperties>(result.value()));
-    } catch (const std::bad_variant_access&) {
-      return VideoResult<VideoProperties>(VideoErrorCode::InvalidOperation);
-    }
-  }
-
-  //! Convenience method for getting audio properties (uses streamProperties internally)
-  VideoResult<AudioProperties> audioProperties(int streamIndex) const {
-    auto result = streamProperties(streamIndex);
-    if (!result.isSuccess()) {
-      return VideoResult<AudioProperties>(result.error());
-    }
-
-    if (streamType(streamIndex) != StreamType::Audio) {
-      return VideoResult<AudioProperties>(VideoErrorCode::InvalidOperation);
-    }
-
-    try {
-      return VideoResult<AudioProperties>(std::get<AudioProperties>(result.value()));
-    } catch (const std::bad_variant_access&) {
-      return VideoResult<AudioProperties>(VideoErrorCode::InvalidOperation);
-    }
-  }
-
-  //! Convenience method for getting data properties (uses streamProperties internally)
-  VideoResult<DataProperties> dataProperties(int streamIndex) const {
-    auto result = streamProperties(streamIndex);
-    if (!result.isSuccess()) {
-      return VideoResult<DataProperties>(result.error());
-    }
-
-    if (streamType(streamIndex) != StreamType::Data) {
-      return VideoResult<DataProperties>(VideoErrorCode::InvalidOperation);
-    }
-
-    try {
-      return VideoResult<DataProperties>(std::get<DataProperties>(result.value()));
-    } catch (const std::bad_variant_access&) {
-      return VideoResult<DataProperties>(VideoErrorCode::InvalidOperation);
-    }
-  }
-
 protected:
   //! Protected constructor to prevent direct instantiation
   MediaContainer() = default;
@@ -122,5 +84,4 @@ protected:
   mutable std::mutex m_mutex;
 };
 
-} // namespace Video
-} // namespace Ravl2
+} // namespace Ravl2::Video

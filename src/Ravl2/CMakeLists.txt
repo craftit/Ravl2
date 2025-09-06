@@ -1,4 +1,3 @@
-
 find_package(OpenCV REQUIRED)
 find_package(fmt REQUIRED)
 find_package(spdlog REQUIRED)
@@ -16,6 +15,7 @@ add_subdirectory(Math)
 add_subdirectory(Image)
 add_subdirectory(3D)
 add_subdirectory(OpenCV)
+add_subdirectory(Video)
 
 
 # If OpenGL is found, add the OpenGL subdirectory

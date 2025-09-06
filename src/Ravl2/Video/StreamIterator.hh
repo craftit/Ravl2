@@ -14,10 +14,9 @@
 #include "Ravl2/Video/AudioChunk.hh"
 #include "Ravl2/Video/MetaDataFrame.hh"
 
-namespace Ravl2 {
-namespace Video {
+namespace Ravl2::Video {
 
-//! Forward declaration
+// Forward declaration
 class MediaContainer;
 
 //! Class representing an iterator for a specific stream in a media container
@@ -271,5 +270,4 @@ private:
   std::shared_ptr<StreamIterator> m_iterator;
 };
 
-} // namespace Video
-} // namespace Ravl2
+} // namespace Ravl2::Video

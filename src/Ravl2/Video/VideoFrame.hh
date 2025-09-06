@@ -13,8 +13,7 @@
 #include "Ravl2/Video/VideoTypes.hh"
 #include "Ravl2/Video/Frame.hh"
 
-namespace Ravl2 {
-namespace Video {
+namespace Ravl2::Video {
 
 //! Base class for video frames, regardless of pixel type
 class VideoFrameBase : public Frame {
@@ -56,7 +55,7 @@ protected:
 template<typename PixelT>
 class VideoFrameImpl;
 
-//! Interface class for video frames
+//! Interface class for video frames with type erasure for template functions
 class VideoFrame : public VideoFrameBase {
 public:
   //! Virtual destructor
@@ -71,15 +70,20 @@ public:
   //! Get the frame data as a specific pixel type
   template<typename PixelT>
   Array<PixelT, 2> frameData() const {
-    // This will throw if the pixel type doesn't match
-    return getFrameDataImpl<PixelT>();
+    // This will be implemented in derived classes via type erasure
+    if (pixelTypeName() != typeid(PixelT).name()) {
+      throw std::runtime_error("Pixel type mismatch when accessing frame data");
+    }
+
+    // Each derived class will implement this method for its specific pixel type
+    return getFrameDataTyped(static_cast<const PixelT*>(nullptr));
   }
 
   //! Get the pixel type name
   virtual std::string pixelTypeName() const = 0;
 
   //! Check if the frame has valid data
-  virtual bool isValid() const = 0;
+  virtual bool isValid() const override = 0;
 
 protected:
   //! Constructor with ID and timestamp
@@ -90,9 +94,14 @@ protected:
   //! Default constructor
   VideoFrame() = default;
 
-  //! Implementation of getting frame data for a specific pixel type
+  //! Type-erased implementation for getting frame data of a specific type
+  virtual Array<char, 2> getFrameDataRaw() const = 0;
+
+  //! Template method to be specialized by derived classes
   template<typename PixelT>
-  virtual Array<PixelT, 2> getFrameDataImpl() const = 0;
+  Array<PixelT, 2> getFrameDataTyped(const PixelT*) const {
+    throw std::runtime_error("Unsupported pixel type");
+  }
 };
 
 //! Template implementation of VideoFrame for a specific pixel type
@@ -105,10 +114,10 @@ public:
     , m_frameData(frameData)
   {}
 
-  //! Get the frame width - computed from frame data to avoid redundancy
+  //! Get the frame width
   int width() const override { return m_frameData.size(0); }
 
-  //! Get the frame height - computed from frame data to avoid redundancy
+  //! Get the frame height
   int height() const override { return m_frameData.size(1); }
 
   //! Get the pixel type name
@@ -118,16 +127,18 @@ public:
 
   //! Check if the frame has valid data
   bool isValid() const override {
-    return !m_frameData.empty(); // Actually check if we have data
+    return !m_frameData.empty();
   }
 
 protected:
-  //! Implementation of getting frame data for a specific pixel type
-  template<typename T>
-  Array<T, 2> getFrameDataImpl() const override {
-    if (typeid(T) != typeid(PixelT)) {
-      throw std::runtime_error("Pixel type mismatch when accessing frame data");
-    }
+  //! Raw access to frame data for type erasure
+  Array<char, 2> getFrameDataRaw() const override {
+    // This is just a placeholder - in real code we'd need proper type conversion
+    throw std::runtime_error("Raw data access not implemented");
+  }
+
+  //! Specialization for the actual pixel type
+  Array<PixelT, 2> getFrameDataTyped(const PixelT*) const {
     return m_frameData;
   }
 
@@ -135,5 +146,4 @@ private:
   Array<PixelT, 2> m_frameData;  //!< The frame data
 };
 
-} // namespace Video
-} // namespace Ravl2
+} // namespace Ravl2::Video

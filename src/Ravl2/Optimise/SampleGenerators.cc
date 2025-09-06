@@ -99,14 +99,14 @@ namespace Ravl2
     Eigen::Index dims = mDomain.dim();
 
     // Calculate points per dimension to get approximately numPoints total
-    Eigen::Index pointsPerDim = static_cast<Eigen::Index>(std::round(std::pow(numPoints, 1.0 / dims)));
-    pointsPerDim = std::max(pointsPerDim, Eigen::Index(2));// At least 2 points per dimension
+    Eigen::Index pointsPerDim = static_cast<Eigen::Index>(std::round(std::pow(numPoints, 1.0 / static_cast<double>(dims))));
+    pointsPerDim = std::max(pointsPerDim, static_cast<Eigen::Index>(2));// At least 2 points per dimension
 
     std::vector<VectorT<RealT>> points;
     points.reserve(numPoints);
 
     // Generate points starting from current position
-    size_t totalGridPoints = static_cast<size_t>(std::pow(pointsPerDim, dims));
+    auto totalGridPoints = static_cast<size_t>(std::pow(pointsPerDim, dims));
 
     for(size_t pointIdx = 0; pointIdx < numPoints; ++pointIdx) {
       size_t currentIndex = (mPosition + pointIdx) % totalGridPoints;
@@ -118,7 +118,7 @@ namespace Ravl2
         Eigen::Index coord = temp % pointsPerDim;
         temp /= pointsPerDim;
 
-        RealT t = (pointsPerDim == 1) ? 0.5 : static_cast<RealT>(coord) / (pointsPerDim - 1);
+        RealT t = (pointsPerDim == 1) ? 0.5F : static_cast<RealT>(coord) / static_cast<RealT>(pointsPerDim - 1);
         point[dim] = mDomain.min(dim) + t * (mDomain.max(dim) - mDomain.min(dim));
       }
 
@@ -181,11 +181,11 @@ namespace Ravl2
   double SobolSampleGenerator::vanDerCorput(size_t n, size_t base)
   {
     double result = 0.0;
-    double f = 1.0 / base;
+    double f = 1.0 / static_cast<double>(base);
     while(n > 0) {
-      result += f * (n % base);
+      result += f * static_cast<double>(n % base);
       n /= base;
-      f /= base;
+      f /= static_cast<double>(base);
     }
     return result;
   }

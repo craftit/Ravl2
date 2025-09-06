@@ -9,7 +9,7 @@
 #include "Ravl2/OpenGL/View3D.hh"
 
 #define USE_OPENGL3 1
-#define USE_IMGUI 1
+#define USE_IMGUI 0
 
 #if USE_IMGUI
 #include "imgui.h"

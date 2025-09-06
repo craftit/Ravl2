@@ -42,9 +42,12 @@ namespace Ravl2
       auto cameraOrigin = cam.origin();
 
       // Do some tests with the camera
-      for(float z = -1.0f; z < 1.0f; z += 0.1f) {
-        for(float y = -1.0f; y < 1.0f; y += 0.1f) {
-          for(float x = -1.0f; x < 1.0f; x += 0.1f) {
+      for(int zi = -10; zi < 10; zi++) {
+        float z = static_cast<float>(zi) * 0.1f;
+        for(int yi = -10; yi < 10; yi++) {
+          float y = static_cast<float>(yi) * 0.1f;
+          for(int xi = -10; xi < 10; xi++) {
+            float x = static_cast<float>(xi) * 0.1f;
             Point<float,3> pnt = {x,y,z};
             Point<float,2> pix = Point<float,2>::Zero();
             if(cam.projectCheck(pix,pnt)) {

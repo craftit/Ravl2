@@ -29,9 +29,7 @@ int main() {
   std::cout << "============================\n\n";
 
   // Define the domain for optimization (2D for Rosenbrock)
-  CostDomain<float> domain;
-  domain.addDim(-5.0f, 5.0f);  // x dimension
-  domain.addDim(-5.0f, 5.0f);  // y dimension
+  CostDomain<float> domain({-5.0f,-5.0f},{5.0f,5.0F});
 
   // Test different sampling patterns
   std::vector<RandomSearchOptimise::PatternType> patterns = {
@@ -72,10 +70,7 @@ int main() {
   std::cout << "Testing 5D Sphere function with Random sampling:\n";
   std::cout << "================================================\n";
 
-  CostDomain<float> domain5D;
-  for (int i = 0; i < 5; ++i) {
-    domain5D.addDim(-10.0f, 10.0f);
-  }
+  CostDomain<float> domain5D({-10.0F,-10.0F,-10.0F,-10.0F,-10.0F}, {10.0F,10.0F,10.0F,10.0F,10.0F});
 
   RandomSearchOptimise optimizer5D(
     500,                                           // maxEvals
