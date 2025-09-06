@@ -9,49 +9,52 @@
 
 namespace Ravl2::Video
 {
-  // Helper function to create a video frame
-  std::shared_ptr<VideoFrame> createVideoFrame(MediaTime timestamp, StreamItemId id) {
-    // Create video properties for the frame
-    VideoProperties props;
-    props.width = 640;
-    props.height = 480;
-    props.pixelFormat = "RGB24";
-    props.frameRate = 30.0;
+  // For testing purposes, we'll use a simple pixel type
+  using TestPixel = uint8_t;
+  using AudioSampleT = float;
 
-    // Create a dummy VideoFrame
-    // In a real application, we would use VideoFrame::create<PixelType>(frameData, id, timestamp)
-    // But since we're just testing container functionality, we can use a simplified constructor
-    auto frame = std::make_shared<VideoFrame>(props);
+  std::shared_ptr<VideoFrameBase> createVideoFrame(MediaTime timestamp, StreamItemId id) {
+    // Create a test frame with simple pixel data
+    Array<TestPixel, 2> frameData({640, 480}, 128); // 640x480 frame filled with value 128
+
+    // Create and return the video frame
+    auto frame = std::make_shared<VideoFrame<TestPixel>>(frameData, id, timestamp);
+
 
     return frame;
   }
 
   // Helper function to create an audio chunk
-  std::shared_ptr<AudioChunk> createAudioChunk(MediaTime timestamp, StreamItemId id) {
-    // Create a minimal audio chunk with some metadata
-    AudioProperties props;
-    props.sampleRate = 44100;
-    props.channels = 2;
+  std::shared_ptr<AudioChunk<AudioSampleT> > createAudioChunk(MediaTime timestamp, StreamItemId id) {
+    Ravl2::Array<AudioSampleT, 2> audioData({4410, 2}, 0.0f); // 4410 samples (0.1s at 44.1kHz), 2 channels
 
-    auto chunk = std::make_shared<AudioChunk>(props, id, timestamp);
+    auto chunk = std::make_shared<AudioChunk<AudioSampleT>>(audioData, id, timestamp);
     return chunk;
   }
 
   // Helper function to create a metadata frame
-  std::shared_ptr<MetaDataFrame> createMetaDataFrame(MediaTime timestamp, StreamItemId id) {
-    std::map<std::string, std::string> data = {{"key1", "value1"}, {"key2", "value2"}};
-    auto frame = std::make_shared<MetaDataFrame>(data, id, timestamp);
+  std::shared_ptr<MetaDataFrameBase> createMetaDataFrame(MediaTime timestamp, StreamItemId id) {
+    // Create metadata with key-value pairs
+    std::map<std::string, std::string> data = {
+      {"key1", "value1"},
+      {"key2", "value2"},
+      {"timestamp", std::to_string(timestamp.count())},
+      {"frame_id", std::to_string(id)}
+    };
+
+    // Create and return the metadata frame
+    auto frame = std::make_shared<MetaDataFrame<std::map<std::string, std::string>>>(data, id, timestamp);
     return frame;
   }
 
   TEST_CASE("MemoryMediaContainer basic functionality", "[video][memory-container]") {
     // Create video frames for video stream
     std::vector<std::shared_ptr<Frame>> videoFrames;
-    for (int i = 0; i < 10; ++i) {
+    for (int i = 0; i < 10; ++i)
+    {
       videoFrames.push_back(createVideoFrame(MediaTime(i * 33333333), i + 1)); // ~30fps timing
     }
 
-    // Create audio chunks for audio stream
     std::vector<std::shared_ptr<Frame>> audioChunks;
     for (int i = 0; i < 20; ++i) {
       audioChunks.push_back(createAudioChunk(MediaTime(i * 20000000), i + 100)); // ~50 chunks per second
@@ -75,7 +78,6 @@ namespace Ravl2::Video
     AudioProperties audioProps;
     audioProps.sampleRate = 44100;
     audioProps.channels = 2;
-    audioProps.format = "S16LE";
     audioProps.duration = MediaTime(19 * 20000000); // Duration of last chunk
 
     // Create data properties
@@ -114,7 +116,7 @@ namespace Ravl2::Video
     SECTION("Stream properties") {
       // Test video properties
       auto videoPropsResult = container->videoProperties(0);
-      REQUIRE(videoPropsResult.success());
+      REQUIRE(videoPropsResult.isSuccess());
       REQUIRE(videoPropsResult.value().width == 640);
       REQUIRE(videoPropsResult.value().height == 480);
       REQUIRE(videoPropsResult.value().pixelFormat == "RGB24");
@@ -122,20 +124,19 @@ namespace Ravl2::Video
 
       // Test audio properties
       auto audioPropsResult = container->audioProperties(1);
-      REQUIRE(audioPropsResult.success());
+      REQUIRE(audioPropsResult.isSuccess());
       REQUIRE(audioPropsResult.value().sampleRate == 44100);
       REQUIRE(audioPropsResult.value().channels == 2);
-      REQUIRE(audioPropsResult.value().format == "S16LE");
 
       // Test data properties
       auto dataPropsResult = container->dataProperties(2);
-      REQUIRE(dataPropsResult.success());
+      REQUIRE(dataPropsResult.isSuccess());
       REQUIRE(dataPropsResult.value().format == "JSON");
 
       // Test invalid stream types
-      REQUIRE_FALSE(container->videoProperties(1).success()); // Audio stream, not video
-      REQUIRE_FALSE(container->audioProperties(0).success()); // Video stream, not audio
-      REQUIRE_FALSE(container->dataProperties(0).success());  // Video stream, not data
+      REQUIRE_FALSE(container->videoProperties(1).isSuccess()); // Audio stream, not video
+      REQUIRE_FALSE(container->audioProperties(0).isSuccess()); // Video stream, not audio
+      REQUIRE_FALSE(container->dataProperties(0).isSuccess());  // Video stream, not data
     }
 
     SECTION("Metadata access") {
@@ -157,24 +158,24 @@ namespace Ravl2::Video
     SECTION("Close container") {
       REQUIRE(container->isOpen());
       auto result = container->close();
-      REQUIRE(result.success());
+      REQUIRE(result.isSuccess());
       REQUIRE_FALSE(container->isOpen());
 
       // Test that operations fail after closing
       auto iterResult = container->createIterator(0);
-      REQUIRE_FALSE(iterResult.success());
+      REQUIRE_FALSE(iterResult.isSuccess());
 
       // Test that closing again fails
       auto closeResult = container->close();
-      REQUIRE_FALSE(closeResult.success());
+      REQUIRE_FALSE(closeResult.isSuccess());
     }
 
     SECTION("Invalid stream indices") {
       REQUIRE(container->streamType(3) == StreamType::Unknown);
-      REQUIRE_FALSE(container->videoProperties(3).success());
-      REQUIRE_FALSE(container->audioProperties(3).success());
-      REQUIRE_FALSE(container->dataProperties(3).success());
-      REQUIRE_FALSE(container->createIterator(3).success());
+      REQUIRE_FALSE(container->videoProperties(3).isSuccess());
+      REQUIRE_FALSE(container->audioProperties(3).isSuccess());
+      REQUIRE_FALSE(container->dataProperties(3).isSuccess());
+      REQUIRE_FALSE(container->createIterator(3).isSuccess());
     }
   }
 
@@ -201,7 +202,7 @@ namespace Ravl2::Video
 
     // Create iterator
     auto iterResult = container->createIterator(0);
-    REQUIRE(iterResult.success());
+    REQUIRE(iterResult.isSuccess());
     auto iterator = iterResult.value();
 
     SECTION("Iterator basics") {
@@ -211,14 +212,13 @@ namespace Ravl2::Video
       REQUIRE(iterator->positionIndex() == 0);
       REQUIRE_FALSE(iterator->isAtEnd());
       REQUIRE(iterator->canSeek());
-      REQUIRE(iterator->progress() == Catch::Approx(0.0f));
       REQUIRE(iterator->duration() == MediaTime(9 * 33333333));
 
       // Test current frame
       auto frameResult = iterator->currentFrame();
-      REQUIRE(frameResult.success());
-      REQUIRE(frameResult.value()->timestamp() == MediaTime(0));
-      REQUIRE(frameResult.value()->id() == 1);
+      REQUIRE(frameResult);
+      REQUIRE(frameResult->timestamp() == MediaTime(0));
+      REQUIRE(frameResult->id() == 1);
     }
 
     SECTION("Iterator navigation") {
@@ -226,7 +226,7 @@ namespace Ravl2::Video
       for (int i = 0; i < 9; ++i) {
         REQUIRE_FALSE(iterator->isAtEnd());
         auto result = iterator->next();
-        REQUIRE(result.success());
+        REQUIRE(result.isSuccess());
         REQUIRE(iterator->positionIndex() == i + 1);
         REQUIRE(iterator->position() == MediaTime((i + 1) * 33333333));
       }
@@ -236,32 +236,32 @@ namespace Ravl2::Video
 
       // Move past end
       auto result = iterator->next();
-      REQUIRE(result.success());
+      REQUIRE(result.isSuccess());
       REQUIRE(iterator->isAtEnd());
 
       // Can't get current frame at end
       auto frameResult = iterator->currentFrame();
-      REQUIRE_FALSE(frameResult.success());
+      REQUIRE_FALSE(frameResult);
 
       // Try to move past end
       result = iterator->next();
-      REQUIRE_FALSE(result.success());
+      REQUIRE_FALSE(result.isSuccess());
 
       // Move backward
       result = iterator->previous();
-      REQUIRE(result.success());
+      REQUIRE(result.isSuccess());
       REQUIRE_FALSE(iterator->isAtEnd());
       REQUIRE(iterator->positionIndex() == 9);
       REQUIRE(iterator->position() == MediaTime(9 * 33333333));
 
       // Get current frame after moving back
       frameResult = iterator->currentFrame();
-      REQUIRE(frameResult.success());
-      REQUIRE(frameResult.value()->timestamp() == MediaTime(9 * 33333333));
+      REQUIRE(frameResult);
+      REQUIRE(frameResult->timestamp() == MediaTime(9 * 33333333));
 
       // Reset to beginning
       result = iterator->reset();
-      REQUIRE(result.success());
+      REQUIRE(result.isSuccess());
       REQUIRE(iterator->positionIndex() == 0);
       REQUIRE(iterator->position() == MediaTime(0));
     }
@@ -269,54 +269,54 @@ namespace Ravl2::Video
     SECTION("Iterator seeking") {
       // Seek to timestamp (exact match)
       auto result = iterator->seek(MediaTime(5 * 33333333));
-      REQUIRE(result.success());
+      REQUIRE(result.isSuccess());
       REQUIRE(iterator->positionIndex() == 5);
       REQUIRE(iterator->position() == MediaTime(5 * 33333333));
 
       // Seek to approximate timestamp
       result = iterator->seek(MediaTime(5 * 33333333 + 10000000));
-      REQUIRE(result.success());
+      REQUIRE(result.isSuccess());
       // Should find closest frame
       REQUIRE(iterator->positionIndex() == 5);
       REQUIRE(iterator->position() == MediaTime(5 * 33333333));
 
       // Seek with Previous flag
       result = iterator->seek(MediaTime(5 * 33333333 + 10000000), SeekFlags::Previous);
-      REQUIRE(result.success());
+      REQUIRE(result.isSuccess());
       REQUIRE(iterator->positionIndex() == 5);
 
       // Seek with Next flag
       result = iterator->seek(MediaTime(5 * 33333333 - 10000000), SeekFlags::Next);
-      REQUIRE(result.success());
+      REQUIRE(result.isSuccess());
       REQUIRE(iterator->positionIndex() == 5);
 
       // Seek to index
       result = iterator->seekToIndex(8);
-      REQUIRE(result.success());
+      REQUIRE(result.isSuccess());
       REQUIRE(iterator->positionIndex() == 8);
       REQUIRE(iterator->position() == MediaTime(8 * 33333333));
 
       // Seek to invalid index
       result = iterator->seekToIndex(20);
-      REQUIRE_FALSE(result.success());
+      REQUIRE_FALSE(result.isSuccess());
       // Position should be unchanged
       REQUIRE(iterator->positionIndex() == 8);
 
       // Seek to negative index
       result = iterator->seekToIndex(-1);
-      REQUIRE_FALSE(result.success());
+      REQUIRE_FALSE(result.isSuccess());
     }
 
     SECTION("Frame access by ID") {
       // Get frame by valid ID
       auto frameResult = iterator->getFrameById(5);
-      REQUIRE(frameResult.success());
+      REQUIRE(frameResult.isSuccess());
       REQUIRE(frameResult.value()->id() == 5);
       REQUIRE(frameResult.value()->timestamp() == MediaTime(4 * 33333333));
 
       // Get frame by invalid ID
       frameResult = iterator->getFrameById(100);
-      REQUIRE_FALSE(frameResult.success());
+      REQUIRE_FALSE(frameResult.isSuccess());
     }
   }
 
@@ -330,7 +330,7 @@ namespace Ravl2::Video
       REQUIRE(container->duration() == MediaTime(0));
 
       // Test that operations with invalid indices fail properly
-      REQUIRE_FALSE(container->createIterator(0).success());
+      REQUIRE_FALSE(container->createIterator(0).isSuccess());
       REQUIRE(container->streamType(0) == StreamType::Unknown);
     }
 
@@ -352,15 +352,14 @@ namespace Ravl2::Video
 
       // Create iterator for empty stream
       auto iterResult = container->createIterator(0);
-      REQUIRE(iterResult.success());
+      REQUIRE(iterResult.isSuccess());
       auto iterator = iterResult.value();
 
       // Should be at end immediately
       REQUIRE(iterator->isAtEnd());
-      REQUIRE_FALSE(iterator->currentFrame().success());
-      REQUIRE_FALSE(iterator->next().success());
-      REQUIRE_FALSE(iterator->previous().success());
-      REQUIRE(iterator->progress() == Catch::Approx(0.0f));
+      REQUIRE_FALSE(iterator->currentFrame());
+      REQUIRE_FALSE(iterator->next().isSuccess());
+      REQUIRE_FALSE(iterator->previous().isSuccess());
     }
   }
 }

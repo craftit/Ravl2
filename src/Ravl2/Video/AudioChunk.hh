@@ -45,15 +45,24 @@ public:
   //! Virtual destructor
   ~AudioChunk() override = default;
 
+  //! Create an audio chunk
+  AudioChunk(const Array<SampleT, 2>& audioData, StreamItemId id, MediaTime timestamp)
+    : AudioChunkBase(id, timestamp)
+    , m_audioData(audioData)
+  {}
 
   //! Get the number of channels
-  [[nodiscard]] int channels() const override { return m_audioData.size(1); }
+  [[nodiscard]] int channels() const override { return m_audioData.range().size(1); }
 
   //! Get the number of samples in this chunk
-  [[nodiscard]] int samples() const override { return m_audioData.size(0); }
+  [[nodiscard]] int samples() const override { return m_audioData.range().size(0); }
 
   //! Access the audio data
   [[nodiscard]] const Array<SampleT, 2>& audioData() const { return m_audioData; }
+
+  //! Check if this frame is valid
+  [[nodiscard]] bool isValid() const override
+  { return !m_audioData.empty(); }
 
 protected:
   //! Constructor with ID and timestamp

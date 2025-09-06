@@ -197,11 +197,11 @@ MemoryStreamIterator::MemoryStreamIterator(std::shared_ptr<MemoryMediaContainer>
 
 
 bool MemoryStreamIterator::isAtEnd() const {
-  return !isValidStream() || !m_frames || m_currentPosition < 0 || m_currentPosition >= static_cast<std::ptrdiff_t>(m_frames->size());
+  return !isValid() || !m_frames || m_currentPosition < 0 || m_currentPosition >= static_cast<std::ptrdiff_t>(m_frames->size());
 }
 
 VideoResult<void> MemoryStreamIterator::next() {
-  if (!isValidStream() || !m_frames) {
+  if (!isValid() || !m_frames) {
     return VideoResult<void>(VideoErrorCode::InvalidOperation);
   }
 
@@ -220,7 +220,7 @@ VideoResult<void> MemoryStreamIterator::next() {
 }
 
 VideoResult<void> MemoryStreamIterator::previous() {
-  if (!isValidStream() || !m_frames) {
+  if (!isValid() || !m_frames) {
     return VideoResult<void>(VideoErrorCode::InvalidOperation);
   }
 
@@ -239,7 +239,7 @@ VideoResult<void> MemoryStreamIterator::previous() {
 }
 
 VideoResult<void> MemoryStreamIterator::seek(MediaTime timestamp, SeekFlags flags) {
-  if (!isValidStream() || !m_frames || m_frames->empty()) {
+  if (!isValid() || !m_frames || m_frames->empty()) {
     return VideoResult<void>(VideoErrorCode::InvalidOperation);
   }
 
@@ -308,7 +308,7 @@ VideoResult<void> MemoryStreamIterator::seek(MediaTime timestamp, SeekFlags flag
 }
 
 VideoResult<void> MemoryStreamIterator::seekToIndex(int64_t index) {
-  if (!isValidStream() || !m_frames) {
+  if (!isValid() || !m_frames) {
     return VideoResult<void>(VideoErrorCode::InvalidOperation);
   }
 
@@ -321,7 +321,7 @@ VideoResult<void> MemoryStreamIterator::seekToIndex(int64_t index) {
 }
 
 VideoResult<std::shared_ptr<Frame>> MemoryStreamIterator::getFrameById(StreamItemId id) const {
-  if (!isValidStream() || !m_frames) {
+  if (!isValid() || !m_frames) {
     return VideoResult<std::shared_ptr<Frame>>(VideoErrorCode::InvalidOperation);
   }
 

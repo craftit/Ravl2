@@ -151,8 +151,6 @@ public:
 private:
   const std::vector<std::shared_ptr<Frame>>* m_frames = nullptr;    //!< Pointer to frames in the stream
   std::ptrdiff_t m_currentPosition = 0;
-  //! Helper method to check if the stream is valid
-  bool isValidStream() const;
 };
 
 } // namespace Ravl2::Video
