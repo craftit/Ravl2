@@ -86,6 +86,9 @@
     - Leverage Ravl2's memory management and threading capabilities
     - Use a wrapped class for the images which contains the identifier, time stamp as well as the image/audio/meta data.
     - The data should be presented in a decoded state that can be used for processing.
+    - See Ravl2/Pixel/.. for pixel types. Use Array<*Pixel,2> for images.
+    - For audio use Array<float> or Array<short> depending on the source format. If there are multiple channels, use Array<float,2>.
+    - Follow the code style and idioms used in Ravl2.
 
 11. **Prototyping this interface**:
     - Unit tests and example code will be places in the 'tests' subdirectory.
