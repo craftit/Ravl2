@@ -135,7 +135,6 @@ MediaTime MemoryMediaContainer::duration() const {
 
 //! Create an iterator for a specific stream
 VideoResult<std::shared_ptr<StreamIterator>> MemoryMediaContainer::createIterator(std::size_t streamIndex) {
-  std::lock_guard<std::mutex> lock(m_mutex);
   if (!m_isOpen) {
     return VideoResult<std::shared_ptr<StreamIterator>>(VideoErrorCode::ResourceUnavailable);
   }

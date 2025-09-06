@@ -110,7 +110,8 @@ namespace Ravl2::Video
       REQUIRE(container->streamType(2) == StreamType::Data);
 
       // Test duration (should be the longest stream duration)
-      REQUIRE(container->duration() == MediaTime(19 * 20000000)); // Audio is longest
+      // The duration is 20 chunks * 20000000 (timestamp of the last chunk + duration of one chunk)
+      REQUIRE(container->duration() == MediaTime(19 * 20000000 + 20000000)); // Audio is longest (20 chunks)
     }
 
     SECTION("Stream properties") {
