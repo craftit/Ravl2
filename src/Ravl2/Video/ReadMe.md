@@ -59,8 +59,8 @@
     - Support for variable frame rate streams
 
 7. **Metadata Handling**:
-    - Extraction and storage of metadata (e.g., EXIF, XMP)
-    - Support for user-defined metadata fields
+    - Extraction and storage of file level metadata (e.g., EXIF, XMP)
+    - Support for metadata streams associated with the video.
     - Efficient querying of metadata across streams
 
 8. **Use Ravl2 containers for data presented for processing**:
