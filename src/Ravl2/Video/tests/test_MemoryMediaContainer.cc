@@ -19,8 +19,6 @@ namespace Ravl2::Video
 
     // Create and return the video frame
     auto frame = std::make_shared<VideoFrame<TestPixel>>(frameData, id, timestamp);
-
-
     return frame;
   }
 

@@ -66,10 +66,10 @@ public:
   {}
 
   //! Get the frame width
-  [[nodiscard]] int width() const override { return m_frameData.range().size(0); }
+  [[nodiscard]] int width() const override { return m_frameData.range().size(1); }
 
   //! Get the frame height
-  [[nodiscard]] int height() const override { return m_frameData.range().size(1); }
+  [[nodiscard]] int height() const override { return m_frameData.range().size(0); }
 
   //! The frame data
   const Array<PixelT, 2> &image() const

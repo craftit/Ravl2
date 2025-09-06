@@ -467,7 +467,13 @@ std::shared_ptr<VideoFrame<PixelT>> FfmpegStreamIterator::createVideoFrame() {
   // In a full implementation, you would use swscale to convert from FFmpeg's pixel format
 
   // Create a 2D array for the frame data
-  Array<PixelT, 2> frameData({static_cast<size_t>(m_frame->width), static_cast<size_t>(m_frame->height)});
+  Array<PixelT, 2> frameData({static_cast<size_t>(m_frame->height), static_cast<size_t>(m_frame->width)});
+  if (m_frame->data[0])
+  {
+    // Copy the frame data into the 2D array
+    //memcpy(frameData.origin_address(), reinterpret_cast<PixelT *>(m_frame->data[0]), static_cast<size_t>(m_frame->linesize[0] * m_frame->height));
+  }
+
 
   // Create a new video frame
   auto videoFrame = std::make_shared<VideoFrame<PixelT>>(frameData, id, timestamp);
