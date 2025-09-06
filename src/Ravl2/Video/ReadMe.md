@@ -72,7 +72,7 @@
     - See Ravl2/Pixel/.. for pixel types. Use Array<*Pixel,2> for images
     - For audio, use Array<float> or Array<short> depending on the source format. For multiple channels, use Array<float,2>
     - Follow Ravl2 code style and idioms
-    - For time use std::chrono classes when dealing with time-based operations where sensible.
+    - For time use std::chrono classes when dealing with time-based operations where sensible. Ideally keep the concepts of a time and a duration separate.
 
 9. **Prototyping this interface**:
     - Unit tests and example code will be placed in the 'tests' subdirectory
