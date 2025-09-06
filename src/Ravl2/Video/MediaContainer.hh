@@ -49,7 +49,7 @@ public:
   //! Get the number of streams in the container
   virtual int streamCount() const = 0;
 
-  //! Get the type of a stream at the specified index
+  //! Get the type of stream at the specified index
   virtual StreamType streamType(int streamIndex) const = 0;
 
   //! Get properties for a video stream
