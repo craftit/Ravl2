@@ -55,6 +55,9 @@ public:
   //! Get the current position as a frame/chunk index (override for more accurate frame counting)
   int64_t positionIndex() const override;
 
+  //! Get the data element type held in the frames.
+  [[nodiscard]] std::type_info const &dataType() const override;
+
 private:
   //! Decode the current packet into a frame
   VideoResult<void> decodeCurrentPacket();

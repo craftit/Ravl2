@@ -109,7 +109,6 @@ VideoResult<std::shared_ptr<MediaContainer>> FfmpegMediaContainer::openFile(cons
 }
 
 bool FfmpegMediaContainer::isOpen() const {
-  std::lock_guard<std::mutex> lock(m_mutex);
   return m_formatContext != nullptr;
 }
 

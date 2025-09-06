@@ -28,4 +28,5 @@ add_executable(exMediaContainer
 target_link_libraries(exMediaContainer
     PRIVATE
     Ravl2Video
+    Ravl2OpenCV
 )

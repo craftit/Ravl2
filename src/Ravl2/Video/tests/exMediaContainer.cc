@@ -6,17 +6,35 @@
 #include <spdlog/spdlog.h>
 
 #include "Ravl2/config.hh"
+#include "Ravl2/IO/OutputSequence.hh"
+#include "Ravl2/IO/InputSequence.hh"
+#include "Ravl2/Resource.hh"
+#include "Ravl2/Video/VideoFrame.hh"
+#include "Ravl2/Video/StreamIterator.hh"
+#include "Ravl2/OpenCV/ImageIO.hh"
+#include "Ravl2/OpenCV/Display.hh"
+#include "Ravl2/Pixel/Colour.hh"
+
 
 // A simple example program that reads an MP4 file and prints information about its streams
-int main(int argc, char *argv[]) {
+int main(int argc, char *argv[])
+{
+  Ravl2::initOpenCVImageIO();
+  Ravl2::initColourConversion();
+
   CLI::App app{"Media container information example program"};
 
   std::string filePath;
+  std::string outPath = "display://Video";
   bool verbose = false;
   bool show_version = false;
+  bool seq = false;
+  using PixelT = Ravl2::PixelYUV8;
 
   // Define command line options
   app.add_option("file", filePath, "Input media file path")->required();
+  app.add_option("-o,--output", outPath, "Output path for frames");
+  app.add_flag("-s,--seq", seq, "Process sequence (loop through frames)");
   app.add_flag("-v,--verbose", verbose, "Verbose mode");
   app.add_flag("--version", show_version, "Show version information");
 
@@ -132,6 +150,90 @@ int main(int argc, char *argv[]) {
     }
   }
 
+  // Process video frames if requested
+  if (seq) {
+    // Find the first video stream
+    std::size_t videoStreamIndex = container->streamCount();
+    for (std::size_t i = 0; i < container->streamCount(); ++i) {
+      if (container->streamType(i) == Ravl2::Video::StreamType::Video) {
+        videoStreamIndex = i;
+        break;
+      }
+    }
+
+    if (videoStreamIndex == container->streamCount()) {
+      SPDLOG_ERROR("No video stream found in the file");
+      return EXIT_FAILURE;
+    }
+
+    // Create stream iterator for the video stream
+    auto iterResult = container->createIterator(videoStreamIndex);
+    if (!iterResult.isSuccess()) {
+      SPDLOG_ERROR("Failed to create iterator for video stream. Error code: {}",
+                  static_cast<int>(iterResult.error()));
+      return EXIT_FAILURE;
+    }
+    Ravl2::Video::VideoStreamIterator<PixelT> iterator(iterResult.value());
+
+    // Set up an output stream if needed
+    Ravl2::StreamOutputProxy<Ravl2::Array<PixelT,2>> outputStream;
+    if ( !outPath.empty()) {
+      outputStream = Ravl2::openOutputStream<Ravl2::Array<PixelT,2>>(outPath);
+      if (!outputStream.valid()) {
+        SPDLOG_ERROR("Failed to open output stream at '{}'", outPath);
+        return EXIT_FAILURE;
+      }
+      if (verbose) {
+        fmt::print("Output stream opened at '{}'\n", outPath);
+      }
+    }
+
+    // Process frames
+    int frameCount = 0;
+    std::chrono::steady_clock::duration totalTime{};
+    fmt::print("Processing frames... {} \n", iterator.isValid());
+    while (iterator.isValid()) {
+      auto startTime = std::chrono::steady_clock::now();
+
+      // Get the next frame
+      auto frameResult = iterator.videoFrame();
+
+      if (outputStream.valid()) {
+        fmt::print("Writing frame {} to output stream\n", frameCount);
+        outputStream.put(frameResult);
+        Ravl2::waitKey(1);
+      }
+
+      // Move to the next frame
+      auto nextResult = iterator.next();
+      if (!nextResult.isSuccess()) {
+        if (nextResult.error() != Ravl2::Video::VideoErrorCode::EndOfStream)
+        {
+          SPDLOG_ERROR("Failed to advance to next frame. Error code: {}",
+                      static_cast<int>(nextResult.error()));
+        }
+        break;
+      }
+
+      auto endTime = std::chrono::steady_clock::now();
+      totalTime += (endTime - startTime);
+      frameCount++;
+
+      if (verbose && frameCount % 100 == 0) {
+        fmt::print("Processed {} frames\n", frameCount);
+      }
+    }
+
+    if (frameCount > 0) {
+      double timeSeconds = std::chrono::duration<double>(totalTime).count();
+      double fps = frameCount / timeSeconds;
+      fmt::print("\nProcessed {} frames in {:.2f} seconds ({:.2f} fps)\n",
+                frameCount, timeSeconds, fps);
+    }
+
+    Ravl2::waitKey(0);
+  }
+
   // Close the container
   auto closeResult = container->close();
   if (!closeResult.isSuccess()) {
@@ -141,6 +243,7 @@ int main(int argc, char *argv[]) {
   if (verbose) {
     fmt::print("\nMedia container closed.\n");
   }
+
 
   return EXIT_SUCCESS;
 }

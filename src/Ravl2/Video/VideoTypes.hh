@@ -9,8 +9,7 @@
 #include <chrono>
 #include "Ravl2/Types.hh"
 
-namespace Ravl2 {
-namespace Video {
+namespace Ravl2::Video {
 
 //! Stream types available in a media container
 enum class StreamType {
@@ -20,6 +19,9 @@ enum class StreamType {
   Data,     //!< Data stream (may contain metadata or other auxiliary information)
   Unknown   //!< Unrecognized stream type
 };
+
+std::string_view toString(StreamType type);
+
 
 //! Unique identifier for a frame/chunk within a stream
 using StreamItemId = int64_t;
@@ -133,5 +135,4 @@ private:
   VideoErrorCode m_error;    //!< The error code
 };
 
-} // namespace Video
-} // namespace Ravl2
+} // namespace Ravl2::Video

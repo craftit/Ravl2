@@ -239,6 +239,60 @@ int64_t FfmpegStreamIterator::positionIndex() const {
   return m_currentPositionIndex;
 }
 
+std::type_info const& FfmpegStreamIterator::dataType() const
+{
+  switch (streamType())
+  {
+    case StreamType::Video: {
+        // Determine the pixel format to convert to based on FFmpeg's format
+        switch (m_codecContext->pix_fmt) {
+          case AV_PIX_FMT_RGB24:
+            return typeid(Ravl2::Array<PixelRGB8,2>);
+          case AV_PIX_FMT_RGBA:
+            return typeid(Ravl2::Array<PixelRGBA8,2>);
+          case AV_PIX_FMT_YUV420P:
+          case AV_PIX_FMT_YUV422P:
+          case AV_PIX_FMT_YUV444P:
+            return typeid(Ravl2::Array<PixelYUV8,2>);
+          default:
+            // Default to RGB for other formats
+            return typeid(Ravl2::Array<PixelRGB8,2>);
+        }
+    }
+    case StreamType::Audio:
+      {
+        // Determine the sample format to convert to based on FFmpeg's format
+        switch (m_codecContext->sample_fmt) {
+          case AV_SAMPLE_FMT_U8:
+          case AV_SAMPLE_FMT_U8P:
+            return typeid(Ravl2::Array<uint8_t,2>);
+          case AV_SAMPLE_FMT_S16:
+          case AV_SAMPLE_FMT_S16P:
+            return typeid(Ravl2::Array<int16_t,2>);
+          case AV_SAMPLE_FMT_S32:
+          case AV_SAMPLE_FMT_S32P:
+            return typeid(Ravl2::Array<int32_t,2>);
+          case AV_SAMPLE_FMT_FLT:
+          case AV_SAMPLE_FMT_FLTP:
+            return typeid(Ravl2::Array<float,2>);
+          case AV_SAMPLE_FMT_DBL:
+          case AV_SAMPLE_FMT_DBLP:
+            return typeid(Ravl2::Array<double,2>);
+          default:
+            // Default to 16-bit PCM for other formats
+            return typeid(Ravl2::Array<int16_t,2>);
+        }
+      }
+    default:
+      {
+        SPDLOG_WARN("Unknown stream type: {}", toString(streamType()));
+        return typeid(std::vector<uint8_t>);
+      }
+  }
+
+  return StreamIterator::dataType();
+}
+
 VideoResult<void> FfmpegStreamIterator::readNextPacket() {
   auto& container = ffmpegContainer();
 

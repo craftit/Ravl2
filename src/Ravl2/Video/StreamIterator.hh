@@ -15,6 +15,7 @@
 #include "Ravl2/Video/VideoFrame.hh"
 #include "Ravl2/Video/AudioChunk.hh"
 #include "Ravl2/Video/MetaDataFrame.hh"
+#include "Ravl2/IO/TypeConverter.hh"
 
 namespace Ravl2::Video {
 
@@ -76,6 +77,9 @@ public:
   //! Check if the iterator can seek
   [[nodiscard]] virtual bool canSeek() const = 0;
 
+  //! Get the data element type held in the frames.
+  [[nodiscard]] virtual std::type_info const &dataType() const;
+
 protected:
   StreamIterator(std::shared_ptr<MediaContainer> container, std::size_t streamIndex)
     : mStreamIndex(streamIndex)
@@ -112,11 +116,27 @@ template <typename PixelT>
 class VideoStreamIterator
 {
 public:
+  using ImageTypeT = Ravl2::Array<PixelT,2>;
+
   //! Constructor taking a StreamIterator
   explicit VideoStreamIterator(std::shared_ptr<StreamIterator> iterator)
-    : m_iterator(std::move(iterator)) {
+    : m_iterator(std::move(iterator))
+  {
+    if (!m_iterator)
+    {
+      throw std::runtime_error("StreamIterator is null");
+    }
     if (m_iterator->streamType() != StreamType::Video) {
       throw std::runtime_error("StreamIterator is not for a video stream");
+    }
+    auto &targetType = typeid(ImageTypeT);
+    if (targetType != m_iterator->dataType())
+    {
+      mConversionChain = Ravl2::TypeConverterMap().find(targetType, m_iterator->dataType());
+      if (!mConversionChain) {
+        SPDLOG_WARN("No conversion available from {} to {}", Ravl2::typeName(m_iterator->dataType()), Ravl2::typeName(targetType));
+        throw std::runtime_error("Cannot convert frames to the requested type");
+      }
     }
   }
 
@@ -130,10 +150,28 @@ public:
     return m_iterator->previous();
   }
 
+  //! Are we at a valid frame?
+  bool isValid() const
+  {
+    return m_iterator->currentFrame() && m_iterator->currentFrame()->isValid();
+  }
+
   //! Get the current frame
   VideoFrame<PixelT> &currentFrame() const
   {
     return *std::dynamic_pointer_cast<VideoFrame<PixelT>>(m_iterator->currentFrame());
+  }
+
+  //! Get the current frame
+  ImageTypeT videoFrame()
+  {
+    if (mConversionChain) {
+      return std::any_cast<ImageTypeT>(mConversionChain->convert(currentFrame().frameData()));
+    }
+    if (typeid(ImageTypeT) != m_iterator->dataType()) {
+      throw std::runtime_error("Frame type does not match iterator data type and no conversion available");
+    }
+    return currentFrame().frameData();
   }
 
   //! Seek to a specific timestamp
@@ -148,6 +186,7 @@ public:
 
 private:
   std::shared_ptr<StreamIterator> m_iterator;
+  std::optional<ConversionChain> mConversionChain;
 };
 
 //! Helper class for simpler type-safe iteration over audio chunks

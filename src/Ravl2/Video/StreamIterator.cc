@@ -25,4 +25,9 @@ namespace Ravl2::Video {
 		}
 		return -1;
 	}
+
+	std::type_info const& StreamIterator::dataType() const
+	{
+		return typeid(void);
+	}
 } // namespace Ravl2::Video
