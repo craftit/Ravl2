@@ -2,7 +2,7 @@
 
 # Create the tests executable
 add_executable(test_video_module
-#    test_MemoryMediaContainer.cc
+    test_MemoryMediaContainer.cc
     test_VideoFrame.cc
 )
 

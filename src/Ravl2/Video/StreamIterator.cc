@@ -3,34 +3,26 @@
 //
 
 #include "Ravl2/Video/StreamIterator.hh"
+#include "Ravl2/Video/MediaContainer.hh"
 #include <stdexcept>
 
 namespace Ravl2::Video {
 
-// This file implements the non-templated functionality of the StreamIterator interface
-// Most of the functionality is defined inline in the header file
+	StreamType StreamIterator::streamType() const
+	{
+		if (!mContainer)
+		{
+			return StreamType::Unknown;
+		}
+		return mContainer->streamType(mStreamIndex);
+	}
 
-// Helper class implementations
-// Currently all functionality is inline in the header
-
-void StreamIterator::setPrefetchEnabled(bool enable)
-{
-  (void)enable;
-}
-
-void StreamIterator::setPrefetchSize(int size)
-{
-  (void)size;
-}
-
-bool StreamIterator::isPrefetchEnabled() const
-{
-  return false;
-}
-
-int StreamIterator::prefetchSize() const
-{
-  return 0;
-}
-
+	int64_t StreamIterator::positionIndex() const
+	{
+		if (mCurrentFrame)
+		{
+			return mCurrentFrame->id();
+		}
+		return -1;
+	}
 } // namespace Ravl2::Video

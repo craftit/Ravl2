@@ -66,22 +66,21 @@ public:
   {}
 
   //! Get the frame width
-  [[nodiscard]] int width() const override { return m_frameData.frame().size(0); }
+  [[nodiscard]] int width() const override { return m_frameData.range().size(0); }
 
   //! Get the frame height
-  [[nodiscard]] int height() const override { return m_frameData.frame().size(1); }
-
-  //! Get the pixel type name
-  [[nodiscard]] virtual std::string pixelTypeName() const = 0;
-
-  //! Check if the frame has valid data
-  [[nodiscard]] bool isValid() const override = 0;
-
+  [[nodiscard]] int height() const override { return m_frameData.range().size(1); }
 
   //! The frame data
   const Array<PixelT, 2> &frameData() const
   {
     return m_frameData;
+  }
+
+  //! Check if this frame is valid
+  [[nodiscard]] bool isValid() const override
+  {
+    return (m_frameData.range().size(0) > 0 && m_frameData.range().size(1) > 0);
   }
 
 protected:

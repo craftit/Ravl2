@@ -184,9 +184,7 @@ bool MemoryMediaContainer::isValidStreamIndex(std::size_t streamIndex) const {
 //----------------------------------------------------------------------
 
 MemoryStreamIterator::MemoryStreamIterator(std::shared_ptr<MemoryMediaContainer> container, std::size_t streamIndex)
-  : m_container(container)
-  , m_streamIndex(streamIndex)
-  , m_currentPosition(0)
+  : StreamIterator(container, streamIndex)
   , m_frames(nullptr)
 {
   if (container && streamIndex < container->streamCount()) {
@@ -197,35 +195,6 @@ MemoryStreamIterator::MemoryStreamIterator(std::shared_ptr<MemoryMediaContainer>
   }
 }
 
-std::size_t MemoryStreamIterator::streamIndex() const {
-  return m_streamIndex;
-}
-
-StreamType MemoryStreamIterator::streamType() const {
-  if (!m_container || !isValidStream()) {
-    return StreamType::Unknown;
-  }
-  return m_container->streamType(m_streamIndex);
-}
-
-MediaTime MemoryStreamIterator::position() const {
-  if (!isValidStream() || isAtEnd() || !m_frames || m_frames->empty()) {
-    return MediaTime(0);
-  }
-  if(m_currentPosition < 0 || m_currentPosition >= static_cast<std::ptrdiff_t>(m_frames->size())) {
-    return MediaTime(0);
-  }
-  // Return the timestamp of the current frame
-  return (*m_frames)[static_cast<std::size_t>(m_currentPosition)]->timestamp();
-}
-
-int64_t MemoryStreamIterator::positionIndex() const {
-  if (!isValidStream() || !m_frames) {
-    return -1;
-  }
-
-  return static_cast<int64_t>(m_currentPosition);
-}
 
 bool MemoryStreamIterator::isAtEnd() const {
   return !isValidStream() || !m_frames || m_currentPosition < 0 || m_currentPosition >= static_cast<std::ptrdiff_t>(m_frames->size());
@@ -241,6 +210,12 @@ VideoResult<void> MemoryStreamIterator::next() {
   }
 
   ++m_currentPosition;
+  if (m_currentPosition >= static_cast<std::ptrdiff_t>(m_frames->size()))
+  {
+    m_currentPosition = -1;
+    return VideoResult<void>(VideoErrorCode::EndOfStream);
+  }
+  setCurrentFrame(m_frames->at(static_cast<std::size_t>(m_currentPosition)));
   return VideoResult<void>();
 }
 
@@ -254,6 +229,12 @@ VideoResult<void> MemoryStreamIterator::previous() {
   }
 
   --m_currentPosition;
+  if (m_currentPosition < 0)
+  {
+    m_currentPosition = -1;
+    return VideoResult<void>(VideoErrorCode::EndOfStream);
+  }
+  setCurrentFrame(m_frames->at(static_cast<std::size_t>(m_currentPosition)));
   return VideoResult<void>();
 }
 
@@ -339,17 +320,6 @@ VideoResult<void> MemoryStreamIterator::seekToIndex(int64_t index) {
   return {};
 }
 
-VideoResult<std::shared_ptr<Frame>> MemoryStreamIterator::currentFrame() const {
-  if (!isValidStream() || !m_frames || isAtEnd()) {
-    return VideoResult<std::shared_ptr<Frame>>(VideoErrorCode::InvalidOperation);
-  }
-  // Check position is valid
-  if (m_currentPosition < 0 || m_currentPosition >= static_cast<std::ptrdiff_t>(m_frames->size())) {
-    return VideoResult<std::shared_ptr<Frame>>(VideoErrorCode::InvalidOperation);
-  }
-  return VideoResult<std::shared_ptr<Frame>>((*m_frames)[static_cast<std::size_t>(m_currentPosition)]);
-}
-
 VideoResult<std::shared_ptr<Frame>> MemoryStreamIterator::getFrameById(StreamItemId id) const {
   if (!isValidStream() || !m_frames) {
     return VideoResult<std::shared_ptr<Frame>>(VideoErrorCode::InvalidOperation);
@@ -368,7 +338,7 @@ VideoResult<std::shared_ptr<Frame>> MemoryStreamIterator::getFrameById(StreamIte
 }
 
 VideoResult<void> MemoryStreamIterator::reset() {
-  if (!isValidStream()) {
+  if (!isValid()) {
     return VideoResult<void>(VideoErrorCode::InvalidOperation);
   }
 
@@ -376,34 +346,13 @@ VideoResult<void> MemoryStreamIterator::reset() {
   return VideoResult<void>();
 }
 
-float MemoryStreamIterator::progress() const {
-  if (!isValidStream() || !m_frames || m_frames->empty()) {
-    return 0.0f;
-  }
-
-  return static_cast<float>(m_currentPosition) /  static_cast<float>(m_frames->size());
-}
-
-std::shared_ptr<MediaContainer> MemoryStreamIterator::container() const {
-  return m_container;
-}
 
 MediaTime MemoryStreamIterator::duration() const {
-  if (!m_container) {
+  if (!isValid()) {
     return MediaTime(0);
   }
-
-  // Get stream-specific duration from properties
-  auto properties = std::visit([](const auto& props) -> MediaTime {
-      return props.duration;
-  }, m_container->m_streams[m_streamIndex].mProperties);
-
-  return properties;
+  return media().duration();
 }
 
-// Helper method to check if the stream is valid
-bool MemoryStreamIterator::isValidStream() const {
-  return m_container && m_streamIndex < m_container->streamCount();
-}
 
 } // namespace Ravl2::Video

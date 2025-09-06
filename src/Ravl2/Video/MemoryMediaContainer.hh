@@ -108,7 +108,7 @@ private:
 
   std::vector<StreamData> m_streams;                      //!< The streams data
   std::map<std::string, std::string> m_metadata;          //!< Container metadata
-  bool m_isOpen = true;                                   //!< Flag indicating if container is open
+  bool m_isOpen = true;                                   //!< Flag indicating if the container is open
   MediaTime m_duration{0};                                //!< Container duration (cached)
 };
 
@@ -117,18 +117,6 @@ class MemoryStreamIterator : public StreamIterator {
 public:
   //! Constructor
   MemoryStreamIterator(std::shared_ptr<MemoryMediaContainer> container, std::size_t streamIndex);
-
-  //! Get the stream index this iterator is associated with
-  std::size_t streamIndex() const override;
-
-  //! Get the stream type
-  StreamType streamType() const override;
-
-  //! Get the current position in the stream (as a timestamp)
-  MediaTime position() const override;
-
-  //! Get the current position as a frame/chunk index
-  int64_t positionIndex() const override;
 
   //! Check if the iterator is at the end of the stream
   bool isAtEnd() const override;
@@ -145,9 +133,6 @@ public:
   //! Seek to a specific frame/chunk index
   VideoResult<void> seekToIndex(int64_t index) override;
 
-  //! Get the current frame (generic interface for all frame types)
-  VideoResult<std::shared_ptr<Frame>> currentFrame() const override;
-
   //! Get a specific frame by its unique ID
   VideoResult<std::shared_ptr<Frame>> getFrameById(StreamItemId id) const override;
 
@@ -160,21 +145,12 @@ public:
     return true;
   }
 
-  //! Get current progress through the stream (0.0 to 1.0)
-  float progress() const override;
-
-  //! Get the parent container
-  std::shared_ptr<MediaContainer> container() const override;
-
   //! Get the total duration of the stream
   MediaTime duration() const override;
 
 private:
-  std::shared_ptr<MemoryMediaContainer> m_container;      //!< Reference to parent container
-  std::size_t m_streamIndex = 0;                          //!< Stream index in the container
-  std::ptrdiff_t m_currentPosition = 0;                   //!< Current position in the frames vector (using signed type to catch errors)
-  const std::vector<std::shared_ptr<Frame>>* m_frames;    //!< Pointer to frames in the stream
-
+  const std::vector<std::shared_ptr<Frame>>* m_frames = nullptr;    //!< Pointer to frames in the stream
+  std::ptrdiff_t m_currentPosition = 0;
   //! Helper method to check if the stream is valid
   bool isValidStream() const;
 };

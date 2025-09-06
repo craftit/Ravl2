@@ -8,6 +8,8 @@
 #include <vector>
 #include <functional>
 #include <optional>
+
+#include "Ravl2/Assert.hh"
 #include "Ravl2/Video/VideoTypes.hh"
 #include "Ravl2/Video/Frame.hh"
 #include "Ravl2/Video/VideoFrame.hh"
@@ -26,16 +28,18 @@ public:
   virtual ~StreamIterator() = default;
 
   //! Get the stream index this iterator is associated with
-  [[nodiscard]] virtual std::size_t streamIndex() const = 0;
+  [[nodiscard]] std::size_t streamIndex() const
+  { return mStreamIndex; }
 
   //! Get the stream type
-  [[nodiscard]] virtual StreamType streamType() const = 0;
+  [[nodiscard]] StreamType streamType() const;
 
   //! Get the current position in the stream (as a timestamp)
-  [[nodiscard]] virtual MediaTime position() const = 0;
+  [[nodiscard]] MediaTime position() const
+  { return mPosition; }
 
   //! Get the current position as a frame/chunk index
-  virtual int64_t positionIndex() const = 0;
+  int64_t positionIndex() const;
 
   //! Check if the iterator is at the end of the stream
   virtual bool isAtEnd() const = 0;
@@ -53,7 +57,8 @@ public:
   virtual VideoResult<void> seekToIndex(int64_t index) = 0;
 
   //! Get the current frame (generic interface for all frame types)
-  virtual VideoResult<std::shared_ptr<Frame>> currentFrame() const = 0;
+  [[nodiscard]] const std::shared_ptr<Frame> &currentFrame() const
+  { return mCurrentFrame; }
 
   //! Get a specific frame by its unique ID
   virtual VideoResult<std::shared_ptr<Frame>> getFrameById(StreamItemId id) const = 0;
@@ -61,31 +66,45 @@ public:
   //! Reset the iterator to the beginning of the stream
   virtual VideoResult<void> reset() = 0;
 
-  //! Get current progress through the stream (0.0 to 1.0)
-  virtual float progress() const = 0;
-
   //! Get the parent container
-  virtual std::shared_ptr<MediaContainer> container() const = 0;
+  const std::shared_ptr<MediaContainer> &container() const
+  { return mContainer; }
 
   //! Get the total duration of the stream
   virtual MediaTime duration() const = 0;
 
-
-  //! Enable or disable frame prefetching for sequential access optimization
-  virtual void setPrefetchEnabled(bool enable);
-
-  //! Set the prefetch size (number of frames/chunks to prefetch)
-  virtual void setPrefetchSize(int size);
-
-  //! Check if prefetching is enabled
-  [[nodiscard]] virtual bool isPrefetchEnabled() const;
-
-  //! Get the prefetch size
-  [[nodiscard]] virtual int prefetchSize() const ;
-
   //! Check if the iterator can seek
   [[nodiscard]] virtual bool canSeek() const = 0;
 
+protected:
+  StreamIterator(std::shared_ptr<MediaContainer> container, std::size_t streamIndex)
+    : mStreamIndex(streamIndex)
+    , mContainer(std::move(container)) {
+    RavlAlwaysAssertMsg(mContainer, "MediaContainer pointer is null");
+  }
+
+  void setCurrentFrame(std::shared_ptr<Frame> frame) {
+    mCurrentFrame = std::move(frame);
+    if (mCurrentFrame) {
+      mPosition = mCurrentFrame->timestamp();
+    } else {
+      mPosition = MediaTime(0);
+    }
+  }
+
+  [[nodiscard]] MediaContainer &media()
+  { return *mContainer; }
+
+  [[nodiscard]] const MediaContainer &media() const
+  { return *mContainer; }
+
+  [[nodiscard]] bool isValid() const
+  { return mContainer && mCurrentFrame; }
+private:
+  std::size_t mStreamIndex = 0;
+  std::shared_ptr<MediaContainer> mContainer;
+  MediaTime mPosition {};
+  std::shared_ptr<Frame> mCurrentFrame;
 };
 
 //! Helper class for simpler type-safe iteration over video frames
@@ -112,10 +131,9 @@ public:
   }
 
   //! Get the current frame
-  VideoResult<std::shared_ptr<VideoFrame<PixelT>> currentFrame() const
+  VideoFrame<PixelT> &currentFrame() const
   {
-    m_iterator->currentFrame();
-    return std::dynamic_pointer_cast<>();
+    return *std::dynamic_pointer_cast<VideoFrame<PixelT>>(m_iterator->currentFrame());
   }
 
   //! Seek to a specific timestamp
@@ -155,9 +173,10 @@ public:
     return m_iterator->previous();
   }
 
-  //! Get the current audio chunk
-  VideoResult<std::shared_ptr<AudioChunk<SampleT>> currentChunk() const {
-
+  //! Get the current frame
+  AudioChunk<SampleT> &currentFrame() const
+  {
+    return *std::dynamic_pointer_cast<AudioChunk<SampleT>>(m_iterator->currentFrame());
   }
 
   //! Seek to a specific timestamp
@@ -175,6 +194,7 @@ private:
 };
 
 //! Helper class for simpler type-safe iteration over metadata frames
+template <typename DataT>
 class MetaDataStreamIterator {
 public:
   //! Constructor taking a StreamIterator
@@ -196,8 +216,8 @@ public:
   }
 
   //! Get the current metadata frame
-  [[nodiscard]] VideoResult<std::shared_ptr<MetaDataFrame>> currentFrame() const {
-    return VideoResult<std::shared_ptr<MetaDataFrame>> {VideoErrorCode::NotImplemented};
+  [[nodiscard]] const MetaDataFrame<DataT> &currentFrame() const {
+    return *std::dynamic_pointer_cast<MetaDataFrame<DataT>>(m_iterator->currentFrame());
   }
 
   //! Seek to a specific timestamp
