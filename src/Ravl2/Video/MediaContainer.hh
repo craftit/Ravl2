@@ -21,52 +21,52 @@ namespace Video {
 // Forward declaration
 class StreamIterator;
 
-/// Unified stream properties variant type
+//! Unified stream properties variant type
 using StreamProperties = std::variant<VideoProperties, AudioProperties, DataProperties>;
 
-/// Class representing a media container (file, memory, network stream)
+//! Class representing a media container (file, memory, network stream)
 class MediaContainer : public std::enable_shared_from_this<MediaContainer> {
 public:
-  /// Virtual destructor
+  //! Virtual destructor
   virtual ~MediaContainer() = default;
 
-  /// Open a media container from a file path
+  //! Open a media container from a file path
   static VideoResult<std::shared_ptr<MediaContainer>> openFile(const std::string& filePath);
 
-  /// Open a media container from memory
+  //! Open a media container from memory
   static VideoResult<std::shared_ptr<MediaContainer>> openMemory(const uint8_t* data, size_t size);
 
-  /// Check if the container is open
+  //! Check if the container is open
   virtual bool isOpen() const = 0;
 
-  /// Close the container and release resources
+  //! Close the container and release resources
   virtual VideoResult<void> close() = 0;
 
-  /// Get the number of streams in the container
+  //! Get the number of streams in the container
   virtual int streamCount() const = 0;
 
-  /// Get the type of a stream at the specified index
+  //! Get the type of a stream at the specified index
   virtual StreamType streamType(int streamIndex) const = 0;
 
-  /// Get properties for any stream type (unified interface)
+  //! Get properties for any stream type (unified interface)
   virtual VideoResult<StreamProperties> streamProperties(int streamIndex) const = 0;
 
-  /// Get total duration of the container (longest stream)
+  //! Get total duration of the container (longest stream)
   virtual MediaTime duration() const = 0;
 
-  /// Create an iterator for a specific stream
+  //! Create an iterator for a specific stream
   virtual VideoResult<std::shared_ptr<StreamIterator>> createIterator(int streamIndex) = 0;
 
-  /// Get global container metadata
+  //! Get global container metadata
   virtual std::map<std::string, std::string> metadata() const = 0;
 
-  /// Get specific metadata value
+  //! Get specific metadata value
   virtual std::string metadata(const std::string& key) const = 0;
 
-  /// Check if a specific metadata key exists
+  //! Check if a specific metadata key exists
   virtual bool hasMetadata(const std::string& key) const = 0;
 
-  /// Convenience method for getting video properties (uses streamProperties internally)
+  //! Convenience method for getting video properties (uses streamProperties internally)
   VideoResult<VideoProperties> videoProperties(int streamIndex) const {
     auto result = streamProperties(streamIndex);
     if (!result.isSuccess()) {
@@ -84,7 +84,7 @@ public:
     }
   }
 
-  /// Convenience method for getting audio properties (uses streamProperties internally)
+  //! Convenience method for getting audio properties (uses streamProperties internally)
   VideoResult<AudioProperties> audioProperties(int streamIndex) const {
     auto result = streamProperties(streamIndex);
     if (!result.isSuccess()) {
@@ -102,7 +102,7 @@ public:
     }
   }
 
-  /// Convenience method for getting data properties (uses streamProperties internally)
+  //! Convenience method for getting data properties (uses streamProperties internally)
   VideoResult<DataProperties> dataProperties(int streamIndex) const {
     auto result = streamProperties(streamIndex);
     if (!result.isSuccess()) {
@@ -121,10 +121,10 @@ public:
   }
 
 protected:
-  /// Protected constructor to prevent direct instantiation
+  //! Protected constructor to prevent direct instantiation
   MediaContainer() = default;
 
-  /// Mutex for thread-safe operations
+  //! Mutex for thread-safe operations
   mutable std::mutex m_mutex;
 };
 
