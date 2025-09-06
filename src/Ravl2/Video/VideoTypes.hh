@@ -91,6 +91,8 @@ enum class SeekFlags {
 template<typename T>
 class VideoResult {
 public:
+  VideoResult() = default;
+
   //! Construct a successful result with a value
   explicit VideoResult(const T& value) : m_value(value), m_error(VideoErrorCode::Success) {}
 
@@ -108,7 +110,7 @@ public:
 
 private:
   T m_value;                 //!< The result value
-  VideoErrorCode m_error;    //!< The error code
+  VideoErrorCode m_error = VideoErrorCode::InvalidOperation;    //!< The error code
 };
 
 // Specialization for void results
