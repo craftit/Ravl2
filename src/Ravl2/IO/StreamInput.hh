@@ -60,8 +60,15 @@ namespace Ravl2
     {
       return mStart == mEnd;
     }
-
   protected:
+    //! Set the position of the start of stream
+    void setStartOffset(std::streampos start)
+    { mStart = start; }
+
+    //! Set the position of the end of stream
+    void setEndOffset(std::streampos end)
+    { mEnd = end; }
+  private:
     std::streampos mStart = 0;
     std::streampos mEnd = std::numeric_limits<std::streampos>::max();
   };
@@ -121,15 +128,15 @@ namespace Ravl2
     }
 
     //! Get start iterator.
-    [[nodiscard]] auto begin() const
+    [[nodiscard]] auto begin()
     {
-      return InputStreamIterator<ObjectT>(*this, mStart);
+      return InputStreamIterator<ObjectT>(*this, beginOffset());
     }
 
     //! Get end iterator.
-    [[nodiscard]] auto end() const
+    [[nodiscard]] auto end()
     {
-      return InputStreamIterator<ObjectT>(*this, mEnd);
+      return InputStreamIterator<ObjectT>(*this, std::numeric_limits<std::streampos>::max());
     }
 
   protected:

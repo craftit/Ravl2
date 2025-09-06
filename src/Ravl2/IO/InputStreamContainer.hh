@@ -37,7 +37,7 @@ namespace Ravl2
       }
       auto wasAt = pos;
       pos += 1;
-      return m_objects[size_t(wasAt)];
+      return m_objects[static_cast<size_t>(wasAt)];
     }
 
   private:
