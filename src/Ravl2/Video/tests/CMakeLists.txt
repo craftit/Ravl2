@@ -18,3 +18,14 @@ add_test(
     NAME test_video_module
     COMMAND test_video_module
 )
+
+# Create the exMediaContainer example
+add_executable(exMediaContainer
+    exMediaContainer.cc
+)
+
+# Link with the necessary libraries
+target_link_libraries(exMediaContainer
+    PRIVATE
+    Ravl2Video
+)
