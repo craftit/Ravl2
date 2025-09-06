@@ -39,7 +39,7 @@ public:
   { return mPosition; }
 
   //! Get the current position as a frame/chunk index
-  int64_t positionIndex() const;
+  virtual int64_t positionIndex() const;
 
   //! Check if the iterator is at the end of the stream
   virtual bool isAtEnd() const = 0;

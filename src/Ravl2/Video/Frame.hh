@@ -41,8 +41,8 @@ protected:
   //! Default constructor
   Frame() = default;
 
-  StreamItemId m_id = 0;                           //!< Unique identifier for this frame
-  MediaTime m_timestamp{0};                        //!< Timestamp of this frame
+  StreamItemId m_id = 0;        //!< Unique identifier for this frame
+  MediaTime m_timestamp{0};   //!< Timestamp of when this frame starts.
 };
 
 } // namespace Video

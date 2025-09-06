@@ -148,6 +148,10 @@ public:
   //! Get the total duration of the stream
   MediaTime duration() const override;
 
+  //! Access the position.
+  int64_t positionIndex() const override
+  { return m_currentPosition; }
+
 private:
   const std::vector<std::shared_ptr<Frame>>* m_frames = nullptr;    //!< Pointer to frames in the stream
   std::ptrdiff_t m_currentPosition = 0;
