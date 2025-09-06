@@ -26,7 +26,7 @@ public:
   virtual ~StreamIterator() = default;
 
   //! Get the stream index this iterator is associated with
-  virtual int streamIndex() const = 0;
+  virtual std::size_t streamIndex() const = 0;
 
   //! Get the stream type
   virtual StreamType streamType() const = 0;
@@ -132,22 +132,20 @@ public:
   //! Configuration options
 
   //! Enable or disable frame prefetching for sequential access optimization
-  virtual void setPrefetchEnabled(bool enable) = 0;
+  virtual void setPrefetchEnabled(bool enable);
 
   //! Set the prefetch size (number of frames/chunks to prefetch)
-  virtual void setPrefetchSize(int size) = 0;
+  virtual void setPrefetchSize(int size);
 
   //! Check if prefetching is enabled
-  virtual bool isPrefetchEnabled() const = 0;
+  [[nodiscard]] virtual bool isPrefetchEnabled() const;
 
   //! Get the prefetch size
-  virtual int prefetchSize() const = 0;
+  [[nodiscard]] virtual int prefetchSize() const ;
 
   //! Check if the iterator can seek
-  virtual bool canSeek() const = 0;
+  [[nodiscard]] virtual bool canSeek() const = 0;
 
-  //! Set a callback to be called when a new frame/chunk is reached
-  virtual void setProgressCallback(std::function<void(MediaTime, float)> callback) = 0;
 };
 
 //! Helper class for simpler type-safe iteration over video frames

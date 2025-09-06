@@ -28,15 +28,9 @@ public:
 
   //! Open a media container from a file path
   static VideoResult<std::shared_ptr<MediaContainer>> openFile(const std::string& filePath) {
+    (void) filePath;
     // This is a placeholder implementation
     // In a real implementation, this would create the appropriate container type based on the file extension
-    return VideoResult<std::shared_ptr<MediaContainer>>(VideoErrorCode::UnsupportedFormat);
-  }
-
-  //! Open a media container from memory
-  static VideoResult<std::shared_ptr<MediaContainer>> openMemory(const uint8_t* data, size_t size) {
-    // This is a placeholder implementation
-    // In a real implementation, this would create an in-memory container
     return VideoResult<std::shared_ptr<MediaContainer>>(VideoErrorCode::UnsupportedFormat);
   }
 
@@ -47,25 +41,25 @@ public:
   virtual VideoResult<void> close() = 0;
 
   //! Get the number of streams in the container
-  virtual int streamCount() const = 0;
+  virtual std::size_t streamCount() const = 0;
 
   //! Get the type of stream at the specified index
-  virtual StreamType streamType(int streamIndex) const = 0;
+  virtual StreamType streamType(std::size_t streamIndex) const = 0;
 
   //! Get properties for a video stream
-  virtual VideoResult<VideoProperties> videoProperties(int streamIndex) const = 0;
+  virtual VideoResult<VideoProperties> videoProperties(std::size_t streamIndex) const = 0;
 
   //! Get properties for an audio stream
-  virtual VideoResult<AudioProperties> audioProperties(int streamIndex) const = 0;
+  virtual VideoResult<AudioProperties> audioProperties(std::size_t streamIndex) const = 0;
 
   //! Get properties for a data stream
-  virtual VideoResult<DataProperties> dataProperties(int streamIndex) const = 0;
+  virtual VideoResult<DataProperties> dataProperties(std::size_t streamIndex) const = 0;
 
   //! Get total duration of the container (longest stream)
   virtual MediaTime duration() const = 0;
 
   //! Create an iterator for a specific stream
-  virtual VideoResult<std::shared_ptr<StreamIterator>> createIterator(int streamIndex) = 0;
+  virtual VideoResult<std::shared_ptr<StreamIterator>> createIterator(std::size_t streamIndex) = 0;
 
   //! Get global container metadata
   virtual std::map<std::string, std::string> metadata() const = 0;

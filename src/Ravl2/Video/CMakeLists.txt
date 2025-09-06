@@ -9,6 +9,7 @@ add_library(Ravl2Video
     AudioChunk.cc AudioChunk.hh
     MetaDataFrame.cc MetaDataFrame.hh
     MediaContainer.cc MediaContainer.hh
+    MemoryMediaContainer.cc MemoryMediaContainer.hh
     StreamIterator.cc StreamIterator.hh
 )
 
