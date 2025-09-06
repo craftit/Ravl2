@@ -26,13 +26,13 @@ public:
   virtual ~StreamIterator() = default;
 
   //! Get the stream index this iterator is associated with
-  virtual std::size_t streamIndex() const = 0;
+  [[nodiscard]] virtual std::size_t streamIndex() const = 0;
 
   //! Get the stream type
-  virtual StreamType streamType() const = 0;
+  [[nodiscard]] virtual StreamType streamType() const = 0;
 
   //! Get the current position in the stream (as a timestamp)
-  virtual MediaTime position() const = 0;
+  [[nodiscard]] virtual MediaTime position() const = 0;
 
   //! Get the current position as a frame/chunk index
   virtual int64_t positionIndex() const = 0;
@@ -70,66 +70,6 @@ public:
   //! Get the total duration of the stream
   virtual MediaTime duration() const = 0;
 
-  //! Type-specific convenience methods
-
-  //! Get the current frame as a video frame (only valid for video streams)
-  VideoResult<std::shared_ptr<VideoFrame>> currentVideoFrame() const {
-    if (streamType() != StreamType::Video) {
-      return VideoResult<std::shared_ptr<VideoFrame>>(VideoErrorCode::InvalidOperation);
-    }
-
-    auto frameResult = currentFrame();
-    if (!frameResult.isSuccess()) {
-      return VideoResult<std::shared_ptr<VideoFrame>>(frameResult.error());
-    }
-
-    auto videoFrame = std::dynamic_pointer_cast<VideoFrame>(frameResult.value());
-    if (!videoFrame) {
-      return VideoResult<std::shared_ptr<VideoFrame>>(VideoErrorCode::InvalidOperation);
-    }
-
-    return VideoResult<std::shared_ptr<VideoFrame>>(videoFrame);
-  }
-
-  //! Get the current frame as an audio chunk (only valid for audio streams)
-  VideoResult<std::shared_ptr<AudioChunk>> currentAudioChunk() const {
-    if (streamType() != StreamType::Audio) {
-      return VideoResult<std::shared_ptr<AudioChunk>>(VideoErrorCode::InvalidOperation);
-    }
-
-    auto frameResult = currentFrame();
-    if (!frameResult.isSuccess()) {
-      return VideoResult<std::shared_ptr<AudioChunk>>(frameResult.error());
-    }
-
-    auto audioChunk = std::dynamic_pointer_cast<AudioChunk>(frameResult.value());
-    if (!audioChunk) {
-      return VideoResult<std::shared_ptr<AudioChunk>>(VideoErrorCode::InvalidOperation);
-    }
-
-    return VideoResult<std::shared_ptr<AudioChunk>>(audioChunk);
-  }
-
-  //! Get the current frame as a metadata frame (only valid for data streams)
-  VideoResult<std::shared_ptr<MetaDataFrame>> currentMetaDataFrame() const {
-    if (streamType() != StreamType::Data) {
-      return VideoResult<std::shared_ptr<MetaDataFrame>>(VideoErrorCode::InvalidOperation);
-    }
-
-    auto frameResult = currentFrame();
-    if (!frameResult.isSuccess()) {
-      return VideoResult<std::shared_ptr<MetaDataFrame>>(frameResult.error());
-    }
-
-    auto metaDataFrame = std::dynamic_pointer_cast<MetaDataFrame>(frameResult.value());
-    if (!metaDataFrame) {
-      return VideoResult<std::shared_ptr<MetaDataFrame>>(VideoErrorCode::InvalidOperation);
-    }
-
-    return VideoResult<std::shared_ptr<MetaDataFrame>>(metaDataFrame);
-  }
-
-  //! Configuration options
 
   //! Enable or disable frame prefetching for sequential access optimization
   virtual void setPrefetchEnabled(bool enable);
@@ -149,7 +89,9 @@ public:
 };
 
 //! Helper class for simpler type-safe iteration over video frames
-class VideoStreamIterator {
+template <typename PixelT>
+class VideoStreamIterator
+{
 public:
   //! Constructor taking a StreamIterator
   explicit VideoStreamIterator(std::shared_ptr<StreamIterator> iterator)
@@ -170,8 +112,10 @@ public:
   }
 
   //! Get the current frame
-  VideoResult<std::shared_ptr<VideoFrame>> currentFrame() const {
-    return m_iterator->currentVideoFrame();
+  VideoResult<std::shared_ptr<VideoFrame<PixelT>> currentFrame() const
+  {
+    m_iterator->currentFrame();
+    return std::dynamic_pointer_cast<>();
   }
 
   //! Seek to a specific timestamp
@@ -189,7 +133,9 @@ private:
 };
 
 //! Helper class for simpler type-safe iteration over audio chunks
-class AudioStreamIterator {
+template <typename SampleT>
+class AudioStreamIterator
+{
 public:
   //! Constructor taking a StreamIterator
   explicit AudioStreamIterator(std::shared_ptr<StreamIterator> iterator)
@@ -210,8 +156,8 @@ public:
   }
 
   //! Get the current audio chunk
-  VideoResult<std::shared_ptr<AudioChunk>> currentChunk() const {
-    return m_iterator->currentAudioChunk();
+  VideoResult<std::shared_ptr<AudioChunk<SampleT>> currentChunk() const {
+
   }
 
   //! Seek to a specific timestamp
@@ -250,8 +196,8 @@ public:
   }
 
   //! Get the current metadata frame
-  VideoResult<std::shared_ptr<MetaDataFrame>> currentFrame() const {
-    return m_iterator->currentMetaDataFrame();
+  [[nodiscard]] VideoResult<std::shared_ptr<MetaDataFrame>> currentFrame() const {
+    return VideoResult<std::shared_ptr<MetaDataFrame>> {VideoErrorCode::NotImplemented};
   }
 
   //! Seek to a specific timestamp
@@ -260,7 +206,7 @@ public:
   }
 
   //! Get the underlying iterator
-  std::shared_ptr<StreamIterator> iterator() const {
+  [[nodiscard]] std::shared_ptr<StreamIterator> iterator() const {
     return m_iterator;
   }
 

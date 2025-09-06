@@ -29,6 +29,7 @@ enum class VideoErrorCode {
   Success,                //!< Operation completed successfully
   EndOfStream,            //!< End of stream reached
   InvalidOperation,       //!< Operation is not valid in the current state
+  NotImplemented,         //!< Operation is not yet implemented
   ResourceUnavailable,    //!< Required resource is not available
   DecodingError,          //!< Error occurred during decoding
   SeekFailed,             //!< Failed to seek to requested position

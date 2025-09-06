@@ -45,3 +45,5 @@ install(DIRECTORY ${PROJECT_SOURCE_DIR}/src/Ravl2/Video
     DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/Ravl2
     FILES_MATCHING PATTERN "*.hh"
 )
+
+add_subdirectory(tests)

@@ -1,0 +1,20 @@
+# CMakeLists.txt for Video module tests
+
+# Create the tests executable
+add_executable(test_video_module
+#    test_MemoryMediaContainer.cc
+    test_VideoFrame.cc
+)
+
+# Link with the necessary libraries
+target_link_libraries(test_video_module
+    PRIVATE
+    Ravl2Video
+    Catch2::Catch2WithMain
+)
+
+# Add the test to CTest
+add_test(
+    NAME test_video_module
+    COMMAND test_video_module
+)

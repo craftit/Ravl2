@@ -336,7 +336,7 @@ VideoResult<void> MemoryStreamIterator::seekToIndex(int64_t index) {
   }
 
   m_currentPosition = static_cast<std::ptrdiff_t>(index);
-  return VideoResult<void>();
+  return {};
 }
 
 VideoResult<std::shared_ptr<Frame>> MemoryStreamIterator::currentFrame() const {
