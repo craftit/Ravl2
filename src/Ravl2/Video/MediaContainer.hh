@@ -30,12 +30,6 @@ public:
   //! Virtual destructor
   virtual ~MediaContainer() = default;
 
-  //! Open a media container from a file path
-  static VideoResult<std::shared_ptr<MediaContainer>> openFile(const std::string& filePath);
-
-  //! Open a media container from memory
-  static VideoResult<std::shared_ptr<MediaContainer>> openMemory(const uint8_t* data, size_t size);
-
   //! Check if the container is open
   virtual bool isOpen() const = 0;
 
