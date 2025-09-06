@@ -191,6 +191,7 @@ MemoryStreamIterator::MemoryStreamIterator(std::shared_ptr<MemoryMediaContainer>
     // This is safe because we're storing a pointer to a vector that's owned by the container
     // and we hold a shared_ptr to the container to ensure it outlives this iterator
     m_frames = &container->m_streams[streamIndex].mFrames;
+    setCurrentFrame(m_frames->at(static_cast<std::size_t>(m_currentPosition)));
   }
 }
 
@@ -209,11 +210,13 @@ VideoResult<void> MemoryStreamIterator::next() {
   }
 
   ++m_currentPosition;
-  if (m_currentPosition >= static_cast<std::ptrdiff_t>(m_frames->size()))
-  {
-    m_currentPosition = -1;
-    return VideoResult<void>(VideoErrorCode::EndOfStream);
+  if (m_currentPosition >= static_cast<std::ptrdiff_t>(m_frames->size())) {
+    // We've reached the end - set position to the end index rather than -1
+    m_currentPosition = static_cast<std::ptrdiff_t>(m_frames->size());
+    setCurrentFrame(nullptr); // Clear current frame
+    return VideoResult<void>();
   }
+
   setCurrentFrame(m_frames->at(static_cast<std::size_t>(m_currentPosition)));
   return VideoResult<void>();
 }
@@ -316,6 +319,7 @@ VideoResult<void> MemoryStreamIterator::seekToIndex(int64_t index) {
   }
 
   m_currentPosition = static_cast<std::ptrdiff_t>(index);
+  setCurrentFrame(m_frames->at(static_cast<std::size_t>(m_currentPosition)));
   return {};
 }
 
