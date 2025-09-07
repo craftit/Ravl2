@@ -12,7 +12,9 @@
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wsign-conversion"
+#ifdef __clang__
 #pragma GCC diagnostic ignored "-Wimplicit-int-conversion"
+#endif
 #pragma GCC diagnostic ignored "-Wold-style-cast"
 extern "C" {
 #include <libavformat/avformat.h>
@@ -31,7 +33,7 @@ namespace Ravl2::Video {
 class FfmpegStreamIterator;
 
 //! Implementation of MediaContainer using FFmpeg for media file access
-class FfmpegMediaContainer : public MediaContainer {
+class FfmpegMediaContainer final : public MediaContainer  {
 public:
   //! Constructor - use the factory method for normal creation
   explicit FfmpegMediaContainer();

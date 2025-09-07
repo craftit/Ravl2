@@ -19,12 +19,7 @@ FfmpegStreamIterator::FfmpegStreamIterator(std::shared_ptr<FfmpegMediaContainer>
       m_currentPositionIndex(0),
       m_wasSeekOperation(false)
   {
-  Ravl2:: initPixel();
-
-
-  if (!container || !container->isOpen()) {
-    throw std::runtime_error("Cannot create iterator: container is not open");
-  }
+  Ravl2::initPixel();
 
   // Allocate FFmpeg resources
   m_packet = av_packet_alloc();
@@ -51,7 +46,7 @@ FfmpegStreamIterator::FfmpegStreamIterator(std::shared_ptr<FfmpegMediaContainer>
   }
 
   // Read the first frame
-  auto result = next();
+  auto result = FfmpegStreamIterator::next();
   if (!result.isSuccess() && result.error() != VideoErrorCode::EndOfStream) {
     av_frame_free(&m_frame);
     av_packet_free(&m_packet);
@@ -190,7 +185,7 @@ VideoResult<void> FfmpegStreamIterator::seekToIndex(int64_t index) {
     auto audioProps = container.audioProperties(streamIndex());
     if (audioProps.isSuccess() && audioProps.value().sampleRate > 0) {
       // For audio, convert sample index to timestamp
-      MediaTime timestamp(static_cast<int64_t>(1000000.0 * index / audioProps.value().sampleRate));
+      MediaTime timestamp(static_cast<int64_t>(1000000.0 * static_cast<double>(index) / audioProps.value().sampleRate));
       return seek(timestamp);
     }
     return VideoResult<void>(VideoErrorCode::InvalidOperation);

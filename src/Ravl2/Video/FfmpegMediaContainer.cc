@@ -174,9 +174,9 @@ VideoResult<VideoProperties> FfmpegMediaContainer::videoProperties(std::size_t s
 
   // Calculate frame rate (can be variable)
   if (stream->avg_frame_rate.num && stream->avg_frame_rate.den) {
-    props.frameRate = static_cast<float>(stream->avg_frame_rate.num) / stream->avg_frame_rate.den;
+    props.frameRate = static_cast<float>(stream->avg_frame_rate.num) / static_cast<float>(stream->avg_frame_rate.den);
   } else if (stream->r_frame_rate.num && stream->r_frame_rate.den) {
-    props.frameRate = static_cast<float>(stream->r_frame_rate.num) / stream->r_frame_rate.den;
+    props.frameRate = static_cast<float>(stream->r_frame_rate.num) / static_cast<float>(stream->r_frame_rate.den);
   } else {
     props.frameRate = 0.0f;
   }
@@ -201,7 +201,7 @@ VideoResult<VideoProperties> FfmpegMediaContainer::videoProperties(std::size_t s
   if (stream->nb_frames > 0) {
     props.totalFrames = stream->nb_frames;
   } else if (props.duration.count() > 0 && props.frameRate > 0) {
-    props.totalFrames = static_cast<int64_t>(props.duration.count() * static_cast<double>(props.frameRate) / 1000000.0);
+    props.totalFrames = static_cast<int64_t>(static_cast<double>(props.duration.count()) * static_cast<double>(props.frameRate) / 1000000.0);
   } else {
     props.totalFrames = 0;
   }
@@ -275,7 +275,7 @@ VideoResult<AudioProperties> FfmpegMediaContainer::audioProperties(std::size_t s
 
   // Estimate total samples
   if (props.duration.count() > 0 && props.sampleRate > 0) {
-    props.totalSamples = static_cast<int64_t>(props.duration.count() * props.sampleRate / 1000000.0);
+    props.totalSamples = static_cast<int64_t>(static_cast<double>(props.duration.count() * props.sampleRate) / 1000000.0);
   } else {
     props.totalSamples = 0;
   }

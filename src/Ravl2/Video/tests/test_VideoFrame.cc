@@ -48,7 +48,7 @@ TEST_CASE("VideoFrame template class", "[VideoFrame]") {
   VideoFrame<TestPixel> frame(frameData, id, timestamp);
 
   SECTION("Frame data access") {
-    const auto& data = frame.frameData();
+    const auto& data = frame.image();
     CHECK(data.range().size(0) == 5);
     CHECK(data.range().size(1) == 5);
     CHECK(data[0][0] == 100);
@@ -116,7 +116,7 @@ TEST_CASE("VideoFrame with complex pixel type", "[VideoFrame]") {
   }
 
   SECTION("Frame data access") {
-    const auto& data = frame.frameData();
+    const auto& data = frame.image();
     CHECK(data[0][0] == RGBPixel{0, 0, 0});
     CHECK(data[1][0] == RGBPixel{50, 0, 25});
     CHECK(data[2][0] == RGBPixel{100, 0, 50});
