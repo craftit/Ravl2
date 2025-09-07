@@ -4,6 +4,7 @@
 
 #include "Ravl2/Video/FfmpegStreamIterator.hh"
 #include "Ravl2/Pixel/Pixel.hh"
+#include "Ravl2/Pixel/Colour.hh"
 #include <iostream>
 #include <stdexcept>
 
@@ -18,6 +19,8 @@ FfmpegStreamIterator::FfmpegStreamIterator(std::shared_ptr<FfmpegMediaContainer>
       m_currentPositionIndex(0),
       m_wasSeekOperation(false)
   {
+  Ravl2:: initPixel();
+
 
   if (!container || !container->isOpen()) {
     throw std::runtime_error("Cannot create iterator: container is not open");
@@ -316,6 +319,76 @@ std::type_info const& FfmpegStreamIterator::dataType() const
   return StreamIterator::dataType();
 }
 
+
+template<typename PixelT>
+bool FfmpegStreamIterator::makeImage(Array<PixelT, 2>&img, const AVFrame* frame) const
+{
+  // For planar YUV formats (YUV420P, YUV422P, YUV444P), we need to convert from planar to packed
+  int width = frame->width;
+  int height = frame->height;
+
+  // Allocate memory for packed YUV pixels
+  // Create a 2D array from the packed data
+  Array<PixelT, 2> frameData({static_cast<size_t>(height), static_cast<size_t>(width)});
+  img = frameData;
+
+  // Determine the chroma subsampling based on the pixel format
+  int horizontalSubsample = 1;
+  int verticalSubsample = 1;
+
+  if (m_codecContext->pix_fmt == AV_PIX_FMT_YUV420P) {
+    horizontalSubsample = 2;
+    verticalSubsample = 2;
+  } else if (m_codecContext->pix_fmt == AV_PIX_FMT_YUV422P) {
+    horizontalSubsample = 2;
+    verticalSubsample = 1;
+  } else if (m_codecContext->pix_fmt == AV_PIX_FMT_YUV444P) {
+    horizontalSubsample = 1;
+    verticalSubsample = 1;
+  } else
+  {
+    SPDLOG_ERROR("Unsupported pixel format for YUV conversion: {}", static_cast<int>(m_codecContext->pix_fmt));
+    return false;
+  }
+  //m_codecContext->
+  SPDLOG_INFO("Using subsampling: {}x{} Sizes:{} {}  {} {} {}  Target: {} ", horizontalSubsample, verticalSubsample, width, height, frame->linesize[0], frame->linesize[1], frame->linesize[2],typeName(typeid(PixelT)));
+
+  // Get pointers to Y, U, V planes
+  uint8_t* yPlane = frame->data[0];
+  uint8_t* uPlane = frame->data[1];
+  uint8_t* vPlane = frame->data[2];
+
+  // Get strides for each plane
+  int yStride = frame->linesize[0];
+  int uStride = frame->linesize[1];
+  int vStride = frame->linesize[2];
+
+  // Convert planar YUV to packed YUV
+  for (int y = 0; y < height; y++) {
+    for (int x = 0; x < width; x++) {
+      // Get Y value directly
+      uint8_t yValue = yPlane[y * yStride + x];
+
+      // Get U and V values based on subsampling
+      int uIndex = (y / verticalSubsample) * uStride + (x / horizontalSubsample);
+      int vIndex = (y / verticalSubsample) * vStride + (x / horizontalSubsample);
+
+      uint8_t uValue = uPlane[uIndex];
+      uint8_t vValue = vPlane[vIndex];
+
+      // Set the pixel values from (Y, U, V, A)
+      if constexpr (std::is_same_v<PixelT, PixelYUV8>)
+      {
+        frameData[y][x] = PixelYUV8(yValue, uValue, vValue);
+      } else
+      {
+        Ravl2::assign(frameData[y][x],PixelYUVA8(yValue, uValue, vValue, 255));
+      }
+    }
+  }
+  return true;
+}
+
 VideoResult<void> FfmpegStreamIterator::readNextPacket() {
   auto& container = ffmpegContainer();
 
@@ -437,7 +510,7 @@ std::shared_ptr<Frame> FfmpegStreamIterator::convertPacketToFrame() {
     }
     case StreamType::Data: {
       // For metadata frames, use a binary blob
-      return createMetadataFrame<std::vector<uint8_t>>();
+      return createMetadataFrame<std::vector<std::byte>>();
     }
     default:
       return nullptr;
@@ -463,23 +536,8 @@ std::shared_ptr<VideoFrame<PixelT>> FfmpegStreamIterator::createVideoFrame() {
   // Create a new frame ID
   StreamItemId id = m_nextFrameId++;
 
-
-
-
-  // Create a 2D array for the frame data
-  PixelT *dataPtr = reinterpret_cast<PixelT*>(m_frame->data[0]);
-  std::array<int, 2> strides = {static_cast<int>(m_frame->linesize[0]), 1};
-
-  Array<PixelT, 2> frameData(dataPtr,{static_cast<size_t>(m_frame->height), static_cast<size_t>(m_frame->width)},strides,
-    std::shared_ptr<PixelT[]>(dataPtr, [framePtr = m_frame]( PixelT *delPtr) mutable
-    {
-      assert(static_cast<void *>(delPtr) == framePtr->data[0]);
-      // Free the frame data when the frame is destroyed
-      av_frame_free(&framePtr);
-    }));
-
-  // Allocate a new frame.
-  m_frame = av_frame_alloc();
+  Array<PixelT, 2> frameData;
+  makeImage(frameData, m_frame);
 
   // Create a new video frame
   auto videoFrame = std::make_shared<VideoFrame<PixelT>>(frameData, id, timestamp);

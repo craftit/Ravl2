@@ -58,6 +58,12 @@ public:
   //! Get the data element type held in the frames.
   [[nodiscard]] std::type_info const &dataType() const override;
 
+protected:
+  template<typename PixelT>
+  bool makeImage(Array<PixelT, 2>&img, const AVFrame* frame) const;
+
+  bool makeImage(Array<uint8_t, 2>&img, const AVFrame* frame) const;
+
 private:
   //! Decode the current packet into a frame
   VideoResult<void> decodeCurrentPacket();
