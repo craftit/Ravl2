@@ -463,17 +463,23 @@ std::shared_ptr<VideoFrame<PixelT>> FfmpegStreamIterator::createVideoFrame() {
   // Create a new frame ID
   StreamItemId id = m_nextFrameId++;
 
-  // For simplicity, assume conversion to RGB/YUV is handled elsewhere
-  // In a full implementation, you would use swscale to convert from FFmpeg's pixel format
+
+
 
   // Create a 2D array for the frame data
-  Array<PixelT, 2> frameData({static_cast<size_t>(m_frame->height), static_cast<size_t>(m_frame->width)});
-  if (m_frame->data[0])
-  {
-    // Copy the frame data into the 2D array
-    //memcpy(frameData.origin_address(), reinterpret_cast<PixelT *>(m_frame->data[0]), static_cast<size_t>(m_frame->linesize[0] * m_frame->height));
-  }
+  PixelT *dataPtr = reinterpret_cast<PixelT*>(m_frame->data[0]);
+  std::array<int, 2> strides = {static_cast<int>(m_frame->linesize[0]), 1};
 
+  Array<PixelT, 2> frameData(dataPtr,{static_cast<size_t>(m_frame->height), static_cast<size_t>(m_frame->width)},strides,
+    std::shared_ptr<PixelT[]>(dataPtr, [framePtr = m_frame]( PixelT *delPtr) mutable
+    {
+      assert(static_cast<void *>(delPtr) == framePtr->data[0]);
+      // Free the frame data when the frame is destroyed
+      av_frame_free(&framePtr);
+    }));
+
+  // Allocate a new frame.
+  m_frame = av_frame_alloc();
 
   // Create a new video frame
   auto videoFrame = std::make_shared<VideoFrame<PixelT>>(frameData, id, timestamp);
