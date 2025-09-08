@@ -7,6 +7,7 @@
 #include "Ravl2/Pixel/Colour.hh"
 #include <iostream>
 #include <stdexcept>
+#include <libswscale/swscale.h>
 
 #pragma GCC diagnostic ignored "-Wold-style-cast"
 
@@ -275,6 +276,7 @@ std::type_info const& FfmpegStreamIterator::dataType() const
           case AV_PIX_FMT_YUV422P:
           case AV_PIX_FMT_YUV444P:
             return typeid(Ravl2::Array<PixelYUV8,2>);
+            //return typeid(Ravl2::Array<PixelYUV8,2>);
           default:
             // Default to RGB for other formats
             return typeid(Ravl2::Array<PixelRGB8,2>);
@@ -316,8 +318,141 @@ std::type_info const& FfmpegStreamIterator::dataType() const
 
 
 template<typename PixelT>
+bool FfmpegStreamIterator::makeImageWithSwScale(Array<PixelT, 2>& img, const AVFrame* frame) const
+{
+  int width = frame->width;
+  int height = frame->height;
+
+  // Create target frame data
+  Array<PixelT, 2> frameData({static_cast<size_t>(height), static_cast<size_t>(width)});
+  img = frameData;
+
+  // Determine the appropriate target pixel format based on PixelT
+  AVPixelFormat targetFormat;
+
+  if constexpr (std::is_same_v<PixelT, PixelRGB8>) {
+    targetFormat = AV_PIX_FMT_RGB24;
+  } else if constexpr (std::is_same_v<PixelT, PixelRGBA8>) {
+    targetFormat = AV_PIX_FMT_RGBA;
+  } else if constexpr (std::is_same_v<PixelT, PixelBGR8>) {
+    targetFormat = AV_PIX_FMT_BGR24;
+  } else if constexpr (std::is_same_v<PixelT, PixelBGRA8>) {
+    targetFormat = AV_PIX_FMT_BGRA;
+  } else if constexpr (std::is_same_v<PixelT, PixelYUV8>) {
+    // Direct copy for YUV format
+    return makeImage(img, frame);
+  } else {
+    // Default to RGB format for other pixel types
+    targetFormat = AV_PIX_FMT_RGB24;
+  }
+
+  // Get a scaling context
+  SwsContext* swsContext = getSwsContext(
+      width, height, m_codecContext->pix_fmt,
+      width, height, targetFormat);
+
+  if (!swsContext) {
+    return false;
+  }
+
+  // Create a temporary AVFrame to hold the converted data
+  AVFrame* dstFrame = av_frame_alloc();
+  if (!dstFrame) {
+    sws_freeContext(swsContext);
+    SPDLOG_ERROR("Failed to allocate destination frame");
+    return false;
+  }
+
+  // Set up the destination frame
+  dstFrame->width = width;
+  dstFrame->height = height;
+  dstFrame->format = targetFormat;
+
+  // Allocate buffer for the destination frame
+  int ret = av_frame_get_buffer(dstFrame, 0);
+  if (ret < 0) {
+    av_frame_free(&dstFrame);
+    sws_freeContext(swsContext);
+    SPDLOG_ERROR("Failed to allocate buffer for destination frame: {}", ret);
+    return false;
+  }
+
+  // Perform the conversion
+  ret = sws_scale(swsContext, 
+                 frame->data, frame->linesize, 0, height,
+                 dstFrame->data, dstFrame->linesize);
+
+  if (ret <= 0) {
+    av_frame_free(&dstFrame);
+    sws_freeContext(swsContext);
+    SPDLOG_ERROR("Failed to convert frame: {}", ret);
+    return false;
+  }
+
+  // Copy the converted data to our image array
+  for (int y = 0; y < height; y++) {
+    uint8_t* srcLine = dstFrame->data[0] + y * dstFrame->linesize[0];
+
+    for (int x = 0; x < width; x++) {
+      if constexpr (std::is_same_v<PixelT, PixelRGB8>) {
+        uint8_t r = srcLine[x * 3];
+        uint8_t g = srcLine[x * 3 + 1];
+        uint8_t b = srcLine[x * 3 + 2];
+        frameData[y][x] = PixelRGB8(r, g, b);
+      } 
+      else if constexpr (std::is_same_v<PixelT, PixelRGBA8>) {
+        uint8_t r = srcLine[x * 4];
+        uint8_t g = srcLine[x * 4 + 1];
+        uint8_t b = srcLine[x * 4 + 2];
+        uint8_t a = srcLine[x * 4 + 3];
+        frameData[y][x] = PixelRGBA8(r, g, b, a);
+      }
+      else if constexpr (std::is_same_v<PixelT, PixelBGR8>) {
+        uint8_t b = srcLine[x * 3];
+        uint8_t g = srcLine[x * 3 + 1];
+        uint8_t r = srcLine[x * 3 + 2];
+        frameData[y][x] = PixelBGR8(b, g, r);
+      }
+      else if constexpr (std::is_same_v<PixelT, PixelBGRA8>) {
+        uint8_t b = srcLine[x * 4];
+        uint8_t g = srcLine[x * 4 + 1];
+        uint8_t r = srcLine[x * 4 + 2];
+        uint8_t a = srcLine[x * 4 + 3];
+        frameData[y][x] = PixelBGRA8(b, g, r, a);
+      }
+      else {
+        // For other formats, convert to RGB and then use color conversion
+        uint8_t r = srcLine[x * 3];
+        uint8_t g = srcLine[x * 3 + 1];
+        uint8_t b = srcLine[x * 3 + 2];
+        PixelRGB8 rgbPixel(r, g, b);
+        Ravl2::assign(frameData[y][x], rgbPixel);
+      }
+    }
+  }
+
+  // Clean up
+  av_frame_free(&dstFrame);
+  sws_freeContext(swsContext);
+
+  return true;
+}
+
+template<typename PixelT>
 bool FfmpegStreamIterator::makeImage(Array<PixelT, 2>&img, const AVFrame* frame) const
 {
+#if 0
+  // Use the SwScale implementation for all formats except YUV
+  if (m_codecContext->pix_fmt == AV_PIX_FMT_YUV420P || 
+      m_codecContext->pix_fmt == AV_PIX_FMT_YUV422P || 
+      m_codecContext->pix_fmt == AV_PIX_FMT_YUV444P) {
+    if constexpr (!std::is_same_v<PixelT, PixelYUV8>) {
+      // For non-YUV target formats, use SwScale for YUV source
+      return makeImageWithSwScale(img, frame);
+    }
+  }
+#endif
+
   // For planar YUV formats (YUV420P, YUV422P, YUV444P), we need to convert from planar to packed
   int width = frame->width;
   int height = frame->height;
@@ -368,6 +503,7 @@ bool FfmpegStreamIterator::makeImage(Array<PixelT, 2>&img, const AVFrame* frame)
       int uIndex = (y / verticalSubsample) * uStride + (x / horizontalSubsample);
       int vIndex = (y / verticalSubsample) * vStride + (x / horizontalSubsample);
 
+      // Get the chrominance values - these should already be offset by 128 in FFmpeg's YUV420P format
       uint8_t uValue = uPlane[uIndex];
       uint8_t vValue = vPlane[vIndex];
 
@@ -474,6 +610,7 @@ std::shared_ptr<Frame> FfmpegStreamIterator::convertPacketToFrame() {
         case AV_PIX_FMT_YUV420P:
         case AV_PIX_FMT_YUV422P:
         case AV_PIX_FMT_YUV444P:
+          // Using RGB8 format with SwScale conversion for most reliable results
           return createVideoFrame<PixelYUV8>();
         default:
           // Default to RGB for other formats
@@ -609,6 +746,21 @@ std::shared_ptr<MetaDataFrame<DataT>> FfmpegStreamIterator::createMetadataFrame(
 FfmpegMediaContainer& FfmpegStreamIterator::ffmpegContainer() const {
   // Cast the container to FfmpegMediaContainer
   return *std::static_pointer_cast<FfmpegMediaContainer>(container());
+}
+
+SwsContext* FfmpegStreamIterator::getSwsContext(int srcWidth, int srcHeight, AVPixelFormat srcFormat, 
+                                              int dstWidth, int dstHeight, AVPixelFormat dstFormat) const {
+  // Create a software scaler context for the conversion
+  SwsContext* swsContext = sws_getContext(
+      srcWidth, srcHeight, srcFormat,
+      dstWidth, dstHeight, dstFormat,
+      SWS_BILINEAR, nullptr, nullptr, nullptr);
+
+  if (!swsContext) {
+    SPDLOG_ERROR("Failed to create SwsContext for format conversion");
+  }
+
+  return swsContext;
 }
 
 } // namespace Ravl2::Video
