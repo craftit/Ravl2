@@ -650,7 +650,7 @@ std::shared_ptr<Frame> FfmpegStreamIterator::convertPacketToFrame() {
 }
 
 template <typename PixelT>
-std::shared_ptr<VideoFrame<PixelT>> FfmpegStreamIterator::createVideoFrame() {
+std::shared_ptr<VideoFrame<Array<PixelT,2>>> FfmpegStreamIterator::createVideoFrame() {
   if (!m_frame || m_frame->width <= 0 || m_frame->height <= 0) {
     return nullptr;
   }
@@ -672,7 +672,7 @@ std::shared_ptr<VideoFrame<PixelT>> FfmpegStreamIterator::createVideoFrame() {
   makeImage(frameData, m_frame);
 
   // Create a new video frame
-  auto videoFrame = std::make_shared<VideoFrame<PixelT>>(frameData, id, timestamp);
+  auto videoFrame = std::make_shared<VideoFrame<Array<PixelT,2>>>(frameData, id, timestamp);
 
   // Set keyframe flag - check the picture type instead of key_frame
   // In newer FFmpeg versions, use the pict_type field to determine if it's a key frame

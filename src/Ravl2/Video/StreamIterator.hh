@@ -112,11 +112,10 @@ private:
 };
 
 //! Helper class for simpler type-safe iteration over video frames
-template <typename PixelT>
+template <typename ImageTypeT>
 class VideoStreamIterator
 {
 public:
-  using ImageTypeT = Ravl2::Array<PixelT,2>;
 
   //! Constructor taking a StreamIterator
   explicit VideoStreamIterator(std::shared_ptr<StreamIterator> iterator)
@@ -157,9 +156,9 @@ public:
   }
 
   //! Get the current frame
-  VideoFrame<PixelT> &currentFrame() const
+  VideoFrame<ImageTypeT> &currentFrame() const
   {
-    return *std::dynamic_pointer_cast<VideoFrame<PixelT>>(m_iterator->currentFrame());
+    return *std::dynamic_pointer_cast<VideoFrame<ImageTypeT>>(m_iterator->currentFrame());
   }
 
   //! Get the current frame

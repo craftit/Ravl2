@@ -173,7 +173,8 @@ int main(int argc, char *argv[])
                   static_cast<int>(iterResult.error()));
       return EXIT_FAILURE;
     }
-    Ravl2::Video::VideoStreamIterator<PixelT> iterator(iterResult.value());
+    using ImageT = Ravl2::Array<PixelT,2>;
+    Ravl2::Video::VideoStreamIterator<ImageT> iterator(iterResult.value());
 
     // Set up an output stream if needed
     Ravl2::StreamOutputProxy<Ravl2::Array<PixelT,2>> outputStream;

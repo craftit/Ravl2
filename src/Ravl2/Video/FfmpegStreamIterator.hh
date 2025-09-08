@@ -84,7 +84,7 @@ private:
 
   //! Create a video frame from FFmpeg data
   template <typename PixelT>
-  std::shared_ptr<VideoFrame<PixelT>> createVideoFrame();
+  std::shared_ptr<VideoFrame<Array<PixelT,2>>> createVideoFrame();
 
   //! Create an audio chunk from FFmpeg data
   template <typename SampleT>

@@ -53,14 +53,14 @@ protected:
 
 
 //! Interface class for video frames with type erasure for template functions
-template<typename PixelT>
+template<typename ImageT>
 class VideoFrame : public VideoFrameBase {
 public:
   //! Virtual destructor
   ~VideoFrame() override = default;
 
   //! Constructor with frame data, ID, and timestamp
-  VideoFrame(const Array<PixelT, 2>& frameData, StreamItemId id, MediaTime timestamp)
+  VideoFrame(const ImageT& frameData, StreamItemId id, MediaTime timestamp)
     : VideoFrameBase(id, timestamp)
     , m_frameData(frameData)
   {}
@@ -72,7 +72,7 @@ public:
   [[nodiscard]] int height() const override { return m_frameData.range().size(0); }
 
   //! The frame data
-  const Array<PixelT, 2> &image() const
+  const ImageT &image() const
   {
     return m_frameData;
   }
@@ -99,7 +99,7 @@ protected:
   VideoFrame() = default;
 
 private:
-  Array<PixelT, 2> m_frameData;  //!< The frame data
+  ImageT m_frameData;  //!< The frame data
 
 };
 
