@@ -143,6 +143,30 @@ namespace Ravl2
     static constexpr DataT defaultValue = offset;
   };
 
+  //! Specialization for Alpha channel to set the default value to max (opaque)
+  template <typename DataT>
+    requires std::is_integral_v<DataT>
+  struct PixelTypeTraits<DataT, ImageChannel::Alpha> {
+    using value_type = DataT;
+    static constexpr bool isNormalized = PixelChannelTraits<ImageChannel::Alpha>::isNormalized;
+    static constexpr DataT min = std::numeric_limits<DataT>::min();
+    static constexpr DataT max = std::numeric_limits<DataT>::max();
+    static constexpr DataT offset = 0;
+    static constexpr DataT defaultValue = max; // Fully opaque by default
+  };
+
+  //! Specialization for Alpha channel with floating point values
+  template <typename DataT>
+    requires std::is_floating_point_v<DataT>
+  struct PixelTypeTraits<DataT, ImageChannel::Alpha> {
+    using value_type = DataT;
+    static constexpr bool isNormalized = PixelChannelTraits<ImageChannel::Alpha>::isNormalized;
+    static constexpr DataT min = 0;
+    static constexpr DataT max = 1;
+    static constexpr DataT offset = 0;
+    static constexpr DataT defaultValue = 1.0; // Fully opaque by default
+  };
+
   //! Convert a pixel value to a different type follow the channel conversion rules.
   template <ImageChannel channel, typename CompT, typename PixelValueTypeT>
   constexpr CompT get(PixelValueTypeT pixel)

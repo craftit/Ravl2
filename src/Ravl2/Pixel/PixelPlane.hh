@@ -188,15 +188,28 @@ namespace Ravl2
     [[nodiscard]] IndexRange<Dims> masterRange() const
     {
       const auto& planeRange = m_data.range();
-      IndexRange<Dims> result;
 
+      // Get min and max indices in plane space
+      Index<Dims> planeMin, planeMax;
       for (unsigned i = 0; i < Dims; ++i) {
-        const int s = scale_type::scale(i);
-        result.min(i) = planeRange.min(i) * s;
-        result.max(i) = (planeRange.max(i) + 1) * s - 1;
+        planeMin[i] = planeRange.min(i);
+        planeMax[i] = planeRange.max(i);
       }
 
-      return result;
+      // Convert to master space using PlaneScale helper
+      Index<Dims> masterMin = scale_type::planeToMaster(planeMin);
+
+      // For the max index, we need to account for the fact that each plane coordinate
+      // maps to a region in master space with size equal to the scale factor
+      Index<Dims> masterMax;
+      for (unsigned i = 0; i < Dims; ++i) {
+        const int s = scale_type::scale(i);
+        // The last master coordinate is (planeMax * s) + (s - 1)
+        masterMax[i] = (planeMax[i] * s) + (s - 1);
+      }
+
+      // Create range from min and max indices
+      return IndexRange<Dims>(masterMin, masterMax);
     }
 
     //! Begin iterator for the plane data
@@ -325,7 +338,113 @@ namespace Ravl2
       applyToEachPlane(std::forward<FuncT>(func), Indices{});
     }
 
+    //! Create a packed pixel of type PixelT at the given master coordinate
+    //! @tparam PixelT The packed pixel type to create
+    //! @tparam CompT The component type to use for the pixel
+    //! @param masterIndex The master coordinate to sample from
+    //! @return A packed pixel containing values from all planes at the given location
+    template <template <typename, ImageChannel...> class PixelT, typename CompT, ImageChannel... Channels>
+    [[nodiscard]] PixelT<CompT, Channels...> createPackedPixel(const Index<Dims>& masterIndex) const
+    {
+      // Create the pixel with default values
+      PixelT<CompT, Channels...> result;
+
+      // Simple approach: for each channel, try to find a matching plane
+      // and set the corresponding value in the result pixel
+      auto setChannel = [&]<ImageChannel Channel>() {
+        bool channelFound = false;
+
+        // Look for a plane with matching channel type
+        for (std::size_t i = 0; i < sizeof...(PlaneTypes); ++i) {
+          if (getPlaneChannelType(i) == Channel) {
+            // Check if the plane contains the master coordinate
+            const auto& plane = getPlaneByIndex(i);
+            if (plane.containsMaster(masterIndex)) {
+              // Get the value from the plane and convert it properly using get<>
+              // This handles normalization between different types
+              auto rawValue = plane.atMaster(masterIndex);
+
+              // Use the proper conversion that respects PixelTypeTraits for normalization
+              result.template set<Channel>(get<Channel, CompT>(rawValue));
+              channelFound = true;
+              break;
+            }
+          }
+        }
+
+        // If no matching plane found, explicitly set the default value from PixelTypeTraits
+        if (!channelFound) {
+          result.template set<Channel>(PixelTypeTraits<CompT, Channel>::defaultValue);
+        }
+      };
+
+      // Set each channel
+      (setChannel.template operator()<Channels>(), ...);
+
+      return result;
+    }
+
+    // Helper to get a plane's channel type by runtime index
+    [[nodiscard]] ImageChannel getPlaneChannelType(std::size_t index) const {
+      ImageChannel result = ImageChannel::Unused;
+      auto getChannelForIndex = [&]<std::size_t I>() {
+        if (I == index) {
+          result = planeChannelType<I>();
+          return true;
+        }
+        return false;
+      };
+
+      // Call the helper for each plane index
+      applyForIndex(getChannelForIndex, std::make_index_sequence<sizeof...(PlaneTypes)>{});
+      return result;
+    }
+
+    // Helper to get a plane by runtime index
+    [[nodiscard]] const auto& getPlaneByIndex(std::size_t index) const {
+
+      auto getPlaneForIndex = [index]<std::size_t I>() {
+        if (I == index) {
+          return true;
+        }
+        return false;
+      };
+
+      // Call the helper for each plane index
+      applyForIndex(getPlaneForIndex, std::make_index_sequence<sizeof...(PlaneTypes)>{});
+
+      // We need to return a reference to avoid copying, but we can't
+      // determine the exact type at runtime. Instead, we'll use std::get
+      // again with the index we know matches.
+      return accessPlaneImpl(index, std::make_index_sequence<sizeof...(PlaneTypes)>{});
+    }
+
+    // Helper to access a plane by runtime index
+    template <std::size_t... Is>
+    [[nodiscard]] const auto& accessPlaneImpl(std::size_t index, std::index_sequence<Is...>) const {
+      // We need to use a reference to avoid copying, so create a tuple of references
+      // and select the one we need
+      using PlaneRefTuple = std::tuple<const std::tuple_element_t<Is, std::tuple<PlaneTypes...>>&...>;
+      PlaneRefTuple refs(std::get<Is>(m_planes)...);
+
+      // Use another helper to extract the right reference
+      const void* result = nullptr;
+      [[maybe_unused]] bool done = ((Is == index ? (result = &std::get<Is>(refs), true) : false) || ...);
+
+      // Cast back to the correct type - this is unsafe but necessary 
+      // due to the limitation of not being able to return different types
+      // based on runtime conditions
+      return *static_cast<const std::tuple_element_t<0, std::tuple<PlaneTypes...>>*>(result);
+    }
+
+    // Helper to apply a function for a specific index
+    template <typename Func, std::size_t... Is>
+    void applyForIndex(Func&& func, std::index_sequence<Is...>) const {
+      (func.template operator()<Is>() || ...);
+    }
+
   private:
+
     // Helper to apply a function to each plane using index sequence
     template <typename FuncT, std::size_t... Is>
     void applyToEachPlane(FuncT&& func, std::index_sequence<Is...>) const

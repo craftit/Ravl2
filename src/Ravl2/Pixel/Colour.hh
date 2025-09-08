@@ -42,6 +42,7 @@ namespace Ravl2
     {
       int iy = pixel.template get<ImageChannel::Luminance, uint8_t>();
       int v = pixel.template get<ImageChannel::ChrominanceV, uint8_t>();
+      // Since the chroma V value is offset by 128, we need to adjust it before looking up
       int tmp = iy + mRGBcYUV_vrLookup[std::size_t(v)];
       return get<ImageChannel::Red, CompT>(uint8_t(std::clamp(tmp, 0, 255)));
     }
@@ -53,6 +54,7 @@ namespace Ravl2
       int iy = pixel.template get<ImageChannel::Luminance, uint8_t>();
       int v = pixel.template get<ImageChannel::ChrominanceV, uint8_t>();
       int u = pixel.template get<ImageChannel::ChrominanceU, uint8_t>();
+      // The UV values are offset by 128, which is accounted for in the lookup table
       int tmp = iy + mRGBcYUV_uvgLookup[std::size_t(u + 256 * v)];
       return get<ImageChannel::Green, CompT>(uint8_t(std::clamp(tmp, 0, 255)));
     }
@@ -63,6 +65,7 @@ namespace Ravl2
     {
       int iy = pixel.template get<ImageChannel::Luminance, uint8_t>();
       int u = pixel.template get<ImageChannel::ChrominanceU, uint8_t>();
+      // Since the chroma U value is offset by 128, we need to adjust it before looking up
       auto tmp = iy + mRGBcYUV_ubLookup[std::size_t(u)];
       return get<ImageChannel::Blue, CompT>(uint8_t(std::clamp(tmp, 0, 255)));
     }
