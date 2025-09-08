@@ -178,7 +178,7 @@ int main(int argc, char *argv[])
     // Set up an output stream if needed
     Ravl2::StreamOutputProxy<Ravl2::Array<PixelT,2>> outputStream;
     if ( !outPath.empty()) {
-      outputStream = Ravl2::openOutputStream<Ravl2::Array<PixelT,2>>(outPath);
+      outputStream = Ravl2::openOutputStream<Ravl2::Array<PixelT,2>>(outPath,Ravl2::defaultSaveFormatHint(true));
       if (!outputStream.valid()) {
         SPDLOG_ERROR("Failed to open output stream at '{}'", outPath);
         return EXIT_FAILURE;

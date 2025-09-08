@@ -64,6 +64,14 @@ protected:
 
   bool makeImage(Array<uint8_t, 2>&img, const AVFrame* frame) const;
 
+  // Helper method to get or create SwsContext for conversion
+  SwsContext* getSwsContext(int srcWidth, int srcHeight, AVPixelFormat srcFormat, 
+                           int dstWidth, int dstHeight, AVPixelFormat dstFormat) const;
+
+  // SwScale-based implementation for image conversion
+  template<typename PixelT>
+  bool makeImageWithSwScale(Array<PixelT, 2>&img, const AVFrame* frame) const;
+
 private:
   //! Decode the current packet into a frame
   VideoResult<void> decodeCurrentPacket();

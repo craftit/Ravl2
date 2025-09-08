@@ -65,7 +65,7 @@ public:
   //! Get properties for a data stream
   VideoResult<DataProperties> dataProperties(std::size_t streamIndex) const override;
 
-  //! Get total duration of the container (longest stream)
+  //! Get the total duration of the container (the longest stream)
   MediaTime duration() const override;
 
   //! Create an iterator for a specific stream
