@@ -364,7 +364,7 @@ namespace Ravl2
                                        ImageChannel::Blue>(planarImage);
 
       // Check dimensions
-      CHECK(floatArray.range() == planarImage.masterRange());
+      CHECK(floatArray.range() == planarImage.range());
 
       // Check values were converted to float range (0-1)
       CHECK(floatArray[{1, 1}].get<ImageChannel::Red>() == Catch::Approx(100.0f/255.0f).epsilon(0.01f));

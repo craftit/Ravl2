@@ -313,7 +313,7 @@ namespace Ravl2
     }
 
     //! Get master dimensions that would cover all planes (taking scaling into account)
-    [[nodiscard]] IndexRange<Dims> masterRange() const
+    [[nodiscard]] IndexRange<Dims> range() const
     {
       IndexRange<Dims> result = IndexRange<Dims>::mostEmpty();
       using Indices = std::index_sequence_for<PlaneTypes...>;

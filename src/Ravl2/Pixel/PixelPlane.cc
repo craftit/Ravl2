@@ -152,7 +152,7 @@ namespace Ravl2
   Array<PixelT, 2> helperConvertToPacked(const PlanarImageT &image)
   {
     // Get the master range from the planar image
-    auto masterRange = image.masterRange();
+    auto masterRange = image.range();
 
     // Create the packed array with the same master range
     Array<PixelT, 2> result(masterRange);

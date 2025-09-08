@@ -9,9 +9,9 @@
 #include <string>
 #include <type_traits>
 #include "Ravl2/Array.hh"
-#include "Ravl2/Pixel/Pixel.hh"
 #include "Ravl2/Video/VideoTypes.hh"
 #include "Ravl2/Video/Frame.hh"
+#include "Ravl2/Pixel/PixelPlane.hh"
 
 namespace Ravl2::Video {
 
