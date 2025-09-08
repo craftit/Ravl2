@@ -528,6 +528,24 @@ namespace Ravl2
 
       return result;
     }
+
+    // Implementation helper for convertToPacked that combines planar channels into a packed pixel array
+    template <typename ComponentT, template <typename, ImageChannel...> class PixelT, unsigned Dims, typename PlanarT, ImageChannel... Channels>
+    static auto convertToPackedImpl(const PlanarT& planarImage, const IndexRange<Dims>& masterRange)
+    {
+      // Create the packed array with the same master range
+      Array<PixelT<ComponentT, Channels...>, Dims> result(masterRange);
+
+      // Iterate through all coordinates in the master range
+      for (auto it = result.begin(); it != result.end(); ++it) {
+        const auto& idx = it.index();
+
+        // Create a packed pixel from the planes at this position
+        *it = planarImage.template createPackedPixel<PixelT, ComponentT, Channels...>(idx);
+      }
+
+      return result;
+    }
   }
 
   //! Convert a packed pixel array to a planar image
@@ -539,6 +557,27 @@ namespace Ravl2
   {
     // Use the channel_count from the Pixel class
     return detail::convertToPlanarImpl<Dims>(packedArray, std::make_index_sequence<PixelT::channel_count>{});
+  }
+
+  //! Convert a planar image to a packed pixel array
+  //! @tparam ComponentT The component type to use for the packed pixel
+  //! @tparam PixelT The packed pixel type template (e.g., PixelRGB)
+  //! @tparam Channels The specific channels to include in the packed pixel
+  //! @tparam Dims The number of dimensions
+  //! @tparam PlanarT The planar image type
+  //! @param planarImage The planar image to convert
+  //! @param masterRange Optional master range to use for the result (defaults to planarImage.masterRange())
+  //! @return A packed pixel array containing values from the planar image
+  template <typename ComponentT, template <typename, ImageChannel...> class PixelT, ImageChannel... Channels, unsigned Dims, typename... PlaneTypes>
+  auto convertToPacked(const PlanarImage<Dims, PlaneTypes...>& planarImage,
+                        const IndexRange<Dims>& masterRange = IndexRange<Dims>())
+  {
+    // Use the provided master range or calculate from the planar image
+    auto resultRange = masterRange.empty() ? planarImage.masterRange() : masterRange;
+
+    // Use the implementation helper
+    return detail::convertToPackedImpl<ComponentT, PixelT, Dims, PlanarImage<Dims, PlaneTypes...>, Channels...>(
+        planarImage, resultRange);
   }
 
 
@@ -596,3 +635,6 @@ namespace Ravl2
   >;
 
 }// namespace Ravl2
+
+
+

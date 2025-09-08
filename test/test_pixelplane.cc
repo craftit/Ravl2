@@ -291,5 +291,117 @@ namespace Ravl2
       // Alpha should be default value (255 for uint8_t)
       CHECK(rgbaPixel.get<ImageChannel::Alpha>() == 255);
     }
+
+    SECTION("convertToPlanar and convertToPacked - Roundtrip conversion")
+    {
+      // Create a packed pixel array with known values
+      IndexRange<2> range({{0, 5}, {0, 5}}); // 5x5 image
+      Array<PixelRGB8, 2> packedArray(range);
+
+      // Fill the array with a pattern
+      for (auto it = packedArray.begin(); it != packedArray.end(); ++it) {
+        const auto& idx = it.index();
+        (*it).set<ImageChannel::Red>(static_cast<uint8_t>(50 + idx[0] * 10));
+        (*it).set<ImageChannel::Green>(static_cast<uint8_t>(100 + idx[1] * 10));
+        (*it).set<ImageChannel::Blue>(static_cast<uint8_t>(150));
+      }
+
+      // Convert to planar
+      auto planarImage = convertToPlanar(packedArray);
+
+      // Verify planar structure
+      REQUIRE(planarImage.planeCount() == 3);
+      CHECK(planarImage.planeChannelType<0>() == ImageChannel::Red);
+      CHECK(planarImage.planeChannelType<1>() == ImageChannel::Green);
+      CHECK(planarImage.planeChannelType<2>() == ImageChannel::Blue);
+
+      // Verify some values in the planar image
+      CHECK(planarImage.plane<0>()[{2, 3}] == 70);  // Red at (2,3) = 50 + 2*10
+      CHECK(planarImage.plane<1>()[{2, 3}] == 130); // Green at (2,3) = 100 + 3*10
+      CHECK(planarImage.plane<2>()[{2, 3}] == 150); // Blue at (2,3) = 150
+
+      // Convert back to packed
+      auto roundtripArray = convertToPacked<uint8_t, Pixel,
+                                           ImageChannel::Red,
+                                           ImageChannel::Green,
+                                           ImageChannel::Blue>(planarImage);
+
+      // Verify the array has the same range
+      CHECK(roundtripArray.range() == packedArray.range());
+
+      // Verify some values in the roundtrip array
+      CHECK(roundtripArray[{2, 3}].get<ImageChannel::Red>() == 70);
+      CHECK(roundtripArray[{2, 3}].get<ImageChannel::Green>() == 130);
+      CHECK(roundtripArray[{2, 3}].get<ImageChannel::Blue>() == 150);
+
+      // Check all values match the original
+      for (auto it = packedArray.begin(); it != packedArray.end(); ++it) {
+        const auto& idx = it.index();
+        const auto& original = *it;
+        const auto& roundtrip = roundtripArray[idx];
+
+        CHECK(roundtrip.get<ImageChannel::Red>() == original.get<ImageChannel::Red>());
+        CHECK(roundtrip.get<ImageChannel::Green>() == original.get<ImageChannel::Green>());
+        CHECK(roundtrip.get<ImageChannel::Blue>() == original.get<ImageChannel::Blue>());
+      }
+    }
+
+    SECTION("convertToPacked - Component type conversion")
+    {
+      // Create a planar image with uint8_t planes
+      IndexRange<2> range({{0, 3}, {0, 3}}); // Small 3x3 image
+      RGBPlanarImage<uint8_t> planarImage(range);
+
+      // Fill with some values
+      planarImage.plane<0>().fill(100); // Red = 100
+      planarImage.plane<1>().fill(150); // Green = 150
+      planarImage.plane<2>().fill(200); // Blue = 200
+
+      // Convert to packed array with float components
+      auto floatArray = convertToPacked<float, Pixel,
+                                       ImageChannel::Red,
+                                       ImageChannel::Green,
+                                       ImageChannel::Blue>(planarImage);
+
+      // Check dimensions
+      CHECK(floatArray.range() == planarImage.masterRange());
+
+      // Check values were converted to float range (0-1)
+      CHECK(floatArray[{1, 1}].get<ImageChannel::Red>() == Catch::Approx(100.0f/255.0f).epsilon(0.01f));
+      CHECK(floatArray[{1, 1}].get<ImageChannel::Green>() == Catch::Approx(150.0f/255.0f).epsilon(0.01f));
+      CHECK(floatArray[{1, 1}].get<ImageChannel::Blue>() == Catch::Approx(200.0f/255.0f).epsilon(0.01f));
+    }
+
+    SECTION("convertToPacked - Custom channel selection and ordering")
+    {
+      // Create a planar image with R,G,B planes
+      IndexRange<2> range({{0, 3}, {0, 3}});
+      RGBPlanarImage<uint8_t> planarImage(range);
+
+      // Fill with different values
+      planarImage.plane<0>().fill(100); // Red = 100
+      planarImage.plane<1>().fill(150); // Green = 150
+      planarImage.plane<2>().fill(200); // Blue = 200
+
+      // Convert to BGR order (reorder channels)
+      auto bgrArray = convertToPacked<uint8_t, Pixel,
+                                     ImageChannel::Blue,
+                                     ImageChannel::Green,
+                                     ImageChannel::Red>(planarImage);
+
+      // Check that the channels were reordered correctly
+      auto bgrPixel = bgrArray[{1, 1}];
+      CHECK(bgrPixel[0] == 200); // First channel (Blue) should be 200
+      CHECK(bgrPixel[1] == 150); // Second channel (Green) should be 150
+      CHECK(bgrPixel[2] == 100); // Third channel (Red) should be 100
+
+      // Convert to just Green channel
+      auto greenArray = convertToPacked<uint8_t, Pixel, ImageChannel::Green>(planarImage);
+
+      // Check that only the green channel was selected
+      auto greenPixel = greenArray[{1, 1}];
+      CHECK(greenPixel[0] == 150); // First and only channel (Green) should be 150
+      CHECK(greenPixel.channel_count == 1);
+    }
   }
 }
