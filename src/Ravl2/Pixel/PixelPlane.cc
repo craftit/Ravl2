@@ -3,9 +3,16 @@
 //
 
 #include "Ravl2/Pixel/PixelPlane.hh"
+#include "Ravl2/IO/TypeConverter.hh"
 
 namespace Ravl2
 {
+  // Call to ensure that the conversion functions are registered
+  void initPlaneConversion()
+  {
+
+  }
+
 
   // Explicit instantiations for common plane types
   // 2D planes with various scaling factors - Luminance planes
@@ -107,5 +114,24 @@ namespace Ravl2
   template auto convertToPlanar<2, PixelYA8>(const Array<PixelYA8, 2>& packedArray);
   template auto convertToPlanar<2, PixelY16>(const Array<PixelY16, 2>& packedArray);
   template auto convertToPlanar<2, PixelY32F>(const Array<PixelY32F, 2>& packedArray);
+
+  [[maybe_unused]] bool g_reg1 = registerConversion(convertToPlanar<2, PixelRGB8>, 1.00f);
+  [[maybe_unused]] bool g_reg2 = registerConversion(convertToPlanar<2, PixelRGBA8>, 1.00f);
+  [[maybe_unused]] bool g_reg3 = registerConversion(convertToPlanar<2, PixelRGB16>, 1.00f);
+  [[maybe_unused]] bool g_reg4 = registerConversion(convertToPlanar<2, PixelRGBA16>, 1.00f);
+  [[maybe_unused]] bool g_reg5 = registerConversion(convertToPlanar<2, PixelRGB32F>, 1.00f);
+  [[maybe_unused]] bool g_reg6 = registerConversion(convertToPlanar<2, PixelRGBA32F>, 1.00f);
+  [[maybe_unused]] bool g_reg7 = registerConversion(convertToPlanar<2, PixelBGR8>, 1.00f);
+  [[maybe_unused]] bool g_reg8 = registerConversion(convertToPlanar<2, PixelBGRA8>, 1.00f);
+  [[maybe_unused]] bool g_reg9 = registerConversion(convertToPlanar<2, PixelYUV8>, 1.00f);
+  [[maybe_unused]] bool g_reg10 = registerConversion(convertToPlanar<2, PixelYUVA8>, 1.00f);
+  [[maybe_unused]] bool g_reg11 = registerConversion(convertToPlanar<2, PixelYUV32F>, 1.00f);
+  [[maybe_unused]] bool g_reg12 = registerConversion(convertToPlanar<2, PixelY8>, 1.00f);
+  [[maybe_unused]] bool g_reg13 = registerConversion(convertToPlanar<2, PixelYA8>, 1.00f);
+  [[maybe_unused]] bool g_reg14 = registerConversion(convertToPlanar<2, PixelY16>, 1.00f);
+  [[maybe_unused]] bool g_reg15 = registerConversion(convertToPlanar<2, PixelY32F>, 1.00f);
+
+
+
 
 }// namespace Ravl2

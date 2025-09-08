@@ -15,6 +15,9 @@
 
 namespace Ravl2
 {
+  // Call to ensure that the conversion functions are registered
+  extern void initPlaneConversion();
+
   //! Helper class for handling scaling between master and plane coordinates with arbitrary dimensions
   template <unsigned Dims, int... Scales>
   struct PlaneScale;
