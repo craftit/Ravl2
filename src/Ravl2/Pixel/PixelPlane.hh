@@ -262,6 +262,7 @@ namespace Ravl2
   class PlanarImage
   {
   public:
+
     //! Default constructor
     PlanarImage() = default;
 

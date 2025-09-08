@@ -131,7 +131,86 @@ namespace Ravl2
   [[maybe_unused]] bool g_reg14 = registerConversion(convertToPlanar<2, PixelY16>, 1.00f);
   [[maybe_unused]] bool g_reg15 = registerConversion(convertToPlanar<2, PixelY32F>, 1.00f);
 
+  // Helper to expand the channel pack at compile time
+  namespace detail {
+    template<typename PixelT, typename PlanarImageT, std::size_t... Is>
+    auto convertToPackedPixelAtIndexImpl(const PlanarImageT& image, const Index<2>& idx, std::index_sequence<Is...>) {
+      // Use Pixel directly instead of trying to access a non-existent pixel_type
+      return image.template createPackedPixel<Pixel,
+                                            typename PixelT::value_type,
+                                            PixelT::template getChannelAtIndex<Is>()...>(idx);
+    }
 
+    template<typename PixelT, typename PlanarImageT>
+    auto convertToPackedPixelAtIndex(const PlanarImageT& image, const Index<2>& idx) {
+      return convertToPackedPixelAtIndexImpl<PixelT>(image, idx,
+                                                  std::make_index_sequence<PixelT::channel_count>{});
+    }
+  }
 
+  template<typename PixelT, typename PlanarImageT>
+  Array<PixelT, 2> helperConvertToPacked(const PlanarImageT &image)
+  {
+    // Get the master range from the planar image
+    auto masterRange = image.masterRange();
 
-}// namespace Ravl2
+    // Create the packed array with the same master range
+    Array<PixelT, 2> result(masterRange);
+
+    // Iterate through all coordinates in the master range
+    for (auto it = result.begin(); it != result.end(); ++it) {
+      const auto& idx = it.index();
+
+      // Create a packed pixel from the planes at this position
+      // Using the createPackedPixel method from PlanarImage with the proper channel expansion
+      *it = detail::convertToPackedPixelAtIndex<PixelT>(image, idx);
+    }
+
+    return result;
+  }
+
+  // Explicitly instantiate the helperConvertToPacked function for common types
+  // RGB conversions
+  template Array<PixelRGB8, 2> helperConvertToPacked<PixelRGB8>(const RGBPlanarImage<uint8_t>& image);
+  template Array<PixelRGBA8, 2> helperConvertToPacked<PixelRGBA8>(const RGBAPlanarImage<uint8_t>& image);
+  template Array<PixelRGB16, 2> helperConvertToPacked<PixelRGB16>(const RGBPlanarImage<uint16_t>& image);
+  template Array<PixelRGBA16, 2> helperConvertToPacked<PixelRGBA16>(const RGBAPlanarImage<uint16_t>& image);
+  template Array<PixelRGB32F, 2> helperConvertToPacked<PixelRGB32F>(const RGBPlanarImage<float>& image);
+  template Array<PixelRGBA32F, 2> helperConvertToPacked<PixelRGBA32F>(const RGBAPlanarImage<float>& image);
+
+  // BGR conversions
+  template Array<PixelBGR8, 2> helperConvertToPacked<PixelBGR8>(const RGBPlanarImage<uint8_t>& image);
+  template Array<PixelBGRA8, 2> helperConvertToPacked<PixelBGRA8>(const RGBAPlanarImage<uint8_t>& image);
+
+  // YUV conversions
+  template Array<PixelYUV8, 2> helperConvertToPacked<PixelYUV8>(const YUV444Image<uint8_t>& image);
+  template Array<PixelYUVA8, 2> helperConvertToPacked<PixelYUVA8>(const YUV444Image<uint8_t>& image);
+  template Array<PixelYUV32F, 2> helperConvertToPacked<PixelYUV32F>(const YUV444Image<float>& image);
+
+  // Luminance conversions
+  template Array<PixelY8, 2> helperConvertToPacked<PixelY8>(const PlanarImage2D<PixelPlane<uint8_t, 2, ImageChannel::Luminance, 1, 1>>& image);
+  template Array<PixelYA8, 2> helperConvertToPacked<PixelYA8>(const PlanarImage2D<
+    PixelPlane<uint8_t, 2, ImageChannel::Luminance, 1, 1>,
+    PixelPlane<uint8_t, 2, ImageChannel::Alpha, 1, 1>>& image);
+  template Array<PixelY16, 2> helperConvertToPacked<PixelY16>(const PlanarImage2D<PixelPlane<uint16_t, 2, ImageChannel::Luminance, 1, 1>>& image);
+  template Array<PixelY32F, 2> helperConvertToPacked<PixelY32F>(const PlanarImage2D<PixelPlane<float, 2, ImageChannel::Luminance, 1, 1>>& image);
+
+  // Register the helperConvertToPacked function for common types
+  [[maybe_unused]] bool g_reg16 = registerConversion(helperConvertToPacked<PixelRGB8, RGBPlanarImage<uint8_t>>, 1.00f);
+  [[maybe_unused]] bool g_reg17 = registerConversion(helperConvertToPacked<PixelRGBA8, RGBAPlanarImage<uint8_t>>, 1.00f);
+  [[maybe_unused]] bool g_reg18 = registerConversion(helperConvertToPacked<PixelRGB16, RGBPlanarImage<uint16_t>>, 1.00f);
+  [[maybe_unused]] bool g_reg19 = registerConversion(helperConvertToPacked<PixelRGBA16, RGBAPlanarImage<uint16_t>>, 1.00f);
+  [[maybe_unused]] bool g_reg20 = registerConversion(helperConvertToPacked<PixelRGB32F, RGBPlanarImage<float>>, 1.00f);
+  [[maybe_unused]] bool g_reg21 = registerConversion(helperConvertToPacked<PixelRGBA32F, RGBAPlanarImage<float>>, 1.00f);
+  [[maybe_unused]] bool g_reg22 = registerConversion(helperConvertToPacked<PixelBGR8, RGBPlanarImage<uint8_t>>, 1.00f);
+  [[maybe_unused]] bool g_reg23 = registerConversion(helperConvertToPacked<PixelBGRA8, RGBAPlanarImage<uint8_t>>, 1.00f);
+  [[maybe_unused]] bool g_reg24 = registerConversion(helperConvertToPacked<PixelYUV8, YUV444Image<uint8_t>>, 1.00f);
+  [[maybe_unused]] bool g_reg25 = registerConversion(helperConvertToPacked<PixelYUVA8, YUV444Image<uint8_t>>, 1.00f);
+  [[maybe_unused]] bool g_reg26 = registerConversion(helperConvertToPacked<PixelYUV32F, YUV444Image<float>>, 1.00f);
+  [[maybe_unused]] bool g_reg27 = registerConversion(helperConvertToPacked<PixelY8, PlanarImage2D<PixelPlane<uint8_t, 2, ImageChannel::Luminance, 1, 1>>>, 1.00f);
+  [[maybe_unused]] bool g_reg28 = registerConversion(helperConvertToPacked<PixelYA8, PlanarImage2D<
+    PixelPlane<uint8_t, 2, ImageChannel::Luminance, 1, 1>,
+    PixelPlane<uint8_t, 2, ImageChannel::Alpha, 1, 1>>>, 1.00f);
+  [[maybe_unused]] bool g_reg29 = registerConversion(helperConvertToPacked<PixelY16, PlanarImage2D<PixelPlane<uint16_t, 2, ImageChannel::Luminance, 1, 1>>>, 1.00f);
+  [[maybe_unused]] bool g_reg30 = registerConversion(helperConvertToPacked<PixelY32F, PlanarImage2D<PixelPlane<float, 2, ImageChannel::Luminance, 1, 1>>>, 1.00f);
+}
