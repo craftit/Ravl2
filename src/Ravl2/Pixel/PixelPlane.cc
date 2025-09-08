@@ -82,4 +82,30 @@ namespace Ravl2
   template struct PlaneScale<2, 2, 2>;
   template struct PlaneScale<3, 1, 1, 1>;
 
+  // Explicit instantiations of conversion functions for common types
+
+  // Explicitly instantiate the generic conversion function for common types
+  // RGB conversions
+  template auto convertToPlanar<2, PixelRGB8>(const Array<PixelRGB8, 2>& packedArray);
+  template auto convertToPlanar<2, PixelRGBA8>(const Array<PixelRGBA8, 2>& packedArray);
+  template auto convertToPlanar<2, PixelRGB16>(const Array<PixelRGB16, 2>& packedArray);
+  template auto convertToPlanar<2, PixelRGBA16>(const Array<PixelRGBA16, 2>& packedArray);
+  template auto convertToPlanar<2, PixelRGB32F>(const Array<PixelRGB32F, 2>& packedArray);
+  template auto convertToPlanar<2, PixelRGBA32F>(const Array<PixelRGBA32F, 2>& packedArray);
+
+  // BGR conversions
+  template auto convertToPlanar<2, PixelBGR8>(const Array<PixelBGR8, 2>& packedArray);
+  template auto convertToPlanar<2, PixelBGRA8>(const Array<PixelBGRA8, 2>& packedArray);
+
+  // YUV conversions
+  template auto convertToPlanar<2, PixelYUV8>(const Array<PixelYUV8, 2>& packedArray);
+  template auto convertToPlanar<2, PixelYUVA8>(const Array<PixelYUVA8, 2>& packedArray);
+  template auto convertToPlanar<2, PixelYUV32F>(const Array<PixelYUV32F, 2>& packedArray);
+
+  // Luminance conversions
+  template auto convertToPlanar<2, PixelY8>(const Array<PixelY8, 2>& packedArray);
+  template auto convertToPlanar<2, PixelYA8>(const Array<PixelYA8, 2>& packedArray);
+  template auto convertToPlanar<2, PixelY16>(const Array<PixelY16, 2>& packedArray);
+  template auto convertToPlanar<2, PixelY32F>(const Array<PixelY32F, 2>& packedArray);
+
 }// namespace Ravl2

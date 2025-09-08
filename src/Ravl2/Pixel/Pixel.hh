@@ -181,6 +181,7 @@ namespace Ravl2
   {
   public:
     using value_type = CompT;
+    static constexpr std::size_t channel_count = sizeof...(Channels);
 
     //! Default constructor.
     // Creates an undefined value.
@@ -236,6 +237,15 @@ namespace Ravl2
     [[nodiscard]] static constexpr bool hasChannels()
     {
       return ((hasChannel<OChannels>()) && ...);
+    }
+
+    //! Get the channel type at a specific index position
+    template <std::size_t Index>
+    [[nodiscard]] static constexpr ImageChannel getChannelAtIndex()
+    {
+      static_assert(Index < sizeof...(Channels), "Channel index out of range");
+      constexpr std::array<ImageChannel, sizeof...(Channels)> channels = {Channels...};
+      return channels[Index];
     }
 
     //! Set a single channel.

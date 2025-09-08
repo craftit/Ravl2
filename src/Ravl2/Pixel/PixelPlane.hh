@@ -379,6 +379,46 @@ namespace Ravl2
 
   };
 
+  namespace detail
+  {
+    // Implementation helper for convertToPlanar that unpacks the channels from PixelT
+    template <unsigned Dims, typename PixelT, std::size_t... Is>
+    static auto convertToPlanarImpl(const Array<PixelT, Dims>& packedArray, std::index_sequence<Is...>)
+    {
+      // Get the component type from the pixel
+      using ComponentT = typename PixelT::value_type;
+
+      // Create a planar image with appropriate plane types for each channel
+      using PlanarType = PlanarImage<Dims, PixelPlane<ComponentT, Dims, PixelT::template getChannelAtIndex<Is>()>...>;
+
+      // Create the planar image with the same range as the packed array
+      PlanarType result(packedArray.range());
+
+      // Extract data for each pixel
+      for (auto it = packedArray.begin(); it != packedArray.end(); ++it) {
+        const auto& pixel = *it;
+        const auto& idx = it.index();
+
+        // Simply extract values by index position and assign to corresponding plane
+        // Since both pixel and planes have the same component type, this is safe
+        ((result.template plane<Is>()[idx] = pixel[Is]), ...);
+      }
+
+      return result;
+    }
+  }
+
+  //! Convert a packed pixel array to a planar image
+  //! This generic implementation extracts channels from the pixel type and creates a corresponding planar image
+  //! @tparam Dims The number of dimensions
+  //! @tparam PixelT The packed pixel type (e.g., PixelRGB8)
+  template <unsigned Dims, typename PixelT>
+  auto convertToPlanar(const Array<PixelT, Dims>& packedArray)
+  {
+    // Use the channel_count from the Pixel class
+    return detail::convertToPlanarImpl<Dims>(packedArray, std::make_index_sequence<PixelT::channel_count>{});
+  }
+
 
   //! Helper alias for 2D planar images (most common case)
   template <typename... PlaneTypes>
