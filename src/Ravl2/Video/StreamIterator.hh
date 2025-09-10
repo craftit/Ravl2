@@ -131,9 +131,13 @@ public:
     auto &targetType = typeid(ImageTypeT);
     if (targetType != m_iterator->dataType())
     {
-      mConversionChain = Ravl2::TypeConverterMap().find(targetType, m_iterator->dataType());
+      mConversionChain = Ravl2::typeConverterMap().find(targetType, m_iterator->dataType());
       if (!mConversionChain) {
         SPDLOG_WARN("No conversion available from {} to {}", Ravl2::typeName(m_iterator->dataType()), Ravl2::typeName(targetType));
+        // Dump available conversions for debugging
+        SPDLOG_WARN("Available conversions:");
+        Ravl2::typeConverterMap().dump();
+        SPDLOG_WARN("Done.");
         throw std::runtime_error("Cannot convert frames to the requested type");
       }
     }
@@ -158,14 +162,17 @@ public:
   //! Get the current frame
   VideoFrame<ImageTypeT> &currentFrame() const
   {
-    return *std::dynamic_pointer_cast<VideoFrame<ImageTypeT>>(m_iterator->currentFrame());
+    assert(m_iterator->currentFrame());
+    auto ptr = std::dynamic_pointer_cast<VideoFrame<ImageTypeT>>(m_iterator->currentFrame());
+    assert(ptr);
+    return *ptr;
   }
 
   //! Get the current frame
   ImageTypeT videoFrame()
   {
     if (mConversionChain) {
-      return std::any_cast<ImageTypeT>(mConversionChain->convert(currentFrame().frameData()));
+      return std::any_cast<ImageTypeT>(mConversionChain->convert(m_iterator->currentFrame()->frameData()));
     }
     if (typeid(ImageTypeT) != m_iterator->dataType()) {
       throw std::runtime_error("Frame type does not match iterator data type and no conversion available");

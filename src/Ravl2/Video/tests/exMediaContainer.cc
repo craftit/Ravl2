@@ -21,6 +21,7 @@ int main(int argc, char *argv[])
 {
   Ravl2::initOpenCVImageIO();
   Ravl2::initColourConversion();
+  Ravl2::initPlaneConversion();
 
   CLI::App app{"Media container information example program"};
 

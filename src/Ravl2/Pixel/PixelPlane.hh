@@ -140,6 +140,11 @@ namespace Ravl2
       : m_data(scale ? scale_type::calculateRange(masterRange) : masterRange, initialValue)
     {}
 
+    //! Construct for an existing image.
+    PixelPlane(const array_type &array)
+      : m_data(array)
+    {}
+
     //! Get the range of this plane
     [[nodiscard]] const IndexRange<Dims>& range() const noexcept
     {

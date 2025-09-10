@@ -62,6 +62,9 @@ protected:
   template<typename PixelT>
   bool makeImage(Array<PixelT, 2>&img, const AVFrame* frame) const;
 
+  template <typename... PlaneTypes>
+  bool makeImage(PlanarImage<2,PlaneTypes... > &img, const AVFrame* frame) const;
+
 
   // Helper method to get or create SwsContext for conversion
   SwsContext* getSwsContext(int srcWidth, int srcHeight, AVPixelFormat srcFormat, 
@@ -82,8 +85,8 @@ private:
   std::shared_ptr<Frame> convertPacketToFrame();
 
   //! Create a video frame from FFmpeg data
-  template <typename PixelT>
-  std::shared_ptr<VideoFrame<Array<PixelT,2>>> createVideoFrame();
+  template <typename ImageT>
+  std::shared_ptr<VideoFrame<ImageT>> createVideoFrame();
 
   //! Create an audio chunk from FFmpeg data
   template <typename SampleT>

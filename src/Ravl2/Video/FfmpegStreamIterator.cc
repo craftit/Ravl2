@@ -273,7 +273,9 @@ std::type_info const& FfmpegStreamIterator::dataType() const
           case AV_PIX_FMT_RGBA:
             return typeid(Ravl2::Array<PixelRGBA8,2>);
           case AV_PIX_FMT_YUV420P:
+            return typeid(YUV420Image<uint8_t>);
           case AV_PIX_FMT_YUV422P:
+            return typeid(YUV422Image<uint8_t>);
           case AV_PIX_FMT_YUV444P:
             return typeid(Ravl2::Array<PixelYUV8,2>);
             //return typeid(Ravl2::Array<PixelYUV8,2>);
@@ -520,6 +522,48 @@ bool FfmpegStreamIterator::makeImage(Array<PixelT, 2>&img, const AVFrame* frame)
   return true;
 }
 
+template<typename ... PlaneTypes>
+bool FfmpegStreamIterator::makeImage(PlanarImage<2, PlaneTypes...>&img,const AVFrame* frame) const
+{
+  // for (size_t i = 0; i < sizeof...(PlaneTypes); i++)
+  // {
+  //   uint8_t* pPlane = frame->data[i];
+  //   int pStride = frame->linesize[i];
+  //   Array<PlaneTypes, 2> pPlaneData({ static_cast<size_t>(frame->height), static_cast<size_t>(frame->width) });
+  // }
+  int width = frame->width;
+  int height = frame->height;
+  IndexRange<2> range({{0,height}, { 0, width}});
+  // Make a new handle to the frame
+  AVFrame* newFrame = av_frame_alloc();
+  if (av_frame_ref(newFrame, frame) != 0)
+  {
+    SPDLOG_ERROR("Failed to allocate new frame");
+    return false;
+  }
+
+  // Create a shared_ptr with a custom deleter to free the frame when done
+  std::shared_ptr avFrameHandle = std::shared_ptr<uint8_t[]>(frame->data[0], [newFrame](uint8_t *data) mutable
+  {
+    (void) data;
+    av_frame_free(&newFrame);
+  });
+
+  // Data plane...
+  // Set up each plane in the PlanarImage
+  int planeIndex = 0;
+  img.forEachPlane([avFrameHandle,range,&planeIndex,frame]<typename PlaneArgT>(PlaneArgT& plane)
+  {
+    using PlaneT = std::decay_t<PlaneArgT>;
+    auto localRange = PlaneT::scale_type::calculateRange(range);
+    SPDLOG_INFO("Setting up plane {} ({}) with range {} (master range {})", planeIndex, toString(plane.getChannelType()), localRange, range);
+    plane.data() = Array<uint8_t, 2>(frame->data[planeIndex], localRange, {frame->linesize[planeIndex],1},avFrameHandle);
+    planeIndex++;
+  });
+
+  return true;
+}
+
 VideoResult<void> FfmpegStreamIterator::readNextPacket() {
   auto& container = ffmpegContainer();
 
@@ -604,17 +648,19 @@ std::shared_ptr<Frame> FfmpegStreamIterator::convertPacketToFrame() {
       // Determine the pixel format to convert to based on FFmpeg's format
       switch (m_codecContext->pix_fmt) {
         case AV_PIX_FMT_RGB24:
-          return createVideoFrame<PixelRGB8>();
+          return createVideoFrame<Array<PixelRGB8,2> >();
         case AV_PIX_FMT_RGBA:
-          return createVideoFrame<PixelRGBA8>();
+          return createVideoFrame<Array<PixelRGBA8,2> >();
         case AV_PIX_FMT_YUV420P:
+          return createVideoFrame<YUV420Image<uint8_t> >();
         case AV_PIX_FMT_YUV422P:
+          return createVideoFrame<YUV422Image<uint8_t> >();
         case AV_PIX_FMT_YUV444P:
           // Using RGB8 format with SwScale conversion for most reliable results
-          return createVideoFrame<PixelYUV8>();
+          return createVideoFrame<Array<PixelYUV8,2> >();
         default:
           // Default to RGB for other formats
-          return createVideoFrame<PixelRGB8>();
+          return createVideoFrame<Array<PixelRGB8,2> >();
       }
     }
     case StreamType::Audio: {
@@ -649,8 +695,8 @@ std::shared_ptr<Frame> FfmpegStreamIterator::convertPacketToFrame() {
   }
 }
 
-template <typename PixelT>
-std::shared_ptr<VideoFrame<Array<PixelT,2>>> FfmpegStreamIterator::createVideoFrame() {
+template <typename ImageT>
+std::shared_ptr<VideoFrame<ImageT>> FfmpegStreamIterator::createVideoFrame() {
   if (!m_frame || m_frame->width <= 0 || m_frame->height <= 0) {
     return nullptr;
   }
@@ -668,11 +714,11 @@ std::shared_ptr<VideoFrame<Array<PixelT,2>>> FfmpegStreamIterator::createVideoFr
   // Create a new frame ID
   StreamItemId id = m_nextFrameId++;
 
-  Array<PixelT, 2> frameData;
+  ImageT frameData;
   makeImage(frameData, m_frame);
 
   // Create a new video frame
-  auto videoFrame = std::make_shared<VideoFrame<Array<PixelT,2>>>(frameData, id, timestamp);
+  auto videoFrame = std::make_shared<VideoFrame<ImageT>>(frameData, id, timestamp);
 
   // Set keyframe flag - check the picture type instead of key_frame
   // In newer FFmpeg versions, use the pict_type field to determine if it's a key frame

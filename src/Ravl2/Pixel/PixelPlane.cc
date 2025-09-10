@@ -7,13 +7,6 @@
 
 namespace Ravl2
 {
-  // Call to ensure that the conversion functions are registered
-  void initPlaneConversion()
-  {
-
-  }
-
-
   // Explicit instantiations for common plane types
   // 2D planes with various scaling factors - Luminance planes
   template class PixelPlane<uint8_t, 2, ImageChannel::Luminance, 1, 1>;
@@ -195,22 +188,43 @@ namespace Ravl2
   template Array<PixelY16, 2> helperConvertToPacked<PixelY16>(const PlanarImage2D<PixelPlane<uint16_t, 2, ImageChannel::Luminance, 1, 1>>& image);
   template Array<PixelY32F, 2> helperConvertToPacked<PixelY32F>(const PlanarImage2D<PixelPlane<float, 2, ImageChannel::Luminance, 1, 1>>& image);
 
-  // Register the helperConvertToPacked function for common types
-  [[maybe_unused]] bool g_reg16 = registerConversion(helperConvertToPacked<PixelRGB8, RGBPlanarImage<uint8_t>>, 1.00f);
-  [[maybe_unused]] bool g_reg17 = registerConversion(helperConvertToPacked<PixelRGBA8, RGBAPlanarImage<uint8_t>>, 1.00f);
-  [[maybe_unused]] bool g_reg18 = registerConversion(helperConvertToPacked<PixelRGB16, RGBPlanarImage<uint16_t>>, 1.00f);
-  [[maybe_unused]] bool g_reg19 = registerConversion(helperConvertToPacked<PixelRGBA16, RGBAPlanarImage<uint16_t>>, 1.00f);
-  [[maybe_unused]] bool g_reg20 = registerConversion(helperConvertToPacked<PixelRGB32F, RGBPlanarImage<float>>, 1.00f);
-  [[maybe_unused]] bool g_reg21 = registerConversion(helperConvertToPacked<PixelRGBA32F, RGBAPlanarImage<float>>, 1.00f);
-  [[maybe_unused]] bool g_reg22 = registerConversion(helperConvertToPacked<PixelBGR8, RGBPlanarImage<uint8_t>>, 1.00f);
-  [[maybe_unused]] bool g_reg23 = registerConversion(helperConvertToPacked<PixelBGRA8, RGBAPlanarImage<uint8_t>>, 1.00f);
-  [[maybe_unused]] bool g_reg24 = registerConversion(helperConvertToPacked<PixelYUV8, YUV444Image<uint8_t>>, 1.00f);
-  [[maybe_unused]] bool g_reg25 = registerConversion(helperConvertToPacked<PixelYUVA8, YUV444Image<uint8_t>>, 1.00f);
-  [[maybe_unused]] bool g_reg26 = registerConversion(helperConvertToPacked<PixelYUV32F, YUV444Image<float>>, 1.00f);
-  [[maybe_unused]] bool g_reg27 = registerConversion(helperConvertToPacked<PixelY8, PlanarImage2D<PixelPlane<uint8_t, 2, ImageChannel::Luminance, 1, 1>>>, 1.00f);
-  [[maybe_unused]] bool g_reg28 = registerConversion(helperConvertToPacked<PixelYA8, PlanarImage2D<
-    PixelPlane<uint8_t, 2, ImageChannel::Luminance, 1, 1>,
-    PixelPlane<uint8_t, 2, ImageChannel::Alpha, 1, 1>>>, 1.00f);
-  [[maybe_unused]] bool g_reg29 = registerConversion(helperConvertToPacked<PixelY16, PlanarImage2D<PixelPlane<uint16_t, 2, ImageChannel::Luminance, 1, 1>>>, 1.00f);
-  [[maybe_unused]] bool g_reg30 = registerConversion(helperConvertToPacked<PixelY32F, PlanarImage2D<PixelPlane<float, 2, ImageChannel::Luminance, 1, 1>>>, 1.00f);
+  namespace  {
+
+    // Register the helperConvertToPacked function for common types
+    [[maybe_unused]] bool g_reg16 = registerConversion(helperConvertToPacked<PixelRGB8, RGBPlanarImage<uint8_t>>, 1.00f);
+    [[maybe_unused]] bool g_reg17 = registerConversion(helperConvertToPacked<PixelRGBA8, RGBAPlanarImage<uint8_t>>, 1.00f);
+    [[maybe_unused]] bool g_reg18 = registerConversion(helperConvertToPacked<PixelRGB16, RGBPlanarImage<uint16_t>>, 1.00f);
+    [[maybe_unused]] bool g_reg19 = registerConversion(helperConvertToPacked<PixelRGBA16, RGBAPlanarImage<uint16_t>>, 1.00f);
+    [[maybe_unused]] bool g_reg20 = registerConversion(helperConvertToPacked<PixelRGB32F, RGBPlanarImage<float>>, 1.00f);
+    [[maybe_unused]] bool g_reg21 = registerConversion(helperConvertToPacked<PixelRGBA32F, RGBAPlanarImage<float>>, 1.00f);
+    [[maybe_unused]] bool g_reg22 = registerConversion(helperConvertToPacked<PixelBGR8, RGBPlanarImage<uint8_t>>, 1.00f);
+    [[maybe_unused]] bool g_reg23 = registerConversion(helperConvertToPacked<PixelBGRA8, RGBAPlanarImage<uint8_t>>, 1.00f);
+    [[maybe_unused]] bool g_reg24 = registerConversion(helperConvertToPacked<PixelYUV8, YUV444Image<uint8_t>>, 1.00f);
+    [[maybe_unused]] bool g_reg24a = registerConversion(helperConvertToPacked<PixelYUV8, YUV422Image<uint8_t>>, 1.00f);
+    [[maybe_unused]] bool g_reg24b = registerConversion(helperConvertToPacked<PixelYUV8, YUV420Image<uint8_t>>, 1.00f);
+    [[maybe_unused]] bool g_reg25 = registerConversion(helperConvertToPacked<PixelYUVA8, YUV444Image<uint8_t>>, 1.00f);
+    [[maybe_unused]] bool g_reg26 = registerConversion(helperConvertToPacked<PixelYUV32F, YUV444Image<float>>, 1.00f);
+    [[maybe_unused]] bool g_reg27 = registerConversion(helperConvertToPacked<PixelY8, PlanarImage2D<PixelPlane<uint8_t, 2, ImageChannel::Luminance, 1, 1>>>, 1.00f);
+    [[maybe_unused]] bool g_reg28 = registerConversion(helperConvertToPacked<PixelYA8, PlanarImage2D<
+      PixelPlane<uint8_t, 2, ImageChannel::Luminance, 1, 1>,
+      PixelPlane<uint8_t, 2, ImageChannel::Alpha, 1, 1>>>, 1.00f);
+    [[maybe_unused]] bool g_reg29 = registerConversion(helperConvertToPacked<PixelY16, PlanarImage2D<PixelPlane<uint16_t, 2, ImageChannel::Luminance, 1, 1>>>, 1.00f);
+    [[maybe_unused]] bool g_reg30 = registerConversion(helperConvertToPacked<PixelY32F, PlanarImage2D<PixelPlane<float, 2, ImageChannel::Luminance, 1, 1>>>, 1.00f);
+  }
+
+  static bool doInit()
+  {
+
+    return true;
+  }
+  // Call to ensure that the conversion functions are registered
+  void initPlaneConversion()
+  {
+    static auto done = doInit();
+    SPDLOG_INFO("PixelPlane::initPlaneConversion() {} ",done);
+    typeConverterMap().dump();
+  }
+
+
+
 }
