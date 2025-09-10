@@ -54,7 +54,7 @@ FfmpegStreamIterator::FfmpegStreamIterator(std::shared_ptr<FfmpegMediaContainer>
     SPDLOG_WARN("Failed to read first frame: {}", toString(result.error()));
     throw std::runtime_error("Failed to read first frame");
   }
-  SPDLOG_INFO("Stream setup. First frame: {}", m_frame->pts);
+  //SPDLOG_INFO("Stream setup. First frame: {}", m_frame->pts);
 
 }
 
@@ -92,7 +92,7 @@ VideoResult<void> FfmpegStreamIterator::next() {
       // Read the next packet
       auto result = readNextPacket();
       if (!result.isSuccess()) {
-        SPDLOG_INFO("Failed to read next packet: {}", toString(result.error()));
+        //SPDLOG_INFO("Failed to read next packet: {}", toString(result.error()));
         m_isAtEnd = true;
         return result;
       }
@@ -103,7 +103,7 @@ VideoResult<void> FfmpegStreamIterator::next() {
         break;
       }
       if (result.error() == VideoErrorCode::NeedMoreData){
-        SPDLOG_INFO("Need more data to decode frame");
+        //SPDLOG_INFO("Need more data to decode frame");
         continue;
       }
       SPDLOG_INFO("Failed to decode frame: {}", toString(result.error()));
@@ -114,7 +114,7 @@ VideoResult<void> FfmpegStreamIterator::next() {
     SPDLOG_INFO("Exception caught: {}", e.what());
     return VideoResult<void>(VideoErrorCode::DecodingError);
   }
-  SPDLOG_INFO("Decoded frame: {}", m_frame->pts);
+  //SPDLOG_INFO("Decoded frame: {}", m_frame->pts);
 
   // Increment the position index
   m_currentPositionIndex++;
@@ -269,19 +269,18 @@ std::type_info const& FfmpegStreamIterator::dataType() const
         // Determine the pixel format to convert to based on FFmpeg's format
         switch (m_codecContext->pix_fmt) {
           case AV_PIX_FMT_RGB24:
-            return typeid(Ravl2::Array<PixelRGB8,2>);
+            return typeid(RGBPlanarImage<uint8_t>);
           case AV_PIX_FMT_RGBA:
-            return typeid(Ravl2::Array<PixelRGBA8,2>);
+            return typeid(RGBAPlanarImage<uint8_t>);
           case AV_PIX_FMT_YUV420P:
             return typeid(YUV420Image<uint8_t>);
           case AV_PIX_FMT_YUV422P:
             return typeid(YUV422Image<uint8_t>);
           case AV_PIX_FMT_YUV444P:
-            return typeid(Ravl2::Array<PixelYUV8,2>);
-            //return typeid(Ravl2::Array<PixelYUV8,2>);
+            return typeid(YUV444Image<uint8_t>);
           default:
             // Default to RGB for other formats
-            return typeid(Ravl2::Array<PixelRGB8,2>);
+            return typeid(RGBPlanarImage<uint8_t>);
         }
     }
     case StreamType::Audio:
@@ -556,7 +555,7 @@ bool FfmpegStreamIterator::makeImage(PlanarImage<2, PlaneTypes...>&img,const AVF
   {
     using PlaneT = std::decay_t<PlaneArgT>;
     auto localRange = PlaneT::scale_type::calculateRange(range);
-    SPDLOG_INFO("Setting up plane {} ({}) with range {} (master range {})", planeIndex, toString(plane.getChannelType()), localRange, range);
+    //SPDLOG_INFO("Setting up plane {} ({}) with range {} (master range {})", planeIndex, toString(plane.getChannelType()), localRange, range);
     plane.data() = Array<uint8_t, 2>(frame->data[planeIndex], localRange, {frame->linesize[planeIndex],1},avFrameHandle);
     planeIndex++;
   });
@@ -570,7 +569,7 @@ VideoResult<void> FfmpegStreamIterator::readNextPacket() {
   if (!container.isOpen()) {
     return VideoResult<void>(VideoErrorCode::InvalidOperation);
   }
-  SPDLOG_INFO("Reading next packet");
+  //SPDLOG_INFO("Reading next packet");
 
   // Read packets until we find one from our stream
   while (true) {
@@ -593,12 +592,12 @@ VideoResult<void> FfmpegStreamIterator::readNextPacket() {
     if (m_packet->stream_index == static_cast<int>(streamIndex())) {
       break;
     }
-    SPDLOG_INFO("Skipping packet from stream {}", m_packet->stream_index);
+    //SPDLOG_INFO("Skipping packet from stream {}", m_packet->stream_index);
 
     // Free the packet if it's not from our stream
     av_packet_unref(m_packet);
   }
-  SPDLOG_INFO("Read packet from stream {}", m_packet->stream_index);
+  //SPDLOG_INFO("Read packet from stream {}", m_packet->stream_index);
   return VideoResult<void>(VideoErrorCode::Success);
 }
 
@@ -648,19 +647,19 @@ std::shared_ptr<Frame> FfmpegStreamIterator::convertPacketToFrame() {
       // Determine the pixel format to convert to based on FFmpeg's format
       switch (m_codecContext->pix_fmt) {
         case AV_PIX_FMT_RGB24:
-          return createVideoFrame<Array<PixelRGB8,2> >();
+          return createVideoFrame<RGBPlanarImage<uint8_t> >();
         case AV_PIX_FMT_RGBA:
-          return createVideoFrame<Array<PixelRGBA8,2> >();
+          return createVideoFrame<RGBAPlanarImage<uint8_t> >();
         case AV_PIX_FMT_YUV420P:
           return createVideoFrame<YUV420Image<uint8_t> >();
         case AV_PIX_FMT_YUV422P:
           return createVideoFrame<YUV422Image<uint8_t> >();
         case AV_PIX_FMT_YUV444P:
           // Using RGB8 format with SwScale conversion for most reliable results
-          return createVideoFrame<Array<PixelYUV8,2> >();
+          return createVideoFrame<YUV444Image<uint8_t> >();
         default:
           // Default to RGB for other formats
-          return createVideoFrame<Array<PixelRGB8,2> >();
+          return createVideoFrame<RGBPlanarImage<uint8_t> >();
       }
     }
     case StreamType::Audio: {

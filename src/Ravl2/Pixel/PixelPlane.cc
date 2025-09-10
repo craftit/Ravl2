@@ -7,6 +7,10 @@
 
 namespace Ravl2
 {
+  // Call to ensure that the conversion functions are registered
+  void initPlaneConversion()
+  {}
+
   // Explicit instantiations for common plane types
   // 2D planes with various scaling factors - Luminance planes
   template class PixelPlane<uint8_t, 2, ImageChannel::Luminance, 1, 1>;
@@ -212,18 +216,6 @@ namespace Ravl2
     [[maybe_unused]] bool g_reg30 = registerConversion(helperConvertToPacked<PixelY32F, PlanarImage2D<PixelPlane<float, 2, ImageChannel::Luminance, 1, 1>>>, 1.00f);
   }
 
-  static bool doInit()
-  {
-
-    return true;
-  }
-  // Call to ensure that the conversion functions are registered
-  void initPlaneConversion()
-  {
-    static auto done = doInit();
-    SPDLOG_INFO("PixelPlane::initPlaneConversion() {} ",done);
-    typeConverterMap().dump();
-  }
 
 
 
