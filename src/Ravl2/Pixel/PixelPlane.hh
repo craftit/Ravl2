@@ -574,7 +574,7 @@ namespace Ravl2
                         const IndexRange<Dims>& masterRange = IndexRange<Dims>())
   {
     // Use the provided master range or calculate from the planar image
-    auto resultRange = masterRange.empty() ? planarImage.masterRange() : masterRange;
+    auto resultRange = masterRange.empty() ? planarImage.range() : masterRange;
 
     // Use the implementation helper
     return detail::convertToPackedImpl<ComponentT, PixelT, Dims, PlanarImage<Dims, PlaneTypes...>, Channels...>(

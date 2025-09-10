@@ -62,7 +62,6 @@ protected:
   template<typename PixelT>
   bool makeImage(Array<PixelT, 2>&img, const AVFrame* frame) const;
 
-  bool makeImage(Array<uint8_t, 2>&img, const AVFrame* frame) const;
 
   // Helper method to get or create SwsContext for conversion
   SwsContext* getSwsContext(int srcWidth, int srcHeight, AVPixelFormat srcFormat, 

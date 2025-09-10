@@ -18,7 +18,7 @@ namespace Ravl2::Video
     Array<TestPixel, 2> frameData({640, 480}, 128); // 640x480 frame filled with value 128
 
     // Create and return the video frame
-    auto frame = std::make_shared<VideoFrame<TestPixel>>(frameData, id, timestamp);
+    auto frame = std::make_shared<VideoFrame<Array<TestPixel,2> > >(frameData, id, timestamp);
     return frame;
   }
 
