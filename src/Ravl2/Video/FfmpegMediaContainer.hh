@@ -27,95 +27,94 @@ extern "C" {
 }
 #pragma GCC diagnostic pop
 
-namespace Ravl2::Video {
-
-// Forward declaration
-class FfmpegStreamIterator;
-class FfmpegMultiStreamIterator;
-
-//! Implementation of MediaContainer using FFmpeg for media file access
-class FfmpegMediaContainer final : public MediaContainer
+namespace Ravl2::Video
 {
-public:
-  //! Constructor - use the factory method for normal creation
-  explicit FfmpegMediaContainer();
+  // Forward declaration
+  class FfmpegStreamIterator;
+  class FfmpegMultiStreamIterator;
 
-  //! Destructor - ensures proper cleanup of FFmpeg resources
-  ~FfmpegMediaContainer() override;
+  //! Implementation of MediaContainer using FFmpeg for media file access
+  class FfmpegMediaContainer final : public MediaContainer
+  {
+  public:
+    //! Constructor - use the factory method for normal creation
+    explicit FfmpegMediaContainer();
 
-  //! Factory method to create an FFmpeg-based media container from a file
-  [[nodiscard]] static VideoResult<std::shared_ptr<MediaContainer>> openFile(const std::string& filePath);
+    //! Destructor - ensures proper cleanup of FFmpeg resources
+    ~FfmpegMediaContainer() override;
 
-  //! Check if the container is open
-  [[nodiscard]] bool isOpen() const override;
+    //! Factory method to create an FFmpeg-based media container from a file
+    [[nodiscard]] static VideoResult<std::shared_ptr<MediaContainer>> openFile(const std::string&filePath);
 
-  //! Close the container and release resources
-  VideoResult<void> close() override;
+    //! Check if the container is open
+    [[nodiscard]] bool isOpen() const override;
 
-  //! Get the number of streams in the container
-  [[nodiscard]] std::size_t streamCount() const override;
+    //! Close the container and release resources
+    VideoResult<void> close() override;
 
-  //! Get the type of stream at the specified index
-  [[nodiscard]] StreamType streamType(std::size_t streamIndex) const override;
+    //! Get the number of streams in the container
+    [[nodiscard]] std::size_t streamCount() const override;
 
-  //! Get properties for a video stream
-  [[nodiscard]] VideoResult<VideoProperties> videoProperties(std::size_t streamIndex) const override;
+    //! Get the type of stream at the specified index
+    [[nodiscard]] StreamType streamType(std::size_t streamIndex) const override;
 
-  //! Get properties for an audio stream
-  [[nodiscard]] VideoResult<AudioProperties> audioProperties(std::size_t streamIndex) const override;
+    //! Get properties for a video stream
+    [[nodiscard]] VideoResult<VideoProperties> videoProperties(std::size_t streamIndex) const override;
 
-  //! Get properties for a data stream
-  [[nodiscard]] VideoResult<DataProperties> dataProperties(std::size_t streamIndex) const override;
+    //! Get properties for an audio stream
+    [[nodiscard]] VideoResult<AudioProperties> audioProperties(std::size_t streamIndex) const override;
 
-  //! Get the total duration of the container (the longest stream)
-  [[nodiscard]] MediaTime duration() const override;
+    //! Get properties for a data stream
+    [[nodiscard]] VideoResult<DataProperties> dataProperties(std::size_t streamIndex) const override;
 
-  //! Create an iterator for a specific stream
-  [[nodiscard]] VideoResult<std::shared_ptr<StreamIterator>> createIterator(std::size_t streamIndex) override;
+    //! Get the total duration of the container (the longest stream)
+    [[nodiscard]] MediaTime duration() const override;
 
-  //! Get global container metadata
-  [[nodiscard]] std::map<std::string, std::string> metadata() const override;
+    //! Create an iterator for a specific stream
+    [[nodiscard]] VideoResult<std::shared_ptr<StreamIterator>> createIterator(std::size_t streamIndex) override;
 
-  //! Get specific metadata value
-  [[nodiscard]] std::string metadata(const std::string& key) const override;
+    //! Get global container metadata
+    [[nodiscard]] std::map<std::string, std::string> metadata() const override;
 
-  //! Check if a specific metadata key exists
-  [[nodiscard]] bool hasMetadata(const std::string& key) const override;
+    //! Get specific metadata value
+    [[nodiscard]] std::string metadata(const std::string&key) const override;
 
-private:
-  //! Initialise FFmpeg library (called once)
-  static void initializeFfmpeg();
+    //! Check if a specific metadata key exists
+    [[nodiscard]] bool hasMetadata(const std::string&key) const override;
 
-  //! Convert FFmpeg error code to VideoErrorCode
-  [[nodiscard]] static VideoErrorCode convertFfmpegError(int ffmpegError);
+  private:
+    //! Initialise FFmpeg library (called once)
+    static void initializeFfmpeg();
 
-  //! Extract metadata from FFmpeg context
-  void extractMetadata();
+    //! Convert FFmpeg error code to VideoErrorCode
+    [[nodiscard]] static VideoErrorCode convertFfmpegError(int ffmpegError);
 
-  //! Map FFmpeg stream types to our StreamType enum
-  [[nodiscard]] static StreamType mapFfmpegStreamType(int ffmpegStreamType);
+    //! Extract metadata from FFmpeg context
+    void extractMetadata();
 
-  //! Get codec information from an AVCodecContext
-  [[nodiscard]] static CodecInfo getCodecInfo(const AVCodecContext* codecContext);
+    //! Map FFmpeg stream types to our StreamType enum
+    [[nodiscard]] static StreamType mapFfmpegStreamType(int ffmpegStreamType);
 
-  //! FFmpeg format context - main container for file information
-  AVFormatContext* m_formatContext = nullptr;
+    //! Get codec information from an AVCodecContext
+    [[nodiscard]] static CodecInfo getCodecInfo(const AVCodecContext* codecContext);
 
-  //! FFmpeg codec contexts for each stream
-  std::vector<AVCodecContext*> m_codecContexts;
+    //! FFmpeg format context - main container for file information
+    AVFormatContext* m_formatContext = nullptr;
 
-  //! Stream types, cached for faster access
-  std::vector<StreamType> m_streamTypes;
+    //! FFmpeg codec contexts for each stream
+    std::vector<AVCodecContext *> m_codecContexts;
 
-  //! Metadata dictionary
-  std::map<std::string, std::string> m_metadata;
+    //! Stream types, cached for faster access
+    std::vector<StreamType> m_streamTypes;
 
-  //! Flag indicating if FFmpeg has been initialized
-  static bool s_ffmpegInitialized;
+    //! Metadata dictionary
+    std::map<std::string, std::string> m_metadata;
 
-  //! Friend class declaration to allow the iterator to access private members
-  friend class FfmpegStreamIterator;
-  friend class FfmpegMultiStreamIterator;
-};
+    //! Flag indicating if FFmpeg has been initialized
+    static bool s_ffmpegInitialized;
 
+    //! Friend class declaration to allow the iterator to access private members
+    friend class FfmpegStreamIterator;
+    friend class FfmpegMultiStreamIterator;
+  };
 } // namespace Ravl2::Video

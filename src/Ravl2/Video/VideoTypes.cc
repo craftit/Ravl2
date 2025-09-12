@@ -1,8 +1,8 @@
 
 #include "VideoTypes.hh"
 
-namespace Ravl2::Video {
-
+namespace Ravl2::Video
+{
 	std::string_view toString(StreamType type)
 	{
 		switch (type)
@@ -15,7 +15,6 @@ namespace Ravl2::Video {
 			default: return "Unknown";
 		}
 	}
-
 
 	std::string_view toString(VideoErrorCode error)
 	{

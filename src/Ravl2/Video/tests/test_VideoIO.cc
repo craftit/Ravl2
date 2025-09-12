@@ -20,13 +20,12 @@ namespace Ravl2::Video
     addResourcePath("data", RAVL_SOURCE_DIR "/data");
     fn = Ravl2::findFileResource("data", fn, true);
 
-    using ImageT = Ravl2::Array<Ravl2::PixelRGB8,2>;
-    StreamInputProxy<ImageT> inputStream = Ravl2::openInputStream<ImageT>(fn,defaultLoadFormatHint(true));
+    using ImageT = Ravl2::Array<Ravl2::PixelRGB8, 2>;
+    StreamInputProxy<ImageT> inputStream = Ravl2::openInputStream<ImageT>(fn, defaultLoadFormatHint(true));
     CHECK(inputStream.valid());
     auto image = inputStream.get();
     CHECK(!image.empty());
   }
-
 
   TEST_CASE("FfmpegMultiStreamIterator - Basic Operation", "[Video]")
   {
@@ -70,8 +69,10 @@ namespace Ravl2::Video
 
     //! Create a multi-stream iterator for the video stream only
     std::vector<std::size_t> videoStreams;
-    for (std::size_t i = 0; i < container->streamCount(); ++i) {
-      if (container->streamType(i) == StreamType::Video) {
+    for (std::size_t i = 0; i < container->streamCount(); ++i)
+    {
+      if (container->streamType(i) == StreamType::Video)
+      {
         videoStreams.push_back(i);
         break; // Just get the first video stream
       }
@@ -85,16 +86,20 @@ namespace Ravl2::Video
     int frameCount = 0;
     const int MAX_FRAMES_TO_CHECK = 20; // Limit the number of frames we check
 
-    while (!iterator.isAtEnd() && frameCount < MAX_FRAMES_TO_CHECK) {
+    while (!iterator.isAtEnd() && frameCount < MAX_FRAMES_TO_CHECK)
+    {
       auto frame = iterator.currentFrame();
       REQUIRE(frame != nullptr);
 
       MediaTime currentPts = frame->timestamp();
 
       //! For the first frame, just record the PTS
-      if (previousPts.count() < 0) {
+      if (previousPts.count() < 0)
+      {
         previousPts = currentPts;
-      } else {
+      }
+      else
+      {
         //! Check that frames are in increasing presentation order
         CHECK(currentPts >= previousPts);
         previousPts = currentPts;
@@ -126,7 +131,8 @@ namespace Ravl2::Video
     FfmpegMultiStreamIterator iterator(container);
 
     //! Skip the test if seeking isn't supported for this container/file
-    if (!iterator.canSeek()) {
+    if (!iterator.canSeek())
+    {
       SKIP("This media file doesn't support seeking");
       return;
     }
@@ -173,7 +179,8 @@ namespace Ravl2::Video
     REQUIRE(container != nullptr);
 
     //! Skip test if file doesn't have multiple streams
-    if (container->streamCount() < 2) {
+    if (container->streamCount() < 2)
+    {
       SKIP("Test file doesn't have multiple streams");
       return;
     }
@@ -186,7 +193,8 @@ namespace Ravl2::Video
     const int MAX_FRAMES_TO_CHECK = 20;
     std::set<std::size_t> seenStreamIndices;
 
-    while (!iterator.isAtEnd() && frameCount < MAX_FRAMES_TO_CHECK) {
+    while (!iterator.isAtEnd() && frameCount < MAX_FRAMES_TO_CHECK)
+    {
       frameCount++;
       seenStreamIndices.insert(iterator.currentStreamIndex());
       iterator.next();
@@ -198,5 +206,4 @@ namespace Ravl2::Video
     //! Print information about which streams we saw
     INFO("Saw frames from " << seenStreamIndices.size() << " different streams");
   }
-
 }

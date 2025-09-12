@@ -11,578 +11,659 @@
 
 #pragma GCC diagnostic ignored "-Wold-style-cast"
 
-namespace Ravl2::Video {
-
-FfmpegStreamIterator::FfmpegStreamIterator(std::shared_ptr<FfmpegMediaContainer> container, std::size_t streamIndex)
-    : StreamIterator(container, streamIndex)
+namespace Ravl2::Video
 {
-  Ravl2::initPixel();
-
-  // Allocate FFmpeg resources
-  m_packet = av_packet_alloc();
-  if (!m_packet) {
-    throw std::runtime_error("Failed to allocate packet");
-  }
-
-  m_frame = av_frame_alloc();
-  if (!m_frame) {
-    av_packet_free(&m_packet);
-    throw std::runtime_error("Failed to allocate frame");
-  }
-
-  // Get the FFmpeg stream
-  m_stream = ffmpegContainer().m_formatContext->streams[streamIndex];
-
-  // Get the codec context
-  m_codecContext = ffmpegContainer().m_codecContexts[streamIndex];
-  if (!m_codecContext) {
-    av_frame_free(&m_frame);
-    av_packet_free(&m_packet);
-    SPDLOG_WARN("No codec context available for stream {}", streamIndex);
-    throw std::runtime_error("No codec context available for stream");
-  }
-
-  // Read the first frame
-  auto result = FfmpegStreamIterator::next();
-  if (!result.isSuccess() && result.error() != VideoErrorCode::EndOfStream) {
-    av_frame_free(&m_frame);
-    av_packet_free(&m_packet);
-    SPDLOG_WARN("Failed to read first frame: {}", toString(result.error()));
-    throw std::runtime_error("Failed to read first frame");
-  }
-  //SPDLOG_INFO("Stream setup. First frame: {}", m_frame->pts);
-
-}
-
-FfmpegStreamIterator::~FfmpegStreamIterator() {
-  // Free FFmpeg resources
-  if (m_frame) {
-    av_frame_free(&m_frame);
-  }
-
-  if (m_packet) {
-    av_packet_free(&m_packet);
-  }
-
-  // We don't free m_stream or m_codecContext as they're owned by the container
-}
-
-bool FfmpegStreamIterator::isAtEnd() const {
-  return m_isAtEnd;
-}
-
-VideoResult<void> FfmpegStreamIterator::next() {
-  // If we're already at the end, return EndOfStream
-  if (m_isAtEnd) {
-    SPDLOG_INFO("Already at end of stream");
-    return VideoResult<void>(VideoErrorCode::EndOfStream);
-  }
-
-  // Reset the last seek operation flag
-  m_wasSeekOperation = false;
-
-  try
+  FfmpegStreamIterator::FfmpegStreamIterator(std::shared_ptr<FfmpegMediaContainer> container, std::size_t streamIndex)
+    : StreamIterator(container, streamIndex)
   {
-    while (true)
+    Ravl2::initPixel();
+
+    // Allocate FFmpeg resources
+    m_packet = av_packet_alloc();
+    if (!m_packet)
     {
-      // Read the next packet
-      auto result = readNextPacket();
-      if (!result.isSuccess()) {
-        //SPDLOG_INFO("Failed to read next packet: {}", toString(result.error()));
-        m_isAtEnd = true;
+      throw std::runtime_error("Failed to allocate packet");
+    }
+
+    m_frame = av_frame_alloc();
+    if (!m_frame)
+    {
+      av_packet_free(&m_packet);
+      throw std::runtime_error("Failed to allocate frame");
+    }
+
+    // Get the FFmpeg stream
+    m_stream = ffmpegContainer().m_formatContext->streams[streamIndex];
+
+    // Get the codec context
+    m_codecContext = ffmpegContainer().m_codecContexts[streamIndex];
+    if (!m_codecContext)
+    {
+      av_frame_free(&m_frame);
+      av_packet_free(&m_packet);
+      SPDLOG_WARN("No codec context available for stream {}", streamIndex);
+      throw std::runtime_error("No codec context available for stream");
+    }
+
+    // Read the first frame
+    auto result = FfmpegStreamIterator::next();
+    if (!result.isSuccess() && result.error() != VideoErrorCode::EndOfStream)
+    {
+      av_frame_free(&m_frame);
+      av_packet_free(&m_packet);
+      SPDLOG_WARN("Failed to read first frame: {}", toString(result.error()));
+      throw std::runtime_error("Failed to read first frame");
+    }
+    //SPDLOG_INFO("Stream setup. First frame: {}", m_frame->pts);
+  }
+
+  FfmpegStreamIterator::~FfmpegStreamIterator()
+  {
+    // Free FFmpeg resources
+    if (m_frame)
+    {
+      av_frame_free(&m_frame);
+    }
+
+    if (m_packet)
+    {
+      av_packet_free(&m_packet);
+    }
+
+    // We don't free m_stream or m_codecContext as they're owned by the container
+  }
+
+  bool FfmpegStreamIterator::isAtEnd() const
+  {
+    return m_isAtEnd;
+  }
+
+  VideoResult<void> FfmpegStreamIterator::next()
+  {
+    // If we're already at the end, return EndOfStream
+    if (m_isAtEnd)
+    {
+      SPDLOG_INFO("Already at end of stream");
+      return VideoResult<void>(VideoErrorCode::EndOfStream);
+    }
+
+    // Reset the last seek operation flag
+    m_wasSeekOperation = false;
+
+    try
+    {
+      while (true)
+      {
+        // Read the next packet
+        auto result = readNextPacket();
+        if (!result.isSuccess())
+        {
+          //SPDLOG_INFO("Failed to read next packet: {}", toString(result.error()));
+          m_isAtEnd = true;
+          return result;
+        }
+
+        // Decode the packet into a frame
+        result = decodeCurrentPacket();
+        if (result.isSuccess())
+        {
+          break;
+        }
+        if (result.error() == VideoErrorCode::NeedMoreData)
+        {
+          //SPDLOG_INFO("Need more data to decode frame");
+          continue;
+        }
+        SPDLOG_INFO("Failed to decode frame: {}", toString(result.error()));
         return result;
       }
+    }
+    catch (std::exception&e)
+    {
+      SPDLOG_INFO("Exception caught: {}", e.what());
+      return VideoResult<void>(VideoErrorCode::DecodingError);
+    }
+    //SPDLOG_INFO("Decoded frame: {}", m_frame->pts);
 
-      // Decode the packet into a frame
-      result = decodeCurrentPacket();
-      if (result.isSuccess()) {
+    // Increment the position index
+    m_currentPositionIndex++;
+
+    return VideoResult<void>(VideoErrorCode::Success);
+  }
+
+  VideoResult<void> FfmpegStreamIterator::previous()
+  {
+    // FFmpeg doesn't natively support backwards iteration
+    // For proper support, we would need to maintain a buffer of recent frames
+    // For now, just return an error
+    return VideoResult<void>(VideoErrorCode::NotImplemented);
+  }
+
+  VideoResult<void> FfmpegStreamIterator::seek(MediaTime timestamp, SeekFlags flags)
+  {
+    auto&container = ffmpegContainer();
+
+    if (!container.isOpen() || !m_stream)
+    {
+      return VideoResult<void>(VideoErrorCode::InvalidOperation);
+    }
+
+    // Convert MediaTime to FFmpeg's time base
+    int64_t timestamp_tb = av_rescale_q(timestamp.count(),
+                                        AVRational{1, AV_TIME_BASE},
+                                        m_stream->time_base
+    );
+
+    // Set FFmpeg seek flags
+    int avFlags = 0;
+    if (flags == SeekFlags::Keyframe)
+    {
+      avFlags |= AVSEEK_FLAG_ANY; // Seek to any frame, not just keyframes
+    }
+    if (flags == SeekFlags::Previous)
+    {
+      avFlags |= AVSEEK_FLAG_BACKWARD; // Seek backwards
+    }
+
+    // Perform the seek operation
+    int result = av_seek_frame(container.m_formatContext, static_cast<int>(streamIndex()), timestamp_tb, avFlags);
+    if (result < 0)
+    {
+      return VideoResult<void>(FfmpegMediaContainer::convertFfmpegError(result));
+    }
+
+    // Flush codec buffers
+    avcodec_flush_buffers(m_codecContext);
+
+    // Set the flag indicating we've just performed a seek
+    m_wasSeekOperation = true;
+    m_isAtEnd = false;
+
+    // Read the next frame at the new position
+    return next();
+  }
+
+  VideoResult<void> FfmpegStreamIterator::seekToIndex(int64_t index)
+  {
+    // FFmpeg doesn't have direct frame index seeking for most formats
+    // We would need to estimate the timestamp and use timestamp-based seeking
+
+    auto&container = ffmpegContainer();
+
+    if (!container.isOpen() || !m_stream)
+    {
+      return VideoResult<void>(VideoErrorCode::InvalidOperation);
+    }
+
+    // Get video properties to estimate frame duration
+    VideoResult<VideoProperties> propsResult;
+
+    if (streamType() == StreamType::Video)
+    {
+      propsResult = container.videoProperties(streamIndex());
+    }
+    else if (streamType() == StreamType::Audio)
+    {
+      auto audioProps = container.audioProperties(streamIndex());
+      if (audioProps.isSuccess() && audioProps.value().sampleRate > 0)
+      {
+        // For audio, convert sample index to timestamp
+        MediaTime timestamp(static_cast<int64_t>(1000000.0 * static_cast<double>(index) / audioProps.value().sampleRate)
+        );
+        return seek(timestamp);
+      }
+      return VideoResult<void>(VideoErrorCode::InvalidOperation);
+    }
+    else
+    {
+      return VideoResult<void>(VideoErrorCode::InvalidOperation);
+    }
+
+    if (!propsResult.isSuccess())
+    {
+      return VideoResult<void>(VideoErrorCode::InvalidOperation);
+    }
+
+    auto props = propsResult.value();
+
+    if (props.frameRate <= 0)
+    {
+      return VideoResult<void>(VideoErrorCode::InvalidOperation);
+    }
+
+    // Estimate timestamp from frame index
+    MediaTime timestamp(
+      static_cast<int64_t>(1000000.0 * static_cast<double>(index) / static_cast<double>(props.frameRate))
+    );
+
+    // Perform the seek
+    return seek(timestamp);
+  }
+
+  VideoResult<std::shared_ptr<Frame>> FfmpegStreamIterator::getFrameById(StreamItemId id) const
+  {
+    (void)id;
+    // FFmpeg doesn't have direct frame ID seeking
+    // This would require either:
+    // 1. Maintaining a cache of frames by ID
+    // 2. Seeking to the start and reading until we find the frame with the right ID
+
+    // For now, just return an error
+    return VideoResult<std::shared_ptr<Frame>>(VideoErrorCode::NotImplemented);
+  }
+
+  VideoResult<void> FfmpegStreamIterator::reset()
+  {
+    // Seek to the beginning of the stream
+    return seekToIndex(0);
+  }
+
+  MediaTime FfmpegStreamIterator::duration() const
+  {
+    auto&container = ffmpegContainer();
+
+    if (!container.isOpen() || !m_stream)
+    {
+      return MediaTime(0);
+    }
+
+    // Get stream duration
+    if (m_stream->duration != AV_NOPTS_VALUE)
+    {
+      int64_t duration_us = av_rescale_q(m_stream->duration, m_stream->time_base, AVRational{1, AV_TIME_BASE});
+      return MediaTime(duration_us);
+    }
+    else
+    {
+      // Fall back to container duration
+      return container.duration();
+    }
+  }
+
+  bool FfmpegStreamIterator::canSeek() const
+  {
+    auto&container = ffmpegContainer();
+
+    if (!container.isOpen() || !m_stream)
+    {
+      return false;
+    }
+
+    // Check if the format supports seeking
+    // Define AVFMT_UNSEEKABLE if not already defined
+    constexpr int AVFMT_UNSEEKABLE_FLAG = 0x0008; // Value from ffmpeg's avformat.h
+    return !(container.m_formatContext->iformat->flags & AVFMT_UNSEEKABLE_FLAG);
+  }
+
+  int64_t FfmpegStreamIterator::positionIndex() const
+  {
+    return m_currentPositionIndex;
+  }
+
+  std::type_info const& FfmpegStreamIterator::dataType() const
+  {
+    switch (streamType())
+    {
+      case StreamType::Video:
+        {
+          // Determine the pixel format to convert to based on FFmpeg's format
+          switch (m_codecContext->pix_fmt)
+          {
+            case AV_PIX_FMT_RGB24:
+              return typeid(RGBPlanarImage<uint8_t>);
+            case AV_PIX_FMT_RGBA:
+              return typeid(RGBAPlanarImage<uint8_t>);
+            case AV_PIX_FMT_YUV420P:
+              return typeid(YUV420Image<uint8_t>);
+            case AV_PIX_FMT_YUV422P:
+              return typeid(YUV422Image<uint8_t>);
+            case AV_PIX_FMT_YUV444P:
+              return typeid(YUV444Image<uint8_t>);
+            default:
+              // Default to RGB for other formats
+              return typeid(RGBPlanarImage<uint8_t>);
+          }
+        }
+      case StreamType::Audio:
+        {
+          // Determine the sample format to convert to based on FFmpeg's format
+          switch (m_codecContext->sample_fmt)
+          {
+            case AV_SAMPLE_FMT_U8:
+            case AV_SAMPLE_FMT_U8P:
+              return typeid(Ravl2::Array<uint8_t, 2>);
+            case AV_SAMPLE_FMT_S16:
+            case AV_SAMPLE_FMT_S16P:
+              return typeid(Ravl2::Array<int16_t, 2>);
+            case AV_SAMPLE_FMT_S32:
+            case AV_SAMPLE_FMT_S32P:
+              return typeid(Ravl2::Array<int32_t, 2>);
+            case AV_SAMPLE_FMT_FLT:
+            case AV_SAMPLE_FMT_FLTP:
+              return typeid(Ravl2::Array<float, 2>);
+            case AV_SAMPLE_FMT_DBL:
+            case AV_SAMPLE_FMT_DBLP:
+              return typeid(Ravl2::Array<double, 2>);
+            default:
+              // Default to 16-bit PCM for other formats
+              return typeid(Ravl2::Array<int16_t, 2>);
+          }
+        }
+      default:
+        {
+          SPDLOG_WARN("Unknown stream type: {}", toString(streamType()));
+          return typeid(std::vector<uint8_t>);
+        }
+    }
+
+    return StreamIterator::dataType();
+  }
+
+  template<typename... PlaneTypes> bool FfmpegStreamIterator::makeImage(PlanarImage<2, PlaneTypes...>&img,
+                                                                        const AVFrame* frame) const
+  {
+    // for (size_t i = 0; i < sizeof...(PlaneTypes); i++)
+    // {
+    //   uint8_t* pPlane = frame->data[i];
+    //   int pStride = frame->linesize[i];
+    //   Array<PlaneTypes, 2> pPlaneData({ static_cast<size_t>(frame->height), static_cast<size_t>(frame->width) });
+    // }
+    int width = frame->width;
+    int height = frame->height;
+    IndexRange<2> range({{0, height}, {0, width}});
+    // Make a new handle to the frame
+    AVFrame* newFrame = av_frame_alloc();
+    if (av_frame_ref(newFrame, frame) != 0)
+    {
+      SPDLOG_ERROR("Failed to allocate new frame");
+      return false;
+    }
+
+    // Create a shared_ptr with a custom deleter to free the frame when done
+    std::shared_ptr avFrameHandle = std::shared_ptr<uint8_t[]>(frame->data[0],
+                                                               [newFrame](uint8_t* data) mutable
+                                                               {
+                                                                 (void)data;
+                                                                 av_frame_free(&newFrame);
+                                                               }
+    );
+
+    // Data plane...
+    // Set up each plane in the PlanarImage
+    int planeIndex = 0;
+    img.forEachPlane([avFrameHandle,range,&planeIndex,frame]<typename PlaneArgT>(PlaneArgT&plane)
+      {
+        using PlaneT = std::decay_t<PlaneArgT>;
+        auto localRange = PlaneT::scale_type::calculateRange(range);
+        //SPDLOG_INFO("Setting up plane {} ({}) with range {} (master range {})", planeIndex, toString(plane.getChannelType()), localRange, range);
+        plane.data() = Array<uint8_t, 2>(frame->data[planeIndex],
+                                         localRange,
+                                         {frame->linesize[planeIndex], 1},
+                                         avFrameHandle
+        );
+        planeIndex++;
+      }
+    );
+
+    return true;
+  }
+
+  VideoResult<void> FfmpegStreamIterator::readNextPacket()
+  {
+    auto&container = ffmpegContainer();
+
+    if (!container.isOpen())
+    {
+      return VideoResult<void>(VideoErrorCode::InvalidOperation);
+    }
+    //SPDLOG_INFO("Reading next packet");
+
+    // Read packets until we find one from our stream
+    while (true)
+    {
+      // Clear any previous packet data
+      av_packet_unref(m_packet);
+
+      // Read a packet
+      int result = av_read_frame(container.m_formatContext, m_packet);
+
+      if (result < 0)
+      {
+        // Check if we've reached the end of the stream
+        if (result == AVERROR_EOF)
+        {
+          return VideoResult<void>(VideoErrorCode::EndOfStream);
+        }
+        else
+        {
+          return VideoResult<void>(FfmpegMediaContainer::convertFfmpegError(result));
+        }
+      }
+
+      // Check if the packet belongs to our stream
+      if (m_packet->stream_index == static_cast<int>(streamIndex()))
+      {
         break;
       }
-      if (result.error() == VideoErrorCode::NeedMoreData){
-        //SPDLOG_INFO("Need more data to decode frame");
-        continue;
-      }
-      SPDLOG_INFO("Failed to decode frame: {}", toString(result.error()));
-      return result;
+      //SPDLOG_INFO("Skipping packet from stream {}", m_packet->stream_index);
+
+      // Free the packet if it's not from our stream
+      av_packet_unref(m_packet);
     }
-  } catch (std::exception& e)
+    //SPDLOG_INFO("Read packet from stream {}", m_packet->stream_index);
+    return VideoResult<void>(VideoErrorCode::Success);
+  }
+
+  VideoResult<void> FfmpegStreamIterator::decodeCurrentPacket()
   {
-    SPDLOG_INFO("Exception caught: {}", e.what());
-    return VideoResult<void>(VideoErrorCode::DecodingError);
-  }
-  //SPDLOG_INFO("Decoded frame: {}", m_frame->pts);
-
-  // Increment the position index
-  m_currentPositionIndex++;
-
-  return VideoResult<void>(VideoErrorCode::Success);
-}
-
-VideoResult<void> FfmpegStreamIterator::previous() {
-  // FFmpeg doesn't natively support backwards iteration
-  // For proper support, we would need to maintain a buffer of recent frames
-  // For now, just return an error
-  return VideoResult<void>(VideoErrorCode::NotImplemented);
-}
-
-VideoResult<void> FfmpegStreamIterator::seek(MediaTime timestamp, SeekFlags flags) {
-  auto& container = ffmpegContainer();
-
-  if (!container.isOpen() || !m_stream) {
-    return VideoResult<void>(VideoErrorCode::InvalidOperation);
-  }
-
-  // Convert MediaTime to FFmpeg's time base
-  int64_t timestamp_tb = av_rescale_q(timestamp.count(),
-                                     AVRational{1, AV_TIME_BASE},
-                                     m_stream->time_base);
-
-  // Set FFmpeg seek flags
-  int avFlags = 0;
-  if (flags == SeekFlags::Keyframe) {
-    avFlags |= AVSEEK_FLAG_ANY; // Seek to any frame, not just keyframes
-  }
-  if (flags == SeekFlags::Previous) {
-    avFlags |= AVSEEK_FLAG_BACKWARD; // Seek backwards
-  }
-
-  // Perform the seek operation
-  int result = av_seek_frame(container.m_formatContext, static_cast<int>(streamIndex()), timestamp_tb, avFlags);
-  if (result < 0) {
-    return VideoResult<void>(FfmpegMediaContainer::convertFfmpegError(result));
-  }
-
-  // Flush codec buffers
-  avcodec_flush_buffers(m_codecContext);
-
-  // Set the flag indicating we've just performed a seek
-  m_wasSeekOperation = true;
-  m_isAtEnd = false;
-
-  // Read the next frame at the new position
-  return next();
-}
-
-VideoResult<void> FfmpegStreamIterator::seekToIndex(int64_t index) {
-  // FFmpeg doesn't have direct frame index seeking for most formats
-  // We would need to estimate the timestamp and use timestamp-based seeking
-
-  auto& container = ffmpegContainer();
-
-  if (!container.isOpen() || !m_stream) {
-    return VideoResult<void>(VideoErrorCode::InvalidOperation);
-  }
-
-  // Get video properties to estimate frame duration
-  VideoResult<VideoProperties> propsResult;
-
-  if (streamType() == StreamType::Video) {
-    propsResult = container.videoProperties(streamIndex());
-  } else if (streamType() == StreamType::Audio) {
-    auto audioProps = container.audioProperties(streamIndex());
-    if (audioProps.isSuccess() && audioProps.value().sampleRate > 0) {
-      // For audio, convert sample index to timestamp
-      MediaTime timestamp(static_cast<int64_t>(1000000.0 * static_cast<double>(index) / audioProps.value().sampleRate));
-      return seek(timestamp);
+    if (!m_codecContext || !m_packet || !m_frame)
+    {
+      return VideoResult<void>(VideoErrorCode::InvalidOperation);
     }
-    return VideoResult<void>(VideoErrorCode::InvalidOperation);
-  } else {
-    return VideoResult<void>(VideoErrorCode::InvalidOperation);
-  }
 
-  if (!propsResult.isSuccess()) {
-    return VideoResult<void>(VideoErrorCode::InvalidOperation);
-  }
+    // Send the packet to the decoder
+    int result = avcodec_send_packet(m_codecContext, m_packet);
 
-  auto props = propsResult.value();
-
-  if (props.frameRate <= 0) {
-    return VideoResult<void>(VideoErrorCode::InvalidOperation);
-  }
-
-  // Estimate timestamp from frame index
-  MediaTime timestamp(static_cast<int64_t>(1000000.0 * static_cast<double>(index) / static_cast<double>(props.frameRate)));
-
-  // Perform the seek
-  return seek(timestamp);
-}
-
-VideoResult<std::shared_ptr<Frame>> FfmpegStreamIterator::getFrameById(StreamItemId id) const {
-  (void) id;
-  // FFmpeg doesn't have direct frame ID seeking
-  // This would require either:
-  // 1. Maintaining a cache of frames by ID
-  // 2. Seeking to the start and reading until we find the frame with the right ID
-
-  // For now, just return an error
-  return VideoResult<std::shared_ptr<Frame>>(VideoErrorCode::NotImplemented);
-}
-
-VideoResult<void> FfmpegStreamIterator::reset() {
-  // Seek to the beginning of the stream
-  return seekToIndex(0);
-}
-
-MediaTime FfmpegStreamIterator::duration() const {
-  auto& container = ffmpegContainer();
-
-  if (!container.isOpen() || !m_stream) {
-    return MediaTime(0);
-  }
-
-  // Get stream duration
-  if (m_stream->duration != AV_NOPTS_VALUE) {
-    int64_t duration_us = av_rescale_q(m_stream->duration, m_stream->time_base, AVRational{1, AV_TIME_BASE});
-    return MediaTime(duration_us);
-  } else {
-    // Fall back to container duration
-    return container.duration();
-  }
-}
-
-bool FfmpegStreamIterator::canSeek() const {
-  auto& container = ffmpegContainer();
-
-  if (!container.isOpen() || !m_stream) {
-    return false;
-  }
-
-  // Check if the format supports seeking
-  // Define AVFMT_UNSEEKABLE if not already defined
-  constexpr int AVFMT_UNSEEKABLE_FLAG = 0x0008; // Value from ffmpeg's avformat.h
-  return !(container.m_formatContext->iformat->flags & AVFMT_UNSEEKABLE_FLAG);
-}
-
-int64_t FfmpegStreamIterator::positionIndex() const {
-  return m_currentPositionIndex;
-}
-
-std::type_info const& FfmpegStreamIterator::dataType() const
-{
-  switch (streamType())
-  {
-    case StreamType::Video: {
-        // Determine the pixel format to convert to based on FFmpeg's format
-        switch (m_codecContext->pix_fmt) {
-          case AV_PIX_FMT_RGB24:
-            return typeid(RGBPlanarImage<uint8_t>);
-          case AV_PIX_FMT_RGBA:
-            return typeid(RGBAPlanarImage<uint8_t>);
-          case AV_PIX_FMT_YUV420P:
-            return typeid(YUV420Image<uint8_t>);
-          case AV_PIX_FMT_YUV422P:
-            return typeid(YUV422Image<uint8_t>);
-          case AV_PIX_FMT_YUV444P:
-            return typeid(YUV444Image<uint8_t>);
-          default:
-            // Default to RGB for other formats
-            return typeid(RGBPlanarImage<uint8_t>);
-        }
+    if (result < 0)
+    {
+      SPDLOG_WARN("Error sending packet to decoder: {}", toString(FfmpegMediaContainer::convertFfmpegError(result)));
+      return VideoResult<void>(FfmpegMediaContainer::convertFfmpegError(result));
     }
-    case StreamType::Audio:
+
+    // Receive a frame from the decoder
+    result = avcodec_receive_frame(m_codecContext, m_frame);
+
+    if (result < 0)
+    {
+      // If the decoder needs more data, that's not an error
+      if (result == AVERROR(EAGAIN))
       {
-        // Determine the sample format to convert to based on FFmpeg's format
-        switch (m_codecContext->sample_fmt) {
-          case AV_SAMPLE_FMT_U8:
-          case AV_SAMPLE_FMT_U8P:
-            return typeid(Ravl2::Array<uint8_t,2>);
-          case AV_SAMPLE_FMT_S16:
-          case AV_SAMPLE_FMT_S16P:
-            return typeid(Ravl2::Array<int16_t,2>);
-          case AV_SAMPLE_FMT_S32:
-          case AV_SAMPLE_FMT_S32P:
-            return typeid(Ravl2::Array<int32_t,2>);
-          case AV_SAMPLE_FMT_FLT:
-          case AV_SAMPLE_FMT_FLTP:
-            return typeid(Ravl2::Array<float,2>);
-          case AV_SAMPLE_FMT_DBL:
-          case AV_SAMPLE_FMT_DBLP:
-            return typeid(Ravl2::Array<double,2>);
-          default:
-            // Default to 16-bit PCM for other formats
-            return typeid(Ravl2::Array<int16_t,2>);
+        return VideoResult<void>(VideoErrorCode::NeedMoreData);
+      }
+      SPDLOG_WARN("Error receiving frame from decoder: {}", toString(FfmpegMediaContainer::convertFfmpegError(result)));
+      return VideoResult<void>(FfmpegMediaContainer::convertFfmpegError(result));
+    }
+
+    // Convert the FFmpeg frame to our Frame type
+    auto frame = convertPacketToFrame();
+
+    if (!frame)
+    {
+      SPDLOG_WARN("Failed to convert packet to frame");
+      return VideoResult<void>(VideoErrorCode::DecodingError);
+    }
+
+    // Set the current frame
+    setCurrentFrame(frame);
+
+    return VideoResult<void>(VideoErrorCode::Success);
+  }
+
+  std::shared_ptr<Frame> FfmpegStreamIterator::convertPacketToFrame()
+  {
+    // Create the appropriate frame type based on the stream type
+    switch (streamType())
+    {
+      case StreamType::Video:
+        {
+          // Determine the pixel format to convert to based on FFmpeg's format
+          switch (m_codecContext->pix_fmt)
+          {
+            case AV_PIX_FMT_RGB24:
+              return createVideoFrame<RGBPlanarImage<uint8_t>>();
+            case AV_PIX_FMT_RGBA:
+              return createVideoFrame<RGBAPlanarImage<uint8_t>>();
+            case AV_PIX_FMT_YUV420P:
+              return createVideoFrame<YUV420Image<uint8_t>>();
+            case AV_PIX_FMT_YUV422P:
+              return createVideoFrame<YUV422Image<uint8_t>>();
+            case AV_PIX_FMT_YUV444P:
+              // Using RGB8 format with SwScale conversion for most reliable results
+              return createVideoFrame<YUV444Image<uint8_t>>();
+            default:
+              // Default to RGB for other formats
+              return createVideoFrame<RGBPlanarImage<uint8_t>>();
+          }
         }
-      }
-    default:
-      {
-        SPDLOG_WARN("Unknown stream type: {}", toString(streamType()));
-        return typeid(std::vector<uint8_t>);
-      }
+      case StreamType::Audio:
+        {
+          // Determine the sample format to convert to based on FFmpeg's format
+          switch (m_codecContext->sample_fmt)
+          {
+            case AV_SAMPLE_FMT_U8:
+            case AV_SAMPLE_FMT_U8P:
+              return createAudioChunk<uint8_t>();
+            case AV_SAMPLE_FMT_S16:
+            case AV_SAMPLE_FMT_S16P:
+              return createAudioChunk<int16_t>();
+            case AV_SAMPLE_FMT_S32:
+            case AV_SAMPLE_FMT_S32P:
+              return createAudioChunk<int32_t>();
+            case AV_SAMPLE_FMT_FLT:
+            case AV_SAMPLE_FMT_FLTP:
+              return createAudioChunk<float>();
+            case AV_SAMPLE_FMT_DBL:
+            case AV_SAMPLE_FMT_DBLP:
+              return createAudioChunk<double>();
+            default:
+              // Default to 16-bit PCM for other formats
+              return createAudioChunk<int16_t>();
+          }
+        }
+      case StreamType::Data:
+        {
+          // For metadata frames, use a binary blob
+          return createMetadataFrame<std::vector<std::byte>>();
+        }
+      default:
+        return nullptr;
+    }
   }
 
-  return StreamIterator::dataType();
-}
-
-template<typename ... PlaneTypes>
-bool FfmpegStreamIterator::makeImage(PlanarImage<2, PlaneTypes...>&img,const AVFrame* frame) const
-{
-  // for (size_t i = 0; i < sizeof...(PlaneTypes); i++)
-  // {
-  //   uint8_t* pPlane = frame->data[i];
-  //   int pStride = frame->linesize[i];
-  //   Array<PlaneTypes, 2> pPlaneData({ static_cast<size_t>(frame->height), static_cast<size_t>(frame->width) });
-  // }
-  int width = frame->width;
-  int height = frame->height;
-  IndexRange<2> range({{0,height}, { 0, width}});
-  // Make a new handle to the frame
-  AVFrame* newFrame = av_frame_alloc();
-  if (av_frame_ref(newFrame, frame) != 0)
+  template<typename ImageT> std::shared_ptr<VideoFrame<ImageT>> FfmpegStreamIterator::createVideoFrame()
   {
-    SPDLOG_ERROR("Failed to allocate new frame");
-    return false;
-  }
-
-  // Create a shared_ptr with a custom deleter to free the frame when done
-  std::shared_ptr avFrameHandle = std::shared_ptr<uint8_t[]>(frame->data[0], [newFrame](uint8_t *data) mutable
-  {
-    (void) data;
-    av_frame_free(&newFrame);
-  });
-
-  // Data plane...
-  // Set up each plane in the PlanarImage
-  int planeIndex = 0;
-  img.forEachPlane([avFrameHandle,range,&planeIndex,frame]<typename PlaneArgT>(PlaneArgT& plane)
-  {
-    using PlaneT = std::decay_t<PlaneArgT>;
-    auto localRange = PlaneT::scale_type::calculateRange(range);
-    //SPDLOG_INFO("Setting up plane {} ({}) with range {} (master range {})", planeIndex, toString(plane.getChannelType()), localRange, range);
-    plane.data() = Array<uint8_t, 2>(frame->data[planeIndex], localRange, {frame->linesize[planeIndex],1},avFrameHandle);
-    planeIndex++;
-  });
-
-  return true;
-}
-
-VideoResult<void> FfmpegStreamIterator::readNextPacket() {
-  auto& container = ffmpegContainer();
-
-  if (!container.isOpen()) {
-    return VideoResult<void>(VideoErrorCode::InvalidOperation);
-  }
-  //SPDLOG_INFO("Reading next packet");
-
-  // Read packets until we find one from our stream
-  while (true) {
-    // Clear any previous packet data
-    av_packet_unref(m_packet);
-
-    // Read a packet
-    int result = av_read_frame(container.m_formatContext, m_packet);
-
-    if (result < 0) {
-      // Check if we've reached the end of the stream
-      if (result == AVERROR_EOF) {
-        return VideoResult<void>(VideoErrorCode::EndOfStream);
-      } else {
-        return VideoResult<void>(FfmpegMediaContainer::convertFfmpegError(result));
-      }
-    }
-
-    // Check if the packet belongs to our stream
-    if (m_packet->stream_index == static_cast<int>(streamIndex())) {
-      break;
-    }
-    //SPDLOG_INFO("Skipping packet from stream {}", m_packet->stream_index);
-
-    // Free the packet if it's not from our stream
-    av_packet_unref(m_packet);
-  }
-  //SPDLOG_INFO("Read packet from stream {}", m_packet->stream_index);
-  return VideoResult<void>(VideoErrorCode::Success);
-}
-
-VideoResult<void> FfmpegStreamIterator::decodeCurrentPacket() {
-  if (!m_codecContext || !m_packet || !m_frame) {
-    return VideoResult<void>(VideoErrorCode::InvalidOperation);
-  }
-
-  // Send the packet to the decoder
-  int result = avcodec_send_packet(m_codecContext, m_packet);
-
-  if (result < 0) {
-    SPDLOG_WARN("Error sending packet to decoder: {}", toString(FfmpegMediaContainer::convertFfmpegError(result)));
-    return VideoResult<void>(FfmpegMediaContainer::convertFfmpegError(result));
-  }
-
-  // Receive a frame from the decoder
-  result = avcodec_receive_frame(m_codecContext, m_frame);
-
-  if (result < 0) {
-    // If the decoder needs more data, that's not an error
-    if (result == AVERROR(EAGAIN)) {
-      return VideoResult<void>(VideoErrorCode::NeedMoreData);
-    }
-    SPDLOG_WARN("Error receiving frame from decoder: {}", toString(FfmpegMediaContainer::convertFfmpegError(result)));
-    return VideoResult<void>(FfmpegMediaContainer::convertFfmpegError(result));
-  }
-
-  // Convert the FFmpeg frame to our Frame type
-  auto frame = convertPacketToFrame();
-
-  if (!frame) {
-    SPDLOG_WARN("Failed to convert packet to frame");
-    return VideoResult<void>(VideoErrorCode::DecodingError);
-  }
-
-  // Set the current frame
-  setCurrentFrame(frame);
-
-  return VideoResult<void>(VideoErrorCode::Success);
-}
-
-std::shared_ptr<Frame> FfmpegStreamIterator::convertPacketToFrame() {
-  // Create the appropriate frame type based on the stream type
-  switch (streamType()) {
-    case StreamType::Video: {
-      // Determine the pixel format to convert to based on FFmpeg's format
-      switch (m_codecContext->pix_fmt) {
-        case AV_PIX_FMT_RGB24:
-          return createVideoFrame<RGBPlanarImage<uint8_t> >();
-        case AV_PIX_FMT_RGBA:
-          return createVideoFrame<RGBAPlanarImage<uint8_t> >();
-        case AV_PIX_FMT_YUV420P:
-          return createVideoFrame<YUV420Image<uint8_t> >();
-        case AV_PIX_FMT_YUV422P:
-          return createVideoFrame<YUV422Image<uint8_t> >();
-        case AV_PIX_FMT_YUV444P:
-          // Using RGB8 format with SwScale conversion for most reliable results
-          return createVideoFrame<YUV444Image<uint8_t> >();
-        default:
-          // Default to RGB for other formats
-          return createVideoFrame<RGBPlanarImage<uint8_t> >();
-      }
-    }
-    case StreamType::Audio: {
-      // Determine the sample format to convert to based on FFmpeg's format
-      switch (m_codecContext->sample_fmt) {
-        case AV_SAMPLE_FMT_U8:
-        case AV_SAMPLE_FMT_U8P:
-          return createAudioChunk<uint8_t>();
-        case AV_SAMPLE_FMT_S16:
-        case AV_SAMPLE_FMT_S16P:
-          return createAudioChunk<int16_t>();
-        case AV_SAMPLE_FMT_S32:
-        case AV_SAMPLE_FMT_S32P:
-          return createAudioChunk<int32_t>();
-        case AV_SAMPLE_FMT_FLT:
-        case AV_SAMPLE_FMT_FLTP:
-          return createAudioChunk<float>();
-        case AV_SAMPLE_FMT_DBL:
-        case AV_SAMPLE_FMT_DBLP:
-          return createAudioChunk<double>();
-        default:
-          // Default to 16-bit PCM for other formats
-          return createAudioChunk<int16_t>();
-      }
-    }
-    case StreamType::Data: {
-      // For metadata frames, use a binary blob
-      return createMetadataFrame<std::vector<std::byte>>();
-    }
-    default:
+    if (!m_frame || m_frame->width <= 0 || m_frame->height <= 0)
+    {
       return nullptr;
-  }
-}
+    }
 
-template <typename ImageT>
-std::shared_ptr<VideoFrame<ImageT>> FfmpegStreamIterator::createVideoFrame() {
-  if (!m_frame || m_frame->width <= 0 || m_frame->height <= 0) {
-    return nullptr;
-  }
+    // Get the timestamp in our MediaTime format
+    MediaTime timestamp(0);
 
-  // Get the timestamp in our MediaTime format
-  MediaTime timestamp(0);
+    // Use int64_t comparison instead of direct AV_NOPTS_VALUE to avoid old-style cast warning
+    int64_t nopts = AV_NOPTS_VALUE;
+    if (m_frame->pts != nopts)
+    {
+      int64_t pts_us = av_rescale_q(m_frame->pts, m_stream->time_base, AVRational{1, AV_TIME_BASE});
+      timestamp = MediaTime(pts_us);
+    }
 
-  // Use int64_t comparison instead of direct AV_NOPTS_VALUE to avoid old-style cast warning
-  int64_t nopts = AV_NOPTS_VALUE;
-  if (m_frame->pts != nopts) {
-    int64_t pts_us = av_rescale_q(m_frame->pts, m_stream->time_base, AVRational{1, AV_TIME_BASE});
-    timestamp = MediaTime(pts_us);
-  }
+    // Create a new frame ID
+    StreamItemId id = m_nextFrameId++;
 
-  // Create a new frame ID
-  StreamItemId id = m_nextFrameId++;
+    ImageT frameData;
+    makeImage(frameData, m_frame);
 
-  ImageT frameData;
-  makeImage(frameData, m_frame);
+    // Create a new video frame
+    auto videoFrame = std::make_shared<VideoFrame<ImageT>>(frameData, id, timestamp);
 
-  // Create a new video frame
-  auto videoFrame = std::make_shared<VideoFrame<ImageT>>(frameData, id, timestamp);
+    // Set keyframe flag - check the picture type instead of key_frame
+    // In newer FFmpeg versions, use the pict_type field to determine if it's a key frame
+    videoFrame->setKeyFrame(m_frame->pict_type == AV_PICTURE_TYPE_I);
 
-  // Set keyframe flag - check the picture type instead of key_frame
-  // In newer FFmpeg versions, use the pict_type field to determine if it's a key frame
-  videoFrame->setKeyFrame(m_frame->pict_type == AV_PICTURE_TYPE_I);
-
-  return videoFrame;
-}
-
-template <typename SampleT>
-std::shared_ptr<AudioChunk<SampleT>> FfmpegStreamIterator::createAudioChunk() {
-  if (!m_frame || m_frame->nb_samples <= 0) {
-    return nullptr;
+    return videoFrame;
   }
 
-  // Get number of channels from codec context since it's not directly in the frame
-  int channels = m_codecContext->ch_layout.nb_channels;
-  if (channels <= 0) {
-    return nullptr;
+  template<typename SampleT> std::shared_ptr<AudioChunk<SampleT>> FfmpegStreamIterator::createAudioChunk()
+  {
+    if (!m_frame || m_frame->nb_samples <= 0)
+    {
+      return nullptr;
+    }
+
+    // Get number of channels from codec context since it's not directly in the frame
+    int channels = m_codecContext->ch_layout.nb_channels;
+    if (channels <= 0)
+    {
+      return nullptr;
+    }
+
+    // Get the timestamp in our MediaTime format
+    MediaTime timestamp(0);
+
+    // Use int64_t comparison instead of direct AV_NOPTS_VALUE to avoid old-style cast warning
+    int64_t nopts = AV_NOPTS_VALUE;
+    if (m_frame->pts != nopts)
+    {
+      int64_t pts_us = av_rescale_q(m_frame->pts, m_stream->time_base, AVRational{1, AV_TIME_BASE});
+      timestamp = MediaTime(pts_us);
+    }
+
+    // Create a new frame ID
+    StreamItemId id = m_nextFrameId++;
+
+    // Create a 2D array for the audio data (samples x channels)
+    Array<SampleT, 2> audioData({static_cast<size_t>(m_frame->nb_samples), static_cast<size_t>(channels)});
+
+    // Create a new audio chunk
+    auto audioChunk = std::make_shared<AudioChunk<SampleT>>(audioData, id, timestamp);
+
+    return audioChunk;
   }
 
-  // Get the timestamp in our MediaTime format
-  MediaTime timestamp(0);
+  template<typename DataT> std::shared_ptr<MetaDataFrame<DataT>> FfmpegStreamIterator::createMetadataFrame()
+  {
+    if (!m_frame)
+    {
+      return nullptr;
+    }
 
-  // Use int64_t comparison instead of direct AV_NOPTS_VALUE to avoid old-style cast warning
-  int64_t nopts = AV_NOPTS_VALUE;
-  if (m_frame->pts != nopts) {
-    int64_t pts_us = av_rescale_q(m_frame->pts, m_stream->time_base, AVRational{1, AV_TIME_BASE});
-    timestamp = MediaTime(pts_us);
+    // Get the timestamp in our MediaTime format
+    MediaTime timestamp(0);
+
+    // Use int64_t comparison instead of direct AV_NOPTS_VALUE to avoid old-style cast warning
+    int64_t nopts = AV_NOPTS_VALUE;
+    if (m_frame->pts != nopts)
+    {
+      int64_t pts_us = av_rescale_q(m_frame->pts, m_stream->time_base, AVRational{1, AV_TIME_BASE});
+      timestamp = MediaTime(pts_us);
+    }
+
+    // Create a new frame ID
+    StreamItemId id = m_nextFrameId++;
+
+    // Create metadata container (implementation will vary depending on data type)
+    DataT data;
+
+    // Create a new metadata frame
+    auto metadataFrame = std::make_shared<MetaDataFrame<DataT>>(data, id, timestamp);
+
+    return metadataFrame;
   }
 
-  // Create a new frame ID
-  StreamItemId id = m_nextFrameId++;
-
-  // Create a 2D array for the audio data (samples x channels)
-  Array<SampleT, 2> audioData({static_cast<size_t>(m_frame->nb_samples), static_cast<size_t>(channels)});
-
-  // Create a new audio chunk
-  auto audioChunk = std::make_shared<AudioChunk<SampleT>>(audioData, id, timestamp);
-
-  return audioChunk;
-}
-
-template <typename DataT>
-std::shared_ptr<MetaDataFrame<DataT>> FfmpegStreamIterator::createMetadataFrame() {
-  if (!m_frame) {
-    return nullptr;
+  FfmpegMediaContainer& FfmpegStreamIterator::ffmpegContainer() const
+  {
+    // Cast the container to FfmpegMediaContainer
+    return *std::static_pointer_cast<FfmpegMediaContainer>(container());
   }
-
-  // Get the timestamp in our MediaTime format
-  MediaTime timestamp(0);
-
-  // Use int64_t comparison instead of direct AV_NOPTS_VALUE to avoid old-style cast warning
-  int64_t nopts = AV_NOPTS_VALUE;
-  if (m_frame->pts != nopts) {
-    int64_t pts_us = av_rescale_q(m_frame->pts, m_stream->time_base, AVRational{1, AV_TIME_BASE});
-    timestamp = MediaTime(pts_us);
-  }
-
-  // Create a new frame ID
-  StreamItemId id = m_nextFrameId++;
-
-  // Create metadata container (implementation will vary depending on data type)
-  DataT data;
-
-  // Create a new metadata frame
-  auto metadataFrame = std::make_shared<MetaDataFrame<DataT>>(data, id, timestamp);
-
-  return metadataFrame;
-}
-
-FfmpegMediaContainer& FfmpegStreamIterator::ffmpegContainer() const {
-  // Cast the container to FfmpegMediaContainer
-  return *std::static_pointer_cast<FfmpegMediaContainer>(container());
-}
-
 } // namespace Ravl2::Video
