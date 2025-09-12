@@ -23,6 +23,7 @@ project(
   LANGUAGES CXX C)
 
 include(cmake/PreventInSourceBuilds.cmake)
+include(cmake/LoggingConfig.cmake)
 
 # print cmake version
 message(STATUS "CMake version: ${CMAKE_VERSION}")
@@ -30,6 +31,9 @@ message(STATUS "CMake version: ${CMAKE_VERSION}")
 include(ProjectOptions.cmake)
 
 RAVL2_setup_options()
+# Configure logging levels based on build type
+configure_logging_level()
+
 
 RAVL2_global_options()
 include(Dependencies.cmake)

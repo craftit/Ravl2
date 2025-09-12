@@ -9,6 +9,7 @@
 #include "Ravl2/Video/VideoIO.hh"
 #include "Ravl2/Video/FfmpegMultiStreamIterator.hh"
 #include "Ravl2/Video/FfmpegMediaContainer.hh"
+#include "Ravl2/Logging.hh"
 #include <set>
 
 namespace Ravl2::Video
@@ -116,7 +117,8 @@ namespace Ravl2::Video
   TEST_CASE("FfmpegMultiStreamIterator - Seeking", "[Video]")
   {
     initIO();
-    spdlog::set_level(spdlog::level::trace);
+    // Initialize logging to ensure debug messages are visible in debug builds
+    Ravl2::initializeLogging();
     std::string fn = "sample-5s.mp4";
     addResourcePath("data", RAVL_SOURCE_DIR "/data");
     fn = Ravl2::findFileResource("data", fn, true);

@@ -24,6 +24,7 @@ namespace Ravl2::Video
   {
     Ravl2::initPixel();
 
+
     // If no stream indices provided, include all available streams
     if (streamIndices.empty())
     {
@@ -333,6 +334,7 @@ namespace Ravl2::Video
 
         return VideoResult<void>();
       }
+      SPDLOG_DEBUG("Seeking not supported {}. Seekable: {}", timestamp.count(),container.m_formatContext->pb->seekable);
 
       // Read the first frame at the new position
       return next();
@@ -866,7 +868,7 @@ namespace Ravl2::Video
     StreamItemId id = (pts << m_streamBits) | (static_cast<int64_t>(localIndex) & ((1LL << m_streamBits) - 1));
 
     SPDLOG_DEBUG("Generated frame ID: {} from PTS: {}, stream index: {}, using {} bits for stream index",
-                 id, pts, localIndex, streamBits);
+                 id, pts, localIndex, m_streamBits);
 
     return id;
   }
@@ -1067,14 +1069,19 @@ namespace Ravl2::Video
 
     // Make a new handle to the frame
     AVFrame* newFrame = av_frame_alloc();
-    if (av_frame_ref(newFrame, frame) != 0)
+    if (!newFrame)
     {
       SPDLOG_ERROR("Failed to allocate new frame");
       return false;
     }
+    if (av_frame_ref(newFrame, frame) != 0) {
+      SPDLOG_ERROR("Failed to reference frame");
+      av_frame_free(&newFrame);
+      return false;
+    }
 
     // Create a shared_ptr with a custom deleter to free the frame when done
-    std::shared_ptr avFrameHandle = std::shared_ptr<uint8_t[]>(frame->data[0],
+    std::shared_ptr avFrameHandle = std::shared_ptr<uint8_t[]>(newFrame->data[0],
                                                                [newFrame](uint8_t* data) mutable
                                                                {
                                                                  (void)data;
@@ -1084,14 +1091,14 @@ namespace Ravl2::Video
 
     // Set up each plane in the PlanarImage
     int planeIndex = 0;
-    img.forEachPlane([avFrameHandle,range,&planeIndex,frame]<typename PlaneArgT>(PlaneArgT&plane)
+    img.forEachPlane([avFrameHandle,range,&planeIndex,newFrame]<typename PlaneArgT>(PlaneArgT&plane)
       {
         using PlaneT = std::decay_t<PlaneArgT>;
         auto localRange = PlaneT::scale_type::calculateRange(range);
         //SPDLOG_INFO("Setting up plane {} ({}) with range {} (master range {})", planeIndex, toString(plane.getChannelType()), localRange, range);
-        plane.data() = Array<uint8_t, 2>(frame->data[planeIndex],
+        plane.data() = Array<uint8_t, 2>(newFrame->data[planeIndex],
                                          localRange,
-                                         {frame->linesize[planeIndex], 1},
+                                         {newFrame->linesize[planeIndex], 1},
                                          avFrameHandle
         );
         planeIndex++;
