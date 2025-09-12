@@ -200,6 +200,7 @@ VideoResult<void> FfmpegMultiStreamIterator::seek(MediaTime timestamp, SeekFlags
   auto& container = ffmpegContainer();
 
   if (!container.isOpen()) {
+    SPDLOG_ERROR("Failed to seek: container is not open");
     return VideoResult<void>(VideoErrorCode::InvalidOperation);
   }
 
@@ -217,9 +218,10 @@ VideoResult<void> FfmpegMultiStreamIterator::seek(MediaTime timestamp, SeekFlags
                                      AVRational{1, AV_TIME_BASE},
                                      AVRational{1, AV_TIME_BASE});
 
-  // Seek to the timestamp
+  // Seek to the given timestamp
   int result = av_seek_frame(container.m_formatContext, -1, timestamp_tb, avFlags);
   if (result < 0) {
+    SPDLOG_WARN("Error seeking to timestamp: {}", toString(FfmpegMediaContainer::convertFfmpegError(result)));
     return VideoResult<void>(FfmpegMediaContainer::convertFfmpegError(result));
   }
 

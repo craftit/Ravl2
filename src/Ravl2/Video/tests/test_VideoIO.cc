@@ -111,6 +111,7 @@ namespace Ravl2::Video
   TEST_CASE("FfmpegMultiStreamIterator - Seeking", "[Video]")
   {
     initIO();
+    spdlog::set_level(spdlog::level::trace);
     std::string fn = "sample-5s.mp4";
     addResourcePath("data", RAVL_SOURCE_DIR "/data");
     fn = Ravl2::findFileResource("data", fn, true);
