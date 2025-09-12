@@ -63,12 +63,6 @@ protected:
   template <typename... PlaneTypes>
   bool makeImage(PlanarImage<2,PlaneTypes... > &img, const AVFrame* frame) const;
 
-
-  // Helper method to get or create SwsContext for conversion
-  SwsContext* getSwsContext(int srcWidth, int srcHeight, AVPixelFormat srcFormat, 
-                           int dstWidth, int dstHeight, AVPixelFormat dstFormat) const;
-
-
 private:
   //! Decode the current packet into a frame
   VideoResult<void> decodeCurrentPacket();

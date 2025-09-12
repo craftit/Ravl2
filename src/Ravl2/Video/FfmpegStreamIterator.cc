@@ -585,19 +585,4 @@ FfmpegMediaContainer& FfmpegStreamIterator::ffmpegContainer() const {
   return *std::static_pointer_cast<FfmpegMediaContainer>(container());
 }
 
-SwsContext* FfmpegStreamIterator::getSwsContext(int srcWidth, int srcHeight, AVPixelFormat srcFormat, 
-                                              int dstWidth, int dstHeight, AVPixelFormat dstFormat) const {
-  // Create a software scaler context for the conversion
-  SwsContext* swsContext = sws_getContext(
-      srcWidth, srcHeight, srcFormat,
-      dstWidth, dstHeight, dstFormat,
-      SWS_BILINEAR, nullptr, nullptr, nullptr);
-
-  if (!swsContext) {
-    SPDLOG_ERROR("Failed to create SwsContext for format conversion");
-  }
-
-  return swsContext;
-}
-
 } // namespace Ravl2::Video
