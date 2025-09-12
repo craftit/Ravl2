@@ -154,7 +154,11 @@ namespace Ravl2::Video
 
     //! Verify the timestamp is close to where we sought to
     MediaTime frameTime = frame->timestamp();
-    CHECK(((frameTime >= midPoint) || (frameTime <= midPoint + MediaTime(1000000)))); // Within 1 second
+    //! Check that the frame timestamp is within a reasonable range of the seek position
+    //! Typically we can only seek to a keyframe, so the actual frame might be slightly
+    //! before or after the requested position
+    CHECK(frameTime >= midPoint - MediaTime(1000000));
+    CHECK(frameTime <= midPoint + MediaTime(1000000)); // Within 1 second either direction
 
     //! Test seeking back to the beginning
     seekResult = iterator.reset();
