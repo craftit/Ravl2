@@ -31,6 +31,8 @@ target_link_libraries(SimplePlayer PRIVATE
     Ravl2Video
 )
 
+target_compile_definitions(SimplePlayer PUBLIC -DRAVL_SOURCE_DIR="${PROJECT_SOURCE_DIR}")
+
 # Set installation target
 install(TARGETS SimplePlayer
     RUNTIME DESTINATION bin

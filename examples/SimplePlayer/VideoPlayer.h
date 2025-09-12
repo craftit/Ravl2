@@ -77,6 +77,9 @@ private:
     //! Update the current frame
     bool updateFrame();
 
+    //! Handle playback state updates and frame advancement
+    void updatePlaybackState();
+
     //! Convert Ravl2 VideoFrame to QPixmap
     QPixmap convertFrameToPixmap(const std::shared_ptr<Ravl2::Video::VideoFrameBase> &frame);
 

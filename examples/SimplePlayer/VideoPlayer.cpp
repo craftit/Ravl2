@@ -232,30 +232,60 @@ QPixmap VideoPlayer::getCurrentFrame()
     QMutexLocker locker(&mutex);
 
     if (isPlaying) {
+        updatePlaybackState();
+    }
+
+    return currentFrame;
+}
+
+void VideoPlayer::updatePlaybackState()
+{
+    if (isPlaying && mediaContainer && videoIterator) {
         //! Check if it's time to move to the next frame
         int64_t currentTime = QDateTime::currentMSecsSinceEpoch();
 
         if (lastFrameTime == 0) {
             lastFrameTime = currentTime;
-        } else {
-            //! Get video properties to calculate frame rate
-            auto propertiesResult = mediaContainer->videoProperties(videoStreamIndex);
-            if (propertiesResult.isSuccess()) {
-                auto properties = propertiesResult.value();
+            return;
+        }
 
-                //! Calculate time per frame in milliseconds
-                float frameRateMs = 1000.0f / properties.frameRate;
+        //! Get video properties to calculate frame rate
+        auto propertiesResult = mediaContainer->videoProperties(videoStreamIndex);
+        if (!propertiesResult.isSuccess()) {
+            return;
+        }
 
-                //! Check if enough time has passed for the next frame
-                if (currentTime - lastFrameTime >= frameRateMs) {
-                    nextFrame();
-                    lastFrameTime = currentTime;
+        auto properties = propertiesResult.value();
+
+        //! Calculate time per frame in milliseconds
+        float frameRateMs = 1000.0f / properties.frameRate;
+
+        //! Check if enough time has passed for the next frame
+        if (currentTime - lastFrameTime >= frameRateMs) {
+            //! Move to the next frame
+            auto result = videoIterator->next();
+            if (!result.isSuccess()) {
+                if (result.error() == Ravl2::Video::VideoErrorCode::EndOfStream) {
+                    //! Reached the end of the stream, seek back to beginning
+                    videoIterator->reset();
+                } else {
+                    //! Error moving to next frame
+                    qWarning() << "Failed to move to next frame. Error:"
+                               << QString::fromUtf8(Ravl2::Video::toString(result.error()));
+                    return;
                 }
             }
+
+            //! Update the current frame
+            updateFrame();
+
+            //! Update the position
+            emit positionChanged(getPosition());
+
+            //! Update the lastFrameTime
+            lastFrameTime = currentTime;
         }
     }
-
-    return currentFrame;
 }
 
 bool VideoPlayer::updateFrame()

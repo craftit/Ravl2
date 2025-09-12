@@ -138,6 +138,10 @@ void MainWindow::updateVideoFrame()
 void MainWindow::updateUI()
 {
     ui->playPauseButton->setText(isPlaying ? tr("Pause") : tr("Play"));
+
+    //! Enable playPauseButton when a file is loaded
+    ui->playPauseButton->setEnabled(videoPlayer->isFileLoaded());
+
     ui->nextFrameButton->setEnabled(!isPlaying && videoPlayer->isFileLoaded());
     ui->prevFrameButton->setEnabled(!isPlaying && videoPlayer->isFileLoaded());
     ui->positionSlider->setEnabled(videoPlayer->isFileLoaded());
