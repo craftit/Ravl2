@@ -20,6 +20,7 @@ FfmpegMultiStreamIterator::FfmpegMultiStreamIterator(std::shared_ptr<FfmpegMedia
                                                     const std::vector<std::size_t>& streamIndices)
     : StreamIterator(container, 0) // Temporary stream index, will be updated when we get the first frame
     , m_ffmpegContainer(std::move(container))
+    , m_packetQueue() // Initialize the packet queue
 {
   Ravl2::initPixel();
 
@@ -174,11 +175,11 @@ VideoResult<void> FfmpegMultiStreamIterator::next() {
         if (frameResult.error() == VideoErrorCode::NeedMoreData) {
           continue;
         }
-        
+
         // For other errors, return the error
         return VideoResult<void>(frameResult.error());
       }
-      
+
       // This packet doesn't belong to any of our streams, discard it
       av_packet_unref(m_packet);
     }

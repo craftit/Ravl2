@@ -10,6 +10,7 @@
 #include <memory>
 #include <vector>
 #include <map>
+#include <queue>
 
 // Forward declarations for FFmpeg structures
 struct AVFormatContext;
@@ -125,6 +126,25 @@ private:
 
   //! Flag to track if we recently performed a seek operation
   bool m_wasSeekOperation = false;
+
+  //! Fill the packet queue with decoded frames in presentation order
+  VideoResult<void> fillPacketQueue();
+
+  //! Packet buffer for presentation timestamp ordering
+  struct PacketInfo {
+    std::shared_ptr<Frame> frame;
+    std::size_t streamIndex;
+    int64_t pts;
+    bool operator<(const PacketInfo& other) const {
+      return pts > other.pts; // Priority queue is a max-heap, so invert comparison
+    }
+  };
+
+  //! Priority queue for presentation ordering
+  std::priority_queue<PacketInfo> m_packetQueue;
+
+  //! Minimum buffer size for presentation ordering
+  static constexpr std::size_t MIN_QUEUE_SIZE = 16;
 };
 
 } // namespace Ravl2::Video
