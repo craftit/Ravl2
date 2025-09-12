@@ -204,6 +204,11 @@ VideoResult<void> FfmpegMultiStreamIterator::seek(MediaTime timestamp, SeekFlags
     return VideoResult<void>(VideoErrorCode::InvalidOperation);
   }
 
+  // Convert MediaTime to FFmpeg's time base
+  int64_t timestamp_tb = av_rescale_q(timestamp.count(),
+                                     AVRational{1, AV_TIME_BASE},
+                                     AVRational{1, AV_TIME_BASE});
+
   // Seek in the container
   int avFlags = 0;
   if (flags == SeekFlags::Keyframe) {
@@ -213,16 +218,46 @@ VideoResult<void> FfmpegMultiStreamIterator::seek(MediaTime timestamp, SeekFlags
     avFlags |= AVSEEK_FLAG_BACKWARD; // Seek backwards
   }
 
-  // Convert MediaTime to FFmpeg's time base
-  int64_t timestamp_tb = av_rescale_q(timestamp.count(),
-                                     AVRational{1, AV_TIME_BASE},
-                                     AVRational{1, AV_TIME_BASE});
+  // Define a range for seeking
+  // For precise seeking, we create a small window around the target timestamp
+  int64_t min_ts = timestamp_tb - (AV_TIME_BASE / 10); // 100ms before
+  int64_t max_ts = timestamp_tb + (AV_TIME_BASE / 10); // 100ms after
 
-  // Seek to the given timestamp
-  int result = av_seek_frame(container.m_formatContext, -1, timestamp_tb, avFlags);
+  // Ensure min timestamp is not negative
+  min_ts = std::max(int64_t(0), min_ts);
+
+  // First try with avformat_seek_file for better precision
+  int result = avformat_seek_file(
+    container.m_formatContext,
+    -1,                // stream index, -1 for auto selection
+    min_ts,            // minimum timestamp
+    timestamp_tb,      // target timestamp
+    max_ts,            // maximum timestamp
+    avFlags            // flags
+  );
+
+  // If avformat_seek_file fails, fall back to av_seek_frame
   if (result < 0) {
-    SPDLOG_WARN("Error seeking to timestamp: {}", toString(FfmpegMediaContainer::convertFfmpegError(result)));
-    return VideoResult<void>(FfmpegMediaContainer::convertFfmpegError(result));
+    SPDLOG_DEBUG("avformat_seek_file failed, falling back to av_seek_frame: {}",
+                toString(FfmpegMediaContainer::convertFfmpegError(result)));
+
+    result = av_seek_frame(container.m_formatContext, -1, timestamp_tb, avFlags);
+
+    if (result < 0) {
+      SPDLOG_WARN("Error seeking to timestamp: {}", toString(FfmpegMediaContainer::convertFfmpegError(result)));
+
+      // One more attempt: try seeking to the beginning as a last resort
+      if (timestamp.count() <= 0) {
+        SPDLOG_DEBUG("Seeking to beginning as fallback");
+        result = av_seek_frame(container.m_formatContext, -1, 0, AVSEEK_FLAG_BACKWARD);
+
+        if (result < 0) {
+          return VideoResult<void>(FfmpegMediaContainer::convertFfmpegError(result));
+        }
+      } else {
+        return VideoResult<void>(FfmpegMediaContainer::convertFfmpegError(result));
+      }
+    }
   }
 
   // Flush buffers for all codec contexts
