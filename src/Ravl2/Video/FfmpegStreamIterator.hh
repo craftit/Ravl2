@@ -26,7 +26,7 @@ public:
   ~FfmpegStreamIterator() override;
 
   //! Check if the iterator is at the end of the stream
-  bool isAtEnd() const override;
+  [[nodiscard]] bool isAtEnd() const override;
 
   //! Move to the next frame/chunk
   VideoResult<void> next() override;
@@ -41,19 +41,19 @@ public:
   VideoResult<void> seekToIndex(int64_t index) override;
 
   //! Get a specific frame by its unique ID
-  VideoResult<std::shared_ptr<Frame>> getFrameById(StreamItemId id) const override;
+  [[nodiscard]] VideoResult<std::shared_ptr<Frame>> getFrameById(StreamItemId id) const override;
 
   //! Reset the iterator to the beginning of the stream
   VideoResult<void> reset() override;
 
   //! Get the total duration of the stream
-  MediaTime duration() const override;
+  [[nodiscard]] MediaTime duration() const override;
 
   //! Check if the iterator can seek
-  bool canSeek() const override;
+  [[nodiscard]] bool canSeek() const override;
 
   //! Get the current position as a frame/chunk index (override for more accurate frame counting)
-  int64_t positionIndex() const override;
+  [[nodiscard]] int64_t positionIndex() const override;
 
   //! Get the data element type held in the frames.
   [[nodiscard]] std::type_info const &dataType() const override;
@@ -82,22 +82,22 @@ private:
   VideoResult<void> readNextPacket();
 
   //! Convert FFmpeg packet to our Frame type
-  std::shared_ptr<Frame> convertPacketToFrame();
+  [[nodiscard]] std::shared_ptr<Frame> convertPacketToFrame();
 
   //! Create a video frame from FFmpeg data
   template <typename ImageT>
-  std::shared_ptr<VideoFrame<ImageT>> createVideoFrame();
+  [[nodiscard]] std::shared_ptr<VideoFrame<ImageT>> createVideoFrame();
 
   //! Create an audio chunk from FFmpeg data
   template <typename SampleT>
-  std::shared_ptr<AudioChunk<SampleT>> createAudioChunk();
+  [[nodiscard]] std::shared_ptr<AudioChunk<SampleT>> createAudioChunk();
 
   //! Create a metadata frame from FFmpeg data
   template <typename DataT>
-  std::shared_ptr<MetaDataFrame<DataT>> createMetadataFrame();
+  [[nodiscard]] std::shared_ptr<MetaDataFrame<DataT>> createMetadataFrame();
 
   //! Get direct access to the FfmpegMediaContainer
-  FfmpegMediaContainer& ffmpegContainer() const;
+  [[nodiscard]] FfmpegMediaContainer& ffmpegContainer() const;
 
   //! FFmpeg packet - container for compressed data
   AVPacket* m_packet = nullptr;

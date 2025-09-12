@@ -14,12 +14,8 @@
 namespace Ravl2::Video {
 
 FfmpegStreamIterator::FfmpegStreamIterator(std::shared_ptr<FfmpegMediaContainer> container, std::size_t streamIndex)
-    : StreamIterator(container, streamIndex),
-      m_nextFrameId(0),
-      m_isAtEnd(false),
-      m_currentPositionIndex(0),
-      m_wasSeekOperation(false)
-  {
+    : StreamIterator(container, streamIndex)
+{
   Ravl2::initPixel();
 
   // Allocate FFmpeg resources

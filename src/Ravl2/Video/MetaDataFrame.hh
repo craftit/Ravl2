@@ -20,7 +20,7 @@ namespace Ravl2::Video {
 class MetaDataFrameBase : public Frame {
 public:
   //! Get the stream type
-  StreamType streamType() const override {
+  [[nodiscard]] StreamType streamType() const override {
     return StreamType::Data;
   }
 
@@ -40,7 +40,7 @@ template<typename DataT>
 class MetaDataFrame : public MetaDataFrameBase {
 public:
   //! Virtual destructor
-  virtual ~MetaDataFrame() = default;
+  ~MetaDataFrame() override = default;
 
   //! Constructor with data, format, ID, and timestamp
   MetaDataFrame(const DataT& data, StreamItemId id, MediaTime timestamp)
@@ -49,15 +49,15 @@ public:
   {}
 
   //! Get the metadata as a specific type
-  const DataT &data() const
+  [[nodiscard]] const DataT &data() const
   { return mData; }
 
   //! Get the data type name
-  virtual std::string dataTypeName() const
+  [[nodiscard]] virtual std::string dataTypeName() const
   { return typeid(DataT).name(); }
 
   //! Check if the frame has valid data
-  bool isValid() const override
+  [[nodiscard]] bool isValid() const override
   { return true; }
 
   //! Access data

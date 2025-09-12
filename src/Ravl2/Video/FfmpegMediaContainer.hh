@@ -42,43 +42,43 @@ public:
   ~FfmpegMediaContainer() override;
 
   //! Factory method to create an FFmpeg-based media container from a file
-  static VideoResult<std::shared_ptr<MediaContainer>> openFile(const std::string& filePath);
+  [[nodiscard]] static VideoResult<std::shared_ptr<MediaContainer>> openFile(const std::string& filePath);
 
   //! Check if the container is open
-  bool isOpen() const override;
+  [[nodiscard]] bool isOpen() const override;
 
   //! Close the container and release resources
   VideoResult<void> close() override;
 
   //! Get the number of streams in the container
-  std::size_t streamCount() const override;
+  [[nodiscard]] std::size_t streamCount() const override;
 
   //! Get the type of stream at the specified index
-  StreamType streamType(std::size_t streamIndex) const override;
+  [[nodiscard]] StreamType streamType(std::size_t streamIndex) const override;
 
   //! Get properties for a video stream
-  VideoResult<VideoProperties> videoProperties(std::size_t streamIndex) const override;
+  [[nodiscard]] VideoResult<VideoProperties> videoProperties(std::size_t streamIndex) const override;
 
   //! Get properties for an audio stream
-  VideoResult<AudioProperties> audioProperties(std::size_t streamIndex) const override;
+  [[nodiscard]] VideoResult<AudioProperties> audioProperties(std::size_t streamIndex) const override;
 
   //! Get properties for a data stream
-  VideoResult<DataProperties> dataProperties(std::size_t streamIndex) const override;
+  [[nodiscard]] VideoResult<DataProperties> dataProperties(std::size_t streamIndex) const override;
 
   //! Get the total duration of the container (the longest stream)
-  MediaTime duration() const override;
+  [[nodiscard]] MediaTime duration() const override;
 
   //! Create an iterator for a specific stream
-  VideoResult<std::shared_ptr<StreamIterator>> createIterator(std::size_t streamIndex) override;
+  [[nodiscard]] VideoResult<std::shared_ptr<StreamIterator>> createIterator(std::size_t streamIndex) override;
 
   //! Get global container metadata
-  std::map<std::string, std::string> metadata() const override;
+  [[nodiscard]] std::map<std::string, std::string> metadata() const override;
 
   //! Get specific metadata value
-  std::string metadata(const std::string& key) const override;
+  [[nodiscard]] std::string metadata(const std::string& key) const override;
 
   //! Check if a specific metadata key exists
-  bool hasMetadata(const std::string& key) const override;
+  [[nodiscard]] bool hasMetadata(const std::string& key) const override;
 
 private:
   //! Initialize FFmpeg library (called once)

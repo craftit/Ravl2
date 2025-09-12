@@ -63,43 +63,43 @@ public:
   friend class MemoryStreamIterator;
 
   //! Check if the container is open
-  bool isOpen() const override;
+  [[nodiscard]] bool isOpen() const override;
 
   //! Close the container and release resources
   VideoResult<void> close() override;
 
   //! Get the number of streams in the container
-  std::size_t streamCount() const override;
+  [[nodiscard]] std::size_t streamCount() const override;
 
   //! Get the type of stream at the specified index
-  StreamType streamType(std::size_t streamIndex) const override;
+  [[nodiscard]] StreamType streamType(std::size_t streamIndex) const override;
 
   //! Get properties for a video stream
-  VideoResult<VideoProperties> videoProperties(std::size_t streamIndex) const override;
+  [[nodiscard]] VideoResult<VideoProperties> videoProperties(std::size_t streamIndex) const override;
 
   //! Get properties for an audio stream
-  VideoResult<AudioProperties> audioProperties(std::size_t streamIndex) const override;
+  [[nodiscard]] VideoResult<AudioProperties> audioProperties(std::size_t streamIndex) const override;
 
   //! Get properties for a data stream
-  VideoResult<DataProperties> dataProperties(std::size_t streamIndex) const override;
+  [[nodiscard]] VideoResult<DataProperties> dataProperties(std::size_t streamIndex) const override;
 
   //! Get the total duration of the container (the longest stream)
-  MediaTime duration() const override;
+  [[nodiscard]] MediaTime duration() const override;
 
   //! Create an iterator for a specific stream
-  VideoResult<std::shared_ptr<StreamIterator>> createIterator(std::size_t streamIndex) override;
+  [[nodiscard]] VideoResult<std::shared_ptr<StreamIterator>> createIterator(std::size_t streamIndex) override;
 
   //! Get global container metadata
-  std::map<std::string, std::string> metadata() const override;
+  [[nodiscard]] std::map<std::string, std::string> metadata() const override;
 
   //! Get specific metadata value
-  std::string metadata(const std::string& key) const override;
+  [[nodiscard]] std::string metadata(const std::string& key) const override;
 
   //! Check if a specific metadata key exists
-  bool hasMetadata(const std::string& key) const override;
+  [[nodiscard]] bool hasMetadata(const std::string& key) const override;
 
   //! Factory method to create memory container from streams
-  static std::shared_ptr<MemoryMediaContainer> create(const std::vector<StreamData>& streams,
+  [[nodiscard]] static std::shared_ptr<MemoryMediaContainer> create(const std::vector<StreamData>& streams,
                                                     const std::map<std::string, std::string>& metadata = {});
 
 private:
@@ -134,13 +134,13 @@ public:
   VideoResult<void> seekToIndex(int64_t index) override;
 
   //! Get a specific frame by its unique ID
-  VideoResult<std::shared_ptr<Frame>> getFrameById(StreamItemId id) const override;
+  [[nodiscard]] VideoResult<std::shared_ptr<Frame>> getFrameById(StreamItemId id) const override;
 
   //! Reset the iterator to the beginning of the stream
   VideoResult<void> reset() override;
 
   //! Check if the iterator can seek
-  bool canSeek() const override
+  [[nodiscard]] bool canSeek() const override
   {
     return true;
   }

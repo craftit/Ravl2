@@ -19,10 +19,10 @@ namespace Ravl2::Video {
 class VideoFrameBase : public Frame {
 public:
   //! Get the frame width
-  virtual int width() const = 0;
+  [[nodiscard]] virtual int width() const = 0;
 
   //! Get the frame height
-  virtual int height() const = 0;
+  [[nodiscard]] virtual int height() const = 0;
 
   //! Set the keyframe flag
   void setKeyFrame(bool isKeyFrame) {
@@ -30,12 +30,12 @@ public:
   }
 
   //! Check if this is a keyframe
-  bool isKeyFrame() const {
+  [[nodiscard]] bool isKeyFrame() const {
     return m_isKeyFrame;
   }
 
   //! Get the stream type
-  StreamType streamType() const override {
+  [[nodiscard]] StreamType streamType() const override {
     return StreamType::Video;
   }
 
@@ -72,7 +72,7 @@ public:
   [[nodiscard]] int height() const override { return m_frameData.range().size(0); }
 
   //! The frame data
-  const ImageT &image() const
+  [[nodiscard]] const ImageT &image() const
   {
     return m_frameData;
   }

@@ -160,7 +160,7 @@ public:
   }
 
   //! Get the current frame
-  VideoFrame<ImageTypeT> &currentFrame() const
+  [[nodiscard]] VideoFrame<ImageTypeT> &currentFrame() const
   {
     assert(m_iterator->currentFrame());
     auto ptr = std::dynamic_pointer_cast<VideoFrame<ImageTypeT>>(m_iterator->currentFrame());
@@ -169,7 +169,7 @@ public:
   }
 
   //! Get the current frame
-  ImageTypeT videoFrame()
+  [[nodiscard]] ImageTypeT videoFrame()
   {
     if (mConversionChain) {
       return std::any_cast<ImageTypeT>(mConversionChain->convert(m_iterator->currentFrame()->frameData()));
@@ -186,7 +186,7 @@ public:
   }
 
   //! Get the underlying iterator
-  std::shared_ptr<StreamIterator> iterator() const {
+  [[nodiscard]] std::shared_ptr<StreamIterator> iterator() const {
     return m_iterator;
   }
 
@@ -219,7 +219,7 @@ public:
   }
 
   //! Get the current frame
-  AudioChunk<SampleT> &currentFrame() const
+  [[nodiscard]] AudioChunk<SampleT> &currentFrame() const
   {
     return *std::dynamic_pointer_cast<AudioChunk<SampleT>>(m_iterator->currentFrame());
   }
@@ -230,7 +230,7 @@ public:
   }
 
   //! Get the underlying iterator
-  std::shared_ptr<StreamIterator> iterator() const {
+  [[nodiscard]] std::shared_ptr<StreamIterator> iterator() const {
     return m_iterator;
   }
 

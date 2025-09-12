@@ -18,10 +18,10 @@ namespace Ravl2::Video {
 class AudioChunkBase : public Frame {
 public:
   //! Get the number of channels
-  virtual int channels() const = 0;
+  [[nodiscard]] virtual int channels() const = 0;
 
   //! Get the number of samples in this chunk
-  virtual int samples() const = 0;
+  [[nodiscard]] virtual int samples() const = 0;
 
   //! Get the stream type
   [[nodiscard]] StreamType streamType() const override {

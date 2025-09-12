@@ -55,7 +55,7 @@ public:
   //! Get properties for a data stream
   virtual VideoResult<DataProperties> dataProperties(std::size_t streamIndex) const = 0;
 
-  //! Get total duration of the container (longest stream)
+  //! Get the total duration of the container (longest stream)
   virtual MediaTime duration() const = 0;
 
   //! Create an iterator for a specific stream
