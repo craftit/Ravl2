@@ -15,7 +15,6 @@ target_link_libraries(test_video_module
     Catch2::Catch2WithMain
 )
 
-target_compile_definitions(test_video_module PRIVATE -DRAVL_SOURCE_DIR="${PROJECT_SOURCE_DIR}" -DRAVL_BINARY_DIR="${PROJECT_BINARY_DIR}" -DRAVL_INSTALL_PREFIX="${CMAKE_INSTALL_PREFIX}")
 
 # Add the test to CTest
 add_test(
@@ -27,6 +26,9 @@ add_test(
 add_executable(exMediaContainer
     exMediaContainer.cc
 )
+
+target_compile_definitions(exMediaContainer PUBLIC -DRAVL_SOURCE_DIR="${PROJECT_SOURCE_DIR}")
+
 
 # Link with the necessary libraries
 target_link_libraries(exMediaContainer

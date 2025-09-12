@@ -16,18 +16,11 @@ MemoryMediaContainer::MemoryMediaContainer(const std::vector<StreamData>& stream
   : m_streams(streams)
   , m_metadata(metadata)
 {
-  // Calculate container duration (longest stream)
-  if (!m_streams.empty()) {
-    for (const auto& stream : m_streams) {
-      // Extract duration based on stream type
-      MediaTime streamDuration = std::visit([](const auto& props) -> MediaTime {
-          return props.duration;
-      }, stream.mProperties);
-
-      // Update container duration if this stream is longer
-      if (streamDuration > m_duration) {
-        m_duration = streamDuration;
-      }
+  // Calculate container duration (longest stream based on provided properties)
+  for (const auto& stream : m_streams) {
+    MediaTime streamDuration = std::visit([](const auto& props) -> MediaTime { return props.duration; }, stream.mProperties);
+    if (streamDuration > m_duration) {
+      m_duration = streamDuration;
     }
   }
 }
@@ -189,169 +182,122 @@ MemoryStreamIterator::MemoryStreamIterator(std::shared_ptr<MemoryMediaContainer>
     // This is safe because we're storing a pointer to a vector that's owned by the container
     // and we hold a shared_ptr to the container to ensure it outlives this iterator
     m_frames = &container->m_streams[streamIndex].mFrames;
-    setCurrentFrame(m_frames->at(static_cast<std::size_t>(m_currentPosition)));
+    if (m_frames && !m_frames->empty()) {
+      m_currentPosition = 0;
+      setCurrentFrame(m_frames->at(0));
+    } else {
+      m_currentPosition = 0;
+      setCurrentFrame(nullptr);
+    }
   }
 }
 
-
 bool MemoryStreamIterator::isAtEnd() const {
-  return !isValid() || !m_frames || m_currentPosition < 0 || m_currentPosition >= static_cast<std::ptrdiff_t>(m_frames->size());
+  if(!m_frames) return true;
+  if(m_frames->empty()) return true; // Treat empty stream as at end
+  return m_currentPosition >= static_cast<std::ptrdiff_t>(m_frames->size());
 }
 
 VideoResult<void> MemoryStreamIterator::next() {
-  if (!isValid() || !m_frames) {
-    return VideoResult<void>(VideoErrorCode::InvalidOperation);
-  }
+  if(!m_frames) return VideoResult<void>(VideoErrorCode::InvalidOperation);
+  if(m_frames->empty()) return VideoResult<void>(VideoErrorCode::EndOfStream);
 
-  if (isAtEnd()) {
+  // Already at sentinel past end
+  if(m_currentPosition >= static_cast<std::ptrdiff_t>(m_frames->size()))
     return VideoResult<void>(VideoErrorCode::EndOfStream);
-  }
 
+  // Move forward
   ++m_currentPosition;
-  if (m_currentPosition >= static_cast<std::ptrdiff_t>(m_frames->size())) {
-    // We've reached the end - set position to the end index rather than -1
-    m_currentPosition = static_cast<std::ptrdiff_t>(m_frames->size());
-    setCurrentFrame(nullptr); // Clear current frame
+  if(m_currentPosition >= static_cast<std::ptrdiff_t>(m_frames->size())) {
+    // Move to end sentinel
+    setCurrentFrame(nullptr);
     return VideoResult<void>();
   }
-
   setCurrentFrame(m_frames->at(static_cast<std::size_t>(m_currentPosition)));
   return VideoResult<void>();
 }
 
 VideoResult<void> MemoryStreamIterator::previous() {
-  if (!isValid() || !m_frames) {
-    return VideoResult<void>(VideoErrorCode::InvalidOperation);
+  if(!m_frames) return VideoResult<void>(VideoErrorCode::InvalidOperation);
+  if(m_frames->empty()) return VideoResult<void>(VideoErrorCode::InvalidOperation);
+
+  // From end sentinel back to last frame
+  if(m_currentPosition == static_cast<std::ptrdiff_t>(m_frames->size())) {
+    m_currentPosition = static_cast<std::ptrdiff_t>(m_frames->size()) - 1;
+    setCurrentFrame(m_frames->at(static_cast<std::size_t>(m_currentPosition)));
+    return VideoResult<void>();
   }
 
-  if (m_currentPosition == 0) {
+  if(m_currentPosition == 0)
     return VideoResult<void>(VideoErrorCode::InvalidOperation);
-  }
 
   --m_currentPosition;
-  if (m_currentPosition < 0)
-  {
-    m_currentPosition = -1;
-    return VideoResult<void>(VideoErrorCode::EndOfStream);
-  }
   setCurrentFrame(m_frames->at(static_cast<std::size_t>(m_currentPosition)));
   return VideoResult<void>();
 }
 
 VideoResult<void> MemoryStreamIterator::seek(MediaTime timestamp, SeekFlags flags) {
-  if (!isValid() || !m_frames || m_frames->empty()) {
+  if(!m_frames || m_frames->empty())
     return VideoResult<void>(VideoErrorCode::InvalidOperation);
-  }
 
-  // Handle different seek flags
-  switch (flags) {
+  std::ptrdiff_t newPos = -1;
+  switch(flags) {
     case SeekFlags::Precise: {
-      // Find the frame with the closest timestamp (prefer exact match if available)
-      auto it = std::find_if(m_frames->begin(), m_frames->end(),
-                           [timestamp](const auto& frame) {
-                             return frame->timestamp() == timestamp;
-                           });
-
-      // If exact match not found, find closest
-      if (it == m_frames->end()) {
-        it = std::min_element(m_frames->begin(), m_frames->end(),
-                            [timestamp](const auto& a, const auto& b) {
-                              auto diffA = std::abs((a->timestamp() - timestamp).count());
-                              auto diffB = std::abs((b->timestamp() - timestamp).count());
-                              return diffA < diffB;
-                            });
+      auto it = std::find_if(m_frames->begin(), m_frames->end(), [timestamp](const auto &f){ return f->timestamp() == timestamp; });
+      if(it == m_frames->end()) {
+        // Choose closest
+        it = std::min_element(m_frames->begin(), m_frames->end(), [timestamp](const auto &a, const auto &b){
+          auto da = (a->timestamp() - timestamp).count(); if(da<0) da=-da;
+          auto db = (b->timestamp() - timestamp).count(); if(db<0) db=-db;
+          return da < db;
+        });
       }
-
-      if (it != m_frames->end()) {
-        m_currentPosition = std::distance(m_frames->begin(), it);
-        return VideoResult<void>();
-      }
-      break;
-    }
-
+      if(it != m_frames->end()) newPos = std::distance(m_frames->begin(), it);
+      break; }
     case SeekFlags::Keyframe: {
-      // In-memory container doesn't need special keyframe handling
-      // for this simple implementation, just use Precise seeking
       return seek(timestamp, SeekFlags::Precise);
     }
-
     case SeekFlags::Previous: {
-      // Find the last frame with timestamp <= requested timestamp
-      auto it = std::find_if(m_frames->rbegin(), m_frames->rend(),
-                           [timestamp](const auto& frame) {
-                             return frame->timestamp() <= timestamp;
-                           });
-
-      if (it != m_frames->rend()) {
-        m_currentPosition = static_cast<std::ptrdiff_t>(m_frames->size()) - 1 - std::distance(m_frames->rbegin(), it);
-        return VideoResult<void>();
+      for(std::ptrdiff_t i = static_cast<std::ptrdiff_t>(m_frames->size()) - 1; i >= 0; --i) {
+        if(m_frames->at(static_cast<std::size_t>(i))->timestamp() <= timestamp) { newPos = i; break; }
       }
-      break;
-    }
-
+      break; }
     case SeekFlags::Next: {
-      // Find the first frame with timestamp >= requested timestamp
-      auto it = std::find_if(m_frames->begin(), m_frames->end(),
-                           [timestamp](const auto& frame) {
-                             return frame->timestamp() >= timestamp;
-                           });
-
-      if (it != m_frames->end()) {
-        m_currentPosition = std::distance(m_frames->begin(), it);
-        return VideoResult<void>();
+      for(std::size_t i = 0; i < m_frames->size(); ++i) {
+        if(m_frames->at(i)->timestamp() >= timestamp) { newPos = static_cast<std::ptrdiff_t>(i); break; }
       }
-      break;
-    }
+      break; }
   }
-
-  return VideoResult<void>(VideoErrorCode::SeekFailed);
+  if(newPos < 0) return VideoResult<void>(VideoErrorCode::SeekFailed);
+  m_currentPosition = newPos;
+  setCurrentFrame(m_frames->at(static_cast<std::size_t>(m_currentPosition)));
+  return VideoResult<void>();
 }
 
 VideoResult<void> MemoryStreamIterator::seekToIndex(int64_t index) {
-  if (!isValid() || !m_frames) {
-    return VideoResult<void>(VideoErrorCode::InvalidOperation);
-  }
-
-  if (index < 0 || static_cast<std::size_t>(index) >= m_frames->size()) {
-    return VideoResult<void>(VideoErrorCode::SeekFailed);
-  }
-
+  if(!m_frames) return VideoResult<void>(VideoErrorCode::InvalidOperation);
+  if(index < 0 || static_cast<std::size_t>(index) >= m_frames->size()) return VideoResult<void>(VideoErrorCode::SeekFailed);
   m_currentPosition = static_cast<std::ptrdiff_t>(index);
   setCurrentFrame(m_frames->at(static_cast<std::size_t>(m_currentPosition)));
   return {};
 }
 
 VideoResult<std::shared_ptr<Frame>> MemoryStreamIterator::getFrameById(StreamItemId id) const {
-  if (!isValid() || !m_frames) {
-    return VideoResult<std::shared_ptr<Frame>>(VideoErrorCode::InvalidOperation);
-  }
-
-  auto it = std::find_if(m_frames->begin(), m_frames->end(),
-                       [id](const auto& frame) {
-                         return frame->id() == id;
-                       });
-
-  if (it != m_frames->end()) {
-    return VideoResult<std::shared_ptr<Frame>>(*it);
-  }
-
-  return VideoResult<std::shared_ptr<Frame>>(VideoErrorCode::ResourceUnavailable);
+  if(!m_frames) return VideoResult<std::shared_ptr<Frame>>(VideoErrorCode::InvalidOperation);
+  auto it = std::find_if(m_frames->begin(), m_frames->end(), [id](const auto &f){ return f->id() == id; });
+  if(it == m_frames->end()) return VideoResult<std::shared_ptr<Frame>>(VideoErrorCode::ResourceUnavailable);
+  return VideoResult<std::shared_ptr<Frame>>(*it);
 }
 
 VideoResult<void> MemoryStreamIterator::reset() {
-  if (!isValid()) {
-    return VideoResult<void>(VideoErrorCode::InvalidOperation);
-  }
-
+  if(!m_frames) return VideoResult<void>(VideoErrorCode::InvalidOperation);
   m_currentPosition = 0;
+  if(!m_frames->empty()) setCurrentFrame(m_frames->at(0)); else setCurrentFrame(nullptr);
   return VideoResult<void>();
 }
 
-
 MediaTime MemoryStreamIterator::duration() const {
-  if (!isValid()) {
-    return MediaTime(0);
-  }
+  if(!m_frames) return MediaTime(0);
   return media().duration();
 }
 

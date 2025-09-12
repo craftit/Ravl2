@@ -6,6 +6,7 @@
 #include <spdlog/spdlog.h>
 
 #include "Ravl2/config.hh"
+#include "Ravl2/Resource.hh"
 #include "Ravl2/IO/OutputSequence.hh"
 #include "Ravl2/IO/InputSequence.hh"
 #include "Ravl2/Resource.hh"
@@ -22,10 +23,11 @@ int main(int argc, char *argv[])
   Ravl2::initOpenCVImageIO();
   Ravl2::initColourConversion();
   Ravl2::initPlaneConversion();
+  Ravl2::addResourcePath("data", RAVL_SOURCE_DIR "/data");
 
   CLI::App app{"Media container information example program"};
 
-  std::string filePath;
+  std::string filePath = "sample-5s.mp4";
   std::string outPath = "display://Video";
   bool verbose = false;
   bool show_version = false;
@@ -33,7 +35,7 @@ int main(int argc, char *argv[])
   using PixelT = Ravl2::PixelYUV8;
 
   // Define command line options
-  app.add_option("file", filePath, "Input media file path")->required();
+  app.add_option("file", filePath, "Input media file path");
   app.add_option("-o,--output", outPath, "Output path for frames");
   app.add_flag("-s,--seq", seq, "Process sequence (loop through frames)");
   app.add_flag("-v,--verbose", verbose, "Verbose mode");
@@ -50,6 +52,15 @@ int main(int argc, char *argv[])
   if (verbose) {
     fmt::print("Opening file: {}\n", filePath);
   }
+  std::filesystem::path p(filePath);
+  if (!std::filesystem::exists(p)) {
+    std::string newFile = Ravl2::findFileResource("data", filePath);
+    if (!newFile.empty()) {
+      filePath = newFile;
+      fmt::print("File not found. Using file from resource: {}\n", filePath);
+    }
+  }
+
 
   // Open the media container
   auto result = Ravl2::Video::FfmpegMediaContainer::openFile(filePath);

@@ -16,7 +16,7 @@ using TestPixel = uint8_t;
 
 TEST_CASE("VideoFrameBase properties", "[VideoFrame]") {
   // Create a test frame
-  Array<TestPixel, 2> frameData({10, 8}, 42); // 10x8 frame filled with value 42
+  Array<TestPixel, 2> frameData({10, 8}, 42); // rows=10 (height), cols=8 (width)
   StreamItemId id = 123;
   MediaTime timestamp = std::chrono::milliseconds(1000);
 
@@ -26,8 +26,8 @@ TEST_CASE("VideoFrameBase properties", "[VideoFrame]") {
     CHECK(frame.id() == id);
     CHECK(frame.timestamp() == timestamp);
     CHECK(frame.streamType() == StreamType::Video);
-    CHECK(frame.width() == 10);
-    CHECK(frame.height() == 8);
+    CHECK(frame.width() == 8);
+    CHECK(frame.height() == 10);
   }
 
   SECTION("Keyframe flag") {
@@ -69,17 +69,17 @@ TEST_CASE("VideoFrame template class", "[VideoFrame]") {
 TEST_CASE("VideoFrame dimensions", "[VideoFrame]") {
   SECTION("Various dimensions") {
     // Test different dimensions
-    Array<TestPixel, 2> frame1({1, 1}, 1);
+    Array<TestPixel, 2> frame1({1, 1}, 1); // rows=1, cols=1
     VideoFrame<Array<TestPixel, 2> > vf1(frame1, 1, std::chrono::milliseconds(100));
     CHECK(vf1.width() == 1);
     CHECK(vf1.height() == 1);
 
-    Array<TestPixel, 2> frame2({16, 9}, 1);
+    Array<TestPixel, 2> frame2({9, 16}, 1); // rows=9, cols=16 (16:9)
     VideoFrame<Array<TestPixel, 2> > vf2(frame2, 2, std::chrono::milliseconds(200));
     CHECK(vf2.width() == 16);
     CHECK(vf2.height() == 9);
 
-    Array<TestPixel, 2> frame3({1920, 1080}, 1);
+    Array<TestPixel, 2> frame3({1080, 1920}, 1); // rows=1080, cols=1920 (FullHD 16:9)
     VideoFrame<Array<TestPixel, 2> > vf3(frame3, 3, std::chrono::milliseconds(300));
     CHECK(vf3.width() == 1920);
     CHECK(vf3.height() == 1080);
@@ -96,7 +96,7 @@ struct RGBPixel {
 };
 
 TEST_CASE("VideoFrame with complex pixel type", "[VideoFrame]") {
-  Array<RGBPixel, 2> frameData({3, 2});
+  Array<RGBPixel, 2> frameData({3, 2}); // rows=3, cols=2
 
   // Fill with some test data
   for (int y = 0; y < 2; y++) {
@@ -110,8 +110,8 @@ TEST_CASE("VideoFrame with complex pixel type", "[VideoFrame]") {
   VideoFrame<Array<RGBPixel,2> > frame(frameData, 999, std::chrono::milliseconds(5000));
 
   SECTION("Frame properties") {
-    CHECK(frame.width() == 3);
-    CHECK(frame.height() == 2);
+    CHECK(frame.width() == 2);
+    CHECK(frame.height() == 3);
     CHECK(frame.isValid());
   }
 

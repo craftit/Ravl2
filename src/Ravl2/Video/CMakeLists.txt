@@ -92,6 +92,7 @@ target_include_directories(Ravl2Video
         $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/include>
 )
 
+
 # Set installation targets for the library
 install(TARGETS Ravl2Video
     EXPORT Ravl2Targets
