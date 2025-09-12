@@ -329,12 +329,45 @@ bool FfmpegMultiStreamIterator::canSeek() const {
   auto& container = ffmpegContainer();
 
   if (!container.isOpen()) {
+    SPDLOG_DEBUG("Cannot seek: container is not open");
+    return false;
+  }
+
+  if (!container.m_formatContext || !container.m_formatContext->iformat) {
+    SPDLOG_DEBUG("Cannot seek: format context or input format is null");
     return false;
   }
 
   // Check if the format supports seeking
-  constexpr int AVFMT_UNSEEKABLE_FLAG = 0x0008; // Value from ffmpeg's avformat.h
-  return !(container.m_formatContext->iformat->flags & AVFMT_UNSEEKABLE_FLAG);
+  bool formatSupportsSeek = false;
+#ifdef AVFMT_UNSEEKABLE
+  formatSupportsSeek = !(container.m_formatContext->iformat->flags & AVFMT_UNSEEKABLE);
+#endif
+
+  // Some formats might report they don't support seeking but actually do
+  // Force seeking to be enabled for common container formats that should support it
+  const char* formatName = container.m_formatContext->iformat->name;
+  bool forceSeekable = false;
+  SPDLOG_DEBUG("Format name: {}", formatName ? formatName : "null");
+
+  if (formatName) {
+    // Common seekable formats
+    static const std::array<const char*, 5> seekableFormats = {
+      "mp4", "mov", "matroska", "mkv", "avi"
+    };
+
+    for (const auto* format : seekableFormats) {
+      // Check if format name contains any of our known seekable formats
+      // This handles compound format names like "mov,mp4,m4a,3gp,3g2,mj2"
+      if (std::strstr(formatName, format) != nullptr) {
+        forceSeekable = true;
+        SPDLOG_DEBUG("Forcing seeking to be enabled for format: {} (matched: {})", formatName, format);
+        break;
+      }
+    }
+  }
+
+  return formatSupportsSeek || forceSeekable;
 }
 
 int64_t FfmpegMultiStreamIterator::positionIndex() const {

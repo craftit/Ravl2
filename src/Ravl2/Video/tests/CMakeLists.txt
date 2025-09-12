@@ -15,6 +15,8 @@ target_link_libraries(test_video_module
     Catch2::Catch2WithMain
 )
 
+target_compile_definitions(test_video_module PUBLIC -DRAVL_SOURCE_DIR="${PROJECT_SOURCE_DIR}")
+
 
 # Add the test to CTest
 add_test(
