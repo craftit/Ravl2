@@ -5,12 +5,12 @@
 
 #pragma once
 
-#include "Ravl2/Video/StreamIterator.hh"
-#include "Ravl2/Video/FfmpegMediaContainer.hh"
 #include <memory>
 #include <vector>
 #include <map>
 #include <queue>
+#include "Ravl2/Video/StreamIterator.hh"
+#include "Ravl2/Video/FfmpegMediaContainer.hh"
 
 // Forward declarations for FFmpeg structures
 struct AVFormatContext;
@@ -75,6 +75,9 @@ private:
   //! Convert an FFmpeg frame to our Frame type
   [[nodiscard]] std::shared_ptr<Frame> convertFrameToFrame(AVFrame* frame, std::size_t streamIndex, StreamItemId id);
 
+  //! Traditional seek implementation (used internally)
+  VideoResult<void> traditionalSeek(MediaTime timestamp, SeekFlags flags);
+
   //! Create a video frame from FFmpeg data
   template <typename ImageT>
   [[nodiscard]] std::shared_ptr<VideoFrame<ImageT>> createVideoFrame(AVFrame* frame, std::size_t streamIndex, StreamItemId id);
@@ -96,6 +99,31 @@ private:
 
   //! Container for the media file
   std::shared_ptr<FfmpegMediaContainer> m_ffmpegContainer;
+
+  //! Structure to store keyframe information for seeking
+  struct KeyframeInfo {
+    int64_t pts;        //!< Presentation timestamp
+    int64_t pos;        //!< Byte position in file
+    bool isKeyframe;    //!< Whether this is a keyframe
+    std::size_t streamIndex;  //!< Stream index
+
+    //! Compare operator for sorting
+    bool operator<(const KeyframeInfo& other) const {
+      return pts < other.pts;
+    }
+  };
+
+  //! Vector to store keyframe information for each stream
+  std::vector<std::vector<KeyframeInfo>> m_keyframeIndex;
+
+  //! Flag to indicate if keyframe index has been built
+  bool m_keyframeIndexBuilt = false;
+
+  //! Build a keyframe index for faster seeking
+  VideoResult<void> buildKeyframeIndex();
+
+  //! Find the nearest keyframe to a given timestamp
+  KeyframeInfo findNearestKeyframe(MediaTime timestamp, SeekFlags flags);
 
   //! List of stream indices we're tracking
   std::vector<std::size_t> m_streamIndices;

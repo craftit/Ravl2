@@ -39,7 +39,8 @@ enum class VideoErrorCode {
   SeekFailed,             //!< Failed to seek to requested position
   CorruptedData,          //!< Data is corrupted
   UnsupportedFormat,      //!< Format is not supported
-  ResourceAllocationError //!< Failed to allocate required resources
+  ResourceAllocationError,//!< Failed to allocate required resources
+  MemoryError,            //!< Memory allocation failed
 };
 
 std::string_view toString(VideoErrorCode error);
