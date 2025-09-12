@@ -28,13 +28,7 @@ namespace Ravl2::Video
     virtual ~MediaContainer() = default;
 
     //! Open a media container from a file path
-    static VideoResult<std::shared_ptr<MediaContainer>> openFile(const std::string&filePath)
-    {
-      (void)filePath;
-      // This is a placeholder implementation
-      // In a real implementation, this would create the appropriate container type based on the file extension
-      return VideoResult<std::shared_ptr<MediaContainer>>(VideoErrorCode::UnsupportedFormat);
-    }
+    static VideoResult<std::shared_ptr<MediaContainer>> openFile(const std::string&filePath);
 
     //! Check if the container is open
     virtual bool isOpen() const = 0;
@@ -79,4 +73,5 @@ namespace Ravl2::Video
     //! Mutex for thread-safe operations
     mutable std::mutex m_mutex;
   };
+
 } // namespace Ravl2::Video
