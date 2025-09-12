@@ -10,7 +10,7 @@
 
 namespace Ravl2::Video {
 
-// Static member initialization
+// Static member initialisation
 bool FfmpegMediaContainer::s_ffmpegInitialized = false;
 
 FfmpegMediaContainer::FfmpegMediaContainer()
@@ -48,8 +48,7 @@ VideoResult<std::shared_ptr<MediaContainer>> FfmpegMediaContainer::openFile(cons
   if (result < 0) {
     char errorBuffer[AV_ERROR_MAX_STRING_SIZE];
     av_strerror(result, errorBuffer, AV_ERROR_MAX_STRING_SIZE);
-    std::cerr << "FFmpeg error: Could not open input file: " << filePath
-              << " - " << errorBuffer << std::endl;
+    SPDLOG_ERROR("FFmpeg error: Could not open input file: {} - {}", filePath, errorBuffer);
     return VideoResult<std::shared_ptr<MediaContainer>>(convertFfmpegError(result));
   }
 
@@ -368,7 +367,7 @@ VideoResult<std::shared_ptr<StreamIterator>> FfmpegMediaContainer::createIterato
       std::static_pointer_cast<StreamIterator>(iterator)
     );
   } catch (const std::exception& e) {
-    std::cerr << "Exception creating stream iterator: " << e.what() << std::endl;
+    SPDLOG_ERROR("Exception creating stream iterator: {}", e.what());
     return VideoResult<std::shared_ptr<StreamIterator>>(VideoErrorCode::ResourceAllocationError);
   }
 }

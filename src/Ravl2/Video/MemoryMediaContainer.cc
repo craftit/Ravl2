@@ -15,8 +15,6 @@ MemoryMediaContainer::MemoryMediaContainer(const std::vector<StreamData>& stream
                                           const std::map<std::string, std::string>& metadata)
   : m_streams(streams)
   , m_metadata(metadata)
-  , m_isOpen(true)
-  , m_duration(0)
 {
   // Calculate container duration (longest stream)
   if (!m_streams.empty()) {
