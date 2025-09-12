@@ -13,7 +13,8 @@
 #include "Ravl2/Video/Frame.hh"
 #include "Ravl2/Pixel/PixelPlane.hh"
 
-namespace Ravl2::Video {
+namespace Ravl2::Video
+{
 
 //! Base class for video frames, regardless of pixel type
 class VideoFrameBase : public Frame {

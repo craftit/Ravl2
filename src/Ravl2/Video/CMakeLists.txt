@@ -36,6 +36,7 @@ set(VIDEO_SOURCES
     MediaContainer.cc MediaContainer.hh
     MemoryMediaContainer.cc MemoryMediaContainer.hh
     StreamIterator.cc StreamIterator.hh
+    VideoIO.cc
 )
 
 # Add FFmpeg components if available

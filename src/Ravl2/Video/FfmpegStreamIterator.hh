@@ -22,7 +22,7 @@ public:
   //! Constructor taking a container and stream index
   FfmpegStreamIterator(std::shared_ptr<FfmpegMediaContainer> container, std::size_t streamIndex);
 
-  //! Destructor - ensures proper cleanup of FFmpeg resources
+  //! Destructor - ensures proper clean-up of FFmpeg resources
   ~FfmpegStreamIterator() override;
 
   //! Check if the iterator is at the end of the stream

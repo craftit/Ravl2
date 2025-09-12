@@ -462,12 +462,9 @@ CodecInfo FfmpegMediaContainer::getCodecInfo(const AVCodecContext* codecContext)
 }
 
 VideoErrorCode FfmpegMediaContainer::convertFfmpegError(int ffmpegError) {
-  if (ffmpegError >= 0) {
-
   // Use pragma to suppress old-style cast warnings from FFmpeg macros
-  #pragma GCC diagnostic push
-  #pragma GCC diagnostic ignored "-Wold-style-cast"
-  }
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wold-style-cast"
 
   switch (ffmpegError) {
     case AVERROR_EOF:
@@ -488,8 +485,8 @@ VideoErrorCode FfmpegMediaContainer::convertFfmpegError(int ffmpegError) {
       return VideoErrorCode::CorruptedData;
     default:
       break;
-  #pragma GCC diagnostic pop
   }
+#pragma GCC diagnostic pop
   return VideoErrorCode::DecodingError;
 }
 

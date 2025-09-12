@@ -33,7 +33,8 @@ namespace Ravl2::Video {
 class FfmpegStreamIterator;
 
 //! Implementation of MediaContainer using FFmpeg for media file access
-class FfmpegMediaContainer final : public MediaContainer  {
+class FfmpegMediaContainer final : public MediaContainer
+{
 public:
   //! Constructor - use the factory method for normal creation
   explicit FfmpegMediaContainer();
@@ -81,20 +82,20 @@ public:
   [[nodiscard]] bool hasMetadata(const std::string& key) const override;
 
 private:
-  //! Initialize FFmpeg library (called once)
+  //! Initialise FFmpeg library (called once)
   static void initializeFfmpeg();
 
   //! Convert FFmpeg error code to VideoErrorCode
-  static VideoErrorCode convertFfmpegError(int ffmpegError);
+  [[nodiscard]] static VideoErrorCode convertFfmpegError(int ffmpegError);
 
   //! Extract metadata from FFmpeg context
   void extractMetadata();
 
   //! Map FFmpeg stream types to our StreamType enum
-  static StreamType mapFfmpegStreamType(int ffmpegStreamType);
+  [[nodiscard]] static StreamType mapFfmpegStreamType(int ffmpegStreamType);
 
   //! Get codec information from an AVCodecContext
-  static CodecInfo getCodecInfo(const AVCodecContext* codecContext);
+  [[nodiscard]] static CodecInfo getCodecInfo(const AVCodecContext* codecContext);
 
   //! FFmpeg format context - main container for file information
   AVFormatContext* m_formatContext = nullptr;
