@@ -31,6 +31,7 @@ namespace Ravl2::Video {
 
 // Forward declaration
 class FfmpegStreamIterator;
+class FfmpegMultiStreamIterator;
 
 //! Implementation of MediaContainer using FFmpeg for media file access
 class FfmpegMediaContainer final : public MediaContainer
@@ -114,6 +115,7 @@ private:
 
   //! Friend class declaration to allow the iterator to access private members
   friend class FfmpegStreamIterator;
+  friend class FfmpegMultiStreamIterator;
 };
 
 } // namespace Ravl2::Video

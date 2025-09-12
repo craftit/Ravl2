@@ -32,6 +32,7 @@ enum class VideoErrorCode {
   NeedMoreData,           //!< More data is needed to complete the operation
   EndOfStream,            //!< End of stream reached
   InvalidOperation,       //!< Operation is not valid in the current state
+  InvalidArgument,        //!< Invalid argument
   NotImplemented,         //!< Operation is not yet implemented
   ResourceUnavailable,    //!< Required resource is not available
   DecodingError,          //!< Error occurred during decoding

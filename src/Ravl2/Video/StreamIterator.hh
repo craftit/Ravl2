@@ -19,8 +19,9 @@
 
 namespace Ravl2::Video {
 
-// Forward declaration
+// Forward declarations
 class MediaContainer;
+class FfmpegMultiStreamIterator;
 
 //! Class representing an iterator for a specific stream in a media container
 class StreamIterator {
@@ -104,10 +105,12 @@ protected:
 
   [[nodiscard]] bool isValid() const
   { return mContainer && mCurrentFrame; }
+  friend class FfmpegMultiStreamIterator;
+
 private:
   std::size_t mStreamIndex = 0;
+  MediaTime mPosition;
   std::shared_ptr<MediaContainer> mContainer;
-  MediaTime mPosition {};
   std::shared_ptr<Frame> mCurrentFrame;
 };
 
