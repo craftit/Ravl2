@@ -2,6 +2,7 @@
 // Created by charles galambos on 12/09/2025.
 //
 
+#include <spdlog/spdlog.h>
 #include "Ravl2/IO/TypeConverter.hh"
 #include "Ravl2/IO/InputFormat.hh"
 #include "Ravl2/IO/StreamInput.hh"            // For StreamInputCall
@@ -11,7 +12,6 @@
 #include "Ravl2/Video/VideoTypes.hh"           // VideoErrorCode / MediaTime
 #include "Ravl2/Pixel/PixelPlane.hh"           // Planar image types (YUV/RGB)
 #include "Ravl2/Pixel/Colour.hh"               // Colour conversions & registration
-#include <spdlog/spdlog.h>
 
 namespace Ravl2::Video
 {

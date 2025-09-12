@@ -59,8 +59,6 @@ public:
   [[nodiscard]] std::type_info const &dataType() const override;
 
 protected:
-  template<typename PixelT>
-  bool makeImage(Array<PixelT, 2>&img, const AVFrame* frame) const;
 
   template <typename... PlaneTypes>
   bool makeImage(PlanarImage<2,PlaneTypes... > &img, const AVFrame* frame) const;
@@ -70,9 +68,6 @@ protected:
   SwsContext* getSwsContext(int srcWidth, int srcHeight, AVPixelFormat srcFormat, 
                            int dstWidth, int dstHeight, AVPixelFormat dstFormat) const;
 
-  // SwScale-based implementation for image conversion
-  template<typename PixelT>
-  bool makeImageWithSwScale(Array<PixelT, 2>&img, const AVFrame* frame) const;
 
 private:
   //! Decode the current packet into a frame
