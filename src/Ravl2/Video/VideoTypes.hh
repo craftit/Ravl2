@@ -42,6 +42,7 @@ namespace Ravl2::Video
     UnsupportedFormat, //!< Format is not supported
     ResourceAllocationError, //!< Failed to allocate required resources
     MemoryError, //!< Memory allocation failed
+    NotFound, //!< Stream frame has not been found
   };
 
   std::string_view toString(VideoErrorCode error);

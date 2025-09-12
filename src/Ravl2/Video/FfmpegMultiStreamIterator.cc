@@ -56,6 +56,24 @@ namespace Ravl2::Video
       throw std::runtime_error("No valid streams available for multi-stream iterator");
     }
 
+    {
+      // Calculate how many bits we need for the stream index
+      // Number of bits = ceil(log2(number of streams))
+      const std::size_t numStreams = m_streamIndices.size();
+      m_streamBits = 0;
+      for (std::size_t temp = numStreams; temp > 0; temp >>= 1)
+      {
+        m_streamBits++;
+      }
+
+      // Ensure we have at least 4 bits for stream index (up to 16 streams)
+      // and at most 16 bits (supporting up to 65536 streams)
+      m_streamBits = std::max(std::size_t(4), m_streamBits);
+      m_streamBits = std::min(std::size_t(16), m_streamBits);
+
+      SPDLOG_DEBUG("Using {} bits for stream index in frame IDs", m_streamBits);
+    }
+
     // Allocate FFmpeg resources
     m_packet = av_packet_alloc();
     if (!m_packet)
@@ -412,6 +430,31 @@ namespace Ravl2::Video
     m_wasSeekOperation = true;
     m_isAtEnd = false;
 
+    // Reset frame ID counters for frames without PTS after seeking
+    // This ensures we generate appropriate frame IDs that reflect the new position
+    for (size_t i = 0; i < m_nextFrameIds.size(); ++i)
+    {
+      // Estimate the new counter value based on the target timestamp
+      // If we know the average frame rate, we could calculate a more precise value
+      auto* stream = m_streams[i];
+      if (stream && stream->avg_frame_rate.num > 0 && stream->avg_frame_rate.den > 0)
+      {
+        // Calculate approximate frame number based on timestamp and framerate
+        double seconds = static_cast<double>(timestamp.count()) / AV_TIME_BASE;
+        double fps = static_cast<double>(stream->avg_frame_rate.num) / stream->avg_frame_rate.den;
+        m_nextFrameIds[i] = static_cast<StreamItemId>(seconds * fps);
+        SPDLOG_DEBUG("Reset frame ID counter for stream {} to {} based on seek to {} seconds",
+                    i, m_nextFrameIds[i], seconds);
+      }
+      else if (timestamp.count() <= 0)
+      {
+        // If seeking to the beginning, reset to 0
+        m_nextFrameIds[i] = 0;
+        SPDLOG_DEBUG("Reset frame ID counter for stream {} to 0", i);
+      }
+      // Otherwise leave the counter as is, which might be better than an arbitrary value
+    }
+
     // Read the next frame at the new position
     return next();
   }
@@ -441,15 +484,108 @@ namespace Ravl2::Video
     return VideoResult<void>();
   }
 
-  VideoResult<std::shared_ptr<Frame>> FfmpegMultiStreamIterator::getFrameById([[maybe_unused]] StreamItemId id) const
+  VideoResult<std::shared_ptr<Frame>> FfmpegMultiStreamIterator::getFrameById(StreamItemId id) const
   {
-    // FFmpeg doesn't have direct frame ID seeking
-    // This would require either:
-    // 1. Maintaining a cache of frames by ID
-    // 2. Seeking to the start and reading until we find the frame with the right ID
+    // Extract stream local index and PTS from the ID
+    // The lower m_streamBits bits contain the stream local index
+    std::size_t localIndex = id & ((1LL << m_streamBits) - 1);
+    // The higher bits contain the PTS value
+    int64_t pts = id >> m_streamBits;
 
-    // For now, just return an error
-    return VideoResult<std::shared_ptr<Frame>>(VideoErrorCode::NotImplemented);
+    SPDLOG_DEBUG("Extracting frame with ID: {}, localIndex: {}, PTS: {}", id, localIndex, pts);
+
+    // Verify that the local index is valid
+    if (localIndex >= m_streamIndices.size())
+    {
+      SPDLOG_WARN("Invalid stream local index in frame ID: {}", localIndex);
+      return VideoResult<std::shared_ptr<Frame>>(VideoErrorCode::InvalidArgument);
+    }
+
+    // Create a non-const copy of this to perform seeking and reading
+    // This avoids changing the state of the original iterator
+    auto iteratorCopy = std::make_shared<FfmpegMultiStreamIterator>(m_ffmpegContainer, m_streamIndices);
+
+    // Create a MediaTime from the PTS
+    MediaTime targetTime(pts);
+
+    // First try precise seeking to the timestamp
+    auto seekResult = iteratorCopy->seek(targetTime, SeekFlags::Precise);
+    if (!seekResult.isSuccess())
+    {
+      SPDLOG_WARN("Failed to seek to PTS {}: {}", pts, toString(seekResult.error()));
+      return VideoResult<std::shared_ptr<Frame>>(seekResult.error());
+    }
+
+    // Search for the frame with the matching ID
+    // We might need to read a few frames around the target position
+    // since our seeking might not land exactly on the right frame
+
+    // Start with the current frame
+    if (iteratorCopy->currentFrame() && iteratorCopy->currentFrame()->id() == id)
+    {
+      return VideoResult<std::shared_ptr<Frame>>(iteratorCopy->currentFrame());
+    }
+
+    // Try reading a few frames forward and backward to find the exact match
+    // First try reading forward (typically we'll be close but slightly before the target)
+    for (int i = 0; i < 30 && !iteratorCopy->isAtEnd(); i++)
+    {
+      auto nextResult = iteratorCopy->next();
+      if (!nextResult.isSuccess() && nextResult.error() != VideoErrorCode::EndOfStream)
+      {
+        SPDLOG_WARN("Error while searching forward for frame ID {}: {}", id, toString(nextResult.error()));
+        break;
+      }
+
+      if (iteratorCopy->currentFrame() && iteratorCopy->currentFrame()->id() == id)
+      {
+        return VideoResult<std::shared_ptr<Frame>>(iteratorCopy->currentFrame());
+      }
+
+      // If we've gone past the target PTS by a significant margin, stop searching
+      if (iteratorCopy->currentFrame() &&
+          iteratorCopy->currentFrame()->timestamp() > targetTime + MediaTime(AV_TIME_BASE / 2)) // 500ms past
+      {
+        break;
+      }
+    }
+
+    // If we didn't find it going forward, try going backward
+    // First seek again to get back near our target
+    seekResult = iteratorCopy->seek(targetTime, SeekFlags::Previous);
+    if (!seekResult.isSuccess())
+    {
+      SPDLOG_WARN("Failed to seek backward to PTS {}: {}", pts, toString(seekResult.error()));
+      return VideoResult<std::shared_ptr<Frame>>(seekResult.error());
+    }
+
+    // Now search backward
+    for (int i = 0; i < 30 && !iteratorCopy->isAtEnd(); i++)
+    {
+      if (iteratorCopy->currentFrame() && iteratorCopy->currentFrame()->id() == id)
+      {
+        return VideoResult<std::shared_ptr<Frame>>(iteratorCopy->currentFrame());
+      }
+
+      // Try to read previous (if implemented) or break
+      auto prevResult = iteratorCopy->previous();
+      if (!prevResult.isSuccess())
+      {
+        // If previous() is not implemented, we can't search backward
+        break;
+      }
+
+      // If we've gone too far back, stop searching
+      if (iteratorCopy->currentFrame() &&
+          iteratorCopy->currentFrame()->timestamp() < targetTime - MediaTime(AV_TIME_BASE / 2)) // 500ms before
+      {
+        break;
+      }
+    }
+
+    // If all attempts failed, return not found
+    SPDLOG_WARN("Could not find frame with ID: {}", id);
+    return VideoResult<std::shared_ptr<Frame>>(VideoErrorCode::NotFound);
   }
 
   VideoResult<void> FfmpegMultiStreamIterator::reset()
@@ -686,8 +822,15 @@ namespace Ravl2::Video
       return VideoResult<std::shared_ptr<Frame>>(FfmpegMediaContainer::convertFfmpegError(result));
     }
 
-    // Get the next frame ID for this stream
-    StreamItemId id = m_nextFrameIds[localIndex]++;
+    // Check if we need to increment the counter for frames without PTS
+    if (frame->pts == AV_NOPTS_VALUE)
+    {
+      // Increment the frame ID counter for this stream since the frame has no PTS
+      m_nextFrameIds[localIndex]++;
+    }
+
+    // Generate a unique frame ID based on PTS and stream index
+    StreamItemId id = generateUniqueFrameId(frame, localIndex);
 
     // Convert the FFmpeg frame to our Frame type
     auto decodedFrame = convertFrameToFrame(frame, localIndex, id);
@@ -699,6 +842,33 @@ namespace Ravl2::Video
     }
 
     return VideoResult<std::shared_ptr<Frame>>(decodedFrame);
+  }
+
+  StreamItemId FfmpegMultiStreamIterator::generateUniqueFrameId(AVFrame* frame, std::size_t localIndex)
+
+  {
+    // Get the pts value
+    int64_t pts = 0;
+    if (frame->pts != AV_NOPTS_VALUE)
+    {
+      // Use the frame's PTS
+      auto* stream = m_streams[localIndex];
+      pts = av_rescale_q(frame->pts, stream->time_base, AVRational{1, AV_TIME_BASE});
+    }
+    else
+    {
+      // If no PTS available, use the counter as a fallback
+      pts = m_nextFrameIds[localIndex]++;
+    }
+
+    // Create a unique ID by combining the pts and stream index
+    // Format: [pts value in higher bits] | [stream index in lower bits]
+    StreamItemId id = (pts << m_streamBits) | (static_cast<int64_t>(localIndex) & ((1LL << m_streamBits) - 1));
+
+    SPDLOG_DEBUG("Generated frame ID: {} from PTS: {}, stream index: {}, using {} bits for stream index",
+                 id, pts, localIndex, streamBits);
+
+    return id;
   }
 
   std::shared_ptr<Frame> FfmpegMultiStreamIterator::convertFrameToFrame(

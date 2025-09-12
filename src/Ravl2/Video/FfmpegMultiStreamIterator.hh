@@ -76,6 +76,9 @@ namespace Ravl2::Video
     //! Convert an FFmpeg frame to our Frame type
     [[nodiscard]] std::shared_ptr<Frame> convertFrameToFrame(AVFrame* frame, std::size_t streamIndex, StreamItemId id);
 
+    //! Generate a unique frame ID based on PTS and stream index
+    [[nodiscard]] StreamItemId generateUniqueFrameId(AVFrame* frame, std::size_t localIndex);
+
     //! Traditional seek implementation (used internally)
     VideoResult<void> traditionalSeek(MediaTime timestamp, SeekFlags flags);
 
@@ -150,6 +153,9 @@ namespace Ravl2::Video
 
     //! Frame ID counters for each stream
     std::vector<StreamItemId> m_nextFrameIds;
+
+    //! Number of bits needed to represent the stream index in frame IDs
+    std::size_t m_streamBits = 0;
 
     //! Current stream index (which stream the current frame belongs to)
     std::size_t m_currentStreamIndex = 0;
