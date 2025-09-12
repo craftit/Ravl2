@@ -17,3 +17,5 @@ target_link_libraries (exRandomSearchOptimise PUBLIC Ravl2Optimise CLI11::CLI11)
 find_package(CLI11 CONFIG REQUIRED)
 add_executable(intro intro.cc)
 target_link_libraries (intro PUBLIC Ravl2Core CLI11::CLI11)
+
+add_subdirectory(SimplePlayer)
