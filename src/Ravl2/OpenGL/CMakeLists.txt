@@ -8,7 +8,7 @@ find_package(OpenGL REQUIRED)
 find_package(GLUT REQUIRED)
 find_package(glm CONFIG REQUIRED)
 
-set(BUILD_IMGUIGLFW OFF CACHE BOOL "Build imgui with glfw")
+set(BUILD_IMGUIGLFW ON CACHE BOOL "Build imgui with glfw")
 
 if(BUILD_IMGUIGLFW)
     FetchContent_Declare(imgui_external
