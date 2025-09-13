@@ -190,5 +190,11 @@ namespace Ravl2::Video
 
     //! Minimum buffer size for presentation ordering
     static constexpr std::size_t MIN_QUEUE_SIZE = 16;
+
+    //! Maximum number of keyframes we will index on open.
+    static constexpr std::size_t MAX_KEYFRAME_INDEX= 10000;
+
+    //! Max frame search when looking for a time code.
+    static constexpr int MAX_FRAME_SEARCH = 30;
   };
 } // namespace Ravl2::Video

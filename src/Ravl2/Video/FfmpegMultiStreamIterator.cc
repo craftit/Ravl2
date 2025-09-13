@@ -625,7 +625,7 @@ namespace Ravl2::Video
 
     // Try reading a few frames forward and backward to find the exact match
     // First try reading forward (typically we'll be close but slightly before the target)
-    for (int i = 0; i < 30 && !iteratorCopy->isAtEnd(); i++)
+    for (int i = 0; i < MAX_FRAME_SEARCH && !iteratorCopy->isAtEnd(); i++)
     {
       auto nextResult = iteratorCopy->next();
       if (!nextResult.isSuccess() && nextResult.error() != VideoErrorCode::EndOfStream)
@@ -657,7 +657,7 @@ namespace Ravl2::Video
     }
 
     // Now search backward
-    for (int i = 0; i < 30 && !iteratorCopy->isAtEnd(); i++)
+    for (int i = 0; i < MAX_FRAME_SEARCH && !iteratorCopy->isAtEnd(); i++)
     {
       if (iteratorCopy->currentFrame() && iteratorCopy->currentFrame()->id() == id)
       {
@@ -1524,9 +1524,9 @@ namespace Ravl2::Video
           keyframesFound++;
 
           // Limit the number of keyframes to avoid excessive memory usage
-          if (keyframesFound > 10000)
+          if (keyframesFound > MAX_KEYFRAME_INDEX)
           {
-            SPDLOG_WARN("Keyframe index reached limit (10000), stopping early");
+            SPDLOG_WARN("Keyframe index reached limit ({}), stopping early",MAX_KEYFRAME_INDEX);
             break;
           }
         }
