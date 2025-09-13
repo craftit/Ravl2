@@ -128,42 +128,12 @@ namespace Ravl2
   [[maybe_unused]] bool g_reg14 = registerConversion(convertToPlanar<2, PixelY16>, 1.00f);
   [[maybe_unused]] bool g_reg15 = registerConversion(convertToPlanar<2, PixelY32F>, 1.00f);
 
-  // Helper to expand the channel pack at compile time
-  namespace detail {
-    template<typename PixelT, typename PlanarImageT, std::size_t... Is>
-    auto convertToPackedPixelAtIndexImpl(const PlanarImageT& image, const Index<2>& idx, std::index_sequence<Is...>) {
-      // Use Pixel directly instead of trying to access a non-existent pixel_type
-      return image.template createPackedPixel<Pixel,
-                                            typename PixelT::value_type,
-                                            PixelT::template getChannelAtIndex<Is>()...>(idx);
-    }
-
-    template<typename PixelT, typename PlanarImageT>
-    auto convertToPackedPixelAtIndex(const PlanarImageT& image, const Index<2>& idx) {
-      return convertToPackedPixelAtIndexImpl<PixelT>(image, idx,
-                                                  std::make_index_sequence<PixelT::channel_count>{});
-    }
-  }
 
   template<typename PixelT, typename PlanarImageT>
-  Array<PixelT, 2> helperConvertToPacked(const PlanarImageT &image)
+  Array<PixelT, 2> helperConvertToPacked(const PlanarImageT &planarImage)
   {
-    // Get the master range from the planar image
-    auto masterRange = image.range();
-
     // Create the packed array with the same master range
-    Array<PixelT, 2> result(masterRange);
-
-    // Iterate through all coordinates in the master range
-    for (auto it = result.begin(); it != result.end(); ++it) {
-      const auto& idx = it.index();
-
-      // Create a packed pixel from the planes at this position
-      // Using the createPackedPixel method from PlanarImage with the proper channel expansion
-      *it = detail::convertToPackedPixelAtIndex<PixelT>(image, idx);
-    }
-
-    return result;
+    return convertToPacked<PixelT>(planarImage);
   }
 
   // Explicitly instantiate the helperConvertToPacked function for common types

@@ -541,15 +541,24 @@ namespace Ravl2
     {
       // Create the packed array with the same master range
       Array<PixelT<ComponentT, Channels...>, Dims> result(masterRange);
-
-      // Iterate through all coordinates in the master range
       for (auto it = result.begin(); it != result.end(); ++it) {
         const auto& idx = it.index();
-
-        // Create a packed pixel from the planes at this position
         *it = planarImage.template createPackedPixel<PixelT, ComponentT, Channels...>(idx);
       }
+      return result;
+    }
 
+    // NEW: helper for fully instantiated pixel types (e.g. PixelRGB8)
+    template <unsigned Dims, typename PackedPixelT, typename PlanarT, std::size_t... Is>
+    static auto convertToPackedInstantiatedImpl(const PlanarT &planarImage, std::index_sequence<Is...>)
+    {
+      using ComponentT = typename PackedPixelT::value_type;
+      Array<PackedPixelT, Dims> result(planarImage.range());
+      for (auto it = result.begin(); it != result.end(); ++it) {
+        const auto &idx = it.index();
+        *it = planarImage.template createPackedPixel<Pixel, ComponentT,
+          PackedPixelT::template getChannelAtIndex<Is>()...>(idx);
+      }
       return result;
     }
   }
@@ -575,17 +584,19 @@ namespace Ravl2
   //! @param masterRange Optional master range to use for the result (defaults to planarImage.masterRange())
   //! @return A packed pixel array containing values from the planar image
   template <typename ComponentT, template <typename, ImageChannel...> class PixelT, ImageChannel... Channels, unsigned Dims, typename... PlaneTypes>
-  auto convertToPacked(const PlanarImage<Dims, PlaneTypes...>& planarImage,
-                        const IndexRange<Dims>& masterRange = IndexRange<Dims>())
+  auto convertToPacked(const PlanarImage<Dims, PlaneTypes...>& planarImage)
   {
-    // Use the provided master range or calculate from the planar image
-    auto resultRange = masterRange.empty() ? planarImage.range() : masterRange;
-
-    // Use the implementation helper
     return detail::convertToPackedImpl<ComponentT, PixelT, Dims, PlanarImage<Dims, PlaneTypes...>, Channels...>(
-        planarImage, resultRange);
+        planarImage, planarImage.range());
   }
 
+  // NEW: overload for already-instantiated pixel types (PixelRGB8 etc.)
+  template <typename PackedPixelT, unsigned Dims, typename... PlaneTypes>
+  auto convertToPacked(const PlanarImage<Dims, PlaneTypes...> &planarImage)
+  {
+    return detail::convertToPackedInstantiatedImpl<Dims, PackedPixelT, PlanarImage<Dims, PlaneTypes...>>(
+      planarImage, std::make_index_sequence<PackedPixelT::channel_count>{});
+  }
 
   //! Helper alias for 2D planar images (most common case)
   template <typename... PlaneTypes>
@@ -641,6 +652,4 @@ namespace Ravl2
   >;
 
 }// namespace Ravl2
-
-
 
