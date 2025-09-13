@@ -585,7 +585,7 @@ namespace Ravl2::Video
   {
     // Extract stream local index and PTS from the ID
     // The lower m_streamBits bits contain the stream local index
-    std::size_t localIndex = id & ((1LL << m_streamBits) - 1);
+    auto localIndex = static_cast<std::size_t>(id & ((1LL << m_streamBits) - 1));
     // The higher bits contain the PTS value
     int64_t pts = id >> m_streamBits;
 
