@@ -29,9 +29,9 @@ namespace Ravl2
           m_translation(translation)
     {}
 
-    //! Construct an isometry from a euler rotation and translation.
+    //! Construct an isometry from an euler rotation and translation.
     //! XYZ euler angles
-    static Isometry3<RealT> fromEulerXYZTranslation(const Vector<RealT, 3> &eulerXYZ, const Vector<RealT, 3> &translation)
+    static Isometry3 fromEulerXYZTranslation(const Vector<RealT, 3> &eulerXYZ, const Vector<RealT, 3> &translation)
     {
       return Isometry3(Quaternion<RealT>::fromEulerAnglesXYZ(eulerXYZ), translation);
     }
@@ -84,13 +84,31 @@ namespace Ravl2
       return Isometry3<RealT>(inv, inv.template rotate<RealT>(-m_translation));
     }
 
+    //! Generate a projective matrix.
+    [[nodiscard]] Matrix<RealT, 4, 4> projectiveMatrix() const
+    {
+      Matrix<RealT, 4, 4> ret;
+      ret.template block<3, 3>(0, 0) = m_rotation.toMatrix();
+      ret.template block<3, 1>(0, 3) = m_translation;
+      ret.template block<1, 3>(3, 0) = Vector<RealT, 3>::Zero();
+      ret(3, 3) = 1;
+      return ret;
+    }
+
+    //! Are all the values in the transform real.
+    //! Used to detect nan and inf values.
+    [[nodiscard]] constexpr bool isReal() const
+    {
+      return m_rotation.isReal() && m_translation.array().isFinite().all();
+    }
+
   private:
     Quaternion<RealT> m_rotation = Quaternion<RealT>::identity();
     Vector<RealT, 3> m_translation = {0, 0, 0};
   };
 
   template <typename RealT>
-  inline Vector<RealT, 3> operator*(const Isometry3<RealT> &iso, const Vector<RealT, 3> &v)
+  Vector<RealT, 3> operator*(const Isometry3<RealT> &iso, const Vector<RealT, 3> &v)
   {
     return iso.transform(v);
   }
@@ -113,7 +131,7 @@ namespace Ravl2
   template <typename DataT>
   std::ostream &operator<<(std::ostream &os, const Isometry3<DataT> &in)
   {
-    os << "Isometry3(" << in.rotation() << "," << in.translation() << ")";
+    os << "Isometry3(" << in.rotation() << "," << Eigen::WithFormat(in.translation(),defaultEigenFormat()) << ")";
     return os;
   }
 

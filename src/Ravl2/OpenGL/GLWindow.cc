@@ -5,6 +5,15 @@
 #include <spdlog/spdlog.h>
 #include "Ravl2/OpenGL/GLWindow.hh"
 
+#define DODEBUG 0
+#if DODEBUG
+#define ONDEBUG(x) x
+#else
+#define ONDEBUG(x)
+#endif
+#define ONDEBUGX(x) x
+
+
 namespace Ravl2
 {
   namespace
@@ -30,7 +39,7 @@ namespace Ravl2
       }
     }
 
-#if 0
+#if 1
     void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
     {
       GLWindow *theWindow = reinterpret_cast<GLWindow *>(glfwGetWindowUserPointer(window));
@@ -51,7 +60,23 @@ namespace Ravl2
     {
       GLWindow *theWindow = reinterpret_cast<GLWindow *>(glfwGetWindowUserPointer(window));
       if (theWindow != nullptr) {
-            theWindow->mouseButtonCallback(button, action, mods);
+        theWindow->mouseButtonCallback(button, action, mods);
+      }
+    }
+
+    void scroll_callback(GLFWwindow* window, double xOffset, double yOffset)
+    {
+      GLWindow *theWindow = reinterpret_cast<GLWindow *>(glfwGetWindowUserPointer(window));
+      if (theWindow != nullptr) {
+        theWindow->scrollCallback(xOffset, yOffset);
+      }
+    }
+
+    void window_size_callback(GLFWwindow* window, int width, int height)
+    {
+      GLWindow *theWindow = reinterpret_cast<GLWindow *>(glfwGetWindowUserPointer(window));
+      if (theWindow != nullptr) {
+        theWindow->windowSizeCallback(width, height);
       }
     }
 #endif
@@ -76,21 +101,23 @@ namespace Ravl2
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);  // 3.2+ only
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);            // Required on Mac
 #else
-    // GL 3.0 + GLSL 130
-    mGlsl_version = "#version 130";
+    // GL 3.3 + GLSL 150
+    mGlsl_version = "#version 150";
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
-    //glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);  // 3.2+ only
-    //glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);            // 3.0+ only
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);  // 3.2+ only
+    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);            // 3.0+ only
 #endif
 
     mWindow = glfwCreateWindow(width, height, title.data(), nullptr, nullptr);
     if (mWindow != nullptr) {
       glfwSetWindowUserPointer(mWindow, this);
       
-//      glfwSetCursorPosCallback(mWindow, cursor_position_callback);
-//      glfwSetMouseButtonCallback(mWindow, mouse_button_callback);
-//      glfwSetKeyCallback(mWindow, key_callback);
+      glfwSetCursorPosCallback(mWindow, cursor_position_callback);
+      glfwSetMouseButtonCallback(mWindow, mouse_button_callback);
+      glfwSetKeyCallback(mWindow, key_callback);
+      glfwSetScrollCallback(mWindow, scroll_callback);
+      glfwSetWindowSizeCallback(mWindow, window_size_callback);
       
       glfwMakeContextCurrent(mWindow);
       glfwSwapInterval(1);// Enable vsync
@@ -110,6 +137,7 @@ namespace Ravl2
   void GLWindow::makeCurrent()
   {
     if (mWindow == nullptr) {
+      SPDLOG_WARN("Window is null");
       return;
     }
     glfwMakeContextCurrent(mWindow);
@@ -135,9 +163,9 @@ namespace Ravl2
   //! Handle key events
   void GLWindow::keyCallback(int key, int scancode, int action, int mods)
   {
-    SPDLOG_INFO("Key: {} Scancode: {} Action: {} Mods: {}", key, scancode, action, mods);
-    //      if (key == GLFW_KEY_E && action == GLFW_PRESS)
-    //        activate_airship();
+    //SPDLOG_INFO("Key: {} Scancode: {} Action: {} Mods: {}", key, scancode, action, mods);
+    mKeyModState = mods;
+    mKeyCB.call(key, scancode, action, mods);
   }
   
   //! Handle cursor position events
@@ -146,29 +174,52 @@ namespace Ravl2
     (void)xpos;
     (void)ypos;
     //SPDLOG_INFO("Cursor position: {} {}", xpos, ypos);
-  
+    mCursorPositionCB.call(xpos, ypos);
+    mMouseLastX = float(xpos);
+    mMouseLastY = float(ypos);
+    MouseEvent event(MouseEventTypeT::MouseMove, mMouseLastX, mMouseLastY, mMouseButtonState,0, mKeyModState);
+    mMouseEventCB.call(event);
   }
   
   //! Handle mouse button events
   void GLWindow::mouseButtonCallback(int button, int action, int mods)
   {
-    SPDLOG_INFO("Button: {} Action: {} Mods: {}", button, action, mods);
+    //SPDLOG_INFO("Button: {} Action: {} Mods: {}", button, action, mods);
+
+    mMouseButtonCB.call(button, action, mods);
+
+    int const changedMask = 1 << button;
+    int const newState = (action == GLFW_PRESS) ? (mMouseButtonState | changedMask) : (mMouseButtonState & ~(changedMask));
+    mMouseButtonState = newState;
+    MouseEvent event((action == GLFW_PRESS) ? MouseEventTypeT::MousePress : MouseEventTypeT::MouseRelease, mMouseLastX, mMouseLastY, newState, changedMask ,mKeyModState);
+    mMouseEventCB.call(event);
   }
-  
-  
-  
-  //! Put a function on the queue to be executed in the main thread
-  void GLWindow::put(std::function<void()> &&f)
+
+  //! Handle mouse button events
+  void GLWindow::scrollCallback(double offsetX, double offsetY)
   {
-    mQueue.push(std::move(f));
+    //SPDLOG_INFO("Scroll: {} {}", offsetX, offsetY);
+    mScrollCB.call(offsetX, offsetY);
+  }
+
+  //! Handle window size callback
+  void GLWindow::windowSizeCallback(int width, int height)
+  {
+    mWindowSizeCB.call(width, height);
+  }
+
+
+  //! Put a function on the queue to be executed in the main thread
+  void GLWindow::put(std::function<void()> &&func)
+  {
+    mQueue.push(std::move(func));
     glfwPostEmptyEvent();
   }
 
   //! Add a function to be called on each frame render
-  void GLWindow::addFrameRender(std::function<void()> &&f)
+  CallbackHandle GLWindow::addFrameRender(std::function<void()> &&f)
   {
-    std::lock_guard lock(mMutex);
-    mFrameRender.push_back(std::move(f));
+    return mFrameRender.add(std::move(f));
   }
 
   void GLWindow::runMainLoop()
@@ -194,12 +245,7 @@ namespace Ravl2
 	func();
       }
       {
-	std::lock_guard lock(mMutex);
-	for(auto &f : mFrameRender) {
-	  if(f) {
-	    f();
-	  }
-	}
+        mFrameRender.call();
       }
     }
 

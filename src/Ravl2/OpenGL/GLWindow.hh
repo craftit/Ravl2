@@ -6,13 +6,13 @@
 
 #ifndef GL_SILENCE_DEPRECATION
 #define GL_SILENCE_DEPRECATION 1
+#include "MouseEvent.hh"
 #endif
 
 #include <string_view>
 #include <GLFW/glfw3.h>
 #include "Ravl2/ThreadedQueue.hh"
 #include "Ravl2/OpenGL/GLContext.hh"
-#include "Ravl2/CallbackArray.hh"
 
 namespace Ravl2
 {
@@ -69,10 +69,50 @@ namespace Ravl2
 
     //! Add a function to be called on each frame render
     //! This can't be called from within the rendering thread
-    void addFrameRender(std::function<void()> &&f);
+    CallbackHandle addFrameRender(std::function<void()> &&f);
 
     //! Put a function on the queue to be executed in the main thread
     void put(std::function<void()> &&f) override;
+
+    //! Get GLSL version
+    [[nodiscard]] const char* glslVersion() const { return mGlsl_version; }
+
+    //! Add a cursor position callback
+    CallbackHandle addCursorPositionCallback(std::function<void(double xpos, double ypos)> &&f)
+    {
+      return mCursorPositionCB.add(std::move(f));
+    }
+
+    //! Add a cursor position callback
+    CallbackHandle addScrollCallback(std::function<void(double xoffset, double yoffset)> &&f)
+    {
+      return mScrollCB.add(std::move(f));
+    }
+
+    //! Add a key callback
+    CallbackHandle addKeyCallback(std::function<void(int key, int scancode, int action, int mods)> &&f)
+    {
+      return mKeyCB.add(std::move(f));
+    }
+
+    //! Add a mouse button callback
+    CallbackHandle addMouseButtonCallback(std::function<void(int button, int action, int mods)> &&f)
+    {
+      return mMouseButtonCB.add(std::move(f));
+    }
+
+
+    //! Add mouse event callback
+    CallbackHandle addMouseEventCallback(std::function<void(const MouseEvent &event)> &&f)
+    {
+      return mMouseEventCB.add(std::move(f));
+    }
+
+    //! Add a window size callback
+    CallbackHandle addWindowSizeCallback(std::function<void(int width, int height)> &&f)
+    {
+      return mWindowSizeCB.add(std::move(f));
+    }
 
     //! Handle key events
     void keyCallback(int key, int scancode, int action, int mods);
@@ -83,13 +123,27 @@ namespace Ravl2
     //! Handle mouse button events
     void mouseButtonCallback(int button, int action, int mods);
 
-    //! Get GLSL version
-    [[nodiscard]] const char* glslVersion() const { return mGlsl_version; }
+    //! Handle mouse button events
+    void scrollCallback(double offsetX, double offsetY);
+
+    //! Handle window size callback
+    void windowSizeCallback(int width, int height);
   private:
+    CallbackArray<std::function<void(const MouseEvent &event)>> mMouseEventCB;
+    CallbackArray<std::function<void(double xpos, double ypos)>> mCursorPositionCB;
+    CallbackArray<std::function<void(double xoffset, double yoffset)>> mScrollCB;
+    CallbackArray<std::function<void(int key, int scancode, int action, int mods)>> mKeyCB;
+    CallbackArray<std::function<void(int button, int action, int mods)>> mMouseButtonCB;
+    CallbackArray<std::function<void(int width, int height)>> mWindowSizeCB;
+
+    int mKeyModState = 0;
+    int mMouseButtonState = 0;
+    float mMouseLastX = 0;
+    float mMouseLastY = 0;
     GLFWwindow* mWindow = nullptr;
     ThreadedQueue<std::function<void()>> mQueue;
     std::mutex mMutex;
-    std::vector<std::function<void()>> mFrameRender;
+    CallbackArray<std::function<void()>> mFrameRender;
     const char* mGlsl_version = "#version 130";
   };
 

@@ -22,35 +22,34 @@ namespace Ravl2
   class Canvas3D;
 
   //! Display object base class in a 3D world.
-  class DObject3D
+  class DObject
   {
   public:
-    //: Default constructor.
-    DObject3D() = default;
+    //! Default constructor.
+    DObject() = default;
 
-    //: Destructor.
-    // Make sure display list is free'd
-    virtual ~DObject3D() = default;
+    //! Destructor.
+    virtual ~DObject() = default;
 
-    //: Render object. Make sure you called Canvas3DC::GUIBeginGL just before
+    //! Initialize object.
+    //! Register object with OpenGL, setup shaders, etc.
+    virtual bool GUIInit(Canvas3D &c3d);
+
+    //! Render object. Make sure you called Canvas3DC::GUIBeginGL just before
     virtual bool GUIRender(Canvas3D &c3d) const = 0;
 
-    //: Get center of object.
-    // defaults to 0,0,0
+    //! Get center of object.
     [[nodiscard]] virtual Vector<float,3> GUICenter() const = 0;
-    //  { return Vector<RealT,3>(0,0,0); }
 
-    //: Get extent of object.
-    // defaults to 1
+    //! Get extent of object.
     [[nodiscard]] virtual float GUIExtent() const = 0;
-    //  { return 1; }
 
-    //: Render, checking for display lists.
+    //! Render, checking for display lists.
     bool GUIRenderDL(Canvas3D &c3d);
 
-    //: Set current colour.
+    //! Set current colour.
     template<typename PixelT>
-    static inline
+    static
     void GLColour(const PixelT &colour)
     { glColor3f(get<ImageChannel::Red,float>(colour),
 		get<ImageChannel::Green,float>(colour),
@@ -58,41 +57,41 @@ namespace Ravl2
     }
 
     //! Set a colour.
-    static inline
+    static
     void GLColour(const PixelRGB8 &colour)
     { glColor3ub(colour.get<ImageChannel::Red>(), colour.get<ImageChannel::Green>(), colour.get<ImageChannel::Blue>()); }
 
-    //: Set a vertex.
-    static inline
+    //! Set a vertex.
+    static
     void GLVertex(const Point<float,3> &v)
-      { glVertex3f(v[0], v[1], v[2]); }
+    { glVertex3f(v[0], v[1], v[2]); }
 
-    //: Set a vertex.
-    static inline
+    //! Set a vertex.
+    static
     void GLVertex(const Point<double,3> &v)
     { glVertex3d(v[0], v[1], v[2]); }
 
-    static inline
+    //! Set a vertex.
+    static
     void GLNormal(const Vector<float,3> &v)
     { glNormal3f(v[0], v[1], v[2]); }
-    //: Set a vertex.
 
-    static inline
+    //! Set a texture coordinate
+    static
     void GLTexCoord(const Point<float,2> &p)
     { glTexCoord2f(p[1], p[0]); }
-    //: Set a texture coordinate
 
+    //! Enable generation of a display list.
     void EnableDisplayList()
     { m_useDisplayList = true; }
-    //: Enable generation of a display list.
 
+    //! Access display list ID.
     [[nodiscard]] auto DisplayListID() const
-      { return id; }
-    //: Access display list ID.
+    { return id; }
 
+    //! Access display list ID.
     [[nodiscard]] auto &DisplayListID()
-      { return id; }
-    //: Access display list ID.
+    { return id; }
 
   protected:
     bool m_useDisplayList = false;
@@ -101,14 +100,13 @@ namespace Ravl2
 
 
   ////////////////////////////////////
-  //: Body for OpenGL code invocation class.
+  //! Body for OpenGL code invocation class.
 
-  class DOpenGLBodyC
-    : public DObject3D
+  class DOpenGLDirect : public DObject
   {
   public:
-    //: Constructor.
-    DOpenGLBodyC(const std::function<void(Canvas3D &)> &se,
+    //! Constructor.
+    DOpenGLDirect(const std::function<void(Canvas3D &)> &se,
                  const Vector<float,3> &ncenter = toVector<float>(0,0,0),
                  float nextent = 1)
       : sigEvent(se),
@@ -116,18 +114,18 @@ namespace Ravl2
 	extent(nextent)
     {}
     
-    //: Get center of object.
+    //! Get center of object.
     // defaults to 0,0,0
-    Vector<float,3> GUICenter() const override
+    [[nodiscard]] Vector<float,3> GUICenter() const override
     { return center; }
     
-    //: Get extent of object.
+    //! Get extent of object.
     // defaults to 1
-    float GUIExtent() const override
+    [[nodiscard]] float GUIExtent() const override
     { return extent; }
 
   protected:
-    //: Render object.
+    //! Render object.
     bool GUIRender(Canvas3D &c3d) const override;
 
     std::function<void(Canvas3D &)> sigEvent;
@@ -138,32 +136,36 @@ namespace Ravl2
 
   ////////////////////////////////////
 
-  //: Body of an  object set in a 3D world.
-  class DObjectSet3DBodyC
-      : public DObject3D
+  //! Body of an  object set in a 3D world.
+  class DObjectSet3D
+      : public DObject
   {
   public:
-    //: Default constructor.
-    DObjectSet3DBodyC() = default;
+    //! Default constructor.
+    DObjectSet3D() = default;
     
-    //: Render object.
+    //! Render object.
     bool GUIRender(Canvas3D &c3d) const override;
-    
-    //: Get center of object.
+
+    //! Initialize object.
+    //! Register object with OpenGL, setup shaders, etc.
+    bool GUIInit(Canvas3D &c3d) override;
+
+    //! Get center of object.
     // defaults to 0,0,0
-    Vector<float,3> GUICenter() const override;
+    [[nodiscard]] Vector<float,3> GUICenter() const override;
     
-    //: Get extent of object.
+    //! Get extent of object.
     // defaults to 1
-    float GUIExtent() const override;
+    [[nodiscard]] float GUIExtent() const override;
     
-    //: Add object into list.
-    void GUIAdd(const std::shared_ptr<DObject3D> &obj);
+    //! Add object into list.
+    void GUIAdd(const std::shared_ptr<DObject> &obj);
 
     //! Update the center and extent of the object.
     void UpdateCenterExtent();
   protected:
-    std::vector<std::shared_ptr<DObject3D> > parts;
+    std::vector<std::shared_ptr<DObject> > parts;
     Vector<float,3> center = Vector<float,3>::Zero();
     float extent = 1.0f;
     bool mUpdateNeeded = true;

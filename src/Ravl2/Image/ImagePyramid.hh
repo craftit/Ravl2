@@ -38,7 +38,7 @@ namespace Ravl2
     }
 
     //! Access the scale and translation of the image.
-    //! @return Transform to map a point from the original image to the level image.
+    //! @return Transform to map a point from the level image to the original image.
     [[nodiscard]] const auto &transformFrom() const
     {
       return mTransformFrom;
@@ -82,10 +82,13 @@ namespace Ravl2
     {}
 
     //! Access a level in the pyramid.
+    //! Each level contains the Transform to map a point from the original image to
+    //! the level image and the image at that level.
     //! @param index The index of the level to access.
     //! @return The level at the given index.
     [[nodiscard]] constexpr const PyramidLevel<ImageT, TransformT> &level(size_t index) const
     {
+      assert(index < mLevels.size());
       return mLevels[index];
     }
 
@@ -93,6 +96,7 @@ namespace Ravl2
     //! @param index The index of the level to access.
     //! @return The image at the given index.
     [[nodiscard]] constexpr const auto &image(size_t index) const {
+      assert(index < mLevels.size());
       return mLevels[index].image();
     }
 
@@ -100,6 +104,7 @@ namespace Ravl2
     //! @param index The index of the level to access.
     //! @return The transform to the level at the given index.
     [[nodiscard]] constexpr const auto &transformTo(size_t index) const {
+      assert(index < mLevels.size());
       return mLevels[index].transformTo();
     }
 
@@ -107,6 +112,7 @@ namespace Ravl2
     //! @param index The index of the level to access.
     //! @return The transform from the level at the given index.
     [[nodiscard]] constexpr const auto &transformFrom(size_t index) const {
+      assert(index < mLevels.size());
       return mLevels[index].transformFrom();
     }
 
@@ -154,6 +160,14 @@ namespace Ravl2
       return bestLevel;
     }
 
+    //! @brief Find the pyramid level that best matches the given area scaling.
+    //! This is shorthand for findLevel(findAreaScale(areaScale)).
+    //! @param areaScale The target area scaling.
+    //! @return The pyramid level that best matches the area scaling.
+    [[nodiscard]]
+    constexpr const PyramidLevel<ImageT, TransformT> &levelFromAreaScale(float areaScale)
+    { return level(findAreaScale(areaScale)); }
+
     //! Add a level to the pyramid.
     //! @param level The level to add.
     constexpr void addLevel(const PyramidLevel<ImageT, TransformT> &level)
@@ -175,7 +189,7 @@ namespace Ravl2
 
   //! Create an image pyramid from an image.
   //! @param fullImg The image to create the pyramid from.
-  //! @param sumImg The summed area table of the image.
+  //! @param subImg The summed area table of the image.
   //! @param numLevels Maximum number of levels in the pyramid.
   //! @param scale The scale factor between levels.
   //! @param pad The amount of padding to add to the image.
@@ -208,7 +222,7 @@ namespace Ravl2
       auto sampleImg = clipUnsafe(newImage,sampleRange);
       assert(sampleImg.range().area() > 0);
       //SPDLOG_INFO("SampleImg:{} ", sampleImg.range());
-      subImg.template sampleGrid(sampleImg, invScale, toVector<float>(0,0));
+      subImg.sampleGrid(sampleImg, invScale, toVector<float>(0,0));
       if(pad > 0) {
         // If we've padded the image then we need to set the padding to zero.
         mirrorEdges(newImage, pad);

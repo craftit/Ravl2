@@ -15,31 +15,32 @@
 namespace Ravl2
 {
 
-  //: Direct OpenGL render of vertex array, using current colour.
+  //! Direct OpenGL render of vertex array, using current colour.
   void DSurfacePointVertexArray(const SurfacePoint3dArrayC<Vertex<RealT>>& s);
 
-  //: Rendering class for vertex array.
+  //! Rendering class for vertex array.
   //  Does not set the colour, so will use current OpenGL colour
+
   class DSurfacePointVertexArrayBodyC : public DObject3DBodyC
   {
   public:
     DSurfacePointVertexArrayBodyC(const SurfacePoint3dArrayC<Vertex<RealT>>& s)
       : surface(s)
       {}
-    //: Constructor.
+    //! Constructor.
 
-    virtual bool GUIRender(Canvas3DC &c3d) const
+    //! Render object.
+    bool GUIRender(Canvas3DC &c3d) const override
       {
         DSurfacePointVertexArray(surface);
         return true;
       }
-    //: Render object.
 
+    //! Get center of object.
     virtual Vector<RealT,3> GUICenter() const;
-    //: Get center of object.
 
+    //! Get extent of object.
     virtual RealT GUIExtent() const;
-    //: Get extent of object.
 
   protected:
     SurfacePoint3dArrayC<Vertex<RealT>> surface;

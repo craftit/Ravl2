@@ -15,6 +15,7 @@
 #include "Ravl2/Geometry/Affine.hh"
 #include "Ravl2/Geometry/Geometry.hh"
 #include "Ravl2/Math/LinearAlgebra.hh"
+#include "VectorOffset.hh"
 
 namespace Ravl2
 {
@@ -40,44 +41,100 @@ namespace Ravl2
     //! Construct a projective transform.
     //! @param: transform - the 2D projective transformation
     //! @param: Iz, Oz - the projective scale values for the input and output vectors
-    //! <p>These are the scale values that the last term in the projective vectors must have for correct normalisation.  They are usually set = 1.  However for some optimisation operations better results are obtained if values more representative of typical components of the vector are used.
+    //! <p>These are the scale values that the last term in the projective vectors must have for correct normalisation.  They are usually set = 1.
+    //! However for some optimisation operations better results are obtained if values more representative of typical components of the vector are used.
     //! In the projection "b = P a", Iz and Oz is the scale values for a and b respectively.</p>
     //! <p> This constructor assumes that the values of the last column of "transform" have already been set to correspond to the value of "iz".</p>
     constexpr explicit Projection(const Matrix<RealT, N+1, N+1> &transform, RealT Oz = 1, RealT Iz = 1)
       : trans(transform),
-	iz(Iz),
-	oz(Oz)
+	    iz(Iz),
+	    oz(Oz)
     {}
+
+    //! Create a null projection, all points are mapped to the origin.
+    static constexpr auto null()
+    { return Projection(Matrix<RealT, N+1, N+1>::Zero(), 1, 1); }
 
     //! Construct a projective transform from an affine one
     //! @param: affineTransform - the 2D affine transform
     //! @param: Iz, Oz - the projective scale values for the input and output vectors
     //! The parameters that are not specified by the affine transform are set to 0.
     constexpr explicit Projection(const Affine<RealT, N> &affineTransform, RealT Oz = 1, RealT Iz = 1)
-        : iz(Iz),
+        : trans(),
+          iz(Iz),
           oz(Oz)
     {
       for(IndexT i = 0; i < IndexT(N); i++) {
         for(IndexT j = 0; j < IndexT(N); j++) {
           trans(i, j) = affineTransform.SRMatrix()(i, j);
         }
-        trans(i, N) = affineTransform.Translation()[i] / iz;
-        trans(i, N) = affineTransform.Translation()[i] / iz;
+        trans(i, N) = affineTransform.translation()[i] / iz;
         trans(N, i) = 0;
       }
       trans(N, N) = oz / iz;
+    }
+
+    //! Construct from a scale /translation
+    explicit constexpr Projection(const ScaleTranslate<RealT, N> &st, RealT Oz = 1, RealT Iz = 1)
+     : trans(Matrix<RealT,N+1,N+1>::Zero()),
+       iz(Iz),
+       oz(Oz)
+    {
+      for(IndexT i = 0; i < IndexT(N); i++) {
+        trans(i, i) = st.scaleVector()[i];
+        trans(i, N) = st.translation()[i] / iz;
+      }
+      trans(N, N) = oz / iz;
+    }
+
+    //! Construct from a scale /translation
+    explicit constexpr Projection(const Translate<RealT, N> &st, RealT Oz = 1, RealT Iz = 1)
+        : trans(Matrix<RealT,N+1,N+1>::Zero()),
+          iz(Iz),
+          oz(Oz)
+    {
+      for(IndexT i = 0; i < IndexT(N); i++) {
+        trans(i, i) = 1;
+        trans(i, N) = st.translation()[i] / iz;
+      }
+      trans(N, N) = oz / iz;
+    }
+
+    //! Construct from a transform
+    template<GeometryTransform TransformT>
+    explicit constexpr Projection(const TransformT &transform)
+      : trans(transform.projectiveMatrix()),
+        iz(1),
+        oz(1)
+    {}
+
+    //! Returns identity projection
+    static constexpr Projection<RealT, N> identity(RealT oz = 1, RealT iz = 1)
+    {
+      Matrix<RealT, N + 1, N + 1> m = Matrix<RealT, N + 1, N + 1>::Identity();
+      m(N, N) = oz / iz;
+      return Projection(m, oz, iz);
+    }
+
+    //! Create a translation projection
+    static constexpr Projection<RealT, N> translation(const Point<RealT,N> trans,RealT oz = 1, RealT iz = 1)
+    {
+      Matrix<RealT, N + 1, N + 1> m = Matrix<RealT, N + 1, N + 1>::Identity();
+      for(IndexT i = 0; i < IndexT(N); i++) {
+        m(i, N) = trans[i] / iz;
+      }
+      m(N, N) = oz / iz;
+      return Projection(m, oz, iz);
     }
 
     //! project a point through the transform.
     [[nodiscard]] constexpr Point<RealT, N> project(const Point<RealT, N> &pnt) const
     {
       Vector<RealT, N + 1> vi;
-      for(IndexT i = 0; i < IndexT(N); i++) {
-        vi[i] = pnt[i];
-      }
+      vi.template block<N, 1>(0, 0) = pnt;
       vi[N] = iz;
       Vector<RealT, N+1> vo = trans * vi;
-      return ((oz * vo.array()) / vo[N]).head(N);
+      return (oz * vo.array().head(N)) / vo[N];
     }
 
     //! project a point through the transform.
@@ -86,26 +143,12 @@ namespace Ravl2
       return project(pnt);
     }
 
-#if 0
-    Line2ABC Project(const Line2ABC &line) const {
-      Vector<RealT,3> vo = trans.Inverse() * Vector<RealT,3>(line.A(),line.B(),line.C()/iz);
-      return Line2ABC(vo[0],vo[1],vo[2]*oz);
-    }
-    //: Project a line through the transform.
-    // Current implementation is slow, as it inverts the projection each time the method is called.
-    
-    Line2ABC operator*(const Line2ABC &line) const
-    { return Project(line); }
-    //: Project a line through the transform.
-    // Current implementation is slow, as it inverts the projection each time the method is called.
-#endif
-
     //! Combine two transforms
     //! @param: oth - the other transform to be combined with this one
     //! @return: the result of cascading this transform with the other one.<br>
     //! Note that the iz and oz values of the two transforms are combined
     //! for the resulting one.
-    [[nodiscard]] Projection<RealT, N> operator*(const Projection<RealT, N> &oth) const
+    [[nodiscard]] constexpr Projection<RealT, N> operator()(const Projection<RealT, N> &oth) const
     {
       Matrix<RealT, N + 1, N + 1> diag = Matrix<RealT, N + 1, N + 1>::Identity();
       diag(N, N) = iz / oth.oz;
@@ -117,14 +160,6 @@ namespace Ravl2
     [[nodiscard]] constexpr Projection inverse() const
     {
       return Projection(Ravl2::inverse(trans).value(), iz, oz);
-    }
-
-    //! Returns identity projection
-    static constexpr Projection<RealT, N> identity(RealT oz = 1, RealT iz = 1)
-    {
-      Matrix<RealT, N + 1, N + 1> m = Matrix<RealT, N + 1, N + 1>::Identity();
-      m(N, N) = oz / iz;
-      return Projection(m, oz, iz);
     }
 
     //! Access transformation matrix.
@@ -166,7 +201,7 @@ namespace Ravl2
     }
 
     //! Test if projection is near affine.
-    [[nodiscard]] constexpr bool IsNearAffine(const RealT tolerance = 1e-6) const
+    [[nodiscard]] constexpr bool isNearAffine(const RealT tolerance = 1e-6) const
     {
       return (std::abs(trans(N, N)) + std::abs(trans(N, 0))) * (iz / oz) < tolerance;
     }
@@ -175,32 +210,37 @@ namespace Ravl2
     //! This returns the projection normalised to make the projective scales both = 1
     [[nodiscard]] constexpr Matrix<RealT, N + 1, N + 1> homography() const
     {
-      Matrix<RealT, N + 1, N + 1> mat1 = Matrix<RealT, N + 1, N + 1>::Identity();
-      mat1(N, N) = iz;
-      Matrix<RealT, N + 1, N + 1> mat2 = Matrix<RealT, N + 1, N + 1>::Identity();
-      mat2(N, N) = oz;
-      Matrix<RealT, N + 1, N + 1> ret = Ravl2::inverse(mat2).value() * trans* mat1;
+      Matrix<RealT, N + 1, N + 1> ret = trans;
+      ret.col(N) *= iz;
+      ret.row(N) /= oz;
       return ret;
     }
 
-    //! Get an affine approximation of this projective transform
+    //! Get as a projective matrix
+    [[nodiscard]] constexpr Matrix<RealT, N + 1, N + 1> projectiveMatrix() const
+    { return homography(); }
+
+    //! Get an affine approximation of this projective transform around the origin.
     //! @return: the affine approximation
-    [[nodiscard]] constexpr Affine<RealT, N> AffineApproximation() const
+    [[nodiscard]] constexpr Affine<RealT, N> affineApproximation() const
     {
-      Matrix<RealT,3,3> htrans = homography();
-      RealT t1 = htrans(0,2) / htrans(2,2);
-      RealT t2 = htrans(1,2) / htrans(2,2);
-      RealT h1 = htrans(0,0) / htrans(2,2)  - t1 * htrans(2,0);
-      RealT h2 = htrans(0,1) / htrans(2,2) - t1 * htrans(2,1);
-      RealT h3 = htrans(1,0) / htrans(2,2) - t2 * htrans(2,0);
-      RealT h4 = htrans(1,1) / htrans(2,2) - t2 * htrans(2,1);
-      return Affine<RealT,N>(Matrix<RealT,2,2>({{h1,h2},{h3,h4}}), Vector<RealT,2>({t1,t2}));
+      Matrix<RealT, N+1, N+1> h = homography();
+      h /= h(N, N);
+      return Affine<RealT, N>(h.template block<N, N>(0, 0),
+                          h.template block<N, 1>(0, N));
     }
 
     //! True if not the zero projection and Matrix<RealT,3,3> is "real"
     [[nodiscard]] constexpr inline bool IsValid() const
     {
       return !isNearZero(trans.cwiseAbs().sum()) && trans.array().isFinite().all();
+    }
+
+    //! Are all the values in the transform real.
+    //! Used to detect nan and inf values.
+    [[nodiscard]] constexpr bool isReal() const
+    {
+      return Eigen::isfinite(trans.array()).all() && std::isfinite(iz) && std::isfinite(oz);
     }
 
     //! Serialization support
@@ -210,12 +250,88 @@ namespace Ravl2
       ar(cereal::make_nvp("transform", trans), cereal::make_nvp("iz", iz), cereal::make_nvp("oz", oz));
     }
 
-  protected:
+    //! Line/Plane at infinity
+    [[maybe_unused]] VectorOffset<RealT, N> atInfinity() const
+    {
+      return VectorOffset<RealT, N>(trans.template block<N,1>(0,N), -trans(N, N)/oz);
+    }
+  private:
     Matrix<RealT, N + 1, N + 1> trans = Matrix<RealT, N + 1, N + 1>::Identity();
     RealT iz = 1;
     RealT oz = 1;
   };
 
+  //! @brief Convert ScaleTranslate to projection.
+  template <typename DataT, unsigned N>
+  Projection<DataT, N> toProjection(Translate<DataT, N> const &translate)
+  {
+    return Projection<DataT, N>(translate);
+  }
+
+  //! @brief Convert ScaleTranslate to projection.
+  template <typename DataT, unsigned N>
+  Projection<DataT, N> toProjection(ScaleTranslate<DataT, N> const &st)
+  {
+    return Projection<DataT, N>(st);
+  }
+  
+  //! @brief Convert ScaleTranslate to projection.
+  template <typename DataT, unsigned N>
+  Projection<DataT, N> toProjection(Affine<DataT, N> const &affine)
+  {
+    return Projection<DataT, N>(affine);
+  }
+
+
+  //! @brief Compose transforms
+  template <typename DataT, unsigned N>
+  Projection<DataT, N> operator*(const Projection<DataT, N> &lhs, const Projection<DataT, N> &rhs)
+  {
+    return lhs(rhs);
+  }
+
+  //! @brief Compose transforms
+  template <typename DataT, unsigned N>
+  Projection<DataT, N> operator*(const Projection<DataT, N> &lhs, const ScaleTranslate<DataT, N> &rhs)
+  {
+    return lhs(toProjection(rhs));
+  }
+
+  template <typename DataT, unsigned N>
+  Projection<DataT, N> operator*(const Projection<DataT, N> &lhs, const Translate<DataT, N> &rhs)
+  {
+    return lhs(toProjection(rhs));
+  }
+
+
+  //! @brief Compose transforms
+  template <typename DataT, unsigned N>
+  Projection<DataT, N> operator*(const ScaleTranslate<DataT, N> &lhs, const Projection<DataT, N> &rhs)
+  {
+    return toProjection(lhs)(rhs);
+  }
+
+  //! @brief Compose transforms
+  template <typename DataT, unsigned N>
+  Projection<DataT, N> operator*(const Translate<DataT, N> &lhs, const Projection<DataT, N> &rhs)
+  {
+    return toProjection(lhs)(rhs);
+  }
+
+  template <typename DataT, unsigned N>
+  Projection<DataT, N> operator*(const Projection<DataT, N> &lhs, const Affine<DataT, N> &rhs)
+  {
+    return lhs(toProjection(rhs));
+  }
+  
+  //! @brief Compose transforms
+  template <typename DataT, unsigned N>
+  Projection<DataT, N> operator*(const Affine<DataT, N> &lhs, const Projection<DataT, N> &rhs)
+  {
+    return toProjection(lhs)(rhs);
+  }
+  
+  
   //! Read from a stream.
   template <typename RealT, unsigned N>
   std::istream &operator>>(std::istream &s, Projection<RealT, N> &proj)
@@ -228,7 +344,7 @@ namespace Ravl2
   template <typename RealT, unsigned N>
   std::ostream &operator<<(std::ostream &s, const Projection<RealT, N> &proj)
   {
-    s << proj.matrix() << ' ' << proj.IZ() << ' ' << proj.OZ();
+    s << "Projection(" << Eigen::WithFormat(proj.matrix(),defaultEigenFormat()) << " iz=" << proj.IZ() << " oz=" << proj.OZ() << ")";
     return s;
   }
 

@@ -213,17 +213,18 @@ namespace Ravl2
     std::array<Point<RealT, N>, 2> point;
   };
 
-  //! Construct a line from two points
-  template <typename RealT, unsigned int N>
-  [[nodiscard]] constexpr inline LinePP<RealT, N> makeLine(const Point<RealT, N> &start, const Point<RealT, N> &end)
+  //! Transform a line by a point transformation
+  template <typename RealT, unsigned int N,typename TransformT>
+   requires PointTransform<TransformT, RealT, N>
+  [[nodiscard]] constexpr inline LinePP<RealT, N> operator*(const TransformT &trans, const LinePP<RealT, N> &line)
   {
-    return LinePP<RealT, N>(start, end);
+    return LinePP<RealT, N>(trans(line.P1()),trans(line.P2()));
   }
 
   template <typename RealT, unsigned int N>
   inline std::ostream &operator<<(std::ostream &s, const LinePP<RealT, N> &dat)
   {
-    s << dat.P1() << ' ' << dat.P2();
+    s << "{ P1:" << Eigen::WithFormat(dat.FirstPoint(),defaultEigenFormat()) << " P2:" << Eigen::WithFormat(dat.SecondPoint(),defaultEigenFormat()) << " }";
     return s;
   }
 
@@ -239,7 +240,7 @@ namespace Ravl2
   extern template class LinePP<float, 3>;
 
   //! Construct a line from two points
-  template <typename RealT,unsigned int N>
+  template <typename RealT,int N>
   [[nodiscard]] inline constexpr LinePP<RealT,N> toLine(Point<RealT, N> const &start, Point<RealT, N> const &end)
   {
     return LinePP<RealT,N>(start, end);

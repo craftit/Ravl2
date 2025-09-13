@@ -37,6 +37,23 @@ namespace Ravl2
         : std::vector<Point<RealT, N>>(points)
     {}
 
+    //! Construct from a fixed array of points
+    template <size_t ArraySize>
+    constexpr explicit PointSet(const std::array<Point<RealT, N>, ArraySize> &points)
+    {
+      this->reserve(ArraySize);
+      for(const auto &point : points)
+        this->push_back(point);
+    }
+
+    //! Construct from initializer list
+    PointSet(std::initializer_list<Point<RealT, N>> list)
+    {
+      this->reserve(list.size());
+      for(const auto &point : list)
+            this->push_back(point);
+    }
+
     //! Returns the centroid (mean) of the points
     [[nodiscard]] constexpr Point<RealT, N> pointCentroid() const;
 
@@ -72,6 +89,21 @@ namespace Ravl2
       for(auto &it : *this)
         it = trans(it);
       return *this;
+    }
+
+    //! The assumes the points form a closed boundary.
+    //! That is, they are in order and the last point is connected to the first.
+    [[nodiscard]] RealT perimeter() const
+    {
+      RealT perimeter = 0;
+      if(!this->empty()) {
+        auto pLast = this->back();
+        for(auto ptr : *this) {
+          perimeter += euclidDistance(pLast, ptr);
+          pLast = ptr;
+        }
+      }
+      return perimeter;
     }
 
   protected:
@@ -196,7 +228,7 @@ namespace Ravl2
   {
     s << dat.size() << std::endl;
     for(auto it : dat) {
-      s << ' ' << it;
+      s << ' ' << Eigen::WithFormat(it, defaultEigenFormat()) << std::endl;
     }
     return s;
   }

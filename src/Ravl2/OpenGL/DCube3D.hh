@@ -11,42 +11,53 @@
 #pragma once
 
 #include "Ravl2/Pixel/Pixel.hh"
-#include "Ravl2/OpenGL/DObject3D.hh"
+#include "Ravl2/OpenGL/DObject.hh"
+#include "Ravl2/OpenGL/GLShader.hh"
 
 namespace Ravl2
 {
 
-  //: Body of a  object set in a 3D world.
+  //! Body of a  object set in a 3D world.
+
   class DCube3D
-    : public DObject3D
+    : public DObject
   {
   public:
     DCube3D() = default;
 
-    //: Constructor.
+    //! Constructor.
     explicit DCube3D(
       const Vector<float,3> &nDiag,
-      const PixelRGB8 &col = {1, 0, 0})
-      : diag(nDiag),
-      colour(col)
-      {}
+      const PixelRGB8 &col = {255, 128, 128})
+      : mDiag(nDiag),
+        mColour(col)
+    {}
 
-    //: Render object.
+    //! Register object with OpenGL.
+    bool GUIInit(Canvas3D &c3d) override;
+
+    //! Render object.
     bool GUIRender(Canvas3D &c3d) const override;
 
-    //: Get center of object.
+    //! Get center of object.
     // defaults to 0,0,0
     [[nodiscard]] Vector<float,3> GUICenter() const override
     { return Vector<float,3>({0, 0, 0}); }
 
-    //: Get extent of object.
-    // defaults to 1
+    //! Get extent of object.
+    //! defaults to 1
     [[nodiscard]] float GUIExtent() const override
-    { return 1; }
+    { return std::max(mDiag[0], std::max(mDiag[1], mDiag[2])); }
 
-  protected:
-    Vector<float,3> diag = {1, 1, 1};
-    PixelRGB8 colour = {1, 0, 0};
+  private:
+    std::shared_ptr<GLShaderProgram> mShaderProgram;
+    GLint mViewProjectionLocation = 0;
+    Vector<float,3> mDiag = {1, 1, 1};
+    PixelRGB8 mColour = {255, 128, 128};
+
+    std::shared_ptr<GLVertexBuffer> mVertexBuffer;
+    GLVertexArray mVertexArray;
+
   };
 
 

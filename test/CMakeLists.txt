@@ -20,22 +20,24 @@ endif()
 find_package(Catch2 3 REQUIRED)
 
 # If we're using fetchContent, we need to add the Catch2 extra directory to the module path
-list(APPEND CMAKE_MODULE_PATH ${catch2_SOURCE_DIR}/extras)
+list(APPEND CMAKE_MODULE_PATH ${Catch2_SOURCE_DIR}/extras)
 # The following is needed on ubuntu 24.04
 list(APPEND CMAKE_MODULE_PATH ${Catch2_DIR})
 
 include(CTest)
 include(Catch)
 
-# Provide a simple smoke test to make sure that the CLI works and can display a --help message
-add_test(NAME cli.has_help COMMAND intro --help)
+if(PROJECT_IS_TOP_LEVEL OR TEST_INSTALLED_VERSION)
+  # Provide a simple smoke test to make sure that the CLI works and can display a --help message
+  add_test(NAME cli.has_help COMMAND intro --help)
 
-# Provide a test to verify that the version being reported from the application
-# matches the version given to CMake. This will be important once you package
-# your program. Real world shows that this is the kind of simple mistake that is easy
-# to make, but also easy to test for.
-add_test(NAME cli.version_matches COMMAND intro --version)
-set_tests_properties(cli.version_matches PROPERTIES PASS_REGULAR_EXPRESSION "${PROJECT_VERSION}")
+  # Provide a test to verify that the version being reported from the application
+  # matches the version given to CMake. This will be important once you package
+  # your program. Real world shows that this is the kind of simple mistake that is easy
+  # to make, but also easy to test for.
+  add_test(NAME cli.version_matches COMMAND intro --version)
+  set_tests_properties(cli.version_matches PROPERTIES PASS_REGULAR_EXPRESSION "${PROJECT_VERSION}")
+endif ()
 
 add_executable(test_call test_calls.cc)
 target_link_libraries(test_call PRIVATE ravl2::RAVL2_warnings ravl2::RAVL2_options ravl2::Ravl2Core Catch2::Catch2WithMain)
@@ -66,7 +68,18 @@ add_executable(tests
         test_warpScale.cc
         test_projective.cc
         test_eigen.cc
+        test_planes.cc
+        test_pixelplane.cc
+        test_spatialhash.cc
+        test_BayesianOptimise.cc
+        test_RandomSearchOptimise.cc
+        test_ParticleSwarmOptimise.cc
+        test_MemoryMediaContainer.cc
+        test_VideoFrame.cc
+        test_VideoIO.cc
+
 )
+target_compile_definitions(tests PRIVATE -DRAVL_SOURCE_DIR="${PROJECT_SOURCE_DIR}")
 target_link_libraries(
   tests
   PRIVATE ravl2::RAVL2_warnings
@@ -78,6 +91,7 @@ target_link_libraries(
           ravl2::Ravl2ImageSegmentation
           ravl2::Ravl2x3D
           ravl2::Ravl2OpenCV
+          ravl2::Ravl2Video
           ravl2::Ravl2Optimise
           Catch2::Catch2WithMain
           Eigen3::Eigen)
@@ -95,13 +109,13 @@ endif()
 catch_discover_tests(
   tests
   TEST_PREFIX
-  "unittests."
+  "ravl2_unittests."
   REPORTER
   XML
   OUTPUT_DIR
   .
   OUTPUT_PREFIX
-  "unittests."
+  "ravl2_unittests."
   OUTPUT_SUFFIX
   .xml)
 
@@ -117,13 +131,13 @@ target_link_libraries(
 catch_discover_tests(
   constexpr_tests
   TEST_PREFIX
-  "constexpr."
+  "ravl2_constexpr."
   REPORTER
   XML
   OUTPUT_DIR
   .
   OUTPUT_PREFIX
-  "constexpr."
+  "ravl2_constexpr."
   OUTPUT_SUFFIX
   .xml)
 
@@ -141,12 +155,12 @@ target_compile_definitions(relaxed_constexpr_tests PRIVATE -DCATCH_CONFIG_RUNTIM
 catch_discover_tests(
   relaxed_constexpr_tests
   TEST_PREFIX
-  "relaxed_constexpr."
+  "ravl2_relaxed_constexpr."
   REPORTER
   XML
   OUTPUT_DIR
   .
   OUTPUT_PREFIX
-  "relaxed_constexpr."
+  "ravl2_relaxed_constexpr."
   OUTPUT_SUFFIX
   .xml)

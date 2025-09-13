@@ -4,6 +4,7 @@
 
 #include <shared_mutex>
 #include "Ravl2/IO/TypeConverter.hh"
+#include <map>
 
 namespace Ravl2
 {
@@ -95,7 +96,7 @@ namespace Ravl2
     if(fromType == to) {
       return from;
     }
-    auto converters = find(fromType, to);
+    auto converters = find(to, fromType);
     if(!converters.has_value()) {
       return std::nullopt;
     }
@@ -105,6 +106,7 @@ namespace Ravl2
   void TypeConverterMap::dump()
   {
     std::shared_lock lock(m_mutex);
+    SPDLOG_INFO("TypeConverterMap. Converters: {} ", m_converters.size());
     for(const auto &x : m_converters) {
       SPDLOG_INFO("From: {}", typeName(x.first));
       for(const auto &y : x.second) {
@@ -121,16 +123,68 @@ namespace Ravl2
     [[maybe_unused]] bool g_reg = registerConversion([](float val) { return double(val); }, 1.0f);
 
     int32_t func(int16_t x)
-    {
-      return x;
-    }
+    { return x; }
     [[maybe_unused]] bool g_reg2 = registerConversion(func, 1.0f);
 
     int64_t func2(const int32_t &x)
-    {
-      return x;
-    }
+    { return x; }
     [[maybe_unused]] bool g_reg3 = registerConversion(func2, 1.0f);
+
+    float func3(const double &x)
+    {  return float(x); }
+    [[maybe_unused]] bool g_reg4 = registerConversion(func3, 0.5f);
+
+    double func4(const float &x)
+    { return double(x); }
+    [[maybe_unused]] bool g_reg5 = registerConversion(func4, 1.0f);
+
+    size_t func5(const int &x)
+    {
+      if(x < 0) {
+        SPDLOG_WARN("Negative value {} converted to 0", x);
+        return 0;
+      }
+      return size_t(x);
+    }
+    [[maybe_unused]] bool g_reg6 = registerConversion(func5, 0.5f);
+
+    unsigned func6(const int &x)
+    {
+      if(x < 0) {
+        SPDLOG_WARN("Negative value {} converted to 0", x);
+        return 0;
+      }
+      return unsigned(x);
+    }
+    [[maybe_unused]] bool g_reg7 = registerConversion(func6, 0.5f);
+
+    int32_t func7(const int64_t &x)
+    {
+      if(x < std::numeric_limits<int32_t>::min() || x > std::numeric_limits<int32_t>::max()) {
+        SPDLOG_WARN("Value {} out of range for int32_t", x);
+        return 0;
+      }
+      return int32_t(x);
+    }
+    [[maybe_unused]] bool g_reg8 = registerConversion(func7, 0.5f);
+
+    int32_t func8(const float &x)
+    {
+      if(x < float(std::numeric_limits<int32_t>::min()) || x > float(std::numeric_limits<int32_t>::max())) {
+        SPDLOG_WARN("Value {} out of range for int32_t", x);
+        return 0;
+      }
+      return int32_t(x);
+    }
+    [[maybe_unused]] bool g_reg9 = registerConversion(func8, 0.5f);
+
+    float func9(const long &x)
+    {
+      return float(x);
+    }
+    [[maybe_unused]] bool g_reg10 = registerConversion(func9, 0.8f);
+
+
   }// namespace
 
   std::any ConversionChain::convert(const std::any &from) const

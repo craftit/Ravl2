@@ -18,9 +18,8 @@
 
 #include "Ravl/Index2d.hh"
 
-namespace RavlImageN
+namespace Ravl2
 {
-  using namespace RavlN;
 
   //! userlevel=Normal
   //: Class to determine whether a pixel belongs to a region based on its colour.

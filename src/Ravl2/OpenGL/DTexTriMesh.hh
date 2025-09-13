@@ -11,26 +11,25 @@
 
 #pragma once
 
-#include "Ravl2/OpenGL/DTriMesh3D.hh"
+#include "Ravl2/OpenGL/DTriMesh.hh"
 #include "Ravl2/OpenGL/GLContext.hh"
 #include "Ravl2/3D/TexTriMesh.hh"
 
 namespace Ravl2
 {
 
-  //: Draw a TexTriMesh
-  class DTexTriMesh3DBodyC
-    : public DTriMesh3D
+  //! Draw a TexTriMesh
+  class DTexTriMesh : public DTriMesh
   {
   public:
-    DTexTriMesh3DBodyC(const std::shared_ptr<TexTriMesh<RealT> > &oTexTriMesh);
-    //: Constructor.
+    DTexTriMesh(const std::shared_ptr<TexTriMesh<RealT> > &oTexTriMesh);
+    //! Constructor.
 
-    ~DTexTriMesh3DBodyC();
-    //: Destructor
+    ~DTexTriMesh() override;
+    //! Destructor
 
     bool GUIRender(Canvas3D &c3d) const override;
-    //: Render object.
+    //! Render object.
 
   protected:
     std::shared_ptr<TexTriMesh<float> > tmodel;

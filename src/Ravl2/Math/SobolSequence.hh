@@ -18,105 +18,110 @@
 
 namespace Ravl2
 {
-  //! Generate a Sobol sequence.
-  //! Re-implementation from numerical recipies 2nd edition. pg 312
+	//! Generate a Sobol sequence.
+	//! Re-implementation from numerical recipies 2nd edition. pg 312
 
-  template<typename RealT, IndexSizeT N, IndexSizeT bits = (sizeof(RealT) * 8 - 2)>
-   requires std::is_floating_point<RealT>::value && (bits > 0) && (N <= 6)
-  class SobolSequence
-  {
-  public:
-    //! Generate a sequence with n dimensions.
-    constexpr inline SobolSequence() { init(); }
+	template<typename RealT, IndexSizeT N, IndexSizeT bits = (sizeof(RealT) * 8 - 2)>
+		requires std::is_floating_point<RealT>::value && (bits > 0) && (N <= 6)
+	class SobolSequence
+	{
+	public:
+		//! Generate a sequence with n dimensions.
+		constexpr inline SobolSequence() { init(); }
 
-    //! Goto first point in sequence.
-    constexpr bool reset()
-    {
-      work = Vector<unsigned, N>::Zero();
-      done = false;
-      s = 0;
-      next();
-      return true;
-    }
+		//! Goto first point in sequence.
+		constexpr bool reset()
+		{
+			work = Vector<unsigned, N>::Zero();
+			done = false;
+			s = 0;
+			next();
+			return true;
+		}
 
-    //! Are the numbers left in the sequence ?
-    [[nodiscard]] constexpr bool valid() const { return !done; }
+		//! Are the numbers left in the sequence ?
+		[[nodiscard]] constexpr bool valid() const { return !done; }
 
-    //! Goto next point in sequence.
-    //! Return: false if out of numbers.
-    constexpr bool next()
-    {
-      if(done)
-	return false;
-      IndexT b = 0;
-      IndexT k = s++;
-      // Find the least unset bit from sequence position.
-      for(; b <= IndexT(bits); b++) {
-	if(!(k & 1))
-	  break;
-	k >>= 1;
-      }
-      //cerr << "b:" << b << " " << s << "\n";
-      if(b == IndexT(bits)) {
-	done = true;
-	return false;
-      }
-      for(IndexT i = 0; i < IndexT(N); i++) {
-	work[i] ^= vx(b,i);
-	result[i] = RealT(work[i]) * frac;
-      }
-      return true;
-    }
+		//! Goto next point in sequence.
+		//! Return: false if out of numbers.
+		constexpr bool next()
+		{
+			if (done)
+				return false;
+			IndexT b = 0;
+			IndexT k = s++;
+			// Find the least unset bit from sequence position.
+			for (; b <= IndexT(bits); b++)
+			{
+				if (!(k & 1))
+					break;
+				k >>= 1;
+			}
+			//cerr << "b:" << b << " " << s << "\n";
+			if (b == IndexT(bits))
+			{
+				done = true;
+				return false;
+			}
+			for (IndexT i = 0; i < IndexT(N); i++)
+			{
+				work[i] ^= vx(b, i);
+				result[i] = RealT(work[i]) * frac;
+			}
+			return true;
+		}
 
-    //: Goto next value in the sequence.
-    constexpr void operator++() { next(); }
+		//: Goto next value in the sequence.
+		constexpr void operator++() { next(); }
 
-    //: Get point. each element will have a value between
-    // 0 and one.
-    [[nodiscard]] constexpr const auto &data() const { return result; }
+		//: Get point. each element will have a value between
+		// 0 and one.
+		[[nodiscard]] constexpr const auto& data() const { return result; }
 
-    //! Access point.
-    [[nodiscard]] constexpr const auto &operator*() const { return data(); }
+		//! Access point.
+		[[nodiscard]] constexpr const auto& operator*() const { return data(); }
 
-  private:
+	private:
+		static constexpr unsigned initseq[6][4] =
+		{
+			{1, 3, 5, 15},
+			{1, 1, 7, 11},
+			{1, 3, 7, 5},
+			{1, 3, 3, 15},
+			{1, 1, 3, 13},
+			{1, 1, 5, 9}
+		};
 
-    static constexpr unsigned initseq[6][4] =
-      {{1, 3, 5, 15},
-       {1, 1, 7, 11},
-       {1, 3, 7, 5},
-       {1, 3, 3, 15},
-       {1, 1, 3, 13},
-       {1, 1, 5, 9}};
+		static constexpr size_t initdeg[6] = {1, 2, 3, 3, 4, 4};
+		static constexpr size_t initpoly[6] = {0, 1, 1, 2, 1, 4};
 
-    static constexpr size_t initdeg[6] = {1, 2, 3, 3, 4, 4};
-    static constexpr size_t initpoly[6] = {0, 1, 1, 2, 1, 4};
+		constexpr void init()
+		{
+			for (size_t k = 0; k < N; k++)
+			{
+				;
+				auto seq =
+					primitiveBinaryPolynomial<bits>(initpoly[k], initdeg[k], std::span<const unsigned>(initseq[k], initdeg[k]));
 
-    constexpr void init()
-    {
-      for(size_t k = 0; k < N; k++) { ;
-	auto seq =
-	  primitiveBinaryPolynomial<bits>(initpoly[k], initdeg[k], std::span<const unsigned>(initseq[k], initdeg[k]));
+				// Work out direction numbers.
+				int shift = bits - 1;
+				for (size_t i = 0; i < bits; i++)
+				{
+					vx(int(i), int(k)) = seq[i] << (shift--);
+				}
+			}
+			next();
+		}
 
-	// Work out direction numbers.
-	int shift = bits - 1;
-	for(size_t i = 0; i < bits; i++) {
-	  vx(int(i), int(k)) = seq[i] << (shift--);
-	}
-      }
-      next();
-    }
+		IndexT s = 0; // Position in sequence.
+		bool done = false;
+		const RealT frac = 1.0 / (1 << bits);
+		Vector<unsigned, N> work = Vector<unsigned, N>::Zero();
+		Point<RealT, N> result;
+		Matrix<unsigned, bits, N> vx;
+	};
 
-    IndexT s = 0;        // Position in sequence.
-    bool done = false;
-    const RealT frac = 1.0 / (1 << bits);
-    Vector<unsigned, N> work = Vector<unsigned, N>::Zero();
-    Point<RealT, N> result;
-    Matrix<unsigned, bits, N> vx;
-  };
-
-  extern template class SobolSequence<float, 1>;
-  extern template class SobolSequence<float, 2>;
-  extern template class SobolSequence<float, 3>;
+	extern template class SobolSequence<float, 1>;
+	extern template class SobolSequence<float, 2>;
+	extern template class SobolSequence<float, 3>;
 }
-  
-

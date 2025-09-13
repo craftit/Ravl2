@@ -9,6 +9,7 @@
 #endif
 
 #include <span>
+#include <any>
 #include <fmt/ostream.h>
 #include <eigen3/Eigen/Dense>
 #include <eigen3/Eigen/Geometry>
@@ -32,7 +33,7 @@ namespace Ravl2
 
   //! Is the inside of a boundary on the left or right side of the boundary?
   //! This is used for pixel boundaries and polygons.
-  enum class BoundaryOrientationT
+  enum class BoundaryOrientationT : uint8_t
   {
     INSIDE_LEFT,
     INSIDE_RIGHT
@@ -58,6 +59,18 @@ namespace Ravl2
   using VectorViewT = std::span<float>;
   using ConstVectorViewT = std::span<const float>;
 
+  template< typename RealT>
+  std::span<RealT> span(VectorT<RealT> &data)
+  {
+    return std::span<RealT>(data.data(), static_cast<std::size_t>(data.size()));
+  }
+
+  template< typename RealT>
+  std::span<RealT> span(const VectorT<RealT> &data)
+  {
+    return std::span<const RealT>(data.data(), static_cast<std::size_t>(data.size()));
+  }
+
   template <typename DataT, IndexSizeT N>
   using Point = Eigen::Matrix<DataT, N, 1>;
 
@@ -80,6 +93,7 @@ namespace Ravl2
 
   using Matrix2f = Matrix<float, 2, 2>;
   using Matrix3f = Matrix<float, 3, 3>;
+  using Matrix3d = Matrix<double, 3, 3>;
 
   //! Convert to a string
   [[nodiscard]] std::string toString(Vector3f v);
@@ -89,26 +103,106 @@ namespace Ravl2
   //std::string toString(const VectorT &v);
 
   template <typename DataT>
-  inline bool is16ByteAligned(const DataT *data)
+  [[nodiscard]] bool is16ByteAligned(const DataT *data)
   {
     return (reinterpret_cast<uintptr_t>(data) & static_cast<uintptr_t>(0xf)) == 0;
+  }
+
+  //! Check there are no nan's or infinities in an eigen matrix
+  template <typename DataT, int N, int M>
+  [[nodiscard]] bool isFinite(const Eigen::Matrix<DataT, N, M> &mat)
+  {
+    return mat.array().isFinite().all();
   }
 
   //! This is a hack to prevent the compiler optimizing away benchmark code
   void doNothing();
 
   //! Get a human-readable name for a type.
-  std::string typeName(const std::type_info &type);
+  [[nodiscard]] std::string typeName(const std::type_info &type);
 
   //! Get a human-readable name for a type.
-  std::string typeName(const std::type_index &type);
+  [[nodiscard]] std::string typeName(const std::type_index &type);
 
+  //! Demangle a C++ symbol name
+  [[nodiscard]] std::string demangle(const char *name);
+
+  //! Get value from any container with boolean return value indicating success
+  template <typename OutT>
+  bool anyGet(const std::any &x, OutT &value)
+  {
+    try {
+      value = std::any_cast<OutT>(x);
+    } catch(std::bad_any_cast &) {
+      return false;
+    }
+    return true;
+  }
+
+  //! Create an object from a string.
+  template <typename DataT>
+  DataT fromString(const std::string &text)
+  {
+    DataT val;
+    std::istringstream is(text);
+    is >> val;
+    return val;
+  }
+
+  //! Register an alternative name for a type.
+  bool registerTypeName(const std::type_info &type, const std::string &name);
+
+  //! Default formatting for converting Eigen matrices to strings
+  [[nodiscard]] const Eigen::IOFormat &defaultEigenFormat();
+
+  template<typename T>
+  struct is_eigen_type {
+    static constexpr bool value = std::is_base_of_v<Eigen::MatrixBase<typename T::PlainObject>, T>;
+  };
+
+
+  //! Set a value to zero in for either an eigen matrix or a vector, or double
+  template <typename T>
+  void setZero(T &val)
+  {
+    if constexpr(is_eigen_type<T>::value) {
+      val = T::Zero();
+    } else if constexpr(std::is_arithmetic_v<T>) {
+      val = T(0);
+    } else {
+      static_assert(is_eigen_type<T>::value || std::is_arithmetic_v<T>, "Unsupported type for setZero");
+    }
+  }
 }// namespace Ravl2
 
 template <typename T>
+struct fmt::formatter<Eigen::WithFormat<T>> : ostream_formatter {};
+
+#if 0
+template <typename T>
 requires std::is_base_of_v<Eigen::DenseBase<T>, T>
 struct fmt::formatter<T> : ostream_formatter {};
+#else
+template <class _Scalar, int _Rows, int _Cols, int _Options, int _MaxRows, int _MaxCols>
+struct fmt::formatter<Eigen::Matrix<_Scalar, _Rows, _Cols, _Options, _MaxRows, _MaxCols>>
+{
+  template<typename ParseContext>
+  constexpr auto parse(ParseContext& ctx) {
+    return ctx.begin();
+  }
 
-template <typename T>
-struct fmt::formatter<Eigen::WithFormat<T>> : ostream_formatter {};
+  template<typename FormatContext>
+  auto format(Eigen::Matrix<_Scalar, _Rows, _Cols, _Options, _MaxRows, _MaxCols> const& mat, FormatContext& ctx) const
+  {
+    if constexpr(_Rows == 1 && _Cols == 1)
+      return fmt::format_to(ctx.out(), "{}", mat(0,0));
+    else
+      return fmt::format_to(ctx.out(), "{}", Eigen::WithFormat(mat, Ravl2::defaultEigenFormat()));
+  }
+
+};
+
+#endif
+
+
 

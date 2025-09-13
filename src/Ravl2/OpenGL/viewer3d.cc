@@ -1,13 +1,17 @@
 
+#include "DCube3D.hh"
+
 #include <spdlog/spdlog.h>
 #include <CLI/CLI.hpp>
 
 #include "Ravl2/OpenGL/GLWindow.hh"
 #include "Ravl2/OpenGL/Canvas3D.hh"
+#include "Ravl2/OpenGL/View3D.hh"
 
 #define USE_OPENGL3 1
+#define USE_IMGUI 0
 
-#if 0
+#if USE_IMGUI
 #include "imgui.h"
 #include "backends/imgui_impl_glfw.h"
 #if USE_OPENGL3
@@ -24,7 +28,6 @@ static void glfw_error_callback(int error, const char* description)
 
 int main(int argc,char **argv)
 {
-  using namespace Ravl2;
 
   CLI::App app{"OpenGL window example program"};
 
@@ -44,8 +47,23 @@ int main(int argc,char **argv)
 
   window->makeCurrent();
 
-  
-#if 1
+  Ravl2::CallbackSet callbacks;
+#if !USE_IMGUI
+  int display_w = 0;
+  int display_h = 0;
+  glfwGetFramebufferSize(window->getGLFWwindow(), &display_w, &display_h);
+  Ravl2::View3D view(display_w, display_h, false, false);
+  view.setContext(window);
+  view.setup(*window);
+  window->makeCurrent();
+  view.GUIInitGL();
+  auto cube = std::make_shared<Ravl2::DCube3D>();
+  view.add(cube);
+  //view.GUIAdjustView();
+
+  callbacks += window->addFrameRender([&view]() {
+    view.GUIRefresh();
+  });
 
 #else
 
@@ -157,10 +175,9 @@ int main(int argc,char **argv)
     window->swapBuffers();
   }
 
+#endif
   // Run the main loop
   window->runMainLoop();
-
-#endif
 
   return 0;
 }

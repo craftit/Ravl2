@@ -190,7 +190,7 @@ namespace Ravl2
 
     //! Mid point along crack.
     template <typename RealT>
-    [[nodiscard]] constexpr Point<RealT, 2> MidPoint() const
+    [[nodiscard]] constexpr Point<RealT, 2> midPoint() const
     {
       switch(mCode.code()) {
         case CrackCodeT::CR_DOWN: return Point<RealT, 2>({RealT(mAt[0]) + RealT(0.5), RealT(mAt[1])});

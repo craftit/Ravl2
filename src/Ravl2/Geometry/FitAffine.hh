@@ -45,8 +45,8 @@ namespace Ravl2
     auto sab = dec.solve(b);
     auto sac = dec.solve(c);
 
-    affine.Translation()[0] = sab[2];
-    affine.Translation()[1] = sac[2];
+    affine.translation()[0] = sab[2];
+    affine.translation()[1] = sac[2];
     affine.SRMatrix() = Matrix<RealT,2,2>({{sab[0], sab[1]},{sac[0], sac[1]}});
 
     return true;
@@ -122,7 +122,7 @@ namespace Ravl2
     }
 
     auto fromNorm = meanScaleToAffine<RealT,2>(fromMean,fromScale);
-    auto toNorm = *inverse(meanScaleToAffine<RealT,2>(toMean,toScale));
+    auto toNorm = inverse(meanScaleToAffine<RealT,2>(toMean,toScale));
 
     // Compose result
     affine = toNorm(Affine<RealT,N>(sr,tr))(fromNorm);

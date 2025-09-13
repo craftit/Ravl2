@@ -46,7 +46,7 @@ namespace Ravl2 {
 
   private:
     unsigned _iterations = 100;
-    RealT _tolerance = RealT(1.0e-4);
+    RealT _tolerance = static_cast<RealT>(1.0e-4);
   };
   
 }

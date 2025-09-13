@@ -176,10 +176,21 @@ namespace Ravl2
               cereal::make_nvp("k1", this->m_k1));
     }
 
-  protected:
+  private:
     RealT m_k1 = 0;
   };
+
+  template<class RealT>
+  std::ostream &operator<<(std::ostream &s,const PinholeCamera1<RealT> &v) {
+    s << static_cast<const PinholeCamera0<RealT>&>(v);
+    s << ' ' << v.k1();
+    return s;
+  }
+
 
   extern template class PinholeCamera1<float>;
 
 };// namespace Ravl2
+
+template <typename RealT>
+struct fmt::formatter<Ravl2::PinholeCamera1<RealT>> : fmt::ostream_formatter {};

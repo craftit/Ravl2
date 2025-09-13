@@ -27,7 +27,7 @@ namespace Ravl2 {
     if(mode & DTransform3D_TRANSLATION)
       glTranslatef(trans[0], trans[1], trans[2]);
     
-    DObjectSet3DBodyC::GUIRender(c3d);
+    DObjectSet3D::GUIRender(c3d);
 
     //glPopMatrix();
     return true;

@@ -278,8 +278,9 @@ namespace Ravl2
     {
       for(unsigned i = N - 2; i > 0; --i) {
         ++mIndex[i];
-        if(mIndex[i] <= m_access.range(i).max())
+        if(mIndex[i] <= m_access.range(i).max()) [[likely]] {
           return;
+        }
         mIndex[i] = m_access.range(i).min();
       }
       // On the last index we don't need to update
@@ -302,7 +303,7 @@ namespace Ravl2
     constexpr inline ArrayIter<DataT, N> &operator++()
     {
       mPtr++;
-      if(mPtr == mEnd) {
+      if(mPtr == mEnd) [[unlikely]] {
         nextRow();
       }
       return *this;
@@ -321,7 +322,7 @@ namespace Ravl2
     constexpr inline bool next()
     {
       mPtr++;
-      if(mPtr == mEnd) {
+      if(mPtr == mEnd) [[unlikely]] {
         nextRow();
         return false;
       }
@@ -465,6 +466,16 @@ namespace Ravl2
     using value_type = DataT;
     constexpr static unsigned dimensions = N;
 
+    //! Given strides and range compute the offset to the origin from the start of the data.
+    [[nodiscard]] static constexpr int compute_origin_offset(const IndexRange<N> &range, const std::array<int, N> &strides)
+    {
+      int off = 0;
+      for(unsigned i = 0; i < N; i++) {
+        off -= range[i].min() * strides[i];
+      }
+      return off;
+    }
+
   protected:
     //! Generate strides
     constexpr void make_strides(const IndexRange<N> &range)
@@ -479,18 +490,14 @@ namespace Ravl2
     }
 
     [[nodiscard]] constexpr int compute_origin_offset(const IndexRange<N> &range) const
-    {
-      int off = 0;
-      for(unsigned i = 0; i < N; i++) {
-        off -= range[i].min() * m_strides[i];
-      }
-      return off;
-    }
+    { return compute_origin_offset(range,m_strides); }
 
     explicit constexpr ArrayView(const IndexRange<N> &range, const std::array<int, N> &strides)
         : m_range(range),
           m_strides(strides)
-    {}
+    {
+      assert(m_strides[N-1] == 1);
+    }
 
     explicit constexpr ArrayView(const IndexRange<N> &range)
         : m_range(range)
@@ -501,13 +508,16 @@ namespace Ravl2
         : m_data(data),
           m_range(range),
           m_strides(strides)
-    {}
+    {
+      assert(m_strides[N-1] == 1);
+    }
 
     explicit constexpr ArrayView(DataT *data, const IndexRange<N> &range, const int *strides)
         : m_data(data),
           m_range(range)
     {
-      memccpy(m_strides.data(), strides, sizeof(int), N);
+      memcpy(m_strides.data(), strides, sizeof(int) * N);
+      assert(m_strides[N-1] == 1);
     }
 
     //! Create an empty array
@@ -522,6 +532,7 @@ namespace Ravl2
         m_strides[i] = array.stride(i);
         m_range[i] = array.range(i);
       }
+      assert(m_strides[N-1] == 1);
     }
 
     template <typename ArrayT>
@@ -536,6 +547,7 @@ namespace Ravl2
         if(!array.range(i).contains(range[i]))
           throw std::out_of_range("requested range is outside that of the original array");
       }
+      assert(m_strides[N-1] == 1);
     }
 
     //! Access address of origin element
@@ -612,7 +624,7 @@ namespace Ravl2
     //! Element by element call operator access
     template <IndexType... IndexDataT, unsigned IndexN = sizeof...(IndexDataT)>
       requires (IndexN <= N)
-    constexpr inline auto& operator()(IndexDataT... data)
+    constexpr auto& operator()(IndexDataT... data)
     {
       return operator[](Index<IndexN>({int(data)...}));
     }
@@ -620,7 +632,7 @@ namespace Ravl2
     //! Element by element call operator access
     template <IndexType... IndexDataT, unsigned IndexN = sizeof...(IndexDataT)>
      requires (IndexN <= N)
-    constexpr inline const auto &operator()(IndexDataT... data) const
+    constexpr const auto &operator()(IndexDataT... data) const
     {
       return operator[](Index<IndexN>({int(data)...}));
     }
@@ -629,7 +641,7 @@ namespace Ravl2
     template<unsigned M>
       requires(M <= N)
     [[nodiscard]]
-    constexpr inline auto operator()(Index<M> ind) const
+    constexpr auto operator()(Index<M> ind) const
     {
       return operator[](ind);
     }
@@ -638,7 +650,7 @@ namespace Ravl2
     template<unsigned M>
       requires(M <= N)
     [[nodiscard]]
-    constexpr inline auto& operator()(Index<M> ind)
+    constexpr auto& operator()(Index<M> ind)
     {
       return operator[](ind);
     }

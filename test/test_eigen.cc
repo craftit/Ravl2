@@ -3,7 +3,9 @@
 #include <catch2/catch_test_macros.hpp>
 #include <eigen3/Eigen/Dense>
 
+#include "Ravl2/Catch2checks.hh"
 #include "Ravl2/Math.hh"
+#include "Ravl2/Eigen.hh"
 #include "Ravl2/IO/Cereal.hh"
 
 TEST_CASE("EigenIntegration")
@@ -37,8 +39,27 @@ TEST_CASE("EigenIntegration")
       iarchive(vec2);
       CHECK(vec.isApprox(vec2));
     }
+
+    {
+      auto anArray = asArrayView(vec);
+      STATIC_REQUIRE(anArray.dimensions == 1);
+      CHECK(anArray.range(0).size() == 3);
+      EXPECT_FLOAT_EQ(anArray[0], 1.1f);
+      EXPECT_FLOAT_EQ(anArray[1], 2.2f);
+      EXPECT_FLOAT_EQ(anArray[2], 3.3f);
+    }
+    {
+      // The view is transposed because Eigen is column major
+      auto anArray = asArrayView(static_cast<const decltype(vec) &>(vec));
+      STATIC_REQUIRE(anArray.dimensions == 1);
+      CHECK(anArray.range(0).size() == 3);
+      EXPECT_FLOAT_EQ(anArray[0], 1.1f);
+      EXPECT_FLOAT_EQ(anArray[1], 2.2f);
+      EXPECT_FLOAT_EQ(anArray[2], 3.3f);
+    }
+
   }
-  SECTION("Cereal Vec<3,1>")
+  SECTION("Cereal Vec<1,3>")
   {
     Eigen::Matrix<float, 1, 3> vec {1.1f,2.2f,3.3f};
     std::stringstream ss;
@@ -53,6 +74,18 @@ TEST_CASE("EigenIntegration")
       iarchive(vec2);
       //SPDLOG_INFO("Vec: {} -> {}", vec, vec2);
       CHECK(vec.isApprox(vec2));
+    }
+    {
+      // The view is transposed because Eigen is column major
+      auto anArray = asArrayView(vec);
+      STATIC_REQUIRE(anArray.dimensions == 2);
+      CHECK(anArray.range(0).size() == vec.cols());
+      CHECK(anArray.range(1).size() == vec.rows());
+      for(int i = 0; i < vec.rows(); i++) {
+        for(int j = 0; j < vec.cols(); j++) {
+          EXPECT_FLOAT_EQ(vec(i, j), anArray(j, i));
+        }
+      }
     }
   }
   SECTION("Cereal Matrix<Dyn,Dyn>")
@@ -72,10 +105,36 @@ TEST_CASE("EigenIntegration")
       //SPDLOG_INFO("Vec: {} -> {}", vec, vec2);
       CHECK(vec.isApprox(vec2));
     }
+
+    {
+      // The view is transposed because Eigen is column major
+      auto anArray = asArrayView(vec);
+      STATIC_REQUIRE(anArray.dimensions == 2);
+      CHECK(anArray.range(0).size() == vec.cols());
+      CHECK(anArray.range(1).size() == vec.rows());
+      for(int i = 0; i < vec.rows(); i++) {
+        for(int j = 0; j < vec.cols(); j++) {
+          EXPECT_FLOAT_EQ(vec(i, j), anArray(j, i));
+        }
+      }
+    }
+
+    {
+      // The view is transposed because Eigen is column major
+      auto anArray = asArrayView(static_cast<const decltype(vec) &>(vec));
+      STATIC_REQUIRE(anArray.dimensions == 2);
+      CHECK(anArray.range(0).size() == vec.cols());
+      CHECK(anArray.range(1).size() == vec.rows());
+      for(int i = 0; i < vec.rows(); i++) {
+        for(int j = 0; j < vec.cols(); j++) {
+          EXPECT_FLOAT_EQ(vec(i, j), anArray(j, i));
+        }
+      }
+    }
   }
   SECTION("Cereal Matrix<2,Dyn>")
   {
-    Eigen::Matrix<float, 2, Eigen::Dynamic> vec = Eigen::Matrix<float, 2, Eigen::Dynamic>::Random(2,3);
+    Eigen::Matrix<float, 2, Eigen::Dynamic> vec = Eigen::Matrix<float, 2, Eigen::Dynamic>::Random(2, 3);
 
     std::stringstream ss;
     {
@@ -89,6 +148,32 @@ TEST_CASE("EigenIntegration")
       iarchive(vec2);
       //SPDLOG_INFO("Vec: {} -> {}", vec, vec2);
       CHECK(vec.isApprox(vec2));
+    }
+
+    {
+      // The view is transposed because Eigen is column major
+      auto anArray = asArrayView(vec);
+      STATIC_REQUIRE(anArray.dimensions == 2);
+      CHECK(anArray.range(0).size() == vec.cols());
+      CHECK(anArray.range(1).size() == vec.rows());
+      for(int i = 0; i < vec.rows(); i++) {
+        for(int j = 0; j < vec.cols(); j++) {
+          EXPECT_FLOAT_EQ(vec(i, j), anArray(j, i));
+        }
+      }
+    }
+
+    {
+      // The view is transposed because Eigen is column major
+      auto anArray = asArrayView(static_cast<const decltype(vec) &>(vec));
+      STATIC_REQUIRE(anArray.dimensions == 2);
+      CHECK(anArray.range(0).size() == vec.cols());
+      CHECK(anArray.range(1).size() == vec.rows());
+      for(int i = 0; i < vec.rows(); i++) {
+        for(int j = 0; j < vec.cols(); j++) {
+          EXPECT_FLOAT_EQ(vec(i, j), anArray(j, i));
+        }
+      }
     }
   }
 
@@ -109,6 +194,33 @@ TEST_CASE("EigenIntegration")
       //SPDLOG_INFO("Vec: {} -> {}", vec, vec2);
       CHECK(vec.isApprox(vec2));
     }
+
+    {
+      // The view is transposed because Eigen is column major
+      auto anArray = asArrayView(vec);
+      STATIC_REQUIRE(anArray.dimensions == 2);
+      CHECK(anArray.range(0).size() == vec.cols());
+      CHECK(anArray.range(1).size() == vec.rows());
+      for(int i = 0; i < vec.rows(); i++) {
+        for(int j = 0; j < vec.cols(); j++) {
+          EXPECT_FLOAT_EQ(vec(i, j), anArray(j, i));
+        }
+      }
+    }
+
+    {
+      // The view is transposed because Eigen is column major
+      auto anArray = asArrayView(static_cast<const decltype(vec) &>(vec));
+      STATIC_REQUIRE(anArray.dimensions == 2);
+      CHECK(anArray.range(0).size() == vec.cols());
+      CHECK(anArray.range(1).size() == vec.rows());
+      for(int i = 0; i < vec.rows(); i++) {
+        for(int j = 0; j < vec.cols(); j++) {
+          EXPECT_FLOAT_EQ(vec(i, j), anArray(j, i));
+        }
+      }
+    }
+
   }
 
   

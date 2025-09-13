@@ -39,10 +39,14 @@ namespace Ravl2 {
   std::tuple<OptimisePowell::RealT,OptimisePowell::RealT> OptimisePowell::SetupLimits(
     const VectorT<RealT> &dir,
     const VectorT<RealT> &P,
-    const CostDomain &domain)
+    const CostDomain<RealT> &domain)
   {
     // Find the domain limits along the direction vector.
-    
+    assert(dir.size() == P.size());
+    if(P.size() != domain.min().size() || P.size() != domain.max().size()) {
+      SPDLOG_ERROR("Parameter vector and domain must be the same size ({} and {})",P.size(),domain.min().size());
+      throw std::runtime_error("Parameter vector and domain must be the same size");
+    }
     RealT min = -std::numeric_limits<RealT>::min();
     RealT max = std::numeric_limits<RealT>::max();
     for(IndexT i = 0;i < P.size();i++) {
@@ -69,7 +73,7 @@ namespace Ravl2 {
   //
   //VectorT<RealT> OptimisePowell::MinimalX (const CostC &domain, RealT startCost, RealT &minimumCost) const
   std::tuple<VectorT<OptimisePowell::RealT>,OptimisePowell::RealT> OptimisePowell::minimise (
-    const CostDomain &domain,
+    const CostDomain<RealT> &domain,
     const std::function<RealT(const VectorT<RealT> &)> &func,
     const VectorT<RealT> &start
   ) const
@@ -164,7 +168,7 @@ namespace Ravl2 {
         }
       }
       if(mVerbose) {
-	SPDLOG_INFO("Iter {} Cost={}  ", iter, minimumCost);
+				SPDLOG_INFO("Iter {} Cost={}  ", iter, minimumCost);
       }
     }
     return std::make_tuple(P,minimumCost);

@@ -10,47 +10,46 @@
 
 #pragma once
 
-#include "Ravl2/OpenGL/DObject3D.hh"
+#include "Ravl2/OpenGL/DObject.hh"
 
 namespace Ravl2 {
 
-  //: Setup a light in a 3D world.
+  //! Setup a light in a 3D world.
 
-  class DLight3DBodyC
-    : public DObject3D
+  class DLight3D
+    : public DObject
   {
   public:
-    //: Constructor.
-    DLight3DBodyC(const PixelRGB8 &nCol, const Vector<float,3> &nPos, int nn)
+    //! Constructor.
+    DLight3D(const PixelRGB32F &nCol, const Vector<float,3> &nPos, int nn = 0)
       : n(nn),
 	colour(nCol),
-	pos(nPos),
-	spot(false)
-    {}
+	pos(nPos)
+   {}
 
-    //: Render object.
+    //! Render object.
     bool GUIRender(Canvas3D &c3d) const override;
 
-    //: Get center of object.
+    //! Get center of object.
     // defaults to 0,0,0
     [[nodiscard]] Vector<float,3> GUICenter() const override
       { return Vector<float,3>({0, 0, 0}); }
 
-    //: Get extent of object.
+    //! Get extent of object.
     // defaults to 1
     [[nodiscard]] float GUIExtent() const override
       { return 1; }
 
-  protected:
-    //: Convert Light number.
+  private:
+    //! Convert Light number.
     [[nodiscard]] GLenum LightNo(int no) const;
 
     int n = 0;           //!< Number of light. 0-7
-    PixelRGB8 colour; //!< Colour of light.
-    Vector<float,3> pos;    //!< Position of light.
-    bool spot = false;        //!< Spot light ?
-    Vector<float,3> dir;    //!< Direction of spot light.
-    float  ang = 0;       //!< angle of light.
+    PixelRGB32F colour;  //!< Colour of light.
+    Vector<float,3> pos; //!< Position of light.
+    //bool spot = false;   //!< Spot light ?
+    Vector<float,3> dir; //!< Direction of spot light.
+    //float  ang = 0;      //!< angle of light.
   };
 
 }

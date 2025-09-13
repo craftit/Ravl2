@@ -7,8 +7,6 @@ add_library (Ravl2Geometry
         Geometry.hh Geometry.cc
         Affine.cc Affine.hh
         ScaleTranslate.cc ScaleTranslate.hh
-        Affine2f.cc Affine2f.hh
-        Affine3d.cc Affine3d.hh
         PointSet.cc PointSet.hh
         Moments2.cc Moments2.hh
         CircleIter.cc CircleIter.hh
@@ -23,9 +21,10 @@ add_library (Ravl2Geometry
         Range.hh Range.cc
         Projection.cc Projection.hh
         Transform.cc Transform.hh
+        Translate.cc Translate.hh
         FitLine.cc FitLine.hh
         Conic2.cc Conic2.hh
-        FitConic.hh
+        FitConic.cc FitConic.hh
         Ellipse.cc Ellipse.hh
         VectorOffset.cc VectorOffset.hh
         FitVectorOffset.hh FitVectorOffset.cc
@@ -38,7 +37,9 @@ add_library (Ravl2Geometry
         FitAffine.cc FitAffine.hh
         FitSimilarity.cc FitSimilarity.hh
         PolyApprox.hh PolyApprox.cc
-
+        Quad.cc Quad.hh
+        NSphere.cc
+        NSphere.hh
 )
 
 add_library(ravl2::Ravl2Geometry ALIAS Ravl2Geometry)

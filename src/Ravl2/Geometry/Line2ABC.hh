@@ -11,6 +11,7 @@
 
 #include "Ravl2/Geometry/Geometry.hh"
 #include "Ravl2/Geometry/VectorOffset.hh"
+#include "Range.hh"
 
 namespace Ravl2
 {
@@ -25,6 +26,11 @@ namespace Ravl2
   public:
     //! Creates a degenerate line (0,0,0).
     inline constexpr Line2ABC() = default;
+
+    //! Creates the line determined by the equation a*x+b*y+c = 0.
+    inline constexpr Line2ABC(const VectorOffset<RealT, 2> &vecOff)
+      : VectorOffset<RealT, 2>(vecOff)
+    {}
 
     //! Creates the line determined by the equation a*x+b*y+c = 0.
     inline constexpr Line2ABC(RealT a, RealT b, RealT c)
@@ -170,15 +176,44 @@ namespace Ravl2
     return (inS);
   }
 
+  //! Test if a line intersects a range (or rectangle)
+  template<typename RealT>
+  bool intersects(const Line2ABC<RealT> &line, const Range<RealT, 2> &rng1)
+  {
+    Point<RealT, 2> here;
+    // This could be faster...
+    Line2ABC<RealT> lineMin1({0, 1}, rng1.range(1).min());
+    if(line.intersection(lineMin1, here)) {
+      if(rng1.range(0).contains(here(0)))
+        return true;
+    }
+    Line2ABC<RealT> lineMax1({0, 1}, rng1.range(1).max());
+    if(line.intersection(lineMax1, here)) {
+      if(rng1.range(0).contains(here(0)))
+        return true;
+    }
+    Line2ABC<RealT> lineMin0({1, 0}, rng1.range(0).min());
+    if(line.intersection(lineMin0, here)) {
+      if(rng1.range(1).contains(here(1)))
+        return true;
+    }
+    Line2ABC<RealT> lineMax0({1, 0}, rng1.range(0).max());
+    if(line.intersection(lineMax0, here)) {
+      if(rng1.range(1).contains(here(1)))
+        return true;
+    }
+    return false;
+  }
+
   // Let everyone know there's an implementation already generated for common cases
   extern template class Line2ABC<float>;
 
-  //! Construct a line from two points
-  template <typename RealT>
-  [[nodiscard]] inline constexpr Line2ABC<RealT> toLine(Point<RealT, 2> const &start, Point<RealT, 2> const &end)
-  {
-    return Line2ABC<RealT>(start, end);
-  }
+//  //! Construct a line from two points
+//  template <typename RealT>
+//  [[nodiscard]] inline constexpr Line2ABC<RealT> toLine(Point<RealT, 2> const &start, Point<RealT, 2> const &end)
+//  {
+//    return Line2ABC<RealT>(start, end);
+//  }
 }// namespace Ravl2
 
 #if FMT_VERSION >= 90000

@@ -49,8 +49,9 @@ namespace Ravl2
     {
       for(unsigned i = N - 2; i > 0; --i) {
         ++mIndex[i];
-        if(mIndex[i] <= mAccess.range(i).max())
+        if(mIndex[i] <= mAccess.range(i).max()) [[likely]] {
           return;
+        }
         mIndex[i] = mAccess.range(i).min();
       }
       // On the last index we don't need to update

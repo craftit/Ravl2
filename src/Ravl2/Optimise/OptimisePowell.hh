@@ -31,10 +31,10 @@ namespace Ravl2
     //! Construct from a configuration
     explicit OptimisePowell(Configuration &config);
 
-    //: Get iterations
+    //! Get iterations
     [[nodiscard]] unsigned numIterations() const {return this->_iterations;}
 
-    //: Get tolerance
+    //! Get tolerance
     [[nodiscard]] RealT tolerance() const {return this->_tolerance;}
 
     //! @brief Determines Xmin=arg min_{X} domain(X)
@@ -49,16 +49,16 @@ namespace Ravl2
     //!
 
     [[nodiscard]] std::tuple<VectorT<RealT>,RealT> minimise (
-      const CostDomain &domain,
+      const CostDomain<RealT> &domain,
       const std::function<RealT(const VectorT<RealT> &)> &func,
       const VectorT<RealT> &start
     ) const final;
 
   private:
 
-    static std::tuple<RealT,RealT> SetupLimits(const VectorT<RealT> &dir,const VectorT<RealT> &P,const CostDomain &domain);
+    static std::tuple<RealT,RealT> SetupLimits(const VectorT<RealT> &dir,const VectorT<RealT> &P,const CostDomain<RealT> &domain);
 
-      unsigned _iterations = 100;
+    unsigned _iterations = 100;
     RealT _tolerance = RealT(1e-4);
     unsigned _brentIterations = 100;
     RealT _brentTolerance = RealT(1e-4);

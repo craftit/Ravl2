@@ -10,40 +10,45 @@
 
 #pragma once
 
-#include "Ravl2/OpenGL/DObject3D.hh"
+#include "Ravl2/OpenGL/DObject.hh"
+#include "Ravl2/OpenGL/GLShader.hh"
 #include "Ravl2/3D/TriMesh.hh"
 
 namespace Ravl2 {
-  using namespace Ravl2;
 
-  //: Draw a TriMesh
+  //! Draw a TriMesh
 
-  class DTriMesh3D
-    : public DObject3D
+  class DTriMesh : public DObject
   {
   public:
     using RealT = float;
 
-    //: Constructor.
-    DTriMesh3D(const std::shared_ptr<TriMesh<RealT> > &oTriMesh);
+    //! Constructor.
+    explicit DTriMesh(const std::shared_ptr<TriMesh<RealT> > &oTriMesh);
 
-    //: Render object.
+    //! Register object with OpenGL.
+    bool GUIInit(Canvas3D &c3d) override;
+
+    //! Render object.
     bool GUIRender(Canvas3D &c3d) const override;
 
-    //: Get center of object.
-    // defaults to 0,0,0
-    Vector<float,3> GUICenter() const override;
+    //! Get center of object.
+    [[nodiscard]] Vector<float,3> GUICenter() const override;
 
-    //: Get extent of object.
-    // defaults to 1
-    float GUIExtent() const override;
+    //! Get extent of object.
+    [[nodiscard]] float GUIExtent() const override;
 
   protected:
-    //: Compute center and extent of mesh.
+    //! Compute center and extent of mesh.
     void ComputeInfo();
 
     std::shared_ptr<TriMesh<RealT> > model;
     bool mUseMeshColour = true;
+
+    std::shared_ptr<GLShaderProgram> mShaderProgram;
+    std::shared_ptr<GLVertexBuffer> mVertexBuffer;
+    GLVertexArray mVertexArray;
+
     Vector<RealT,3> center = {0,0,0};
     RealT extent = 1.0;
   };

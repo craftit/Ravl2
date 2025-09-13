@@ -54,7 +54,7 @@ namespace Ravl2
     auto r = split(std::string_view(path), d);
     std::vector<std::string> result;
     result.reserve(r.size());
-    for(auto &s : r) {
+    for(const auto &s : r) {
       result.push_back(std::string(s));
     }
     return result;

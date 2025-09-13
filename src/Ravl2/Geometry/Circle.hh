@@ -12,6 +12,7 @@
 #include "Ravl2/Assert.hh"
 #include "Ravl2/Math.hh"
 #include "Ravl2/Geometry/Geometry.hh"
+#include "NSphere.hh"
 
 namespace Ravl2
 {
@@ -19,15 +20,15 @@ namespace Ravl2
 
   template <typename RealT>
   class Circle
+    : public NSphere<RealT,2>
   {
   public:
     //! Construct a circle with radius of 1 centered on the origin.
-    inline constexpr Circle() = default;
+    constexpr Circle() = default;
 
     //! Constructor.
-    inline constexpr Circle(const Point<RealT, 2> &at, RealT rad) noexcept
-        : centre(at),
-          radius(rad)
+    constexpr Circle(const Point<RealT, 2> &at, RealT rad) noexcept
+     : NSphere<RealT,2>(at, rad)
     {}
 
     //! Generate circle from 3 points on its circumference
@@ -37,7 +38,7 @@ namespace Ravl2
     }
 
     //! Fit circle to a set of points.
-    inline constexpr explicit Circle(const std::vector<Point<RealT, 2>> &points)
+    constexpr explicit Circle(const std::vector<Point<RealT, 2>> &points)
     {
       (void)points;
       //RealT tmp;
@@ -46,89 +47,86 @@ namespace Ravl2
     }
 
     //! Fit a circle from 3 points on its circumference
-    //! Returns false if the points are collinear.
-    constexpr bool fit(const Point<RealT, 2> &p0, const Point<RealT, 2> &p1, const Point<RealT, 2> &p2)
+    //! Fails if the points are collinear.
+    constexpr static std::optional<Circle<RealT>> fit(const Point<RealT, 2> &p0, const Point<RealT, 2> &p1, const Point<RealT, 2> &p2)
     {
       Vector<RealT, 2> a1({p1[1] - p0[1], p0[0] - p1[0]});
       Vector<RealT, 2> a2({p2[1] - p1[1], p1[0] - p2[0]});
       RealT d = a2[0] * a1[1] - a2[1] * a1[0];
       if(isNearZero(d))
-        return false;
+        return std::nullopt; // Points are collinear.
       Vector<RealT, 2> np1 = (p0 + p1) / 2.0;
       Vector<RealT, 2> np2 = (p1 + p2) / 2.0;
       RealT m = (a1[0] * (np2[1] - np1[1]) - a1[1] * (np2[0] - np1[0])) / d;
       a2 *= m;
-      centre = np2 + a2;
-      radius = euclidDistance<RealT, 2>(centre, p0);
-      return true;
+      Point<RealT,2> centre = np2 + a2;
+      RealT radius = euclidDistance<RealT, 2>(centre, p0);
+      return Circle<RealT>(centre, radius);
     }
 
     //! Constant access to radius.
-    [[nodiscard]] inline constexpr RealT &Radius()
+    [[nodiscard]] constexpr RealT &Radius()
     {
-      return radius;
+      return this->mRadius;
     }
 
     //! Constant access to radius.
     [[nodiscard]] inline constexpr RealT Radius() const
     {
-      return radius;
+      return this->mRadius;
     }
 
     //! Centre of circle.
-    [[nodiscard]] inline constexpr Point<RealT, 2> &Centre()
+    [[nodiscard]] constexpr Point<RealT, 2> &Centre()
     {
-      return centre;
+      return this->mCentre;
     }
 
     //! Constant access to centre of circle.
-    [[nodiscard]] inline constexpr Point<RealT, 2> Centre() const
+    [[nodiscard]] constexpr Point<RealT, 2> Centre() const
     {
-      return centre;
+      return this->mCentre;
     }
 
     //! Is point inside circle ?
     [[nodiscard]] inline constexpr bool IsInside(const Point<RealT, 2> &point) const
     {
-      return squaredEuclidDistance<RealT,2>(centre, point) < (radius * radius);
+      return squaredEuclidDistance<RealT,2>(this->mCentre, point) < (sqr(this->mRadius));
     }
 
     //! Find the closest point on the circle to 'point'.
-    [[nodiscard]] inline constexpr Point<RealT, 2> Projection(const Point<RealT, 2> &point) const
+    [[nodiscard]] constexpr Point<RealT, 2> Projection(const Point<RealT, 2> &point) const
     {
-      Vector<RealT, 2> dir = point - centre;
-      return centre + ((radius / dir.norm()) * dir.array()).matrix();
+      Vector<RealT, 2> dir = point - this->mCentre;
+      return this->mCentre + ((this->mRadius / dir.norm()) * dir.array()).matrix();
     }
 
     //! Angle between origin and point p.
-    [[nodiscard]] inline constexpr RealT Angle(const Point<RealT, 2> &p) const
+    [[nodiscard]] constexpr RealT Angle(const Point<RealT, 2> &p) const
     {
-      return angle<RealT,2>(p, centre);
+      return angle<RealT,2>(p, this->mCentre);
     }
 
     //! Get point on circle at given angle.
-    [[nodiscard]] inline constexpr Point<RealT, 2> Value(RealT angle) const
+    [[nodiscard]] constexpr Point<RealT, 2> Value(RealT angle) const
     {
-      return toPoint<RealT>(centre[0] + radius * std::cos(angle),
-                            centre[1] + radius * std::sin(angle));
+      return toPoint<RealT>(this->mCentre[0] + this->mRadius * std::cos(angle),
+                            this->mCentre[1] + this->mRadius * std::sin(angle));
     }
 
     //! Distance to closest point on perimeter.
-    [[nodiscard]] inline constexpr RealT Distance(const Point<RealT, 2> &p) const
+    [[nodiscard]] constexpr RealT Distance(const Point<RealT, 2> &p) const
     {
-      return std::abs(euclidDistance(centre, p) - radius);
+      return std::abs(euclidDistance(this->mCentre, p) - this->mRadius);
     }
 
     //! Serialization support
     template <class Archive>
     constexpr void serialize(Archive &ar)
     {
-      ar(cereal::make_nvp("pnt", centre), cereal::make_nvp("r", radius));
+      ar(cereal::base_class<NSphere<RealT,2>>(this));
     }
 
-  private:
-    Point<RealT, 2> centre  = Point<RealT,2>::Zero();
-    RealT radius = 0;
   };
 
   //! @brief Fit points to a circle.

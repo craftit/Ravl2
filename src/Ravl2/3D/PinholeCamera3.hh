@@ -52,7 +52,19 @@ namespace Ravl2
           m_k2(k2)
     {}
 
-  public:
+    //! Construct camera from another coordinate system
+    template <CameraCoordinateSystemT CoordSys>
+    static PinholeCamera3<RealT> fromParameters(RealT cx, RealT cy,
+                                                RealT fx, RealT fy,
+                                                const Matrix<RealT, 3, 3> &R,
+                                                const Vector<RealT, 3> &t,
+                                                const IndexRange<2> &frame,
+                                                RealT k1, RealT k2
+                                                )
+    {
+      return PinholeCamera3<RealT>(PinholeCamera0<RealT>::template fromParameters<CoordSys>(cx, cy, fx, fy, R, t, frame), k1, k2);
+    }
+
     //: First radial distortion coefficient
     [[nodiscard]] const RealT &k1() const
     {
@@ -65,7 +77,6 @@ namespace Ravl2
       return this->m_k2;
     };
 
-  public:
     //! project 3D point in space to 2D image point
     //!  Can result in a divide-by-zero for degenerate points.
     //!  See projectCheck if this is to be avoided.
@@ -77,19 +88,43 @@ namespace Ravl2
       z[1] = this->m_cy + this->m_fy * zd[1];
     }
 
+    //! project a set of 3D point to a 2D image point
+    void project(std::span<Vector<RealT, 2> > z,std::span<const Vector<RealT, 3> > x) const
+    {
+      assert(z.size() == x.size());
+      if(z.size() != x.size()) {
+        throw std::runtime_error("Size mismatch");
+      }
+      for(size_t i = 0; i < z.size(); i++)
+      {
+        project(z[i], x[i]);
+      }
+    }
+
     //! project 3D point in space to 2D image point
     //! The same as project(...) but checks that the point
-    //! is not degenerate.
+    //! is not degenerate and in front of the camera.
     bool projectCheck(Vector<RealT, 2> &z, const Vector<RealT, 3> &x) const
     {
       // Distortion-free projection
       Vector<RealT, 3> Rx = (this->m_R * x) + this->m_t;
-      if(isNearZero(Rx[2], RealT(1E-3)))
+      if(Rx[2] < this->mNearPlane) {
         return false;
+      }
       Vector<RealT, 2> zd = distort0(toVector<RealT>(Rx[0] / Rx[2], Rx[1] / Rx[2]));
       z[0] = this->m_cx + this->m_fx * zd[0];
       z[1] = this->m_cy + this->m_fy * zd[1];
       return true;
+    }
+
+    //! Test if a point is in frame
+    [[nodiscard]] bool isInView(const Vector<RealT, 3> &pnt) const
+    {
+      Point<float,2> pix;
+      if(!projectCheck(pix,pnt)) {
+        return false;
+      }
+      return this->m_frame.contains(toIndex(pix));
     }
 
     //! Inverse projection up to a scale factor.
@@ -109,8 +144,23 @@ namespace Ravl2
       x = this->m_R.transpose() * Rx;
     }
 
+    //! Inverse projection given a z coordinate in the camera frame
+    [[nodiscard]] Point<RealT, 3> unprojectZ(const Vector<RealT, 2> &pix,RealT z) const
+    {
+      Vector<RealT, 2> zd;
+      zd[0] = (pix[0] - this->m_cx) / this->m_fx;
+      zd[1] = (pix[1] - this->m_cy) / this->m_fy;
+      Vector<RealT, 2> uz = undistort0(zd);
+      Vector<RealT, 3> Rx;
+      Rx[0] = uz[0] * z;
+      Rx[1] = uz[1] * z;
+      Rx[2] = z;
+      return this->m_R.transpose() * (Rx - this->m_t);
+    }
+
+
     //! Transform from a simple pinhole model point to a distorted image point
-    Vector<RealT, 2> distort(const Vector<RealT, 2> &z) const
+    [[nodiscard]] Vector<RealT, 2> distort(const Vector<RealT, 2> &z) const
     {
       RealT dx = (z[0] - this->m_cx) / this->m_fx;
       RealT dy = (z[1] - this->m_cy) / this->m_fy;
@@ -122,7 +172,7 @@ namespace Ravl2
     }
 
     //! Return an undistorted image point for a PinholeCamera0C model
-    Vector<RealT, 2> undistort(const Vector<RealT, 2> &z) const
+    [[nodiscard]] Vector<RealT, 2> undistort(const Vector<RealT, 2> &z) const
     {
       Vector<RealT, 2> zd;
       zd[0] = (z[0] - this->m_cx) / this->m_fx;
@@ -145,7 +195,7 @@ namespace Ravl2
 
   protected:
     //! Apply radial distortion
-    Vector<RealT, 2> distort0(const Vector<RealT, 2> &z) const
+    [[nodiscard]] Vector<RealT, 2> distort0(const Vector<RealT, 2> &z) const
     {
       Vector<RealT, 2> ret = z;
       if(!isNearZero(this->m_k1) || !isNearZero(this->m_k2)) {
@@ -160,7 +210,7 @@ namespace Ravl2
     }
 
     //! Remove radial distortion
-    Vector<RealT, 2> undistort0(const Vector<RealT, 2> &z) const
+    [[nodiscard]] Vector<RealT, 2> undistort0(const Vector<RealT, 2> &z) const
     {
       Vector<RealT, 2> ret = z;
       // NOTE: do not undistort a point greater than one image width/height outside the image as this may not converge
@@ -186,12 +236,12 @@ namespace Ravl2
      * Function undist2dist: 
      *    ... given the distance between optical center and ideal projected point
      *    Pu, this function calculates the distance to a Point Pd (distorted),
-     *    which describes a (real) projection with radial lensdistortion (set by
+     *    which describes a (real) projection with radial lens distortion (set by
      *    parameters k1 & k2). The function performs an iterative search ...
      * PROVIDED BY BBC UNDER IVIEW PROJECT
      */
     static const int max_distiter = 50;
-    static double undist2dist(double ru, double k1, double k2)
+    [[nodiscard]] static double undist2dist(double ru, double k1, double k2)
     {
       int i = max_distiter;
       double rd;
@@ -218,11 +268,21 @@ namespace Ravl2
       return rd;
     }
 
-  protected:
+  private:
     RealT m_k1 = 0;//!< First radial distortion coefficient
     RealT m_k2 = 0;//!< Second radial distortion coefficient
   };
 
+  template<class RealT>
+  std::ostream &operator<<(std::ostream &s,const PinholeCamera3<RealT> &v) {
+    s << static_cast<const PinholeCamera0<RealT>&>(v);
+    s << " k:"  << v.k1() << ' ' << v.k2();
+    return s;
+  }
+
   extern template class PinholeCamera3<float>;
 
 };// namespace Ravl2
+
+template <typename RealT>
+struct fmt::formatter<Ravl2::PinholeCamera3<RealT>> : fmt::ostream_formatter {};

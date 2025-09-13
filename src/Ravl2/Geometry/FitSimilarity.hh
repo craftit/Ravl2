@@ -125,7 +125,7 @@ namespace Ravl2
 			   const ContainerOfPointBT &pointsFrom)
   {
     RealT scale = 0;
-    if(!fitSimilarity<RealT,N>(affine.SRMatrix(), affine.Translation(), scale, pointsTo, pointsFrom, false)) {
+    if(!fitSimilarity<RealT,N>(affine.SRMatrix(), affine.translation(), scale, pointsTo, pointsFrom, false)) {
       return false;
     }
     affine.SRMatrix() *= scale;
@@ -144,7 +144,7 @@ namespace Ravl2
 		     const ContainerOfPointBT &pointsFrom)
   {
     RealT scale = 0;
-    if(!fitSimilarity<RealT,N>(affine.SRMatrix(), affine.Translation(), scale, pointsTo, pointsFrom, true)) {
+    if(!fitSimilarity<RealT,N>(affine.SRMatrix(), affine.translation(), scale, pointsTo, pointsFrom, true)) {
       return false;
     }
     affine.SRMatrix() *= scale;

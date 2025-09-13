@@ -135,6 +135,13 @@ namespace Ravl2
   class InputFormatMap
   {
   public:
+    InputFormatMap() = default;
+    
+    InputFormatMap(const InputFormatMap &) = delete;
+    InputFormatMap &operator=(const InputFormatMap &) = delete;
+    InputFormatMap(InputFormatMap &&) = delete;
+    InputFormatMap &operator=(InputFormatMap &&) = delete;
+    
     //! Add a format to the map.
     //! @param format - The format to add.
     //! @return True if the format was added.
@@ -148,6 +155,6 @@ namespace Ravl2
     std::unordered_map<std::string, std::vector<std::shared_ptr<InputFormat>>> m_formatByExtension;
   };
 
-  InputFormatMap &inputFormatMap();
+  [[nodiscard]] InputFormatMap &inputFormatMap();
 
 }// namespace Ravl2

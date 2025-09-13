@@ -18,6 +18,17 @@ namespace Ravl2
     { a(pnt) } -> std::convertible_to<Point<RealT, N>>;
   };
 
+  //! Define the concept of a transform
+  //! It is any class/function that takes a point and returns a point
+  template <typename TransformT, typename RealT = typename TransformT::value_type, unsigned N = TransformT::dimension>
+  concept GeometryTransform = requires(TransformT a, Point<RealT, N> pnt) {
+    { a(pnt) } -> std::convertible_to<Point<RealT, N>>;
+    { a.projectiveMatrix() } -> std::convertible_to<Matrix<RealT, N+1, N+1>>;
+    { a.isReal() } -> std::convertible_to<bool>;
+    { a.inverse() } -> PointTransform; // We use a PointTransform here to avoid a recursive concept definition.
+    { TransformT::identity() } -> PointTransform;
+  };
+
   //! Operator to transform a point
   template <typename TransformT, typename RealT = typename TransformT::value_type, unsigned N = TransformT::dimension>
    requires PointTransform<TransformT, RealT, N>
@@ -25,10 +36,20 @@ namespace Ravl2
   {
     return a(pnt);
   }
+
+  //! Concept of an array of N-d points
+  template <typename DataT, IndexSizeT N, typename RealT = typename DataT::value_type::value_type>
+  concept PointArray = requires(DataT a) {
+    { a.size() } -> std::convertible_to<size_t>;
+    { a[0] } -> std::convertible_to<Point<RealT,N> >;
+    { a.empty() } -> std::convertible_to<bool>;
+    { a.begin() } -> std::convertible_to<typename DataT::iterator>;
+    { a.end() } -> std::convertible_to<typename DataT::iterator>;
+  };
   
   //! Get a perpendicular vector in 2d space
   template <typename DataT>
-  [[nodiscard]] inline constexpr Vector<DataT, 2> perpendicular(const Vector<DataT, 2> &v)
+  [[nodiscard]] constexpr Vector<DataT, 2> perpendicular(const Vector<DataT, 2> &v)
   {
     return {-v(1), v(0)};
   }
@@ -40,20 +61,35 @@ namespace Ravl2
     return std::span(t);
   }
 
-  template <typename RealT, IndexSizeT N>
+  //! Convert to a span
+  template <typename RealT, int N>
+  [[nodiscard]] constexpr auto span(Vector<RealT, N> &b)
+  {
+    return std::span(b.data(), N);
+  }
+
+  //! Convert to a span
+  template <typename RealT, int N>
+  [[nodiscard]] constexpr auto span(const Vector<RealT, N> &b)
+  {
+    return std::span<RealT const>(b.data(), N);
+  }
+
+  template <typename RealT, int N>
   auto dot(const Vector<RealT, N> &a, const Vector<RealT, N> &b)
   {
     return a.dot(b);
   }
 
-  template <typename RealT, IndexSizeT N, IndexSizeT M>
+  template <typename RealT, int N, int M>
+    requires (N > 1) && (M > 1)
   auto dot(const Matrix<RealT, N, M> &a, const Vector<RealT, N> &b)
   {
     return a * b;
   }
 
 
-  template <typename RealT, IndexSizeT N>
+  template <typename RealT, int N>
   auto sum(const Vector<RealT, N> &a)
   {
     return a.sum();
@@ -74,7 +110,7 @@ namespace Ravl2
   }
 
   //! Compute the l2 norm of a vector
-  template <typename RealT, IndexSizeT N>
+  template <typename RealT, int N>
   [[nodiscard]] RealT norm_l2(const Vector<RealT, N> &v)
   {
     RealT sum = 0;
@@ -84,21 +120,21 @@ namespace Ravl2
     return std::sqrt(sum);
   }
 
-  template <typename RealT, IndexSizeT N>
+  template <typename RealT, int N>
   [[nodiscard]] constexpr RealT squaredEuclidDistance(const Point<RealT, N> &a, const Point<RealT, N> &b)
   { return (a - b).squaredNorm(); }
 
-  template <typename RealT, IndexSizeT N>
+  template <typename RealT, int N>
   [[nodiscard]] constexpr auto euclidDistance(const Point<RealT, N> &a, const Point<RealT, N> &b)
-  {
-    RealT sum = 0;
-    for(unsigned i = 0; i < N; i++) {
-      sum += sqr(a(i) - b(i));
-    }
-    return std::sqrt(sum);
-  }
+  { return (a - b).norm(); }
 
-  template <typename Pnt1T>
+  //! Define types that can be used as an index
+  template <typename DataT>
+  concept VectorWithNorm = requires(DataT data){
+    { data.norm() } -> std::convertible_to<typename DataT::value_type>;
+  };
+
+  template <VectorWithNorm Pnt1T>
   [[nodiscard]] constexpr auto norm(Pnt1T a)
   { return a.norm(); }
 
@@ -147,7 +183,7 @@ namespace Ravl2
     return sum;
   }
 
-  //! Compute twice the area contained by the three 2d points.
+  //! @brief Compute twice the area contained by the three 2d points.
   //! Area of triangle (*this, second, third) is equal to the area
   //! of the triangle which the first point represents the origin
   //! of the coordinate system. In fact the points 'aa' and 'bb'
@@ -163,6 +199,26 @@ namespace Ravl2
   {
     return (second[0] - first[0]) * (third[1] - first[1]) - (second[1] - first[1]) * (third[0] - first[0]);
   }
+
+  //! @brief Compute the area of a polygon from a container of  2d points
+  //! Assumes the points are in order and the last point is connected to the first.
+  //! @param points The points of the polygon
+  //! @return The area of the polygon
+  template <typename PointContainerT, typename RealT = PointContainerT::value_type::value_type>
+   requires PointArray<PointContainerT,2,RealT>
+  RealT area(const PointContainerT &points)
+  {
+    RealT sum = 0;
+    if(!points.empty()) {
+      auto pLast = points.back();
+      for(auto const &ptr : points) {
+        sum += pLast[0] * ptr[1] - ptr[0] * pLast[1];
+        pLast = ptr;
+      }
+    }
+    return sum * RealT(0.5);
+  }
+
 
   //! Cross product of two 2d vectors
   template <typename RealT>
@@ -181,11 +237,21 @@ namespace Ravl2
   }
 
   //! Convert a point to the closest integer index
-  template <IndexSizeT N, typename RealT>
+  template <int N, typename RealT>
     requires std::is_floating_point<RealT>::value
-  [[nodiscard]] constexpr inline Index<N> toIndex(const Point<RealT, N> &pnt)
+  [[nodiscard]] constexpr Index<unsigned(N)> toIndex(const Point<RealT, N> &pnt)
   {
-    Index<N> ret;
+    Index<unsigned(N)> ret;
+    for(unsigned i = 0; i < N; i++) {
+      ret[i] = intRound(pnt[i]);
+    }
+    return ret;
+  }
+
+  template <int N, typename RealT>
+  [[nodiscard]] constexpr Index<unsigned(N)> toIndex(const Eigen::Array<RealT, N, 1> &pnt)
+  {
+    Index<unsigned(N)> ret;
     for(unsigned i = 0; i < N; i++) {
       ret[i] = intRound(pnt[i]);
     }
@@ -193,9 +259,9 @@ namespace Ravl2
   }
 
   //! Get the closest integer index from an integer point
-  template <IndexSizeT N, typename NumberT>
+  template <int N, typename NumberT>
     requires std::is_integral<NumberT>::value
-  [[nodiscard]] constexpr inline Index<unsigned (N)> toIndex(const Point<NumberT, N> &pnt)
+  [[nodiscard]] constexpr Index<unsigned (N)> toIndex(const Point<NumberT, N> &pnt)
   {
     Index<unsigned (N)> ret;
     for(unsigned i = 0; i < N; i++) {
@@ -207,7 +273,7 @@ namespace Ravl2
   //! Convert an index to a point
   template <typename RealT, unsigned N>
     requires std::is_convertible<int, RealT>::value
-  [[nodiscard]] constexpr inline Point<RealT, N> toPoint(const Index<N> &idx)
+  [[nodiscard]] constexpr Point<RealT, N> toPoint(const Index<N> &idx)
   {
     Point<RealT, N> ret;
     for(unsigned i = 0; i < N; i++) {
@@ -239,7 +305,7 @@ namespace Ravl2
   //! Convert a parameter list of RealT to a point
   template <typename RealT, typename... DataT, IndexSizeT N = sizeof...(DataT)>
     requires(std::is_convertible_v<DataT, RealT> && ...)
-  [[nodiscard]] constexpr inline Vector<RealT, N> toVector(DataT... data)
+  [[nodiscard]] constexpr Vector<RealT, N> toVector(DataT... data)
   {
     return Vector<RealT, N>({RealT(data)...});
   }
@@ -258,7 +324,7 @@ namespace Ravl2
 
   //! Linear interpolation between two points
   template <typename RealT, IndexSizeT N>
-  [[nodiscard]] constexpr inline Point<RealT, N> lerp(const Point<RealT, N> &a, const Point<RealT, N> &b, RealT t)
+  [[nodiscard]] constexpr Point<RealT, N> lerp(const Point<RealT, N> &a, const Point<RealT, N> &b, RealT t)
   {
     Point<RealT, N> ret;
     for(unsigned i = 0; i < N; i++) {
@@ -290,5 +356,23 @@ namespace Ravl2
     }
     return true;
   }
+
+  //! Convert to homogeneous coordinates
+  template <typename RealT, int N>
+  [[nodiscard]] constexpr Point<RealT, N + 1> toHomogeneous(const Point<RealT, N> &pnt)
+  {
+    Point<RealT, N + 1> ret;
+    ret.template head<N>() = pnt;
+    ret[N] = RealT(1);
+    return ret;
+  }
+
+  //! Convert from homogeneous coordinates
+  template <typename RealT, int N>
+  [[nodiscard]] constexpr Point<RealT, N - 1> fromHomogeneous(const Point<RealT, N> &pnt)
+  {
+    return pnt.template head<N - 1>() / pnt[N-1];
+  }
+
 
 }// namespace Ravl2

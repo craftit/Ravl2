@@ -122,7 +122,7 @@ namespace Ravl2
     }
 
     //! Rotate a vector
-    //! Maybe a different precision from the quaternion type.
+    //! Maybe at a different precision from the quaternion type.
     template <typename Real2T>
     [[nodiscard]] constexpr Vector<Real2T, 3> rotate(const Vector<Real2T, 3> &v) const
     {
@@ -158,6 +158,17 @@ namespace Ravl2
                               2.0f * (m_vec[2] * m_vec[3] + m_vec[0] * m_vec[1]),
                               m_vec[0] * m_vec[0] - m_vec[1] * m_vec[1] - m_vec[2] * m_vec[2] + m_vec[3] * m_vec[3]}});
       return m;
+    }
+
+    //! Generate a projective matrix.
+    [[nodiscard]] constexpr Matrix<RealT, 4, 4> projectiveMatrix() const
+    {
+      Matrix<RealT, 4, 4> ret;
+      ret.template block<3, 3>(0, 0) = toMatrix();
+      ret.template block<3, 1>(0, 3) = Vector<RealT, 3>::Zero();
+      ret.template block<1, 3>(3, 0) = Vector<RealT, 3>::Zero();
+      ret(3, 3) = 1;
+      return ret;
     }
 
     [[nodiscard]] constexpr RealT w() const
@@ -218,12 +229,36 @@ namespace Ravl2
     }
 
     //! From XYZ euler angles
-    [[nodiscard]] static constexpr Quaternion<RealT> fromEulerAnglesXYZ(const Vector3f &angles)
+    template <typename Real2T>
+    [[nodiscard]] static constexpr Quaternion<RealT> fromEulerAnglesXYZ(const Vector<Real2T, 3> &angles)
     {
       // We should simplify this out.
-      auto ret = fromAngleAxis(angles[0], {1.0f, 0.0f, 0.0f}) * fromAngleAxis(angles[1], {0.0f, 1.0f, 0.0f}) * fromAngleAxis(angles[2], {0.0f, 0.0f, 1.0f});
+      auto ret = fromAngleAxis(static_cast<RealT>(angles[0]), {1.0f, 0.0f, 0.0f}) *
+                 fromAngleAxis(static_cast<RealT>(angles[1]), {0.0f, 1.0f, 0.0f}) *
+                 fromAngleAxis(static_cast<RealT>(angles[2]), {0.0f, 0.0f, 1.0f});
       ret.normalise();
       return ret;
+    }
+
+    //! From XYZ euler angles
+    template <typename Real2T>
+    [[nodiscard]] static constexpr Quaternion<RealT> fromEulerAnglesXYZ(Real2T angleX, Real2T angleY, Real2T angleZ)
+    {
+      return fromEulerAnglesXYZ(Vector<Real2T, 3>{angleX, angleY, angleZ});
+    }
+
+    //! Check quaternion is real
+    [[nodiscard]]
+    constexpr bool isReal() const
+    {
+      return Eigen::isfinite(m_vec.array()).all();
+    }
+
+    //! Serialize the quaternion
+    template <class Archive>
+    void serialize(Archive &archive)
+    {
+      archive(m_vec[0], m_vec[1], m_vec[2], m_vec[3]);
     }
 
   private:
@@ -248,10 +283,11 @@ namespace Ravl2
   //! @param p2 Second quaternion, given at t=1
   //! @param t The interpolation parameter
   //! @return The interpolated quaternion
-  template <typename RealT>
+  template <typename RealT,typename ScaleT>
   [[nodiscard]]
-  constexpr Quaternion<RealT> slerp(const Quaternion<RealT> &p1, const Quaternion<RealT> &p2, float t)
+  constexpr Quaternion<RealT> slerp(const Quaternion<RealT> &p1, const Quaternion<RealT> &p2, ScaleT t)
   {
+    const RealT it = static_cast<RealT>(t);
     const RealT one = RealT(1.0) - std::numeric_limits<RealT>::epsilon();
     RealT d = p1.asVector().dot(p2.asVector());
     RealT absD = std::fabs(d);
@@ -260,15 +296,15 @@ namespace Ravl2
     RealT scale1;
 
     if(absD >= one) {
-      scale0 = RealT(1) - t;
-      scale1 = t;
+      scale0 = RealT(1) - it;
+      scale1 = it;
     } else {
       // theta is the angle between the 2 quaternions
       RealT theta = std::acos(absD);
       RealT sinTheta = std::sin(theta);
 
-      scale0 = std::sin((RealT(1) - t) * theta) / sinTheta;
-      scale1 = std::sin((t * theta)) / sinTheta;
+      scale0 = std::sin((RealT(1) - it) * theta) / sinTheta;
+      scale1 = std::sin((it * theta)) / sinTheta;
     }
     if(d < RealT(0)) scale1 = -scale1;
 
@@ -312,7 +348,7 @@ namespace Ravl2
   template <typename RealT, typename Real2T>
   [[nodiscard]] constexpr Quaternion<RealT> ApplyAngularVelocity(const Quaternion<RealT> &orientation, const Vector<Real2T, 3> &angularVelocity, Real2T duration)
   {
-    auto rot = Quaternion<RealT>::fromEulerAnglesXYZ(angularVelocity * duration);
+    auto rot = Quaternion<RealT>::fromEulerAnglesXYZ((angularVelocity * duration).eval());
     return orientation * rot;//add to the starting rotation
   }
 
@@ -320,7 +356,7 @@ namespace Ravl2
   constexpr std::string toString(const Quaternion<RealT> &val)
   {
     auto angles = val.eulerAngles();
-    return fmt::format("Q: {} {} {}", angles[0], angles[1], angles[2]);
+    return fmt::format("Q: {} {} {} deg.", Ravl2::rad2deg(angles[0]), Ravl2::rad2deg(angles[1]), Ravl2::rad2deg(angles[2]));
   }
 
   extern template class Quaternion<float>;

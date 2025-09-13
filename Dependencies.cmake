@@ -18,11 +18,15 @@ function(RAVL2_setup_dependencies)
       set(BLA_VENDOR "All")
     endif ()
   else ()
-    set(BLA_VENDOR "All")
+    #set(BLA_VENDOR "All")
   endif()
 
   find_package(BLAS REQUIRED)
+  message(STATUS "BLAS_LIBS: ${BLAS_LIBRARIES}")
+  message(STATUS "BLA_VENDOR: ${BLA_VENDOR}")
+
   find_package(LAPACK REQUIRED)
+  message(STATUS "LAPACK_LIBRARIES: ${LAPACK_LIBRARIES}")
 
   # Try and use native packages if they're available
 
@@ -51,9 +55,9 @@ function(RAVL2_setup_dependencies)
     cpmaddpackage("gh:fmtlib/fmt#9.1.0")
   else()
     message(STATUS "Found native fmt::fmt")
-    if (NOT TARGET libfmt::libfmt)
-      add_library(libfmt::libfmt ALIAS fmt::fmt)
-    endif ()
+#    if (NOT TARGET libfmt::libfmt)
+#      add_library(libfmt::libfmt ALIAS fmt::fmt)
+#    endif ()
   endif()
 
   if(NOT TARGET spdlog::spdlog)
@@ -73,7 +77,7 @@ function(RAVL2_setup_dependencies)
   if(NOT TARGET Catch2::Catch2WithMain)
     cpmaddpackage("gh:catchorg/Catch2@3.3.2")
   else()
-    message(STATUS "Found native Catch2::Catch2WithMain")
+    message(STATUS "Found native Catch2::Catch2")
   endif()
 
   if(NOT TARGET CLI11::CLI11)

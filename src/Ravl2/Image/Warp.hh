@@ -7,16 +7,30 @@
 #include "Ravl2/Array.hh"
 #include "Ravl2/Math.hh"
 #include "Ravl2/Geometry/Affine.hh"
+#include "Ravl2/Geometry/Line2ABC.hh"
+#include "Ravl2/Geometry/Line2PP.hh"
+#include "Ravl2/Geometry/Projection.hh"
 #include "Ravl2/Geometry/Range.hh"
 #include "Ravl2/Image/BilinearInterpolation.hh"
+#include "Ravl2/Image/WarpIter.hh"
 
 namespace Ravl2
 {
+  //! @brief Compute the bounds we can actually interpolate over
+  //! This is a genetic method, used when we don't know the interpolator
+  //! @param indexRange The range iterate over in a grid
+  //! @param interpolator The interpolator to use
+  //! @return The range of real points we can sample from
+  template <typename CoordTypeT, unsigned N, typename SamplerT>
+  Range<CoordTypeT, N> interpolationBounds(const IndexRange<N> &indexRange, [[maybe_unused]] const SamplerT &interpolator)
+  {
+    return toRange<CoordTypeT>(indexRange);
+  }
 
   //! @brief Assignment pixel operation
   //! This operation is used to assign the pixel value from the source to the target
-  //! @param Target The target pixel to assign to
-  //! @param Source The source pixel to assign from
+  //! @param target The target pixel to assign to
+  //! @param source The source pixel to assign from
   template <typename TargetT>
   struct AssignOp {
     template <typename SourceT>
@@ -35,9 +49,10 @@ namespace Ravl2
   //! @param transform The point-to-point mapping to use
   //! @return The range of pixels the transformed points will sample from
   template <typename TransformT, unsigned N, typename CoordTypeT = float>
+   requires PointTransform<TransformT, CoordTypeT, N>
   Range<CoordTypeT, N> projectedBounds(const TransformT &transform, const IndexRange<N> &targetRange)
   {
-    Range<CoordTypeT, N> transformedRange;
+    Range<CoordTypeT, N> transformedRange = Range<CoordTypeT,N>::mostEmpty();
     for(unsigned i = 0; i < (1u << N); i++) {
       Point<CoordTypeT, N> pnt;
       for(unsigned j = 0; j < N; j++) {
@@ -47,6 +62,30 @@ namespace Ravl2
     }
     return transformedRange;
   }
+
+  //! @brief Get the range of pixels the transformed points will sample from
+  //! @param targetRange The range to iterate over in a grid
+  //! @param transform The point-to-point mapping to use
+  //! @return The range of pixels the transformed points will sample from
+  template <typename CoordTypeT = float>
+  Range<CoordTypeT, 2> projectedBounds(const Projection<CoordTypeT,2> &transform, const IndexRange<2> &targetRange)
+  {
+    Line2ABC<CoordTypeT> line(transform.atInfinity());
+    if(intersects(line, toRange<CoordTypeT>(targetRange))) {
+      return Range<CoordTypeT,2>::largest();
+    }
+
+    Range<CoordTypeT, 2> transformedRange = Range<CoordTypeT,2>::mostEmpty();
+    for(unsigned i = 0; i < (1u << 2); i++) {
+      Point<CoordTypeT, 2> pnt;
+      for(unsigned j = 0; j < 2; j++) {
+        pnt[j] = CoordTypeT((i & (1u << j)) ? targetRange.max(j) : targetRange.min(j));
+      }
+      transformedRange.involve(transform(pnt));
+    }
+    return transformedRange;
+  }
+
 
   //! @brief Wrap a point coordinate to the source image
   //! @param sourcePoint The point to wrap
@@ -141,40 +180,41 @@ namespace Ravl2
             SamplerT &&sampler = SamplerT())
   {
     // Get the range of pixels the transformed points will sample from
+    // Check if it is a projective transform
     auto realSourceRange = interpolationBounds<CoordTypeT>(source.range(), sampler);
-    auto realSampleRange = projectedBounds(transform, target.range());
-    if(realSourceRange.contains(realSampleRange)) {
-      // Iterate over the target image, no need for bounds check.
-      for(auto it = target.begin(); it.valid();) {
-        do {
-          // Get the point in the target image
-          auto targetIndex = it.index();
+    {
+      auto realSampleRange = projectedBounds(transform, target.range());
+      if(realSourceRange.contains(realSampleRange)) {
+        // Iterate over the target image, no need for bounds check.
+        for(auto it = beginWarp(target,transform); it.valid();) {
+          do {
+            // Get the pixel value from the source image
+            auto sourcePoint = it.warpedIndex();
 
-          // Get the point in the source image
-          auto sourcePoint = transform(toPoint<CoordTypeT>(targetIndex));
+            assert(realSourceRange.contains(sourcePoint));
 
-          // Get the pixel value from the source image
-          auto sourcePixel = sampler(source, sourcePoint);
+            // Get the pixel value from the source image
+            auto sourcePixel = sampler(source, sourcePoint);
 
-          // Assign the pixel value to the target image
-          operation(*it, sourcePixel);
-        } while(it.next());
+            // Assign the pixel value to the target image
+            operation(*it, sourcePixel);
+          } while(it.next());
+        }
+        return true;
       }
-      return true;
-    } else {
+    }
+    {
       if constexpr(wrapMode == WarpWrapMode::Stop) {
         return false;
       } else {
         // Iterate over the target image
         // We could project the polygon and iterate over that.
-        for(auto it = target.begin(); it.valid();) {
+        for(auto it = beginWarp(target,transform); it.valid();) {
           do {
-            // Get the point in the target image
-            auto targetIndex = it.index();
-
             // Get the point in the source image
-            auto sourcePoint = transform(toPoint<CoordTypeT>(targetIndex));
+            auto sourcePoint = it.warpedIndex();
 
+            // Check if the source point is within the source image
             if constexpr(wrapMode == WarpWrapMode::Clamp) {
               // Clamp the point to the source image
               sourcePoint = clamp(sourcePoint, realSourceRange);

@@ -3,6 +3,8 @@
 //
 
 #include "Ravl2/ConfigJson.hh"
+#include "Ravl2/IO/Load.hh"
+#include "Ravl2/Resource.hh"
 #include <fstream>
 
 #define DODEBUG 0
@@ -49,13 +51,12 @@ namespace Ravl2
                                       int min,
                                       int max)
   {
-    std::string const tname(name);// jsoncpp doesn't support string_view.
     // Just use the default value?
-    if(m_json.find(tname) == m_json.end()) {
-      m_json[tname] = defaultValue;
+    if(m_json.find(name) == m_json.end()) {
+      m_json[name] = defaultValue;
       return ConfigNode::initNumber(name, description, defaultValue, min, max);
     }
-    json const value = m_json[tname];
+    json const value = m_json[name];
     if(!value.is_number()) {
       SPDLOG_ERROR("Expected a number for field {}.{}  got '{}'  ", rootPathString(), name, value.dump());
       throw std::runtime_error("Expected a number in field.");
@@ -75,13 +76,12 @@ namespace Ravl2
 				      unsigned min,
 				      unsigned max)
   {
-    std::string const tname(name);// jsoncpp doesn't support string_view.
     // Just use the default value?
-    if(m_json.find(tname) == m_json.end()) {
-      m_json[tname] = defaultValue;
+    if(m_json.find(name) == m_json.end()) {
+      m_json[name] = defaultValue;
       return ConfigNode::initNumber(name, description, defaultValue, min, max);
     }
-    json const value = m_json[tname];
+    json const value = m_json[name];
     if(!value.is_number()) {
       SPDLOG_ERROR("Expected a number for field {}.{}  got '{}'  ", rootPathString(), name, value.dump());
       throw std::runtime_error("Expected a number in field.");
@@ -102,13 +102,12 @@ namespace Ravl2
                                       float min,
                                       float max)
   {
-    std::string const tname(name);// jsoncpp doesn't support string_view.
     // Just use the default value?
-    if(m_json.find(tname) == m_json.end()) {
-      m_json[tname] = static_cast<double>(defaultValue);
+    if(m_json.find(name) == m_json.end()) {
+      m_json[name] = static_cast<double>(defaultValue);
       return ConfigNode::initNumber(name, description, defaultValue, min, max);
     }
-    json const value = m_json[tname];
+    json const value = m_json[name];
     if(!value.is_number()) {
       SPDLOG_ERROR("Expected a number for field {}.{}  got '{}'  ", rootPathString(), name, value.dump());
       throw std::runtime_error("Expected a number in field.");
@@ -128,13 +127,12 @@ namespace Ravl2
                                       double min,
                                       double max)
   {
-    std::string const tname(name);// jsoncpp doesn't support string_view.
     // Just use the default value?
-    if(m_json.find(tname) == m_json.end()) {
-      m_json[tname] = static_cast<double>(defaultValue);
+    if(m_json.find(name) == m_json.end()) {
+      m_json[name] = static_cast<double>(defaultValue);
       return ConfigNode::initNumber(name, description, defaultValue, min, max);
     }
-    json const value = m_json[tname];
+    json const value = m_json[name];
     if(!value.is_number()) {
       SPDLOG_ERROR("Expected a number for field {}.{}  got '{}'  ", rootPathString(), name, value.dump());
       throw std::runtime_error("Expected a number in field.");
@@ -151,13 +149,12 @@ namespace Ravl2
   std::any
   ConfigNodeJSON::initNumber(const std::string_view &name, const std::string_view &description, size_t defaultValue, size_t min, size_t max)
   {
-    std::string const tname(name);
     // Just use the default value?
-    if(m_json.find(tname) == m_json.end()) {
-      m_json[tname] = defaultValue;
+    if(m_json.find(name) == m_json.end()) {
+      m_json[name] = defaultValue;
       return ConfigNode::initNumber(name, description, defaultValue, min, max);
     }
-    json const value = m_json[tname];
+    json const value = m_json[name];
     if(!value.is_number()) {
       SPDLOG_ERROR("Expected a number for field {}.{}  got '{}'  ", rootPathString(), name, value.dump());
       throw std::runtime_error("Expected a number in field.");
@@ -215,13 +212,12 @@ namespace Ravl2
                                       const std::string_view &defaultValue)
   {
     ONDEBUG(SPDLOG_INFO("initString for {} ", name));
-    std::string const tname(name);// jsoncpp doesn't support string_view.
     // Just use the default value?
-    if(m_json.find(tname) == m_json.end()) {
-      m_json[tname] = std::string(defaultValue);
+    if(m_json.find(name) == m_json.end()) {
+      m_json[name] = std::string(defaultValue);
       return ConfigNode::initString(name, description, defaultValue);
     }
-    json const value = m_json[tname];
+    json const value = m_json[name];
     if(!value.is_string()) {
       SPDLOG_ERROR("Expected a string for field {}.{}  got '{}'  ", rootPathString(), name, value.dump());
       throw std::runtime_error("Expected a string in field.");
@@ -234,14 +230,12 @@ namespace Ravl2
                                     const std::string_view &description,
                                     bool defaultValue)
   {
-    std::string tname(name);// jsoncpp doesn't support string_view.
-
     // Just use the default value?
-    if(m_json.find(tname) == m_json.end()) {
-      m_json[tname] = defaultValue;
+    if(m_json.find(name) == m_json.end()) {
+      m_json[name] = defaultValue;
       return ConfigNode::initBool(name, description, defaultValue);
     }
-    json value = m_json[tname];
+    json value = m_json[name];
     if(!value.is_boolean()) {
       SPDLOG_ERROR("Expected a bool for field {}.{}  got '{}'  ", rootPathString(), name, value.dump());
       throw std::runtime_error("Expected a bool in field.");
@@ -250,23 +244,57 @@ namespace Ravl2
     return x->value();
   }
 
+  std::any ConfigNodeJSON::loadFile(std::string tname, const std::string_view &description, const std::type_info &type, std::string path)
+  {
+    if(path.empty()) {
+      SPDLOG_ERROR("Failed to follow path '{}' from '{}'  Parent:{} ", path, rootPathString(), !m_parent);
+      throw std::runtime_error("Failed to follow path ");
+    }
+    std::string filename = path;
+    // FIXME: This may interact poorly with URL's.
+    std::string::size_type pos = path.find(':');
+    if(pos != std::string::npos) {
+      std::string section = path.substr(0, pos);
+      std::string resourceName = path.substr(pos + 1);
+      filename = findFileResource(section, resourceName,false);
+      if(filename.empty()) {
+        SPDLOG_ERROR("Failed to find file '{}'   {} : {} ", path,section,resourceName);
+        throw std::runtime_error("Failed to find file.");
+      }
+    } else {
+
+    }
+    std::any anObj;
+    if(!ioLoad(anObj, filename, type, Ravl2::defaultLoadFormatHint(false))) {
+      SPDLOG_ERROR("Failed to load file '{}' ", filename);
+      throw std::runtime_error("Failed to load file.");
+    }
+    std::shared_ptr<ConfigNode> node = std::make_shared<ConfigNodeJSON>(*this,
+                                            std::move(tname),
+                                            std::string(description),
+                                            std::move(anObj),
+                                            path);
+    m_children.emplace(node->name(), node);
+    return node->value();
+  }
+
   std::any ConfigNodeJSON::initObject(const std::string_view &name,
                                       const std::string_view &description,
                                       const std::type_info &type,
                                       const std::string_view &defaultType)
   {
     ONDEBUG(SPDLOG_INFO("initObject {} for handle type '{}'  with default type '{}'  ", name, type.name(), defaultType));
-    // Check if the 'name' is actually a path seperated by dots.
+    // Check if the 'name' is actually a path separated by dots.
 
     std::string tname(name);
     json jvalue;
     std::shared_ptr<ConfigNode> node;
     if(m_json.find(tname) == m_json.end()) {
-      // Try and use string as path if string has a dot in it.
+      // Try and use string as a path if string has a dot in it.
       if(tname.find('.') != std::string::npos) {
         jvalue = tname;
       } else {
-        SPDLOG_ERROR("Expected a object for {}.{} of type '{}' ", rootPathString(), name, typeName(type));
+        SPDLOG_ERROR("Expected an object for {}{} of type '{}' in file '{}' ", rootPathString(), name, typeName(type),filename());
         throw std::runtime_error("Expected a object in field.");
       }
     } else {
@@ -275,6 +303,12 @@ namespace Ravl2
     if(jvalue.is_string()) {
       std::string path = jvalue.template get<std::string>();
       ONDEBUG(SPDLOG_INFO("Following path {} ", path));
+      // Does the path start with '@' ?
+      if(path[0] == '@') {
+        // Yes, so it's a file name we want to load
+        path = path.substr(1);
+        return loadFile(tname, description, type, path);
+      }
       ConfigNode *aNode = nullptr;
       // We have to start from the parent, else we'll just find this entry again.
       if(m_parent != nullptr) {
@@ -362,7 +396,7 @@ namespace Ravl2
     std::string theName(name);
     json childJson = m_json[theName];
     if(childJson.is_null()) {
-      SPDLOG_WARN("Failed to find child node '{}' in {} ", name, rootPathString());
+      ONDEBUG(SPDLOG_WARN("Failed to find child node '{}' in {} ", name, rootPathString()));
     }
     return std::make_shared<ConfigNodeJSON>(*this, std::move(theName), std::move(description), std::move(value), childJson);
   }

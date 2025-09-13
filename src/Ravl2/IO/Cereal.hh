@@ -9,7 +9,11 @@
 #define CEREAL_THREAD_SAFE 1
 #endif
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wnull-dereference"
+// The compiler claims this has some potential null dereference issues.
 #include <cereal/archives/binary.hpp>
+#pragma GCC diagnostic pop
 #include <cereal/archives/json.hpp>
 #include <cereal/types/string.hpp>
 #include <cereal/types/vector.hpp>
@@ -281,7 +285,7 @@ namespace Ravl2
 	m_isFirst = false;
       }
       ObjectT obj;
-      m_archive(cereal::make_nvp(fmt::format("body{}",size_t(pos)),obj));
+      m_archive(cereal::make_nvp(fmt::format("body{}", static_cast<std::size_t>(pos)),obj));
       if constexpr(std::is_same_v<ArchiveT, cereal::BinaryInputArchive>) {
 	pos = m_stream->tellg();
       } else {
@@ -455,6 +459,9 @@ namespace Ravl2
       auto it = m_streamInputFactory.find(header.typeName);
       if(it == m_streamInputFactory.end()) {
 	SPDLOG_WARN("Unknown object type '{}' in format '{}' Archive:{} ", header.typeName, typeName(typeid(*this)),static_cast<void*>(this));
+        for(const auto &pair : m_streamInputFactory) {
+          SPDLOG_INFO("  Known type: '{}'", pair.first);
+        }
 	return std::nullopt;
       }
       auto newStream = it->second(ctx);

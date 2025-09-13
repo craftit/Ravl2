@@ -25,9 +25,9 @@ namespace Ravl2
     RankedScoreArray() = default;
 
     //! Constructor.
-    explicit RankedScoreArray(size_t maxSize, const KeyT &Threshold = -std::numeric_limits<KeyT>::infinity())
+    explicit RankedScoreArray(size_t maxSize, const KeyT &threshold = -std::numeric_limits<KeyT>::infinity())
         : m_maxSize(maxSize),
-          m_worseAcceptableScore(Threshold)
+          m_worseAcceptableScore(threshold)
     {
       reset();
     }

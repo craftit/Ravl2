@@ -13,7 +13,7 @@ namespace Ravl2
 {
 
   //! Vertex in a mesh.
-  // This holds a position and a normal.
+  //! This holds a position and a normal vector.
 
   template<class RealT>
   class Vertex
@@ -22,36 +22,39 @@ namespace Ravl2
     //! Default constructor.
     Vertex() = default;
 
-    Vertex(const Point<RealT,3> &pos,const Vector<RealT,3> &norm)
-      : at(pos),
-	mNormal(norm)
-    {}
-    //: Constructor from position and normal
+    //! Constructor from position and normal
     //! @param  pos - position of vertex.
     //! @param  norm - Direction of surface normal at vertex.
-    
-    explicit Vertex(const Point<RealT,3> &pos)
-      : at(pos)
+    Vertex(const Point<RealT,3> &pos,const Vector<RealT,3> &norm)
+      : mAt(pos),
+	mNormal(norm)
     {}
-    //: Constructor from position
+    
+    //! Constructor from position
     //! @param  pos - position of vertex.
     // The surface normal is left undefined.
+    explicit Vertex(const Point<RealT,3> &pos)
+      : mAt(pos),
+        mNormal(static_cast<RealT>(std::nan("")),
+          static_cast<RealT>(std::nan("")),
+          static_cast<RealT>(std::nan("")))
+    {}
     
+    //! Access position of vertex.
     [[nodiscard]] Vector<RealT,3> &position()
-    { return at; }
-    //: Access position of vertex.
+    { return mAt; }
     
+    //! Access position of vertex.
     [[nodiscard]] const Vector<RealT,3> &position() const
-    { return at; }
-    //: Access position of vertex.
+    { return mAt; }
     
+    //! Access normal at vertex.
     [[nodiscard]] Vector<RealT,3> &normal()
     { return mNormal; }
-    //: Access normal at vertex.
 
+    //! Access normal at vertex.
     [[nodiscard]] const Vector<RealT,3> &normal() const
     { return mNormal; }
-    //: Access normal at vertex.
 
     //! Make unit normal.
     void makeUnitNormal()
@@ -66,12 +69,12 @@ namespace Ravl2
     template <class Archive>
     constexpr void serialize(Archive &archive)
     {
-      archive(cereal::make_nvp("at", at));
+      archive(cereal::make_nvp("at", mAt));
       archive(cereal::make_nvp("normal", mNormal));
     }
 
-  protected:
-    Vector<RealT,3> at;        // Position of vertex.
+  private:
+    Vector<RealT,3> mAt;        // Position of vertex.
     Vector<RealT,3> mNormal;    // Normal to vertex.
   };
 

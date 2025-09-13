@@ -25,10 +25,22 @@ namespace Ravl2
   //! Default load format hint.
   [[nodiscard]] const nlohmann::json &defaultLoadFormatHint(bool verbose = false);
 
+  //! @brief Load a file into a std::any.
+  //! @param object - The object to load into.
+  //! @param url - The filename to load.
+  //! @param expectedType - Type of object expected or typeid(void) if don't care.
+  //! @param formatHint - A hint to the format of the file.
+  //! @return True if the file was loaded successfully.
+  //!
+  //! Format hints include
+  //!  - "verbose" - If true, print verbose output.
+  bool ioLoad(std::any &object, const std::string &url, const std::type_info &expectedType,const nlohmann::json &formatHint = defaultLoadFormatHint());
+
+
   //! @brief Load a file into an object.
   //! The file is loaded using the cereal library.
-  //! @param url - The filename to load.
   //! @param object - The object to load into.
+  //! @param url - The filename to load.
   //! @param formatHint - A hint to the format of the file.
   //! @return True if the file was loaded successfully.
   //!
@@ -69,6 +81,7 @@ namespace Ravl2
     object = std::move(std::any_cast<ObjectT>(resultAny));
     return true;
   }
+
 
   //! @brief Load a file into an object.
   template <typename ObjectT>

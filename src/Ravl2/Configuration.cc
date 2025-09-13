@@ -4,6 +4,7 @@
 
 #include "Ravl2/Configuration.hh"
 #include "Ravl2/StringUtils.hh"
+#include "Ravl2/IO/TypeConverter.hh"
 
 #define DODEBUG 0
 #if DODEBUG
@@ -15,7 +16,61 @@
 namespace Ravl2
 {
 
-  ConfigFactory &defaultConfigFactory()
+  std::any ConfigFactory::create(const std::type_info &type, std::string_view name, Configuration &config)
+  {
+    if(type == typeid(void)) {
+      return {};
+    }
+    std::any obj;
+    auto it = m_map.find(type);
+    if(it != m_map.end()) {
+      auto it2 = it->second.m_constructors.find(name);
+      if(it2 != it->second.m_constructors.end()) {
+        obj = it2->second(config);
+      }
+      // SPDLOG_ERROR("Type '{}' unknown when constructing '{}' ", Ravl2::typeName(type), name);
+      // for(auto &a : m_map) {
+      //   SPDLOG_ERROR("  Known type: {}", Ravl2::typeName(a.first));
+      // }
+      // throw std::runtime_error("type unknown");
+    }
+    if(!obj.has_value()) {
+      auto directIt = m_name2factory.find(std::string(name));
+      if(directIt == m_name2factory.end()) {
+        SPDLOG_ERROR("No constructor for '{}' of type {} ", name, typeName(type));
+        throw std::runtime_error("type unknown");
+      }
+      obj = directIt->second(config);
+    }
+
+    auto result = typeConverterMap().convert(type, obj);
+    if(!result.has_value()) {
+      SPDLOG_ERROR("Failed to convert type '{}' to type '{}' ", typeName(obj.type()), typeName(type));
+      throw std::runtime_error("type unknown");
+    }
+    return *result;
+  }
+
+  bool ConfigFactory::add(const std::type_info &type, std::string_view name, const std::function<std::any(Configuration &)> &func)
+  {
+    auto &entry = m_map[std::type_index(type)].m_constructors[std::string(name)];
+    if(entry) {
+      SPDLOG_ERROR("Constructor '{}' already exists for type '{}'", name, type.name());
+      throw std::runtime_error("type already exists");
+    }
+    if(name != "default") {
+      auto &entry2 = m_map[std::type_index(type)].m_constructors["default"];
+      if(entry2) {
+        SPDLOG_ERROR("Constructor 'default' already exists for type '{}'", type.name());
+        throw std::runtime_error("type already exists");
+      }
+      m_name2factory[std::string(name)] = func;
+    }
+    entry = func;
+    return true;
+  }
+
+  ConfigFactory &defaultConfigFactory() noexcept
   {
     static std::shared_ptr<ConfigFactory> factory = std::make_shared<ConfigFactory>();
     return *factory;
@@ -29,11 +84,29 @@ namespace Ravl2
   {}
   
   ConfigNode::ConfigNode(const std::string_view &filename)
-    : m_factory(defaultConfigFactory().shared_from_this()),
-      m_filename(filename),
-      m_name("root")
+      : m_factory(defaultConfigFactory().shared_from_this()),
+        m_filename(filename),
+        m_name("root")
   {}
-  
+
+  const ConfigNode &ConfigNode::rootNode() const
+  {
+    const ConfigNode *node = this;
+    while(node->m_parent != nullptr) {
+      node = node->m_parent;
+    }
+    return *node;
+  }
+
+  ConfigNode &ConfigNode::rootNode()
+  {
+    ConfigNode *node = this;
+    while(node->m_parent != nullptr) {
+      node = node->m_parent;
+    }
+    return *node;
+  }
+
   //! Get path to this node.
   std::string ConfigNode::path() const
   {
@@ -142,8 +215,9 @@ namespace Ravl2
   {
     flagAsUsed(name);
     auto x = m_children.find(name);
-    if(x == m_children.end())
+    if(x == m_children.end()) {
       return {};
+    }
     assert(x->second->value().type() == type);
     return x->second->value();
   }
@@ -157,9 +231,14 @@ namespace Ravl2
 
   std::string ConfigNode::rootPathString() const
   {
-    if(m_parent == nullptr)
-      return m_name;
-    return m_parent->rootPathString() + '.' + m_name;
+    std::string ret;
+    ret.reserve(256);
+    auto at = this;
+    while(at->m_parent != nullptr) {
+      ret = at->m_name + '.' + ret;
+      at = at->m_parent;
+    }
+    return ret;
   }
 
   void ConfigNode::checkAllFieldsUsed() const
@@ -168,7 +247,7 @@ namespace Ravl2
 
   ConfigNode *ConfigNode::followPath(std::string_view pathstr, const std::type_info &type)
   {
-    std::vector<std::string_view> thePath = split(pathstr, '.');
+    std::vector<std::string_view> const thePath = split(pathstr, '.');
     return followPath(thePath, type);
   }
 
@@ -236,5 +315,30 @@ namespace Ravl2
     flagAsUsed(name);
     return it->second.get();
   }
-  
+
+  bool ConfigNode::setValue(std::any &&v)
+  {
+    if(m_fieldType == nullptr || *m_fieldType == typeid(void)) {
+      m_fieldType = &m_value.type();
+      m_value = std::move(v);
+    } else {
+      //SPDLOG_INFO("Setting value of {}, has update:{}  type:{}  from:{} ", name(), hasUpdate(), typeName(*m_fieldType), typeName(v.type()));
+      if(*m_fieldType != v.type()) {
+        auto optValue = typeConverterMap().convert(*m_fieldType, v);
+        if(!optValue) {
+          SPDLOG_ERROR("Failed to convert {} to {} ", typeName(v.type()), typeName(*m_fieldType));
+          return false;
+        }
+        assert(optValue->type() == *m_fieldType);
+        m_value = std::move(*optValue);
+      } else {
+        m_value = std::move(v);
+      }
+    }
+    if(mUpdate) {
+      return mUpdate(m_value);
+    }
+    return true;
+  }
+
 }// namespace Ravl2

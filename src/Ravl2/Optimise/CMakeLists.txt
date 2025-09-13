@@ -1,5 +1,3 @@
-
-
 include(GenerateExportHeader)
 
 add_library (Ravl2Optimise
@@ -7,7 +5,11 @@ add_library (Ravl2Optimise
   OptimiseBrent.hh OptimiseBrent.cc
   BracketMinimum.cc BracketMinimum.hh
   OptimisePowell.cc OptimisePowell.hh
-
+  GaussianProcess.cc  GaussianProcess.hh
+  BayesianOptimise.cc BayesianOptimise.hh
+  RandomSearchOptimise.cc RandomSearchOptimise.hh
+  SampleGenerators.cc SampleGenerators.hh
+  ParticleSwarmOptimise.cc ParticleSwarmOptimise.hh
 )
 
 add_library(ravl2::Ravl2Optimise ALIAS Ravl2Optimise)
@@ -33,5 +35,3 @@ generate_export_header(Ravl2Optimise EXPORT_FILE_NAME ${PROJECT_BINARY_DIR}/incl
 if(NOT BUILD_SHARED_LIBS)
     target_compile_definitions(Ravl2Optimise PUBLIC SAMPLE_LIBRARY_STATIC_DEFINE)
 endif()
-
-

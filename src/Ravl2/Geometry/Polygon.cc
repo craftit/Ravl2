@@ -18,33 +18,18 @@ namespace Ravl2
   Polygon<RealT>::Polygon(const Range<RealT, 2> &range, BoundaryOrientationT orientation)
   {
     this->reserve(4);
+    this->push_back(range.min());
     if(orientation == BoundaryOrientationT::INSIDE_LEFT) {
       // Clockwise
-      this->push_back(range.min());
       this->push_back(toPoint<RealT>(range[0].max(), range[1].min()));
       this->push_back(range.max());
       this->push_back(toPoint<RealT>(range[0].min(), range[1].max()));
     } else {
       // Counterclockwise
-      this->push_back(range.min());
       this->push_back(toPoint<RealT>(range[0].min(), range[1].max()));
       this->push_back(range.max());
       this->push_back(toPoint<RealT>(range[0].max(), range[1].min()));
     }
-  }
-  
-  template <typename RealT>
-  RealT Polygon<RealT>::area() const
-  {
-    RealT sum = 0.0;
-    if(!this->empty()) {
-      auto pLast = this->back();
-      for(auto ptr : *this) {
-        sum += pLast[0] * ptr[1] - ptr[0] * pLast[1];
-        pLast = ptr;
-      }
-    }
-    return sum * RealT(0.5);
   }
 
   template <typename RealT>
@@ -72,7 +57,7 @@ namespace Ravl2
     RealT y = 0.0;
     if(!this->empty()) {
       auto pLast = this->back();
-      for(auto ptr : *this) {
+      for(auto &ptr : *this) {
         RealT temp = pLast[0] * ptr[1] - ptr[0] * pLast[1];
         x += (pLast[0] + ptr[0]) * temp;
         y += (pLast[1] + ptr[1]) * temp;
@@ -316,20 +301,6 @@ namespace Ravl2
       }
     }
     return false;
-  }
-
-  template <typename RealT>
-  RealT Polygon<RealT>::perimeter() const
-  {
-    RealT perimeter = 0.0;
-    if(!this->empty()) {
-      auto pLast = this->back();
-      for(auto ptr : *this) {
-        perimeter += euclidDistance(pLast, ptr);
-        pLast = ptr;
-      }
-    }
-    return perimeter;
   }
 
   template <typename RealT>

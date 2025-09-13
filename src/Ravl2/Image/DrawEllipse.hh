@@ -26,7 +26,7 @@ namespace Ravl2
   {
     auto [major, minor] = ellipse.size();
     if((major + minor) < 3) {// Very small ?
-      auto at = toIndex<2>(ellipse.Centre());
+      auto at = toIndex<2>(ellipse.centre());
       if(image.range().contains(at)) {
         image[at] = value;
       }

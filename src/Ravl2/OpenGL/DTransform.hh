@@ -10,7 +10,7 @@
 
 #pragma once
 
-#include "Ravl2/OpenGL/DObject3D.hh"
+#include "Ravl2/OpenGL/DObject.hh"
 #include "Ravl2/Pixel/Pixel.hh"
 
 #define DTransform3D_RESET       0x0001
@@ -21,21 +21,22 @@ namespace Ravl2
 {
 
   ///////////////////////////////////////////////////////
-  //: Rotate objects
+  //! Rotate objects
   class DTransform3DBodyC
-    : public DObjectSet3DBodyC
+    : public DObjectSet3D
   {
   public:
-    //: Rotation Constructor.
+    //! Rotation Constructor.
     DTransform3DBodyC() = default;
 
+    //! Rotation Constructor.
     DTransform3DBodyC(float nAngle, const Vector<float,3> &nAxis)
       : mode(DTransform3D_ROTATION),
         angle(nAngle),
         axis(nAxis)
       {}
-    //: Rotation Constructor.
 
+    //! Rotation/Translation Constructor.
     DTransform3DBodyC(float nAngle, const Vector<float,3> &nAxis,
                       const Vector<float,3> &nTrans)
       : mode(DTransform3D_ROTATION | DTransform3D_TRANSLATION),
@@ -43,16 +44,15 @@ namespace Ravl2
         axis(nAxis),
         trans(nTrans)
       {}
-    //: Rotation/Translation Constructor.
 
+    //! Translation Constructor.
     DTransform3DBodyC(const Vector<float,3> &nTrans)
       : mode(DTransform3D_TRANSLATION),
         trans(nTrans)
       {}
-    //: Translation Constructor.
 
+    //! Render object.
     bool GUIRender(Canvas3D &c3d) const override;
-    //: Render object.
 
   protected:
     int mode = DTransform3D_RESET;

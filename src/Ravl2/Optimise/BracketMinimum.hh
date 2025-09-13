@@ -105,7 +105,7 @@ namespace Ravl2
   }
 
   extern template std::tuple<double,double,double> bracketMinimum<double>(double min,double max, const std::function<double(double)> &func,int steps);
-
+  extern template std::tuple<float,float,float> bracketMinimum<float>(float min,float max, const std::function<float(float)> &func,int steps);
 
 }
 

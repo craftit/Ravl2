@@ -20,56 +20,9 @@
 namespace Ravl2
 {
 
-  //! Extrema threshold information.
-
-  class ExtremaThresholdC
-  {
-  public:
-    int thresh;   //!< Threshold value.
-    int pos;      //!< Start of margin.  (thresh = pos + margin/2)
-    int margin;   //!< Measure of stability.
-    uint32_t area;//!< Expected area of region.
-  };
-
-  //! Extremal region
-
-  class ExtremaRegionC
-  {
-  public:
-    //! Constructor.
-    ExtremaRegionC() = default;
-
-    //! Destructor.
-    ~ExtremaRegionC()
-    {
-      if(hist != nullptr)
-        delete[] hist;
-    }
-
-    ExtremaRegionC *merge = nullptr;//!< Region to merge with.
-    uint32_t *hist = nullptr;       //!< Histogram of pixels values at level.
-    uint32_t total = 0;
-
-    std::vector<ExtremaThresholdC> thresh;//!< Thresholds
-
-    int maxValue = 0;
-    int minValue = 0;
-    Index<2> minat {};
-    ExtremaRegionC *closed = nullptr;
-  };
-
-  //: Extremal pixel list.
-
-  class ExtremaChainPixelC
-  {
-  public:
-    ExtremaRegionC *region;
-    ExtremaChainPixelC *next;
-  };
-
   //: Common parts to segmenting extrema.
 
-  class SegmentExtremaBaseC
+  class SegmentExtremaBase
   {
   public:
     using RealT = float;
@@ -79,20 +32,23 @@ namespace Ravl2
     //! \param nMinMargin - Threshold for region stability.
     //! \param nlimitMaxValue - Maximum pixel value.
     //! \param maxRegionSize - Maximum region size.
-    SegmentExtremaBaseC(uint32_t minRegionSize, int nMinMargin, int nlimitMaxValue = 255, size_t maxRegionSize = 0)
-        : stride(0),
-          labelAlloc(1),
-          origin(nullptr),
-          minSize(minRegionSize),
-          maxSize(maxRegionSize),// If 0 this gets set to the image size.
-          minMargin(nMinMargin),
-          limitMaxValue(std::max(nlimitMaxValue, 3))
+    SegmentExtremaBase(uint32_t minRegionSize, int nMinMargin, int nlimitMaxValue = 255, size_t maxRegionSize = 0)
+        : mStride(0),
+          mLabelAlloc(1),
+          mOrigin(nullptr),
+          mMinSize(minRegionSize),
+          mMaxSize(maxRegionSize),// If 0 this gets set to the image size.
+          mMinMargin(nMinMargin),
+          mLimitMaxValue(std::max(nlimitMaxValue, 3))
     {
       histStack.reserve(100);
     }
 
+    SegmentExtremaBase(const SegmentExtremaBase &) = delete;
+    SegmentExtremaBase &operator=(const SegmentExtremaBase &) = delete;
+
     //! Destructor.
-    ~SegmentExtremaBaseC();
+    ~SegmentExtremaBase();
 
     //! Setup structures for a given image size.
     void SetupImage(const IndexRange<2> &rect);
@@ -101,81 +57,180 @@ namespace Ravl2
     void GenerateRegions();
 
     //! Get number of levels being considered.
-    [[nodiscard]] unsigned Levels() const
+    [[nodiscard]] unsigned levels() const
     {
-      return unsigned(levels.range().size());
+      return unsigned(mLevels.range().size());
     }
 
     //! Access minimum size.
-    [[nodiscard]] auto MinSize() const
+    [[nodiscard]] auto minSize() const
     {
-      return minSize;
+      return mMinSize;
     }
 
     //! Access maximum size.
-    [[nodiscard]] auto MaxSize() const
+    [[nodiscard]] auto maxSize() const
     {
-      return maxSize;
+      return mMaxSize;
     }
 
     //! Access minimum margin
-    [[nodiscard]] auto MinMargin() const
+    [[nodiscard]] auto minMargin() const
     {
-      return minMargin;
+      return mMinMargin;
     }
 
     //! Access value limit
-    [[nodiscard]] auto LimitMaxValue() const
+    [[nodiscard]] auto limitMaxValue() const
     {
-      return limitMaxValue;
+      return mLimitMaxValue;
     }
 
-    //! Access level set array.
-    [[nodiscard]] Array<ExtremaChainPixelC *, 1> &LevelSets()
-    {
-      return levels;
-    }
 
   protected:
-    //! Find matching label.
-    static ExtremaRegionC *FindLabel(ExtremaChainPixelC *lab);
+
+    //! Extrema threshold information.
+
+    class ExtremaThreshold
+    {
+    public:
+      int mThresh;   //!< Threshold value.
+      int mPos;      //!< Start of margin.  (mThresh = pos + margin/2)
+      int mMargin;   //!< Measure of stability.
+      uint32_t mArea;//!< Expected area of region.
+    };
+
+    //! Extremal region
+
+    class ExtremaRegion
+    {
+    public:
+      //! Constructor.
+      ExtremaRegion() = default;
+
+      //! Destructor.
+      ~ExtremaRegion()
+      {
+        if(mHist != nullptr)
+          delete[] mHist;
+      }
+
+      ExtremaRegion(const ExtremaRegion &) = delete;
+      ExtremaRegion &operator=(const ExtremaRegion &) = delete;
+
+      ExtremaRegion(ExtremaRegion &&other) {
+        mMerge = other.mMerge;
+        mHist = other.mHist;
+        mTotal = other.mTotal;
+        mThresh = std::move(other.mThresh);
+        mMaxValue = other.mMaxValue;
+        mMinValue = other.mMinValue;
+        mMinat = other.mMinat;
+        mClosed = other.mClosed;
+        other.mHist = nullptr;
+#ifndef NDEBUG
+        other.mMerge = nullptr;
+        other.mTotal = 0;
+        other.mMaxValue = 0;
+        other.mMinValue = 0;
+        other.mMinat = {};
+        other.mClosed = nullptr;
+#endif
+      }
+
+      ExtremaRegion &operator=(ExtremaRegion &&other) {
+        if(this != &other) {
+          mMerge = other.mMerge;
+          mHist = other.mHist;
+          mTotal = other.mTotal;
+          mThresh = std::move(other.mThresh);
+          mMaxValue = other.mMaxValue;
+          mMinValue = other.mMinValue;
+          mMinat = other.mMinat;
+          mClosed = other.mClosed;
+          other.mHist = nullptr;
+#ifndef NDEBUG
+          other.mMerge = nullptr;
+          other.mTotal = 0;
+          other.mMaxValue = 0;
+          other.mMinValue = 0;
+          other.mMinat = {};
+          other.mClosed = nullptr;
+#endif
+        }
+        return *this;
+      }
+
+      ExtremaRegion *mMerge = nullptr;//!< Region to merge with.
+      uint32_t *mHist = nullptr;       //!< Histogram of pixels values at level.
+      uint32_t mTotal = 0;
+
+      std::vector<ExtremaThreshold> mThresh;//!< thresholds
+
+      int mMaxValue = 0;
+      int mMinValue = 0;
+      Index<2> mMinat {};
+      ExtremaRegion *mClosed = nullptr;
+    };
+
+
+    //: Extremal pixel list.
+
+    class ExtremaChainPixel
+    {
+    public:
+      ExtremaRegion *mRegion;
+      ExtremaChainPixel *mNext;
+    };
+
+    //! Access level set array.
+    [[nodiscard]] Array<ExtremaChainPixel *, 1> &levelSets()
+    {
+      return mLevels;
+    }
 
     //! Find the labels around the pixel 'pix'
     // put the results into 'labelArray' which must be at least 4 labels long.
     // The number of labels found is returned.
-    int ConnectedLabels(ExtremaChainPixelC *pix, ExtremaRegionC **labelArray);
+    int connectedLabels(ExtremaChainPixel *pix, ExtremaRegion **labelArray);
 
     //! Add a new region.
-    void AddRegion(ExtremaChainPixelC *pix, int level);
+    void addRegion(ExtremaChainPixel *pix, int level);
 
     //! Add pixel to region.
-    void AddPixel(ExtremaChainPixelC *pix, int level, ExtremaRegionC *reg);
+    void addPixel(ExtremaChainPixel *pix, int level, ExtremaRegion *reg);
 
     //! Add pixel to region.
-    void MergeRegions(ExtremaChainPixelC *pix, int level, ExtremaRegionC **labels, int n);
+    void mergeRegions(ExtremaChainPixel *pix, int level, ExtremaRegion **labels, int n);
 
     //! Generate thresholds
-    void Thresholds();
+    void thresholds();
 
-    Array<ExtremaChainPixelC, 2> pixs;
-    Array<ExtremaChainPixelC *, 1> levels;
-    std::vector<ExtremaRegionC> regionMap;
-    int stride = 0;// Image stride.
-    unsigned labelAlloc = 0;
-    IndexRange<1> valueRange;            // Range of pixel values.
-    ExtremaChainPixelC *origin = nullptr;// Origin of image.
+    //! Find matching label.
+    static ExtremaRegion *findLabel(ExtremaChainPixel *lab);
+
+    Array<ExtremaChainPixel, 2> mPixs;
+    Array<ExtremaChainPixel *, 1> mLevels;
+
+    std::vector<ExtremaRegion> mRegionMap;
+    int mStride = 0;// Image stride.
+    unsigned mLabelAlloc = 0;
+    IndexRange<1> mValueRange;            // Range of pixel values.
+    ExtremaChainPixel *mOrigin = nullptr;// Origin of image.
 
     // Parameters.
 
-    size_t minSize = 0;
-    size_t maxSize = 0;
-    int minMargin = 0;
-    int limitMaxValue = 0;// Maximum image value that will be encountered.
+    size_t mMinSize = 0;
+    size_t mMaxSize = 0;
+    int mMinMargin = 0;
+    const int mLimitMaxValue = 0;// Maximum image value that will be encountered.
+
+  private:
 
     struct HistStackC {
       HistStackC(int nmax, uint32_t *nstack)
-          : max(nmax),
-            data(nstack)
+        : max(nmax),
+          data(nstack)
       {}
       int max = 0;
       uint32_t *data = nullptr;
@@ -184,18 +239,19 @@ namespace Ravl2
     std::vector<HistStackC> histStack;
 
     //! Get a new histogram.
-    uint32_t *PopHist(int level)
+    uint32_t *popHist(int level)
     {
       assert(level >= 0);
       if(histStack.empty()) {
         // Should this deal with negative pixel values?
-        assert(limitMaxValue > 0);
-        auto *val = new uint32_t[size_t(limitMaxValue + 2)];
-        memset(&(val[level]), 0, sizeof(uint32_t) * size_t((limitMaxValue + 1) - level));
+        assert(mLimitMaxValue > 0);
+        auto *val = new uint32_t[size_t(mLimitMaxValue + 2)];
+        memset(&(val[level]), 0, sizeof(uint32_t) * size_t((mLimitMaxValue + 1) - level));
         return val;
       }
       HistStackC &ret = histStack.back();
       uint32_t *rret = ret.data;
+      ret.data = nullptr;
       int clearSize = std::max(ret.max + 1, 3) - level;
       histStack.pop_back();
       if(clearSize > 0)
@@ -204,7 +260,7 @@ namespace Ravl2
     }
 
     //! Push unused histogram
-    void PushHist(uint32_t *stack, int used)
+    void pushHist(uint32_t *stack, int used)
     {
       histStack.emplace_back(used, stack);
     }
@@ -235,15 +291,15 @@ namespace Ravl2
   // <p>References: <a href="http://cmp.felk.cvut.cz/~matas/papers/matas-bmvc02.pdf">J Matas et al. BMVC 2002</a>; Image and Vision Computing, 22(10):761-767, September 2004. </p>
 
   template <class PixelT>
-  class SegmentExtremaC : public SegmentExtremaBaseC
+  class SegmentExtrema : public SegmentExtremaBase
   {
   public:
     //! @brief Constructor.
     //! @param minRegionSize - Minimum region size in pixels to detect.
     //! @param minMargin - Threshold for region stability.
     //! @param minRegionSize - Maximum pixel value to consider.
-    explicit SegmentExtremaC(uint32_t minRegionSize = 12, int theMinMargin = 10, int nLimitMaxPixelValue = 255)
-        : SegmentExtremaBaseC(minRegionSize, theMinMargin, nLimitMaxPixelValue)
+    explicit SegmentExtrema(uint32_t minRegionSize = 12, int theMinMargin = 10, int nLimitMaxPixelValue = 255)
+        : SegmentExtremaBase(minRegionSize, theMinMargin, nLimitMaxPixelValue)
     {
       assert(minRegionSize > 0);
       assert(nLimitMaxPixelValue > 0);
@@ -255,13 +311,13 @@ namespace Ravl2
     std::vector<Boundary> apply(const Array<PixelT, 2> &img)
     {
       if(typeid(PixelT) == typeid(uint8_t)) {// Should decided at compile time.
-        SortPixelsByte(img);
+        sortPixelsByte(img);
       } else {
-        SortPixels(img);
+        sortPixels(img);
       }
       GenerateRegions();
-      Thresholds();
-      return GrowRegionBoundary(img);
+      thresholds();
+      return growRegionBoundary(img);
     }
 
     //! @brief Segment image using callback
@@ -277,21 +333,21 @@ namespace Ravl2
     void apply(const Array<PixelT, 2> &img, CallbackT &&callback)
     {
       if constexpr(typeid(PixelT) == typeid(uint8_t)) {
-        SortPixelsByte(img);
+        sortPixelsByte(img);
       } else {
-        SortPixels(img);
+        sortPixels(img);
       }
       GenerateRegions();
-      Thresholds();
+      thresholds();
 
-      auto end = regionMap.begin();
-      end += labelAlloc;
-      for(auto it = regionMap.begin(); it != end; ++it) {
+      auto end = mRegionMap.begin();
+      end += mLabelAlloc;
+      for(auto it = mRegionMap.begin(); it != end; ++it) {
 
-        for(const auto &at : it->thresh) {
-          callback(it->minat, at.thresh, at.area);
+        for(const auto &at : it->mThresh) {
+          callback(it->mMinat, at.mThresh, at.mArea);
         }
-        it->thresh.clear();
+        it->mThresh.clear();
       }
     }
 
@@ -300,12 +356,12 @@ namespace Ravl2
     std::vector<Array<int, 2>> applyMask(const Array<PixelT, 2> &img)
     {
       if(typeid(PixelT) == typeid(uint8_t))// Should decided at compile time.
-        SortPixelsByte(img);
+        sortPixelsByte(img);
       else
-        SortPixels(img);
+        sortPixels(img);
       GenerateRegions();
-      Thresholds();
-      return GrowRegionMask(img);
+      thresholds();
+      return growRegionMask(img);
     }
 
     //! Apply operation to specified region of an img.
@@ -314,49 +370,49 @@ namespace Ravl2
 
     std::vector<Boundary> apply(const Array<PixelT, 2> &img, const IndexRangeSet<2> &roi)
     {
-      SortPixels(img, roi);
+      sortPixels(img, roi);
       GenerateRegions();
-      Thresholds();
-      return GrowRegionBoundary(img);
+      thresholds();
+      return growRegionBoundary(img);
     }
 
     //! Apply operation to img.
     // Generates labeled images.
     std::vector<Array<int, 2>> applyMask(const Array<PixelT, 2> &img, const IndexRangeSet<2> &roi)
     {
-      SortPixels(img, roi);
+      sortPixels(img, roi);
       GenerateRegions();
-      Thresholds();
-      return GrowRegionMask(img);
+      thresholds();
+      return growRegionMask(img);
     }
 
   protected:
     //! Do initial sorting of pixels.
-    bool SortPixels(const Array<PixelT, 2> &nimg);
+    bool sortPixels(const Array<PixelT, 2> &nimg);
 
     //! Do initial sorting of pixels.
-    bool SortPixelsByte(const Array<PixelT, 2> &nimg);
+    bool sortPixelsByte(const Array<PixelT, 2> &nimg);
 
     //! Build a list from a byte image in regions of interest.
-    bool SortPixels(const Array<PixelT, 2> &img, const IndexRangeSet<2> &roi);
+    bool sortPixels(const Array<PixelT, 2> &img, const IndexRangeSet<2> &roi);
 
     //! Grow regions.
-    std::vector<Boundary> GrowRegionBoundary(const Array<PixelT, 2> &img);
+    std::vector<Boundary> growRegionBoundary(const Array<PixelT, 2> &img);
 
     //! Grow regions associated with a extrema.
-    void GrowRegionBoundary(std::vector<Boundary> &boundaries, ExtremaRegionC &region);
+    void growRegionBoundary(std::vector<Boundary> &boundaries, ExtremaRegion &region);
 
     //! Grow regions.
-    std::vector<Array<int, 2>> GrowRegionMask(const Array<PixelT, 2> &img);
+    std::vector<Array<int, 2>> growRegionMask(const Array<PixelT, 2> &img);
 
     //! Grow regions associated with a extrema.
-    std::vector<Array<int, 2>> GrowRegionMask(ExtremaRegionC &region);
+    std::vector<Array<int, 2>> growRegionMask(ExtremaRegion &region);
 
-    FloodRegionC<PixelT> flood;//!< Region fill code.
+    FloodRegionC<PixelT> mFlood;//!< Region fill code.
   };
 
   template <class PixelT>
-  bool SegmentExtremaC<PixelT>::SortPixels(const Array<PixelT, 2> &img)
+  bool SegmentExtrema<PixelT>::sortPixels(const Array<PixelT, 2> &img)
   {
 
     SetupImage(img.range());
@@ -371,69 +427,69 @@ namespace Ravl2
         if(*it > lmax)
           lmax = *it;
       }
-      valueRange.min() = int(lmin);
-      valueRange.max() = int(lmax);
+      mValueRange.min() = int(lmin);
+      mValueRange.max() = int(lmax);
     }
 
-    if(valueRange.max() >= limitMaxValue)
-      valueRange.max() = limitMaxValue - 1;
+    if(mValueRange.max() >= mLimitMaxValue)
+      mValueRange.max() = mLimitMaxValue - 1;
 
-    //cerr << "SegmentExtremaC<PixelT>::SortPixels, Value Range=" << valueRange << "\n";
+    //cerr << "SegmentExtrema<PixelT>::sortPixels, Value Range=" << mValueRange << "\n";
 
     // Check level list allocation.
 
-    if(!levels.range().contains(valueRange))
-      levels = Array<ExtremaChainPixelC *, 1>(valueRange.expand(2));
-    fill(levels, nullptr);
+    if(!mLevels.range().contains(mValueRange))
+      mLevels = Array<ExtremaChainPixel *, 1>(mValueRange.expand(2));
+    fill(mLevels, nullptr);
 
     // Sort pixels into appropriate lists.
-    RavlAssert(pixs.range().contains(img.range()));
+    RavlAssert(mPixs.range().contains(img.range()));
 
-    for(auto it = zip(img, clipUnsafe(pixs, img.range())); it.valid(); it++) {
-      it.template data<1>().region = 0;
+    for(auto it = zip(img, clipUnsafe(mPixs, img.range())); it.valid(); it++) {
+      it.template data<1>().mRegion = 0;
       PixelT val = it.template data<0>();
-      if(val > limitMaxValue) {
+      if(val > mLimitMaxValue) {
         continue;
       }
-      auto &tmp = levels[val];
-      it.template data<1>().next = tmp;
+      auto &tmp = mLevels[val];
+      it.template data<1>().mNext = tmp;
       tmp = &it.template data<1>();
     }
-    SPDLOG_INFO("SegmentExtremaC<PixelT>::SortPixels, Value Range={}", valueRange);
+    SPDLOG_INFO("SegmentExtrema<PixelT>::sortPixels, Value Range={}", mValueRange);
 
     return true;
   }
 
   template <class PixelT>
-  bool SegmentExtremaC<PixelT>::SortPixelsByte(const Array<PixelT, 2> &img)
+  bool SegmentExtrema<PixelT>::sortPixelsByte(const Array<PixelT, 2> &img)
   {
     SetupImage(img.range());
 
     // Check level list allocation.
     IndexRange<1> targetRange(std::numeric_limits<PixelT>::min(), std::numeric_limits<PixelT>::max());
-    if(levels.range() != targetRange)
-      levels = Array<ExtremaChainPixelC *, 1>(targetRange);
-    memset(&(levels[levels.range().min()]), 0, size_t(levels.range().size()) * sizeof(ExtremaChainPixelC *));
+    if(mLevels.range() != targetRange)
+      mLevels = Array<ExtremaChainPixel *, 1>(targetRange);
+    memset(&(mLevels[mLevels.range().min()]), 0, size_t(mLevels.range().size()) * sizeof(ExtremaChainPixel *));
     static_assert(std::numeric_limits<PixelT>::max() <= std::numeric_limits<int>::max(), "PixelT must be a byte type.");
 
     // Sort pixels into appropriate lists.
-    valueRange = IndexRange<1>::mostEmpty();
-    for(auto it = zip(img, clipUnsafe(pixs, img.range())); it.valid(); ++it) {
-      it.template data<1>().region = nullptr;
+    mValueRange = IndexRange<1>::mostEmpty();
+    for(auto it = zip(img, clipUnsafe(mPixs, img.range())); it.valid(); ++it) {
+      it.template data<1>().mRegion = nullptr;
       int val = it.template data<0>();
-      if(val > limitMaxValue)
+      if(val > mLimitMaxValue)
         continue;
-      valueRange.involve(val);
-      ExtremaChainPixelC *&tmp = levels[val];
-      it.template data<1>().next = tmp;
+      mValueRange.involve(val);
+      ExtremaChainPixel *&tmp = mLevels[val];
+      it.template data<1>().mNext = tmp;
       tmp = &it.template data<1>();
     }
-    //SPDLOG_INFO("SegmentExtremaC<PixelT>::SortPixels, Value Range={}", valueRange);
+    //SPDLOG_INFO("SegmentExtrema<PixelT>::sortPixels, Value Range={}", mValueRange);
     return true;
   }
 
   template <class PixelT>
-  bool SegmentExtremaC<PixelT>::SortPixels(const Array<PixelT, 2> &img, const IndexRangeSet<2> &roi)
+  bool SegmentExtrema<PixelT>::sortPixels(const Array<PixelT, 2> &img, const IndexRangeSet<2> &roi)
   {
 
     SetupImage(img.range());
@@ -460,20 +516,20 @@ namespace Ravl2
           lmax = *it;
       }
     }
-    valueRange.min() = int(lmin);
-    valueRange.max() = int(lmax);
-    if(valueRange.max() > limitMaxValue)
-      valueRange.max() = limitMaxValue;
-    //cerr << "SegmentExtremaC<PixelT>::SortPixels, Value Range=" << valueRange << "\n";
+    mValueRange.min() = int(lmin);
+    mValueRange.max() = int(lmax);
+    if(mValueRange.max() > mLimitMaxValue)
+      mValueRange.max() = mLimitMaxValue;
+    //cerr << "SegmentExtrema<PixelT>::sortPixels, Value Range=" << mValueRange << "\n";
     // Check level list allocation.
 
-    if(!levels.range().contains(valueRange))
-      levels = Array<ExtremaChainPixelC *, 1>(valueRange.expand(2));
-    fill(levels, nullptr);
+    if(!mLevels.range().contains(mValueRange))
+      mLevels = Array<ExtremaChainPixel *, 1>(mValueRange.expand(2));
+    fill(mLevels, nullptr);
 
     // Clear chain image.
 
-    for(auto &it : clipUnsafe(pixs, img.range())) {
+    for(auto &it : clipUnsafe(mPixs, img.range())) {
       it.Data().region = 0;
       it.Data().next = 0;
     }
@@ -485,11 +541,11 @@ namespace Ravl2
       rng.clipBy(img.range());
       if(rng.area() < 1)
         continue;
-      for(auto it = begin(clipUnsafe(img, rng), clipUnsafe(pixs, rng)); it; it++) {
+      for(auto it = begin(clipUnsafe(img, rng), clipUnsafe(mPixs, rng)); it; it++) {
         PixelT val = it.template data<0>();
-        if(val > limitMaxValue)
+        if(val > mLimitMaxValue)
           continue;
-        ExtremaChainPixelC *&tmp = levels[val];
+        ExtremaChainPixel *&tmp = mLevels[val];
         it.template data<1>().next = tmp;
         tmp = &it.template data<1>();
       }
@@ -498,39 +554,39 @@ namespace Ravl2
   }
 
   template <class PixelT>
-  std::vector<Boundary> SegmentExtremaC<PixelT>::GrowRegionBoundary(const Array<PixelT, 2> &img)
+  std::vector<Boundary> SegmentExtrema<PixelT>::growRegionBoundary(const Array<PixelT, 2> &img)
   {
-    //cerr << "SegmentExtremaBaseC::GrowRegions() \n";
-    flood.SetupImage(img);
+    //cerr << "SegmentExtremaBase::GrowRegions() \n";
+    mFlood.SetupImage(img);
 
     std::vector<Boundary> bounds;
-    bounds.reserve(size_t(img.range().area()) / (minSize * 3u));
-    if(labelAlloc == 0)
+    bounds.reserve(size_t(img.range().area()) / (mMinSize * 3u));
+    if(mLabelAlloc == 0)
       return bounds;
-    auto end = regionMap.begin();
-    end += labelAlloc;
-    for(auto it = regionMap.begin(); it != end; ++it) {
-      if(!it->thresh.empty()) {
-        GrowRegionBoundary(bounds, *it);
+    auto end = mRegionMap.begin();
+    end += mLabelAlloc;
+    for(auto it = mRegionMap.begin(); it != end; ++it) {
+      if(!it->mThresh.empty()) {
+        growRegionBoundary(bounds, *it);
       }
-      it->thresh.clear();
+      it->mThresh.clear();
     }
 
     return bounds;
   }
 
   template <class PixelT>
-  void SegmentExtremaC<PixelT>::GrowRegionBoundary(std::vector<Boundary> &ret, ExtremaRegionC &region)
+  void SegmentExtrema<PixelT>::growRegionBoundary(std::vector<Boundary> &ret, ExtremaRegion &region)
   {
-    for(size_t i = 0; i < region.thresh.size(); i++) {
+    for(size_t i = 0; i < region.mThresh.size(); i++) {
       Boundary boundary;
-      if(!flood.GrowRegion(region.minat, FloodRegionLessThanThresholdC<PixelT>(PixelT(region.thresh[i].thresh)), boundary, maxSize)) {
-        SPDLOG_WARN("GrowRegionBoundary, Failed to grow region at:{} Threshold:{} Area:{} SeedValue:{}", region.minat, region.thresh[i].thresh, region.thresh[i].area, flood.Image()[region.minat]);
+      if(!mFlood.GrowRegion(region.mMinat, FloodRegionLessThanThresholdC<PixelT>(PixelT(region.mThresh[i].mThresh)), boundary, mMaxSize)) {
+        SPDLOG_WARN("growRegionBoundary, Failed to grow region at:{} Threshold:{} Area:{} SeedValue:{}", region.mMinat, region.mThresh[i].mThresh, region.mThresh[i].mArea, mFlood.Image()[region.mMinat]);
         continue;
       }
 #ifndef NDEBUG
-      if(boundary.area() != int(region.thresh[i].area)) {
-        SPDLOG_WARN("Area mismatch, At:{} Threshold:{} Boundary Size={} Area:{} Expected:{} ", region.minat, region.thresh[i].thresh, boundary.size(), boundary.area(), region.thresh[i].area);
+      if(boundary.area() != int(region.mThresh[i].mArea)) {
+        SPDLOG_WARN("Area mismatch, At:{} Threshold:{} Boundary Size={} Area:{} Expected:{} ", region.mMinat, region.mThresh[i].mThresh, boundary.size(), boundary.area(), region.mThresh[i].mArea);
       }
 #endif
       ret.push_back(boundary);
@@ -538,34 +594,34 @@ namespace Ravl2
   }
 
   template <class PixelT>
-  std::vector<Array<int, 2>> SegmentExtremaC<PixelT>::GrowRegionMask(const Array<PixelT, 2> &img)
+  std::vector<Array<int, 2>> SegmentExtrema<PixelT>::growRegionMask(const Array<PixelT, 2> &img)
   {
-    //cerr << "SegmentExtremaBaseC::GrowRegions() \n";
-    flood.SetupImage(img);
+    //cerr << "SegmentExtremaBase::GrowRegions() \n";
+    mFlood.SetupImage(img);
 
     std::vector<Array<int, 2>> masks;
-    if(labelAlloc == 0)
+    if(mLabelAlloc == 0)
       return masks;
-    auto end = regionMap.begin() + labelAlloc;
-    for(auto it = regionMap.begin(); it != end; ++it) {
-      if(!it->thresh.empty()) {
-        auto regions = GrowRegionMask(*it);
+    auto end = mRegionMap.begin() + mLabelAlloc;
+    for(auto it = mRegionMap.begin(); it != end; ++it) {
+      if(!it->mThresh.empty()) {
+        auto regions = growRegionMask(*it);
         masks.insert(masks.end(), regions.begin(), regions.end());
       }
-      it->thresh.clear();
+      it->mThresh.clear();
     }
 
     return masks;
   }
 
   template <class PixelT>
-  std::vector<Array<int, 2>> SegmentExtremaC<PixelT>::GrowRegionMask(ExtremaRegionC &region)
+  std::vector<Array<int, 2>> SegmentExtrema<PixelT>::growRegionMask(ExtremaRegion &region)
   {
     std::vector<Array<int, 2>> ret;
-    //cerr << " Thresholds=" << region.nThresh << "\n";
-    for(int i = 0; i < region.thresh.size(); i++) {
+    //cerr << " thresholds=" << region.nThresh << "\n";
+    for(int i = 0; i < region.mThresh.size(); i++) {
       Array<int, 2> mask;
-      if(flood.GrowRegion(region.minat, FloodRegionLessThanThresholdC<PixelT>(PixelT(region.thresh[i].thresh)), mask, 1))
+      if(mFlood.GrowRegion(region.mMinat, FloodRegionLessThanThresholdC<PixelT>(PixelT(region.mThresh[i].mThresh)), mask, 1))
         ret.push_back(mask);
     }
     return ret;

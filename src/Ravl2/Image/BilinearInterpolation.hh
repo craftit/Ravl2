@@ -71,4 +71,5 @@ namespace Ravl2
     return targetRange.shrinkMax(CoordTypeT(1) + (std::numeric_limits<CoordTypeT>::epsilon() * 4096));
   }
 
+
 }// namespace Ravl2

@@ -19,9 +19,7 @@
 
 int main(int argc,char **argv)
 {
-  using namespace Ravl2;
-
-  initOpenCVImageIO();
+  Ravl2::initOpenCVImageIO();
 
   CLI::App app{"Corner detection example program"};
 
@@ -31,7 +29,7 @@ int main(int argc,char **argv)
   app.add_option("-t", threshold, "Threshold. ");
   app.add_flag("-v", verbose, "Verbose mode. ");
 
-  std::string inf = findFileResource("data","lena.jpg",verbose);
+  std::string inf = Ravl2::findFileResource("data","lena.jpg",verbose);
   std::string outf = "display://Corners";
 
   app.add_option("-i", inf, "Input image. ");

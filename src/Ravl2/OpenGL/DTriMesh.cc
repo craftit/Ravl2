@@ -7,7 +7,7 @@
 //////////////////////////////////////////
 
 #include <GL/gl.h>
-#include "Ravl2/OpenGL/DTriMesh3D.hh"
+#include "Ravl2/OpenGL/DTriMesh.hh"
 #include "Ravl2/OpenGL/Canvas3D.hh"
 
 #define DODEBUG 0
@@ -21,15 +21,15 @@
 namespace Ravl2
 {
 
-  //: Constructor.
-  DTriMesh3D::DTriMesh3D(const std::shared_ptr<TriMesh<RealT> > &oTriMesh)
+  //! Constructor.
+  DTriMesh::DTriMesh(const std::shared_ptr<TriMesh<RealT> > &oTriMesh)
     : model(oTriMesh)
   {
     ComputeInfo();
   }
 
-  //: Compute center and extent of mesh.
-  void DTriMesh3D::ComputeInfo()
+  //! Compute center and extent of mesh.
+  void DTriMesh::ComputeInfo()
   {
     if(!model)
       return;
@@ -45,28 +45,45 @@ namespace Ravl2
   }
 
 
-  //: Get center of object.
+  //! Get center of object.
   // defaults to 0,0,0
-  Vector<float,3> DTriMesh3D::GUICenter() const
+  Vector<float,3> DTriMesh::GUICenter() const
   {
-    //cerr << "DTriMesh3D::GUICenter(): " << center << std::endl;
+    //cerr << "DTriMesh::GUICenter(): " << center << std::endl;
     return center;
   }
 
-  //: Get extent of object.
+  //! Get extent of object.
   // defaults to 1
-  float DTriMesh3D::GUIExtent() const
+  float DTriMesh::GUIExtent() const
   {
-    //cerr << "DTriMesh3D::GUIExtent(): " << extent << std::endl;
+    //cerr << "DTriMesh::GUIExtent(): " << extent << std::endl;
     return extent;
   }
 
-  //: Render object.
-  bool DTriMesh3D::GUIRender(Canvas3D &canvas) const
+  bool DTriMesh::GUIInit(Canvas3D &c3d)
   {
+    mShaderProgram = c3d.getShaderProgram("triMesh", [&]() {
+      // vertex shader
+      std::string vertex_source = R"(
+      )";
+
+      return std::make_shared<GLShaderProgram>(vertex_source, "");
+    });
+
+    return true;
+  }
+
+
+  //! Render object.
+  bool DTriMesh::GUIRender(Canvas3D &canvas) const
+  {
+    (void) canvas;
     if(!model)
       return true; // Don't do anything.
 
+
+#if 0
     // Setup materials and colours as appropriate
     if(canvas.GetLightingMode()) {
       GLfloat ambient[] = {0.2f, 0.2f, 0.2f, 1.0f};
@@ -162,6 +179,7 @@ namespace Ravl2
     if(mUseMeshColour){
       glDisable(GL_COLOR_MATERIAL);
    }
+#endif
     return true;
   }
 

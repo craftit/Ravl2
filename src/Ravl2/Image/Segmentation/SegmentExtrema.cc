@@ -22,7 +22,7 @@ namespace Ravl2
 
   //: Destructor.
 
-  SegmentExtremaBaseC::~SegmentExtremaBaseC()
+  SegmentExtremaBase::~SegmentExtremaBase()
   {
     // Free histogram stack.
     while(!histStack.empty()) {
@@ -33,52 +33,52 @@ namespace Ravl2
 
   //: Setup structures for a given image size.
 
-  void SegmentExtremaBaseC::SetupImage(const IndexRange<2> &rect)
+  void SegmentExtremaBase::SetupImage(const IndexRange<2> &rect)
   {
     IndexRange<2> imgRect = rect.expand(1);
-    labelAlloc = 0;// Reset region allocation counter.
-    if(imgRect == pixs.range())
+    mLabelAlloc = 0;// Reset region allocation counter.
+    if(imgRect == mPixs.range())
       return;// Done already.
 
-    // Allocate ExtremaChainPixelC image.
-    pixs = Array<ExtremaChainPixelC, 2>(imgRect);
-    origin = &(pixs[rect.min()]);
-    stride = pixs.stride(0);
+    // Allocate ExtremaChainPixel image.
+    mPixs = Array<ExtremaChainPixel, 2>(imgRect);
+    mOrigin = &(mPixs[rect.min()]);
+    mStride = mPixs.stride(0);
 
     // Put a frame of zero labels around the edge.
-    ExtremaChainPixelC zeroPix {nullptr, nullptr};
-    DrawFrame(pixs, zeroPix, imgRect);
+    ExtremaChainPixel zeroPix {nullptr, nullptr};
+    DrawFrame(mPixs, zeroPix, imgRect);
 
     assert(!rect.empty());
     // Create region map.
     size_t newSize = size_t(rect.area() / 2);
-    if(regionMap.size() < newSize)
-      regionMap.resize(newSize);
+    if(mRegionMap.size() < newSize)
+      mRegionMap.resize(newSize);
 
     // ...
-    if(maxSize == 0)
-      maxSize = size_t(rect.area());
+    if(mMaxSize == 0)
+      mMaxSize = size_t(rect.area());
   }
 
   //: Find matching label.
   // This looks at the region assosciated with a given pixel,
   // and resolves any merged regions to the current label.
 
-  inline ExtremaRegionC *SegmentExtremaBaseC::FindLabel(ExtremaChainPixelC *cp)
+  inline SegmentExtremaBase::ExtremaRegion *SegmentExtremaBase::findLabel(ExtremaChainPixel *pix)
   {
-    ExtremaRegionC *lab = cp->region;
-    if(lab == nullptr || lab->merge == nullptr)
+    ExtremaRegion *lab = pix->mRegion;
+    if(lab == nullptr || lab->mMerge == nullptr)
       return lab;
-    ExtremaRegionC *at = lab->merge;
-    while(at->merge != nullptr)
-      at = at->merge;
+    ExtremaRegion *at = lab->mMerge;
+    while(at->mMerge != nullptr)
+      at = at->mMerge;
     // Relabel mappings so its faster next time.
     do {
-      ExtremaRegionC *tmp = lab;
-      lab = lab->merge;
-      tmp->merge = at;
+      ExtremaRegion *tmp = lab;
+      lab = lab->mMerge;
+      tmp->mMerge = at;
     } while(lab != at);
-    cp->region = at;// This makes things run slightly faster, but we loose info about the pixel.
+    pix->mRegion = at;// This makes things run slightly faster, but we loose info about the pixel.
     return at;
   }
 
@@ -88,87 +88,87 @@ namespace Ravl2
   // Puts the results into 'labelArray' which must be at least 4 labels long.
   // The total number of labels found is returned.
 
-  inline int SegmentExtremaBaseC::ConnectedLabels(ExtremaChainPixelC *pix, ExtremaRegionC **labelArray)
+  inline int SegmentExtremaBase::connectedLabels(ExtremaChainPixel *pix, ExtremaRegion **labelArray)
   {
-    //cerr << "SegmentExtremaBaseC::ConnectedLabels(), Pix=" << ((void *) pix) << "\n";
+    //cerr << "SegmentExtremaBase::connectedLabels(), Pix=" << ((void *) pix) << "\n";
     int n = 0;
-    ExtremaRegionC *l1 = FindLabel(pix + 1);
+    ExtremaRegion *l1 = findLabel(pix + 1);
     if(l1 != nullptr) {
       labelArray[n++] = l1;
     }
-    ExtremaRegionC *l2 = FindLabel(pix + stride);
+    ExtremaRegion *l2 = findLabel(pix + mStride);
     if(l2 != nullptr && l2 != l1) {
       labelArray[n++] = l2;
     }
-    ExtremaRegionC *l3 = FindLabel(pix - 1);
+    ExtremaRegion *l3 = findLabel(pix - 1);
     if(l3 != nullptr && l3 != l1 && l3 != l2) {
       labelArray[n++] = l3;
     }
-    ExtremaRegionC *l4 = FindLabel(pix - stride);
+    ExtremaRegion *l4 = findLabel(pix - mStride);
     if(l4 != nullptr && l4 != l1 && l4 != l2 && l4 != l3) {
       labelArray[n++] = l4;
     }
     return n;
   }
 
-  inline void SegmentExtremaBaseC::AddRegion(ExtremaChainPixelC *pix, int level)
+  inline void SegmentExtremaBase::addRegion(ExtremaChainPixel *pix, int level)
   {
-    ExtremaRegionC &region = regionMap[labelAlloc++];
-    pix->region = &region;
-    region.total = 0;
-    region.merge = nullptr;//&region;
+    ExtremaRegion &region = mRegionMap[mLabelAlloc++];
+    pix->mRegion = &region;
+    region.mTotal = 0;
+    region.mMerge = nullptr;//&region;
     int nlevel = level + 1;// Don't need to clear this level as its going to be set anyway
-    if(region.hist == nullptr) {
-      region.hist = PopHist(nlevel);
+    if(region.mHist == nullptr) {
+      region.mHist = popHist(nlevel);
     } else {
-      int clearSize = (region.maxValue + 1) - nlevel;
+      int clearSize = (region.mMaxValue + 1) - nlevel;
       if(clearSize > 0) {
-        memset(&(region.hist[nlevel]), 0, size_t(clearSize) * sizeof(int));
+        memset(&(region.mHist[nlevel]), 0, size_t(clearSize) * sizeof(int));
       }
     }
 #ifndef NDEBUG
     // Check the histogram is clear.
-    for(int i = nlevel; i <= valueRange.max(); i++) {
-      if(region.hist[i] != 0) {
-        SPDLOG_WARN("Non zero at {} Max={}", i, valueRange.max());
+    for(int i = nlevel; i <= mValueRange.max(); i++) {
+      if(region.mHist[i] != 0) {
+        SPDLOG_WARN("Non zero at {} Max={}", i, mValueRange.max());
         abort();
       }
     }
 #endif
 
-    auto offset = pix - origin;
-    region.minat = toIndex((offset / stride) + 1, (offset % stride) + 1) + pixs.range().min();
-    ONDEBUG(SPDLOG_INFO("Region minat={} level={} Pix={} Offset={} Stride={} origin={}", region.minat, level, static_cast<void *>(pix), offset, stride, static_cast<void *>(origin)));
-    RavlAssert(&pixs[region.minat] == pix);
-    region.minValue = level;
-    region.maxValue = valueRange.max();
-    region.hist[level] = 1;
-    region.total = 1;
-    region.thresh.clear();
-    region.closed = nullptr;
+    auto offset = pix - mOrigin;
+    region.mMinat = toIndex((offset / mStride) + 1, (offset % mStride) + 1) + mPixs.range().min();
+    ONDEBUG(SPDLOG_INFO("Region mMinat={} level={} Pix={} Offset={} Stride={} origin={}", region.mMinat, level, static_cast<void *>(pix), offset, mStride, static_cast<void *>(mOrigin)));
+    RavlAssert(&mPixs[region.mMinat] == pix);
+    region.mMinValue = level;
+    region.mMaxValue = mValueRange.max();
+    region.mHist[level] = 1;
+    region.mTotal = 1;
+    region.mThresh.clear();
+    region.mClosed = nullptr;
   }
 
   //: Add pixel to region.
 
-  inline void SegmentExtremaBaseC::AddPixel(ExtremaChainPixelC *pix, int level, ExtremaRegionC *reg)
+  inline void SegmentExtremaBase::addPixel(ExtremaChainPixel *pix, int level, ExtremaRegion *reg)
   {
-    reg->hist[level]++;
-    reg->total++;
-    pix->region = reg;
+    reg->mHist[level]++;
+    reg->mTotal++;
+    pix->mRegion = reg;
   }
 
   //: Add pixel to region.
 
-  inline void SegmentExtremaBaseC::MergeRegions(ExtremaChainPixelC *pix, int level, ExtremaRegionC **labels, int n)
+  inline void SegmentExtremaBase::mergeRegions(ExtremaChainPixel *pix, int level, ExtremaRegion **labels, int n)
   {
-    ONDEBUG(SPDLOG_INFO("MergeRegions() Pix={} Level={} N={}", static_cast<void *>(pix), level, n));
-    auto maxValue = labels[0]->total;
-    ExtremaRegionC *max = labels[0];
+    ONDEBUG(SPDLOG_INFO("mergeRegions() Pix={} Level={} N={}", static_cast<void *>(pix), level, n));
+    auto maxValue = labels[0]->mTotal;
+    ExtremaRegion *max = labels[0];
 
     // Find largest region.
     int i;
     for(i = 1; i < n; i++) {
-      auto tot = labels[i]->total;
+      auto tot = labels[i]->mTotal;
       if(maxValue < tot) {
         max = labels[i];
         maxValue = tot;
@@ -179,113 +179,113 @@ namespace Ravl2
     for(i = 0; i < n; i++) {
       if(labels[i] == max)
         continue;
-      ExtremaRegionC &oldr = *labels[i];
-      oldr.maxValue = level;
-      oldr.merge = max;
-      oldr.closed = max;
+      ExtremaRegion &oldr = *labels[i];
+      oldr.mMaxValue = level;
+      oldr.mMerge = max;
+      oldr.mClosed = max;
 
       // If we don't need the histogram, put it back in a pool
-      if(oldr.hist != nullptr && (oldr.total < minSize || ((level - oldr.minValue) < minMargin))) {
-        PushHist(oldr.hist, level);
-        oldr.hist = nullptr;
+      if(oldr.mHist != nullptr && (oldr.mTotal < mMinSize || ((level - oldr.mMinValue) < mMinMargin))) {
+        pushHist(oldr.mHist, level);
+        oldr.mHist = nullptr;
       }
 
-      max->total += oldr.total;
-      max->hist[level] += oldr.total;
+      max->mTotal += oldr.mTotal;
+      max->mHist[level] += oldr.mTotal;
     }
-    AddPixel(pix, level, max);
+    addPixel(pix, level, max);
   }
 
   //: Generate regions.
 
-  void SegmentExtremaBaseC::GenerateRegions()
+  void SegmentExtremaBase::GenerateRegions()
   {
-    ExtremaChainPixelC *at;
-    int clevel = valueRange.min();
-    ExtremaRegionC *labels[6];
+    ExtremaChainPixel *at;
+    int clevel = mValueRange.min();
+    ExtremaRegion *labels[6];
 
     // For each grey level value in image.
-    for(auto lit : clipUnsafe(levels, valueRange)) {
+    for(auto lit : clipUnsafe(mLevels, mValueRange)) {
       //ONDEBUG(SPDLOG_INFO("Level={}", clevel));
 
       // Go through linked list of pixels at the current brightness level.
-      for(at = lit; at != nullptr; at = at->next) {
+      for(at = lit; at != nullptr; at = at->mNext) {
         // Got a standard pixel.
         // ONDEBUG(SPDLOG_INFO("Pixel={} Region={}", static_cast<void *>(at), static_cast<void *>(at->region)));
 
         // Look at the region membership of the pixels surrounding the new
         // one.  n is the number of different regions found.
-        int n = ConnectedLabels(at, labels);
+        int n = connectedLabels(at, labels);
 
         switch(n) {
           case 0:// Add a new region ?
-            AddRegion(at, clevel);
+            addRegion(at, clevel);
             break;
 
           case 1:// 1 adjacent region to this pixel.
-            AddPixel(at, clevel, labels[0]);
+            addPixel(at, clevel, labels[0]);
             break;
 
           default:// 2 or more adjacent regions to merge.
-            MergeRegions(at, clevel, labels, n);
+            mergeRegions(at, clevel, labels, n);
             break;
         }
       }
       clevel++;
     }
-    ONDEBUG(SPDLOG_INFO("Regions labeled={}", labelAlloc));
+    ONDEBUG(SPDLOG_INFO("Regions labeled={}", mLabelAlloc));
   }
 
   //: Generate thresholds
 
-  void SegmentExtremaBaseC::Thresholds()
+  void SegmentExtremaBase::thresholds()
   {
     ONDEBUG(SPDLOG_INFO("Computing thresholds **********************************************"));
-    std::vector<ExtremaThresholdC> thresh(size_t(limitMaxValue + 2));
+    std::vector<ExtremaThreshold> thresh(size_t(mLimitMaxValue + 2));
     size_t nthresh = 0;
-    assert(limitMaxValue + 2 < std::numeric_limits<int>::max());
-    Array<uint32_t, 1> chist(IndexRange<1>(0, limitMaxValue + 2), 0);
+    assert(mLimitMaxValue + 2 < std::numeric_limits<int>::max());
+    Array<uint32_t, 1> chist(IndexRange<1>(0, mLimitMaxValue + 2), 0);
 
-    auto end = regionMap.begin() + labelAlloc;
+    auto end = mRegionMap.begin() + mLabelAlloc;
 
-    for(auto it = regionMap.begin(); it != end; ++it) {
-      if(it->total < minSize || (it->maxValue - it->minValue) < minMargin) {
-        it->thresh.clear();// Ignore these regions.
+    for(auto it = mRegionMap.begin(); it != end; ++it) {
+      if(it->mTotal < mMinSize || (it->mMaxValue - it->mMinValue) < mMinMargin) {
+        it->mThresh.clear();// Ignore these regions.
         continue;       // Not enough levels in the region.
       }
       // Build the cumulative histogram.
-      int maxValue = it->maxValue;
-      int minValue = it->minValue;
+      int maxValue = it->mMaxValue;
+      int minValue = it->mMinValue;
       uint32_t sum = 0;
 
-      //ONDEBUG(std::cerr << "Hist= " << it->minValue << " :");
+      //ONDEBUG(std::cerr << "Hist= " << it->mMinValue << " :");
       ONDEBUG(std::string histStr = fmt::format("Hist= {}->{} :", it->minValue, it->maxValue));
       // Build cumulative histogram.
       for(int i = minValue; i <= maxValue; i++) {
-        sum += it->hist[i];
+        sum += it->mHist[i];
         chist[i] = sum;
-        ONDEBUG(histStr += fmt::format(" {}", it->hist[i]));
+        ONDEBUG(histStr += fmt::format(" {}", it->mHist[i]));
       }
       assert(chist[maxValue] == sum);
       ONDEBUG(SPDLOG_INFO("{}", histStr));
 
       //ONDEBUG(std::cerr << "  Closed=" << (it->closed != 0)<< "\n");
-      ONDEBUG(SPDLOG_INFO("Region={} Min={} Max={} Total={} Closed={}", it - regionMap.begin(), minValue, maxValue, sum, it->closed != nullptr));
+      ONDEBUG(SPDLOG_INFO("Region={} Min={} Max={} Total={} Closed={}", it - mRegionMap.begin(), minValue, maxValue, sum, it->mClosed != nullptr));
       int up;
-      // look for threshold that guarantee area bigger than minSize.
+      // look for threshold that guarantee area bigger than mMinSize.
       int i;
       for(i = minValue; i <= maxValue; i++) {
-        if(chist[i] >= minSize)
+        if(chist[i] >= mMinSize)
           break;
       }
 
       // Find thresholds.
       nthresh = 0;
-      ONDEBUG(SPDLOG_INFO("Min={} Max={} Init={} MaxSize={}", minValue, maxValue, i, maxSize));
+      ONDEBUG(SPDLOG_INFO("Min={} Max={} Init={} MaxSize={}", minValue, maxValue, i, mMaxSize));
       size_t lastThresh = 0;
       for(up = i + 1; up < maxValue && i < maxValue; i++) {
         auto area_i = chist[i];
-        if(area_i > maxSize) {
+        if(area_i > mMaxSize) {
           ONDEBUG(SPDLOG_INFO("Size limit reached. "));
           break;// Quit if area is too large.
         }
@@ -300,52 +300,52 @@ namespace Ravl2
 
         int margin = up - i;
         ONDEBUG(SPDLOG_INFO("Margin={}", margin));
-        if(margin > minMargin) {// && margin > prevMargin
-          ExtremaThresholdC &et = thresh[nthresh++];
-          et.pos = i;
-          et.margin = margin;
-          et.thresh = i + margin / 2;
-          ONDEBUG(SPDLOG_INFO("Threshold={} Area={}", et.thresh, chist[et.thresh]));
+        if(margin > mMinMargin) {// && margin > prevMargin
+          ExtremaThreshold &et = thresh[nthresh++];
+          et.mPos = i;
+          et.mMargin = margin;
+          et.mThresh = i + margin / 2;
+          ONDEBUG(SPDLOG_INFO("Threshold={} Area={}", et.mThresh, chist[et.mThresh]));
         }
       }
 
-      if(it->closed == nullptr) {// Is region closed ?
-        ExtremaThresholdC &et = thresh[nthresh++];
-        et.pos = maxValue - 1;
-        et.margin = up - i;
-        et.thresh = maxValue - 1;
+      if(it->mClosed == nullptr) {// Is region closed ?
+        ExtremaThreshold &et = thresh[nthresh++];
+        et.mPos = maxValue - 1;
+        et.mMargin = up - i;
+        et.mThresh = maxValue - 1;
       }
-      ONDEBUG(SPDLOG_INFO("Thresholds={} Kept={}", nthresh, it->nThresh));
-      //std::vector<ExtremaThresholdC> newthresh = new std::vector<ExtremaThresholdC>(nthresh);
-      std::vector<ExtremaThresholdC> newthresh;
+      ONDEBUG(SPDLOG_INFO("thresholds={} Kept={}", nthresh, it->nThresh));
+      //std::vector<ExtremaThreshold> newthresh = new std::vector<ExtremaThreshold>(nthresh);
+      std::vector<ExtremaThreshold> newthresh;
       newthresh.reserve(nthresh);
 
       unsigned lastSize = 0;
       unsigned lastInd = 0;
       for(unsigned j = 0; j < nthresh; j++) {
-        auto size = chist[thresh[j].pos];
+        auto size = chist[thresh[j].mPos];
         if((lastSize * 1.15) > size) {// Is size only slightly different ?
-          if(thresh[j].margin > thresh[lastInd].margin) {
+          if(thresh[j].mMargin > thresh[lastInd].mMargin) {
             newthresh.back() = thresh[j];// Move threshold if margin is bigger.
-            newthresh.back().area = chist[thresh[j].thresh];
+            newthresh.back().mArea = chist[thresh[j].mThresh];
             lastSize = size;
           }
           ONDEBUG(SPDLOG_INFO("Rejecting threshold={} LastArea={} Area={}", thresh[j].thresh, size, chist[thresh[j].thresh]));
           continue;// Reject it, not enough difference.
         }
         newthresh.push_back(thresh[j]);
-        newthresh.back().area = chist[thresh[j].thresh];
+        newthresh.back().mArea = chist[thresh[j].mThresh];
         lastSize = size;
         lastInd = j;
       }
 
       if(!newthresh.empty()) {
-        it->thresh = std::move(newthresh);
+        it->mThresh = std::move(newthresh);
       } else {
-        it->thresh.clear();
+        it->mThresh.clear();
       }
-      ONDEBUG(SPDLOG_INFO("Thresholds={} Kept={}", nthresh, it->nThresh));
-    }// for(SArray1dIterC<ExtremaRegionC> it(...
-    //cerr << "SegmentExtremaBaseC::Thresholds() Interesting regions=" << regions <<" \n";
+      ONDEBUG(SPDLOG_INFO("thresholds={} Kept={}", nthresh, it->nThresh));
+    }// for(SArray1dIterC<ExtremaRegion> it(...
+    //cerr << "SegmentExtremaBase::thresholds() Interesting regions=" << regions <<" \n";
   }
 }// namespace Ravl2

@@ -61,6 +61,17 @@ namespace Ravl2
         : PointSet<RealT, 2>(std::move(points))
     {}
 
+    //! Construct from a fixed array of points
+    template <size_t N>
+    constexpr explicit Polygon(const std::array<Point<RealT, 2>, N> &points)
+      : PointSet<RealT, 2>(points)
+    {}
+
+    //! From initializer list
+    Polygon(std::initializer_list<Point<RealT,2>> list)
+      : PointSet<RealT,2>(list)
+    {}
+
     //! Constructor creates a rectangular polygon of the range
     //! @param: range - the range defining the rectangle for the polygon
     //! @param: orientation - the orientation of the boundary
@@ -77,7 +88,8 @@ namespace Ravl2
     
     //! @return: the signed area of this polygon
     //! @param: type - the orientation of the boundary inverts sign.
-    [[nodiscard]] RealT area() const;
+    [[nodiscard]] RealT area() const
+    { return Ravl2::area(*this); }
 
     //! @brief Test if the polygon is convex
     //! @return: true if the polygon is convex
@@ -111,13 +123,9 @@ namespace Ravl2
     //! Returns true iff the point 'p' is an internal point of this polygon.
     [[nodiscard]] bool contains(const Point<RealT, 2> &p) const;
 
-    //! Returns the perimeter length of this polygon.
-    [[nodiscard]] RealT perimeter() const;
-
     //! Returns the centroid of this polygon.
     //! This computes the centroid of the area covered by the polygon
-    [[nodiscard]]
-    Point<RealT, 2> centroid() const;
+    [[nodiscard]] Point<RealT, 2> centroid() const;
 
     //! Returns true if the polygon is self intersecting, ie do any sides cross
     [[nodiscard]] bool isSelfIntersecting() const;
@@ -178,18 +186,27 @@ namespace Ravl2
   //! @param: orientation - the orientation of the boundary
   //! If BoundaryOrientationT::INSIDE_LEFT makes a counter clockwise polygon, with a positive area.
   template <typename RealT>
-  [[nodiscard]] inline Polygon<RealT> toPolygon(const Range<RealT, 2> &range, BoundaryOrientationT orientation = BoundaryOrientationT::INSIDE_LEFT)
+  [[nodiscard]] Polygon<RealT> toPolygon(const Range<RealT, 2> &range, BoundaryOrientationT orientation = BoundaryOrientationT::INSIDE_LEFT)
   {
     return Polygon<RealT>(range, orientation);
   }
 
+  //! Convert a range to a polygon.
+  //! @param: points - Fixed size array of points
+  //! @param: orientation - the orientation of the boundary
+  //! If BoundaryOrientationT::INSIDE_LEFT makes a counter clockwise polygon, with a positive area.
+  template <typename RealT,size_t N>
+  [[nodiscard]] Polygon<RealT> toPolygon(const std::array<Point<RealT, 2>, N> &points)
+  {
+    return Polygon<RealT>(points);
+  }
 
   //! Convert an IndexRange to a polygon
   //! @param: range - the range defining the rectangle for the polygon
   //! @param: orientation - the orientation of the boundary
   //! If BoundaryOrientationT::INSIDE_LEFT makes a counter clockwise polygon, with a positive area.
   template <typename RealT>
-  [[nodiscard]] inline Polygon<RealT> toPolygon(const IndexRange<2> &range, BoundaryOrientationT orientation = BoundaryOrientationT::INSIDE_LEFT)
+  [[nodiscard]] Polygon<RealT> toPolygon(const IndexRange<2> &range, BoundaryOrientationT orientation = BoundaryOrientationT::INSIDE_LEFT)
   {
     return Polygon<RealT>(toRange<RealT>(range), orientation);
   }

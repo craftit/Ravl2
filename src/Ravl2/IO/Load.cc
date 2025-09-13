@@ -55,6 +55,9 @@ namespace Ravl2
     if(protocol == "file") {
       std::unique_ptr<std::istream> tmpStrm = std::make_unique<std::ifstream>(rawFilename);
       if(!tmpStrm->good()) {
+        if(verbose) {
+          SPDLOG_ERROR("Failed to open file: '{}'", rawFilename);
+        }
         return std::nullopt;
       }
       ctx.m_data = std::vector<uint8_t>(256);
@@ -72,5 +75,37 @@ namespace Ravl2
 
     return inputFormatMap().probe(ctx);
   }
+
+  bool ioLoad(std::any &object, const std::string &url, const std::type_info &expectedType,const nlohmann::json &formatHint)
+  {
+    auto container = openInput(url, expectedType, formatHint);
+    if(!container.has_value())
+      return false;
+    std::streampos pos = container.value().mStream->beginOffset();
+    if(!container.value().mConversion) {
+      auto tmp = container.value().mStream->anyNext(pos);
+      if(!tmp.has_value()) {
+        SPDLOG_ERROR("Failed to read object from stream");
+        return false;
+      }
+      object = std::move(tmp);
+      return true;
+    }
+    auto loaded = container.value().mStream->anyNext(pos);
+    if(!loaded.has_value()) {
+      SPDLOG_ERROR("Failed to read object from stream");
+      return false;
+    }
+    auto resultAny = container.value().mConversion(loaded);
+    if(!resultAny.has_value()) {
+      SPDLOG_ERROR("Failed to convert object from stream");
+      return false;
+    }
+    object = std::move(resultAny);
+    return true;
+
+  }
+
+
 
 }// namespace Ravl2

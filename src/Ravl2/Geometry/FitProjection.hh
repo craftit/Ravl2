@@ -24,8 +24,7 @@ namespace Ravl2
     return normMat;
   }
 
-
-  //: Fit projection to a set of points.  4 or point correspondences are required
+  //! Fit projection to a set of points.  4 or point correspondences are required
 
   template <typename RealT, SimpleContainer DataContainer1T,SimpleContainer DataContainer2T> // assumed to be a container of Point<RealT,2>
    requires std::is_floating_point_v<RealT>
@@ -140,32 +139,31 @@ namespace Ravl2
       auto it2 = newPos.begin();
       const auto it2end = newPos.end();
       for(;it1 != it1end && it2 != it2end;++it1,++it2,i++) {
-	RealT x1, y1, x2, y2;
-	x1=(*it1)[0]; y1=(*it1)[1];
-	x2=(*it2)[0]; y2=(*it2)[1];
+	      RealT x1, y1, x2, y2;
+	      x1=(*it1)[0]; y1=(*it1)[1];
+	      x2=(*it2)[0]; y2=(*it2)[1];
 
-	A(i*2,0) = x1*zh2; A(i*2,1) = y1*zh2; A(i*2,2) = zh1*zh2;
-	A(i*2,6) = -x1*x2; A(i*2,7) = -y1*x2;
-	b[i*2] = zh1*x2;
-	A(i*2+1,3) = x1*zh2; A(i*2+1,4) = y1*zh2; A(i*2+1,5) = zh1*zh2;
-	A(i*2+1,6) = -x1*y2; A(i*2+1,7) = -y1*y2;
-	b[i*2+1] = zh1*y2;
+	      A(i*2,0) = x1*zh2; A(i*2,1) = y1*zh2; A(i*2,2) = zh1*zh2;
+	      A(i*2,6) = -x1*x2; A(i*2,7) = -y1*x2;
+	      b[i*2] = zh1*x2;
+	      A(i*2+1,3) = x1*zh2; A(i*2+1,4) = y1*zh2; A(i*2+1,5) = zh1*zh2;
+	      A(i*2+1,6) = -x1*y2; A(i*2+1,7) = -y1*y2;
+	      b[i*2+1] = zh1*y2;
       }
 
       // solve for solution vector
       try {
-	//auto sb = xt::linalg::solve(A, b);
         //auto solver = A.bdcSvd(Eigen::ComputeFullU | Eigen::ComputeFullV);
         auto solver = A.colPivHouseholderQr();
         auto sb = solver.solve(b);
-	Matrix<RealT, 3, 3> P({{sb[0], sb[1], sb[2]},
+      	Matrix<RealT, 3, 3> P({{sb[0], sb[1], sb[2]},
 			       {sb[3], sb[4], sb[5]},
 			       {sb[6], sb[7], 1.0}}
 			     );
-	proj = Projection<RealT, 2>(P, zh1, zh2);
+      	proj = Projection<RealT, 2>(P, zh1, zh2);
       } catch (const std::exception &e) {
-	SPDLOG_WARN("FitProjection() failed to solve for homography: {}", e.what());
-	return false;
+	      SPDLOG_WARN("FitProjection() failed to solve for homography: {}", e.what());
+	      return false;
       }
       return true;
     }

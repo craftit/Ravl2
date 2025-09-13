@@ -5,14 +5,22 @@
 // see http://www.gnu.org/copyleft/lesser.html
 // file-header-ends-here
 
-#include "Ravl2/OpenGL/DObject3D.hh"
+#include "Ravl2/OpenGL/DObject.hh"
 
 namespace Ravl2
 {
 
+  //! Initialize object.
+  //! Register object with OpenGL, setup shaders, etc.
+  bool DObject::GUIInit(Canvas3D &c3d)
+  {
+    (void)c3d;
+    return true;
+  }
+
 
   //: Render, checking for display lists.
-  bool DObject3D::GUIRenderDL(Canvas3D &c3d) {
+  bool DObject::GUIRenderDL(Canvas3D &c3d) {
     bool ret = false;
     //cerr << "Calling Genlist. " << id << "\n";
     if(m_useDisplayList) {
@@ -35,41 +43,51 @@ namespace Ravl2
   }
 
 
-  /// DObjectSet3DBodyC ///////////////////////////////////////////////
+  /// DObjectSet3D ///////////////////////////////////////////////
 
   //: Render object.
-  bool DObjectSet3DBodyC::GUIRender(Canvas3D &c3d) const
+  bool DObjectSet3D::GUIRender(Canvas3D &c3d) const
   {
     //cerr << "DObjectSet3DBodyC::GUIRender\n";
-    for(auto &x: parts)
+    for(auto &x: parts) {
+      assert(x != nullptr);
       x->GUIRender(c3d);
+    }
     return true;
   }
 
-  //: Get center of object.
-  // defaults to 0,0,0
-  Vector<float,3> DObjectSet3DBodyC::GUICenter() const
+  bool DObjectSet3D::GUIInit(Canvas3D &c3d)
+  {
+    bool ret = true;
+    for(auto &x: parts) {
+      assert(x != nullptr);
+      if(!x->GUIInit(c3d)) {
+        ret = false;
+      }
+    }
+    return ret;
+  }
+
+  Vector<float,3> DObjectSet3D::GUICenter() const
   {
     assert(!mUpdateNeeded);
     return center;
   }
 
-  //: Get extent of object.
-  // defaults to 1
-  float DObjectSet3DBodyC::GUIExtent() const
+  float DObjectSet3D::GUIExtent() const
   {
     assert(!mUpdateNeeded);
     return extent;
   }
   
   //: Add object into list.
-  void DObjectSet3DBodyC::GUIAdd(const std::shared_ptr<DObject3D> &obj) {
+  void DObjectSet3D::GUIAdd(const std::shared_ptr<DObject> &obj) {
     parts.push_back(obj);
     center = (center * (parts.size() - 1) + obj->GUICenter()) / parts.size();
     mUpdateNeeded = true;
   }
   
-  void DObjectSet3DBodyC::UpdateCenterExtent()
+  void DObjectSet3D::UpdateCenterExtent()
   {
     center = toVector<float>(0,0,0);
     for(auto &x: parts) {
@@ -78,7 +96,7 @@ namespace Ravl2
     center /= float(parts.size());
     extent = 0;
     for(auto &x: parts) {
-      float distToCenter = (x->GUICenter() - center).norm() + x->GUIExtent();
+      float const distToCenter = (x->GUICenter() - center).norm() + x->GUIExtent();
       if(distToCenter > extent) {
         extent = distToCenter;
       }
@@ -87,14 +105,15 @@ namespace Ravl2
   }
   
   
-  //// DOpenGLBodyC ////////////////////////////////////////////////////////
+  //// DOpenGLDirect ////////////////////////////////////////////////////////
   
   //: Render object.
-  bool DOpenGLBodyC::GUIRender(Canvas3D &c3d) const
+  bool DOpenGLDirect::GUIRender(Canvas3D &c3d) const
   {
-    //cerr << "DOpenGLBodyC::GUIRender\n";
-    if(sigEvent)
+    //cerr << "DOpenGLDirect::GUIRender\n";
+    if(sigEvent) {
       sigEvent(c3d);
+    }
     return true;
   }
 

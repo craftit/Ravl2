@@ -20,14 +20,18 @@ namespace Ravl2
   bool loadEnvFile(std::string_view path)
   {
     // Check file exists
-    if(!std::filesystem::exists(path))
+    if(!std::filesystem::exists(path)) {
       return false;
+    }
     std::ifstream file(path.data());
     if(!file.is_open()) {
       SPDLOG_ERROR("Failed to open env file {}", path);
       return false;
     }
-    SPDLOG_TRACE("Loading env file '{}'", path);
+    // Enabling this line can cause output to be printed to the console
+    // before main is called, which can cause problems with catch2
+    // unit test processing.
+    //SPDLOG_INFO("Loading env file '{}'", path);
     nlohmann::json config;
     file >> config;
     file.close();
@@ -35,7 +39,7 @@ namespace Ravl2
     // Get the host name from the system
     std::array<char, 256> hostnameRaw {};
     gethostname(hostnameRaw.data(), hostnameRaw.size() - 1);
-    std::string_view hostname(hostnameRaw.data());
+    std::string_view const hostname(hostnameRaw.data());
     SPDLOG_TRACE("Hostname: '{}'", hostname);
 
     // Setup a lambda to read in the paths from a json object
@@ -43,7 +47,7 @@ namespace Ravl2
       // Go through each section type and and paths in the array for that section
       for(auto &section : obj.items()) {
         // Get the section name
-        std::string sectionName = section.key();
+        const std::string& sectionName = section.key();
         // Get the array of paths
         auto &paths = section.value();
         // Go through each path and add it

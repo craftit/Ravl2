@@ -75,6 +75,8 @@ namespace Ravl2
     Unused
   };
 
+  void initPixel();
+
   //! Get name for a channel.
   std::string_view toString(ImageChannel channel);
 
@@ -141,12 +143,39 @@ namespace Ravl2
     static constexpr DataT defaultValue = offset;
   };
 
+  //! Specialization for Alpha channel to set the default value to max (opaque)
+  template <typename DataT>
+    requires std::is_integral_v<DataT>
+  struct PixelTypeTraits<DataT, ImageChannel::Alpha> {
+    using value_type = DataT;
+    static constexpr bool isNormalized = PixelChannelTraits<ImageChannel::Alpha>::isNormalized;
+    static constexpr DataT min = std::numeric_limits<DataT>::min();
+    static constexpr DataT max = std::numeric_limits<DataT>::max();
+    static constexpr DataT offset = 0;
+    static constexpr DataT defaultValue = max; // Fully opaque by default
+  };
+
+  //! Specialization for Alpha channel with floating point values
+  template <typename DataT>
+    requires std::is_floating_point_v<DataT>
+  struct PixelTypeTraits<DataT, ImageChannel::Alpha> {
+    using value_type = DataT;
+    static constexpr bool isNormalized = PixelChannelTraits<ImageChannel::Alpha>::isNormalized;
+    static constexpr DataT min = 0;
+    static constexpr DataT max = 1;
+    static constexpr DataT offset = 0;
+    static constexpr DataT defaultValue = 1.0; // Fully opaque by default
+  };
+
   //! Convert a pixel value to a different type follow the channel conversion rules.
   template <ImageChannel channel, typename CompT, typename PixelValueTypeT>
   constexpr CompT get(PixelValueTypeT pixel)
   {
     // If the channel is normalized then we need to scale the value to the correct range.
     if constexpr(PixelTypeTraits<CompT, channel>::isNormalized) {
+// turn off warning about promotion to double.
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdouble-promotion"
       //SPDLOG_INFO("Normalized channel {} -> {}  Type:{} <- {} ",toString(channel), (PixelTypeTraits<CompT, channel>::max - PixelTypeTraits<CompT, channel>::min) / (PixelTypeTraits<PixelValueTypeT, channel>::max - PixelTypeTraits<PixelValueTypeT, channel>::min), typeid(CompT).name(), typeid(PixelValueTypeT).name());
       // If the channel is normalized then we need to scale the value to the correct range.
       auto raw = (pixel - PixelTypeTraits<PixelValueTypeT, channel>::offset) * (PixelTypeTraits<CompT, channel>::max - PixelTypeTraits<CompT, channel>::min) / (PixelTypeTraits<PixelValueTypeT, channel>::max - PixelTypeTraits<PixelValueTypeT, channel>::min) + PixelTypeTraits<CompT, channel>::offset;
@@ -160,6 +189,7 @@ namespace Ravl2
       }
       // If we're converting to an integer type then we need to clamp the value.
       return CompT(std::clamp(raw, decltype(raw)(PixelTypeTraits<CompT, channel>::min), decltype(raw)(PixelTypeTraits<CompT, channel>::max)));
+#pragma GCC diagnostic pop
     }
     // If the channel is not normalized then we can just return the value.
     return CompT(pixel);
@@ -175,6 +205,7 @@ namespace Ravl2
   {
   public:
     using value_type = CompT;
+    static constexpr std::size_t channel_count = sizeof...(Channels);
 
     //! Default constructor.
     // Creates an undefined value.
@@ -230,6 +261,15 @@ namespace Ravl2
     [[nodiscard]] static constexpr bool hasChannels()
     {
       return ((hasChannel<OChannels>()) && ...);
+    }
+
+    //! Get the channel type at a specific index position
+    template <std::size_t Index>
+    [[nodiscard]] static constexpr ImageChannel getChannelAtIndex()
+    {
+      static_assert(Index < sizeof...(Channels), "Channel index out of range");
+      constexpr std::array<ImageChannel, sizeof...(Channels)> channels = {Channels...};
+      return channels[Index];
     }
 
     //! Set a single channel.
@@ -308,8 +348,10 @@ namespace Ravl2
 
   //! Define some common formats to save typing
   using PixelY8 = Pixel<uint8_t, ImageChannel::Luminance>;
+  using PixelI8 = Pixel<uint8_t, ImageChannel::Intensity>;
+  using PixelYA8 = Pixel<uint8_t, ImageChannel::Luminance, ImageChannel::Alpha>;
   using PixelY16 = Pixel<uint16_t, ImageChannel::Luminance>;
-  using PixelY32F = Pixel<uint16_t, ImageChannel::Luminance>;
+  using PixelY32F = Pixel<float, ImageChannel::Luminance>;
   using PixelZ16 = Pixel<uint16_t, ImageChannel::Depth>;
   using PixelZ32F = Pixel<float, ImageChannel::Depth>;
   using PixelRGB8 = Pixel<uint8_t, ImageChannel::Red, ImageChannel::Green, ImageChannel::Blue>;
@@ -318,9 +360,11 @@ namespace Ravl2
   using PixelRGBA16 = Pixel<uint16_t, ImageChannel::Red, ImageChannel::Green, ImageChannel::Blue, ImageChannel::Alpha>;
   using PixelRGB32F = Pixel<float, ImageChannel::Red, ImageChannel::Green, ImageChannel::Blue>;
   using PixelRGBA32F = Pixel<float, ImageChannel::Red, ImageChannel::Green, ImageChannel::Blue, ImageChannel::Alpha>;
+  using PixelRGBA64F = Pixel<double, ImageChannel::Red, ImageChannel::Green, ImageChannel::Blue, ImageChannel::Alpha>;
   using PixelBGR8 = Pixel<uint8_t, ImageChannel::Blue, ImageChannel::Green, ImageChannel::Red>;
   using PixelBGRA8 = Pixel<uint8_t, ImageChannel::Blue, ImageChannel::Green, ImageChannel::Red, ImageChannel::Alpha>;
   using PixelYUV8 = Pixel<uint8_t, ImageChannel::Luminance, ImageChannel::ChrominanceU, ImageChannel::ChrominanceV>;
+  using PixelYUVA8 = Pixel<uint8_t, ImageChannel::Luminance, ImageChannel::ChrominanceU, ImageChannel::ChrominanceV, ImageChannel::Alpha>;
   using PixelYUV32F = Pixel<float, ImageChannel::Luminance, ImageChannel::ChrominanceU, ImageChannel::ChrominanceV>;
 
   // Let the compiler know there's instantiations of the template
@@ -334,6 +378,7 @@ namespace Ravl2
   extern template class Pixel<float, ImageChannel::Luminance, ImageChannel::ChrominanceU, ImageChannel::ChrominanceV>;
 
   // Also about arrays based on the pixel types
+  extern template class Array<PixelI8,2>;
   extern template class Array<PixelY8,2>;
   extern template class Array<PixelY16,2>;
   extern template class Array<PixelZ16, 2>;
