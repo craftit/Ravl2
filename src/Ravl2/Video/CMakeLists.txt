@@ -108,4 +108,3 @@ install(DIRECTORY ${PROJECT_SOURCE_DIR}/src/Ravl2/Video
     FILES_MATCHING PATTERN "*.hh"
 )
 
-add_subdirectory(tests)
