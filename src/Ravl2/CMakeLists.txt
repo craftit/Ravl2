@@ -57,7 +57,7 @@ add_library(Ravl2Core
     ConfigJson.cc ConfigJson.hh
     Pixel/Pixel.cc Pixel/Pixel.hh
     Pixel/Colour.cc Pixel/Colour.hh
-    Pixel/PixelPlane.cc Pixel/PixelPlane.cc
+    Pixel/PixelPlane.cc Pixel/PixelPlane.hh
     IO/InputSequence.cc IO/InputSequence.hh
     IO/OutputFormat.cc IO/OutputFormat.hh
     IO/TypeConverter.cc IO/TypeConverter.hh
