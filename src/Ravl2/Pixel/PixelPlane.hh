@@ -355,38 +355,29 @@ namespace Ravl2
       // Create the pixel with default values
       PixelT<CompT, Channels...> result;
 
-      // Simple approach: for each channel, try to find a matching plane
-      // and set the corresponding value in the result pixel
+      // Helper lambda to set an individual channel value by scanning planes
       auto setChannel = [&]<ImageChannel Channel>() {
         bool channelFound = false;
-
-        // Look for a plane with matching channel type
-        for (std::size_t i = 0; i < sizeof...(PlaneTypes); ++i) {
-          if (getPlaneChannelType(i) == Channel) {
-            // Check if the plane contains the master coordinate
-            const auto& plane = getPlaneByIndex(i);
-            if (plane.containsMaster(masterIndex)) {
-              // Get the value from the plane and convert it properly using get<>
-              // This handles normalization between different types
-              auto rawValue = plane.atMaster(masterIndex);
-
-              // Use the proper conversion that respects PixelTypeTraits for normalization
+        // Iterate over planes using existing helper; stop when found
+        applyToEachPlane([&](const auto &plane) {
+          if(channelFound) return; // early exit guard
+          if(plane.getChannelType() == Channel) {
+            if(plane.containsMaster(masterIndex)) {
+              auto rawValue = plane.atMaster(masterIndex); // raw plane component
               result.template set<Channel>(get<Channel, CompT>(rawValue));
               channelFound = true;
-              break;
             }
           }
-        }
+        }, std::make_index_sequence<sizeof...(PlaneTypes)>{});
 
-        // If no matching plane found, explicitly set the default value from PixelTypeTraits
-        if (!channelFound) {
+        // If channel not present in the planar image populate default
+        if(!channelFound) {
           result.template set<Channel>(PixelTypeTraits<CompT, Channel>::defaultValue);
         }
       };
 
-      // Set each channel
+      // Expand over requested channels
       (setChannel.template operator()<Channels>(), ...);
-
       return result;
     }
 
