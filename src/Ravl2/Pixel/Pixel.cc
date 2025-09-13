@@ -8,6 +8,12 @@
 
 namespace Ravl2
 {
+  // This helps ensure that the colour conversions are linked if the user uses any of the pixel classes.
+  void initPixel()
+  {
+    initColourConversion();
+  }
+
 
   //! Get name for a channel.
   std::string_view toString(ImageChannel channel)
@@ -84,12 +90,6 @@ namespace Ravl2
     return strm;
   }
 
-  // This helps ensure that the colour conversions are linked if the user uses any of the pixel classes.
-  void initPixel()
-  {
-    initColourConversion();
-  }
-
   template class Pixel<uint8_t, ImageChannel::Red, ImageChannel::Green, ImageChannel::Blue>;
   template class Pixel<uint8_t, ImageChannel::Red, ImageChannel::Green, ImageChannel::Blue, ImageChannel::Alpha>;
   template class Pixel<float, ImageChannel::Red, ImageChannel::Green, ImageChannel::Blue>;
@@ -131,6 +131,15 @@ namespace Ravl2
     [[maybe_unused]] bool g_reg11 = registerCerealFormats<Array<PixelRGBA32F,2>>();
     [[maybe_unused]] bool g_reg14 = registerCerealFormats<Array<PixelYUV32F,2>>();
     [[maybe_unused]] bool g_reg15 = registerCerealFormats<Array<PixelY32F,2>>();
+
+    // Make the pixel type names more readable
+    [[maybe_unused]] bool g_typeReg1 = registerTypeName(typeid(PixelI8),"Ravl2::PixelI8");
+    [[maybe_unused]] bool g_typeReg2 = registerTypeName(typeid(PixelY8),"Ravl2::PixelY8");
+    [[maybe_unused]] bool g_typeReg3 = registerTypeName(typeid(PixelY16),"Ravl2::PixelY16");
+    [[maybe_unused]] bool g_typeReg4 = registerTypeName(typeid(PixelYUV8),"Ravl2::PixelYUV8");
+    [[maybe_unused]] bool g_typeReg5 = registerTypeName(typeid(PixelRGB8),"Ravl2::PixelRGB8");
+    [[maybe_unused]] bool g_typeReg6 = registerTypeName(typeid(PixelRGBA8),"Ravl2::PixelRGBA8");
+    [[maybe_unused]] bool g_typeReg7 = registerTypeName(typeid(PixelRGB16),"Ravl2::PixelRGB16");
   }
 
 }// namespace Ravl2

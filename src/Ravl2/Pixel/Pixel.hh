@@ -75,6 +75,8 @@ namespace Ravl2
     Unused
   };
 
+  void initPixel();
+
   //! Get name for a channel.
   std::string_view toString(ImageChannel channel);
 
@@ -141,6 +143,30 @@ namespace Ravl2
     static constexpr DataT defaultValue = offset;
   };
 
+  //! Specialization for Alpha channel to set the default value to max (opaque)
+  template <typename DataT>
+    requires std::is_integral_v<DataT>
+  struct PixelTypeTraits<DataT, ImageChannel::Alpha> {
+    using value_type = DataT;
+    static constexpr bool isNormalized = PixelChannelTraits<ImageChannel::Alpha>::isNormalized;
+    static constexpr DataT min = std::numeric_limits<DataT>::min();
+    static constexpr DataT max = std::numeric_limits<DataT>::max();
+    static constexpr DataT offset = 0;
+    static constexpr DataT defaultValue = max; // Fully opaque by default
+  };
+
+  //! Specialization for Alpha channel with floating point values
+  template <typename DataT>
+    requires std::is_floating_point_v<DataT>
+  struct PixelTypeTraits<DataT, ImageChannel::Alpha> {
+    using value_type = DataT;
+    static constexpr bool isNormalized = PixelChannelTraits<ImageChannel::Alpha>::isNormalized;
+    static constexpr DataT min = 0;
+    static constexpr DataT max = 1;
+    static constexpr DataT offset = 0;
+    static constexpr DataT defaultValue = 1.0; // Fully opaque by default
+  };
+
   //! Convert a pixel value to a different type follow the channel conversion rules.
   template <ImageChannel channel, typename CompT, typename PixelValueTypeT>
   constexpr CompT get(PixelValueTypeT pixel)
@@ -179,6 +205,7 @@ namespace Ravl2
   {
   public:
     using value_type = CompT;
+    static constexpr std::size_t channel_count = sizeof...(Channels);
 
     //! Default constructor.
     // Creates an undefined value.
@@ -234,6 +261,15 @@ namespace Ravl2
     [[nodiscard]] static constexpr bool hasChannels()
     {
       return ((hasChannel<OChannels>()) && ...);
+    }
+
+    //! Get the channel type at a specific index position
+    template <std::size_t Index>
+    [[nodiscard]] static constexpr ImageChannel getChannelAtIndex()
+    {
+      static_assert(Index < sizeof...(Channels), "Channel index out of range");
+      constexpr std::array<ImageChannel, sizeof...(Channels)> channels = {Channels...};
+      return channels[Index];
     }
 
     //! Set a single channel.
@@ -328,6 +364,7 @@ namespace Ravl2
   using PixelBGR8 = Pixel<uint8_t, ImageChannel::Blue, ImageChannel::Green, ImageChannel::Red>;
   using PixelBGRA8 = Pixel<uint8_t, ImageChannel::Blue, ImageChannel::Green, ImageChannel::Red, ImageChannel::Alpha>;
   using PixelYUV8 = Pixel<uint8_t, ImageChannel::Luminance, ImageChannel::ChrominanceU, ImageChannel::ChrominanceV>;
+  using PixelYUVA8 = Pixel<uint8_t, ImageChannel::Luminance, ImageChannel::ChrominanceU, ImageChannel::ChrominanceV, ImageChannel::Alpha>;
   using PixelYUV32F = Pixel<float, ImageChannel::Luminance, ImageChannel::ChrominanceU, ImageChannel::ChrominanceV>;
 
   // Let the compiler know there's instantiations of the template

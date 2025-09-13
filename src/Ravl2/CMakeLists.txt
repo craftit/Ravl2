@@ -1,4 +1,3 @@
-
 find_package(OpenCV REQUIRED)
 find_package(fmt REQUIRED)
 find_package(spdlog REQUIRED)
@@ -16,6 +15,7 @@ add_subdirectory(Math)
 add_subdirectory(Image)
 add_subdirectory(3D)
 add_subdirectory(OpenCV)
+add_subdirectory(Video)
 
 
 # If OpenGL is found, add the OpenGL subdirectory
@@ -57,6 +57,7 @@ add_library(Ravl2Core
     ConfigJson.cc ConfigJson.hh
     Pixel/Pixel.cc Pixel/Pixel.hh
     Pixel/Colour.cc Pixel/Colour.hh
+    Pixel/PixelPlane.cc Pixel/PixelPlane.hh
     IO/InputSequence.cc IO/InputSequence.hh
     IO/OutputFormat.cc IO/OutputFormat.hh
     IO/TypeConverter.cc IO/TypeConverter.hh
@@ -72,6 +73,7 @@ add_library(Ravl2Core
     Eigen.cc Eigen.hh
     SpatialHash.cc SpatialHash.hh
     Catch2checks.hh
+    Logging.cc Logging.hh
 )
 
 add_library(ravl2::Ravl2Core ALIAS Ravl2Core)

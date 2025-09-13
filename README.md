@@ -107,6 +107,11 @@ There is a .clang-format file in the root directory that can be used to format t
 
 The output is the first argument(s).
 
+### Image coordinates
+
+The origin of the image is in the top left corner, and the first dimension is the vertical axis, the second is the horizontal axis.
+
+
 ## Library Design
 
 ### Common functions
@@ -128,6 +133,6 @@ The output is the first argument(s).
 
 These are designed to be easy to construct from other containers.
 
- * This uses a thread safe reference counted handle to the data. 
- * Other than the buffer the uses is responsible for coordinating access to the data.
+ * This uses a thread safe reference-counted handle to the data. 
+ * Other than the buffer the uses are responsible for coordinating access to the data.
 

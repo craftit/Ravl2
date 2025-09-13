@@ -14,8 +14,6 @@
 #include "Ravl2/Types.hh"
 #include "Ravl2/Geometry/Plane3ABCD.hh"
 
-#include <opencv2/core/matx.hpp>
-
 namespace Ravl2
 {
 

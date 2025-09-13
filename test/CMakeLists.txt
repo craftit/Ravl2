@@ -69,11 +69,17 @@ add_executable(tests
         test_projective.cc
         test_eigen.cc
         test_planes.cc
+        test_pixelplane.cc
         test_spatialhash.cc
         test_BayesianOptimise.cc
         test_RandomSearchOptimise.cc
         test_ParticleSwarmOptimise.cc
+        test_MemoryMediaContainer.cc
+        test_VideoFrame.cc
+        test_VideoIO.cc
+
 )
+target_compile_definitions(tests PRIVATE -DRAVL_SOURCE_DIR="${PROJECT_SOURCE_DIR}")
 target_link_libraries(
   tests
   PRIVATE ravl2::RAVL2_warnings
@@ -85,6 +91,7 @@ target_link_libraries(
           ravl2::Ravl2ImageSegmentation
           ravl2::Ravl2x3D
           ravl2::Ravl2OpenCV
+          ravl2::Ravl2Video
           ravl2::Ravl2Optimise
           Catch2::Catch2WithMain
           Eigen3::Eigen)

@@ -114,10 +114,8 @@ void main() {
     glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * 6 * 4 * 6, vertexData, GL_STATIC_DRAW);
 
     // set up generic attrib pointers
-
-    mVertexArray.addBuffer(mVertexBuffer, 0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), static_cast<char *>(0) + 0 * sizeof(GLfloat));
-
-    mVertexArray.addBuffer(mVertexBuffer, 1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), static_cast<char *>(0) + 3 * sizeof(GLfloat));
+    mVertexArray.addBuffer(mVertexBuffer, 0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), reinterpret_cast<void*>(3 * sizeof(GLfloat)));
+    mVertexArray.addBuffer(mVertexBuffer, 1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), reinterpret_cast<void*>(3 * sizeof(GLfloat)));
 
     // generate and bind the index buffer object
     mVertexBuffer->bind(GL_ELEMENT_ARRAY_BUFFER, 1);

@@ -106,6 +106,7 @@ namespace Ravl2
   void TypeConverterMap::dump()
   {
     std::shared_lock lock(m_mutex);
+    SPDLOG_INFO("TypeConverterMap. Converters: {} ", m_converters.size());
     for(const auto &x : m_converters) {
       SPDLOG_INFO("From: {}", typeName(x.first));
       for(const auto &y : x.second) {
