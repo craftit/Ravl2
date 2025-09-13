@@ -18,11 +18,15 @@ function(RAVL2_setup_dependencies)
       set(BLA_VENDOR "All")
     endif ()
   else ()
-    set(BLA_VENDOR "All")
+    #set(BLA_VENDOR "All")
   endif()
 
   find_package(BLAS REQUIRED)
+  message(STATUS "BLAS_LIBS: ${BLAS_LIBRARIES}")
+  message(STATUS "BLA_VENDOR: ${BLA_VENDOR}")
+
   find_package(LAPACK REQUIRED)
+  message(STATUS "LAPACK_LIBRARIES: ${LAPACK_LIBRARIES}")
 
   # Try and use native packages if they're available
 
