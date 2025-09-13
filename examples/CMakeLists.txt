@@ -23,4 +23,4 @@ find_package(CLI11 CONFIG REQUIRED)
 add_executable(intro intro.cc)
 target_link_libraries (intro PUBLIC Ravl2Core CLI11::CLI11)
 
-add_subdirectory(SimplePlayer)
+#add_subdirectory(SimplePlayer)
