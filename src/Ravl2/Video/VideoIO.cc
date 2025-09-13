@@ -10,6 +10,7 @@
 #include "Ravl2/Video/StreamIterator.hh"       // Generic stream iterator API
 #include "Ravl2/Video/VideoFrame.hh"           // VideoFrame template
 #include "Ravl2/Video/VideoTypes.hh"           // VideoErrorCode / MediaTime
+#include "Ravl2/Video/VideoIO.hh"              // initIO()
 #include "Ravl2/Pixel/PixelPlane.hh"           // Planar image types (YUV/RGB)
 #include "Ravl2/Pixel/Colour.hh"               // Colour conversions & registration
 

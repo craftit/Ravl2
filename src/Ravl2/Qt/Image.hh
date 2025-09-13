@@ -135,22 +135,23 @@ namespace Ravl2
     using QtBytesPerLineT = int;
 #endif
 
-    QtBytesPerLineT bytesPerLine = QtBytesPerLineT(ssize_t(array.stride(0)) * ssize_t(sizeof(DataT)));
+    QtBytesPerLineT bytesPerLine = QtBytesPerLineT(static_cast<ssize_t>(array.stride(0)) * static_cast<ssize_t>(sizeof(DataT)));
     if((bytesPerLine % 4) != 0) {
       // QImage requires the bytes per line to be a multiple of 4
       if(copyMode == CopyModeT::Never) {
         throw std::runtime_error("Bytes per line must be a multiple of 4");
       }
-      IndexRange<2> newRng = array.range();
+      IndexRange<2> rng = array.range();
       auto targetBytePerLine = (bytesPerLine + 3) & ~3;
-      newRng[0].max() = newRng[0].min() + int((targetBytePerLine / ssize_t(sizeof(DataT))) - 1);
-      assert(newRng[0].size() * ssize_t(sizeof(DataT)) % 4 == 0);
-      // Adjust the range to match the new bytes per line
-      Array<DataT, 2> newArray(newRng);
-      copy(array, clipUnsafe(newArray, array.range()));
-      // Check we've achieved the correct bytes per line
-      assert((newArray.stride(0) * ssize_t(sizeof(DataT))) % 4 == 0);
-      return toQImage<DataT, CopyModeT::Never>(newArray);
+      QImage newImage(rng.size(1), rng.size(0), toQImageFormat<DataT, CopyModeT::Never>());
+      // Copy data into the image.
+      auto newImagePtr = newImage.bits();
+      for(auto row = rng.min(0); row < rng.max(0); ++row) {
+        auto srcPtr = addressOfMin(array[row]);
+        auto dstPtr = newImagePtr + row * targetBytePerLine;
+        memcpy(dstPtr, srcPtr, static_cast<size_t>(rng.size(1)) * sizeof(DataT));
+      }
+      return newImage;
     }
     return QImage(reinterpret_cast<uint8_t *>(addressOfMin(array)),
                   array.range(0).size(), array.range(1).size(),

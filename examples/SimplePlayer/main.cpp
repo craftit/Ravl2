@@ -14,6 +14,7 @@
 #include "Ravl2/Resource.hh"
 #include "Ravl2/config.hh"
 #include "Ravl2/Logging.hh"
+#include "Ravl2/Video/VideoIO.hh"
 
 int main(int argc, char *argv[])
 {
@@ -21,6 +22,7 @@ int main(int argc, char *argv[])
   app.setApplicationName("SimplePlayer");
   app.setApplicationVersion("0.1.0");
 
+  Ravl2::Video::initIO();
   Ravl2::initializeLogging();
 
   //! Set up command line parser

@@ -29,6 +29,7 @@ target_link_libraries(SimplePlayer PRIVATE
     Qt6::Gui
     Qt6::Widgets
     Ravl2Video
+    Ravl2Qt
 )
 
 target_compile_definitions(SimplePlayer PUBLIC -DRAVL_SOURCE_DIR="${PROJECT_SOURCE_DIR}")

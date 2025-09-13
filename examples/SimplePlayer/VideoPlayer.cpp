@@ -7,6 +7,7 @@
 #include "Ravl2/Video/StreamIterator.hh"
 #include "Ravl2/Video/VideoFrame.hh"
 #include "Ravl2/Video/VideoTypes.hh"
+#include "Ravl2/Qt/Image.hh"
 
 #include <QImage>
 #include <QMutexLocker>
@@ -323,46 +324,11 @@ QPixmap VideoPlayer::convertFrameToPixmap(const std::shared_ptr<Ravl2::Video::Vi
     return QPixmap();
   }
 
-  //! Try to get the frame data using the frameData() method which returns std::any
-  std::any frameData = frame->frameData();
-
-  //! Check if we have Ravl2's Qt conversion utilities
-  //! If so, we'll try to use them to convert the frame to a QImage
   try {
-    //! Try to create a QImage using the QImage constructors
-    QImage image(width, height, QImage::Format_RGB888);
-
-    //! For demonstration, create a solid color image as fallback
-    //! In a real application, you'd need to convert from various pixel formats
-    image.fill(Qt::black);
-
-    //! Check if we can access an RGB array from frameData
-    //! This part would need to be customized based on your actual frame data type
-    if(frameData.has_value()) {
-      //! In a real implementation, you would extract the pixel data from frameData
-      //! and populate the QImage with it
-      qDebug() << "Frame data type: " << QString::fromStdString(frameData.type().name());
-
-      //! Try to use Ravl2's built-in conversion functions if available
-      try {
-        //! For now, we'll just create a gradient as a placeholder
-        for(int y = 0; y < height; ++y) {
-          QRgb *scanLine = reinterpret_cast<QRgb *>(image.scanLine(y));
-          for(int x = 0; x < width; ++x) {
-            //! Create a gradient pattern as a placeholder
-            scanLine[x] = qRgb(
-              static_cast<int>(255.0 * x / width),
-              static_cast<int>(255.0 * y / height),
-              128
-              );
-          }
-        }
-      } catch(const std::exception &e) {
-        qWarning() << "Error converting frame data: " << e.what();
-      }
-    }
-
-    return QPixmap::fromImage(image);
+    //! Try to get the frame data using the frameData() method which returns std::any
+    auto bgrArray = frame->cast<Ravl2::Array<Ravl2::PixelRGB8,2>>();
+    auto qImage = Ravl2::toQImage(bgrArray);
+    return QPixmap::fromImage(qImage);
   } catch(const std::exception &e) {
     qWarning() << "Error creating QImage from frame: " << e.what();
     return QPixmap();

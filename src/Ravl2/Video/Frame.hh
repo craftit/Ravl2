@@ -10,6 +10,7 @@
 #include <string>
 #include <any>
 #include "Ravl2/Video/VideoTypes.hh"
+#include "Ravl2/IO/TypeConverter.hh"
 
 namespace Ravl2::Video
 {
@@ -34,6 +35,12 @@ namespace Ravl2::Video
 
     //! Access data as std::any
     [[nodiscard]] virtual std::any frameData() const = 0;
+
+    //! Convert a frame to a different type.
+    //! This will throw std::bad_any_cast if the conversion is not possible.
+    template <typename ToT>
+    ToT cast() const
+    { return typeConvert<ToT>(frameData()); }
 
   protected:
     //! Constructor with ID and timestamp
