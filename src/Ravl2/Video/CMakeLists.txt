@@ -43,7 +43,6 @@ set(VIDEO_SOURCES
 if(WITH_FFMPEG)
     list(APPEND VIDEO_SOURCES
         FfmpegMediaContainer.cc FfmpegMediaContainer.hh
-        FfmpegStreamIterator.cc FfmpegStreamIterator.hh
         FfmpegMultiStreamIterator.cc FfmpegMultiStreamIterator.hh
     )
 endif()
