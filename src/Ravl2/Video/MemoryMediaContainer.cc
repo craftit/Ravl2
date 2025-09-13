@@ -32,14 +32,14 @@ namespace Ravl2::Video
   //! Check if the container is open
   bool MemoryMediaContainer::isOpen() const
   {
-    std::lock_guard<std::mutex> lock(m_mutex);
+    std::shared_lock lock(m_mutex);
     return m_isOpen;
   }
 
   //! Close the container and release resources
   VideoResult<void> MemoryMediaContainer::close()
   {
-    std::lock_guard<std::mutex> lock(m_mutex);
+    std::unique_lock lock(m_mutex);
     if (!m_isOpen)
     {
       return VideoResult<void>(VideoErrorCode::InvalidOperation);
@@ -52,14 +52,14 @@ namespace Ravl2::Video
   //! Get the number of streams in the container
   std::size_t MemoryMediaContainer::streamCount() const
   {
-    std::lock_guard<std::mutex> lock(m_mutex);
+    std::shared_lock lock(m_mutex);
     return m_streams.size();
   }
 
   //! Get the type of stream at the specified index
   StreamType MemoryMediaContainer::streamType(std::size_t streamIndex) const
   {
-    std::lock_guard<std::mutex> lock(m_mutex);
+    std::shared_lock lock(m_mutex);
     if (!isValidStreamIndex(streamIndex))
     {
       return StreamType::Unknown;
@@ -71,7 +71,7 @@ namespace Ravl2::Video
   //! Get properties for a video stream
   VideoResult<VideoProperties> MemoryMediaContainer::videoProperties(std::size_t streamIndex) const
   {
-    std::lock_guard<std::mutex> lock(m_mutex);
+    std::shared_lock lock(m_mutex);
     if (!isValidStreamIndex(streamIndex))
     {
       return VideoResult<VideoProperties>(VideoErrorCode::InvalidOperation);
@@ -97,7 +97,7 @@ namespace Ravl2::Video
   //! Get properties for an audio stream
   VideoResult<AudioProperties> MemoryMediaContainer::audioProperties(std::size_t streamIndex) const
   {
-    std::lock_guard<std::mutex> lock(m_mutex);
+    std::shared_lock lock(m_mutex);
     if (!isValidStreamIndex(streamIndex))
     {
       return VideoResult<AudioProperties>(VideoErrorCode::InvalidOperation);
@@ -123,7 +123,7 @@ namespace Ravl2::Video
   //! Get properties for a data stream
   VideoResult<DataProperties> MemoryMediaContainer::dataProperties(std::size_t streamIndex) const
   {
-    std::lock_guard<std::mutex> lock(m_mutex);
+    std::shared_lock lock(m_mutex);
     if (!isValidStreamIndex(streamIndex))
     {
       return VideoResult<DataProperties>(VideoErrorCode::InvalidOperation);
@@ -149,7 +149,7 @@ namespace Ravl2::Video
   //! Get the total duration of the container (longest stream)
   MediaTime MemoryMediaContainer::duration() const
   {
-    std::lock_guard<std::mutex> lock(m_mutex);
+    std::shared_lock lock(m_mutex);
     return m_duration;
   }
 
@@ -176,14 +176,14 @@ namespace Ravl2::Video
   //! Get global container metadata
   std::map<std::string, std::string> MemoryMediaContainer::metadata() const
   {
-    std::lock_guard<std::mutex> lock(m_mutex);
+    std::shared_lock lock(m_mutex);
     return m_metadata;
   }
 
   //! Get specific metadata value
   std::string MemoryMediaContainer::metadata(const std::string&key) const
   {
-    std::lock_guard<std::mutex> lock(m_mutex);
+    std::shared_lock lock(m_mutex);
     auto it = m_metadata.find(key);
     return (it != m_metadata.end()) ? it->second : "";
   }
@@ -191,7 +191,7 @@ namespace Ravl2::Video
   //! Check if a specific metadata key exists
   bool MemoryMediaContainer::hasMetadata(const std::string&key) const
   {
-    std::lock_guard<std::mutex> lock(m_mutex);
+    std::shared_lock lock(m_mutex);
     return m_metadata.find(key) != m_metadata.end();
   }
 

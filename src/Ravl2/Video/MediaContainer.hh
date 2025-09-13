@@ -9,6 +9,7 @@
 #include <memory>
 #include <functional>
 #include <mutex>
+#include <shared_mutex>
 #include <variant>
 #include "Ravl2/Video/VideoTypes.hh"
 #include "Ravl2/Video/VideoFrame.hh"
@@ -71,7 +72,7 @@ namespace Ravl2::Video
     MediaContainer() = default;
 
     //! Mutex for thread-safe operations
-    mutable std::mutex m_mutex;
+    mutable std::shared_mutex m_mutex;
   };
 
 } // namespace Ravl2::Video

@@ -3,7 +3,7 @@
 //
 
 #include "Ravl2/Video/FfmpegMediaContainer.hh"
-#include "Ravl2/Video/FfmpegStreamIterator.hh"
+#include "Ravl2/Video/FfmpegMultiStreamIterator.hh"
 #include <iostream>
 
 #pragma GCC diagnostic ignored "-Wold-style-cast"
@@ -126,7 +126,7 @@ namespace Ravl2::Video
 
   VideoResult<void> FfmpegMediaContainer::close()
   {
-    std::lock_guard<std::mutex> lock(m_mutex);
+    std::unique_lock lock(m_mutex);
 
     // Free all codec contexts
     for (auto codecContext : m_codecContexts)
@@ -154,7 +154,7 @@ namespace Ravl2::Video
 
   std::size_t FfmpegMediaContainer::streamCount() const
   {
-    std::lock_guard<std::mutex> lock(m_mutex);
+    std::shared_lock lock(m_mutex);
     return m_formatContext ? m_formatContext->nb_streams : 0;
   }
 
@@ -170,7 +170,7 @@ namespace Ravl2::Video
 
   VideoResult<VideoProperties> FfmpegMediaContainer::videoProperties(std::size_t streamIndex) const
   {
-    std::lock_guard<std::mutex> lock(m_mutex);
+    std::shared_lock lock(m_mutex);
 
     if (!m_formatContext || streamIndex >= m_formatContext->nb_streams)
     {
@@ -254,7 +254,7 @@ namespace Ravl2::Video
 
   VideoResult<AudioProperties> FfmpegMediaContainer::audioProperties(std::size_t streamIndex) const
   {
-    std::lock_guard<std::mutex> lock(m_mutex);
+    std::shared_lock lock(m_mutex);
 
     if (!m_formatContext || streamIndex >= m_formatContext->nb_streams)
     {
@@ -338,7 +338,7 @@ namespace Ravl2::Video
 
   VideoResult<DataProperties> FfmpegMediaContainer::dataProperties(std::size_t streamIndex) const
   {
-    std::lock_guard<std::mutex> lock(m_mutex);
+    std::shared_lock lock(m_mutex);
 
     if (!m_formatContext || streamIndex >= m_formatContext->nb_streams)
     {
@@ -387,7 +387,7 @@ namespace Ravl2::Video
 
   MediaTime FfmpegMediaContainer::duration() const
   {
-    std::lock_guard<std::mutex> lock(m_mutex);
+    std::shared_lock lock(m_mutex);
 
     if (!m_formatContext)
     {
@@ -419,7 +419,7 @@ namespace Ravl2::Video
 
   VideoResult<std::shared_ptr<StreamIterator>> FfmpegMediaContainer::createIterator(std::size_t streamIndex)
   {
-    std::lock_guard<std::mutex> lock(m_mutex);
+    std::shared_lock lock(m_mutex);
 
     if (!m_formatContext || streamIndex >= m_formatContext->nb_streams)
     {
@@ -429,9 +429,10 @@ namespace Ravl2::Video
     // Create a new iterator for the specified stream
     try
     {
-      auto iterator = std::make_shared<FfmpegStreamIterator>(
+      std::vector<std::size_t> streamsIndexList = { streamIndex };
+      auto iterator = std::make_shared<FfmpegMultiStreamIterator>(
         std::static_pointer_cast<FfmpegMediaContainer>(shared_from_this()),
-        streamIndex
+        streamsIndexList
       );
 
       return VideoResult<std::shared_ptr<StreamIterator>>(
@@ -447,13 +448,13 @@ namespace Ravl2::Video
 
   std::map<std::string, std::string> FfmpegMediaContainer::metadata() const
   {
-    std::lock_guard<std::mutex> lock(m_mutex);
+    std::shared_lock lock(m_mutex);
     return m_metadata;
   }
 
   std::string FfmpegMediaContainer::metadata(const std::string&key) const
   {
-    std::lock_guard<std::mutex> lock(m_mutex);
+    std::shared_lock lock(m_mutex);
 
     auto it = m_metadata.find(key);
     if (it != m_metadata.end())
@@ -466,7 +467,7 @@ namespace Ravl2::Video
 
   bool FfmpegMediaContainer::hasMetadata(const std::string&key) const
   {
-    std::lock_guard<std::mutex> lock(m_mutex);
+    std::shared_lock lock(m_mutex);
     return m_metadata.find(key) != m_metadata.end();
   }
 
