@@ -212,4 +212,74 @@ namespace Ravl2::Video
     //! Print information about which streams we saw
     INFO("Saw frames from " << seenStreamIndices.size() << " different streams");
   }
+
+  TEST_CASE("FfmpegMultiStreamIterator - Successive Frame Timecodes", "[Video]")
+  {
+    initIO();
+    std::string fn = "sample-5s.mp4";
+    addResourcePath("data", RAVL_SOURCE_DIR "/data");
+    fn = Ravl2::findFileResource("data", fn, true);
+
+    //! Open the media container
+    auto containerResult = FfmpegMediaContainer::openFile(fn);
+    REQUIRE(containerResult.isSuccess());
+    auto container = std::dynamic_pointer_cast<FfmpegMediaContainer>(containerResult.value());
+    REQUIRE(container != nullptr);
+
+    //! Find first video stream
+    std::vector<std::size_t> videoStreams;
+    for (std::size_t i = 0; i < container->streamCount(); ++i)
+    {
+      if (container->streamType(i) == StreamType::Video)
+      {
+        videoStreams.push_back(i);
+        break;
+      }
+    }
+    REQUIRE(!videoStreams.empty());
+
+    FfmpegMultiStreamIterator iterator(container, videoStreams);
+    REQUIRE(!iterator.isAtEnd());
+
+    //! Iterate through a number of frames and check timestamp progression
+    const int MAX_FRAMES = 100; //!< Limit frames to inspect
+    MediaTime previousPts(-1);
+    std::vector<long long> deltas; //!< Microsecond deltas between frames
+    int framesSeen = 0;
+
+    while (!iterator.isAtEnd() && framesSeen < MAX_FRAMES)
+    {
+      auto frame = iterator.currentFrame();
+      REQUIRE(frame != nullptr);
+      MediaTime pts = frame->timestamp();
+
+      if (previousPts.count() >= 0)
+      {
+        auto delta = pts.count() - previousPts.count();
+        //! Delta must be positive (strictly increasing PTS)
+        CHECK(delta > 0);
+        //! Delta should be less than 0.5s to be plausible for typical video material
+        CHECK(delta < 500000); // 500 ms
+        if (delta > 0 && delta < 500000)
+          deltas.push_back(delta);
+      }
+      previousPts = pts;
+      iterator.next();
+      ++framesSeen;
+    }
+
+    CHECK(framesSeen > 2); //!< Should have seen at least a few frames
+    CHECK(!deltas.empty());
+
+    //! Compute average delta to ensure an overall sensible frame rate
+    long long sum = 0;
+    for (auto d : deltas) sum += d;
+    long long avg = sum / static_cast<long long>(deltas.size());
+
+    INFO("Average frame delta: " << avg << " microseconds across " << deltas.size() << " intervals");
+
+    //! Average delta should correspond to a frame rate between ~2 fps (500000 us) and 200 fps (5000 us)
+    CHECK(avg >= 5000);
+    CHECK(avg <= 500000);
+  }
 }

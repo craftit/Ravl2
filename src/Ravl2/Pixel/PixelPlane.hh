@@ -370,7 +370,7 @@ namespace Ravl2
           }
         }, std::make_index_sequence<sizeof...(PlaneTypes)>{});
 
-        // If channel not present in the planar image populate default
+        // If channel doesn't present in the planar image populate default
         if(!channelFound) {
           result.template set<Channel>(PixelTypeTraits<CompT, Channel>::defaultValue);
         }
