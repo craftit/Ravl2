@@ -107,8 +107,9 @@ namespace Ravl2::Video
       -2,
       [](const ProbeInputContext &ctx) -> std::optional<StreamInputPlan>
       {
-        if (ctx.m_verbose)
+        if (ctx.m_verbose) {
           SPDLOG_INFO("FFmpeg: probing '{}' target {}", ctx.m_filename, typeName(ctx.m_targetType));
+        }
 
         // Attempt open.
         auto openRes = FfmpegMediaContainer::openFile(ctx.m_filename);

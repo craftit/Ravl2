@@ -202,8 +202,9 @@ namespace Ravl2
   template std::optional<std::chrono::duration<double, std::milli>> fromStringToDuration<double, std::milli>(const std::string& str);
   template std::optional<std::chrono::microseconds> fromStringToDuration<int64_t, std::micro>(const std::string& str);
   template std::optional<std::chrono::nanoseconds> fromStringToDuration<int64_t, std::nano>(const std::string& str);
-  template std::optional<std::chrono::minutes> fromStringToDuration<int64_t, std::ratio<60>>(const std::string& str);
-  template std::optional<std::chrono::hours> fromStringToDuration<int64_t, std::ratio<3600>>(const std::string& str);
+
+  template std::optional<std::chrono::duration<int64_t, std::ratio<60>>> fromStringToDuration<int64_t, std::ratio<60>>(const std::string& str);
+  template std::optional<std::chrono::duration<int64_t, std::ratio<3600>>> fromStringToDuration<int64_t, std::ratio<3600>>(const std::string& str);
 
   // Additional instantiations for test cases
   template std::optional<std::chrono::duration<double, std::ratio<3600>>> fromStringToDuration<double, std::ratio<3600>>(const std::string& str);

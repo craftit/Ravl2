@@ -205,6 +205,13 @@ namespace Ravl2
   [[nodiscard]]
   std::optional<std::chrono::duration<Rep, Period> > fromStringToDuration(const std::string& str);
 
+  template <typename DurationT,typename RepT = DurationT::rep, typename PeriodT = DurationT::period>
+  requires std::is_same_v<DurationT, std::chrono::duration<RepT, PeriodT>>
+  [[nodiscard]]
+  std::optional<DurationT> fromStringToDuration(const std::string& str)
+  {
+    return fromStringToDuration<RepT,PeriodT>(str);
+  }
 
 }// namespace Ravl2
 
