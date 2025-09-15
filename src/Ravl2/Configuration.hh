@@ -536,6 +536,7 @@ namespace Ravl2
     {}
 
     //! Path to this node
+    //! @return Path as a string with '.' between elements.
     [[nodiscard]] std::string path() const
     {
       assert(m_node);
@@ -543,19 +544,22 @@ namespace Ravl2
     }
 
     //! Name of this node
+    //! @return Name of this node
     [[nodiscard]] const std::string &name() const
     {
       assert(m_node);
       return m_node->name();
     }
 
-    //! Name of this node
+    //! Filename this node was loaded from
+    //! @return Filename
     [[nodiscard]] const std::string &filename() const
     {
       assert(m_node);
       return m_node->rootNode().filename();
     }
 
+    //! Get number
     template <typename DataT,typename ParamT = DataT>
      requires std::is_convertible_v<ParamT,DataT>
     [[nodiscard]] DataT getNumber(const std::string_view &name, const std::string_view &description, DataT defaultValue, ParamT min, ParamT max,std::function<bool(DataT)> update = {})
@@ -677,6 +681,90 @@ namespace Ravl2
       }
 
       return std::any_cast<bool>(value);
+    }
+
+
+    //! Helper to get a time duration as a std::chrono type
+    //! If duration is given as a plain number, it is assumed to be in seconds.
+    //! Otherwise it is a string with postfix of the same form as std::chrono literals.
+    //! @param name Name of the field
+    //! @param description Description of the field
+    //! @param defaultValue Default value
+    //! @param minV Minimum value
+    //! @param maxV Maximum value
+    //! @param update Update function
+    //! @return Duration
+    template<typename Rep, typename Period = std::ratio<1>>
+    [[nodiscard]] std::chrono::duration<Rep,Period> getDuration(
+        const std::string_view &name,
+        const std::string_view &description,
+        std::chrono::duration<Rep,Period> defaultValue,
+        std::chrono::duration<Rep,Period> minV = std::chrono::duration<Rep,Period>(std::numeric_limits<Rep>::lowest()),
+        std::chrono::duration<Rep,Period> maxV = std::chrono::duration<Rep,Period>(std::numeric_limits<Rep>::max()),
+          std::function<bool(std::chrono::duration<Rep,Period>)> update = {})
+    {
+      using DurationT = std::chrono::duration<Rep,Period>;
+      if(defaultValue < minV || defaultValue > maxV) {
+        SPDLOG_ERROR("Default duration {} out of range {} - {}",defaultValue,minV,maxV);
+        throw std::runtime_error("Default duration out of range");
+      }
+      // Check if the field exists
+      std::any value;
+      if (m_node->hasChild(name)) {
+        // Try to get the value, but don't assert on type mismatch
+        try {
+          value = m_node->getValue(name, typeid(void));
+        } catch (const std::exception&) {
+          // If getValue fails, we'll use the default value
+        }
+      }
+
+      // If no value was found or getValue failed, initialize with default
+      if(!value.has_value()) {
+        value = m_node->init(name, description, fmt::format("{}",defaultValue));
+      }
+
+      DurationT ret {};
+
+      if(value.type() == typeid(std::chrono::duration<Rep,Period>)) {
+        ret = std::any_cast<DurationT>(value);
+      } else if(value.type() == typeid(int)) {
+        ret = std::chrono::duration<Rep,Period>(std::any_cast<int>(value));
+      } else if(value.type() == typeid(double)) {
+        if constexpr (std::is_floating_point_v<Rep>) {
+          // Direct assignment for floating point representation types
+          ret = std::chrono::duration<Rep,Period>(std::any_cast<double>(value));
+        } else {
+          // For integer representation types, first create a duration with double representation
+          // and then cast to the target duration type
+          auto doubleValue = std::any_cast<double>(value);
+          ret = std::chrono::duration_cast<DurationT>(std::chrono::duration<double>(doubleValue));
+        }
+      } else if(value.type() == typeid(std::string)) {
+        auto optRet = fromStringToDuration<Rep,Period>(std::any_cast<std::string>(value));
+        if(!optRet) {
+          SPDLOG_ERROR("Duration type {} not recognised",typeName(value.type()));
+          throw std::runtime_error("Duration type not recognised");
+        }
+        ret = *optRet;
+      } else {
+        SPDLOG_ERROR("Duration type {} not recognised",typeName(value.type()));
+        throw std::runtime_error("Duration type not recognised");
+      }
+
+      // Check against min/max bounds - throw exception if out of range
+      if(ret < minV || ret > maxV) {
+        SPDLOG_ERROR("Duration {} out of range {} - {}",ret,minV,maxV);
+        throw std::runtime_error("Duration out of range");
+      }
+
+      if(update) {
+        m_node->setUpdate(name, [update](std::any &newValue) {
+
+          return update(std::any_cast<std::chrono::duration<Rep,Period>>(newValue));
+        });
+      }
+      return ret;
     }
 
     template <typename T>
@@ -809,3 +897,4 @@ namespace Ravl2
   };
 
 }// namespace Ravl2
+

@@ -218,7 +218,7 @@ namespace Ravl2
     if(x == m_children.end()) {
       return {};
     }
-    assert(x->second->value().type() == type);
+    assert(x->second->value().type() == type || type == typeid(void));
     return x->second->value();
   }
 

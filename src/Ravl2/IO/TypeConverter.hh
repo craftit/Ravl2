@@ -17,6 +17,7 @@
 #include <unordered_set>
 #include <shared_mutex>
 #include <spdlog/spdlog.h>
+#include <fmt/chrono.h>
 #include "Ravl2/Types.hh"
 
 namespace Ravl2

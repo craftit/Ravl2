@@ -3,6 +3,7 @@
 //
 
 #pragma once
+#include <optional>
 
 #ifndef CEREAL_THREAD_SAFE
 #define CEREAL_THREAD_SAFE 1
@@ -173,6 +174,38 @@ namespace Ravl2
       static_assert(is_eigen_type<T>::value || std::is_arithmetic_v<T>, "Unsupported type for setZero");
     }
   }
+
+  //! Time units as used in std::chrono
+  enum class TimeUnitT
+  {
+    Hours, //!< h
+    Minutes, //!< min
+    Seconds, //!< s
+    Milliseconds, //!< ms
+    Microseconds, //!< us
+    Nanoseconds //!< ns
+  };
+
+  //! Convert a time unit to a string
+  //! @return a string based on the std::chrono literals for those units
+  [[nodiscard]]
+  std::string_view toString(TimeUnitT unit);
+
+  //! Convert a string to a time unit
+  //! @return optional containing unit
+  [[nodiscard]]
+  std::optional<TimeUnitT> fromString(std::string_view unit);
+
+  //! Convert a string to a std::chrono::duration
+  //! @tparam Rep The representation type of the duration (e.g., int, float)
+  //! @tparam Period The period type of the duration (e.g., std::ratio<1>)
+  //! @param str The string to convert
+  //! @return The duration value
+  template <typename Rep, typename Period>
+  [[nodiscard]]
+  std::optional<std::chrono::duration<Rep, Period> > fromStringToDuration(const std::string& str);
+
+
 }// namespace Ravl2
 
 template <typename T>
@@ -203,6 +236,3 @@ struct fmt::formatter<Eigen::Matrix<_Scalar, _Rows, _Cols, _Options, _MaxRows, _
 };
 
 #endif
-
-
-
