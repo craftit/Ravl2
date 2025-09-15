@@ -709,17 +709,9 @@ namespace Ravl2
         throw std::runtime_error("Default duration out of range");
       }
       // Check if the field exists
-      std::any value;
-      if (m_node->hasChild(name)) {
-        // Try to get the value, but don't assert on type mismatch
-        try {
-          value = m_node->getValue(name, typeid(void));
-        } catch (const std::exception&) {
-          // If getValue fails, we'll use the default value
-        }
-      }
+      std::any value = m_node->getValue(name, typeid(void));
 
-      // If no value was found or getValue failed, initialize with default
+      // If no value was found or getValue failed, initialise with default
       if(!value.has_value()) {
         value = m_node->init(name, description, fmt::format("{}",defaultValue));
       }
