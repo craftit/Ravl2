@@ -119,6 +119,12 @@ void MainWindow::on_prevFrameButton_clicked()
 void MainWindow::updatePlaybackState()
 {
   if(isPlaying) {
+    // Advance playback by one frame per timer tick; stop at end-of-stream.
+    if(!videoPlayer->nextFrame()) {
+      isPlaying = false;
+      updateUI();
+      return;
+    }
     updateVideoFrame();
   }
 }

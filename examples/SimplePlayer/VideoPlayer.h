@@ -8,7 +8,6 @@
 #include <QPixmap>
 #include <QString>
 #include <QMutex>
-#include <QDateTime>
 #include <memory>
 #include <string>
 
@@ -93,5 +92,4 @@ private:
   QMutex mutex; //!< Mutex for thread safety
   QPixmap currentFrame; //!< Current frame as a QPixmap
   bool isPlaying = false; //!< Flag indicating whether playback is active
-  int64_t lastFrameTime = 0; //!< Timestamp of the last frame display
 };

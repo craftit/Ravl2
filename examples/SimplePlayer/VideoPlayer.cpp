@@ -12,7 +12,6 @@
 #include <QImage>
 #include <QMutexLocker>
 #include <QDebug>
-#include <QDateTime>
 
 VideoPlayer::VideoPlayer(QObject *parent)
   : QObject(parent) {}
@@ -229,61 +228,36 @@ bool VideoPlayer::isFileLoaded() const
 QPixmap VideoPlayer::getCurrentFrame()
 {
   QMutexLocker locker(&mutex);
-
-  if(isPlaying) {
-    updatePlaybackState();
-  }
-
+  // Do not advance playback here; rendering should be independent of stepping to avoid jitter.
   return currentFrame;
 }
 
 void VideoPlayer::updatePlaybackState()
 {
-  if(isPlaying && mediaContainer && videoIterator) {
-    //! Check if it's time to move to the next frame
-    int64_t currentTime = QDateTime::currentMSecsSinceEpoch();
+  if(!(isPlaying && mediaContainer && videoIterator))
+    return;
 
-    if(lastFrameTime == 0) {
-      lastFrameTime = currentTime;
-      return;
-    }
-
-    //! Get video properties to calculate frame rate
-    auto propertiesResult = mediaContainer->videoProperties(videoStreamIndex);
-    if(!propertiesResult.isSuccess()) {
-      return;
-    }
-
-    auto properties = propertiesResult.value();
-
-    //! Calculate time per frame in milliseconds
-    float frameRateMs = 1000.0f / properties.frameRate;
-
-    //! Check if enough time has passed for the next frame
-    if(currentTime - lastFrameTime >= frameRateMs) {
-      //! Move to the next frame
-      auto result = videoIterator->next();
-      if(!result.isSuccess()) {
-        if(result.error() == Ravl2::Video::VideoErrorCode::EndOfStream) {
-          //! Reached the end of the stream, seek back to beginning
-          videoIterator->reset();
-        } else {
-          //! Error moving to next frame
-          qWarning() << "Failed to move to next frame. Error:"
-            << QString::fromUtf8(Ravl2::Video::toString(result.error()));
-          return;
-        }
+  // Advance exactly one frame per call; UI timer drives cadence.
+  auto result = videoIterator->next();
+  if(!result.isSuccess()) {
+    if(result.error() == Ravl2::Video::VideoErrorCode::EndOfStream) {
+      // Reached end of stream: reset to beginning
+      auto resetRes = videoIterator->reset();
+      if(!resetRes.isSuccess()) {
+        qWarning() << "Failed to reset video iterator. Error:"
+                   << QString::fromUtf8(Ravl2::Video::toString(resetRes.error()));
+        return;
       }
-
-      //! Update the current frame
-      updateFrame();
-
-      //! Update the position
-      emit positionChanged(getPosition());
-
-      //! Update the lastFrameTime
-      lastFrameTime = currentTime;
+    } else {
+      qWarning() << "Failed to move to next frame. Error:"
+                 << QString::fromUtf8(Ravl2::Video::toString(result.error()));
+      return;
     }
+  }
+
+  // Update the current frame and notify position change.
+  if(updateFrame()) {
+    emit positionChanged(getPosition());
   }
 }
 
