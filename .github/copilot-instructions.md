@@ -40,5 +40,5 @@ C++ source files use the '.cc' extension, and C++ headers use '.hh'.
 Write concise tests that cover required functionality with as few tests as possible.
 Use catch2 test framework.
 Include both normal and edge cases.
-In this project, unit tests should be in a 'tests' subdirectory of the implementation.
+In this project, unit tests should be in a 'tests' subdirectory in the root of the main project.
 
