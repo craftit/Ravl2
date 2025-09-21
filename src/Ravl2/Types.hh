@@ -125,6 +125,20 @@ namespace Ravl2
   //! Get a human-readable name for a type.
   [[nodiscard]] std::string typeName(const std::type_index &type);
 
+  //! Get a human-readable name for a type.
+  template<typename DataT>
+  [[nodiscard]] std::string typeName(const DataT &obj)
+  {
+    return typeName(typeid(const_cast<DataT &>(obj))); // We want to keep the 'const' out of the type.
+  }
+
+  //! Get a human-readable name for a type.
+  template<typename DataT>
+  [[nodiscard]] std::string typeName()
+  {
+    return typeName(typeid(DataT));
+  }
+
   //! Demangle a C++ symbol name
   [[nodiscard]] std::string demangle(const char *name);
 
