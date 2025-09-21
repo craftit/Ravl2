@@ -23,7 +23,7 @@
 namespace Ravl2
 {
   //! @brief Define allowed copy modes for converting between Arrays
-  //! If auto is selected data will be copied / converted if the format is
+  //! If auto is selected, data will be copied / converted if the format is
   //! not compatible with the target type
   enum class CopyModeT : uint8_t
   {

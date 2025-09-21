@@ -134,6 +134,7 @@ namespace Ravl2
   }
 
   extern template class Angle<float>;
+  extern template class Angle<double>;
 }// namespace Ravl2
 
 namespace fmt
