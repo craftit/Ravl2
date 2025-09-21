@@ -78,6 +78,7 @@ add_executable(tests
         test_VideoFrame.cc
         test_VideoIO.cc
         test_types_duration.cc
+        test_types.cc
 )
 target_compile_definitions(tests PRIVATE -DRAVL_SOURCE_DIR="${PROJECT_SOURCE_DIR}")
 target_link_libraries(
