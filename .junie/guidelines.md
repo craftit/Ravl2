@@ -24,7 +24,7 @@
 
 # 3. Language and naming conventions
 
-- Use C++20.
+- Use C++23.
 - Naming:
   - Methods and variables: camelCase.
   - Classes and structs: PascalCase.
@@ -52,9 +52,7 @@
 - Error handling:
   - For common/expected errors, prefer returning error information rather than throwing exceptions.
   - For rare or logical errors (e.g., corrupt config), throwing is acceptable.
-  - In C++20 (no `std::expected`), use one of:
-    - A lightweight `Result<T>` type with `bool ok()`, `T& value()`, and an error code/message.
-    - `std::optional<T>` plus an `out` error code/reference or a companion `Error` object.
+  - The code has been updated to use C++23, so use `std::expected` in new code.
   - Do not both return and log the same error at multiple layers. Log errors at the boundary where action is taken.
   - Prefer error codes/enums over magic numbers. Map to readable messages at boundaries.
 
@@ -97,7 +95,7 @@
 
 - Use target-based CMake with modern commands:
   - `add_library(NAME ...)`, `add_executable(NAME ...)`.
-  - `target_compile_features(NAME PRIVATE cxx_std_20)`.
+  - `target_compile_features(NAME PRIVATE cxx_std_23)`.
   - `target_link_libraries(NAME PRIVATE ... PUBLIC ... INTERFACE ...)`.
   - Prefer `PRIVATE` for most dependencies; expose via `PUBLIC` only if required by the interface.
 - Organize tests as separate `tests` targets in the top level directory. Do not add tests to production targets.
