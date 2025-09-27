@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.21)
 project(SimplePlayer VERSION 0.1.0 LANGUAGES CXX)
 
 # Set C++ standard
-set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # Find Qt6 components

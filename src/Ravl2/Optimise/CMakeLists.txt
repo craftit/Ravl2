@@ -22,7 +22,7 @@ target_include_directories(Ravl2Optimise ${WARNING_GUARD} PUBLIC
         $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/include>
 )
 
-target_compile_features(Ravl2Optimise PUBLIC cxx_std_20)
+target_compile_features(Ravl2Optimise PUBLIC cxx_std_23)
 
 set_target_properties(
         Ravl2Optimise

@@ -27,7 +27,7 @@ A windows port should be possible, but is not currently supported.
 Pre-requisites:
 
  - CMake 3.21 or higher
- - A C++20 compatible compiler
+ - A C++23 compatible compiler
  - OpenCV 4.5 or higher
  - BLAS and LAPACK libraries
 

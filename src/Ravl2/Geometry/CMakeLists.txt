@@ -52,7 +52,7 @@ target_link_libraries(Ravl2Geometry PUBLIC Ravl2Core Ravl2Math)
 target_include_directories(Ravl2Geometry ${WARNING_GUARD} PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src>
         $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/include>)
 
-target_compile_features(Ravl2Geometry PUBLIC cxx_std_20)
+target_compile_features(Ravl2Geometry PUBLIC cxx_std_23)
 
 set_target_properties(
         Ravl2Geometry

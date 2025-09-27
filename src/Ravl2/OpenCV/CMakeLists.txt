@@ -19,7 +19,7 @@ target_include_directories(Ravl2OpenCV ${WARNING_GUARD} PUBLIC
         ${OpenCV_INCLUDE_DIRS}
 )
 
-target_compile_features(Ravl2OpenCV PUBLIC cxx_std_20)
+target_compile_features(Ravl2OpenCV PUBLIC cxx_std_23)
 
 set_target_properties(
         Ravl2OpenCV

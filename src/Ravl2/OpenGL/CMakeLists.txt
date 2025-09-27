@@ -77,7 +77,7 @@ target_include_directories(Ravl2OpenGL ${WARNING_GUARD} PUBLIC
         ${GLU_INCLUDE_DIRS}
 )
 
-target_compile_features(Ravl2OpenGL PUBLIC cxx_std_20)
+target_compile_features(Ravl2OpenGL PUBLIC cxx_std_23)
 
 set_target_properties(
         Ravl2OpenGL

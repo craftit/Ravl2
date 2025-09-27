@@ -101,7 +101,7 @@ message(STATUS "RAVL2 Source     : ${PROJECT_SOURCE_DIR}")
 target_compile_definitions(Ravl2Core PRIVATE -DRAVL_SOURCE_DIR="${PROJECT_SOURCE_DIR}" -DRAVL_BINARY_DIR="${PROJECT_BINARY_DIR}" -DRAVL_INSTALL_PREFIX="${CMAKE_INSTALL_PREFIX}")
 
 
-target_compile_features(Ravl2Core PUBLIC cxx_std_20)
+target_compile_features(Ravl2Core PUBLIC cxx_std_23)
 
 set_target_properties(
         Ravl2Core
