@@ -16,6 +16,7 @@
 #pragma GCC diagnostic ignored "-Wpessimizing-move"
 #pragma GCC diagnostic ignored "-Wold-style-cast"
 #pragma GCC diagnostic ignored "-Wsuggest-override"
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 #if defined(__clang__)
 #pragma GCC diagnostic ignored "-Wunused-but-set-variable"
 #pragma GCC diagnostic ignored "-Wdollar-in-identifier-extension"
