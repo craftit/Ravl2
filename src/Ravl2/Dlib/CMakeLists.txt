@@ -21,7 +21,7 @@ target_include_directories(Ravl2Dlib ${WARNING_GUARD} PUBLIC
         ${OpenCV_INCLUDE_DIRS}
 )
 
-target_compile_features(Ravl2Dlib PUBLIC cxx_std_23)
+target_compile_features(Ravl2Dlib PUBLIC cxx_std_20)
 
 set_target_properties(
         Ravl2Dlib
