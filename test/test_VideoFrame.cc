@@ -119,25 +119,18 @@ namespace Ravl2::Video
         };
       }
     }
-
     VideoFrame<Array<RGBPixel, 2>> frame(frameData, 999, std::chrono::milliseconds(5000));
 
-    SECTION("Frame properties")
-    {
-      CHECK(frame.width() == 2);
-      CHECK(frame.height() == 3);
-      CHECK(frame.isValid());
-    }
+    CHECK(frame.width() == 2);
+    CHECK(frame.height() == 3);
+    CHECK(frame.isValid());
 
-    SECTION("Frame data access")
-    {
-      const auto&data = frame.image();
-      CHECK(data[0][0] == RGBPixel{0, 0, 0});
-      CHECK(data[1][0] == RGBPixel{50, 0, 25});
-      CHECK(data[2][0] == RGBPixel{100, 0, 50});
-      CHECK(data[0][1] == RGBPixel{0, 50, 25});
-      CHECK(data[1][1] == RGBPixel{50, 50, 50});
-      CHECK(data[2][1] == RGBPixel{100, 50, 75});
-    }
+    const auto&data = frame.image();
+    CHECK(data[0][0] == RGBPixel{0, 0, 0});
+    CHECK(data[1][0] == RGBPixel{50, 0, 25});
+    CHECK(data[2][0] == RGBPixel{100, 0, 50});
+    CHECK(data[0][1] == RGBPixel{0, 50, 25});
+    CHECK(data[1][1] == RGBPixel{50, 50, 50});
+    CHECK(data[2][1] == RGBPixel{100, 50, 75});
   }
 } // namespace Ravl2::Video

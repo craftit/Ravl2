@@ -49,11 +49,20 @@ namespace Ravl2
 
     //! Construct from sizes for each dimension.
     //! The ranges will have a zero origin.
-    constexpr IndexRange(std::initializer_list<size_t> sizes) noexcept
+    constexpr IndexRange(std::initializer_list<std::size_t> sizes) noexcept
     {
       assert(sizes.size() == N);
       for(unsigned i = 0; i < N; i++)
-        m_range[i] = IndexRange<1>(0, int(sizes.begin()[i]) - 1);
+        m_range[i] = IndexRange<1>(0, static_cast<int>(sizes.begin()[i]) - 1);
+    }
+
+    //! Construct from sizes for each dimension.
+    //! The ranges will have a zero origin.
+    constexpr IndexRange(std::initializer_list<int> sizes) noexcept
+    {
+      assert(sizes.size() == N);
+      for(unsigned i = 0; i < N; i++)
+        m_range[i] = IndexRange<1>(0, sizes.begin()[i] - 1);
     }
 
     //! Construct from ranges for each dimension.
