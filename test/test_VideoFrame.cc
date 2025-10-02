@@ -93,11 +93,11 @@ namespace Ravl2::Video
   }
 
   // Test with a more complex pixel type
-  struct RGBPixel
+  struct RGBPixelV
   {
-    uint8_t r, g, b;
+    uint8_t r, g, b, a = 0;
 
-    bool operator==(const RGBPixel&other) const
+    bool operator==(const RGBPixelV&other) const
     {
       return r == other.r && g == other.g && b == other.b;
     }
@@ -105,7 +105,7 @@ namespace Ravl2::Video
 
   TEST_CASE("VideoFrame with complex pixel type", "[VideoFrame]")
   {
-    Array<RGBPixel, 2> frameData({3, 2}); // rows=3, cols=2
+    Array<RGBPixelV, 2> frameData({3, 2}); // rows=3, cols=2
 
     // Fill with some test data
     for (int y = 0; y < 2; y++)
@@ -119,18 +119,18 @@ namespace Ravl2::Video
         };
       }
     }
-    VideoFrame<Array<RGBPixel, 2>> frame(frameData, 999, std::chrono::milliseconds(5000));
+    VideoFrame<Array<RGBPixelV, 2>> frame(frameData, 999, std::chrono::milliseconds(5000));
 
     CHECK(frame.width() == 2);
     CHECK(frame.height() == 3);
     CHECK(frame.isValid());
 
     const auto&data = frame.image();
-    CHECK(data[0][0] == RGBPixel{0, 0, 0});
-    CHECK(data[1][0] == RGBPixel{50, 0, 25});
-    CHECK(data[2][0] == RGBPixel{100, 0, 50});
-    CHECK(data[0][1] == RGBPixel{0, 50, 25});
-    CHECK(data[1][1] == RGBPixel{50, 50, 50});
-    CHECK(data[2][1] == RGBPixel{100, 50, 75});
+    CHECK(data[0][0] == RGBPixelV{0, 0, 0});
+    CHECK(data[1][0] == RGBPixelV{50, 0, 25});
+    CHECK(data[2][0] == RGBPixelV{100, 0, 50});
+    CHECK(data[0][1] == RGBPixelV{0, 50, 25});
+    CHECK(data[1][1] == RGBPixelV{50, 50, 50});
+    CHECK(data[2][1] == RGBPixelV{100, 50, 75});
   }
 } // namespace Ravl2::Video
