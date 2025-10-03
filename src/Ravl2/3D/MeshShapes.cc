@@ -105,7 +105,14 @@ namespace Ravl2 {
   TriMesh<float> createTriMeshSphere(unsigned layers,unsigned slices,float radius) {
     RavlAssert(layers >= 1);
     RavlAssert(slices >= 2);
-    
+    if(slices < 3) {
+      SPDLOG_ERROR("Can't create sphere with less than two slices");
+      return TriMesh<float>();
+    }
+    if(layers < 2) {
+      SPDLOG_ERROR("Can't create sphere with less than two layer");
+      return TriMesh<float>();
+    }
     float texRowSize = 1.0f/float(layers);
     float texColSize = 1.0f/float(slices);
     
