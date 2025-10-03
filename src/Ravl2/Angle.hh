@@ -89,7 +89,7 @@ namespace Ravl2
     }
 
     //! Find the difference between two angles.
-    //! it returns values in the rangle +/- max/2.
+    //! it returns values in the range +/- max/2.
     [[nodiscard]] inline RealT diff(const Angle<RealT, N> &val) const
     {
       RealT ret = angle - val.angle;
