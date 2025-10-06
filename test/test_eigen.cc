@@ -1,6 +1,9 @@
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Warray-bounds"
 #include <spdlog/spdlog.h>
 #include <catch2/catch_test_macros.hpp>
+#pragma GCC diagnostic pop
 #include <eigen3/Eigen/Dense>
 
 #include "Ravl2/Catch2checks.hh"

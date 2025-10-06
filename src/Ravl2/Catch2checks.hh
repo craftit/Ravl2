@@ -4,7 +4,11 @@
 
 #pragma once
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wstringop-overflow"
+
 #include <catch2/catch_test_macros.hpp>
+#pragma GCC diagnostic pop
 #include <spdlog/spdlog.h>
 #include "Ravl2/Assert.hh"
 #include "Ravl2/Math.hh"
