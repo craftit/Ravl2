@@ -6,6 +6,8 @@
 #include <random>
 #include "Ravl2/StringUtils.hh"
 
+#include <mutex>
+
 namespace Ravl2
 {
   std::string_view topAndTail(std::string_view word)
@@ -88,7 +90,11 @@ namespace Ravl2
     return result;
   }
 
-  std::mt19937 g_randomNumberGenerator;
+  namespace
+  {
+    std::mutex gRandomMutex;
+    std::mt19937 g_randomNumberGenerator = std::mt19937(std::random_device()());
+  }
 
   std::string generateUniqueId(size_t size)
   {
@@ -96,6 +102,7 @@ namespace Ravl2
 
     std::string ret;
     ret.reserve(size);
+    std::lock_guard lock(gRandomMutex);
     for(size_t i = 0; i < size; i++) {
       ret += distributeInt(g_randomNumberGenerator);
     }
