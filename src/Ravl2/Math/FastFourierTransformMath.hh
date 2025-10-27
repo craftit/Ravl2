@@ -106,6 +106,8 @@ namespace Ravl2
     int *m, i, j, k, jk;
     std::complex<RealT> **p, **q;
     std::vector<int> mm(static_cast<size_t>(kk[0]) + 1);
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wnull-dereference"
     for(i = 1, mm[0] = 1, m = mm.data(); i <= kk[0]; ++i, ++m)
       *(m + 1) = *m * kk[i];
     for(j = 0, p = pb; j < n; ++j) {
@@ -118,6 +120,7 @@ namespace Ravl2
       }
       *q = *p++;
     }
+#pragma GCC diagnostic pop
   }
 
   //! @brief Compute the general radix FFT of a complex input series with output series order specified in a pointer array.
