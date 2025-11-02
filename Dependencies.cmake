@@ -52,7 +52,7 @@ function(RAVL2_setup_dependencies)
   # already been provided to us by a parent project
 
   if(NOT TARGET fmt::fmt)
-    cpmaddpackage("gh:fmtlib/fmt#9.1.0")
+    cpmaddpackage("gh:fmtlib/fmt#12.1.0")
   else()
     message(STATUS "Found native fmt::fmt")
 #    if (NOT TARGET libfmt::libfmt)
@@ -65,7 +65,7 @@ function(RAVL2_setup_dependencies)
       NAME
       spdlog
       VERSION
-      1.11.0
+      1.16.0
       GITHUB_REPOSITORY
       "gabime/spdlog"
       OPTIONS
