@@ -51,7 +51,7 @@ namespace Ravl2
 
     //auto [x, residual, rank, s] = xt::linalg::lstsq(A, B);
     //SPDLOG_INFO("A:{} \n B:{}", A,B);
-    auto solver = A.bdcSvd(Eigen::ComputeThinU | Eigen::ComputeThinV);
+    auto solver = A.template bdcSvd<Eigen::ComputeThinU | Eigen::ComputeThinV>();
     auto x = solver.solve(B);
 
     const RealT X = x[0] / -2;

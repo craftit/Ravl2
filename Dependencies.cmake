@@ -32,7 +32,7 @@ function(RAVL2_setup_dependencies)
 
   find_package(fmt QUIET)
   find_package(spdlog QUIET)
-  find_package(Eigen3 3.4 QUIET)
+  find_package(Eigen3 5.0 QUIET)
   find_package(Catch2 3 QUIET)
   find_package(CLI11 QUIET)
   find_package(nlohmann_json QUIET)
@@ -93,9 +93,9 @@ function(RAVL2_setup_dependencies)
             GITLAB_REPOSITORY
             "libeigen/eigen"
             VERSION
-            3.4.0
+            5.0.0
             GIT_TAG
-            "3.4.0"
+            "5.0.0"
     )
   else()
     message(STATUS "Found native Eigen3::Eigen")

@@ -144,7 +144,7 @@ namespace Ravl2
     template<IndexType IndexT>
     [[nodiscard]] constexpr DataT &operator()(IndexT i) const
     {
-      return mPtr[int(i)];
+      return mPtr[static_cast<int>(i)];
     }
 
     //! Index access
@@ -152,7 +152,7 @@ namespace Ravl2
     template<IndexType IndexT>
     [[nodiscard]] constexpr inline const auto &operator()(IndexT i) const
     {
-      return mPtr[int(i)];
+      return mPtr[static_cast<int>(i)];
     }
 
     //! Access relative element
@@ -160,7 +160,7 @@ namespace Ravl2
     template<IndexType IndexT>
     [[nodiscard]] constexpr inline const auto &at(IndexT i) const
     {
-      return mPtr[int(i)];
+      return mPtr[static_cast<int>(i)];
     }
 
     //! Access relative element
@@ -168,7 +168,7 @@ namespace Ravl2
     template<IndexType IndexT>
     [[nodiscard]] constexpr inline auto &at(IndexT i)
     {
-      return mPtr[int(i)];
+      return mPtr[static_cast<int>(i)];
     }
 
     //! Access element point

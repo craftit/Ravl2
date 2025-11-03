@@ -86,7 +86,7 @@ namespace Ravl2
 
     //auto [u, d, v] = xt::linalg::svd(covar, true, true);
     //Eigen::template JacobiSVD<Matrix<RealT, N, N>, Eigen::ComputeFullU|Eigen::ComputeFullV> svd(covar);
-    auto svd = covar.jacobiSvd(Eigen::ComputeFullU | Eigen::ComputeFullV);
+    auto svd = covar.template jacobiSvd<Eigen::ComputeFullU | Eigen::ComputeFullV>();
     auto u = svd.matrixU();
     auto d = svd.singularValues();
     auto v = svd.matrixV();

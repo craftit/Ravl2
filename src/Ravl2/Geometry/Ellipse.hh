@@ -120,7 +120,7 @@ namespace Ravl2
       ONDEBUG(std::cerr << "SRMatrix:\n"
                         << p.SRMatrix() << std::endl);
       //auto [u, s, vt] = xt::linalg::svd(p.SRMatrix(), true, true);
-      auto svd = p.SRMatrix().jacobiSvd(Eigen::ComputeFullU);
+      auto svd = p.SRMatrix().template jacobiSvd<Eigen::ComputeFullU>();
       auto s = svd.singularValues();
       auto u = svd.matrixU();
       ONDEBUG(std::cerr << "U:\n"

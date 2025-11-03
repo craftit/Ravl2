@@ -456,28 +456,48 @@ namespace Ravl2
       (func(std::get<Is>(m_planes)), ...);
     }
 
-    // Helper to get a plane by channel type
+    // Helper to get a plane by channel type using constexpr recursion to avoid mixed types in folds
+    template <ImageChannel Channel, std::size_t I = 0>
+    [[nodiscard]] decltype(auto) planeByChannelRec()
+    {
+      if constexpr (I >= sizeof...(PlaneTypes)) {
+        throw std::runtime_error("Channel not found in planar image");
+      } else {
+        if constexpr (planeChannelType<I>() == Channel) {
+          return plane<I>();
+        } else {
+          return planeByChannelRec<Channel, I + 1>();
+        }
+      }
+    }
+
+    template <ImageChannel Channel, std::size_t I = 0>
+    [[nodiscard]] decltype(auto) planeByChannelRec() const
+    {
+      if constexpr (I >= sizeof...(PlaneTypes)) {
+        throw std::runtime_error("Channel not found in planar image");
+      } else {
+        if constexpr (planeChannelType<I>() == Channel) {
+          return plane<I>();
+        } else {
+          return planeByChannelRec<Channel, I + 1>();
+        }
+      }
+    }
+
+    // Backward-compatible wrappers to satisfy existing calls
     template <ImageChannel Channel, std::size_t... Is>
     [[nodiscard]] decltype(auto) planeByChannelImpl(std::index_sequence<Is...>)
     {
-        // Use fold expression with comma operator to select the correct plane
-        // The comma operator evaluates all expressions and returns the last one
-        return (... , (planeChannelType<Is>() == Channel ? 
-                      std::ref(plane<Is>()) : 
-                      (Is == sizeof...(PlaneTypes) - 1 ? 
-                          throw std::runtime_error("Channel not found in planar image") : 
-                          std::ref(plane<0>()))));
+      (void)sizeof...(Is); // unused
+      return planeByChannelRec<Channel>();
     }
 
-    // Const version
     template <ImageChannel Channel, std::size_t... Is>
     [[nodiscard]] decltype(auto) planeByChannelImpl(std::index_sequence<Is...>) const
     {
-        return (... , (planeChannelType<Is>() == Channel ? 
-                      std::ref(plane<Is>()) : 
-                      (Is == sizeof...(PlaneTypes) - 1 ? 
-                          throw std::runtime_error("Channel not found in planar image") : 
-                          std::ref(plane<0>()))));
+      (void)sizeof...(Is); // unused
+      return planeByChannelRec<Channel>();
     }
 
     //! Check if a specific plane contains a master coordinate

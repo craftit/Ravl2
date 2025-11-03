@@ -109,11 +109,11 @@ namespace Ravl2
       }
       //SPDLOG_INFO("sr:{} tr:{}", sr, tr);
     } else {
-      auto sol = A.bdcSvd(Eigen::ComputeThinU | Eigen::ComputeThinV);
-      for(IndexT j = 0; j < IndexT(N); j++) {
+      auto sol = A.template bdcSvd<Eigen::ComputeThinU | Eigen::ComputeThinV>();
+      for(IndexT j = 0; j < static_cast<IndexT>(N); j++) {
 	//auto [solA, residualA, rankA, sA] = xt::linalg::lstsq(A, eqs[j]);
-        auto solA = sol.solve(eqs[unsigned(j)]);
-	for(IndexT k = 0; k < IndexT(N); k++) {
+        auto solA = sol.solve(eqs[static_cast<unsigned>(j)]);
+	for(IndexT k = 0; k < static_cast<IndexT>(N); k++) {
 	  sr(j, k) = solA[k];
 	}
 	tr[j] = solA[IndexT(N)];
