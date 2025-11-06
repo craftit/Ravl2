@@ -10,7 +10,22 @@
 
 #pragma once
 
+#if RAVL2_LINUX_NATIVE_EIGEN
 #include <eigen3/Eigen/SVD>
+#else
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wold-style-cast"
+#pragma GCC diagnostic ignored "-Wsign-conversion"
+#pragma GCC diagnostic ignored "-Wuseless-cast"
+#pragma GCC diagnostic ignored "-Wduplicated-branches"
+#pragma GCC diagnostic ignored "-Wconversion"
+#pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
+#pragma GCC diagnostic ignored "-Wnull-dereference"
+#pragma GCC diagnostic ignored "-Wfloat-conversion"
+#include <Eigen/SVD>
+#pragma GCC diagnostic pop
+#endif
+
 #include "Ravl2/Types.hh"
 #include "Ravl2/Geometry/Affine.hh"
 #include "Ravl2/Geometry/Conic2.hh"

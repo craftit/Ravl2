@@ -88,7 +88,7 @@ endif()
 # We need to define CEREAL_THREAD_SAFE 1 for cereal to be thread safe
 target_compile_definitions(Ravl2Core PUBLIC CEREAL_THREAD_SAFE=1)
 
-target_link_libraries(Ravl2Core PUBLIC ${OpenCV_LIBS} cereal::cereal fmt::fmt spdlog::spdlog BLAS::BLAS LAPACK::LAPACK)
+target_link_libraries(Ravl2Core PUBLIC ${OpenCV_LIBS} Eigen3::Eigen cereal::cereal fmt::fmt spdlog::spdlog BLAS::BLAS LAPACK::LAPACK)
 
 target_include_directories(Ravl2Core ${WARNING_GUARD} PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src>
         $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/include>
