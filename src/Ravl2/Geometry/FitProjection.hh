@@ -47,6 +47,9 @@ namespace Ravl2
     auto frIt = from.begin();
     auto frEnd = from.end();
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wnull-dereference"
+
     for(;toIt != toEnd && frIt!=frEnd;++toIt,++frIt) {
       const Point<RealT,2> x = normalisePoint<RealT,2>(*frIt,fromMean,fromScale);
       const Point<RealT,2> y = normalisePoint<RealT,2>(*toIt,toMean,toScale);
@@ -84,6 +87,7 @@ namespace Ravl2
       row2[7] = x[1] * -r;
       row2[8] = -r;
     }
+#pragma GCC diagnostic pop
     // Should check the rank of A?
 
     VectorT<RealT> v;
