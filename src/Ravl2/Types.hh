@@ -14,6 +14,40 @@
 #include <fmt/ostream.h>
 #include <eigen3/Eigen/Dense>
 #include <eigen3/Eigen/Geometry>
+<<<<<<< Updated upstream
+||||||| Stash base
+#else
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wold-style-cast"
+#pragma GCC diagnostic ignored "-Wsign-conversion"
+#pragma GCC diagnostic ignored "-Wuseless-cast"
+#pragma GCC diagnostic ignored "-Wduplicated-branches"
+#pragma GCC diagnostic ignored "-Wconversion"
+#pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
+#pragma GCC diagnostic ignored "-Wnull-dereference"
+#pragma GCC diagnostic ignored "-Wfloat-conversion"
+#include <Eigen/Dense>
+#include <Eigen/Geometry>
+#pragma GCC diagnostic pop
+#endif
+=======
+#else
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wold-style-cast"
+#pragma GCC diagnostic ignored "-Wsign-conversion"
+#if !defined(__clang__)
+#pragma GCC diagnostic ignored "-Wuseless-cast"
+#pragma GCC diagnostic ignored "-Wduplicated-branches"
+#pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
+#endif
+#pragma GCC diagnostic ignored "-Wconversion"
+#pragma GCC diagnostic ignored "-Wnull-dereference"
+#pragma GCC diagnostic ignored "-Wfloat-conversion"
+#include <Eigen/Dense>
+#include <Eigen/Geometry>
+#pragma GCC diagnostic pop
+#endif
+>>>>>>> Stashed changes
 #include <cereal/cereal.hpp>
 #include <cereal/types/array.hpp>
 
