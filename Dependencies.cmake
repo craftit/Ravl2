@@ -194,6 +194,7 @@ function(RAVL2_setup_dependencies)
       GITHUB_REPOSITORY ocornut/imgui
       GIT_TAG docking
     )
+
     cpmaddpackage(
       NAME implot
       GITHUB_REPOSITORY epezent/implot

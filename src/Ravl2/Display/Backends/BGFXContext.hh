@@ -22,12 +22,12 @@ struct BGFXContext {
     Backend backend = Backend::Vulkan;
     int width = 1280;
     int height = 720;
-    void* nativeWindow = nullptr; //! platform-specific window handle
+    void* nativeWindow = nullptr; //! SDL_Window* pointer
   };
 
   bool initialized() const noexcept { return m_initialized; }
 
-  // Stubbed init; returns false until bgfx wiring is added.
+  // Initialize bgfx with the given native SDL window and size.
   bool init(const InitParams& params) noexcept;
 
   // To be called on window resize.
@@ -39,7 +39,7 @@ struct BGFXContext {
   // Shutdown bgfx.
   void shutdown() noexcept;
 
-  // Human-readable backend name (stubbed for now).
+  // Human-readable backend name.
   static const char* backendName(Backend b) noexcept;
 
 private:

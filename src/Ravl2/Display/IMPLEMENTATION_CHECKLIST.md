@@ -15,9 +15,28 @@ Legend: [ ] = todo, [*] = in progress, [x] = done
 
 ## Phase 2 — ImGui docking + event loop
 - [x] Add SDL2 window creation (GUI thread via `std::jthread`)
-- [ ] Initialize bgfx with backend policy (Vulkan default, per-platform fallbacks)
-- [ ] Integrate Dear ImGui (docking) and set up dockspace
+- [*] Initialize bgfx with backend policy (Vulkan default, per-platform fallbacks) — Step A started
+- [*] Integrate Dear ImGui (docking) and set up dockspace — Step A: vendor backends and wire minimal frame
 - [x] Idle-friendly loop using `SDL_WaitEventTimeout` and render-on-invalidation
+
+### Phase 2 — Staged migration plan
+- [x] Step A scope approved: Initialize bgfx + ImGui while keeping SDL renderer for first pixels
+- [x] Step A deliverable: bgfx initialized against SDL window; ImGui dockspace visible; SDL still blits image
+  - [x] Implement `BGFXContext` with real `init/resize/frame/shutdown` using `SDL_SysWMinfo`
+  - [x] ImGui backends wired from `imgui` package (using SDL2 + SDL_Renderer backend for UI in Step A)
+  - [x] CMake: link `imgui` and add backend sources; set `RAVL2_WITH_IMGUI`
+  - [x] GUI thread: create ImGui context (docking enabled), init SDL2 + SDL_Renderer backends
+  - [x] Per-frame: ImGui NewFrame → DockSpace → simple "Channels" window → Render via ImGui SDL_Renderer backend
+  - [x] Window events: forward SDL input to ImGui backend; on resize call `BGFXContext::resize`
+  - [x] First-frame: ensure non-zero backbuffer size before initial bgfx init (already handled for SDL)
+- [*] Step B deliverable: move 2D image display to bgfx textures; remove SDL_Renderer path entirely
+  - [x] Add bgfx `TextureHandle` to `Image2DNode` and lifetime management
+  - [x] U8 path: upload to R8 texture (recreate on size change)
+  - [x] F32 path: CPU normalize to U8 (policy: Auto/Fixed/Percentile) and upload to R8
+  - [x] Draw in channel window via ImGui `Image` (bgfx texture ID)
+  - [x] Apply pan/zoom using `ChannelState::view2D` (transform positions/UVs or use draw list)
+  - [x] Remove SDL texture cache and `SDL_RenderCopy` usage; keep SDL only for window/events when bgfx is available
+  - [x] Verify pixel query (uses CPU copy); display in ImGui status/tooltip (window title MVP)
 
 ## Phase 3 — Message bus and channels (Command/Node architecture)
 - [x] Define `IRenderCommand` base (applied on GUI thread)

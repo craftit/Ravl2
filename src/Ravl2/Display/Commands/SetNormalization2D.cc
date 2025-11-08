@@ -12,6 +12,9 @@ void SetNormalization2D::apply(ChannelRegistry &channels) {
     // Keep node's local settings in sync for sampling paths that consult the node.
     if (auto *node = dynamic_cast<Image2DNode*>(ch.baseImage2D.get())) {
       node->norm = settings;
+#if defined(RAVL2_WITH_BGFX)
+      node->gpuDirty = true; // ensure GPU upload reflects new normalization for F32
+#endif
     }
   }
   SPDLOG_INFO("DebugDisplay: Set normalization on '{}' to policy={} (fixed: [{},{}], pct: [{},{}])",

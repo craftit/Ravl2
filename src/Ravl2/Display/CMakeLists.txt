@@ -1,5 +1,8 @@
 # Ravl2 Debug Display (scaffold)
 
+# Ensure local Find*.cmake modules are discoverable
+list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
+
 add_library(Ravl2Display
     DebugDisplay.cc DebugDisplay.hh
     Backends/BGFXContext.cc Backends/BGFXContext.hh
@@ -29,6 +32,59 @@ target_link_libraries(Ravl2Display
   PRIVATE RAVL2_options RAVL2_warnings
   PUBLIC spdlog::spdlog SDL2::SDL2 Ravl2Core Ravl2Geometry
 )
+
+# ImGui integration
+find_package(imgui QUIET)
+if(IMGUI_FOUND)
+  message(STATUS "Ravl2Display: integrating Dear ImGui")
+  target_link_libraries(Ravl2Display PRIVATE imgui)
+  target_compile_definitions(Ravl2Display PRIVATE RAVL2_WITH_IMGUI=1)
+  if(IMGUI_INCLUDE_DIRS)
+    target_include_directories(Ravl2Display PRIVATE ${IMGUI_INCLUDE_DIRS})
+  endif()
+endif()
+
+# Link bgfx stack if available
+find_package(bgfx QUIET)
+if(BGFX_FOUND)
+  if(TARGET bgfx)
+    target_link_libraries(Ravl2Display PRIVATE bgfx)
+    target_compile_definitions(Ravl2Display PRIVATE RAVL2_WITH_BGFX=1)
+  endif()
+  if(BGFX_INCLUDE_DIRS)
+    target_include_directories(Ravl2Display PRIVATE ${BGFX_INCLUDE_DIRS})
+  endif()
+endif()
+find_package(bimg QUIET)
+if(BIMG_FOUND)
+  target_link_libraries(Ravl2Display PRIVATE bimg)
+  if(BIMG_INCLUDE_DIRS)
+    target_include_directories(Ravl2Display PRIVATE ${BIMG_INCLUDE_DIRS})
+  endif()
+endif()
+find_package(bx QUIET)
+if(BX_FOUND)
+  target_link_libraries(Ravl2Display PRIVATE bx)
+  if(BX_INCLUDE_DIRS)
+    target_include_directories(Ravl2Display PRIVATE ${BX_INCLUDE_DIRS})
+  endif()
+endif()
+
+# Choose ImGui backend: use bgfx backend when bgfx is available; otherwise SDL_Renderer backend if provided via IMGUI_BACKENDS_DIR
+if(IMGUI_FOUND AND BGFX_FOUND)
+  message(STATUS "Ravl2Display: using ImGui bgfx backend (vendored)")
+  target_sources(Ravl2Display PRIVATE
+    bgfx_imgui/imgui.cpp
+  )
+  target_include_directories(Ravl2Display PRIVATE ${CMAKE_CURRENT_LIST_DIR}/bgfx_imgui)
+elseif(IMGUI_FOUND AND DEFINED IMGUI_BACKENDS_DIR)
+  message(STATUS "Ravl2Display: using ImGui SDL_Renderer backend")
+  target_sources(Ravl2Display PRIVATE
+    ${IMGUI_BACKENDS_DIR}/imgui_impl_sdl2.cpp
+    ${IMGUI_BACKENDS_DIR}/imgui_impl_sdlrenderer.cpp
+  )
+  target_include_directories(Ravl2Display PRIVATE ${IMGUI_BACKENDS_DIR})
+endif()
 
 set_target_properties(Ravl2Display PROPERTIES
   CXX_STANDARD 23

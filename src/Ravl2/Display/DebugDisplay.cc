@@ -17,6 +17,16 @@
 #include <SDL2/SDL.h>
 #include <algorithm>
 #include <cstdio>
+#include "Ravl2/Display/Backends/BGFXContext.hh"
+#if defined(RAVL2_WITH_BGFX)
+#include <bgfx/bgfx.h>
+#endif
+
+#if defined(RAVL2_WITH_IMGUI) && defined(RAVL2_WITH_BGFX)
+// ImGui (Step B): bgfx backend (from bgfx examples) with manual input forwarding
+#include "bgfx_imgui/imgui.h"
+#include <imgui.h>
+#endif
 
 namespace Ravl2::DebugDisplay {
 
@@ -50,20 +60,34 @@ namespace {
   SDL_Renderer* g_renderer = nullptr;
   std::atomic_bool g_invalidated{true};
 
+  // bgfx context (initialized against SDL window)
+  BGFXContext g_bgfx;
+
   // Mouse interaction state
   bool g_dragging = false;
   int g_lastMouseX = 0;
   int g_lastMouseY = 0;
   std::string g_activeChannel; // channel under cursor or being dragged
 
-  // Per-channel texture cache
+  // Per-channel texture cache (SDL fallback only)
+#if !defined(RAVL2_WITH_BGFX)
   struct TextureEntry {
     SDL_Texture* tex = nullptr;
     int w = 0;
     int h = 0;
   };
   std::unordered_map<std::string, TextureEntry> g_textures;
+#endif
   std::unordered_map<std::string, SDL_FRect> g_lastRects; // last drawn rect per channel for hit-testing
+
+  // ImGui state
+#if defined(RAVL2_WITH_IMGUI)
+  bool g_imguiInitialized = false;
+#endif
+#if defined(RAVL2_WITH_IMGUI) && defined(RAVL2_WITH_BGFX)
+  uint8_t g_mouseButtons = 0;
+  int32_t g_scroll = 0;
+#endif
 
   bool initSDLAndWindow()
   {
@@ -114,6 +138,62 @@ namespace {
     } else {
       SPDLOG_INFO("DebugDisplay: SDL window+renderer created (drawable {}x{})", outW, outH);
     }
+
+    // Initialize bgfx context (Step A: init only; SDL used for blit until Step B)
+    BGFXContext::InitParams ip{};
+    ip.backend = BGFXContext::Backend::Vulkan; // default; bgfx may auto-fallback inside
+    ip.width = outW > 0 ? outW : 1280;
+    ip.height = outH > 0 ? outH : 720;
+    ip.nativeWindow = g_window;
+    if (!g_bgfx.init(ip)) {
+      SPDLOG_WARN("DebugDisplay: bgfx init failed; continuing with SDL renderer MVP only");
+    }
+
+    // Initialize Dear ImGui
+#if defined(RAVL2_WITH_IMGUI) && defined(RAVL2_WITH_BGFX)
+    if (!g_imguiInitialized) {
+      if (g_bgfx.initialized()) {
+        imguiCreate(18.0f, nullptr);
+        g_imguiInitialized = true;
+        SPDLOG_INFO("DebugDisplay: Dear ImGui initialized (bgfx backend)");
+      } else {
+        IMGUI_CHECKVERSION();
+        ImGui::CreateContext();
+        ImGuiIO& io = ImGui::GetIO(); (void)io;
+        io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+        io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+        ImGui::StyleColorsDark();
+        if (!ImGui_ImplSDL2_InitForSDLRenderer(g_window, g_renderer)) {
+          SPDLOG_WARN("DebugDisplay: ImGui_ImplSDL2_InitForSDLRenderer failed");
+        }
+        if (!ImGui_ImplSDLRenderer_Init(g_renderer)) {
+          SPDLOG_WARN("DebugDisplay: ImGui_ImplSDLRenderer_Init failed");
+        } else {
+          g_imguiInitialized = true;
+          SPDLOG_INFO("DebugDisplay: Dear ImGui initialized (SDL_Renderer backend, bgfx init failed)");
+        }
+      }
+    }
+#elif defined(RAVL2_WITH_IMGUI)
+    if (!g_imguiInitialized) {
+      IMGUI_CHECKVERSION();
+      ImGui::CreateContext();
+      ImGuiIO& io = ImGui::GetIO(); (void)io;
+      io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+      io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+      ImGui::StyleColorsDark();
+      if (!ImGui_ImplSDL2_InitForSDLRenderer(g_window, g_renderer)) {
+        SPDLOG_WARN("DebugDisplay: ImGui_ImplSDL2_InitForSDLRenderer failed");
+      }
+      if (!ImGui_ImplSDLRenderer_Init(g_renderer)) {
+        SPDLOG_WARN("DebugDisplay: ImGui_ImplSDLRenderer_Init failed");
+      } else {
+        g_imguiInitialized = true;
+        SPDLOG_INFO("DebugDisplay: Dear ImGui initialized (SDL_Renderer backend)");
+      }
+    }
+#endif
+
     // Invalidate to force an immediate first render once the loop starts
     g_invalidated.store(true, std::memory_order_release);
     return true;
@@ -121,10 +201,27 @@ namespace {
 
   void shutdownSDL()
   {
+    // Shutdown ImGui if initialized
+#if defined(RAVL2_WITH_IMGUI) && defined(RAVL2_WITH_BGFX)
+    if (g_imguiInitialized) {
+      imguiDestroy();
+      g_imguiInitialized = false;
+    }
+#elif defined(RAVL2_WITH_IMGUI)
+    if (g_imguiInitialized) {
+      ImGui_ImplSDLRenderer_Shutdown();
+      ImGui_ImplSDL2_Shutdown();
+      ImGui::DestroyContext();
+      g_imguiInitialized = false;
+    }
+#endif
+
+#if !defined(RAVL2_WITH_BGFX)
     for (auto &kv : g_textures) {
       if (kv.second.tex) SDL_DestroyTexture(kv.second.tex);
     }
     g_textures.clear();
+#endif
 
     if (g_renderer) { SDL_DestroyRenderer(g_renderer); g_renderer = nullptr; }
     if (g_window) { SDL_DestroyWindow(g_window); g_window = nullptr; }
@@ -136,6 +233,10 @@ namespace {
     (void)st; // unused for now; reserved for future stop-aware processing
     SDL_Event e;
     while (SDL_PollEvent(&e)) {
+#if defined(RAVL2_WITH_IMGUI) && !defined(RAVL2_WITH_BGFX)
+      // Forward events to ImGui (SDL backend)
+      ImGui_ImplSDL2_ProcessEvent(&e);
+#endif
       if (e.type == SDL_QUIT) {
         // Request stop on quit
         if (g_guiThread) { g_guiThread->request_stop(); }
@@ -146,6 +247,13 @@ namespace {
             e.window.event == SDL_WINDOWEVENT_RESIZED ||
             e.window.event == SDL_WINDOWEVENT_SHOWN ||
             e.window.event == SDL_WINDOWEVENT_EXPOSED) {
+          if (e.window.event == SDL_WINDOWEVENT_SIZE_CHANGED || e.window.event == SDL_WINDOWEVENT_RESIZED) {
+            const int nw = static_cast<int>(e.window.data1);
+            const int nh = static_cast<int>(e.window.data2);
+            if (nw > 0 && nh > 0) {
+              g_bgfx.resize(nw, nh);
+            }
+          }
           g_invalidated.store(true, std::memory_order_release);
         }
       } else if (e.type == SDL_MOUSEBUTTONDOWN) {
@@ -166,10 +274,20 @@ namespace {
             }
           }
         }
+#if defined(RAVL2_WITH_IMGUI) && defined(RAVL2_WITH_BGFX)
+        if (e.button.button == SDL_BUTTON_LEFT) g_mouseButtons |= IMGUI_MBUT_LEFT;
+        if (e.button.button == SDL_BUTTON_RIGHT) g_mouseButtons |= IMGUI_MBUT_RIGHT;
+        if (e.button.button == SDL_BUTTON_MIDDLE) g_mouseButtons |= IMGUI_MBUT_MIDDLE;
+#endif
       } else if (e.type == SDL_MOUSEBUTTONUP) {
         if (e.button.button == SDL_BUTTON_LEFT) {
           g_dragging = false;
         }
+#if defined(RAVL2_WITH_IMGUI) && defined(RAVL2_WITH_BGFX)
+        if (e.button.button == SDL_BUTTON_LEFT) g_mouseButtons &= ~IMGUI_MBUT_LEFT;
+        if (e.button.button == SDL_BUTTON_RIGHT) g_mouseButtons &= ~IMGUI_MBUT_RIGHT;
+        if (e.button.button == SDL_BUTTON_MIDDLE) g_mouseButtons &= ~IMGUI_MBUT_MIDDLE;
+#endif
       } else if (e.type == SDL_MOUSEMOTION) {
         if (g_dragging && !g_activeChannel.empty()) {
           int mx = e.motion.x;
@@ -274,6 +392,7 @@ namespace {
 
   void renderAll()
   {
+#if !defined(RAVL2_WITH_BGFX)
     if (!g_renderer) return;
     SDL_SetRenderDrawColor(g_renderer, 16, 16, 24, 255);
     SDL_RenderClear(g_renderer);
@@ -376,7 +495,10 @@ namespace {
       SDL_SetWindowTitle(g_window, "Ravl2 Debug Display");
     }
 
-    SDL_RenderPresent(g_renderer);
+    // Note: SDL_RenderPresent is called after ImGui rendering in guiThreadMain.
+#else
+    (void)0;
+#endif
   }
 
   void guiThreadMain(std::stop_token st)
@@ -400,10 +522,155 @@ namespace {
         ++drained;
       }
 
+      // Begin ImGui frame (always build UI)
+#if defined(RAVL2_WITH_IMGUI) && defined(RAVL2_WITH_BGFX)
+      if (g_imguiInitialized && g_bgfx.initialized()) {
+        int mx=0,my=0; uint32_t mstate = SDL_GetMouseState(&mx, &my);
+        // SDL mouse state already tracked for buttons/scroll
+        uint16_t fbw = 0, fbh = 0;
+        int winW=0, winH=0;
+        SDL_GetWindowSize(g_window, &winW, &winH);
+        fbw = static_cast<uint16_t>(winW);
+        fbh = static_cast<uint16_t>(winH);
+        imguiBeginFrame(mx, my, g_mouseButtons, g_scroll, fbw, fbh);
+        g_scroll = 0; // consume scroll
+
+        // Dockspace over main viewport
+        ImGui::DockSpaceOverViewport(ImGui::GetMainViewport());
+
+        // Channel windows with images
+        g_lastRects.clear();
+        RenderContext rc{}; rc.framebufferWidth = fbw; rc.framebufferHeight = fbh;
+        g_channels.forEachChannel([&](ChannelState &ch){
+          if (!ImGui::Begin(ch.name.c_str())) { ImGui::End(); return; }
+          if (ch.baseImage2D) {
+            auto *node = static_cast<Image2DNode*>(ch.baseImage2D.get());
+            node->prepare(rc);
+#if defined(RAVL2_WITH_BGFX)
+            if (node->width > 0 && node->height > 0 && node->textureHandleIdx != UINT16_MAX) {
+              bgfx::TextureHandle thdl{node->textureHandleIdx};
+              const float sx = ch.view2D.scaleVector()[0];
+              const float sy = ch.view2D.scaleVector()[1];
+              const float tx = ch.view2D.translation()[0];
+              const float ty = ch.view2D.translation()[1];
+              // Compute position in screen space
+              ImVec2 winPos = ImGui::GetCursorScreenPos();
+              ImVec2 pos = ImVec2(winPos.x + tx, winPos.y + ty);
+              ImVec2 size = ImVec2(static_cast<float>(node->width) * sx, static_cast<float>(node->height) * sy);
+              // Set cursor and draw
+              ImGui::SetCursorScreenPos(pos);
+              ImGui::Image(thdl, size);
+              // Update hit-test rect in screen space
+              SDL_FRect r{ pos.x, pos.y, size.x, size.y };
+              g_lastRects[ch.name] = r;
+            }
+#endif
+          }
+          ImGui::End();
+        });
+
+        // Pixel query: update window title using screen-space g_lastRects
+        {
+          int mx, my; SDL_GetMouseState(&mx, &my);
+          std::string under;
+          SDL_FRect rect{};
+          for (const auto &kv : g_lastRects) {
+            const auto &r = kv.second;
+            const float fx = static_cast<float>(mx);
+            const float fy = static_cast<float>(my);
+            if (fx >= r.x && fx < r.x + r.w && fy >= r.y && fy < r.y + r.h) { under = kv.first; rect = r; break; }
+          }
+          if (!under.empty()) {
+            auto &ch = g_channels.getOrCreateChannel(under);
+            if (ch.baseImage2D) {
+              auto *node = static_cast<Image2DNode*>(ch.baseImage2D.get());
+              const int w = node->width, h = node->height;
+              const float sx = ch.view2D.scaleVector()[0];
+              const float sy = ch.view2D.scaleVector()[1];
+              const float tx = ch.view2D.translation()[0];
+              const float ty = ch.view2D.translation()[1];
+              int ix = int((static_cast<float>(mx) - tx - rect.x + rect.x - rect.x + (0.0f)) / (sx != 0.0f ? sx : 1.0f));
+              int iy = int((static_cast<float>(my) - ty - rect.y + rect.y - rect.y + (0.0f)) / (sy != 0.0f ? sy : 1.0f));
+              float orig = 0.0f, disp = 0.0f;
+              if (ix >= 0 && iy >= 0 && ix < w && iy < h) {
+                const int idx = iy*w + ix;
+                if (node->format == Image2DFormat::U8 && !node->dataU8.empty()) {
+                  orig = static_cast<float>(node->dataU8[static_cast<size_t>(idx)]) / 255.0f;
+                  disp = orig;
+                } else if (node->format == Image2DFormat::F32 && !node->dataF32.empty()) {
+                  orig = node->dataF32[static_cast<size_t>(idx)];
+                  float mn = node->cachedMin, mxv = node->cachedMax;
+                  switch (ch.norm.policy) {
+                    case NormalizationPolicy::Auto: break;
+                    case NormalizationPolicy::Fixed: mn = ch.norm.minVal; mxv = ch.norm.maxVal; break;
+                    case NormalizationPolicy::Percentile: {
+                      auto mm = percentiles(node->dataF32.data(), w, h, w*int(sizeof(float)), ch.norm.lowPct, ch.norm.highPct);
+                      mn = mm.first; mxv = mm.second; break; }
+                  }
+                  if (mxv <= mn) mxv = mn + 1.0f;
+                  disp = (orig - mn) / (mxv - mn);
+                  if (disp < 0.0f) disp = 0.0f;
+                  if (disp > 1.0f) disp = 1.0f;
+                }
+                char title[256];
+                std::snprintf(title, sizeof(title), "Ravl2 Debug Display — %s (%d,%d) orig=%.6g disp=%.4f", under.c_str(), ix, iy, static_cast<double>(orig), static_cast<double>(disp));
+                SDL_SetWindowTitle(g_window, title);
+              }
+            }
+          } else {
+            SDL_SetWindowTitle(g_window, "Ravl2 Debug Display");
+          }
+        }
+
+        imguiEndFrame();
+      }
+#elif defined(RAVL2_WITH_IMGUI)
+      if (g_imguiInitialized) {
+        ImGui_ImplSDL2_NewFrame();
+        ImGui_ImplSDLRenderer_NewFrame();
+        ImGui::NewFrame();
+
+        // Dockspace over main viewport
+        ImGui::DockSpaceOverViewport(ImGui::GetMainViewport());
+
+        // Simple Channels window
+        if (ImGui::Begin("Channels")) {
+          g_channels.forEachChannel([](ChannelState &ch){
+            ImGui::BulletText("%s", ch.name.c_str());
+          });
+        }
+        ImGui::End();
+      }
+#endif
+
+      // Only redraw image content when invalidated (SDL fallback path)
+#if !defined(RAVL2_WITH_BGFX)
       if (g_invalidated.exchange(false, std::memory_order_acq_rel)) {
         renderAll();
       }
+#endif
+
+      // Render UI and present
+#if defined(RAVL2_WITH_IMGUI) && defined(RAVL2_WITH_BGFX)
+      if (g_imguiInitialized && g_bgfx.initialized()) {
+        // ImGui bgfx backend submits during imguiEndFrame via bgfx calls; nothing to do here
+      }
+#elif defined(RAVL2_WITH_IMGUI)
+      if (g_imguiInitialized) {
+        ImGui::Render();
+        ImGui_ImplSDLRenderer_RenderDrawData(ImGui::GetDrawData());
+      }
+#endif
+#if !defined(RAVL2_WITH_BGFX)
+      SDL_RenderPresent(g_renderer);
+#endif
+
+      // Submit bgfx frame boundary
+      g_bgfx.frame();
     }
+
+    // Shutdown bgfx before SDL teardown
+    g_bgfx.shutdown();
 
     shutdownSDL();
     SPDLOG_INFO("DebugDisplay: GUI thread exiting");

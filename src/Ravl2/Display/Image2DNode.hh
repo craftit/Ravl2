@@ -35,7 +35,14 @@ struct Image2DNode : public ISceneNode {
   float cachedMin = 0.0f;
   float cachedMax = 1.0f;
 
-  // GPU texture handle will be added when bgfx is wired.
+#if defined(RAVL2_WITH_BGFX)
+  // GPU texture resources (bgfx)
+  uint16_t texWidth = 0;
+  uint16_t texHeight = 0;
+  bool gpuDirty = true;            //!< Marked when CPU data or normalization changes
+  // Store as uint16_t handle index to avoid including bgfx headers in the header file
+  uint16_t textureHandleIdx = UINT16_MAX; //!< bgfx::kInvalidHandle as UINT16_MAX when not created
+#endif
 
   Image2DNode() = default;
 
