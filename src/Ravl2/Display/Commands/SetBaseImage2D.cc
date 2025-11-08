@@ -22,8 +22,7 @@ void SetBaseImage2D::apply(ChannelRegistry &channels) {
       SPDLOG_INFO("DebugDisplay: Updated u8 image {}x{} on channel '{}'", width, height, channel);
     }
   }
-  // Sync basic view from channel defaults
-  node->zoom = ch.zoom; node->panX = ch.panX; node->panY = ch.panY;
+  // View (pan/zoom) is owned by the ChannelState (view2D); no sync into nodes.
 }
 
 } // namespace Ravl2::DebugDisplay

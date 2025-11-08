@@ -29,9 +29,11 @@ Legend: [ ] = todo, [*] = in progress, [x] = done
 - [x] Back-compat shim (optional): convert old payload-based enqueue to commands (temporary)
 
 ## Phase 4 — 2D image path (MVP)
-- [ ] Adapter for `Array<uint8_t,2>`
-- [ ] Adapter for `Array<float,2>` with normalization (auto/fixed/percentile)
-- [ ] Textured quad shader; zoom/pan controls
+- [x] Adapter for `Array<uint8_t,2]`
+- [*] Adapter for `Array<float,2>` with normalization (auto/fixed/percentile)
+  - [x] Auto normalization (min/max) for display of f32
+  - [ ] Fixed range and percentile policies
+- [ ] Textured quad shader; zoom/pan controls (bgfx/ImGui)
 - [ ] Pixel query tooltip (original + displayed values)
 
 ## Phase 5 — Overlays (2D)
@@ -67,3 +69,4 @@ Legend: [ ] = todo, [*] = in progress, [x] = done
 ## Notes / Decisions
 - Vulkan default with MoltenVK on macOS; fallbacks documented in Dependencies.cmake status messages.
 - Display stack remains optional: enable with `-DRAVL2_ENABLE_DISPLAY_STACK=ON`.
+- First-pixels MVP uses SDL_Renderer for 2D blit; to be replaced by bgfx + ImGui in later phases.

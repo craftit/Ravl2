@@ -31,11 +31,6 @@ struct Image2DNode : public ISceneNode {
   // Display/normalization
   NormalizationSettings norm{};
 
-  // View (zoom/pan) per channel, we also keep a local copy for convenience
-  float zoom = 1.0f;
-  float panX = 0.0f;
-  float panY = 0.0f;
-
   // Cached min/max for F32 Auto normalization
   float cachedMin = 0.0f;
   float cachedMax = 1.0f;

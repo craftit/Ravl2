@@ -1,6 +1,6 @@
 # Ravl2 Debug Display (scaffold)
 
-add_library(ravl2_debug_display
+add_library(Ravl2Display
     DebugDisplay.cc DebugDisplay.hh
     Backends/BGFXContext.cc Backends/BGFXContext.hh
     IRenderCommand.hh ISceneNode.hh Channel.hh
@@ -10,7 +10,8 @@ add_library(ravl2_debug_display
     Adapters/Array2DAdapters.cc
 )
 
-add_library(ravl2::ravl2_debug_display ALIAS ravl2_debug_display)
+add_library(ravl2::Ravl2Display ALIAS Ravl2Display)
+
 
 # Public headers are provided via include directories; avoid FILE_SET to keep CMake 3.21 compatibility.
 # Headers:
@@ -23,19 +24,19 @@ find_package(spdlog REQUIRED)
 # SDL2 is required when the display stack is enabled
 find_package(SDL2 REQUIRED)
 
-target_link_libraries(ravl2_debug_display
+target_link_libraries(Ravl2Display
   PRIVATE RAVL2_options RAVL2_warnings
-  PUBLIC spdlog::spdlog SDL2::SDL2 Ravl2Core
+  PUBLIC spdlog::spdlog SDL2::SDL2 Ravl2Core Ravl2Geometry
 )
 
-set_target_properties(ravl2_debug_display PROPERTIES
+set_target_properties(Ravl2Display PROPERTIES
   CXX_STANDARD 23
   CXX_STANDARD_REQUIRED YES
   CXX_EXTENSIONS NO
   VISIBILITY_INLINES_HIDDEN YES
 )
 
-target_include_directories(ravl2_debug_display
+target_include_directories(Ravl2Display
   PUBLIC
     $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src>
     $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/include>
@@ -44,17 +45,19 @@ target_include_directories(ravl2_debug_display
 
 # Sample executable that exercises the new DebugDisplay interface by loading an RGB image
 # and saving it to the @debug channel. Built only when the Display stack is enabled.
-add_executable(ravl2_debug_display_sample
-  DebugDisplaySample.cc
+add_executable(doDisplay
+        doDisplay.cc
 )
 
-target_link_libraries(ravl2_debug_display_sample
+target_link_libraries(doDisplay
   PRIVATE
-    ravl2_debug_display
+    Ravl2Display
     Ravl2Core
 )
 
-set_target_properties(ravl2_debug_display_sample PROPERTIES
+target_compile_definitions(doDisplay PRIVATE -DRAVL_SOURCE_DIR="${PROJECT_SOURCE_DIR}" -DRAVL_BINARY_DIR="${PROJECT_BINARY_DIR}" -DRAVL_INSTALL_PREFIX="${CMAKE_INSTALL_PREFIX}")
+
+set_target_properties(doDisplay PROPERTIES
   CXX_STANDARD 23
   CXX_STANDARD_REQUIRED YES
   CXX_EXTENSIONS NO
