@@ -97,8 +97,9 @@ macro(RAVL2_enable_clang_tidy target WARNINGS_AS_ERRORS)
       list(APPEND CLANG_TIDY_OPTIONS -warnings-as-errors=*)
     endif()
 
-    message("Also setting clang-tidy globally")
-    set(CMAKE_CXX_CLANG_TIDY ${CLANG_TIDY_OPTIONS})
+    message(STATUS "Enabling clang-tidy on target ${target} (not global)")
+    # Apply clang-tidy to the specified target only to avoid affecting third-party subprojects
+    set_target_properties(${target} PROPERTIES CXX_CLANG_TIDY "${CLANG_TIDY_OPTIONS}")
   else()
     message(${WARNING_MESSAGE} "clang-tidy requested but executable not found")
   endif()

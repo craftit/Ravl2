@@ -17,6 +17,10 @@ add_subdirectory(3D)
 add_subdirectory(OpenCV)
 add_subdirectory(Video)
 
+# Optional Debug Display stack
+if(RAVL2_ENABLE_DISPLAY_STACK)
+    add_subdirectory(Display)
+endif()
 
 # If OpenGL is found, add the OpenGL subdirectory
 if(TARGET OpenGL::GL)

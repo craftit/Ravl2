@@ -1,5 +1,10 @@
 include(cmake/CPM.cmake)
 
+# Options controlling optional stacks and minimal deps
+option(RAVL2_MIN_DEPS "Disable optional stacks (Qt, dlib, Display) for a minimal build" OFF)
+option(RAVL2_ENABLE_DISPLAY_STACK "Enable SDL2+bgfx+ImGui display stack (optional)" ON)
+# Note: Vulkan will be preferred as default renderer when available; on macOS use MoltenVK/Metal fallback.
+
 # Done as a function so that updates to variables like
 # CMAKE_CXX_FLAGS don't propagate out to other
 # targets
@@ -44,8 +49,14 @@ function(RAVL2_setup_dependencies)
   find_package(dlib QUIET)
   find_package(glfw3 QUIET)
 
-  find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Widgets)
-  find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS  Core Gui Widgets)
+  if(NOT RAVL2_MIN_DEPS)
+    find_package(QT NAMES Qt6 Qt5 QUIET COMPONENTS Widgets)
+    if(QT_FOUND)
+      find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Core Gui Widgets)
+    else()
+      message(STATUS "Qt not found or disabled, building without Qt support")
+    endif()
+  endif()
 
 
   # For each dependency, see if it's
@@ -136,5 +147,69 @@ function(RAVL2_setup_dependencies)
 #  if(NOT TARGET tools::tools)
 #    cpmaddpackage("gh:lefticus/tools#update_build_system")
 #  endif()
+
+  # Optional Display Stack (SDL2 + bgfx + ImGui + ImPlot), minimal wiring
+  if(RAVL2_ENABLE_DISPLAY_STACK AND NOT RAVL2_MIN_DEPS)
+    message(STATUS "Ravl2 Display Stack: enabled")
+
+    # Prefer native SDL2 and Vulkan first
+    find_package(SDL2 QUIET)
+    if(SDL2_FOUND)
+      message(STATUS "Found native SDL2: ${SDL2_VERSION}")
+    else()
+      message(STATUS "SDL2 not found in system packages; display stack will require SDL2 later or add via CPM in a follow-up.")
+    endif()
+
+    find_package(Vulkan QUIET)
+    if(Vulkan_FOUND)
+      message(STATUS "Found native Vulkan: ${Vulkan_LIBRARY}")
+    else()
+      if(APPLE)
+        message(STATUS "Vulkan not found on macOS; expecting MoltenVK (system install). Will fall back to Metal at runtime if needed.")
+      else()
+        message(STATUS "Vulkan not found; OpenGL/Direct3D fallback may be used at runtime.")
+      endif()
+    endif()
+
+    # bgfx stack (CPM) — pinned SHAs recommended; using branches/tags minimally for now
+    cpmaddpackage(
+      NAME bx
+      GITHUB_REPOSITORY bkaradzic/bx
+      GIT_TAG master
+    )
+    cpmaddpackage(
+      NAME bimg
+      GITHUB_REPOSITORY bkaradzic/bimg
+      GIT_TAG master
+    )
+    cpmaddpackage(
+      NAME bgfx
+      GITHUB_REPOSITORY bkaradzic/bgfx
+      GIT_TAG master
+    )
+
+    # Dear ImGui (docking) and ImPlot
+    cpmaddpackage(
+      NAME imgui
+      GITHUB_REPOSITORY ocornut/imgui
+      GIT_TAG docking
+    )
+    cpmaddpackage(
+      NAME implot
+      GITHUB_REPOSITORY epezent/implot
+      GIT_TAG v0.16
+    )
+
+    # Backend preference cache var (default Vulkan)
+    set(RAVL2_BGFX_BACKEND "Vulkan" CACHE STRING "Default bgfx backend: Auto, Vulkan, Metal, D3D12, D3D11, OpenGL")
+    set_property(CACHE RAVL2_BGFX_BACKEND PROPERTY STRINGS Auto Vulkan Metal D3D12 D3D11 OpenGL)
+    message(STATUS "Ravl2 Display: default backend is ${RAVL2_BGFX_BACKEND}")
+  else()
+    if(RAVL2_MIN_DEPS)
+      message(STATUS "RAVL2_MIN_DEPS=ON: Optional stacks disabled (Qt, dlib, Display)")
+    else()
+      message(STATUS "Ravl2 Display Stack: disabled (set RAVL2_ENABLE_DISPLAY_STACK=ON to enable)")
+    endif()
+  endif()
 
 endfunction()

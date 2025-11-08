@@ -1,0 +1,22 @@
+{
+  "version": 3,
+  "configurePresets": [
+    {
+      "name": "relwithdebinfo-display",
+      "displayName": "RelWithDebInfo + Display Stack (cmake-build-relwithdebinfo)",
+      "description": "Use cmake-build-relwithdebinfo as binary dir, enable display stack by default",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/cmake-build-relwithdebinfo",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "RelWithDebInfo",
+        "RAVL2_ENABLE_DISPLAY_STACK": "ON"
+      }
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "relwithdebinfo-display",
+      "configurePreset": "relwithdebinfo-display"
+    }
+  ]
+}

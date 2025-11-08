@@ -29,7 +29,7 @@ macro(RAVL2_setup_options)
   cmake_dependent_option(
           RAVL2_ENABLE_GLOBAL_HARDENING
           "Attempt to push hardening options to built dependencies"
-          ON
+          OFF
           RAVL2_ENABLE_HARDENING
           OFF)
 
