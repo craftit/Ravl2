@@ -123,7 +123,7 @@ namespace Ravl2
     }
   };
 
-  //! Acquisition function sample generator for Bayesian optimization
+  //! Acquisition function sample generator for Bayesian optimisation
   //!
   //! Generates candidate points and selects the best ones based on an acquisition function
   //! (Expected Improvement). Uses multiple strategies including random sampling around
@@ -156,7 +156,7 @@ namespace Ravl2
     std::vector<VectorT<RealT>> generatePoints(size_t numPoints) override;
 
     //! Clone this generator
-    std::shared_ptr<SampleGenerator> clone() const override;
+    [[nodiscard]] std::shared_ptr<SampleGenerator> clone() const override;
 
     //! Set evaluation data for acquisition function
     //! @param X Evaluated points
@@ -184,7 +184,7 @@ namespace Ravl2
       mPosition = 0;
     }
     void skip(size_t n) override { mPosition += n; }
-    size_t getCurrentPosition() const override { return mPosition; }
+    [[nodiscard]] size_t getCurrentPosition() const override { return mPosition; }
 
   private:
     RealT mExplorationWeight;
@@ -331,9 +331,9 @@ namespace Ravl2
     std::shared_ptr<SampleGenerator> mAcquisitionGenerator;//!< Generator for acquisition-based points
 
 
-    //! Internal state class for Bayesian optimization process
+    //! Internal state class for the Bayesian optimisation process
     //!
-    //! Maintains the current state of the optimization including
+    //! Maintains the current state of the optimisation including
     //! evaluated points, function values, surrogate model, sample generators, and function cache.
     class State
     {
