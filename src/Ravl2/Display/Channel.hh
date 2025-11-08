@@ -6,17 +6,21 @@
 #include <vector>
 #include <mutex>
 
+#include "Ravl2/Display/ISceneNode.hh"
+
 namespace Ravl2::DebugDisplay {
 
-//! Per-channel state placeholder.
-//! This will expand to hold per-view settings (zoom/pan/camera) and resources.
+//! Per-channel state.
+//! Holds per-view settings (zoom/pan/camera) and top-level scene nodes.
 struct ChannelState {
   std::string name;
-  // 2D view params (to be expanded)
+  // 2D view params (default values)
   float zoom = 1.0f;
   float panX = 0.0f;
   float panY = 0.0f;
-  // TODO: scene nodes will be stored here in a future step.
+
+  // Base image node for 2D view (optional)
+  std::unique_ptr<ISceneNode> baseImage2D;
 };
 
 //! Registry of channels with basic thread-safe access helpers.
@@ -39,7 +43,8 @@ struct ChannelRegistry {
     auto it = m_channels.find(name);
     if (it != m_channels.end()) {
       // Reset to defaults while preserving the entry
-      it->second = ChannelState{.name = name};
+      ChannelState st; st.name = name; // ensure all fields are value-initialized
+      it->second = std::move(st);
     }
   }
 

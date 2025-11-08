@@ -3,6 +3,11 @@
 add_library(ravl2_debug_display
     DebugDisplay.cc DebugDisplay.hh
     Backends/BGFXContext.cc Backends/BGFXContext.hh
+    IRenderCommand.hh ISceneNode.hh Channel.hh
+    RenderContext.hh Normalization.hh
+    Image2DNode.cc Image2DNode.hh
+    Commands/SetBaseImage2D.cc Commands/SetBaseImage2D.hh
+    Adapters/Array2DAdapters.cc
 )
 
 add_library(ravl2::ravl2_debug_display ALIAS ravl2_debug_display)
@@ -20,7 +25,7 @@ find_package(SDL2 REQUIRED)
 
 target_link_libraries(ravl2_debug_display
   PRIVATE RAVL2_options RAVL2_warnings
-  PUBLIC spdlog::spdlog SDL2::SDL2
+  PUBLIC spdlog::spdlog SDL2::SDL2 Ravl2Core
 )
 
 set_target_properties(ravl2_debug_display PROPERTIES
