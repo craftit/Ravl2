@@ -9,9 +9,12 @@ namespace Ravl2::DLibIO
 {
 
   DisplayWindow::DisplayWindow(const std::string &name)
-      : m_queue(16)
+    : mName(name),
+      m_queue(16)
   {
+#ifndef DLIB_NO_GUI_SUPPORT
     m_win.set_title(name);
+#endif
     start();
   }
 

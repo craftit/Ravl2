@@ -27,9 +27,11 @@
 #endif
 
 #include <dlib/image_processing/frontal_face_detector.h>
+#ifndef DLIB_NO_GUI_SUPPORT
 #include <dlib/image_processing/render_face_detections.h>
-#include <dlib/image_processing.h>
 #include <dlib/gui_widgets.h>
+#endif
+#include <dlib/image_processing.h>
 #include <dlib/opencv.h>
 #pragma GCC diagnostic pop
 
@@ -53,24 +55,35 @@ namespace Ravl2::DLibIO
     template<typename ImageT>
     void display(const ImageT &image)
     {
+#ifndef DLIB_NO_GUI_SUPPORT
       m_win.clear_overlay();
       m_win.set_image(image);
+#else
+      (void) image;
+#endif
     }
 
     //! Don't call outside the vision thread
     template<typename ImageT, typename OverlayT>
     void display(const ImageT &image, const OverlayT &overlay)
     {
+#ifndef DLIB_NO_GUI_SUPPORT
       m_win.clear_overlay();
       m_win.set_image(image);
       m_win.add_overlay(overlay);
+#else
+      (void) image;
+      (void) overlay;
+#endif
     }
 
+
+#ifndef DLIB_NO_GUI_SUPPORT
     //! @brief Access display window
     //! Don't call outside the vision thread
     dlib::image_window &window()
     { return m_win; }
-
+#endif
 
     //! Queue a function to be called in the display thread
     void queue(std::function<void(DisplayWindow &win)> &&f)
@@ -86,11 +99,15 @@ namespace Ravl2::DLibIO
 
     void run();
 
+    std::string mName;
     ThreadedQueue<std::function<void(DisplayWindow &win)> > m_queue {16};
 
     std::atomic<bool> m_terminate = false;
     std::thread m_thread;
+#ifndef DLIB_NO_GUI_SUPPORT
     dlib::image_window m_win;
+#endif
+
   };
 
 }
