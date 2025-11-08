@@ -7,6 +7,7 @@
 #include <typeindex>
 
 namespace Ravl2::DebugDisplay {
+void initDisplay();
 
 struct IRenderCommand; // fwd decl
 
@@ -22,13 +23,13 @@ void ensureStarted(const InitOptions &opts = {});
 
 //! Enqueue a typed render command (command carries its own context, e.g., channel).
 //! Thread-safe.
-//! @param command Unique pointer to a command (will be moved into the queue).
+//! @param command Shared pointer to a command; may be referenced elsewhere until applied.
 //! @return std::expected<void, std::string> with error message on failure.
 std::expected<void, std::string> enqueue(
-    std::unique_ptr<IRenderCommand> command);
+    std::shared_ptr<IRenderCommand> command);
 
 //! Deprecated shim: payload-based enqueue retained temporarily for migration.
-[[deprecated("Use enqueue(unique_ptr<IRenderCommand>) instead")]]
+[[deprecated("Use enqueue(shared_ptr<IRenderCommand>) instead")]]
 std::expected<void, std::string> enqueue(
     std::string_view channel,
     std::type_index type,

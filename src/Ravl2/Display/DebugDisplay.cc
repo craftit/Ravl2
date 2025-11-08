@@ -2,6 +2,7 @@
 #include "Ravl2/Display/IRenderCommand.hh"
 #include "Ravl2/Display/Channel.hh"
 #include "Ravl2/Display/Image2DNode.hh"
+#include "Ravl2/Display/Normalization.hh"
 
 #include "Ravl2/ThreadedQueue.hh"
 
@@ -14,6 +15,8 @@
 #include <spdlog/spdlog.h>
 #include <thread>
 #include <SDL2/SDL.h>
+#include <algorithm>
+#include <cstdio>
 
 namespace Ravl2::DebugDisplay {
 
@@ -34,7 +37,7 @@ namespace {
   std::atomic_bool g_started{false};
 
   // Bounded queue of commands
-  ThreadedQueue<std::unique_ptr<IRenderCommand>> g_queue{128};
+  ThreadedQueue<std::shared_ptr<IRenderCommand>> g_queue{128};
 
   // Channel registry lives on the GUI thread
   ChannelRegistry g_channels;
@@ -47,6 +50,12 @@ namespace {
   SDL_Renderer* g_renderer = nullptr;
   std::atomic_bool g_invalidated{true};
 
+  // Mouse interaction state
+  bool g_dragging = false;
+  int g_lastMouseX = 0;
+  int g_lastMouseY = 0;
+  std::string g_activeChannel; // channel under cursor or being dragged
+
   // Per-channel texture cache
   struct TextureEntry {
     SDL_Texture* tex = nullptr;
@@ -54,6 +63,7 @@ namespace {
     int h = 0;
   };
   std::unordered_map<std::string, TextureEntry> g_textures;
+  std::unordered_map<std::string, SDL_FRect> g_lastRects; // last drawn rect per channel for hit-testing
 
   bool initSDLAndWindow()
   {
@@ -85,7 +95,27 @@ namespace {
       }
     }
 
-    SPDLOG_INFO("DebugDisplay: SDL window+renderer created ({}x{})", 1280, 720);
+    // Some platforms (Wayland/HiDPI) report a 0x0 drawable until the first expose/resize.
+    // Wait briefly for a non-zero renderer output size so the first frame is visible without moving the window.
+    SDL_PumpEvents();
+    int outW = 0, outH = 0;
+    const uint32_t startTicks = SDL_GetTicks();
+    while (true) {
+      SDL_GetRendererOutputSize(g_renderer, &outW, &outH);
+      if (outW > 0 && outH > 0) break;
+      if (SDL_GetTicks() - startTicks > 250) { // give up after 250ms
+        break;
+      }
+      // Wait for any window config event briefly
+      SDL_WaitEventTimeout(nullptr, 5);
+    }
+    if (outW <= 0 || outH <= 0) {
+      SPDLOG_WARN("DebugDisplay: renderer output size is {}x{} at startup; first frame may be delayed.", outW, outH);
+    } else {
+      SPDLOG_INFO("DebugDisplay: SDL window+renderer created (drawable {}x{})", outW, outH);
+    }
+    // Invalidate to force an immediate first render once the loop starts
+    g_invalidated.store(true, std::memory_order_release);
     return true;
   }
 
@@ -113,7 +143,74 @@ namespace {
       }
       if (e.type == SDL_WINDOWEVENT) {
         if (e.window.event == SDL_WINDOWEVENT_SIZE_CHANGED ||
-            e.window.event == SDL_WINDOWEVENT_RESIZED) {
+            e.window.event == SDL_WINDOWEVENT_RESIZED ||
+            e.window.event == SDL_WINDOWEVENT_SHOWN ||
+            e.window.event == SDL_WINDOWEVENT_EXPOSED) {
+          g_invalidated.store(true, std::memory_order_release);
+        }
+      } else if (e.type == SDL_MOUSEBUTTONDOWN) {
+        if (e.button.button == SDL_BUTTON_LEFT) {
+          g_dragging = true;
+          g_lastMouseX = e.button.x;
+          g_lastMouseY = e.button.y;
+          // Pick active channel under cursor
+          g_activeChannel.clear();
+          for (const auto &kv : g_lastRects) {
+            const auto &r = kv.second;
+            const float bx = static_cast<float>(e.button.x);
+            const float by = static_cast<float>(e.button.y);
+            if (bx >= r.x && bx < r.x + r.w &&
+                by >= r.y && by < r.y + r.h) {
+              g_activeChannel = kv.first;
+              break;
+            }
+          }
+        }
+      } else if (e.type == SDL_MOUSEBUTTONUP) {
+        if (e.button.button == SDL_BUTTON_LEFT) {
+          g_dragging = false;
+        }
+      } else if (e.type == SDL_MOUSEMOTION) {
+        if (g_dragging && !g_activeChannel.empty()) {
+          int mx = e.motion.x;
+          int my = e.motion.y;
+          int dx = mx - g_lastMouseX;
+          int dy = my - g_lastMouseY;
+          g_lastMouseX = mx; g_lastMouseY = my;
+          // Apply to channel translation
+          auto &ch = g_channels.getOrCreateChannel(g_activeChannel);
+          auto &t = ch.view2D.translation();
+          t[0] += static_cast<float>(dx);
+          t[1] += static_cast<float>(dy);
+          g_invalidated.store(true, std::memory_order_release);
+        }
+      } else if (e.type == SDL_MOUSEWHEEL) {
+        // Zoom in/out around cursor for active channel under cursor
+        int mx, my; SDL_GetMouseState(&mx, &my);
+        std::string under;
+        for (const auto &kv : g_lastRects) {
+          const auto &r = kv.second;
+          const float fx = static_cast<float>(mx);
+          const float fy = static_cast<float>(my);
+          if (fx >= r.x && fx < r.x + r.w && fy >= r.y && fy < r.y + r.h) { under = kv.first; break; }
+        }
+        if (!under.empty()) {
+          auto &ch = g_channels.getOrCreateChannel(under);
+          auto &view = ch.view2D;
+          float &sx = view.scaleVector()[0];
+          float &sy = view.scaleVector()[1];
+          float &tx = view.translation()[0];
+          float &ty = view.translation()[1];
+          float factor = (e.wheel.y > 0) ? 1.1f : 1.0f / 1.1f;
+          float newSx = std::clamp(sx * factor, 0.05f, 32.0f);
+          float newSy = std::clamp(sy * factor, 0.05f, 32.0f);
+          // Compute image coords under cursor
+          float ix = (static_cast<float>(mx) - tx) / (sx != 0.0f ? sx : 1.0f);
+          float iy = (static_cast<float>(my) - ty) / (sy != 0.0f ? sy : 1.0f);
+          // Update translation so the point under cursor remains fixed
+          tx = static_cast<float>(mx) - ix * newSx;
+          ty = static_cast<float>(my) - iy * newSy;
+          sx = newSx; sy = newSy;
           g_invalidated.store(true, std::memory_order_release);
         }
       }
@@ -128,8 +225,8 @@ namespace {
       entry.tex = nullptr; entry.w = entry.h = 0;
     }
     if (!entry.tex) {
-      // Using RGB24 texture; we'll expand grayscale to RGB when uploading.
-      entry.tex = SDL_CreateTexture(g_renderer, SDL_PIXELFORMAT_RGB24, SDL_TEXTUREACCESS_STREAMING, w, h);
+      // Use a widely supported 32-bit RGBA texture; we'll expand grayscale on upload.
+      entry.tex = SDL_CreateTexture(g_renderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_STREAMING, w, h);
       if (!entry.tex) {
         SPDLOG_ERROR("DebugDisplay: SDL_CreateTexture failed: {}", SDL_GetError());
         return;
@@ -145,14 +242,18 @@ namespace {
       SPDLOG_ERROR("DebugDisplay: SDL_LockTexture failed: {}", SDL_GetError());
       return;
     }
-    // Expand to RGB24
+    // Expand to RGBA8888
     auto *dst = static_cast<uint8_t*>(pixels);
     for (int y=0; y<h; ++y) {
       uint8_t* row = dst + y * pitch;
       const uint8_t* srcRow = gray + y * w;
       for (int x=0; x<w; ++x) {
         uint8_t v = srcRow[x];
-        row[x*3+0] = v; row[x*3+1] = v; row[x*3+2] = v;
+        size_t off = static_cast<size_t>(x) * 4;
+        row[off + 0] = v; // R
+        row[off + 1] = v; // G
+        row[off + 2] = v; // B
+        row[off + 3] = 255; // A
       }
     }
     SDL_UnlockTexture(tex);
@@ -177,6 +278,9 @@ namespace {
     SDL_SetRenderDrawColor(g_renderer, 16, 16, 24, 255);
     SDL_RenderClear(g_renderer);
 
+    // Clear last rects before drawing
+    g_lastRects.clear();
+
     // Enumerate channels and render their base images with view transform
     g_channels.forEachChannel([](ChannelState &ch){
       if (!ch.baseImage2D) return;
@@ -191,7 +295,19 @@ namespace {
       if (node->format == Image2DFormat::U8 && !node->dataU8.empty()) {
         uploadGrayscaleToTexture(it->second.tex, node->dataU8.data(), w, h);
       } else if (node->format == Image2DFormat::F32 && !node->dataF32.empty()) {
-        uploadFloatToTexture(it->second.tex, node->dataF32.data(), w, h, node->cachedMin, node->cachedMax);
+        // Choose normalization based on channel settings
+        float mn = node->cachedMin, mx = node->cachedMax;
+        switch (ch.norm.policy) {
+          case NormalizationPolicy::Auto:
+            // already set via cachedMin/Max
+            break;
+          case NormalizationPolicy::Fixed:
+            mn = ch.norm.minVal; mx = ch.norm.maxVal; break;
+          case NormalizationPolicy::Percentile: {
+            auto mm = percentiles(node->dataF32.data(), w, h, w*int(sizeof(float)), ch.norm.lowPct, ch.norm.highPct);
+            mn = mm.first; mx = mm.second; break; }
+        }
+        uploadFloatToTexture(it->second.tex, node->dataF32.data(), w, h, mn, mx);
       } else {
         return;
       }
@@ -203,9 +319,62 @@ namespace {
       const float tx = st.translation()[0];
       const float ty = st.translation()[1];
       SDL_FRect dst { tx, ty, static_cast<float>(w) * sx, static_cast<float>(h) * sy };
+      g_lastRects[ch.name] = dst;
 
       SDL_RenderCopyF(g_renderer, it->second.tex, nullptr, &dst);
     });
+
+    // Pixel query tooltip in window title (MVP): show for first channel under cursor
+    int mx, my; SDL_GetMouseState(&mx, &my);
+    std::string under;
+    SDL_FRect rect{};
+    for (const auto &kv : g_lastRects) {
+      const auto &r = kv.second;
+      const float fx = static_cast<float>(mx);
+      const float fy = static_cast<float>(my);
+      if (fx >= r.x && fx < r.x + r.w && fy >= r.y && fy < r.y + r.h) { under = kv.first; rect = r; break; }
+    }
+    if (!under.empty()) {
+      auto &ch = g_channels.getOrCreateChannel(under);
+      if (ch.baseImage2D) {
+        auto *node = static_cast<Image2DNode*>(ch.baseImage2D.get());
+        const int w = node->width, h = node->height;
+        // Map mouse to image coords
+        const float sx = ch.view2D.scaleVector()[0];
+        const float sy = ch.view2D.scaleVector()[1];
+        const float tx = ch.view2D.translation()[0];
+        const float ty = ch.view2D.translation()[1];
+        int ix = int((static_cast<float>(mx) - tx) / (sx != 0.0f ? sx : 1.0f));
+        int iy = int((static_cast<float>(my) - ty) / (sy != 0.0f ? sy : 1.0f));
+        float orig = 0.0f, disp = 0.0f;
+        if (ix >= 0 && iy >= 0 && ix < w && iy < h) {
+          const int idx = iy*w + ix;
+          if (node->format == Image2DFormat::U8 && !node->dataU8.empty()) {
+            orig = static_cast<float>(node->dataU8[static_cast<size_t>(idx)]) / 255.0f;
+            disp = orig;
+          } else if (node->format == Image2DFormat::F32 && !node->dataF32.empty()) {
+            orig = node->dataF32[static_cast<size_t>(idx)];
+            float mn = node->cachedMin, mxv = node->cachedMax;
+            switch (ch.norm.policy) {
+              case NormalizationPolicy::Auto: break;
+              case NormalizationPolicy::Fixed: mn = ch.norm.minVal; mxv = ch.norm.maxVal; break;
+              case NormalizationPolicy::Percentile: {
+                auto mm = percentiles(node->dataF32.data(), w, h, w*int(sizeof(float)), ch.norm.lowPct, ch.norm.highPct);
+                mn = mm.first; mxv = mm.second; break; }
+            }
+            if (mxv <= mn) mxv = mn + 1.0f;
+            disp = (orig - mn) / (mxv - mn);
+            if (disp < 0.0f) disp = 0.0f;
+            if (disp > 1.0f) disp = 1.0f;
+          }
+          char title[256];
+          std::snprintf(title, sizeof(title), "Ravl2 Debug Display — %s (%d,%d) orig=%.6g disp=%.4f", under.c_str(), ix, iy, static_cast<double>(orig), static_cast<double>(disp));
+          SDL_SetWindowTitle(g_window, title);
+        }
+      }
+    } else {
+      SDL_SetWindowTitle(g_window, "Ravl2 Debug Display");
+    }
 
     SDL_RenderPresent(g_renderer);
   }
@@ -225,7 +394,7 @@ namespace {
 
       // Drain at most N commands per tick to bound work; mark invalidated when changes occur
       int drained = 0;
-      std::unique_ptr<IRenderCommand> cmd;
+      std::shared_ptr<IRenderCommand> cmd;
       while (drained < 64 && g_queue.tryPop(cmd)) {
         if (cmd) { cmd->apply(g_channels); g_invalidated.store(true, std::memory_order_release); }
         ++drained;
@@ -260,7 +429,7 @@ void ensureStarted(const InitOptions &opts) {
   });
 }
 
-std::expected<void, std::string> enqueue(std::unique_ptr<IRenderCommand> command)
+std::expected<void, std::string> enqueue(std::shared_ptr<IRenderCommand> command)
 {
   if (!g_started.load(std::memory_order_acquire)) { ensureStarted({}); }
   if (!command) { return std::unexpected(std::string{"DebugDisplay enqueue: null command"}); }
@@ -282,11 +451,11 @@ std::expected<void, std::string> enqueue(std::string_view channel,
 {
   (void)type; (void)payload; (void)flags;
   // Convert :Clear control to a command; otherwise no-op and success
-  std::unique_ptr<IRenderCommand> cmd;
+  std::shared_ptr<IRenderCommand> cmd;
   const bool hasClearCtrl = (!controls.empty() && controls.find(":Clear") != std::string_view::npos);
   if (hasClearCtrl) {
-    cmd = std::make_unique<Commands::ClearChannelCommand>(std::string{channel});
-    return enqueue(std::move(cmd));
+    cmd = std::make_shared<Commands::ClearChannelCommand>(std::string{channel});
+    return enqueue(cmd);
   }
   // No recognized control; accept as no-op for backward compatibility
   return {};

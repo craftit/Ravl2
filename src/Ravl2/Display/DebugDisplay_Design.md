@@ -263,3 +263,40 @@ src/Ravl2/Display/
 - Initial backend policy per OS (e.g., Metal on macOS, Vulkan on Linux where available, D3D11/12 on Windows).
 - Default normalization (auto vs fixed) and histogram binning cost for percentile.
 - Per‑channel queue sizing and drop policy thresholds.
+
+
+
+## `@debug` command sink via TypeConverter (implemented)
+The `@debug:` output now accepts `std::shared_ptr<IRenderCommand>` as the canonical sink type. The IO layer uses the `TypeConverter` registry to convert supported Ravl2 types into render commands.
+
+### URL controls (current prototype)
+Controls are appended after the channel name, separated by `:`. Multiple controls may be combined.
+
+- `:Clear` — clears the channel before applying the command.
+- `:Norm=Auto` or `:Normalize=Auto` — use auto normalization (min/max) for float images.
+- `:Norm=Fixed=min,max` — use fixed normalization range.
+- `:Norm=Pct:low,high` or `:Normalize=Percentile:low,high` — compute percentiles on the float image and use the resulting range.
+
+Examples:
+- `@debug:Image:Clear:Norm=Auto`
+- `@debug:Image:Norm=Fixed=0.0,255.0`
+- `@debug:Image:Normalize=Percentile:1,99`
+
+A `SetNormalization2D` command is enqueued before the primary command when a normalization control is present. The URL's channel is authoritative and will be applied to `SetBaseImage2D` if needed.
+
+### Interaction (SDL MVP)
+- Pan: left-drag inside the image view updates `ChannelState::view2D.translation()`.
+- Zoom: mouse wheel zooms around the cursor; `ChannelState::view2D.scaleVector()` is clamped to [0.05, 32].
+- Pixel query: the window title displays `(x,y)` along with original and displayed values under the mouse.
+
+- OutputFormat: a generic sink recognizes `@debug:<Channel>[:Control...]` URLs.
+  - It applies URL controls like `:Clear` by enqueuing a small `ClearChannelCommand` before the main command.
+  - It enforces the channel from the URL on known commands (e.g., sets `SetBaseImage2D::channel`).
+  - It enqueues the resulting command via `DebugDisplay::enqueue`.
+- Conversions currently registered:
+  - `Array<uint8_t,2>` → `std::shared_ptr<IRenderCommand>` building `SetBaseImage2D` (u8).
+  - `Array<float,2>` → `std::shared_ptr<IRenderCommand>` building `SetBaseImage2D` (f32); auto normalization (min/max) is computed in `Image2DNode`.
+- Backward compatibility:
+  - Legacy per-type `@debug` adapters have been removed in the prototype; the command sink is the authoritative path going forward.
+- Separation of concerns:
+  - View state (pan/zoom) lives in `ChannelState::view2D` using `ScaleTranslate<float,2>`; scene nodes do not own view transforms.

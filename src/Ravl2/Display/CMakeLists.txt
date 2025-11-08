@@ -7,7 +7,8 @@ add_library(Ravl2Display
     RenderContext.hh Normalization.hh
     Image2DNode.cc Image2DNode.hh
     Commands/SetBaseImage2D.cc Commands/SetBaseImage2D.hh
-    Adapters/Array2DAdapters.cc
+    Commands/SetNormalization2D.hh Commands/SetNormalization2D.cc
+    Adapters/RenderCommandSink.cc
 )
 
 add_library(ravl2::Ravl2Display ALIAS Ravl2Display)

@@ -9,6 +9,7 @@
 
 #include "Ravl2/Display/ISceneNode.hh"
 #include "Ravl2/Geometry/ScaleTranslate.hh"
+#include "Ravl2/Display/Normalization.hh"
 
 namespace Ravl2::DebugDisplay {
 
@@ -19,7 +20,10 @@ struct ChannelState {
 
   // 2D view transform: scale (per-axis) and translate in pixels.
   // This represents the view (pan/zoom) state, not owned by scene nodes.
-  ScaleTranslate<float, 2> view2D{};
+  ScaleTranslate<float, 2> view2D = ScaleTranslate<float, 2>::identity();
+
+  // Display normalization settings for float images (per-view)
+  NormalizationSettings norm = {};
 
   // Base image node for 2D view (optional)
   std::unique_ptr<ISceneNode> baseImage2D;

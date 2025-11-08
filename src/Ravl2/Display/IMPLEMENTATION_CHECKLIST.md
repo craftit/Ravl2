@@ -22,19 +22,21 @@ Legend: [ ] = todo, [*] = in progress, [x] = done
 ## Phase 3 — Message bus and channels (Command/Node architecture)
 - [x] Define `IRenderCommand` base (applied on GUI thread)
 - [x] Define `ISceneNode` base (persistent per-channel, owns GPU resources)
-- [x] Add new `enqueue(channel, std::unique_ptr<IRenderCommand>, flags, controls)` API
-- [x] Define bounded, thread-safe queue for `DisplayMessage` (now carries a command)
+- [x] Add `enqueue(std::shared_ptr<IRenderCommand>)` API (channel/controls embedded in commands)
+- [x] Define bounded, thread-safe queue for render commands
 - [x] Implement `enqueue()` push with backpressure / drop-oldest policy
 - [x] Channel registry (create/find/reset) and parse `:Clear` control
 - [x] Back-compat shim (optional): convert old payload-based enqueue to commands (temporary)
+- [x] ioSave → `std::shared_ptr<IRenderCommand>` via `TypeConverter` and generic `@debug` OutputFormat (command sink)
 
 ## Phase 4 — 2D image path (MVP)
-- [x] Adapter for `Array<uint8_t,2]`
-- [*] Adapter for `Array<float,2>` with normalization (auto/fixed/percentile)
+- [x] Command sink via TypeConverter for `Array<uint8_t,2]` → `SetBaseImage2D`
+- [x] Command sink via TypeConverter for `Array<float,2]` → `SetBaseImage2D` with normalization (auto/fixed/percentile)
   - [x] Auto normalization (min/max) for display of f32
-  - [ ] Fixed range and percentile policies
-- [ ] Textured quad shader; zoom/pan controls (bgfx/ImGui)
-- [ ] Pixel query tooltip (original + displayed values)
+  - [x] Fixed range and percentile policies (via URL controls and per-channel state)
+- [ ] Textured quad shader (bgfx) — pending bgfx integration
+- [x] Zoom/pan controls (SDL MVP; to be moved to ImGui later)
+- [x] Pixel query tooltip (original + displayed values) — window title MVP
 
 ## Phase 5 — Overlays (2D)
 - [ ] Adapter for `std::vector<Point<float,2>>`

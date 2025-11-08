@@ -18,6 +18,8 @@ using namespace std::chrono_literals;
 
 int main(int argc, char** argv)
 {
+  Ravl2::DebugDisplay::initDisplay();
+
   Ravl2::addResourcePath("data",RAVL_SOURCE_DIR "/data");
 
   std::string imagePath;
