@@ -20,13 +20,13 @@ int RAVL2_MAIN(int argc, char** argv)
 {
   // Set logging early before any DebugDisplay initialization
   spdlog::set_pattern("[%Y-%m-%d %T.%e] [%^%l%$] [%t] %v");
-  spdlog::set_level(spdlog::level::info);
+  spdlog::set_level(spdlog::level::debug);
 
   Ravl2::DebugDisplay::initDisplay();
 
   Ravl2::addResourcePath("data",RAVL_SOURCE_DIR "/data");
 
-  std::string imagePath;
+  std::string imagePath = "lena.jpg";
   cxxopts::Options options(argv[0], "doDisplay");
   try {
     options

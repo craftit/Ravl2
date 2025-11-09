@@ -1,5 +1,6 @@
 #include "Ravl2/Display/Backends/BGFXContext.hh"
 #include <spdlog/spdlog.h>
+#include <atomic>
 
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_syswm.h>
@@ -17,19 +18,28 @@ namespace Ravl2::DebugDisplay {
 
 #if defined(RAVL2_WITH_BGFX)
 
+// Global flag to detect bgfx fatals during initialization attempts
+static std::atomic_bool s_bgfxFatalSeen{false};
+
 // bgfx callback to capture internal logs and errors
 class BgfxCallback : public bgfx::CallbackI {
 public:
   void fatal(const char* /*filePath*/, uint16_t /*line*/, bgfx::Fatal::Enum code, const char* str) override {
     SPDLOG_CRITICAL("bgfx fatal error {}: {}", static_cast<int>(code), str);
+    // Mark that a fatal occurred so the current init attempt can be treated as failed
+    s_bgfxFatalSeen.store(true, std::memory_order_release);
   }
   
   void traceVargs(const char* /*filePath*/, uint16_t /*line*/, const char* format, va_list argList) override {
     char buffer[2048];
+#ifdef __clang__
     #pragma clang diagnostic push
     #pragma clang diagnostic ignored "-Wformat-nonliteral"
+#endif
     vsnprintf(buffer, sizeof(buffer), format, argList);
+#ifdef __clang__
     #pragma clang diagnostic pop
+#endif
     SPDLOG_DEBUG("bgfx trace: {}", buffer);
   }
   
@@ -78,64 +88,115 @@ bool BGFXContext::init(const InitParams& params) noexcept {
     SPDLOG_ERROR("BGFXContext: SDL_GetWindowWMInfo failed: {}", SDL_GetError());
     return false;
   }
+  const char* sdlDriver = SDL_GetCurrentVideoDriver();
+  SPDLOG_INFO("BGFXContext: SDL video driver='{}', WM subsystem={}", (sdlDriver ? sdlDriver : "(null)"), static_cast<int>(wmi.subsystem));
 
   static BgfxCallback s_callback;
   
-  bgfx::Init init{};
-  init.type = toBgfxType(params.backend);
-  init.vendorId = BGFX_PCI_ID_NONE;
-  init.resolution.width = static_cast<uint32_t>(params.width);
-  init.resolution.height = static_cast<uint32_t>(params.height);
-  init.resolution.reset = BGFX_RESET_VSYNC;
-  init.callback = &s_callback;
+  auto buildInit = [&](bgfx::RendererType::Enum rt) {
+    bgfx::Init init{};
+    init.type = rt; // bgfx::RendererType::Count means auto
+    init.vendorId = BGFX_PCI_ID_NONE;
+    init.resolution.width = static_cast<uint32_t>(params.width);
+    init.resolution.height = static_cast<uint32_t>(params.height);
+    init.resolution.reset = BGFX_RESET_VSYNC;
+    init.callback = &s_callback;
   
-#ifdef __APPLE__
-  // On macOS, Metal requires main thread access; disable bgfx render thread
-  init.resolution.reset |= BGFX_RESET_NONE;
-  // Note: This doesn't actually disable threading; bgfx needs to be compiled with BGFX_CONFIG_MULTITHREADED=0
-#endif
+  #ifdef __APPLE__
+    // On macOS, Metal requires main thread access; disable bgfx render thread
+    init.resolution.reset |= BGFX_RESET_NONE;
+    // Note: This doesn't actually disable threading; bgfx needs to be compiled with BGFX_CONFIG_MULTITHREADED=0
+  #endif
   
-  // Set platform data directly in init structure (not via global setPlatformData)
-#if defined(SDL_VIDEO_DRIVER_WINDOWS)
-  init.platformData.nwh = wmi.info.win.window;
-#elif defined(SDL_VIDEO_DRIVER_COCOA)
-  // On macOS with Metal backend, bgfx needs the NSView's CAMetalLayer, not the NSWindow
-  // SDL_WINDOW_METAL flag ensures the view has a Metal layer
-  NSWindow* nsWindow = wmi.info.cocoa.window;
-  NSView* contentView = [nsWindow contentView];
-  // __bridge is an Objective-C ARC keyword, not a C++ cast; disable old-style-cast warning
-  #pragma clang diagnostic push
-  #pragma clang diagnostic ignored "-Wold-style-cast"
-  init.platformData.nwh = (__bridge void*)contentView;
-  #pragma clang diagnostic pop
-#elif defined(SDL_VIDEO_DRIVER_X11)
-  init.platformData.ndt = wmi.info.x11.display;
-  init.platformData.nwh = (void*)(uintptr_t)wmi.info.x11.window;
-#elif defined(SDL_VIDEO_DRIVER_WAYLAND)
-  init.platformData.ndt = wmi.info.wl.display;
-  init.platformData.nwh = wmi.info.wl.surface;
-#elif defined(__ANDROID__)
-  init.platformData.nwh = wmi.info.android.window;
-#else
-  init.platformData.nwh = nullptr;
-#endif
+    // Set platform data directly in init structure (not via global setPlatformData)
+  #if defined(SDL_VIDEO_DRIVER_WINDOWS)
+    init.platformData.nwh = wmi.info.win.window;
+  #elif defined(SDL_VIDEO_DRIVER_COCOA)
+    // On macOS with Metal backend, bgfx needs the NSView's CAMetalLayer, not the NSWindow
+    // SDL_WINDOW_METAL flag ensures the view has a Metal layer
+    NSWindow* nsWindow = wmi.info.cocoa.window;
+    NSView* contentView = [nsWindow contentView];
+    // __bridge is an Objective-C ARC keyword, not a C++ cast; disable old-style-cast warning
+    #pragma clang diagnostic push
+    #pragma clang diagnostic ignored "-Wold-style-cast"
+    init.platformData.nwh = (__bridge void*)contentView;
+    #pragma clang diagnostic pop
+  #elif defined(SDL_VIDEO_DRIVER_X11)
+    init.platformData.ndt = wmi.info.x11.display;
+    init.platformData.nwh = reinterpret_cast<void *>(wmi.info.x11.window);
+  #elif defined(SDL_VIDEO_DRIVER_WAYLAND)
+    init.platformData.ndt = wmi.info.wl.display;
+    init.platformData.nwh = wmi.info.wl.surface;
+  #elif defined(__ANDROID__)
+    init.platformData.nwh = wmi.info.android.window;
+  #else
+    init.platformData.nwh = nullptr;
+  #endif
+    return init;
+  };
 
-  SPDLOG_INFO("BGFXContext: attempting init with backend={}, size={}x{}, nwh={}", 
-               backendName(params.backend), params.width, params.height, init.platformData.nwh);
-
-  if (!bgfx::init(init)) {
-    SPDLOG_ERROR("BGFXContext: bgfx::init failed ({}x{}, backend={})", params.width, params.height, backendName(params.backend));
-    SPDLOG_ERROR("BGFXContext: renderer type requested: {}", static_cast<int>(init.type));
-    m_initialized = false;
-    return false;
+  // Build backend candidate list
+  std::vector<Backend> candidates;
+  if (params.backend == Backend::Auto) {
+  #if defined(_WIN32)
+    candidates = { Backend::D3D12, Backend::D3D11, Backend::OpenGL };
+  #elif defined(__APPLE__)
+    candidates = { Backend::Metal };
+  #else
+    // Linux: prefer Vulkan first on NVIDIA/X11 setups; OpenGL as fallback
+    candidates = { Backend::Vulkan, Backend::OpenGL };
+  #endif
+  } else {
+    candidates = { params.backend };
   }
 
-  bgfx::setViewClear(0, BGFX_CLEAR_COLOR | BGFX_CLEAR_DEPTH, 0x303030ff, 1.0f, 0);
-  bgfx::setViewRect(0, 0, 0, static_cast<uint16_t>(params.width), static_cast<uint16_t>(params.height));
+  for (auto b : candidates) {
+    auto rt = toBgfxType(b);
+    auto init = buildInit(rt);
+    SPDLOG_INFO("BGFXContext: attempting init with backend={}, size={}x{}, nwh={}", backendName(b), params.width, params.height, init.platformData.nwh);
+    // Reset fatal flag for this attempt
+    s_bgfxFatalSeen.store(false, std::memory_order_release);
+    if (bgfx::init(init)) {
+      // If bgfx reported a fatal during init, treat as failure and clean up
+      if (s_bgfxFatalSeen.load(std::memory_order_acquire)) {
+        SPDLOG_WARN("BGFXContext: bgfx::init returned true but a fatal was reported; treating as failure for backend {}", backendName(b));
+        bgfx::shutdown();
+      } else {
+        bgfx::setViewClear(0, BGFX_CLEAR_COLOR | BGFX_CLEAR_DEPTH, 0x303030ff, 1.0f, 0);
+        bgfx::setViewRect(0, 0, 0, static_cast<uint16_t>(params.width), static_cast<uint16_t>(params.height));
+        // Enable debug text so HUD can render when desired
+        bgfx::setDebug(BGFX_DEBUG_TEXT);
+        m_initialized = true;
+        m_params.backend = b;
+        SPDLOG_INFO("BGFXContext: initialized ({}x{}, backend={})", params.width, params.height, backendName(b));
+        return true;
+      }
+    }
+    SPDLOG_WARN("BGFXContext: bgfx::init failed for backend {}", backendName(b));
+  }
 
-  m_initialized = true;
-  SPDLOG_INFO("BGFXContext: initialized ({}x{}, backend={})", params.width, params.height, backendName(params.backend));
-  return true;
+  // As a last resort, try bgfx auto selection
+  {
+    auto init = buildInit(bgfx::RendererType::Count);
+    SPDLOG_INFO("BGFXContext: attempting init with backend=Auto (bgfx), size={}x{}", params.width, params.height);
+    s_bgfxFatalSeen.store(false, std::memory_order_release);
+    if (bgfx::init(init)) {
+      if (s_bgfxFatalSeen.load(std::memory_order_acquire)) {
+        SPDLOG_WARN("BGFXContext: bgfx::init (Auto) returned true but a fatal was reported; treating as failure");
+        bgfx::shutdown();
+      } else {
+        bgfx::setViewClear(0, BGFX_CLEAR_COLOR | BGFX_CLEAR_DEPTH, 0x303030ff, 1.0f, 0);
+        bgfx::setViewRect(0, 0, 0, static_cast<uint16_t>(params.width), static_cast<uint16_t>(params.height));
+        m_initialized = true;
+        SPDLOG_INFO("BGFXContext: initialized via bgfx Auto ({}x{})", params.width, params.height);
+        return true;
+      }
+    }
+  }
+
+  SPDLOG_ERROR("BGFXContext: failed to initialize any backend");
+  m_initialized = false;
+  return false;
 }
 
 void BGFXContext::resize(int width, int height) noexcept {
@@ -154,6 +215,8 @@ void BGFXContext::frame() noexcept {
 
 void BGFXContext::shutdown() noexcept {
   if (m_initialized) {
+    // Disable debug output to avoid driver debug group calls during teardown
+    bgfx::setDebug(BGFX_DEBUG_NONE);
     bgfx::shutdown();
     SPDLOG_INFO("BGFXContext: shutdown");
     m_initialized = false;

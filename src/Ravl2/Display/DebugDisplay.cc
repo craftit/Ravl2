@@ -20,6 +20,156 @@
 #include "Ravl2/Display/Backends/BGFXContext.hh"
 #if defined(RAVL2_WITH_BGFX)
 #include <bgfx/bgfx.h>
+#include <bgfx/platform.h>
+#endif
+
+#if defined(RAVL2_WITH_BGFX)
+namespace {
+  struct NonImGuiBgfxRenderer {
+    bgfx::ProgramHandle program{bgfx::kInvalidHandle};
+    bgfx::UniformHandle uSampler{bgfx::kInvalidHandle};
+    bgfx::VertexLayout layout{};
+    bool initialized = false;
+
+    static const char* shaderDir() noexcept {
+    #ifdef RAVL2_SHADER_DIR
+      return RAVL2_SHADER_DIR;
+    #else
+      return "";
+    #endif
+    }
+
+    static std::string shaderPath(const char* base) {
+      const bgfx::RendererType::Enum rt = bgfx::getRendererType();
+      const char* ext = nullptr;
+      switch (rt) {
+        case bgfx::RendererType::OpenGL: ext = "glsl.bin"; break;
+        case bgfx::RendererType::Vulkan: ext = "spv.bin"; break;
+        default: ext = "glsl.bin"; break; // best effort
+      }
+      std::string p = std::string(shaderDir()) + "/" + base + "." + ext;
+      return p;
+    }
+
+    static bgfx::ShaderHandle loadShaderFile(const std::string& path) {
+      FILE* f = fopen(path.c_str(), "rb");
+      if (!f) {
+        SPDLOG_ERROR("NonImGuiBgfxRenderer: failed to open shader '{}'", path);
+        return BGFX_INVALID_HANDLE;
+      }
+      fseek(f, 0, SEEK_END);
+      long len = ftell(f);
+      fseek(f, 0, SEEK_SET);
+      if (len <= 0) { fclose(f); return BGFX_INVALID_HANDLE; }
+      const bgfx::Memory* mem = bgfx::alloc(static_cast<uint32_t>(len + 1));
+      if (fread(mem->data, 1, static_cast<size_t>(len), f) != static_cast<size_t>(len)) {
+        fclose(f);
+        return BGFX_INVALID_HANDLE;
+      }
+      fclose(f);
+      mem->data[len] = '\0';
+      return bgfx::createShader(mem);
+    }
+
+    bool init() {
+      if (initialized) return true;
+      // Vertex layout: vec2 position, vec2 uv
+      layout.begin()
+        .add(bgfx::Attrib::Position, 2, bgfx::AttribType::Float)
+        .add(bgfx::Attrib::TexCoord0, 2, bgfx::AttribType::Float)
+        .end();
+      uSampler = bgfx::createUniform("s_texColor", bgfx::UniformType::Sampler);
+      if (!bgfx::isValid(uSampler)) {
+        SPDLOG_ERROR("NonImGuiBgfxRenderer: failed to create sampler uniform");
+        return false;
+      }
+      const std::string vs = shaderPath("vs_image");
+      const std::string fs = shaderPath("fs_image");
+      bgfx::ShaderHandle vsh = loadShaderFile(vs);
+      bgfx::ShaderHandle fsh = loadShaderFile(fs);
+      if (!bgfx::isValid(vsh) || !bgfx::isValid(fsh)) {
+        if (bgfx::isValid(vsh)) bgfx::destroy(vsh);
+        if (bgfx::isValid(fsh)) bgfx::destroy(fsh);
+        SPDLOG_ERROR("NonImGuiBgfxRenderer: failed to load shaders ({} , {})", vs, fs);
+        return false;
+      }
+      program = bgfx::createProgram(vsh, fsh, true /*destroy shaders*/);
+      if (!bgfx::isValid(program)) {
+        SPDLOG_ERROR("NonImGuiBgfxRenderer: failed to create program");
+        return false;
+      }
+      initialized = true;
+      SPDLOG_INFO("NonImGuiBgfxRenderer: program initialized (renderer={})", static_cast<int>(bgfx::getRendererType()));
+      return true;
+    }
+
+    void shutdown() {
+      if (bgfx::isValid(program)) { bgfx::destroy(program); program = BGFX_INVALID_HANDLE; }
+      if (bgfx::isValid(uSampler)) { bgfx::destroy(uSampler); uSampler = BGFX_INVALID_HANDLE; }
+      initialized = false;
+    }
+
+    void submitTexturedQuad(uint16_t fbw, uint16_t fbh,
+                            uint16_t texHandleIdx,
+                            int imgW, int imgH,
+                            float sx, float sy, float tx, float ty) {
+      if (!initialized && !init()) return;
+      if (texHandleIdx == UINT16_MAX) return;
+      bgfx::TextureHandle th{texHandleIdx};
+      if (!bgfx::isValid(th)) return;
+
+      // Compute destination rectangle in pixels using view2D params
+      float dstW = static_cast<float>(imgW) * sx;
+      float dstH = static_cast<float>(imgH) * sy;
+      float dstX = tx; // pixels from left
+      float dstY = ty; // pixels from top
+
+      // Convert to NDC vertices (origin center, y up). SDL uses top-left origin.
+      auto toNdcX = [&](float px){ return (px / float(fbw)) * 2.0f - 1.0f; };
+      auto toNdcY = [&](float py){ return 1.0f - (py / float(fbh)) * 2.0f; };
+
+      float x0 = toNdcX(dstX);
+      float y0 = toNdcY(dstY);
+      float x1 = toNdcX(dstX + dstW);
+      float y1 = toNdcY(dstY + dstH);
+
+      struct Vtx { float x,y,u,v; };
+      Vtx* vtx = nullptr;
+      const uint16_t numVerts = 4;
+      const uint16_t numInds = 6;
+      bgfx::TransientVertexBuffer tvb;
+      bgfx::TransientIndexBuffer tib;
+      if (bgfx::getAvailTransientVertexBuffer(numVerts, layout) < numVerts ||
+          bgfx::getAvailTransientIndexBuffer(numInds) < numInds) {
+        SPDLOG_WARN("NonImGuiBgfxRenderer: transient buffer alloc unavailable");
+        return;
+      }
+      bgfx::allocTransientVertexBuffer(&tvb, numVerts, layout);
+      bgfx::allocTransientIndexBuffer(&tib, numInds);
+      vtx = reinterpret_cast<Vtx*>(tvb.data);
+      // Triangle strip order (we'll use indices for two triangles)
+      vtx[0] = { x0, y0, 0.0f, 0.0f }; // top-left
+      vtx[1] = { x1, y0, 1.0f, 0.0f }; // top-right
+      vtx[2] = { x1, y1, 1.0f, 1.0f }; // bottom-right
+      vtx[3] = { x0, y1, 0.0f, 1.0f }; // bottom-left
+      uint16_t* idx = reinterpret_cast<uint16_t*>(tib.data);
+      idx[0]=0; idx[1]=1; idx[2]=2; idx[3]=0; idx[4]=2; idx[5]=3;
+
+      uint64_t state = 0
+        | BGFX_STATE_WRITE_RGB
+        | BGFX_STATE_WRITE_A
+        | BGFX_STATE_MSAA
+        ;
+      bgfx::setState(state);
+      bgfx::setVertexBuffer(0, &tvb, 0, numVerts);
+      bgfx::setIndexBuffer(&tib, 0, numInds);
+      bgfx::setTexture(0, uSampler, th);
+      bgfx::submit(0, program);
+    }
+  };
+
+  NonImGuiBgfxRenderer g_nonImguiRenderer;
+}
 #endif
 
 #if defined(RAVL2_WITH_IMGUI) && defined(RAVL2_WITH_BGFX)
@@ -69,6 +219,7 @@ namespace {
   SDL_Window* g_window = nullptr;
   SDL_Renderer* g_renderer = nullptr;
   std::atomic_bool g_invalidated{true};
+  bool g_needSDLRenderer = true;
 
   // bgfx context (initialized against SDL window)
   BGFXContext g_bgfx;
@@ -120,52 +271,71 @@ namespace {
       return false;
     }
 
-    // Create SDL renderer (accelerated if available)
-    g_renderer = SDL_CreateRenderer(g_window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
-    if (!g_renderer) {
-      SPDLOG_WARN("DebugDisplay: SDL_CreateRenderer failed ({}). Falling back to software.", SDL_GetError());
-      g_renderer = SDL_CreateRenderer(g_window, -1, SDL_RENDERER_SOFTWARE);
-      if (!g_renderer) {
-        SPDLOG_ERROR("DebugDisplay: SDL_CreateRenderer (software) failed: {}", SDL_GetError());
-        return false;
-      }
-    }
+    // Determine initial window size
+    int winW = 0, winH = 0;
+    SDL_GetWindowSize(g_window, &winW, &winH);
 
-    // Some platforms (Wayland/HiDPI) report a 0x0 drawable until the first expose/resize.
-    // Wait briefly for a non-zero renderer output size so the first frame is visible without moving the window.
-    SDL_PumpEvents();
-    int outW = 0, outH = 0;
-    const uint32_t startTicks = SDL_GetTicks();
-    while (true) {
-      SDL_GetRendererOutputSize(g_renderer, &outW, &outH);
-      if (outW > 0 && outH > 0) break;
-      if (SDL_GetTicks() - startTicks > 250) { // give up after 250ms
-        break;
-      }
-      // Wait for any window config event briefly
-      SDL_WaitEventTimeout(nullptr, 5);
-    }
-    if (outW <= 0 || outH <= 0) {
-      SPDLOG_WARN("DebugDisplay: renderer output size is {}x{} at startup; first frame may be delayed.", outW, outH);
-    } else {
-      SPDLOG_INFO("DebugDisplay: SDL window+renderer created (drawable {}x{})", outW, outH);
-    }
-
-    // Initialize bgfx context (Step A: init only; SDL used for blit until Step B)
-    // Note: bgfx Metal backend on macOS has threading issues and blocks indefinitely
-    // Use SDL renderer fallback on macOS for now
-#ifndef __APPLE__
+    // Try bgfx first on non-Apple platforms, before creating any SDL_Renderer to avoid GL context conflicts
+#if !defined(__APPLE__)
     BGFXContext::InitParams ip{};
-    ip.backend = BGFXContext::Backend::Vulkan; // default for other platforms
-    ip.width = outW > 0 ? outW : 1280;
-    ip.height = outH > 0 ? outH : 720;
+    ip.backend = BGFXContext::Backend::Auto; // let bgfx choose the best available backend
+    ip.width = winW > 0 ? winW : 1280;
+    ip.height = winH > 0 ? winH : 720;
     ip.nativeWindow = g_window;
     if (!g_bgfx.init(ip)) {
-      SPDLOG_WARN("DebugDisplay: bgfx init failed; continuing with SDL renderer MVP only");
+      SPDLOG_WARN("DebugDisplay: bgfx init failed; falling back to SDL_Renderer path");
     }
 #else
-    SPDLOG_INFO("DebugDisplay: using SDL renderer on macOS (bgfx Metal has threading issues)");
+    SPDLOG_INFO("DebugDisplay: skipping bgfx init on macOS for now; using SDL renderer for images");
 #endif
+
+    // Decide if we need SDL renderer (fallback) when bgfx isn't usable for 2D blit
+    g_needSDLRenderer = !g_bgfx.initialized();
+#if defined(RAVL2_WITH_BGFX) && !defined(RAVL2_WITH_IMGUI)
+    // If bgfx is initialized but non-ImGui renderer can't init (e.g., shaders missing), fall back to SDL
+    if (g_bgfx.initialized()) {
+      if (!g_nonImguiRenderer.init()) {
+        SPDLOG_WARN("DebugDisplay: non-ImGui bgfx renderer not available; using SDL renderer fallback");
+        g_needSDLRenderer = true;
+      }
+    }
+#endif
+
+    if (g_needSDLRenderer) {
+      // Prefer software renderer to avoid GL context conflicts with bgfx
+      g_renderer = SDL_CreateRenderer(g_window, -1, SDL_RENDERER_SOFTWARE);
+      if (!g_renderer) {
+        // As a fallback, try accelerated with vsync (may still conflict with GL backends)
+        SPDLOG_WARN("DebugDisplay: SDL_CreateRenderer (software) failed ({}). Trying accelerated.", SDL_GetError());
+        g_renderer = SDL_CreateRenderer(g_window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
+        if (!g_renderer) {
+          SPDLOG_ERROR("DebugDisplay: SDL_CreateRenderer failed: {}", SDL_GetError());
+          return false;
+        }
+      }
+
+      // Some platforms (Wayland/HiDPI) report a 0x0 drawable until the first expose/resize.
+      // Wait briefly for a non-zero renderer output size so the first frame is visible without moving the window.
+      SDL_PumpEvents();
+      int outW = 0, outH = 0;
+      const uint32_t startTicks = SDL_GetTicks();
+      while (true) {
+        SDL_GetRendererOutputSize(g_renderer, &outW, &outH);
+        if (outW > 0 && outH > 0) break;
+        if (SDL_GetTicks() - startTicks > 250) { // give up after 250ms
+          break;
+        }
+        // Wait for any window config event briefly
+        SDL_WaitEventTimeout(nullptr, 5);
+      }
+      if (outW <= 0 || outH <= 0) {
+        SPDLOG_WARN("DebugDisplay: renderer output size is {}x{} at startup; first frame may be delayed.", outW, outH);
+      } else {
+        SPDLOG_INFO("DebugDisplay: SDL window+renderer created (drawable {}x{})", outW, outH);
+      }
+    } else {
+      SPDLOG_INFO("DebugDisplay: bgfx initialized; SDL_Renderer not created to avoid conflicts");
+    }
 
     // Initialize Dear ImGui
 #if defined(RAVL2_WITH_IMGUI) && defined(RAVL2_WITH_BGFX)
@@ -515,6 +685,28 @@ namespace {
     // Note: SDL_RenderPresent is called after ImGui rendering in guiThreadMain.
   }
 
+  void renderAllBgfxNonImGui(uint16_t fbw, uint16_t fbh)
+  {
+#if defined(RAVL2_WITH_BGFX)
+    g_lastRects.clear();
+    RenderContext rc{}; rc.framebufferWidth = fbw; rc.framebufferHeight = fbh;
+    g_channels.forEachChannel([&](ChannelState &ch){
+      if (!ch.baseImage2D) return;
+      auto *node = static_cast<Image2DNode*>(ch.baseImage2D.get());
+      node->prepare(rc);
+      if (node->width > 0 && node->height > 0 && node->textureHandleIdx != UINT16_MAX) {
+        const float sx = ch.view2D.scaleVector()[0];
+        const float sy = ch.view2D.scaleVector()[1];
+        const float tx = ch.view2D.translation()[0];
+        const float ty = ch.view2D.translation()[1];
+        g_nonImguiRenderer.submitTexturedQuad(fbw, fbh, node->textureHandleIdx, node->width, node->height, sx, sy, tx, ty);
+        SDL_FRect r{ tx, ty, static_cast<float>(node->width) * sx, static_cast<float>(node->height) * sy };
+        g_lastRects[ch.name] = r;
+      }
+    });
+#endif
+  }
+
   void guiThreadMain(std::stop_token st)
   {
     SPDLOG_INFO("DebugDisplay: GUI thread started (SDL window+renderer)");
@@ -528,6 +720,14 @@ namespace {
       SDL_WaitEventTimeout(nullptr, 33); // ~30 FPS heartbeat
       if (st.stop_requested()) {
         SPDLOG_INFO("DebugDisplay: GUI loop detected stop request, exiting");
+#if defined(RAVL2_WITH_BGFX)
+        if (g_bgfx.initialized()) {
+          // Disable bgfx debug markers and flush a final frame to avoid GL debug group calls after teardown
+          bgfx::setDebug(BGFX_DEBUG_NONE);
+          bgfx::touch(0);
+          g_bgfx.frame();
+        }
+#endif
         break; // Check immediately after wait
       }
       processEvents(st);
@@ -669,6 +869,16 @@ namespace {
         renderAll();
       }
 
+#if defined(RAVL2_WITH_BGFX) && !defined(RAVL2_WITH_IMGUI)
+      // Non-ImGui bgfx path: submit textured quads for all image channels
+      if (g_bgfx.initialized()) {
+        int winW=0, winH=0; SDL_GetWindowSize(g_window, &winW, &winH);
+        uint16_t fbw = static_cast<uint16_t>(winW);
+        uint16_t fbh = static_cast<uint16_t>(winH);
+        renderAllBgfxNonImGui(fbw, fbh);
+      }
+#endif
+
       // Render UI and present
 #if defined(RAVL2_WITH_IMGUI) && defined(RAVL2_WITH_BGFX)
       if (g_imguiInitialized && g_bgfx.initialized()) {
@@ -685,12 +895,29 @@ namespace {
         SDL_RenderPresent(g_renderer);
       }
 
+#if defined(RAVL2_WITH_BGFX)
+      // If bgfx is initialized but nothing submitted, keep a minimal overlay so the window isn't blank
+      if (g_bgfx.initialized()) {
+        // Print a small HUD with backend info; ensure view 0 is touched so a frame is produced
+        bgfx::dbgTextClear();
+        bgfx::dbgTextPrintf(0, 0, 0x0f, "Ravl2 DebugDisplay — backend=%s", BGFXContext::backendName(g_bgfx.backend()));
+        bgfx::touch(0);
+      }
+#endif
+
       // Submit bgfx frame boundary (only if initialized)
       if (g_bgfx.initialized()) {
         g_bgfx.frame();
       }
     }
 
+    // Destroy ImGui (bgfx backend) before shutting down bgfx to avoid use-after-shutdown
+#if defined(RAVL2_WITH_IMGUI) && defined(RAVL2_WITH_BGFX)
+    if (g_imguiInitialized && g_bgfx.initialized()) {
+      imguiDestroy();
+      g_imguiInitialized = false;
+    }
+#endif
     // Shutdown bgfx before SDL teardown
     g_bgfx.shutdown();
 

@@ -178,7 +178,7 @@ function(RAVL2_setup_dependencies)
       GIT_TAG master
       OPTIONS
         "BGFX_BUILD_EXAMPLES OFF"
-        "BGFX_BUILD_TOOLS OFF"
+        "BGFX_BUILD_TOOLS ON"
         "BGFX_INSTALL OFF"
     )
 

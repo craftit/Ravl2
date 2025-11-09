@@ -19,7 +19,7 @@ struct BGFXContext {
   };
 
   struct InitParams {
-    Backend backend = Backend::Vulkan;
+    Backend backend = Backend::Auto;
     int width = 1280;
     int height = 720;
     void* nativeWindow = nullptr; //! SDL_Window* pointer
@@ -41,6 +41,9 @@ struct BGFXContext {
 
   // Human-readable backend name.
   static const char* backendName(Backend b) noexcept;
+
+  // Currently selected backend (meaningful only if initialized()).
+  Backend backend() const noexcept { return m_params.backend; }
 
 private:
   bool m_initialized = false;

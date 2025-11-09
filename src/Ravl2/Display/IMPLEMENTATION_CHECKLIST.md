@@ -15,7 +15,7 @@ Legend: [ ] = todo, [*] = in progress, [x] = done
 
 ## Phase 2 — ImGui docking + event loop
 - [x] Add SDL2 window creation (GUI thread via `std::jthread`)
-- [*] Initialize bgfx with backend policy (Vulkan default, per-platform fallbacks) — Step A started
+- [x] Initialize bgfx with backend policy (Linux: Vulkan→OpenGL; Windows: D3D12→D3D11→OpenGL; macOS: Metal/SDL path)
 - [*] Integrate Dear ImGui (docking) and set up dockspace — Step A: vendor backends and wire minimal frame
 - [x] Idle-friendly loop using `SDL_WaitEventTimeout` and render-on-invalidation
 
@@ -53,7 +53,16 @@ Legend: [ ] = todo, [*] = in progress, [x] = done
 - [x] Command sink via TypeConverter for `Array<float,2]` → `SetBaseImage2D` with normalization (auto/fixed/percentile)
   - [x] Auto normalization (min/max) for display of f32
   - [x] Fixed range and percentile policies (via URL controls and per-channel state)
-- [ ] Textured quad shader (bgfx) — pending bgfx integration
+- [ ] Non‑ImGui bgfx renderer (textured quad) — in progress
+  - [x] Shaders: add `vs_image.sc`, `fs_image.sc`, and `varying.def.sc` (pass‑through + R8 sampling)
+  - [x] Build: compile shaders with bgfx `shaderc` via CMake custom target; output to `${CMAKE_CURRENT_BINARY_DIR}/shaders`; define `RAVL2_SHADER_DIR`
+  - [x] Runtime: load shader binaries based on renderer (Vulkan→SPIR‑V, OpenGL→GLSL) and create `bgfx::Program`
+  - [x] Geometry: create screen‑quad (transient VBO/IBO) and vertex layout (position + uv)
+  - [x] Uniforms: create sampler uniform and bind uploaded R8 texture from `prepare()`
+  - [*] Render: compute aspect‑fit from channel view (scale/translation) and submit quad each frame to view 0
+  - [*] Resize: update view rect on window resize; recompute quad as needed
+  - [*] Diagnostics: keep dbgText HUD (backend, frame) toggleable; log shader load/creation failures
+  - [*] Fallback: if bgfx init or shader load fails, fall back to SDL renderer automatically
 - [x] Zoom/pan controls (SDL MVP; to be moved to ImGui later)
 - [x] Pixel query tooltip (original + displayed values) — window title MVP
 

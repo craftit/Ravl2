@@ -54,6 +54,8 @@ if(TARGET imgui)
   message(STATUS "Ravl2Display: integrating Dear ImGui")
   target_link_libraries(Ravl2Display PRIVATE imgui)
   target_compile_definitions(Ravl2Display PRIVATE RAVL2_WITH_IMGUI=1)
+else()
+  message(STATUS "Ravl2Display: no Dear ImGui available")
 endif()
 
 # Link bgfx stack if available (targets created by CPM in Dependencies.cmake)
@@ -69,6 +71,87 @@ endif()
 if(TARGET bx)
   target_link_libraries(Ravl2Display PRIVATE bx)
   message(STATUS "Ravl2Display: linking bx")
+endif()
+
+# Try to load helper variables from Findbgfx.cmake (BGFX_SHADER_INCLUDE_DIR)
+find_package(bgfx QUIET)
+
+# Compile bgfx shaders for non-ImGui textured quad (GLSL + SPIR-V)
+if(TARGET shaderc)
+  set(RAVL2_SHADER_SRC_DIR ${CMAKE_CURRENT_LIST_DIR}/shaders)
+  set(RAVL2_SHADER_BIN_DIR ${CMAKE_CURRENT_BINARY_DIR}/shaders)
+  file(MAKE_DIRECTORY ${RAVL2_SHADER_BIN_DIR})
+
+  set(VARYING_DEF ${RAVL2_SHADER_SRC_DIR}/varying.def.sc)
+  set(VS_SRC ${RAVL2_SHADER_SRC_DIR}/vs_image.sc)
+  set(FS_SRC ${RAVL2_SHADER_SRC_DIR}/fs_image.sc)
+
+  set(VS_GLSL ${RAVL2_SHADER_BIN_DIR}/vs_image.glsl.bin)
+  set(FS_GLSL ${RAVL2_SHADER_BIN_DIR}/fs_image.glsl.bin)
+  set(VS_SPV  ${RAVL2_SHADER_BIN_DIR}/vs_image.spv.bin)
+  set(FS_SPV  ${RAVL2_SHADER_BIN_DIR}/fs_image.spv.bin)
+
+  # Determine bgfx shader include directory containing bgfx_shader.sh.
+  # Try to locate it robustly via find_file among common locations created by bgfx.cmake.
+  if(TARGET shaderc)
+    if(NOT DEFINED BGFX_SHADER_INCLUDE_DIR)
+      find_file(BGFX_SHADER_SH
+        NAMES bgfx_shader.sh
+        HINTS
+          ${PROJECT_BINARY_DIR}/_deps/bgfx.cmake-src/bgfx/src
+          ${CMAKE_BINARY_DIR}/_deps/bgfx.cmake-src/bgfx/src
+          ${PROJECT_SOURCE_DIR}/cmake-build-debug/_deps/bgfx.cmake-src/bgfx/src
+          ${PROJECT_SOURCE_DIR}/cmake-build-release/_deps/bgfx.cmake-src/bgfx/src
+          ${PROJECT_SOURCE_DIR}/_deps/bgfx.cmake-src/bgfx/src
+        NO_DEFAULT_PATH
+      )
+      if(BGFX_SHADER_SH)
+        get_filename_component(BGFX_SHADER_INCLUDE_DIR "${BGFX_SHADER_SH}" DIRECTORY)
+        message(STATUS "bgfx shader include dir: ${BGFX_SHADER_INCLUDE_DIR}")
+      else()
+        message(STATUS "bgfx_shader.sh not found; you can set -DBGFX_SHADER_INCLUDE_DIR=/path/to/bgfx/src to enable bgfx shader includes")
+      endif()
+    endif()
+  endif()
+
+  # Compose optional include args for bgfx shader headers.
+  set(BGFX_SHADER_INC_ARGS)
+  if(BGFX_SHADER_INCLUDE_DIR)
+    list(APPEND BGFX_SHADER_INC_ARGS -i ${BGFX_SHADER_INCLUDE_DIR})
+  endif()
+
+  add_custom_command(
+    OUTPUT ${VS_GLSL}
+    COMMAND $<TARGET_FILE:shaderc> -f ${VS_SRC} -o ${VS_GLSL} --type vertex --platform linux --profile 430 --varyingdef ${VARYING_DEF} -i ${RAVL2_SHADER_SRC_DIR} ${BGFX_SHADER_INC_ARGS}
+    DEPENDS ${VS_SRC} ${VARYING_DEF}
+    VERBATIM
+  )
+  add_custom_command(
+    OUTPUT ${FS_GLSL}
+    COMMAND $<TARGET_FILE:shaderc> -f ${FS_SRC} -o ${FS_GLSL} --type fragment --platform linux --profile 430 --varyingdef ${VARYING_DEF} -i ${RAVL2_SHADER_SRC_DIR} ${BGFX_SHADER_INC_ARGS}
+    DEPENDS ${FS_SRC} ${VARYING_DEF}
+    VERBATIM
+  )
+  add_custom_command(
+    OUTPUT ${VS_SPV}
+    COMMAND $<TARGET_FILE:shaderc> -f ${VS_SRC} -o ${VS_SPV} --type vertex --platform linux --profile spirv --varyingdef ${VARYING_DEF} -i ${RAVL2_SHADER_SRC_DIR} ${BGFX_SHADER_INC_ARGS}
+    DEPENDS ${VS_SRC} ${VARYING_DEF}
+    VERBATIM
+  )
+  add_custom_command(
+    OUTPUT ${FS_SPV}
+    COMMAND $<TARGET_FILE:shaderc> -f ${FS_SRC} -o ${FS_SPV} --type fragment --platform linux --profile spirv --varyingdef ${VARYING_DEF} -i ${RAVL2_SHADER_SRC_DIR} ${BGFX_SHADER_INC_ARGS}
+    DEPENDS ${FS_SRC} ${VARYING_DEF}
+    VERBATIM
+  )
+
+  add_custom_target(Ravl2DisplayShaders
+    DEPENDS ${VS_GLSL} ${FS_GLSL} ${VS_SPV} ${FS_SPV}
+  )
+  add_dependencies(Ravl2Display Ravl2DisplayShaders)
+  target_compile_definitions(Ravl2Display PRIVATE RAVL2_SHADER_DIR="${RAVL2_SHADER_BIN_DIR}")
+else()
+  message(STATUS "shaderc target not available; bgfx shaders will not be compiled. SDL fallback will be used if missing.")
 endif()
 
 # Choose ImGui backend: use bgfx backend when bgfx is available; otherwise SDL_Renderer backend if provided via IMGUI_BACKENDS_DIR
