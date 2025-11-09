@@ -171,21 +171,15 @@ function(RAVL2_setup_dependencies)
       endif()
     endif()
 
-    # bgfx stack (CPM) — pinned SHAs recommended; using branches/tags minimally for now
+    # bgfx stack (CPM) — using bgfx.cmake which provides CMake build system for bgfx
     cpmaddpackage(
-      NAME bx
-      GITHUB_REPOSITORY bkaradzic/bx
+      NAME bgfx.cmake
+      GITHUB_REPOSITORY bkaradzic/bgfx.cmake
       GIT_TAG master
-    )
-    cpmaddpackage(
-      NAME bimg
-      GITHUB_REPOSITORY bkaradzic/bimg
-      GIT_TAG master
-    )
-    cpmaddpackage(
-      NAME bgfx
-      GITHUB_REPOSITORY bkaradzic/bgfx
-      GIT_TAG master
+      OPTIONS
+        "BGFX_BUILD_EXAMPLES OFF"
+        "BGFX_BUILD_TOOLS OFF"
+        "BGFX_INSTALL OFF"
     )
 
     # Dear ImGui (docking) and ImPlot

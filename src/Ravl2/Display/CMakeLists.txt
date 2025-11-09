@@ -14,6 +14,13 @@ add_library(Ravl2Display
     Adapters/RenderCommandSink.cc
 )
 
+# On macOS, compile BGFXContext.cc as Objective-C++ to use Cocoa framework
+if(APPLE)
+  set_source_files_properties(Backends/BGFXContext.cc PROPERTIES
+    COMPILE_FLAGS "-x objective-c++"
+  )
+endif()
+
 add_library(ravl2::Ravl2Display ALIAS Ravl2Display)
 
 
@@ -33,51 +40,45 @@ target_link_libraries(Ravl2Display
   PUBLIC spdlog::spdlog SDL2::SDL2 Ravl2Core Ravl2Geometry
 )
 
-# ImGui integration
-find_package(imgui QUIET)
-if(IMGUI_FOUND)
+# On macOS, link required frameworks for Metal and Cocoa
+if(APPLE)
+  target_link_libraries(Ravl2Display PRIVATE
+    "-framework Metal"
+    "-framework QuartzCore"
+    "-framework Cocoa"
+  )
+endif()
+
+# ImGui integration (target created by CPM in Dependencies.cmake)
+if(TARGET imgui)
   message(STATUS "Ravl2Display: integrating Dear ImGui")
   target_link_libraries(Ravl2Display PRIVATE imgui)
   target_compile_definitions(Ravl2Display PRIVATE RAVL2_WITH_IMGUI=1)
-  if(IMGUI_INCLUDE_DIRS)
-    target_include_directories(Ravl2Display PRIVATE ${IMGUI_INCLUDE_DIRS})
-  endif()
 endif()
 
-# Link bgfx stack if available
-find_package(bgfx QUIET)
-if(BGFX_FOUND)
-  if(TARGET bgfx)
-    target_link_libraries(Ravl2Display PRIVATE bgfx)
-    target_compile_definitions(Ravl2Display PRIVATE RAVL2_WITH_BGFX=1)
-  endif()
-  if(BGFX_INCLUDE_DIRS)
-    target_include_directories(Ravl2Display PRIVATE ${BGFX_INCLUDE_DIRS})
-  endif()
+# Link bgfx stack if available (targets created by CPM in Dependencies.cmake)
+if(TARGET bgfx)
+  target_link_libraries(Ravl2Display PRIVATE bgfx)
+  target_compile_definitions(Ravl2Display PRIVATE RAVL2_WITH_BGFX=1)
+  message(STATUS "Ravl2Display: linking bgfx")
 endif()
-find_package(bimg QUIET)
-if(BIMG_FOUND)
+if(TARGET bimg)
   target_link_libraries(Ravl2Display PRIVATE bimg)
-  if(BIMG_INCLUDE_DIRS)
-    target_include_directories(Ravl2Display PRIVATE ${BIMG_INCLUDE_DIRS})
-  endif()
+  message(STATUS "Ravl2Display: linking bimg")
 endif()
-find_package(bx QUIET)
-if(BX_FOUND)
+if(TARGET bx)
   target_link_libraries(Ravl2Display PRIVATE bx)
-  if(BX_INCLUDE_DIRS)
-    target_include_directories(Ravl2Display PRIVATE ${BX_INCLUDE_DIRS})
-  endif()
+  message(STATUS "Ravl2Display: linking bx")
 endif()
 
 # Choose ImGui backend: use bgfx backend when bgfx is available; otherwise SDL_Renderer backend if provided via IMGUI_BACKENDS_DIR
-if(IMGUI_FOUND AND BGFX_FOUND)
+if(TARGET imgui AND TARGET bgfx)
   message(STATUS "Ravl2Display: using ImGui bgfx backend (vendored)")
   target_sources(Ravl2Display PRIVATE
     bgfx_imgui/imgui.cpp
   )
   target_include_directories(Ravl2Display PRIVATE ${CMAKE_CURRENT_LIST_DIR}/bgfx_imgui)
-elseif(IMGUI_FOUND AND DEFINED IMGUI_BACKENDS_DIR)
+elseif(TARGET imgui AND DEFINED IMGUI_BACKENDS_DIR)
   message(STATUS "Ravl2Display: using ImGui SDL_Renderer backend")
   target_sources(Ravl2Display PRIVATE
     ${IMGUI_BACKENDS_DIR}/imgui_impl_sdl2.cpp

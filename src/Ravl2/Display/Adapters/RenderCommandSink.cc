@@ -4,6 +4,7 @@
 #include <string_view>
 
 #include <spdlog/spdlog.h>
+#include <SDL2/SDL.h>
 
 #include "Ravl2/Array.hh"
 #include "Ravl2/IO/OutputFormat.hh"
@@ -16,7 +17,22 @@
 
 namespace Ravl2::DebugDisplay {
   void initDisplay()
-  {}
+  {
+    // Initialize SDL on the main thread (required for macOS)
+    // macOS requires SDL initialization, particularly for window/menu system, on main thread
+#ifdef __APPLE__
+    // On macOS, set hint to reduce restrictions on secondary thread window creation
+    SDL_SetHint(SDL_HINT_VIDEO_MAC_FULLSCREEN_SPACES, "0");
+#endif
+    
+    if (SDL_WasInit(0) == 0) {
+      if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS) != 0) {
+        SPDLOG_ERROR("DebugDisplay: SDL_Init failed on main thread: {}", SDL_GetError());
+        return;
+      }
+      SPDLOG_INFO("DebugDisplay: SDL initialized on main thread");
+    }
+  }
 namespace {
 
 // Parse @debug URL of the form "@debug:Channel[:Control[:Control...]]"

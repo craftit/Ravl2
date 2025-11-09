@@ -16,8 +16,12 @@
 using namespace std::chrono_literals;
 
 
-int main(int argc, char** argv)
+int RAVL2_MAIN(int argc, char** argv)
 {
+  // Set logging early before any DebugDisplay initialization
+  spdlog::set_pattern("[%Y-%m-%d %T.%e] [%^%l%$] [%t] %v");
+  spdlog::set_level(spdlog::level::info);
+
   Ravl2::DebugDisplay::initDisplay();
 
   Ravl2::addResourcePath("data",RAVL_SOURCE_DIR "/data");
@@ -39,9 +43,6 @@ int main(int argc, char** argv)
     SPDLOG_ERROR("error parsing options: {}", e.what());
     exit(1);
   }
-
-  spdlog::set_pattern("[%Y-%m-%d %T.%e] [%^%l%$] [%t] %v");
-  spdlog::set_level(spdlog::level::info);
 
   {
     auto foundFile = Ravl2::findFileResource("data",imagePath);

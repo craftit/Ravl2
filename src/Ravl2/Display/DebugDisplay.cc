@@ -28,6 +28,11 @@
 #include <imgui.h>
 #endif
 
+#ifdef __APPLE__
+#include <objc/message.h>
+#include <objc/runtime.h>
+#endif
+
 namespace Ravl2::DebugDisplay {
 
 // Simple Clear command used by shim and controls parsing
@@ -45,6 +50,11 @@ namespace Commands {
 namespace {
   std::once_flag g_startOnce;
   std::atomic_bool g_started{false};
+  
+#ifdef __APPLE__
+  // On macOS, track whether we're running on main thread
+  std::atomic_bool g_runningOnMainThread{false};
+#endif
 
   // Bounded queue of commands
   ThreadedQueue<std::shared_ptr<IRenderCommand>> g_queue{128};
@@ -69,15 +79,13 @@ namespace {
   int g_lastMouseY = 0;
   std::string g_activeChannel; // channel under cursor or being dragged
 
-  // Per-channel texture cache (SDL fallback only)
-#if !defined(RAVL2_WITH_BGFX)
+  // Per-channel texture cache (SDL fallback when bgfx not initialized)
   struct TextureEntry {
     SDL_Texture* tex = nullptr;
     int w = 0;
     int h = 0;
   };
   std::unordered_map<std::string, TextureEntry> g_textures;
-#endif
   std::unordered_map<std::string, SDL_FRect> g_lastRects; // last drawn rect per channel for hit-testing
 
   // ImGui state
@@ -91,18 +99,22 @@ namespace {
 
   bool initSDLAndWindow()
   {
+    // Note: SDL should already be initialized on the main thread before this is called
     if (SDL_WasInit(0) == 0) {
-      if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS) != 0) {
-        SPDLOG_ERROR("DebugDisplay: SDL_Init failed: {}", SDL_GetError());
-        return false;
-        }
+      SPDLOG_ERROR("DebugDisplay: SDL was not initialized before GUI thread started");
+      return false;
     }
     // Create a resizable, high-DPI aware window
+    // On macOS, add SDL_WINDOW_METAL to allow creation from non-main thread
+    uint32_t windowFlags = SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI | SDL_WINDOW_SHOWN;
+#ifdef __APPLE__
+    windowFlags |= SDL_WINDOW_METAL;
+#endif
     g_window = SDL_CreateWindow(
         "Ravl2 Debug Display",
         SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
         1280, 720,
-        SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI | SDL_WINDOW_SHOWN);
+        windowFlags);
     if (!g_window) {
       SPDLOG_ERROR("DebugDisplay: SDL_CreateWindow failed: {}", SDL_GetError());
       return false;
@@ -141,7 +153,11 @@ namespace {
 
     // Initialize bgfx context (Step A: init only; SDL used for blit until Step B)
     BGFXContext::InitParams ip{};
-    ip.backend = BGFXContext::Backend::Vulkan; // default; bgfx may auto-fallback inside
+#ifdef __APPLE__
+    ip.backend = BGFXContext::Backend::Metal; // macOS requires Metal
+#else
+    ip.backend = BGFXContext::Backend::Vulkan; // default for other platforms
+#endif
     ip.width = outW > 0 ? outW : 1280;
     ip.height = outH > 0 ? outH : 720;
     ip.nativeWindow = g_window;
@@ -216,12 +232,11 @@ namespace {
     }
 #endif
 
-#if !defined(RAVL2_WITH_BGFX)
+    // Clean up SDL textures (used for fallback rendering)
     for (auto &kv : g_textures) {
       if (kv.second.tex) SDL_DestroyTexture(kv.second.tex);
     }
     g_textures.clear();
-#endif
 
     if (g_renderer) { SDL_DestroyRenderer(g_renderer); g_renderer = nullptr; }
     if (g_window) { SDL_DestroyWindow(g_window); g_window = nullptr; }
@@ -392,7 +407,7 @@ namespace {
 
   void renderAll()
   {
-#if !defined(RAVL2_WITH_BGFX)
+    // SDL fallback rendering (used when bgfx is not initialized)
     if (!g_renderer) return;
     SDL_SetRenderDrawColor(g_renderer, 16, 16, 24, 255);
     SDL_RenderClear(g_renderer);
@@ -496,9 +511,6 @@ namespace {
     }
 
     // Note: SDL_RenderPresent is called after ImGui rendering in guiThreadMain.
-#else
-    (void)0;
-#endif
   }
 
   void guiThreadMain(std::stop_token st)
@@ -643,12 +655,13 @@ namespace {
       }
 #endif
 
-      // Only redraw image content when invalidated (SDL fallback path)
-#if !defined(RAVL2_WITH_BGFX)
-      if (g_invalidated.exchange(false, std::memory_order_acq_rel)) {
+      // SDL fallback path: render every frame when bgfx is not initialized
+      // (bgfx path handles its own frame timing via imguiEndFrame)
+      if (!g_bgfx.initialized()) {
+        // Consume invalidation flag but render regardless to keep display visible
+        g_invalidated.exchange(false, std::memory_order_acq_rel);
         renderAll();
       }
-#endif
 
       // Render UI and present
 #if defined(RAVL2_WITH_IMGUI) && defined(RAVL2_WITH_BGFX)
@@ -661,12 +674,15 @@ namespace {
         ImGui_ImplSDLRenderer_RenderDrawData(ImGui::GetDrawData());
       }
 #endif
-#if !defined(RAVL2_WITH_BGFX)
-      SDL_RenderPresent(g_renderer);
-#endif
+      // Use SDL_RenderPresent when bgfx is not initialized
+      if (!g_bgfx.initialized()) {
+        SDL_RenderPresent(g_renderer);
+      }
 
-      // Submit bgfx frame boundary
-      g_bgfx.frame();
+      // Submit bgfx frame boundary (only if initialized)
+      if (g_bgfx.initialized()) {
+        g_bgfx.frame();
+      }
     }
 
     // Shutdown bgfx before SDL teardown
@@ -680,6 +696,16 @@ namespace {
 void ensureStarted(const InitOptions &opts) {
   (void)opts;
   std::call_once(g_startOnce, []() {
+    // Note: SDL should be initialized on the main thread before this is called (via initDisplay())
+#ifdef __APPLE__
+    // On macOS, when using RAVL2_MAIN, the GUI thread is the main thread
+    // Skip creating a background thread; GUI will run on main via runMainLoop
+    if (g_runningOnMainThread) {
+      SPDLOG_INFO("DebugDisplay: will run on main thread (macOS)");
+      g_started.store(true, std::memory_order_release);
+      return;
+    }
+#endif
     // Start background GUI thread (SDL window + simple renderer)
     g_guiThread = std::make_unique<std::jthread>(guiThreadMain);
     SPDLOG_INFO("DebugDisplay: starting — background GUI thread created");
@@ -726,6 +752,53 @@ std::expected<void, std::string> enqueue(std::string_view channel,
   }
   // No recognized control; accept as no-op for backward compatibility
   return {};
+}
+
+int runMainLoop(int (*appMain)(int, char**), int argc, char** argv)
+{
+#ifdef __APPLE__
+  g_runningOnMainThread.store(true, std::memory_order_release);
+  
+  // Initialize SDL on the main thread (must happen here on macOS)
+  // This is done outside RenderCommandSink::initDisplay since we need it before app thread
+  if (SDL_WasInit(0) == 0) {
+    SDL_SetHint(SDL_HINT_VIDEO_MAC_FULLSCREEN_SPACES, "0");
+    if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS) != 0) {
+      SPDLOG_ERROR("DebugDisplay: SDL_Init failed on main thread: {}", SDL_GetError());
+      return 1;
+    }
+    SPDLOG_INFO("DebugDisplay: SDL initialized on main thread (via runMainLoop)");
+  }
+  
+  // Start the application main in a background thread
+  int exitCode = 0;
+  std::stop_source stopSource;
+  std::stop_token stopToken = stopSource.get_token();
+  
+  std::thread appThread([&]() {
+    exitCode = appMain(argc, argv);
+    // Signal the GUI thread to stop when app completes
+    stopSource.request_stop();
+  });
+  
+  // Wait for ensureStarted to be called by the app thread
+  while (!g_started.load(std::memory_order_acquire)) {
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+  }
+  
+  // Run the GUI loop on main thread until app signals stop
+  guiThreadMain(stopToken);
+  
+  // Wait for app thread to complete
+  if (appThread.joinable()) {
+    appThread.join();
+  }
+  
+  return exitCode;
+#else
+  // On non-macOS platforms, just run appMain directly
+  return appMain(argc, argv);
+#endif
 }
 
 } // namespace Ravl2::DebugDisplay
