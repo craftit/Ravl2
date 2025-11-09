@@ -139,16 +139,17 @@ namespace Ravl2
     }
     size_t height = hdr.charsize;
     size_t ng = 255;
-    if(hdr.mode & PSF1_MODE512)
+    if(hdr.mode & PSF1_MODE512) {
       ng = 512;
+    }
 
     ONDEBUG(SPDLOG_INFO("LoadPSF1() Found {} characters with height {}", ng, height));
-
+    constexpr std::size_t width = 8;
     std::vector<Array<uint8_t, 2>> glyphs(ng);
     std::vector<uint8_t> buf(height);
     for(auto &it : glyphs) {
       // Read glyph
-      Array<uint8_t, 2> img({height, 8});
+      Array<uint8_t, 2> img({height, width});
       inf.read(reinterpret_cast<char *>(buf.data()), std::streamsize(height));
       if(!inf) {
         SPDLOG_ERROR("Failed to read font file '{}'", fontFile);

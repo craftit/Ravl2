@@ -780,7 +780,8 @@ namespace Ravl2
     {}
 
     //! Create an array from a set of sizes.
-    constexpr Array(std::initializer_list<IndexRange<1>> ranges)
+    template<typename RangeInitTypeT>
+    constexpr Array(std::initializer_list<RangeInitTypeT> ranges)
         : ArrayView<DataT, N>(IndexRange<N>(ranges)),
           m_buffer(std::make_shared<DataT[]>(this->m_range.elements()))
     {
@@ -788,26 +789,10 @@ namespace Ravl2
       this->m_data = &(m_buffer.get()[this->compute_origin_offset(this->m_range)]);
     }
 
-    //! Create an array from a set of sizes.
-    constexpr Array(std::initializer_list<IndexRange<1>> ranges, const DataT &data)
-        : ArrayView<DataT, N>(IndexRange<N>(ranges)),
-          m_buffer(std::make_shared<DataT[]>(this->m_range.elements(), data))
-    {
-      this->make_strides(this->m_range);
-      this->m_data = &(m_buffer.get()[this->compute_origin_offset(this->m_range)]);
-    }
 
     //! Create an array from a set of sizes.
-    constexpr Array(std::initializer_list<size_t> sizes)
-        : ArrayView<DataT, N>(IndexRange<N>(sizes)),
-          m_buffer(std::make_shared<DataT[]>(this->m_range.elements()))
-    {
-      this->make_strides(this->m_range);
-      this->m_data = &(m_buffer.get()[this->compute_origin_offset(this->m_range)]);
-    }
-
-    //! Create an array from a set of sizes.
-    constexpr Array(std::initializer_list<size_t> sizes, const DataT &fillData)
+    template<typename RangeInitTypeT>
+    constexpr Array(std::initializer_list<RangeInitTypeT> sizes, const DataT &fillData)
         : ArrayView<DataT, N>(IndexRange<N>(sizes)),
           m_buffer(std::make_shared<DataT[]>(this->m_range.elements(), fillData))
     {

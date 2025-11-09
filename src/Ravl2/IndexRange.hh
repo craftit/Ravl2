@@ -49,25 +49,19 @@ namespace Ravl2
 
     //! Construct from sizes for each dimension.
     //! The ranges will have a zero origin.
-    constexpr IndexRange(std::initializer_list<std::size_t> sizes) noexcept
+    template<typename IntTypeT>
+     requires std::is_integral_v<IntTypeT>
+    constexpr IndexRange(std::initializer_list<IntTypeT> sizes) noexcept
     {
       assert(sizes.size() == N);
       for(unsigned i = 0; i < N; i++)
         m_range[i] = IndexRange<1>(0, static_cast<int>(sizes.begin()[i]) - 1);
     }
 
-    //! Construct from sizes for each dimension.
-    //! The ranges will have a zero origin.
-    constexpr IndexRange(std::initializer_list<int> sizes) noexcept
-    {
-      assert(sizes.size() == N);
-      for(unsigned i = 0; i < N; i++)
-        m_range[i] = IndexRange<1>(0, sizes.begin()[i] - 1);
-    }
-
     //! Construct from ranges for each dimension.
-
-    constexpr IndexRange(std::initializer_list<std::initializer_list<int>> init) noexcept
+    template<typename IntTypeT>
+     requires std::is_integral_v<IntTypeT>
+    constexpr IndexRange(std::initializer_list<std::initializer_list<IntTypeT>> init) noexcept
     {
       assert(init.size() == N);
       for(unsigned i = 0; i < N; i++) {
