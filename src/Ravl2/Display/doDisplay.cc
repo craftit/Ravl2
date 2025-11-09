@@ -10,6 +10,7 @@
 #include "Ravl2/IO/Load.hh"
 #include "Ravl2/IO/Save.hh"
 #include "Ravl2/Resource.hh"
+#include "Ravl2/OpenCV/ImageIO.hh"
 #include "Ravl2/Display/DebugDisplay.hh"
 #include <cxxopts.hpp>
 
@@ -23,6 +24,7 @@ int RAVL2_MAIN(int argc, char** argv)
   spdlog::set_level(spdlog::level::debug);
 
   Ravl2::DebugDisplay::initDisplay();
+  Ravl2::initOpenCVImageIO();
 
   Ravl2::addResourcePath("data",RAVL_SOURCE_DIR "/data");
 

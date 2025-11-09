@@ -194,6 +194,7 @@ target_link_libraries(doDisplay
   PRIVATE
     Ravl2Display
     Ravl2Core
+    Ravl2OpenCV
 )
 
 target_compile_definitions(doDisplay PRIVATE -DRAVL_SOURCE_DIR="${PROJECT_SOURCE_DIR}" -DRAVL_BINARY_DIR="${PROJECT_BINARY_DIR}" -DRAVL_INSTALL_PREFIX="${CMAKE_INSTALL_PREFIX}")
