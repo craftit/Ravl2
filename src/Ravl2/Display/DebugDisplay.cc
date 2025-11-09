@@ -152,18 +152,20 @@ namespace {
     }
 
     // Initialize bgfx context (Step A: init only; SDL used for blit until Step B)
+    // Note: bgfx Metal backend on macOS has threading issues and blocks indefinitely
+    // Use SDL renderer fallback on macOS for now
+#ifndef __APPLE__
     BGFXContext::InitParams ip{};
-#ifdef __APPLE__
-    ip.backend = BGFXContext::Backend::Metal; // macOS requires Metal
-#else
     ip.backend = BGFXContext::Backend::Vulkan; // default for other platforms
-#endif
     ip.width = outW > 0 ? outW : 1280;
     ip.height = outH > 0 ? outH : 720;
     ip.nativeWindow = g_window;
     if (!g_bgfx.init(ip)) {
       SPDLOG_WARN("DebugDisplay: bgfx init failed; continuing with SDL renderer MVP only");
     }
+#else
+    SPDLOG_INFO("DebugDisplay: using SDL renderer on macOS (bgfx Metal has threading issues)");
+#endif
 
     // Initialize Dear ImGui
 #if defined(RAVL2_WITH_IMGUI) && defined(RAVL2_WITH_BGFX)
@@ -524,6 +526,10 @@ namespace {
     while(!st.stop_requested()) {
       // Wait for events with timeout to keep CPU low when idle
       SDL_WaitEventTimeout(nullptr, 33); // ~30 FPS heartbeat
+      if (st.stop_requested()) {
+        SPDLOG_INFO("DebugDisplay: GUI loop detected stop request, exiting");
+        break; // Check immediately after wait
+      }
       processEvents(st);
 
       // Drain at most N commands per tick to bound work; mark invalidated when changes occur
@@ -778,7 +784,9 @@ int runMainLoop(int (*appMain)(int, char**), int argc, char** argv)
   std::thread appThread([&]() {
     exitCode = appMain(argc, argv);
     // Signal the GUI thread to stop when app completes
+    SPDLOG_INFO("DebugDisplay: app thread finished, requesting GUI stop");
     stopSource.request_stop();
+    SPDLOG_INFO("DebugDisplay: stop requested, stop_requested={}", stopToken.stop_requested());
   });
   
   // Wait for ensureStarted to be called by the app thread
