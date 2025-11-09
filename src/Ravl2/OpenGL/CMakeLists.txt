@@ -8,36 +8,11 @@ find_package(OpenGL REQUIRED)
 find_package(GLUT REQUIRED)
 find_package(glm CONFIG REQUIRED)
 
-set(BUILD_IMGUIGLFW ON CACHE BOOL "Build imgui with glfw")
+
+set(BUILD_IMGUIGLFW OFF CACHE BOOL "Build imgui with glfw")
 
 if(BUILD_IMGUIGLFW)
-    FetchContent_Declare(imgui_external
-            GIT_REPOSITORY https://github.com/ocornut/imgui.git
-            EXCLUDE_FROM_ALL
-    )
-    FetchContent_MakeAvailable(imgui_external)
-
-    add_library(imgui
-            ${imgui_external_SOURCE_DIR}/imgui.cpp
-            ${imgui_external_SOURCE_DIR}/imgui_draw.cpp
-            ${imgui_external_SOURCE_DIR}/imgui_tables.cpp
-            ${imgui_external_SOURCE_DIR}/imgui_widgets.cpp
-            ${imgui_external_SOURCE_DIR}/imgui_demo.cpp
-            ${imgui_external_SOURCE_DIR}/backends/imgui_impl_glfw.cpp
-            ${imgui_external_SOURCE_DIR}/backends/imgui_impl_opengl2.cpp
-            ${imgui_external_SOURCE_DIR}/backends/imgui_impl_opengl3.cpp
-    )
-
-    # Set compile flags for imgui.  Suppress useless cast
-    # If we're using gcc
-    if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-        target_compile_options(imgui PRIVATE -Wno-old-style-cast -Wno-useless-cast)
-    else ()
-        target_compile_options(imgui PRIVATE -Wno-old-style-cast)
-    endif()
-
-    target_include_directories(imgui PUBLIC ${imgui_external_SOURCE_DIR})
-    target_link_libraries(imgui PUBLIC ${GLFW_LIBRARIES} )
+    include(SetupIMGUI.cmake)
 endif ()
 
 

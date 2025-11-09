@@ -35,6 +35,8 @@ find_package(spdlog REQUIRED)
 # SDL2 is required when the display stack is enabled
 find_package(SDL2 REQUIRED)
 
+include(SetupImGUI)
+
 target_link_libraries(Ravl2Display
   PRIVATE RAVL2_options RAVL2_warnings
   PUBLIC spdlog::spdlog SDL2::SDL2 Ravl2Core Ravl2Geometry
@@ -49,7 +51,10 @@ if(APPLE)
   )
 endif()
 
-# ImGui integration (target created by CPM in Dependencies.cmake)
+# ImGui integration (ensure finder runs and create/consume target)
+find_package(imgui QUIET)
+message(STATUS "IMGUI_FOUND= ${IMGUI_FOUND}")
+
 if(TARGET imgui)
   message(STATUS "Ravl2Display: integrating Dear ImGui")
   target_link_libraries(Ravl2Display PRIVATE imgui)
@@ -154,20 +159,19 @@ else()
   message(STATUS "shaderc target not available; bgfx shaders will not be compiled. SDL fallback will be used if missing.")
 endif()
 
-# Choose ImGui backend: use bgfx backend when bgfx is available; otherwise SDL_Renderer backend if provided via IMGUI_BACKENDS_DIR
+# ImGui backend: always prefer bgfx backend (vendored) when both imgui and bgfx are available.
+# We do not use the SDL_Renderer backend path; this keeps the build simple and avoids extra dependencies.
 if(TARGET imgui AND TARGET bgfx)
-  message(STATUS "Ravl2Display: using ImGui bgfx backend (vendored)")
-  target_sources(Ravl2Display PRIVATE
-    bgfx_imgui/imgui.cpp
+  message(STATUS "Ravl2Display: using ImGui bgfx backend ")
+  add_library(bgfx_imgui STATIC
+          ${CMAKE_CURRENT_LIST_DIR}/bgfx_imgui/ImGUI/imgui.cpp
+          ${CMAKE_CURRENT_LIST_DIR}/bgfx_imgui/ImGUI/dock.cc
+# ${CMAKE_CURRENT_LIST_DIR}/bgfx_imgui/bgfx_utils.cpp
   )
-  target_include_directories(Ravl2Display PRIVATE ${CMAKE_CURRENT_LIST_DIR}/bgfx_imgui)
-elseif(TARGET imgui AND DEFINED IMGUI_BACKENDS_DIR)
-  message(STATUS "Ravl2Display: using ImGui SDL_Renderer backend")
-  target_sources(Ravl2Display PRIVATE
-    ${IMGUI_BACKENDS_DIR}/imgui_impl_sdl2.cpp
-    ${IMGUI_BACKENDS_DIR}/imgui_impl_sdlrenderer.cpp
-  )
-  target_include_directories(Ravl2Display PRIVATE ${IMGUI_BACKENDS_DIR})
+
+  target_include_directories(bgfx_imgui PUBLIC ${bgfx_SOURCE_DIR}/bgfx/3rdparty)
+  target_link_libraries(bgfx_imgui PUBLIC imgui bimg bx bgfx)
+  target_link_libraries(Ravl2Display PUBLIC bgfx_imgui)
 endif()
 
 set_target_properties(Ravl2Display PROPERTIES
@@ -195,6 +199,7 @@ target_link_libraries(doDisplay
     Ravl2Display
     Ravl2Core
     Ravl2OpenCV
+
 )
 
 target_compile_definitions(doDisplay PRIVATE -DRAVL_SOURCE_DIR="${PROJECT_SOURCE_DIR}" -DRAVL_BINARY_DIR="${PROJECT_BINARY_DIR}" -DRAVL_INSTALL_PREFIX="${CMAKE_INSTALL_PREFIX}")

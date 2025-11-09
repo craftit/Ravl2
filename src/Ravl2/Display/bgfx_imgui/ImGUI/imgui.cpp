@@ -8,11 +8,15 @@
 #include <bx/allocator.h>
 #include <bx/math.h>
 #include <bx/timer.h>
-#include <dear-imgui/imgui.h>
-#include <dear-imgui/imgui_internal.h>
+#include <imgui.h>
+#include <imgui_internal.h>
+#include <ImGuizmo.h>
 
-#include "imgui.h"
-#include "../bgfx_utils.h"
+#include "imgui.hh"
+#include "font.hh"
+#include "dock.hh"
+#include "ImGuizmo.h"
+#include "../bgfx_utils.hh"
 
 #ifndef USE_ENTRY
 #	define USE_ENTRY 0
@@ -454,14 +458,14 @@ struct OcornutImguiContext
 			}
 		}
 
-		ImGuizmo::Create();
+		//ImGuizmo::Create();
 
 		ImGui::InitDockContext();
 	}
 
 	void destroy()
 	{
-		ImGuizmo::Destroy();
+		//ImGuizmo::Destroy();
 
 		for (ImTextureData* texData : ImGui::GetPlatformIO().Textures)
 		{

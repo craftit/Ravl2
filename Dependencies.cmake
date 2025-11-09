@@ -184,15 +184,16 @@ function(RAVL2_setup_dependencies)
 
     # Dear ImGui (docking) and ImPlot
     cpmaddpackage(
-      NAME imgui
-      GITHUB_REPOSITORY ocornut/imgui
-      GIT_TAG docking
+            NAME imgui
+            GITHUB_REPOSITORY ocornut/imgui
+            GIT_TAG docking
+            DOWNLOAD_ONLY
     )
 
     cpmaddpackage(
-      NAME implot
-      GITHUB_REPOSITORY epezent/implot
-      GIT_TAG v0.16
+            NAME implot
+            GITHUB_REPOSITORY epezent/implot
+            GIT_TAG v0.16
     )
 
     # Backend preference cache var (default Vulkan)

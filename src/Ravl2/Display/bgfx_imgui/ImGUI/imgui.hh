@@ -8,7 +8,7 @@
 
 #include <bgfx/bgfx.h>
 #include <bx/bx.h>
-#include <dear-imgui/imgui.h>
+#include <imgui.h>
 #include <iconfontheaders/icons_kenney.h>
 #include <iconfontheaders/icons_font_awesome.h>
 

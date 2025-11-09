@@ -8,11 +8,11 @@ set(_BGFX_CMAKE_HINT_DIR   "${CMAKE_BINARY_DIR}/_deps/bgfx.cmake-src/bgfx"      
 
 # Public include dir for C++ side
 if(EXISTS "${_BGFX_CMAKE_HINT_DIR}/include")
-  set(BGFX_INCLUDE_DIRS "${_BGFX_CMAKE_HINT_DIR}/include")
+  set(BGFX_INCLUDE_DIRS "${_BGFX_CMAKE_HINT_DIR}/include" "${_BGFX_CMAKE_HINT_DIR}/3dparty" )
 elseif(EXISTS "${_BGFX_HINT_DIR}/include")
-  set(BGFX_INCLUDE_DIRS "${_BGFX_HINT_DIR}/include")
+  set(BGFX_INCLUDE_DIRS "${_BGFX_HINT_DIR}/include" "${_BGFX_HINT_DIR}/3dparty" )
 else()
-  set(BGFX_INCLUDE_DIRS "${_BGFX_HINT_DIR}/include")
+  set(BGFX_INCLUDE_DIRS "${_BGFX_HINT_DIR}/include" "${_BGFX_HINT_DIR}/3dparty" )
 endif()
 
 # Shader include dir contains bgfx_shader.sh under <bgfx_root>/src
