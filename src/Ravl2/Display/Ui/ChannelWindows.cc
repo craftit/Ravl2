@@ -42,10 +42,8 @@ void build(uint16_t fbw, uint16_t fbh,
     const ImVec2 winPos = ImGui::GetWindowPos();
     const ImVec2 contentMinScreen = ImVec2(winPos.x + contentMin.x, winPos.y + contentMin.y);
     const ImVec2 contentMaxScreen = ImVec2(winPos.x + contentMax.x, winPos.y + contentMax.y);
-    // The image origin should be the cursor screen position before applying our translation,
-    // which matches where we will place the image after adding tx,ty.
-    const ImVec2 curAtStart = ImGui::GetCursorScreenPos();
-    SDL_FPoint origin{ curAtStart.x, curAtStart.y };
+    // Use the content min as the image origin so translation is relative to the content area
+    SDL_FPoint origin{ contentMinScreen.x, contentMinScreen.y };
     SDL_FRect cRect{ contentMinScreen.x, contentMinScreen.y,
                      contentMaxScreen.x - contentMinScreen.x,
                      contentMaxScreen.y - contentMinScreen.y };
@@ -66,16 +64,17 @@ void build(uint16_t fbw, uint16_t fbh,
   #if defined(RAVL2_WITH_BGFX)
       if (node->width > 0 && node->height > 0 && node->textureHandleIdx != UINT16_MAX) {
         if (doFit) {
-          // Compute fit using the current content region (remaining space)
-          ImVec2 avail = ImGui::GetContentRegionAvail();
-          if (avail.x > 1.0f && avail.y > 1.0f) {
+          // Compute fit using the full content region size, not the remaining avail after the toolbar
+          const float contentW = cRect.w;
+          const float contentH = cRect.h;
+          if (contentW > 1.0f && contentH > 1.0f) {
             const float imgWf = static_cast<float>(node->width);
             const float imgHf = static_cast<float>(node->height);
-            const float sFit = std::max(0.0001f, std::min(avail.x / imgWf, avail.y / imgHf));
+            const float sFit = std::max(0.0001f, std::min(contentW / imgWf, contentH / imgHf));
             auto v = ch.view2D.scaleVector(); v[0] = sFit; v[1] = sFit; ch.view2D.scale(v);
             auto tr = ch.view2D.translation();
-            tr[0] = (avail.x - imgWf * sFit) * 0.5f;
-            tr[1] = (avail.y - imgHf * sFit) * 0.5f;
+            tr[0] = (contentW - imgWf * sFit) * 0.5f;
+            tr[1] = (contentH - imgHf * sFit) * 0.5f;
             ch.view2D.translate(tr);
             invalidated.store(true, std::memory_order_release);
           }
@@ -85,11 +84,10 @@ void build(uint16_t fbw, uint16_t fbh,
         const float sy = ch.view2D.scaleVector()[1];
         const float tx = ch.view2D.translation()[0];
         const float ty = ch.view2D.translation()[1];
-        // Compute position in screen space (relative to content region)
-        ImVec2 cur = ImGui::GetCursorScreenPos();
-        ImVec2 pos = ImVec2(cur.x + tx, cur.y + ty);
+        // Compute position in screen space anchored at the content origin
+        ImVec2 pos = ImVec2(origin.x + tx, origin.y + ty);
         ImVec2 size = ImVec2(static_cast<float>(node->width) * sx, static_cast<float>(node->height) * sy);
-        // Set cursor and draw
+        // Set cursor to the computed position and draw
         ImGui::SetCursorScreenPos(pos);
         ImGui::Image(thdl, size);
         // Record the full image rect (screen space)

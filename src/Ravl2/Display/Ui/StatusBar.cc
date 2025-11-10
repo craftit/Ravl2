@@ -20,9 +20,11 @@ void build(const std::unordered_map<std::string, SDL_FRect>& lastRects,
 {
 #if defined(RAVL2_WITH_IMGUI)
   ImGuiViewport* vp = ImGui::GetMainViewport();
-  // Place at bottom on first use; remain dockable and movable later by the user.
-  ImGui::SetNextWindowPos(ImVec2(vp->WorkPos.x, vp->WorkPos.y + vp->WorkSize.y), ImGuiCond_FirstUseEver, ImVec2(0.0f, 1.0f));
-  ImGui::SetNextWindowSize(ImVec2(vp->WorkSize.x, 0.0f), ImGuiCond_FirstUseEver);
+  // Always place at the bottom of the main viewport when not docked.
+  // If the window is docked, ImGui will ignore this position.
+  ImGui::SetNextWindowViewport(vp->ID);
+  ImGui::SetNextWindowPos(ImVec2(vp->WorkPos.x, vp->WorkPos.y + vp->WorkSize.y), ImGuiCond_Always, ImVec2(0.0f, 1.0f));
+  ImGui::SetNextWindowSize(ImVec2(vp->WorkSize.x, 0.0f), ImGuiCond_Always);
   ImGuiWindowFlags flags = ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_AlwaysAutoResize;
   if (ImGui::Begin("Status", nullptr, flags)) {
     int mx = 0, my = 0;

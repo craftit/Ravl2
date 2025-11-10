@@ -99,14 +99,21 @@ int RAVL2_MAIN(int argc, char** argv)
   }
 
   // Start the new debug display subsystem and attempt to display via @debug scheme
-  Ravl2::DebugDisplay::ensureStarted({});
+  //Ravl2::DebugDisplay::ensureStarted({});
 
   // Save to the debug display channel. This will enqueue a SetBaseImage2D command via the @debug adapter.
-  const std::string channel = "@debug:Image:Clear";
-  if (!ioSave(channel, imgGray)) {
-    SPDLOG_WARN("ioSave('{}', imgGray) did not find a writer.", channel);
+  const std::string channel1 = "@debug:Image1:Clear";
+  if (!ioSave(channel1, imgGray)) {
+    SPDLOG_WARN("ioSave('{}', imgGray) did not find a writer.", channel1);
   } else {
-    SPDLOG_INFO("Queued image to {}", channel);
+    SPDLOG_INFO("Queued image to {}", channel1);
+  }
+
+  const std::string channel2 = "@debug:Image2:Clear";
+  if (!ioSave(channel2, imgGray)) {
+    SPDLOG_WARN("ioSave('{}', imgGray) did not find a writer.", channel2);
+  } else {
+    SPDLOG_INFO("Queued image to {}", channel2);
   }
 
   // Keep the process alive briefly so the SDL window (from the debug display thread) is visible.
