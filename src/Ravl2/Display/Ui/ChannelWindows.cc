@@ -21,14 +21,36 @@ namespace Ravl2::DebugDisplay::Ui::ChannelWindows {
 void build(uint16_t fbw, uint16_t fbh,
            ChannelRegistry& channels,
            std::unordered_map<std::string, SDL_FRect>& lastRects,
+           std::unordered_map<std::string, SDL_FPoint>& imageOrigins,
+           std::unordered_map<std::string, SDL_FRect>& contentRects,
            std::atomic_bool& invalidated)
 {
   (void)fbw; (void)fbh;
   lastRects.clear();
+  imageOrigins.clear();
+  contentRects.clear();
   RenderContext rc{}; rc.framebufferWidth = fbw; rc.framebufferHeight = fbh;
   channels.forEachChannel([&](ChannelState &ch){
 #if defined(RAVL2_WITH_IMGUI)
-    if (!ImGui::Begin(ch.name.c_str())) { ImGui::End(); return; }
+    // Disable scrollbars to avoid interaction with image pan/zoom.
+    ImGuiWindowFlags wflags = ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse;
+    if (!ImGui::Begin(ch.name.c_str(), nullptr, wflags)) { ImGui::End(); return; }
+
+    // Compute content rect in screen space for input gating
+    const ImVec2 contentMin = ImGui::GetWindowContentRegionMin();
+    const ImVec2 contentMax = ImGui::GetWindowContentRegionMax();
+    const ImVec2 winPos = ImGui::GetWindowPos();
+    const ImVec2 contentMinScreen = ImVec2(winPos.x + contentMin.x, winPos.y + contentMin.y);
+    const ImVec2 contentMaxScreen = ImVec2(winPos.x + contentMax.x, winPos.y + contentMax.y);
+    // The image origin should be the cursor screen position before applying our translation,
+    // which matches where we will place the image after adding tx,ty.
+    const ImVec2 curAtStart = ImGui::GetCursorScreenPos();
+    SDL_FPoint origin{ curAtStart.x, curAtStart.y };
+    SDL_FRect cRect{ contentMinScreen.x, contentMinScreen.y,
+                     contentMaxScreen.x - contentMinScreen.x,
+                     contentMaxScreen.y - contentMinScreen.y };
+    imageOrigins[ch.name] = origin;
+    contentRects[ch.name] = cRect;
 
     // Small toolbar: Reset and Fit using the window's content region
     if (ImGui::Button("Reset")) {
@@ -64,15 +86,15 @@ void build(uint16_t fbw, uint16_t fbh,
         const float tx = ch.view2D.translation()[0];
         const float ty = ch.view2D.translation()[1];
         // Compute position in screen space (relative to content region)
-        ImVec2 winPos = ImGui::GetCursorScreenPos();
-        ImVec2 pos = ImVec2(winPos.x + tx, winPos.y + ty);
+        ImVec2 cur = ImGui::GetCursorScreenPos();
+        ImVec2 pos = ImVec2(cur.x + tx, cur.y + ty);
         ImVec2 size = ImVec2(static_cast<float>(node->width) * sx, static_cast<float>(node->height) * sy);
         // Set cursor and draw
         ImGui::SetCursorScreenPos(pos);
         ImGui::Image(thdl, size);
-        // Update hit-test rect in screen space
-        SDL_FRect r{ pos.x, pos.y, size.x, size.y };
-        lastRects[ch.name] = r;
+        // Record the full image rect (screen space)
+        SDL_FRect imgRect{ pos.x, pos.y, size.x, size.y };
+        lastRects[ch.name] = imgRect;
       }
   #endif
     }

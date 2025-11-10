@@ -15,6 +15,7 @@
 namespace Ravl2::DebugDisplay::Ui::StatusBar {
 
 void build(const std::unordered_map<std::string, SDL_FRect>& lastRects,
+           const std::unordered_map<std::string, SDL_FPoint>& imageOrigins,
            ChannelRegistry& channels)
 {
 #if defined(RAVL2_WITH_IMGUI)
@@ -30,7 +31,7 @@ void build(const std::unordered_map<std::string, SDL_FRect>& lastRects,
     mx = static_cast<int>(mp.x);
     my = static_cast<int>(mp.y);
     PixelInspector2D inspector;
-    if (auto info = inspector.inspect(mx, my, lastRects, channels)) {
+    if (auto info = inspector.inspect(mx, my, lastRects, imageOrigins, channels)) {
       ImGui::Text("%s  x=%d y=%d  orig=%.6g  disp=%.4f  [range %.6g..%.6g]",
                   info->channel.c_str(), info->ix, info->iy,
                   static_cast<double>(info->raw), static_cast<double>(info->disp),
@@ -41,7 +42,7 @@ void build(const std::unordered_map<std::string, SDL_FRect>& lastRects,
   }
   ImGui::End();
 #else
-  (void)lastRects; (void)channels;
+  (void)lastRects; (void)imageOrigins; (void)channels;
 #endif
 }
 

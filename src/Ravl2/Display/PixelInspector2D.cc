@@ -10,6 +10,7 @@ namespace Ravl2::DebugDisplay {
 std::optional<PixelInfo2D> PixelInspector2D::inspect(
     int mouseX, int mouseY,
     const std::unordered_map<std::string, SDL_FRect>& lastRects,
+    const std::unordered_map<std::string, SDL_FPoint>& imageOrigins,
     ChannelRegistry& channels) const noexcept
 {
   // Find first channel whose last drawn rect contains the mouse
@@ -34,13 +35,19 @@ std::optional<PixelInfo2D> PixelInspector2D::inspect(
   const int h = node->height;
   if (w <= 0 || h <= 0) return std::nullopt;
 
-  // Map mouse to image pixel using view2D transform parameters
+  // Map mouse to image pixel using image origin + view2D transform parameters
   const float sx = ch.view2D.scaleVector()[0];
   const float sy = ch.view2D.scaleVector()[1];
   const float tx = ch.view2D.translation()[0];
   const float ty = ch.view2D.translation()[1];
-  const int ix = static_cast<int>((fx - tx) / (sx != 0.0f ? sx : 1.0f));
-  const int iy = static_cast<int>((fy - ty) / (sy != 0.0f ? sy : 1.0f));
+  SDL_FPoint origin{0.f, 0.f};
+  if (auto it = imageOrigins.find(under); it != imageOrigins.end()) {
+    origin = it->second;
+  }
+  const float denomX = (sx != 0.0f) ? sx : 1.0f;
+  const float denomY = (sy != 0.0f) ? sy : 1.0f;
+  const int ix = static_cast<int>((fx - (origin.x + tx)) / denomX);
+  const int iy = static_cast<int>((fy - (origin.y + ty)) / denomY);
   if (ix < 0 || iy < 0 || ix >= w || iy >= h) return std::nullopt;
 
   PixelInfo2D out{};

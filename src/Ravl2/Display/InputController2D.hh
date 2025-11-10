@@ -23,7 +23,8 @@ public:
   void setZoomLimits(float minVal, float maxVal) noexcept { mZoomMin = minVal; mZoomMax = maxVal; }
 
   void onMouseButtonDown(int x, int y,
-                         const std::unordered_map<std::string, SDL_FRect>& lastRects) noexcept;
+                         const std::unordered_map<std::string, SDL_FRect>& lastRects,
+                         const std::unordered_map<std::string, SDL_FRect>& contentRects) noexcept;
 
   void onMouseButtonUp(uint8_t sdlButton) noexcept;
 
@@ -32,6 +33,7 @@ public:
 
   void onMouseWheel(int wheelY, int mouseX, int mouseY,
                     const std::unordered_map<std::string, SDL_FRect>& lastRects,
+                    const std::unordered_map<std::string, SDL_FRect>& contentRects,
                     ChannelRegistry& channels) noexcept;
 
   const std::string& activeChannel() const noexcept { return mActiveChannel; }

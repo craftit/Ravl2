@@ -29,6 +29,7 @@ public:
 
   std::optional<PixelInfo2D> inspect(int mouseX, int mouseY,
                                      const std::unordered_map<std::string, SDL_FRect>& lastRects,
+                                     const std::unordered_map<std::string, SDL_FPoint>& imageOrigins,
                                      ChannelRegistry& channels) const noexcept;
 };
 

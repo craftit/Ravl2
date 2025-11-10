@@ -1,21 +1,30 @@
 #include "Ravl2/Display/InputController2D.hh"
 
 #include <algorithm>
+#include <cmath>
 
 namespace Ravl2::DebugDisplay {
 
 void InputController2D::onMouseButtonDown(int x, int y,
-                                          const std::unordered_map<std::string, SDL_FRect>& lastRects) noexcept
+                                          const std::unordered_map<std::string, SDL_FRect>& lastRects,
+                                          const std::unordered_map<std::string, SDL_FRect>& contentRects) noexcept
 {
-  mDragging = true;
-  mLastX = x; mLastY = y;
+  mDragging = false;
   mActiveChannel.clear();
+  mLastX = x; mLastY = y;
   const float fx = static_cast<float>(x);
   const float fy = static_cast<float>(y);
+  // Only start drag if inside both the image rect and the window content rect
   for (const auto &kv : lastRects) {
-    const auto &r = kv.second;
-    if (fx >= r.x && fx < r.x + r.w && fy >= r.y && fy < r.y + r.h) {
+    const auto &img = kv.second;
+    auto itC = contentRects.find(kv.first);
+    if (itC == contentRects.end()) continue;
+    const auto &c = itC->second;
+    const bool inImg = (fx >= img.x && fx < img.x + img.w && fy >= img.y && fy < img.y + img.h);
+    const bool inContent = (fx >= c.x && fx < c.x + c.w && fy >= c.y && fy < c.y + c.h);
+    if (inImg && inContent) {
       mActiveChannel = kv.first;
+      mDragging = true;
       break;
     }
   }
@@ -45,15 +54,23 @@ void InputController2D::onMouseMotion(int x, int y,
 
 void InputController2D::onMouseWheel(int wheelY, int mouseX, int mouseY,
                                      const std::unordered_map<std::string, SDL_FRect>& lastRects,
+                                     const std::unordered_map<std::string, SDL_FRect>& contentRects,
                                      ChannelRegistry& channels) noexcept
 {
-  // Determine channel under cursor
+  // Determine channel under cursor and fetch its last drawn rect (ImGui screen space)
   std::string under;
+  SDL_FRect rect{};
+  SDL_FRect cRect{};
   const float fx = static_cast<float>(mouseX);
   const float fy = static_cast<float>(mouseY);
   for (const auto &kv : lastRects) {
     const auto &r = kv.second;
-    if (fx >= r.x && fx < r.x + r.w && fy >= r.y && fy < r.y + r.h) { under = kv.first; break; }
+    auto itC = contentRects.find(kv.first);
+    if (itC == contentRects.end()) continue;
+    const auto &cr = itC->second;
+    const bool inImg = (fx >= r.x && fx < r.x + r.w && fy >= r.y && fy < r.y + r.h);
+    const bool inContent = (fx >= cr.x && fx < cr.x + cr.w && fy >= cr.y && fy < cr.y + cr.h);
+    if (inImg && inContent) { under = kv.first; rect = r; cRect = cr; break; }
   }
   if (under.empty()) return;
 
@@ -64,19 +81,29 @@ void InputController2D::onMouseWheel(int wheelY, int mouseX, int mouseY,
   float &tx = view.translation()[0];
   float &ty = view.translation()[1];
 
+  // Use continuous zoom factor; support multiple wheel ticks per event
   constexpr float kFactor = 1.1f;
-  const float factor = (wheelY > 0) ? kFactor : 1.0f / kFactor;
+  int delta = wheelY;
+  if (delta == 0) return;
+  // Clamp excessive deltas to avoid huge jumps from high-resolution wheels
+  delta = std::clamp(delta, -8, 8);
+  const float factor = std::pow(kFactor, static_cast<float>(delta));
 
   const float newSx = std::clamp(sx * factor, mZoomMin, mZoomMax);
   const float newSy = std::clamp(sy * factor, mZoomMin, mZoomMax);
 
-  // Compute image coordinates under cursor with old transform
-  const float ix = (static_cast<float>(mouseX) - tx) / (sx != 0.0f ? sx : 1.0f);
-  const float iy = (static_cast<float>(mouseY) - ty) / (sy != 0.0f ? sy : 1.0f);
+  // Anchor around mouse using content-origin-based mapping: screen = contentMin + tx + ix*s
+  constexpr float kEps = 1e-6f;
+  const float curSx = (std::abs(sx) < kEps) ? (sx >= 0 ? kEps : -kEps) : sx;
+  const float curSy = (std::abs(sy) < kEps) ? (sy >= 0 ? kEps : -kEps) : sy;
+  const float ix = (fx - (cRect.x + tx)) / curSx;
+  const float iy = (fy - (cRect.y + ty)) / curSy;
 
-  // Update translation so the point under cursor remains fixed
-  tx = static_cast<float>(mouseX) - ix * newSx;
-  ty = static_cast<float>(mouseY) - iy * newSy;
+  // Keep the point under cursor fixed: newScreen = cRect.(x|y) + tx' + (ix|iy)*newS
+  // Solve for tx', ty'
+  tx = fx - (cRect.x + ix * newSx);
+  ty = fy - (cRect.y + iy * newSy);
+  // Apply new scales
   sx = newSx; sy = newSy;
 
   invalidate();

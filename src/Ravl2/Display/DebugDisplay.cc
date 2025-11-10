@@ -273,7 +273,9 @@ namespace {
     int h = 0;
   };
   std::unordered_map<std::string, TextureEntry> g_textures;
-  std::unordered_map<std::string, SDL_FRect> g_lastRects; // last drawn rect per channel for hit-testing
+  std::unordered_map<std::string, SDL_FRect> g_lastRects; // last drawn image rect per channel (screen space)
+  std::unordered_map<std::string, SDL_FPoint> g_imageOrigins; // per-channel image origin = content cursor screen pos
+  std::unordered_map<std::string, SDL_FRect> g_contentRects; // per-channel window content rect (screen space)
 
   // ImGui state
 #if defined(RAVL2_WITH_IMGUI)
@@ -288,6 +290,7 @@ namespace {
   // Forward declarations for mouse helpers used in event processing
   static inline void getMouseScreenPos(int& mx, int& my) noexcept;
   static inline bool isOverAnyChannelRect(int mx, int my) noexcept;
+  static inline bool isOverImageContentRect(int mx, int my) noexcept;
 
   // Minimal SDL wrapper (Step 5): encapsulates init/shutdown/event processing without changing globals
   struct SdlApp {
@@ -511,8 +514,8 @@ namespace {
             int mx=0,my=0; getMouseScreenPos(mx,my);
             g_lastMouseX = mx;
             g_lastMouseY = my;
-            if (!imguiWantsMouse || isOverAnyChannelRect(mx,my)) {
-              g_input.onMouseButtonDown(mx, my, g_lastRects);
+            if (!imguiWantsMouse || isOverImageContentRect(mx,my)) {
+              g_input.onMouseButtonDown(mx, my, g_lastRects, g_contentRects);
               g_activeChannel = g_input.activeChannel();
             }
           }
@@ -542,7 +545,7 @@ namespace {
 #endif
           {
             int mx=0,my=0; getMouseScreenPos(mx,my);
-            if (!imguiWantsMouse || isOverAnyChannelRect(mx,my)) {
+            if (!imguiWantsMouse || isOverImageContentRect(mx,my)) {
               g_input.onMouseMotion(mx, my, g_channels);
             }
           }
@@ -555,8 +558,8 @@ namespace {
 #endif
           // Zoom in/out around cursor for channel under mouse
           int mx=0,my=0; getMouseScreenPos(mx,my);
-          if (!imguiWantsMouse || isOverAnyChannelRect(mx,my)) {
-            g_input.onMouseWheel(e.wheel.y, mx, my, g_lastRects, g_channels);
+          if (!imguiWantsMouse || isOverImageContentRect(mx,my)) {
+            g_input.onMouseWheel(e.wheel.y, mx, my, g_lastRects, g_contentRects, g_channels);
           }
 #if defined(RAVL2_WITH_IMGUI) && defined(RAVL2_WITH_BGFX)
           // Forward scroll to ImGui bgfx backend (accumulate this frame)
@@ -586,6 +589,21 @@ namespace {
     for (const auto &kv : g_lastRects) {
       const auto &r = kv.second;
       if (fx >= r.x && fx < r.x + r.w && fy >= r.y && fy < r.y + r.h) return true;
+    }
+    return false;
+  }
+
+  static inline bool isOverImageContentRect(int mx, int my) noexcept {
+    const float fx = static_cast<float>(mx);
+    const float fy = static_cast<float>(my);
+    for (const auto &kv : g_lastRects) {
+      const auto &img = kv.second;
+      auto itC = g_contentRects.find(kv.first);
+      if (itC == g_contentRects.end()) continue;
+      const auto &cr = itC->second;
+      const bool inImg = (fx >= img.x && fx < img.x + img.w && fy >= img.y && fy < img.y + img.h);
+      const bool inContent = (fx >= cr.x && fx < cr.x + cr.w && fy >= cr.y && fy < cr.y + cr.h);
+      if (inImg && inContent) return true;
     }
     return false;
   }
@@ -773,10 +791,10 @@ namespace {
                              kZoomMin, kZoomMax);
       ImGui::End();
 
-      Ui::ChannelWindows::build(fbw, fbh, g_channels, g_lastRects, g_invalidated);
+      Ui::ChannelWindows::build(fbw, fbh, g_channels, g_lastRects, g_imageOrigins, g_contentRects, g_invalidated);
 
       // Bottom status bar with live inspector info
-      Ui::StatusBar::build(g_lastRects, g_channels);
+      Ui::StatusBar::build(g_lastRects, g_imageOrigins, g_channels);
 
       g_imguiBridge.endFrame();
       SPDLOG_DEBUG("ImGui frame submitted");
@@ -802,7 +820,7 @@ namespace {
       ImGui::End();
 
       // Bottom status bar with live inspector info (SDL path)
-      Ui::StatusBar::build(g_lastRects, g_channels);
+      Ui::StatusBar::build(g_lastRects, g_imageOrigins, g_channels);
 
       ImGui::Render();
       ImGui_ImplSDLRenderer2_RenderDrawData(ImGui::GetDrawData(), g_renderer);
