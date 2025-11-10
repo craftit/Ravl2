@@ -6,6 +6,10 @@ list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
 add_library(Ravl2Display
     DebugDisplay.cc DebugDisplay.hh
     Backends/BGFXContext.cc Backends/BGFXContext.hh
+    Backends/ImguiBgfxBridge.cc Backends/ImguiBgfxBridge.hh
+    Ui/Dockspace.cc Ui/Dockspace.hh
+    Ui/ControlsPanel.cc Ui/ControlsPanel.hh
+    Ui/ChannelWindows.cc Ui/ChannelWindows.hh
     IRenderCommand.hh ISceneNode.hh Channel.hh
     RenderContext.hh Normalization.hh
     Image2DNode.cc Image2DNode.hh

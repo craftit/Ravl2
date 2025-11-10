@@ -18,6 +18,10 @@
 #include <algorithm>
 #include <cstdio>
 #include "Ravl2/Display/Backends/BGFXContext.hh"
+#include "Ravl2/Display/Backends/ImguiBgfxBridge.hh"
+#include "Ravl2/Display/Ui/Dockspace.hh"
+#include "Ravl2/Display/Ui/ControlsPanel.hh"
+#include "Ravl2/Display/Ui/ChannelWindows.hh"
 #if defined(RAVL2_WITH_BGFX)
 #include <bgfx/bgfx.h>
 #include <bgfx/platform.h>
@@ -173,8 +177,7 @@ namespace {
 #endif
 
 #if defined(RAVL2_WITH_IMGUI) && defined(RAVL2_WITH_BGFX)
-// ImGui (Step B): bgfx backend (from bgfx examples) with manual input forwarding
-// Important: include SDL backends BEFORE the bgfx-wrapped imgui.hh since it may define IMGUI_DISABLE
+// ImGui (bgfx path): UI API; bridge wraps bgfx backend. Keep SDL backends for fallback and include bgfx helper for button masks.
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wold-style-cast"
 #if defined(__clang__)
@@ -183,7 +186,7 @@ namespace {
 #include <imgui.h>
 #include <backends/imgui_impl_sdl2.h>
 #include <backends/imgui_impl_sdlrenderer2.h>
-#include "bgfx_imgui/ImGUI/imgui.hh"
+#include "Ravl2/Display/bgfx_imgui/ImGUI/imgui.hh"
 #include "Ravl2/Display/Commands/SetNormalization2D.hh"
 #pragma GCC diagnostic pop
 #elif defined(RAVL2_WITH_IMGUI)
@@ -271,6 +274,7 @@ namespace {
   bool g_imguiInitialized = false;
 #endif
 #if defined(RAVL2_WITH_IMGUI) && defined(RAVL2_WITH_BGFX)
+  ImguiBgfxBridge g_imguiBridge;
   uint8_t g_mouseButtons = 0;
   int32_t g_scroll = 0;
 #endif
@@ -373,9 +377,12 @@ namespace {
 #if defined(RAVL2_WITH_IMGUI) && defined(RAVL2_WITH_BGFX)
       if (!g_imguiInitialized) {
         if (g_bgfx.initialized()) {
-          imguiCreate(18.0f, nullptr);
-          g_imguiInitialized = true;
-          SPDLOG_INFO("DebugDisplay: Dear ImGui initialized (bgfx backend)");
+          if (g_imguiBridge.init(18.0f)) {
+            g_imguiInitialized = true;
+            SPDLOG_INFO("DebugDisplay: Dear ImGui initialized (bgfx backend via ImguiBgfxBridge)");
+          } else {
+            SPDLOG_WARN("DebugDisplay: ImguiBgfxBridge init failed while bgfx is initialized");
+          }
         } else {
           IMGUI_CHECKVERSION();
           ImGui::CreateContext();
@@ -423,7 +430,7 @@ namespace {
       // Shutdown ImGui if initialized
 #if defined(RAVL2_WITH_IMGUI) && defined(RAVL2_WITH_BGFX)
       if (g_imguiInitialized) {
-        imguiDestroy();
+        g_imguiBridge.shutdown();
         g_imguiInitialized = false;
       }
 #elif defined(RAVL2_WITH_IMGUI)
@@ -803,151 +810,6 @@ namespace {
     }
   }
 
-  // Build a global dockspace over the main viewport
-  static inline void buildDockspace()
-  {
-    // ImGui 1.90+: DockSpaceOverViewport signature is (ImGuiID, const ImGuiViewport*, ...)
-    ImGui::DockSpaceOverViewport(0, ImGui::GetMainViewport());
-  }
-
-  // Shared Controls panel UI (channel selection, view, normalization)
-  static void buildControlsUI(float fbw, float fbh, bool markInvalidatedOnChange)
-  {
-    // Collect channel names for selection
-    static int selectedChannel = 0;
-    std::vector<std::string> chNames;
-    g_channels.forEachChannel([&](ChannelState &ch){ chNames.push_back(ch.name); });
-    if (selectedChannel >= static_cast<int>(chNames.size())) {
-      selectedChannel = chNames.empty() ? 0 : (static_cast<int>(chNames.size()) - 1);
-    }
-
-    // Channel selector
-    if (!chNames.empty()) {
-      const char* current = chNames[static_cast<size_t>(selectedChannel)].c_str();
-      if (ImGui::BeginCombo("Channel", current)) {
-        for (int i = 0; i < static_cast<int>(chNames.size()); ++i) {
-          bool isSelected = (selectedChannel == i);
-          if (ImGui::Selectable(chNames[static_cast<size_t>(i)].c_str(), isSelected)) {
-            selectedChannel = i;
-          }
-          if (isSelected) ImGui::SetItemDefaultFocus();
-        }
-        ImGui::EndCombo();
-      }
-    } else {
-      ImGui::TextUnformatted("No channels");
-    }
-
-    // Fetch the selected channel state for editing
-    if (!chNames.empty()) {
-      const std::string& selName = chNames[static_cast<size_t>(selectedChannel)];
-      auto &ch = g_channels.getOrCreateChannel(selName);
-
-      ImGui::SeparatorText("View");
-      // Uniform scale control mapped to both axes
-      float sx = ch.view2D.scaleVector()[0];
-      float sy = ch.view2D.scaleVector()[1];
-      float scaleUniform = (sx + sy) * 0.5f;
-      if (ImGui::SliderFloat("Scale", &scaleUniform, kZoomMin, 10.0f, "%.3f", ImGuiSliderFlags_Logarithmic)) {
-        auto v = ch.view2D.scaleVector();
-        v[0] = scaleUniform; v[1] = scaleUniform;
-        ch.view2D.scale(v);
-        if (markInvalidatedOnChange) g_invalidated.store(true, std::memory_order_release);
-      }
-      auto t = ch.view2D.translation();
-      float tx = t[0];
-      float ty = t[1];
-      if (ImGui::DragFloat("Translate X", &tx, 1.0f)) { t[0] = tx; ch.view2D.translate(t); if (markInvalidatedOnChange) g_invalidated.store(true, std::memory_order_release); }
-      if (ImGui::DragFloat("Translate Y", &ty, 1.0f)) { t[1] = ty; ch.view2D.translate(t); if (markInvalidatedOnChange) g_invalidated.store(true, std::memory_order_release); }
-
-      ImGui::SameLine();
-      if (ImGui::Button("Reset View")) {
-        ch.view2D = ScaleTranslate<float,2>::identity();
-        if (markInvalidatedOnChange) g_invalidated.store(true, std::memory_order_release);
-      }
-      ImGui::SameLine();
-      if (ImGui::Button("Fit To Window")) {
-        int imgW = 0, imgH = 0;
-        if (ch.baseImage2D) {
-          if (auto *node = static_cast<Image2DNode*>(ch.baseImage2D.get())) {
-            imgW = node->width; imgH = node->height;
-          }
-        }
-        if (imgW > 0 && imgH > 0) {
-          const float fbwf = fbw;
-          const float fbhf = fbh;
-          const float sxFit = fbwf / static_cast<float>(imgW);
-          const float syFit = fbhf / static_cast<float>(imgH);
-          const float sFit = std::min(sxFit, syFit);
-          auto v = ch.view2D.scaleVector(); v[0] = sFit; v[1] = sFit; ch.view2D.scale(v);
-          auto tr = ch.view2D.translation();
-          tr[0] = (fbwf - static_cast<float>(imgW) * sFit) * 0.5f;
-          tr[1] = (fbhf - static_cast<float>(imgH) * sFit) * 0.5f;
-          ch.view2D.translate(tr);
-          if (markInvalidatedOnChange) g_invalidated.store(true, std::memory_order_release);
-        }
-      }
-
-      ImGui::SeparatorText("Normalization");
-      NormalizationSettings ns = ch.norm; // edit copy to avoid partial writes
-      int pol = 0;
-      switch (ns.policy) {
-        case NormalizationPolicy::Auto: pol = 0; break;
-        case NormalizationPolicy::Fixed: pol = 1; break;
-        case NormalizationPolicy::Percentile: pol = 2; break;
-      }
-      const char* polNames[] = {"Auto", "Fixed", "Percentile"};
-      if (ImGui::Combo("Policy", &pol, polNames, 3)) {
-        ns.policy = pol == 0 ? NormalizationPolicy::Auto : (pol == 1 ? NormalizationPolicy::Fixed : NormalizationPolicy::Percentile);
-      }
-      if (ns.policy == NormalizationPolicy::Fixed) {
-        ImGui::DragFloat("Min", &ns.minVal, 0.01f);
-        ImGui::DragFloat("Max", &ns.maxVal, 0.01f);
-        if (ns.maxVal <= ns.minVal) ns.maxVal = ns.minVal + 1.0f;
-      } else if (ns.policy == NormalizationPolicy::Percentile) {
-        ImGui::DragFloat("Low %", &ns.lowPct, 0.1f, 0.0f, 100.0f);
-        ImGui::DragFloat("High %", &ns.highPct, 0.1f, 0.0f, 100.0f);
-        if (ns.highPct < ns.lowPct) std::swap(ns.lowPct, ns.highPct);
-      }
-      if (ImGui::Button("Apply Normalization")) {
-        g_queue.push(std::make_shared<SetNormalization2D>(selName, ns));
-        if (markInvalidatedOnChange) g_invalidated.store(true, std::memory_order_release);
-      }
-    }
-  }
-
-  static void buildChannelWindows(uint16_t fbw, uint16_t fbh)
-  {
-    g_lastRects.clear();
-    RenderContext rc{}; rc.framebufferWidth = fbw; rc.framebufferHeight = fbh;
-    g_channels.forEachChannel([&](ChannelState &ch){
-      if (!ImGui::Begin(ch.name.c_str())) { ImGui::End(); return; }
-      if (ch.baseImage2D) {
-        auto *node = static_cast<Image2DNode*>(ch.baseImage2D.get());
-        node->prepare(rc);
-  #if defined(RAVL2_WITH_BGFX)
-        if (node->width > 0 && node->height > 0 && node->textureHandleIdx != UINT16_MAX) {
-          bgfx::TextureHandle thdl{node->textureHandleIdx};
-          const float sx = ch.view2D.scaleVector()[0];
-          const float sy = ch.view2D.scaleVector()[1];
-          const float tx = ch.view2D.translation()[0];
-          const float ty = ch.view2D.translation()[1];
-          // Compute position in screen space
-          ImVec2 winPos = ImGui::GetCursorScreenPos();
-          ImVec2 pos = ImVec2(winPos.x + tx, winPos.y + ty);
-          ImVec2 size = ImVec2(static_cast<float>(node->width) * sx, static_cast<float>(node->height) * sy);
-          // Set cursor and draw
-          ImGui::SetCursorScreenPos(pos);
-          ImGui::Image(thdl, size);
-          // Update hit-test rect in screen space
-          SDL_FRect r{ pos.x, pos.y, size.x, size.y };
-          g_lastRects[ch.name] = r;
-        }
-  #endif
-      }
-      ImGui::End();
-    });
-  }
 
   // --- Loop helpers extracted in Phase 4.9 Step 4 ---
   static inline void drainCommandsOnce(int maxPerTick)
@@ -973,24 +835,28 @@ namespace {
       fbw = static_cast<uint16_t>(winW);
       fbh = static_cast<uint16_t>(winH);
       SPDLOG_DEBUG("ImGui frame begin: fb={}x{}, mouse=({},{}), buttons=0x{:x}, scroll={}", fbw, fbh, mx, my, static_cast<unsigned>(g_mouseButtons), static_cast<int>(g_scroll));
-      imguiBeginFrame(mx, my, g_mouseButtons, g_scroll, fbw, fbh);
+      g_imguiBridge.beginFrame(mx, my, g_mouseButtons, g_scroll, fbw, fbh);
       g_scroll = 0; // consume scroll
 
-      buildDockspace();
+      Ui::buildDockspace();
 
       // Controls window (bgfx path currently pinned; parity with existing behavior)
       ImGui::SetNextWindowPos(ImVec2(kControlsPosX, kControlsPosY), ImGuiCond_Always);
       ImGui::SetNextWindowSize(ImVec2(kControlsInitialWidth, 0), ImGuiCond_FirstUseEver);
       ImGui::Begin("Controls", nullptr, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoDocking);
       SPDLOG_DEBUG("ImGui Controls window built");
-      buildControlsUI(static_cast<float>(fbw), static_cast<float>(fbh), false);
+      Ui::buildControlsPanel(static_cast<float>(fbw), static_cast<float>(fbh),
+                             g_channels,
+                             [&](std::shared_ptr<IRenderCommand> cmd){ g_queue.push(std::move(cmd)); },
+                             g_invalidated,
+                             kZoomMin, kZoomMax);
       ImGui::End();
 
-      buildChannelWindows(fbw, fbh);
+      Ui::ChannelWindows::build(fbw, fbh, g_channels, g_lastRects);
 
       updateWindowTitleFromLastRects_Bgfx();
 
-      imguiEndFrame();
+      g_imguiBridge.endFrame();
       SPDLOG_DEBUG("ImGui frame submitted");
     }
   #elif defined(RAVL2_WITH_IMGUI)
@@ -999,13 +865,17 @@ namespace {
       ImGui_ImplSDLRenderer2_NewFrame();
       ImGui::NewFrame();
 
-      buildDockspace();
+      Ui::buildDockspace();
 
       ImGui::SetNextWindowPos(ImVec2(kControlsPosX, kControlsPosY), ImGuiCond_Once);
       ImGui::SetNextWindowSize(ImVec2(kControlsInitialWidth, 0), ImGuiCond_FirstUseEver);
       if (ImGui::Begin("Controls", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
         int winW=0, winH=0; SDL_GetWindowSize(g_window, &winW, &winH);
-        buildControlsUI(static_cast<float>(winW), static_cast<float>(winH), true);
+        Ui::buildControlsPanel(static_cast<float>(winW), static_cast<float>(winH),
+                               g_channels,
+                               [&](std::shared_ptr<IRenderCommand> cmd){ g_queue.push(std::move(cmd)); },
+                               g_invalidated,
+                               kZoomMin, kZoomMax);
       }
       ImGui::End();
 
@@ -1133,7 +1003,7 @@ namespace {
     // Destroy ImGui (bgfx backend) before shutting down bgfx to avoid use-after-shutdown
 #if defined(RAVL2_WITH_IMGUI) && defined(RAVL2_WITH_BGFX)
     if (g_imguiInitialized && g_bgfx.initialized()) {
-      imguiDestroy();
+      g_imguiBridge.shutdown();
       g_imguiInitialized = false;
     }
 #endif

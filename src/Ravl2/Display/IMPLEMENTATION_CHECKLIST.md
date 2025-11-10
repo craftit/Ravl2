@@ -80,8 +80,8 @@ Legend: [ ] = todo, [*] = in progress, [x] = done
   3. [x] Extract minimal helpers without behavior change: `buildDockspace(...)`, `buildControlsUI(...)`, `buildChannelWindows(...)`, `updateWindowTitlePixelInfo(...)`
   4. [x] Split setup/teardown into dedicated functions; keep the main loop orchestration under ~100 lines
   5. [x] Introduce `SdlApp` wrapper (window/events); migrate lifecycle calls (no functional change)
-  6. [ ] Harden `BgfxContext` single‑responsibility; move ImGui+bgfx glue into `ImguiBgfxBridge`
-  7. [ ] Move UI composition into `Ui::Dockspace`, `Ui::ControlsPanel`, `Ui::ChannelWindows`; update call sites
+  6. [x] Harden `BgfxContext` single‑responsibility; move ImGui+bgfx glue into `ImguiBgfxBridge`
+  7. [x] Move UI composition into `Ui::Dockspace`, `Ui::ControlsPanel`, `Ui::ChannelWindows`; update call sites
   8. [ ] Add `InputController2D` (per‑channel state) and route pan/zoom through it
   9. [ ] Add `PixelInspector2D` and switch title/pixel info to use it (consults normalization)
   10. [ ] Error handling and logging pass: convert new/refactored paths to `std::expected`; ensure boundary‑only logging and exception‑safe RAII
