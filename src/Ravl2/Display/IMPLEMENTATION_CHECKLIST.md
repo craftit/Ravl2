@@ -95,41 +95,63 @@ Legend: [ ] = todo, [*] = in progress, [x] = done
   13. [x] Tests and documentation: Doxygen for new helpers/classes; unit tests for normalization/percentile helpers; update `DebugDisplay_Design.md` with module diagram/data flow
   14. [x] Acceptance criteria verification: size reduced; no regressions for Phases 2–4; overlay stubs exercised
 
-- [ ] Partition responsibilities for maintainability:
-  - [ ] Window/SDL lifecycle: `SdlApp` (init/shutdown, window events)
-  - [ ] Rendering backends: `BgfxContext` (already exists) — ensure single-responsibility; move ImGui+bgfx glue into `ImguiBgfxBridge`
-  - [ ] ImGui UI composition: `Ui::Dockspace`, `Ui::ControlsPanel`, `Ui::ChannelWindows`
-  - [ ] Input handling for pan/zoom: `InputController2D` with per-channel state
-  - [ ] Pixel query and normalization bridge: `PixelInspector2D` (CPU-side, consults normalization)
-- [ ] Refactor `DebugDisplay.cc`:
-  - [ ] Extract helpers: `buildDockspace(...)`, `buildControlsUI(...)`, `buildChannelWindows(...)`, `updateWindowTitlePixelInfo(...)`
-  - [ ] Keep the main loop orchestration under ~100 lines; move setup/teardown into dedicated functions
-  - [ ] Replace magic constants with named `constexpr` (e.g., `kControlsInitialPos`)
-- [ ] Error handling and logging pass:
-  - [ ] Prefer `std::expected` returns in new code paths; log at boundaries only (no duplicate logging)
-  - [ ] Ensure RAII and early-returns keep initialization/shutdown exception-safe
-- [ ] Prepare extension points for upcoming phases:
-  - [ ] Define `OverlayRenderer2D` interface and stub implementations (points/lines) to support Phase 5
-  - [ ] Ensure channel windows can register overlays via a small registry (composition over inheritance)
-  - [ ] Isolate ImPlot integration hooks so Phase 7 can add plots without touching rendering core
-- [ ] Tests and documentation:
-  - [ ] Doxygen for new helpers/classes with thread-safety notes
-  - [ ] Unit tests for normalization helpers (ties into Phase 11); quick tests for percentile math
-  - [ ] Update `DebugDisplay_Design.md` with a module diagram and data flow
-- [ ] Acceptance criteria:
-  - [ ] `DebugDisplay.cc` reduced in size (e.g., main loop and per-frame UI functions < 100 lines each)
-  - [ ] No behavior regressions for Phases 2–4 features (dockspace, channel windows, pixel query)
-  - [ ] Overlay integration points exist and are exercised by trivial stubs
-
 ## Phase 5 — Overlays (2D)
 - [ ] Adapter for `std::vector<Point<float,2>>`
 - [ ] Adapter for 2D lines
 - [ ] Render via ImGui draw lists or bgfx line pass (choose and document)
 
 ## Phase 6 — 3D basic rendering
-- [ ] Camera orbit controls
-- [ ] PointCloud3f and Mesh3f adapters
-- [ ] Depth-tested draw calls; axes/grid overlay
+
+- Execution order (deliver in small, verifiable slices; build and run after each slice):
+
+- 6a. Viewport3D + Orbit Camera MVP
+  - [ ] Add `Viewport3DNode` per channel to manage 3D view ID, viewport rect, camera state (orbit: `target`, `distance`, `yaw`, `pitch`).
+  - [ ] Input mapping (ImGui/SDL): Alt+LMB orbit, Alt+MMB pan, Wheel dolly; toolbar buttons for Reset and Fit.
+  - [ ] Perspective builder (fovY, aspect, near, far). Keep simple helpers; do not depend on `PinholeCamera` internally.
+  - [ ] Grid overlay on XZ at y=0 (extent, cell size configurable); render with depth test off (always visible) or a second pass.
+  - [ ] Minimal points program: positions only, uniform color, fixed point size (backend-safe default).
+  - [ ] Resize handling: update bgfx view rect and projection aspect on window/panel resize.
+  - [ ] Acceptance: empty scene shows a grid; orbit/pan/dolly feel stable; no crashes.
+
+- 6b. Depth test, Axes, Point colors/size
+  - [ ] Enable depth test/write for 3D content and configure clear flags per frame.
+  - [ ] Axes triad at origin; toggle in the channel toolbar.
+  - [ ] Per-vertex color path for point clouds (packed ABGR `uint32_t`); fallback to uniform color.
+  - [ ] Point size control (uniform); document backend variability; keep constant screen-space size initially.
+  - [ ] Toolbar toggles: grid, axes, depth test on/off.
+  - [ ] Acceptance: points occlude correctly; axes/grid toggles work; colorized clouds display.
+
+- 6c. Mesh renderer (PN) using existing MeshShapes
+  - [ ] Add simple mesh shaders: VS transforms positions and normals; FS supports Flat/Normal/Lambert shading.
+  - [ ] Upload mesh vertex (P,N) and index buffers; recreate on size/format change.
+  - [ ] Back-face culling toggle; depth test/write enabled by default for meshes.
+  - [ ] Use `MeshShapes` (cube, sphere) as smoke tests; note that `TriMesh`/`TexTriMesh` may need work — defer advanced features.
+  - [ ] Acceptance: cube/sphere render with correct culling; shading mode switch functions.
+
+- 6d. Adapters and command sink wiring (Ravl2 + Eigen)
+  - [ ] Define commands: `SetPointCloud3D`, `SetMesh3D`, `SetCamera3D`, `Clear3D` (use `std::expected` for fallible ops; log at boundaries).
+  - [ ] TypeConverters:
+    - [ ] Ravl2 `PointCloud3f` → `SetPointCloud3D` (positions [+ optional colors]).
+    - [ ] Ravl2 `Mesh3f` (or thin adapter via `Vertex.hh` + `Tri.hh`) → `SetMesh3D` (positions, normals, indices, optional colors). Defer `TriMesh` specifics if incomplete.
+    - [ ] Eigen interop: `std::vector<Eigen::Vector3f>` (and `std::span`) → `SetPointCloud3D`; optional `std::vector<uint32_t>` colors.
+  - [ ] Extend `@debug` sink URLs, e.g.: `@debug:channel=cloud:mode=3d:replace`, `@debug:channel=mesh:mode=3d:replace`.
+  - [ ] Controls: `:Clear3D`, `:Camera(fov,near,far)`, `:PointSize(x)`, `:Shading(Lambert/Normals/Color)`; apply to channel state.
+  - [ ] Acceptance: data pushed via either Ravl2 geometry or Eigen containers renders identically.
+
+- 6e. PinholeCamera interop + Fit-to-bounds
+  - [ ] Implement helper to set the 3D viewport’s projection/viewport from `PinholeCamera` parameters (derive fov/near/far/aspect); do not adopt `PinholeCamera` internally.
+  - [ ] Fit-to-bounds: compute scene AABB from currently loaded point cloud/mesh; frame target with reasonable distance; clamp near/far.
+  - [ ] Optional: ImGuizmo toggle for object translate gizmo (off by default) without interfering with orbit input.
+  - [ ] Acceptance: calling interop produces matching FOV/aspect; Fit centers and frames content predictably.
+
+- 6f. Shaders and CMake
+  - [ ] Add and compile 3D shaders: `vs_point3d.sc`, `fs_point3d.sc`, `vs_mesh3d.sc`, `fs_mesh3d.sc` (+ `varying.def.sc` updates) via existing shaderc custom target; install to `RAVL2_SHADER_DIR`.
+  - [ ] Keep new dependencies PRIVATE; guard behind `RAVL2_ENABLE_DISPLAY_STACK`.
+
+- 6g. Tests and diagnostics
+  - [ ] Unit tests (non-GPU): camera math (orbit deltas, view/projection build), AABB fit-to-bounds, small adapter data validation.
+  - [ ] Manual checks: load synthetic point cloud (sphere/spiral) and `MeshShapes` cube; verify depth, shading, resize behavior.
+  - [ ] Diagnostics: dbgText HUD shows 3D view ID, draw counts; clear, actionable logs on shader/resource failures.
 
 ## Phase 7 — ImPlot integration
 - [ ] Plots panel and 1D series channel
