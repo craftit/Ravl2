@@ -92,8 +92,8 @@ Legend: [ ] = todo, [*] = in progress, [x] = done
   11.4 [x] Ensure `Lines2DOverlay` supports `closed` and style; render closing segment when requested.
   11.5 [x] Build + manual verify with two images and multiple overlays per channel.
   12. [x] Isolate ImPlot integration hooks so Phase 7 can add plots without touching the rendering core
-  13. [ ] Tests and documentation: Doxygen for new helpers/classes; unit tests for normalization/percentile helpers; update `DebugDisplay_Design.md` with module diagram/data flow
-  14. [ ] Acceptance criteria verification: size reduced; no regressions for Phases 2–4; overlay stubs exercised
+  13. [x] Tests and documentation: Doxygen for new helpers/classes; unit tests for normalization/percentile helpers; update `DebugDisplay_Design.md` with module diagram/data flow
+  14. [x] Acceptance criteria verification: size reduced; no regressions for Phases 2–4; overlay stubs exercised
 
 - [ ] Partition responsibilities for maintainability:
   - [ ] Window/SDL lifecycle: `SdlApp` (init/shutdown, window events)

@@ -6,16 +6,30 @@
 
 namespace Ravl2::DebugDisplay {
 
-//! Thin wrapper that encapsulates Dear ImGui integration over bgfx.
-//! Keeps BGFXContext focused on renderer lifecycle and isolates ImGui glue.
+//! ImguiBgfxBridge
+//! @brief Thin wrapper that encapsulates Dear ImGui integration over bgfx.
+//! @details Separates ImGui+bgfx glue from the renderer context so `BGFXContext` can
+//! remain single-responsibility. Provides frame begin/end and lifetime management.
+//! @threadsafe No. Call from the GUI thread only.
 struct ImguiBgfxBridge {
-  //! Legacy init with logging inside. Prefer initEx for boundary-only logging.
+  //! Initialize ImGui (bgfx backend).
+  //! @param fontSize Default font size in pixels.
+  //! @return true on success. Prefer `initEx` to avoid internal logging.
   bool init(float fontSize = 18.0f) noexcept;
-  //! New init returning std::expected; does not log internally.
+
+  //! Initialize ImGui (bgfx backend) with error reporting and no internal logging.
+  //! @param fontSize Default font size in pixels.
+  //! @return `std::expected<void, std::string>` with error message on failure.
   std::expected<void, std::string> initEx(float fontSize = 18.0f) noexcept;
 
+  //! Shutdown and release ImGui (bgfx backend) resources.
   void shutdown() noexcept;
 
+  //! Begin a new ImGui frame providing mouse input and framebuffer size.
+  //! @param mouseX,mouseY Mouse position in window coordinates (screen space).
+  //! @param mouseButtons Bitmask matching ImGui backend expectations.
+  //! @param scroll Accumulated scroll since last frame.
+  //! @param fbWidth,fbHeight Current framebuffer size in pixels.
   void beginFrame(int mouseX,
                   int mouseY,
                   uint8_t mouseButtons,
@@ -23,12 +37,14 @@ struct ImguiBgfxBridge {
                   uint16_t fbWidth,
                   uint16_t fbHeight) noexcept;
 
+  //! End and render the current ImGui frame.
   void endFrame() noexcept;
 
+  //! @return true if initialized.
   bool initialized() const noexcept { return mInitialized; }
 
 private:
-  bool mInitialized = false;
+  bool mInitialized = false; //!< Internal init state
 };
 
 } // namespace Ravl2::DebugDisplay
