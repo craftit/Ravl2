@@ -492,6 +492,12 @@ namespace {
               }
             }
             g_invalidated.store(true, std::memory_order_release);
+          } else if (e.window.event == SDL_WINDOWEVENT_LEAVE ||
+                     e.window.event == SDL_WINDOWEVENT_FOCUS_LOST) {
+            // Safety: cancel any ongoing drag if the mouse leaves the window or focus is lost.
+            g_dragging = false;
+            g_activeChannel.clear();
+            g_input.onMouseButtonUp(SDL_BUTTON_LEFT);
           }
         } else if (e.type == SDL_MOUSEBUTTONDOWN) {
 #if defined(RAVL2_WITH_IMGUI)
@@ -516,18 +522,12 @@ namespace {
           if (e.button.button == SDL_BUTTON_MIDDLE) g_mouseButtons |= IMGUI_MBUT_MIDDLE;
 #endif
         } else if (e.type == SDL_MOUSEBUTTONUP) {
-#if defined(RAVL2_WITH_IMGUI)
-          bool imguiWantsMouse = false;
-          if (g_imguiInitialized) { imguiWantsMouse = ImGui::GetIO().WantCaptureMouse; }
-#else
-          bool imguiWantsMouse = false;
-#endif
           if (e.button.button == SDL_BUTTON_LEFT) {
             g_dragging = false;
           }
-          if (!imguiWantsMouse) {
-            g_input.onMouseButtonUp(e.button.button);
-          }
+          // Always notify our input controller on button release to stop any panning/dragging,
+          // regardless of ImGui capture state.
+          g_input.onMouseButtonUp(e.button.button);
 #if defined(RAVL2_WITH_IMGUI) && defined(RAVL2_WITH_BGFX)
           if (e.button.button == SDL_BUTTON_LEFT) g_mouseButtons &= static_cast<uint8_t>(~IMGUI_MBUT_LEFT);
           if (e.button.button == SDL_BUTTON_RIGHT) g_mouseButtons &= static_cast<uint8_t>(~IMGUI_MBUT_RIGHT);
