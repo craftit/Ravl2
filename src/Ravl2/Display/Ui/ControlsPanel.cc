@@ -28,6 +28,7 @@ void buildControlsPanel(float fbw, float fbh,
                         float zoomMax)
 {
 #if defined(RAVL2_WITH_IMGUI)
+  (void)fbw; (void)fbh;
   // Collect channel names for selection
   static int selectedChannel = 0;
   std::vector<std::string> chNames;
@@ -80,28 +81,7 @@ void buildControlsPanel(float fbw, float fbh,
       ch.view2D = ScaleTranslate<float,2>::identity();
       invalidated.store(true, std::memory_order_release);
     }
-    ImGui::SameLine();
-    if (ImGui::Button("Fit To Window")) {
-      int imgW = 0, imgH = 0;
-      if (ch.baseImage2D) {
-        if (auto *node = static_cast<Image2DNode*>(ch.baseImage2D.get())) {
-          imgW = node->width; imgH = node->height;
-        }
-      }
-      if (imgW > 0 && imgH > 0) {
-        const float fbwf = fbw;
-        const float fbhf = fbh;
-        const float sxFit = fbwf / static_cast<float>(imgW);
-        const float syFit = fbhf / static_cast<float>(imgH);
-        const float sFit = std::min(sxFit, syFit);
-        auto v = ch.view2D.scaleVector(); v[0] = sFit; v[1] = sFit; ch.view2D.scale(v);
-        auto tr = ch.view2D.translation();
-        tr[0] = (fbwf - static_cast<float>(imgW) * sFit) * 0.5f;
-        tr[1] = (fbhf - static_cast<float>(imgH) * sFit) * 0.5f;
-        ch.view2D.translate(tr);
-        invalidated.store(true, std::memory_order_release);
-      }
-    }
+    // Fit-To-Window moved to per-channel window toolbar for correct content-based sizing.
 
     ImGui::SeparatorText("Normalization");
     NormalizationSettings ns = ch.norm; // edit copy to avoid partial writes

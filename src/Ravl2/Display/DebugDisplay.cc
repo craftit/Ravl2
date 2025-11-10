@@ -22,6 +22,7 @@
 #include "Ravl2/Display/Ui/Dockspace.hh"
 #include "Ravl2/Display/Ui/ControlsPanel.hh"
 #include "Ravl2/Display/Ui/ChannelWindows.hh"
+#include "Ravl2/Display/Ui/StatusBar.hh"
 #include "Ravl2/Display/InputController2D.hh"
 #include "Ravl2/Display/PixelInspector2D.hh"
 #if defined(RAVL2_WITH_BGFX)
@@ -284,6 +285,10 @@ namespace {
   int32_t g_scroll = 0;
 #endif
 
+  // Forward declarations for mouse helpers used in event processing
+  static inline void getMouseScreenPos(int& mx, int& my) noexcept;
+  static inline bool isOverAnyChannelRect(int mx, int my) noexcept;
+
   // Minimal SDL wrapper (Step 5): encapsulates init/shutdown/event processing without changing globals
   struct SdlApp {
     bool init() {
@@ -383,6 +388,9 @@ namespace {
       if (!g_imguiInitialized) {
         if (g_bgfx.initialized()) {
           if (g_imguiBridge.init(18.0f)) {
+                    // Only move windows from their title bars to avoid accidental drags while panning images.
+                    ImGuiIO& io = ImGui::GetIO();
+                    io.ConfigWindowsMoveFromTitleBarOnly = true;
             g_imguiInitialized = true;
             SPDLOG_INFO("DebugDisplay: Dear ImGui initialized (bgfx backend via ImguiBgfxBridge)");
           } else {
@@ -486,12 +494,21 @@ namespace {
             g_invalidated.store(true, std::memory_order_release);
           }
         } else if (e.type == SDL_MOUSEBUTTONDOWN) {
+#if defined(RAVL2_WITH_IMGUI)
+          bool imguiWantsMouse = false;
+          if (g_imguiInitialized) { imguiWantsMouse = ImGui::GetIO().WantCaptureMouse; }
+#else
+          bool imguiWantsMouse = false;
+#endif
           if (e.button.button == SDL_BUTTON_LEFT) {
             g_dragging = true;
-            g_lastMouseX = e.button.x;
-            g_lastMouseY = e.button.y;
-            g_input.onMouseButtonDown(e.button.x, e.button.y, g_lastRects);
-            g_activeChannel = g_input.activeChannel();
+            int mx=0,my=0; getMouseScreenPos(mx,my);
+            g_lastMouseX = mx;
+            g_lastMouseY = my;
+            if (!imguiWantsMouse || isOverAnyChannelRect(mx,my)) {
+              g_input.onMouseButtonDown(mx, my, g_lastRects);
+              g_activeChannel = g_input.activeChannel();
+            }
           }
 #if defined(RAVL2_WITH_IMGUI) && defined(RAVL2_WITH_BGFX)
           if (e.button.button == SDL_BUTTON_LEFT) g_mouseButtons |= IMGUI_MBUT_LEFT;
@@ -499,21 +516,48 @@ namespace {
           if (e.button.button == SDL_BUTTON_MIDDLE) g_mouseButtons |= IMGUI_MBUT_MIDDLE;
 #endif
         } else if (e.type == SDL_MOUSEBUTTONUP) {
+#if defined(RAVL2_WITH_IMGUI)
+          bool imguiWantsMouse = false;
+          if (g_imguiInitialized) { imguiWantsMouse = ImGui::GetIO().WantCaptureMouse; }
+#else
+          bool imguiWantsMouse = false;
+#endif
           if (e.button.button == SDL_BUTTON_LEFT) {
             g_dragging = false;
           }
-          g_input.onMouseButtonUp(e.button.button);
+          if (!imguiWantsMouse) {
+            g_input.onMouseButtonUp(e.button.button);
+          }
 #if defined(RAVL2_WITH_IMGUI) && defined(RAVL2_WITH_BGFX)
           if (e.button.button == SDL_BUTTON_LEFT) g_mouseButtons &= static_cast<uint8_t>(~IMGUI_MBUT_LEFT);
           if (e.button.button == SDL_BUTTON_RIGHT) g_mouseButtons &= static_cast<uint8_t>(~IMGUI_MBUT_RIGHT);
           if (e.button.button == SDL_BUTTON_MIDDLE) g_mouseButtons &= static_cast<uint8_t>(~IMGUI_MBUT_MIDDLE);
 #endif
         } else if (e.type == SDL_MOUSEMOTION) {
-          g_input.onMouseMotion(e.motion.x, e.motion.y, g_channels);
+#if defined(RAVL2_WITH_IMGUI)
+          bool imguiWantsMouse = false;
+          if (g_imguiInitialized) { imguiWantsMouse = ImGui::GetIO().WantCaptureMouse; }
+#else
+          bool imguiWantsMouse = false;
+#endif
+          {
+            int mx=0,my=0; getMouseScreenPos(mx,my);
+            if (!imguiWantsMouse || isOverAnyChannelRect(mx,my)) {
+              g_input.onMouseMotion(mx, my, g_channels);
+            }
+          }
         } else if (e.type == SDL_MOUSEWHEEL) {
+#if defined(RAVL2_WITH_IMGUI)
+          bool imguiWantsMouse = false;
+          if (g_imguiInitialized) { imguiWantsMouse = ImGui::GetIO().WantCaptureMouse; }
+#else
+          bool imguiWantsMouse = false;
+#endif
           // Zoom in/out around cursor for channel under mouse
-          int mx, my; SDL_GetMouseState(&mx, &my);
-          g_input.onMouseWheel(e.wheel.y, mx, my, g_lastRects, g_channels);
+          int mx=0,my=0; getMouseScreenPos(mx,my);
+          if (!imguiWantsMouse || isOverAnyChannelRect(mx,my)) {
+            g_input.onMouseWheel(e.wheel.y, mx, my, g_lastRects, g_channels);
+          }
 #if defined(RAVL2_WITH_IMGUI) && defined(RAVL2_WITH_BGFX)
           // Forward scroll to ImGui bgfx backend (accumulate this frame)
           g_scroll += e.wheel.y;
@@ -522,6 +566,29 @@ namespace {
       }
     }
   };
+
+  // Mouse helpers: fetch screen-space mouse position and test against channel rects
+  static inline void getMouseScreenPos(int& mx, int& my) noexcept {
+  #if defined(RAVL2_WITH_IMGUI)
+    if (g_imguiInitialized) {
+      ImVec2 mp = ImGui::GetMousePos();
+      mx = static_cast<int>(mp.x);
+      my = static_cast<int>(mp.y);
+      return;
+    }
+  #endif
+    SDL_GetMouseState(&mx, &my);
+  }
+
+  static inline bool isOverAnyChannelRect(int mx, int my) noexcept {
+    const float fx = static_cast<float>(mx);
+    const float fy = static_cast<float>(my);
+    for (const auto &kv : g_lastRects) {
+      const auto &r = kv.second;
+      if (fx >= r.x && fx < r.x + r.w && fy >= r.y && fy < r.y + r.h) return true;
+    }
+    return false;
+  }
 
   static SdlApp g_sdlApp; // single instance for GUI thread
 
@@ -638,19 +705,6 @@ namespace {
       SDL_RenderCopyF(g_renderer, it->second.tex, nullptr, &dst);
     });
 
-    // Pixel query in window title via PixelInspector2D
-    int mx, my; SDL_GetMouseState(&mx, &my);
-    PixelInspector2D inspector;
-    if (auto info = inspector.inspect(mx, my, g_lastRects, g_channels)) {
-      char title[256];
-      std::snprintf(title, sizeof(title), "Ravl2 Debug Display — %s (%d,%d) orig=%.6g disp=%.4f",
-                    info->channel.c_str(), info->ix, info->iy,
-                    static_cast<double>(info->raw), static_cast<double>(info->disp));
-      SDL_SetWindowTitle(g_window, title);
-    } else {
-      SDL_SetWindowTitle(g_window, "Ravl2 Debug Display");
-    }
-
     // Note: SDL_RenderPresent is called after ImGui rendering in guiThreadMain.
   }
 
@@ -676,21 +730,6 @@ namespace {
 #endif
   }
 
-  // --- Extracted minimal helpers (Phase 4.9) ---
-  static void updateWindowTitleFromInspector()
-  {
-    int mx, my; SDL_GetMouseState(&mx, &my);
-    PixelInspector2D inspector;
-    if (auto info = inspector.inspect(mx, my, g_lastRects, g_channels)) {
-      char title[256];
-      std::snprintf(title, sizeof(title), "Ravl2 Debug Display — %s (%d,%d) orig=%.6g disp=%.4f",
-                    info->channel.c_str(), info->ix, info->iy,
-                    static_cast<double>(info->raw), static_cast<double>(info->disp));
-      SDL_SetWindowTitle(g_window, title);
-    } else {
-      SDL_SetWindowTitle(g_window, "Ravl2 Debug Display");
-    }
-  }
 
 
   // --- Loop helpers extracted in Phase 4.9 Step 4 ---
@@ -734,9 +773,10 @@ namespace {
                              kZoomMin, kZoomMax);
       ImGui::End();
 
-      Ui::ChannelWindows::build(fbw, fbh, g_channels, g_lastRects);
+      Ui::ChannelWindows::build(fbw, fbh, g_channels, g_lastRects, g_invalidated);
 
-      updateWindowTitleFromInspector();
+      // Bottom status bar with live inspector info
+      Ui::StatusBar::build(g_lastRects, g_channels);
 
       g_imguiBridge.endFrame();
       SPDLOG_DEBUG("ImGui frame submitted");
@@ -760,6 +800,9 @@ namespace {
                                kZoomMin, kZoomMax);
       }
       ImGui::End();
+
+      // Bottom status bar with live inspector info (SDL path)
+      Ui::StatusBar::build(g_lastRects, g_channels);
 
       ImGui::Render();
       ImGui_ImplSDLRenderer2_RenderDrawData(ImGui::GetDrawData(), g_renderer);

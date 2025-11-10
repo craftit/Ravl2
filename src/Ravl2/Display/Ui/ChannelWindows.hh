@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <unordered_map>
 #include <string>
+#include <atomic>
 
 #include <SDL2/SDL.h>
 
@@ -15,6 +16,7 @@ namespace Ravl2::DebugDisplay::Ui::ChannelWindows {
 //! Requires ImGui + bgfx path for rendering images via ImGui::Image helper.
 void build(uint16_t fbw, uint16_t fbh,
            ChannelRegistry& channels,
-           std::unordered_map<std::string, SDL_FRect>& lastRects);
+           std::unordered_map<std::string, SDL_FRect>& lastRects,
+           std::atomic_bool& invalidated);
 
 } // namespace Ravl2::DebugDisplay::Ui::ChannelWindows
