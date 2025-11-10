@@ -177,7 +177,9 @@ namespace {
 // Important: include SDL backends BEFORE the bgfx-wrapped imgui.hh since it may define IMGUI_DISABLE
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wold-style-cast"
+#if defined(__clang__)
 #pragma GCC diagnostic ignored "-Wgnu-zero-variadic-macro-arguments"
+#endif
 #include <imgui.h>
 #include <backends/imgui_impl_sdl2.h>
 #include <backends/imgui_impl_sdlrenderer2.h>
