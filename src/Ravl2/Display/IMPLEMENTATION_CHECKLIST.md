@@ -4,6 +4,12 @@ This checklist tracks progress across the phased implementation plan. Update as 
 
 Legend: [ ] = todo, [*] = in progress, [x] = done
 
+## Build notes (local)
+- Use the preconfigured Ninja build directory at the project root: `cmake-build-debug`.
+  - Build: `cmake --build cmake-build-debug`
+  - Clean: `ninja -C cmake-build-debug clean`
+  - Notes: This preset has all display stack options enabled (SDL2 + bgfx + ImGui), so no extra flags are needed.
+
 ## Phase 1 — Foundations
 - [x] Design document added (`DebugDisplay_Design.md`)
 - [x] Rename Message.hh → DisplayMessage.hh in design document
@@ -65,6 +71,50 @@ Legend: [ ] = todo, [*] = in progress, [x] = done
   - [*] Fallback: if bgfx init or shader load fails, fall back to SDL renderer automatically
 - [x] Zoom/pan controls (SDL MVP; to be moved to ImGui later)
 - [x] Pixel query tooltip (original + displayed values) — window title MVP
+
+## Phase 4.9 — DebugDisplay.cc structure review and refactor
+
+- [ ] Execution order (do these in sequence; build and run after each step):
+  1. [x] Snapshot current file size and hotspots (functions >150 lines; duplicated logic) — record in design notes
+  2. [x] Refactor safety prep: introduce named `constexpr` for magic numbers (e.g., `kControlsInitialPos`), confirm logging pattern and error policy (RAII + `std::expected` in new code)
+  3. [x] Extract minimal helpers without behavior change: `buildDockspace(...)`, `buildControlsUI(...)`, `buildChannelWindows(...)`, `updateWindowTitlePixelInfo(...)`
+  4. [x] Split setup/teardown into dedicated functions; keep the main loop orchestration under ~100 lines
+  5. [x] Introduce `SdlApp` wrapper (window/events); migrate lifecycle calls (no functional change)
+  6. [ ] Harden `BgfxContext` single‑responsibility; move ImGui+bgfx glue into `ImguiBgfxBridge`
+  7. [ ] Move UI composition into `Ui::Dockspace`, `Ui::ControlsPanel`, `Ui::ChannelWindows`; update call sites
+  8. [ ] Add `InputController2D` (per‑channel state) and route pan/zoom through it
+  9. [ ] Add `PixelInspector2D` and switch title/pixel info to use it (consults normalization)
+  10. [ ] Error handling and logging pass: convert new/refactored paths to `std::expected`; ensure boundary‑only logging and exception‑safe RAII
+  11. [ ] Prepare extension points: define `OverlayRenderer2D` interface and trivial stubs (points/lines); add small overlay registry hook in channel windows
+  12. [ ] Isolate ImPlot integration hooks so Phase 7 can add plots without touching rendering core
+  13. [ ] Tests and documentation: Doxygen for new helpers/classes; unit tests for normalization/percentile helpers; update `DebugDisplay_Design.md` with module diagram/data flow
+  14. [ ] Acceptance criteria verification: size reduced; no regressions for Phases 2–4; overlay stubs exercised
+
+- [ ] Partition responsibilities for maintainability:
+  - [ ] Window/SDL lifecycle: `SdlApp` (init/shutdown, window events)
+  - [ ] Rendering backends: `BgfxContext` (already exists) — ensure single-responsibility; move ImGui+bgfx glue into `ImguiBgfxBridge`
+  - [ ] ImGui UI composition: `Ui::Dockspace`, `Ui::ControlsPanel`, `Ui::ChannelWindows`
+  - [ ] Input handling for pan/zoom: `InputController2D` with per-channel state
+  - [ ] Pixel query and normalization bridge: `PixelInspector2D` (CPU-side, consults normalization)
+- [ ] Refactor `DebugDisplay.cc`:
+  - [ ] Extract helpers: `buildDockspace(...)`, `buildControlsUI(...)`, `buildChannelWindows(...)`, `updateWindowTitlePixelInfo(...)`
+  - [ ] Keep the main loop orchestration under ~100 lines; move setup/teardown into dedicated functions
+  - [ ] Replace magic constants with named `constexpr` (e.g., `kControlsInitialPos`)
+- [ ] Error handling and logging pass:
+  - [ ] Prefer `std::expected` returns in new code paths; log at boundaries only (no duplicate logging)
+  - [ ] Ensure RAII and early-returns keep initialization/shutdown exception-safe
+- [ ] Prepare extension points for upcoming phases:
+  - [ ] Define `OverlayRenderer2D` interface and stub implementations (points/lines) to support Phase 5
+  - [ ] Ensure channel windows can register overlays via a small registry (composition over inheritance)
+  - [ ] Isolate ImPlot integration hooks so Phase 7 can add plots without touching rendering core
+- [ ] Tests and documentation:
+  - [ ] Doxygen for new helpers/classes with thread-safety notes
+  - [ ] Unit tests for normalization helpers (ties into Phase 11); quick tests for percentile math
+  - [ ] Update `DebugDisplay_Design.md` with a module diagram and data flow
+- [ ] Acceptance criteria:
+  - [ ] `DebugDisplay.cc` reduced in size (e.g., main loop and per-frame UI functions < 100 lines each)
+  - [ ] No behavior regressions for Phases 2–4 features (dockspace, channel windows, pixel query)
+  - [ ] Overlay integration points exist and are exercised by trivial stubs
 
 ## Phase 5 — Overlays (2D)
 - [ ] Adapter for `std::vector<Point<float,2>>`
