@@ -24,12 +24,16 @@ void build(uint16_t fbw, uint16_t fbh,
            std::unordered_map<std::string, SDL_FRect>& lastRects,
            std::unordered_map<std::string, SDL_FPoint>& imageOrigins,
            std::unordered_map<std::string, SDL_FRect>& contentRects,
-           std::atomic_bool& invalidated)
+           std::atomic_bool& invalidated,
+           std::string& hoveredChannelOut,
+           std::string& hoveredImageChannelOut)
 {
   (void)fbw; (void)fbh;
   lastRects.clear();
   imageOrigins.clear();
   contentRects.clear();
+  hoveredChannelOut.clear();
+  hoveredImageChannelOut.clear();
   RenderContext rc{}; rc.framebufferWidth = fbw; rc.framebufferHeight = fbh;
   channels.forEachChannel([&](ChannelState &ch){
 #if defined(RAVL2_WITH_IMGUI)
@@ -50,6 +54,11 @@ void build(uint16_t fbw, uint16_t fbh,
                      contentMaxScreen.y - contentMinScreen.y };
     imageOrigins[ch.name] = origin;
     contentRects[ch.name] = cRect;
+
+    // If this window (and its children) are hovered, record it as the top-most hovered channel.
+    if (ImGui::IsWindowHovered(ImGuiHoveredFlags_RootAndChildWindows)) {
+      hoveredChannelOut = ch.name;
+    }
 
     // Small toolbar: Reset and Fit using the window's content region
     if (ImGui::Button("Reset")) {
@@ -94,6 +103,10 @@ void build(uint16_t fbw, uint16_t fbh,
         // Record the full image rect (screen space)
         SDL_FRect imgRect{ pos.x, pos.y, size.x, size.y };
         lastRects[ch.name] = imgRect;
+        // If the drawn image item is hovered, remember this channel as the top-most hovered image
+        if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenBlockedByActiveItem)) {
+          hoveredImageChannelOut = ch.name;
+        }
 
         // Render any registered overlays using ImGui draw list
         ImDrawList* drawList = ImGui::GetWindowDrawList();

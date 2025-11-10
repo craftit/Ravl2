@@ -11,6 +11,7 @@ add_library(Ravl2Display
     Ui/ControlsPanel.cc Ui/ControlsPanel.hh
     Ui/ChannelWindows.cc Ui/ChannelWindows.hh
     Ui/StatusBar.cc Ui/StatusBar.hh
+    Ui/Plots.cc Ui/Plots.hh
     InputController2D.cc InputController2D.hh
     PixelInspector2D.cc PixelInspector2D.hh
     Overlays/OverlayRenderer2D.cc Overlays/OverlayRenderer2D.hh

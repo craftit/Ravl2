@@ -26,12 +26,25 @@ public:
                          const std::unordered_map<std::string, SDL_FRect>& lastRects,
                          const std::unordered_map<std::string, SDL_FRect>& contentRects) noexcept;
 
+  // Explicit-channel overload to avoid ambiguity when overlapping windows exist.
+  void onMouseButtonDown(int x, int y,
+                         const std::string& channelName,
+                         const std::unordered_map<std::string, SDL_FRect>& lastRects,
+                         const std::unordered_map<std::string, SDL_FRect>& contentRects) noexcept;
+
   void onMouseButtonUp(uint8_t sdlButton) noexcept;
 
   void onMouseMotion(int x, int y,
                      ChannelRegistry& channels) noexcept;
 
   void onMouseWheel(int wheelY, int mouseX, int mouseY,
+                    const std::unordered_map<std::string, SDL_FRect>& lastRects,
+                    const std::unordered_map<std::string, SDL_FRect>& contentRects,
+                    ChannelRegistry& channels) noexcept;
+
+  // Explicit-channel overload mirroring the above but constrained to a given channel.
+  void onMouseWheel(int wheelY, int mouseX, int mouseY,
+                    const std::string& channelName,
                     const std::unordered_map<std::string, SDL_FRect>& lastRects,
                     const std::unordered_map<std::string, SDL_FRect>& contentRects,
                     ChannelRegistry& channels) noexcept;

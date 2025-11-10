@@ -23,6 +23,7 @@
 #include "Ravl2/Display/Ui/ControlsPanel.hh"
 #include "Ravl2/Display/Ui/ChannelWindows.hh"
 #include "Ravl2/Display/Ui/StatusBar.hh"
+#include "Ravl2/Display/Ui/Plots.hh"
 #include "Ravl2/Display/InputController2D.hh"
 #include "Ravl2/Display/PixelInspector2D.hh"
 #if defined(RAVL2_WITH_BGFX)
@@ -276,6 +277,8 @@ namespace {
   std::unordered_map<std::string, SDL_FRect> g_lastRects; // last drawn image rect per channel (screen space)
   std::unordered_map<std::string, SDL_FPoint> g_imageOrigins; // per-channel image origin = content cursor screen pos
   std::unordered_map<std::string, SDL_FRect> g_contentRects; // per-channel window content rect (screen space)
+  std::string g_hoveredChannel; // top-most hovered channel window name (if any)
+  std::string g_hoveredImageChannel; // top-most hovered image item (channel) this frame
 
   // ImGui state
 #if defined(RAVL2_WITH_IMGUI)
@@ -503,19 +506,15 @@ namespace {
             g_input.onMouseButtonUp(SDL_BUTTON_LEFT);
           }
         } else if (e.type == SDL_MOUSEBUTTONDOWN) {
-#if defined(RAVL2_WITH_IMGUI)
-          bool imguiWantsMouse = false;
-          if (g_imguiInitialized) { imguiWantsMouse = ImGui::GetIO().WantCaptureMouse; }
-#else
-          bool imguiWantsMouse = false;
-#endif
           if (e.button.button == SDL_BUTTON_LEFT) {
             g_dragging = true;
             int mx=0,my=0; getMouseScreenPos(mx,my);
             g_lastMouseX = mx;
             g_lastMouseY = my;
-            if (!imguiWantsMouse || isOverImageContentRect(mx,my)) {
-              g_input.onMouseButtonDown(mx, my, g_lastRects, g_contentRects);
+            g_activeChannel.clear();
+            // Start drag only on the top-most hovered image item (if any)
+            if (!g_hoveredImageChannel.empty()) {
+              g_input.onMouseButtonDown(mx, my, g_hoveredImageChannel, g_lastRects, g_contentRects);
               g_activeChannel = g_input.activeChannel();
             }
           }
@@ -537,29 +536,19 @@ namespace {
           if (e.button.button == SDL_BUTTON_MIDDLE) g_mouseButtons &= static_cast<uint8_t>(~IMGUI_MBUT_MIDDLE);
 #endif
         } else if (e.type == SDL_MOUSEMOTION) {
-#if defined(RAVL2_WITH_IMGUI)
-          bool imguiWantsMouse = false;
-          if (g_imguiInitialized) { imguiWantsMouse = ImGui::GetIO().WantCaptureMouse; }
-#else
-          bool imguiWantsMouse = false;
-#endif
           {
             int mx=0,my=0; getMouseScreenPos(mx,my);
-            if (!imguiWantsMouse || isOverImageContentRect(mx,my)) {
+            // Only move the image that started the drag (activeChannel)
+            if (!g_activeChannel.empty() && g_activeChannel == g_hoveredImageChannel) {
               g_input.onMouseMotion(mx, my, g_channels);
             }
           }
         } else if (e.type == SDL_MOUSEWHEEL) {
-#if defined(RAVL2_WITH_IMGUI)
-          bool imguiWantsMouse = false;
-          if (g_imguiInitialized) { imguiWantsMouse = ImGui::GetIO().WantCaptureMouse; }
-#else
-          bool imguiWantsMouse = false;
-#endif
           // Zoom in/out around cursor for channel under mouse
           int mx=0,my=0; getMouseScreenPos(mx,my);
-          if (!imguiWantsMouse || isOverImageContentRect(mx,my)) {
-            g_input.onMouseWheel(e.wheel.y, mx, my, g_lastRects, g_contentRects, g_channels);
+          // Zoom only the top-most hovered image item (if any)
+          if (!g_hoveredImageChannel.empty()) {
+            g_input.onMouseWheel(e.wheel.y, mx, my, g_hoveredImageChannel, g_lastRects, g_contentRects, g_channels);
           }
 #if defined(RAVL2_WITH_IMGUI) && defined(RAVL2_WITH_BGFX)
           // Forward scroll to ImGui bgfx backend (accumulate this frame)
@@ -594,18 +583,18 @@ namespace {
   }
 
   static inline bool isOverImageContentRect(int mx, int my) noexcept {
+    // Only consider the currently hovered (top-most) image item, if any.
+    if (g_hoveredImageChannel.empty()) return false;
     const float fx = static_cast<float>(mx);
     const float fy = static_cast<float>(my);
-    for (const auto &kv : g_lastRects) {
-      const auto &img = kv.second;
-      auto itC = g_contentRects.find(kv.first);
-      if (itC == g_contentRects.end()) continue;
-      const auto &cr = itC->second;
-      const bool inImg = (fx >= img.x && fx < img.x + img.w && fy >= img.y && fy < img.y + img.h);
-      const bool inContent = (fx >= cr.x && fx < cr.x + cr.w && fy >= cr.y && fy < cr.y + cr.h);
-      if (inImg && inContent) return true;
-    }
-    return false;
+    auto itImg = g_lastRects.find(g_hoveredImageChannel);
+    auto itCR  = g_contentRects.find(g_hoveredImageChannel);
+    if (itImg == g_lastRects.end() || itCR == g_contentRects.end()) return false;
+    const auto &img = itImg->second;
+    const auto &cr  = itCR->second;
+    const bool inImg = (fx >= img.x && fx < img.x + img.w && fy >= img.y && fy < img.y + img.h);
+    const bool inContent = (fx >= cr.x && fx < cr.x + cr.w && fy >= cr.y && fy < cr.y + cr.h);
+    return inImg && inContent;
   }
 
   static SdlApp g_sdlApp; // single instance for GUI thread
@@ -779,10 +768,13 @@ namespace {
 
       Ui::buildDockspace();
 
-      // Controls window (bgfx path currently pinned; parity with existing behavior)
-      ImGui::SetNextWindowPos(ImVec2(kControlsPosX, kControlsPosY), ImGuiCond_Always);
+      // Plots panel (Phase 4.9 Step 12: placeholder hooks for future ImPlot integration)
+      Ui::Plots::buildPlotsPanel();
+
+      // Controls window (now dockable; only position on first use)
+      ImGui::SetNextWindowPos(ImVec2(kControlsPosX, kControlsPosY), ImGuiCond_Once);
       ImGui::SetNextWindowSize(ImVec2(kControlsInitialWidth, 0), ImGuiCond_FirstUseEver);
-      ImGui::Begin("Controls", nullptr, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoDocking);
+      ImGui::Begin("Controls", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
       SPDLOG_DEBUG("ImGui Controls window built");
       Ui::buildControlsPanel(static_cast<float>(fbw), static_cast<float>(fbh),
                              g_channels,
@@ -791,7 +783,7 @@ namespace {
                              kZoomMin, kZoomMax);
       ImGui::End();
 
-      Ui::ChannelWindows::build(fbw, fbh, g_channels, g_lastRects, g_imageOrigins, g_contentRects, g_invalidated);
+      Ui::ChannelWindows::build(fbw, fbh, g_channels, g_lastRects, g_imageOrigins, g_contentRects, g_invalidated, g_hoveredChannel, g_hoveredImageChannel);
 
       // Bottom status bar with live inspector info
       Ui::StatusBar::build(g_lastRects, g_imageOrigins, g_channels);
@@ -806,6 +798,9 @@ namespace {
       ImGui::NewFrame();
 
       Ui::buildDockspace();
+
+      // Plots panel (Phase 4.9 Step 12: placeholder hooks for future ImPlot integration)
+      Ui::Plots::buildPlotsPanel();
 
       ImGui::SetNextWindowPos(ImVec2(kControlsPosX, kControlsPosY), ImGuiCond_Once);
       ImGui::SetNextWindowSize(ImVec2(kControlsInitialWidth, 0), ImGuiCond_FirstUseEver);
