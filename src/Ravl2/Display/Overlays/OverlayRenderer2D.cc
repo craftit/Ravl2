@@ -49,10 +49,18 @@ void Lines2DOverlay::render(ImDrawList* drawList,
   (void)imgW; (void)imgH;
 #if defined(RAVL2_WITH_IMGUI)
   if (!drawList) return;
-  if (vertices.size() < 2) return;
-  for (size_t i = 1; i < vertices.size(); ++i) {
+  const size_t n = vertices.size();
+  if (n < 2) return;
+  for (size_t i = 1; i < n; ++i) {
     const auto& a = vertices[i-1];
     const auto& b = vertices[i];
+    ImVec2 sa = toScreen(origin, view, a.x, a.y);
+    ImVec2 sb = toScreen(origin, view, b.x, b.y);
+    drawList->AddLine(sa, sb, rgba, thickness);
+  }
+  if (closed && n >= 3) {
+    const auto& a = vertices.back();
+    const auto& b = vertices.front();
     ImVec2 sa = toScreen(origin, view, a.x, a.y);
     ImVec2 sb = toScreen(origin, view, b.x, b.y);
     drawList->AddLine(sa, sb, rgba, thickness);

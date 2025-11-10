@@ -19,6 +19,7 @@ add_library(Ravl2Display
     Image2DNode.cc Image2DNode.hh
     Commands/SetBaseImage2D.cc Commands/SetBaseImage2D.hh
     Commands/SetNormalization2D.hh Commands/SetNormalization2D.cc
+    Commands/AddPolylineOverlay2D.cc Commands/AddPolylineOverlay2D.hh
     Adapters/RenderCommandSink.cc
 )
 

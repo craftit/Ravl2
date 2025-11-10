@@ -51,6 +51,7 @@ struct Lines2DOverlay final : public OverlayRenderer2D {
   std::vector<SDL_FPoint> vertices; // image-space
   uint32_t rgba = 0xff00ff00u;      // default green
   float thickness = 1.0f;           // line thickness in screen px
+  bool closed = false;              // draw closing segment if true
 
   void render(ImDrawList* drawList,
               const SDL_FPoint& origin,

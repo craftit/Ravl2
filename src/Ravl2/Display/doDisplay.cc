@@ -12,6 +12,7 @@
 #include "Ravl2/Resource.hh"
 #include "Ravl2/OpenCV/ImageIO.hh"
 #include "Ravl2/Display/DebugDisplay.hh"
+#include "Ravl2/Geometry/PolyLine.hh"
 #include <cxxopts.hpp>
 
 using namespace std::chrono_literals;
@@ -114,6 +115,20 @@ int RAVL2_MAIN(int argc, char** argv)
     SPDLOG_WARN("ioSave('{}', imgGray) did not find a writer.", channel2);
   } else {
     SPDLOG_INFO("Queued image to {}", channel2);
+  }
+
+  // Add a simple test polyline overlay to Image1 so we can verify overlay rendering
+  {
+    using Poly2f = Ravl2::PolyLine<float,2>;
+    const int H = imgGray.range()[0].size();
+    const int W = imgGray.range()[1].size();
+    Poly2f poly({ {10.f, 10.f}, {static_cast<float>(W-10), 10.f}, {static_cast<float>(W-10), static_cast<float>(H-10)} });
+    const std::string overlay1 = "@debug:Image1:Mode=Append:Color=#00ff00ff:Width=2"; // green 2px line
+    if (!ioSave(overlay1, poly)) {
+      SPDLOG_WARN("ioSave('{}', polyline) did not find a writer.", overlay1);
+    } else {
+      SPDLOG_INFO("Queued test polyline overlay to {} ({} points)", overlay1, poly.size());
+    }
   }
 
   // Keep the process alive briefly so the SDL window (from the debug display thread) is visible.
