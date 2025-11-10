@@ -32,7 +32,9 @@ if(NOT TARGET imgui)
 
     if(SDL2_FOUND)
         message(STATUS "Including SDL2 support in imgui")
-        list(APPEND _IMGUI_SRC ${IMGUI_DIR}/backends/imgui_impl_sdl2.cpp)
+        list(APPEND _IMGUI_SRC ${IMGUI_DIR}/backends/imgui_impl_sdl2.cpp
+                                ${IMGUI_DIR}/backends/imgui_impl_sdlrenderer2.cpp
+        )
     endif ()
 
     add_library(imgui STATIC ${_IMGUI_SRC})

@@ -25,6 +25,10 @@
 //
 // For more information, please refer to <http://unlicense.org>
 
+#ifndef IMGUI_DEFINE_MATH_OPERATORS
+#define IMGUI_DEFINE_MATH_OPERATORS
+#endif // IMGUI_DEFINE_MATH_OPERATORS
+
 #include "dock.hh"
 #include <new> // placement new
 
