@@ -197,7 +197,6 @@ namespace Ravl2::Video
         SPDLOG_ERROR("Unexpected frame type.");
         RavlAlwaysAssertMsg(false, "Unexpected frame type.");
       }
-      assert(ptr);
       return *ptr;
     }
 
