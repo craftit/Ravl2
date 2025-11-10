@@ -243,7 +243,6 @@ namespace {
   constexpr float kControlsPosX = 10.0f;
   constexpr float kControlsPosY = 10.0f;
   constexpr float kControlsInitialWidth = 360.0f;
-  constexpr float kZoomFactor = 1.1f;
   constexpr float kZoomMin = 0.05f;
   constexpr float kZoomMax = 32.0f;
 
@@ -299,8 +298,6 @@ namespace {
 
   // Forward declarations for mouse helpers used in event processing
   static inline void getMouseScreenPos(int& mx, int& my) noexcept;
-  static inline bool isOverAnyChannelRect(int mx, int my) noexcept;
-  static inline bool isOverImageContentRect(int mx, int my) noexcept;
 
   // Minimal SDL wrapper (Step 5): encapsulates init/shutdown/event processing without changing globals
   struct SdlApp {
@@ -579,31 +576,6 @@ namespace {
     SDL_GetMouseState(&mx, &my);
   }
 
-  static inline bool isOverAnyChannelRect(int mx, int my) noexcept {
-    const float fx = static_cast<float>(mx);
-    const float fy = static_cast<float>(my);
-    for (const auto &kv : g_lastRects) {
-      const auto &r = kv.second;
-      if (fx >= r.x && fx < r.x + r.w && fy >= r.y && fy < r.y + r.h) return true;
-    }
-    return false;
-  }
-
-  static inline bool isOverImageContentRect(int mx, int my) noexcept {
-    // Only consider the currently hovered (top-most) image item, if any.
-    if (g_hoveredImageChannel.empty()) return false;
-    const float fx = static_cast<float>(mx);
-    const float fy = static_cast<float>(my);
-    auto itImg = g_lastRects.find(g_hoveredImageChannel);
-    auto itCR  = g_contentRects.find(g_hoveredImageChannel);
-    if (itImg == g_lastRects.end() || itCR == g_contentRects.end()) return false;
-    const auto &img = itImg->second;
-    const auto &cr  = itCR->second;
-    const bool inImg = (fx >= img.x && fx < img.x + img.w && fy >= img.y && fy < img.y + img.h);
-    const bool inContent = (fx >= cr.x && fx < cr.x + cr.w && fy >= cr.y && fy < cr.y + cr.h);
-    return inImg && inContent;
-  }
-
   static SdlApp g_sdlApp; // single instance for GUI thread
 
   static void ensureTextureFor(const std::string &channel, int w, int h)
@@ -838,13 +810,6 @@ namespace {
     }
   }
 
-  static inline void presentFallbackIfNeeded()
-  {
-    if (!g_bgfx.initialized()) {
-      SDL_RenderPresent(g_renderer);
-    }
-  }
-
   static inline void renderNonImguiBgfxIfEnabled()
   {
   #if defined(RAVL2_WITH_BGFX) && !defined(RAVL2_WITH_IMGUI)
@@ -855,28 +820,6 @@ namespace {
       renderAllBgfxNonImGui(fbw, fbh);
     }
   #endif
-  }
-
-  static inline void drawBgfxDbgTextIfEnabled()
-  {
-  #if defined(RAVL2_WITH_BGFX)
-  #if defined(RAVL2_WITH_IMGUI)
-    if (g_bgfx.initialized() && !g_imguiInitialized) {
-  #else
-    if (g_bgfx.initialized()) {
-  #endif
-      bgfx::dbgTextClear();
-      bgfx::dbgTextPrintf(0, 0, 0x0f, "Ravl2 DebugDisplay — backend=%s", BGFXContext::backendName(g_bgfx.backend()));
-      bgfx::touch(0);
-    }
-  #endif
-  }
-
-  static inline void submitBgfxFrameIfInitialized()
-  {
-    if (g_bgfx.initialized()) {
-      g_bgfx.frame();
-    }
   }
 
   void guiThreadMain(std::stop_token st)
