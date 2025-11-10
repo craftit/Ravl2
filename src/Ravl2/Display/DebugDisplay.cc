@@ -189,6 +189,7 @@ namespace {
 #include <imgui.h>
 #include <backends/imgui_impl_sdl2.h>
 #include <backends/imgui_impl_sdlrenderer2.h>
+#include "Ravl2/Display/Commands/SetNormalization2D.hh"
 #endif
 
 #ifdef __APPLE__
@@ -292,7 +293,7 @@ namespace {
     SDL_GetWindowSize(g_window, &winW, &winH);
 
     // Try bgfx first on non-Apple platforms, before creating any SDL_Renderer to avoid GL context conflicts
-#if !defined(__APPLE__)
+#if !defined(__APPLE__) || true
     BGFXContext::InitParams ip{};
     ip.backend = BGFXContext::Backend::Auto; // let bgfx choose the best available backend
     ip.width = winW > 0 ? winW : 1280;
@@ -318,12 +319,16 @@ namespace {
 #endif
 
     if (g_needSDLRenderer) {
-      // Prefer software renderer to avoid GL context conflicts with bgfx
-      g_renderer = SDL_CreateRenderer(g_window, -1, SDL_RENDERER_SOFTWARE);
+#ifdef __APPLE__
+      // Prefer Metal renderer on macOS for correct pixel format ordering
+      SDL_SetHint(SDL_HINT_RENDER_DRIVER, "metal");
+#endif
+      // Prefer accelerated renderer with vsync; fallback to software if unavailable
+      g_renderer = SDL_CreateRenderer(g_window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
       if (!g_renderer) {
         // As a fallback, try accelerated with vsync (may still conflict with GL backends)
-        SPDLOG_WARN("DebugDisplay: SDL_CreateRenderer (software) failed ({}). Trying accelerated.", SDL_GetError());
-        g_renderer = SDL_CreateRenderer(g_window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
+        SPDLOG_WARN("DebugDisplay: SDL_CreateRenderer (accelerated) failed ({}). Trying software.", SDL_GetError());
+        g_renderer = SDL_CreateRenderer(g_window, -1, SDL_RENDERER_SOFTWARE);
         if (!g_renderer) {
           SPDLOG_ERROR("DebugDisplay: SDL_CreateRenderer failed: {}", SDL_GetError());
           return false;
@@ -550,8 +555,13 @@ namespace {
       entry.tex = nullptr; entry.w = entry.h = 0;
     }
     if (!entry.tex) {
-      // Use a widely supported 32-bit RGBA texture; we'll expand grayscale on upload.
-      entry.tex = SDL_CreateTexture(g_renderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_STREAMING, w, h);
+      // Use a widely supported 32-bit texture; prefer BGRA on macOS/Metal to avoid swizzle issues.
+#ifdef __APPLE__
+      Uint32 pf = SDL_PIXELFORMAT_ABGR8888; // corresponds to BGRA byte-order on little-endian
+#else
+      Uint32 pf = SDL_PIXELFORMAT_RGBA8888;
+#endif
+      entry.tex = SDL_CreateTexture(g_renderer, pf, SDL_TEXTUREACCESS_STREAMING, w, h);
       if (!entry.tex) {
         SPDLOG_ERROR("DebugDisplay: SDL_CreateTexture failed: {}", SDL_GetError());
         return;
@@ -762,7 +772,8 @@ namespace {
 
       // Begin ImGui frame (always build UI)
 #if defined(RAVL2_WITH_IMGUI) && defined(RAVL2_WITH_BGFX)
-      if (g_imguiInitialized && g_bgfx.initialized()) {
+      if (g_imguiInitialized && g_bgfx.initialized())
+      {
         int mx=0,my=0;
         //uint32_t mstate = SDL_GetMouseState(&mx, &my);
         // SDL mouse state already tracked for buttons/scroll
@@ -810,7 +821,7 @@ namespace {
             ImGui::TextUnformatted("No channels");
           }
 
-          // Fetch selected channel state for editing
+          // Fetch the selected channel state for editing
           if (!chNames.empty()) {
             const std::string& selName = chNames[static_cast<size_t>(selectedChannel)];
             auto &ch = g_channels.getOrCreateChannel(selName);
@@ -983,11 +994,95 @@ namespace {
         // Dockspace over main viewport
         ImGui::DockSpaceOverViewport(ImGui::GetMainViewport());
 
-        // Simple Channels window
-        if (ImGui::Begin("Channels")) {
-          g_channels.forEachChannel([](ChannelState &ch){
-            ImGui::BulletText("%s", ch.name.c_str());
-          });
+        // Controls window (parity on SDL path)
+        ImGui::SetNextWindowPos(ImVec2(10, 10), ImGuiCond_Once);
+        ImGui::SetNextWindowSize(ImVec2(360, 0), ImGuiCond_FirstUseEver);
+        if (ImGui::Begin("Controls", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
+          // Collect channel names for selection
+          static int selectedChannel = 0;
+          std::vector<std::string> chNames;
+          g_channels.forEachChannel([&](ChannelState &ch){ chNames.push_back(ch.name); });
+          if (selectedChannel >= static_cast<int>(chNames.size())) {
+            selectedChannel = chNames.empty() ? 0 : (static_cast<int>(chNames.size()) - 1);
+          }
+          if (!chNames.empty()) {
+            const char* current = chNames[static_cast<size_t>(selectedChannel)].c_str();
+            if (ImGui::BeginCombo("Channel", current)) {
+              for (int i = 0; i < static_cast<int>(chNames.size()); ++i) {
+                bool isSelected = (selectedChannel == i);
+                if (ImGui::Selectable(chNames[static_cast<size_t>(i)].c_str(), isSelected)) {
+                  selectedChannel = i;
+                }
+                if (isSelected) ImGui::SetItemDefaultFocus();
+              }
+              ImGui::EndCombo();
+            }
+          } else {
+            ImGui::TextUnformatted("No channels");
+          }
+
+          if (!chNames.empty()) {
+            const std::string& selName = chNames[static_cast<size_t>(selectedChannel)];
+            auto &ch = g_channels.getOrCreateChannel(selName);
+
+            ImGui::SeparatorText("View");
+            float sx = ch.view2D.scaleVector()[0];
+            float sy = ch.view2D.scaleVector()[1];
+            float scaleUniform = (sx + sy) * 0.5f;
+            if (ImGui::SliderFloat("Scale", &scaleUniform, 0.05f, 10.0f, "%.3f", ImGuiSliderFlags_Logarithmic)) {
+              auto v = ch.view2D.scaleVector(); v[0] = scaleUniform; v[1] = scaleUniform; ch.view2D.scale(v);
+              g_invalidated.store(true, std::memory_order_release);
+            }
+            auto t = ch.view2D.translation();
+            float tx = t[0]; float ty = t[1];
+            if (ImGui::DragFloat("Translate X", &tx, 1.0f)) { t[0] = tx; ch.view2D.translate(t); g_invalidated.store(true, std::memory_order_release); }
+            if (ImGui::DragFloat("Translate Y", &ty, 1.0f)) { t[1] = ty; ch.view2D.translate(t); g_invalidated.store(true, std::memory_order_release); }
+            ImGui::SameLine();
+            if (ImGui::Button("Reset View")) { ch.view2D = ScaleTranslate<float,2>::identity(); g_invalidated.store(true, std::memory_order_release); }
+            ImGui::SameLine();
+            if (ImGui::Button("Fit To Window")) {
+              int imgW = 0, imgH = 0;
+              if (ch.baseImage2D) {
+                if (auto *node = static_cast<Image2DNode*>(ch.baseImage2D.get())) { imgW = node->width; imgH = node->height; }
+              }
+              if (imgW > 0 && imgH > 0) {
+                int winW=0, winH=0; SDL_GetWindowSize(g_window, &winW, &winH);
+                const float fbwf = static_cast<float>(winW);
+                const float fbhf = static_cast<float>(winH);
+                const float sxFit = fbwf / static_cast<float>(imgW);
+                const float syFit = fbhf / static_cast<float>(imgH);
+                const float sFit = std::min(sxFit, syFit);
+                auto v = ch.view2D.scaleVector(); v[0] = sFit; v[1] = sFit; ch.view2D.scale(v);
+                auto tr = ch.view2D.translation();
+                tr[0] = (fbwf - static_cast<float>(imgW) * sFit) * 0.5f;
+                tr[1] = (fbhf - static_cast<float>(imgH) * sFit) * 0.5f;
+                ch.view2D.translate(tr);
+                g_invalidated.store(true, std::memory_order_release);
+              }
+            }
+
+            ImGui::SeparatorText("Normalization");
+            NormalizationSettings ns = ch.norm;
+            int pol = 0;
+            switch (ns.policy) { case NormalizationPolicy::Auto: pol = 0; break; case NormalizationPolicy::Fixed: pol = 1; break; case NormalizationPolicy::Percentile: pol = 2; break; }
+            const char* polNames[] = {"Auto", "Fixed", "Percentile"};
+            if (ImGui::Combo("Policy", &pol, polNames, 3)) {
+              ns.policy = pol == 0 ? NormalizationPolicy::Auto : (pol == 1 ? NormalizationPolicy::Fixed : NormalizationPolicy::Percentile);
+            }
+            if (ns.policy == NormalizationPolicy::Fixed) {
+              ImGui::DragFloat("Min", &ns.minVal, 0.01f);
+              ImGui::DragFloat("Max", &ns.maxVal, 0.01f);
+              if (ns.maxVal <= ns.minVal) ns.maxVal = ns.minVal + 1.0f;
+            } else if (ns.policy == NormalizationPolicy::Percentile) {
+              ImGui::DragFloat("Low %", &ns.lowPct, 0.1f, 0.0f, 100.0f);
+              ImGui::DragFloat("High %", &ns.highPct, 0.1f, 0.0f, 100.0f);
+              if (ns.highPct < ns.lowPct) std::swap(ns.lowPct, ns.highPct);
+            }
+            if (ImGui::Button("Apply Normalization")) {
+              g_queue.push(std::make_shared<SetNormalization2D>(selName, ns));
+              g_invalidated.store(true, std::memory_order_release);
+            }
+          }
         }
         ImGui::End();
       }

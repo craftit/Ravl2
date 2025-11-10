@@ -6,7 +6,8 @@
 #include <SDL2/SDL_syswm.h>
 
 #ifdef __APPLE__
-#import <Cocoa/Cocoa.h>
+#include <objc/message.h>
+#include <objc/runtime.h>
 #endif
 
 #if defined(RAVL2_WITH_BGFX)
@@ -112,15 +113,33 @@ bool BGFXContext::init(const InitParams& params) noexcept {
   #if defined(SDL_VIDEO_DRIVER_WINDOWS)
     init.platformData.nwh = wmi.info.win.window;
   #elif defined(SDL_VIDEO_DRIVER_COCOA)
-    // On macOS with Metal backend, bgfx needs the NSView's CAMetalLayer, not the NSWindow
-    // SDL_WINDOW_METAL flag ensures the view has a Metal layer
-    NSWindow* nsWindow = wmi.info.cocoa.window;
-    NSView* contentView = [nsWindow contentView];
-    // __bridge is an Objective-C ARC keyword, not a C++ cast; disable old-style-cast warning
-    #pragma clang diagnostic push
-    #pragma clang diagnostic ignored "-Wold-style-cast"
-    init.platformData.nwh = (__bridge void*)contentView;
-    #pragma clang diagnostic pop
+    // On macOS with Metal backend, bgfx expects a CAMetalLayer* in platformData.nwh.
+    // Use Objective-C runtime to avoid requiring Objective-C++ compilation.
+    void* nsWindowVoid = wmi.info.cocoa.window;
+    id nsWindow = static_cast<id>(nsWindowVoid);
+    SEL selContentView = sel_registerName("contentView");
+    id contentView = reinterpret_cast<id (*)(id, SEL)>(objc_msgSend)(nsWindow, selContentView);
+    SEL selWantsLayer = sel_registerName("wantsLayer");
+    bool wantsLayer = reinterpret_cast<bool (*)(id, SEL)>(objc_msgSend)(contentView, selWantsLayer);
+    if (!wantsLayer) {
+      SEL selSetWantsLayer = sel_registerName("setWantsLayer:");
+      reinterpret_cast<void (*)(id, SEL, bool)>(objc_msgSend)(contentView, selSetWantsLayer, true);
+    }
+    SEL selLayer = sel_registerName("layer");
+    id layer = reinterpret_cast<id (*)(id, SEL)>(objc_msgSend)(contentView, selLayer);
+    Class CAMetalLayerClass = objc_getClass("CAMetalLayer");
+    SEL selIsKindOfClass = sel_registerName("isKindOfClass:");
+    bool isMetalLayer = (layer != nil) ? reinterpret_cast<bool (*)(id, SEL, Class)>(objc_msgSend)(layer, selIsKindOfClass, CAMetalLayerClass) : false;
+    if (!isMetalLayer) {
+      SEL selLayerClassMethod = sel_registerName("layer");
+      layer = reinterpret_cast<id (*)(Class, SEL)>(objc_msgSend)(CAMetalLayerClass, selLayerClassMethod);
+      SEL selSetLayer = sel_registerName("setLayer:");
+      reinterpret_cast<void (*)(id, SEL, id)>(objc_msgSend)(contentView, selSetLayer, layer);
+    }
+    // Set pixelFormat = MTLPixelFormatBGRA8Unorm (80) if available
+    SEL selSetPixelFormat = sel_registerName("setPixelFormat:");
+    reinterpret_cast<void (*)(id, SEL, unsigned long)>(objc_msgSend)(layer, selSetPixelFormat, static_cast<unsigned long>(80));
+    init.platformData.nwh = static_cast<void *>(layer);
   #elif defined(SDL_VIDEO_DRIVER_X11)
     init.platformData.ndt = wmi.info.x11.display;
     init.platformData.nwh = reinterpret_cast<void *>(wmi.info.x11.window);
@@ -134,6 +153,12 @@ bool BGFXContext::init(const InitParams& params) noexcept {
   #endif
     return init;
   };
+
+#ifdef __APPLE__
+  // Force single-threaded mode on macOS to avoid render thread deadlock during init
+  // This must be called before bgfx::init()
+  bgfx::renderFrame();
+#endif
 
   // Build backend candidate list
   std::vector<Backend> candidates;
