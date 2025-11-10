@@ -27,6 +27,9 @@ struct Viewport3DNode final : public ISceneNode {
   float gridCellSize = 0.5f; // world units
   int   gridHalfCells = 20;  // extent in cells from origin
 
+  // Test scaffolding: last applied point cloud size (CPU-side only)
+  std::optional<size_t> lastPointCount;
+
   // Update viewport; also updates camera aspect if size is positive
   void setViewportRect(int x, int y, int w, int h) noexcept;
 

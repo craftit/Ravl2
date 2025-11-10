@@ -208,6 +208,13 @@ namespace {
 
 namespace Ravl2::DebugDisplay {
 
+// Headless/test mode toggle
+static std::atomic_bool g_headless{false};
+
+void setHeadlessForTests(bool on) noexcept {
+  g_headless.store(on, std::memory_order_release);
+}
+
 // Simple Clear command used by shim and controls parsing
 namespace Commands {
   struct ClearChannelCommand : public IRenderCommand {
@@ -966,6 +973,12 @@ void ensureStarted(const InitOptions &opts) {
       return;
     }
 #endif
+    // Headless mode: do not start GUI thread or create a window
+    if (g_headless.load(std::memory_order_acquire)) {
+      SPDLOG_INFO("DebugDisplay: headless mode enabled — no GUI thread/window");
+      g_started.store(true, std::memory_order_release);
+      return;
+    }
     // Start background GUI thread (SDL window + simple renderer)
     g_guiThread = std::make_unique<std::jthread>(guiThreadMain);
     SPDLOG_INFO("DebugDisplay: starting — background GUI thread created");

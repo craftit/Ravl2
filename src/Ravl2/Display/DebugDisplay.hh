@@ -12,6 +12,11 @@ namespace Ravl2::DebugDisplay {
 //! On macOS, this initializes SDL which must happen on the main thread.
 void initDisplay();
 
+//! Optional: disable window/thread creation for tests or headless runs.
+//! When enabled, ensureStarted() will not create an SDL window nor a GUI thread.
+//! Routing and command enqueue remain available, but no frames are rendered.
+void setHeadlessForTests(bool on) noexcept;
+
 //! Run the main event loop (blocking). Only needed on macOS when using RAVL2_MAIN wrapper.
 //! @param appMain Function pointer to the application's main logic
 //! @param argc Command line argument count

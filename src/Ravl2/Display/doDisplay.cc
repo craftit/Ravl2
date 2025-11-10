@@ -117,6 +117,14 @@ int RAVL2_MAIN(int argc, char** argv)
     SPDLOG_INFO("Queued image to {}", channel2);
   }
 
+  // Construct a tiny 3-point set (triangle in XY plane)
+  PointSet<float,3> ps({ Point<float,3>{0.f, 0.f, 0.f},
+                         Point<float,3>{1.f, 0.f, 0.f},
+                         Point<float,3>{0.f, 1.f, 0.f} });
+
+  const std::string url = "@debug:Cloud1"; // no mode hint; should infer 3D by payload type
+  bool ok = ioSave(url, ps);
+
   // Add a simple test polyline overlay to Image1 so we can verify overlay rendering
   {
     using Poly2f = Ravl2::PolyLine<float,2>;

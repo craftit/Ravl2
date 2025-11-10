@@ -21,6 +21,7 @@ add_library(Ravl2Display
     Commands/SetBaseImage2D.cc Commands/SetBaseImage2D.hh
     Commands/SetNormalization2D.hh Commands/SetNormalization2D.cc
     Commands/AddPolylineOverlay2D.cc Commands/AddPolylineOverlay2D.hh
+    Commands/SetPointCloud3D.cc Commands/SetPointCloud3D.hh
     Adapters/RenderCommandSink.cc
     OrbitCamera.cc OrbitCamera.hh
     Viewport3DNode.cc Viewport3DNode.hh

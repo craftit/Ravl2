@@ -16,6 +16,9 @@
 #include "Ravl2/Display/Commands/SetNormalization2D.hh"
 #include "Ravl2/Display/Commands/AddPolylineOverlay2D.hh"
 #include "Ravl2/Geometry/PolyLine.hh"
+#include "Ravl2/Geometry/PointSet.hh"
+#include "Ravl2/Types.hh"
+#include "Ravl2/Display/Commands/SetPointCloud3D.hh"
 
 namespace Ravl2::DebugDisplay {
   void initDisplay()
@@ -110,13 +113,26 @@ static std::shared_ptr<IRenderCommand> makeCmdFromPolyLine2f(const Ravl2::PolyLi
   return cmd;
 }
 
+// Converter: PointSet<float,3> -> shared_ptr<IRenderCommand> (SetPointCloud3D)
+static std::shared_ptr<IRenderCommand> makeCmdFromPointSet3f(const Ravl2::PointSet<float,3> &ps)
+{
+  auto cmd = std::make_shared<SetPointCloud3D>(std::string{} /*channel set by sink from URL*/);
+  cmd->positions.reserve(ps.size());
+  for (const auto &p : ps) {
+    if (!std::isfinite(p[0]) || !std::isfinite(p[1]) || !std::isfinite(p[2])) continue;
+    cmd->positions.emplace_back(p[0], p[1], p[2]);
+  }
+  return cmd;
+}
+
 // Register type conversions when this TU is loaded.
 [[maybe_unused]] bool g_registerConverters = [](){
-  SPDLOG_INFO("Registering TypeConverter: Array<u8,2>/Array<f32,2>/PolyLine2f -> shared_ptr<IRenderCommand>");
+  SPDLOG_INFO("Registering TypeConverter: Array<u8,2>/Array<f32,2>/PolyLine2f/PointSet3f -> shared_ptr<IRenderCommand>");
   bool ok1 = registerConversion(makeCmdFromU8Array, 1.0f);
   bool ok2 = registerConversion(makeCmdFromF32Array, 0.95f);
   bool ok3 = registerConversion(makeCmdFromPolyLine2f, 1.0f);
-  (void)ok1; (void)ok2; (void)ok3;
+  bool ok4 = registerConversion(makeCmdFromPointSet3f, 1.0f);
+  (void)ok1; (void)ok2; (void)ok3; (void)ok4;
   return true;
 }();
 
@@ -294,6 +310,10 @@ struct OutputFormatDebugDisplayCmdSink : public Ravl2::OutputFormat {
               SPDLOG_WARN("DebugDisplay: invalid :Color spec '{}', keeping default", *colv);
             }
           }
+          DebugDisplay::enqueue(cmd);
+        } else if (auto *pc3d = dynamic_cast<SetPointCloud3D*>(cmd.get())) {
+          // Default 3D routing: set channel from URL and enqueue
+          pc3d->channel = parsed2->channel;
           DebugDisplay::enqueue(cmd);
         } else {
           // For other commands we just enqueue as-is.

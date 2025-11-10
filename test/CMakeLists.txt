@@ -80,6 +80,7 @@ add_executable(tests
         test_types_duration.cc
         test_types.cc
         Display_Normalization_tests.cc
+        Display_3D_E2E_tests.cc
 )
 target_compile_definitions(tests PRIVATE -DRAVL_SOURCE_DIR="${PROJECT_SOURCE_DIR}")
 target_link_libraries(
@@ -96,7 +97,8 @@ target_link_libraries(
           ravl2::Ravl2Video
           ravl2::Ravl2Optimise
           Catch2::Catch2WithMain
-          Eigen3::Eigen)
+          Eigen3::Eigen
+          ravl2::Ravl2Display)
 
 if(WIN32 AND BUILD_SHARED_LIBS)
   add_custom_command(

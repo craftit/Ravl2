@@ -31,6 +31,12 @@ struct ChannelState {
   // Exclusive view selection for this channel
   ViewMode viewMode = ViewMode::View2D;
 
+  // Per-channel UI/runtime flags
+  struct Flags {
+    bool wantsFocus3D = false;   //!< Request focus on 3D window next frame
+    bool showViewToggle = false; //!< Developer toggle to expose 2D/3D radios (hidden by default)
+  } flags;
+
   // 2D view transform: scale (per-axis) and translate in pixels.
   // This represents the view (pan/zoom) state, not owned by scene nodes.
   ScaleTranslate<float, 2> view2D = ScaleTranslate<float, 2>::identity();
