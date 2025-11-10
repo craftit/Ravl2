@@ -776,9 +776,9 @@ namespace {
 #if defined(RAVL2_WITH_IMGUI) && defined(RAVL2_WITH_BGFX)
       if (g_imguiInitialized && g_bgfx.initialized())
       {
-        int mx=0,my=0;
-        //uint32_t mstate = SDL_GetMouseState(&mx, &my);
-        // SDL mouse state already tracked for buttons/scroll
+        int mx=0, my=0;
+        SDL_GetMouseState(&mx, &my);
+        // SDL mouse buttons and scroll are tracked separately; provide position via SDL_GetMouseState
         uint16_t fbw = 0, fbh = 0;
         int winW=0, winH=0;
         SDL_GetWindowSize(g_window, &winW, &winH);
