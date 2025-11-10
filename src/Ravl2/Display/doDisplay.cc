@@ -111,7 +111,7 @@ int RAVL2_MAIN(int argc, char** argv)
 
   // Keep the process alive briefly so the SDL window (from the debug display thread) is visible.
   SPDLOG_INFO("Sample running. Close the debug window to exit, or wait a moment...");
-  std::this_thread::sleep_for(10s);
+  std::this_thread::sleep_for(30s);
 
   return 0;
 }

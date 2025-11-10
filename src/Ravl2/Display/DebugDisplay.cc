@@ -23,6 +23,7 @@
 #include "Ravl2/Display/Ui/ControlsPanel.hh"
 #include "Ravl2/Display/Ui/ChannelWindows.hh"
 #include "Ravl2/Display/InputController2D.hh"
+#include "Ravl2/Display/PixelInspector2D.hh"
 #if defined(RAVL2_WITH_BGFX)
 #include <bgfx/bgfx.h>
 #include <bgfx/platform.h>
@@ -637,54 +638,15 @@ namespace {
       SDL_RenderCopyF(g_renderer, it->second.tex, nullptr, &dst);
     });
 
-    // Pixel query tooltip in window title (MVP): show for first channel under cursor
+    // Pixel query in window title via PixelInspector2D
     int mx, my; SDL_GetMouseState(&mx, &my);
-    std::string under;
-    SDL_FRect rect{};
-    for (const auto &kv : g_lastRects) {
-      const auto &r = kv.second;
-      const float fx = static_cast<float>(mx);
-      const float fy = static_cast<float>(my);
-      if (fx >= r.x && fx < r.x + r.w && fy >= r.y && fy < r.y + r.h) { under = kv.first; rect = r; break; }
-    }
-    if (!under.empty()) {
-      auto &ch = g_channels.getOrCreateChannel(under);
-      if (ch.baseImage2D) {
-        auto *node = static_cast<Image2DNode*>(ch.baseImage2D.get());
-        const int w = node->width, h = node->height;
-        // Map mouse to image coords
-        const float sx = ch.view2D.scaleVector()[0];
-        const float sy = ch.view2D.scaleVector()[1];
-        const float tx = ch.view2D.translation()[0];
-        const float ty = ch.view2D.translation()[1];
-        int ix = int((static_cast<float>(mx) - tx) / (sx != 0.0f ? sx : 1.0f));
-        int iy = int((static_cast<float>(my) - ty) / (sy != 0.0f ? sy : 1.0f));
-        float orig = 0.0f, disp = 0.0f;
-        if (ix >= 0 && iy >= 0 && ix < w && iy < h) {
-          const int idx = iy*w + ix;
-          if (node->format == Image2DFormat::U8 && !node->dataU8.empty()) {
-            orig = static_cast<float>(node->dataU8[static_cast<size_t>(idx)]) / 255.0f;
-            disp = orig;
-          } else if (node->format == Image2DFormat::F32 && !node->dataF32.empty()) {
-            orig = node->dataF32[static_cast<size_t>(idx)];
-            float mn = node->cachedMin, mxv = node->cachedMax;
-            switch (ch.norm.policy) {
-              case NormalizationPolicy::Auto: break;
-              case NormalizationPolicy::Fixed: mn = ch.norm.minVal; mxv = ch.norm.maxVal; break;
-              case NormalizationPolicy::Percentile: {
-                auto mm = percentiles(node->dataF32.data(), w, h, w*int(sizeof(float)), ch.norm.lowPct, ch.norm.highPct);
-                mn = mm.first; mxv = mm.second; break; }
-            }
-            if (mxv <= mn) mxv = mn + 1.0f;
-            disp = (orig - mn) / (mxv - mn);
-            if (disp < 0.0f) disp = 0.0f;
-            if (disp > 1.0f) disp = 1.0f;
-          }
-          char title[256];
-          std::snprintf(title, sizeof(title), "Ravl2 Debug Display — %s (%d,%d) orig=%.6g disp=%.4f", under.c_str(), ix, iy, static_cast<double>(orig), static_cast<double>(disp));
-          SDL_SetWindowTitle(g_window, title);
-        }
-      }
+    PixelInspector2D inspector;
+    if (auto info = inspector.inspect(mx, my, g_lastRects, g_channels)) {
+      char title[256];
+      std::snprintf(title, sizeof(title), "Ravl2 Debug Display — %s (%d,%d) orig=%.6g disp=%.4f",
+                    info->channel.c_str(), info->ix, info->iy,
+                    static_cast<double>(info->raw), static_cast<double>(info->disp));
+      SDL_SetWindowTitle(g_window, title);
     } else {
       SDL_SetWindowTitle(g_window, "Ravl2 Debug Display");
     }
@@ -715,54 +677,16 @@ namespace {
   }
 
   // --- Extracted minimal helpers (Phase 4.9) ---
-  static void updateWindowTitleFromLastRects_Bgfx()
+  static void updateWindowTitleFromInspector()
   {
-    int mmx, mmy; SDL_GetMouseState(&mmx, &mmy);
-    std::string under;
-    SDL_FRect rect{};
-    for (const auto &kv : g_lastRects) {
-      const auto &r = kv.second;
-      const float fx = static_cast<float>(mmx);
-      const float fy = static_cast<float>(mmy);
-      if (fx >= r.x && fx < r.x + r.w && fy >= r.y && fy < r.y + r.h) { under = kv.first; rect = r; break; }
-    }
-    if (!under.empty()) {
-      auto &ch = g_channels.getOrCreateChannel(under);
-      if (ch.baseImage2D) {
-        auto *node = static_cast<Image2DNode*>(ch.baseImage2D.get());
-        const int w = node->width, h = node->height;
-        const float sx = ch.view2D.scaleVector()[0];
-        const float sy = ch.view2D.scaleVector()[1];
-        const float tx = ch.view2D.translation()[0];
-        const float ty = ch.view2D.translation()[1];
-        int ix = int((static_cast<float>(mmx) - tx) / (sx != 0.0f ? sx : 1.0f));
-        int iy = int((static_cast<float>(mmy) - ty) / (sy != 0.0f ? sy : 1.0f));
-        float orig = 0.0f, disp = 0.0f;
-        if (ix >= 0 && iy >= 0 && ix < w && iy < h) {
-          const int idx = iy*w + ix;
-          if (node->format == Image2DFormat::U8 && !node->dataU8.empty()) {
-            orig = static_cast<float>(node->dataU8[static_cast<size_t>(idx)]) / 255.0f;
-            disp = orig;
-          } else if (node->format == Image2DFormat::F32 && !node->dataF32.empty()) {
-            orig = node->dataF32[static_cast<size_t>(idx)];
-            float mn = node->cachedMin, mxv = node->cachedMax;
-            switch (ch.norm.policy) {
-              case NormalizationPolicy::Auto: break;
-              case NormalizationPolicy::Fixed: mn = ch.norm.minVal; mxv = ch.norm.maxVal; break;
-              case NormalizationPolicy::Percentile: {
-                auto mm = percentiles(node->dataF32.data(), w, h, w*int(sizeof(float)), ch.norm.lowPct, ch.norm.highPct);
-                mn = mm.first; mxv = mm.second; break; }
-            }
-            if (mxv <= mn) mxv = mn + 1.0f;
-            disp = (orig - mn) / (mxv - mn);
-            if (disp < 0.0f) disp = 0.0f;
-            if (disp > 1.0f) disp = 1.0f;
-          }
-          char title[256];
-          std::snprintf(title, sizeof(title), "Ravl2 Debug Display — %s (%d,%d) orig=%.6g disp=%.4f", under.c_str(), ix, iy, static_cast<double>(orig), static_cast<double>(disp));
-          SDL_SetWindowTitle(g_window, title);
-        }
-      }
+    int mx, my; SDL_GetMouseState(&mx, &my);
+    PixelInspector2D inspector;
+    if (auto info = inspector.inspect(mx, my, g_lastRects, g_channels)) {
+      char title[256];
+      std::snprintf(title, sizeof(title), "Ravl2 Debug Display — %s (%d,%d) orig=%.6g disp=%.4f",
+                    info->channel.c_str(), info->ix, info->iy,
+                    static_cast<double>(info->raw), static_cast<double>(info->disp));
+      SDL_SetWindowTitle(g_window, title);
     } else {
       SDL_SetWindowTitle(g_window, "Ravl2 Debug Display");
     }
@@ -812,7 +736,7 @@ namespace {
 
       Ui::ChannelWindows::build(fbw, fbh, g_channels, g_lastRects);
 
-      updateWindowTitleFromLastRects_Bgfx();
+      updateWindowTitleFromInspector();
 
       g_imguiBridge.endFrame();
       SPDLOG_DEBUG("ImGui frame submitted");

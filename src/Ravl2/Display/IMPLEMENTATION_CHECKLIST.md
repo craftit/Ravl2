@@ -83,7 +83,7 @@ Legend: [ ] = todo, [*] = in progress, [x] = done
   6. [x] Harden `BgfxContext` single‑responsibility; move ImGui+bgfx glue into `ImguiBgfxBridge`
   7. [x] Move UI composition into `Ui::Dockspace`, `Ui::ControlsPanel`, `Ui::ChannelWindows`; update call sites
   8. [x] Add `InputController2D` (per‑channel state) and route pan/zoom through it
-  9. [ ] Add `PixelInspector2D` and switch title/pixel info to use it (consults normalization)
+  9. [x] Add `PixelInspector2D` and switch title/pixel info to use it (consults normalization)
   10. [ ] Error handling and logging pass: convert new/refactored paths to `std::expected`; ensure boundary‑only logging and exception‑safe RAII
   11. [ ] Prepare extension points: define `OverlayRenderer2D` interface and trivial stubs (points/lines); add small overlay registry hook in channel windows
   12. [ ] Isolate ImPlot integration hooks so Phase 7 can add plots without touching rendering core
