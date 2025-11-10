@@ -105,10 +105,11 @@ Legend: [ ] = todo, [*] = in progress, [x] = done
 - Execution order (deliver in small, verifiable slices; build and run after each slice):
 
 - 6a. Viewport3D + Orbit Camera MVP
-  - [ ] Add `Viewport3DNode` per channel to manage 3D view ID, viewport rect, camera state (orbit: `target`, `distance`, `yaw`, `pitch`).
-  - [ ] Input mapping (ImGui/SDL): Alt+LMB orbit, Alt+MMB pan, Wheel dolly; toolbar buttons for Reset and Fit.
-  - [ ] Perspective builder (fovY, aspect, near, far). Keep simple helpers; do not depend on `PinholeCamera` internally.
-  - [ ] Grid overlay on XZ at y=0 (extent, cell size configurable); render with depth test off (always visible) or a second pass.
+  - [x] Add `Viewport3DNode` per channel to manage 3D view ID, viewport rect, camera state (orbit: `target`, `distance`, `yaw`, `pitch`).
+  - [x] Input mapping (ImGui/SDL): Alt+LMB orbit, Alt+MMB pan, Wheel dolly; toolbar buttons for Reset and Fit.
+  - [x] Perspective builder (fovY, aspect, near, far). Keep simple helpers; do not depend on `PinholeCamera` internally.
+  - [x] Grid overlay on XZ at y=0 (extent, cell size configurable); render with depth test off (always visible) or a second pass.
+    - Implemented as CPU-projected ImGui overlay for now (`Grid3DOverlay.{hh,cc}`), submitted from the 3D child region; always visible. May switch to a bgfx line pass later.
   - [ ] Minimal points program: positions only, uniform color, fixed point size (backend-safe default).
   - [ ] Resize handling: update bgfx view rect and projection aspect on window/panel resize.
   - [ ] Acceptance: empty scene shows a grid; orbit/pan/dolly feel stable; no crashes.

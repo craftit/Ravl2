@@ -22,6 +22,9 @@ add_library(Ravl2Display
     Commands/SetNormalization2D.hh Commands/SetNormalization2D.cc
     Commands/AddPolylineOverlay2D.cc Commands/AddPolylineOverlay2D.hh
     Adapters/RenderCommandSink.cc
+    OrbitCamera.cc OrbitCamera.hh
+    Viewport3DNode.cc Viewport3DNode.hh
+    3D/Grid3DOverlay.cc 3D/Grid3DOverlay.hh
 )
 
 # On macOS, compile BGFXContext.cc as Objective-C++ to use Cocoa framework
