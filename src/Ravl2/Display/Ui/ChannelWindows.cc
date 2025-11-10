@@ -14,6 +14,7 @@
 #include <SDL2/SDL.h>
 
 #include "Ravl2/Display/Image2DNode.hh"
+#include "Ravl2/Display/Overlays/OverlayRenderer2D.hh"
 #include <algorithm>
 
 namespace Ravl2::DebugDisplay::Ui::ChannelWindows {
@@ -93,6 +94,16 @@ void build(uint16_t fbw, uint16_t fbh,
         // Record the full image rect (screen space)
         SDL_FRect imgRect{ pos.x, pos.y, size.x, size.y };
         lastRects[ch.name] = imgRect;
+
+        // Render any registered overlays using ImGui draw list
+        ImDrawList* drawList = ImGui::GetWindowDrawList();
+        if (drawList) {
+          for (const auto& ov : ch.overlays) {
+            if (ov) {
+              ov->render(drawList, origin, ch.view2D, node->width, node->height);
+            }
+          }
+        }
       }
   #endif
     }

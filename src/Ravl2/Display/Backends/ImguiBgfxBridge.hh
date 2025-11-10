@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <expected>
 #include <spdlog/spdlog.h>
 
 namespace Ravl2::DebugDisplay {
@@ -8,7 +9,11 @@ namespace Ravl2::DebugDisplay {
 //! Thin wrapper that encapsulates Dear ImGui integration over bgfx.
 //! Keeps BGFXContext focused on renderer lifecycle and isolates ImGui glue.
 struct ImguiBgfxBridge {
+  //! Legacy init with logging inside. Prefer initEx for boundary-only logging.
   bool init(float fontSize = 18.0f) noexcept;
+  //! New init returning std::expected; does not log internally.
+  std::expected<void, std::string> initEx(float fontSize = 18.0f) noexcept;
+
   void shutdown() noexcept;
 
   void beginFrame(int mouseX,

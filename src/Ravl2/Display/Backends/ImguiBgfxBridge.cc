@@ -14,11 +14,26 @@
 
 namespace Ravl2::DebugDisplay {
 
-bool ImguiBgfxBridge::init(float fontSize) noexcept {
+std::expected<void, std::string> ImguiBgfxBridge::initEx(float fontSize) noexcept {
 #if defined(RAVL2_WITH_IMGUI) && defined(RAVL2_WITH_BGFX)
-  if (mInitialized) return true;
+  if (mInitialized) return {};
+  // imguiCreate does not provide error reporting; assume success if it returns.
   imguiCreate(fontSize, nullptr);
   mInitialized = true;
+  return {};
+#else
+  (void)fontSize;
+  return std::unexpected{"ImguiBgfxBridge: ImGui/bgfx backend not available at compile time"};
+#endif
+}
+
+bool ImguiBgfxBridge::init(float fontSize) noexcept {
+#if defined(RAVL2_WITH_IMGUI) && defined(RAVL2_WITH_BGFX)
+  auto res = initEx(fontSize);
+  if (!res.has_value()) {
+    SPDLOG_WARN("ImguiBgfxBridge: init failed: {}", res.error());
+    return false;
+  }
   SPDLOG_INFO("ImguiBgfxBridge: initialized (fontSize={})", fontSize);
   return true;
 #else

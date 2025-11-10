@@ -13,6 +13,7 @@ add_library(Ravl2Display
     Ui/StatusBar.cc Ui/StatusBar.hh
     InputController2D.cc InputController2D.hh
     PixelInspector2D.cc PixelInspector2D.hh
+    Overlays/OverlayRenderer2D.cc Overlays/OverlayRenderer2D.hh
     IRenderCommand.hh ISceneNode.hh Channel.hh
     RenderContext.hh Normalization.hh
     Image2DNode.cc Image2DNode.hh

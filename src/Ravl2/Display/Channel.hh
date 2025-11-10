@@ -7,11 +7,15 @@
 #include <mutex>
 #include <functional>
 
+#include <SDL2/SDL.h>
+
 #include "Ravl2/Display/ISceneNode.hh"
 #include "Ravl2/Geometry/ScaleTranslate.hh"
 #include "Ravl2/Display/Normalization.hh"
 
 namespace Ravl2::DebugDisplay {
+
+namespace Overlays { struct OverlayRenderer2D; }
 
 //! Per-channel state.
 //! Holds per-view settings and top-level scene nodes.
@@ -27,6 +31,9 @@ struct ChannelState {
 
   // Base image node for 2D view (optional)
   std::unique_ptr<ISceneNode> baseImage2D;
+
+  // Registered overlays to render over the base image (composition over inheritance)
+  std::vector<std::shared_ptr<Overlays::OverlayRenderer2D>> overlays;
 };
 
 //! Registry of channels with basic thread-safe access helpers.

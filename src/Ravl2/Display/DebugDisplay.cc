@@ -390,14 +390,14 @@ namespace {
 #if defined(RAVL2_WITH_IMGUI) && defined(RAVL2_WITH_BGFX)
       if (!g_imguiInitialized) {
         if (g_bgfx.initialized()) {
-          if (g_imguiBridge.init(18.0f)) {
-                    // Only move windows from their title bars to avoid accidental drags while panning images.
-                    ImGuiIO& io = ImGui::GetIO();
-                    io.ConfigWindowsMoveFromTitleBarOnly = true;
+          if (auto res = g_imguiBridge.initEx(18.0f); res.has_value()) {
+            // Only move windows from their title bars to avoid accidental drags while panning images.
+            ImGuiIO& io = ImGui::GetIO();
+            io.ConfigWindowsMoveFromTitleBarOnly = true;
             g_imguiInitialized = true;
             SPDLOG_INFO("DebugDisplay: Dear ImGui initialized (bgfx backend via ImguiBgfxBridge)");
           } else {
-            SPDLOG_WARN("DebugDisplay: ImguiBgfxBridge init failed while bgfx is initialized");
+            SPDLOG_WARN("DebugDisplay: ImguiBgfxBridge init failed while bgfx is initialized: {}", res.error());
           }
         } else {
           IMGUI_CHECKVERSION();

@@ -84,8 +84,8 @@ Legend: [ ] = todo, [*] = in progress, [x] = done
   7. [x] Move UI composition into `Ui::Dockspace`, `Ui::ControlsPanel`, `Ui::ChannelWindows`; update call sites
   8. [x] Add `InputController2D` (per‑channel state) and route pan/zoom through it
   9. [x] Add `PixelInspector2D` and switch title/pixel info to use it (consults normalization)
-  10. [ ] Error handling and logging pass: convert new/refactored paths to `std::expected`; ensure boundary‑only logging and exception‑safe RAII
-  11. [ ] Prepare extension points: define `OverlayRenderer2D` interface and trivial stubs (points/lines); add small overlay registry hook in channel windows
+  10. [x] Error handling and logging pass: convert new/refactored paths to `std::expected`; ensure boundary‑only logging and exception‑safe RAII
+  11. [x] Prepare extension points: define `OverlayRenderer2D` interface and trivial stubs (points/lines); add small overlay registry hook in channel windows
   12. [ ] Isolate ImPlot integration hooks so Phase 7 can add plots without touching the rendering core
   13. [ ] Tests and documentation: Doxygen for new helpers/classes; unit tests for normalization/percentile helpers; update `DebugDisplay_Design.md` with module diagram/data flow
   14. [ ] Acceptance criteria verification: size reduced; no regressions for Phases 2–4; overlay stubs exercised
