@@ -193,7 +193,7 @@ namespace Ravl2::Video
     {
       assert(m_iterator->currentFrame());
       auto ptr = std::dynamic_pointer_cast<VideoFrame<ImageTypeT>>(m_iterator->currentFrame());
-      assert(ptr);
+      RavlAlwaysAssert(ptr != nullptr);
       return *ptr;
     }
 
