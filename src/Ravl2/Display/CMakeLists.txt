@@ -10,6 +10,7 @@ add_library(Ravl2Display
     Ui/Dockspace.cc Ui/Dockspace.hh
     Ui/ControlsPanel.cc Ui/ControlsPanel.hh
     Ui/ChannelWindows.cc Ui/ChannelWindows.hh
+    InputController2D.cc InputController2D.hh
     IRenderCommand.hh ISceneNode.hh Channel.hh
     RenderContext.hh Normalization.hh
     Image2DNode.cc Image2DNode.hh

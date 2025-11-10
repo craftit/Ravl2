@@ -22,6 +22,7 @@
 #include "Ravl2/Display/Ui/Dockspace.hh"
 #include "Ravl2/Display/Ui/ControlsPanel.hh"
 #include "Ravl2/Display/Ui/ChannelWindows.hh"
+#include "Ravl2/Display/InputController2D.hh"
 #if defined(RAVL2_WITH_BGFX)
 #include <bgfx/bgfx.h>
 #include <bgfx/platform.h>
@@ -259,6 +260,9 @@ namespace {
   int g_lastMouseX = 0;
   int g_lastMouseY = 0;
   std::string g_activeChannel; // channel under cursor or being dragged
+  
+  // Input controller for pan/zoom (Step 8)
+  InputController2D g_input(g_invalidated, kZoomMin, kZoomMax);
 
   // Per-channel texture cache (SDL fallback when bgfx not initialized)
   struct TextureEntry {
@@ -485,18 +489,8 @@ namespace {
             g_dragging = true;
             g_lastMouseX = e.button.x;
             g_lastMouseY = e.button.y;
-            // Pick active channel under cursor
-            g_activeChannel.clear();
-            for (const auto &kv : g_lastRects) {
-              const auto &r = kv.second;
-              const float bx = static_cast<float>(e.button.x);
-              const float by = static_cast<float>(e.button.y);
-              if (bx >= r.x && bx < r.x + r.w &&
-                  by >= r.y && by < r.y + r.h) {
-                g_activeChannel = kv.first;
-                break;
-              }
-            }
+            g_input.onMouseButtonDown(e.button.x, e.button.y, g_lastRects);
+            g_activeChannel = g_input.activeChannel();
           }
 #if defined(RAVL2_WITH_IMGUI) && defined(RAVL2_WITH_BGFX)
           if (e.button.button == SDL_BUTTON_LEFT) g_mouseButtons |= IMGUI_MBUT_LEFT;
@@ -507,54 +501,18 @@ namespace {
           if (e.button.button == SDL_BUTTON_LEFT) {
             g_dragging = false;
           }
+          g_input.onMouseButtonUp(e.button.button);
 #if defined(RAVL2_WITH_IMGUI) && defined(RAVL2_WITH_BGFX)
           if (e.button.button == SDL_BUTTON_LEFT) g_mouseButtons &= static_cast<uint8_t>(~IMGUI_MBUT_LEFT);
           if (e.button.button == SDL_BUTTON_RIGHT) g_mouseButtons &= static_cast<uint8_t>(~IMGUI_MBUT_RIGHT);
           if (e.button.button == SDL_BUTTON_MIDDLE) g_mouseButtons &= static_cast<uint8_t>(~IMGUI_MBUT_MIDDLE);
 #endif
         } else if (e.type == SDL_MOUSEMOTION) {
-          if (g_dragging && !g_activeChannel.empty()) {
-            int mx = e.motion.x;
-            int my = e.motion.y;
-            int dx = mx - g_lastMouseX;
-            int dy = my - g_lastMouseY;
-            g_lastMouseX = mx; g_lastMouseY = my;
-            // Apply to channel translation
-            auto &ch = g_channels.getOrCreateChannel(g_activeChannel);
-            auto &t = ch.view2D.translation();
-            t[0] += static_cast<float>(dx);
-            t[1] += static_cast<float>(dy);
-            g_invalidated.store(true, std::memory_order_release);
-          }
+          g_input.onMouseMotion(e.motion.x, e.motion.y, g_channels);
         } else if (e.type == SDL_MOUSEWHEEL) {
-          // Zoom in/out around cursor for active channel under cursor
+          // Zoom in/out around cursor for channel under mouse
           int mx, my; SDL_GetMouseState(&mx, &my);
-          std::string under;
-          for (const auto &kv : g_lastRects) {
-            const auto &r = kv.second;
-            const float fx = static_cast<float>(mx);
-            const float fy = static_cast<float>(my);
-            if (fx >= r.x && fx < r.x + r.w && fy >= r.y && fy < r.y + r.h) { under = kv.first; break; }
-          }
-          if (!under.empty()) {
-            auto &ch = g_channels.getOrCreateChannel(under);
-            auto &view = ch.view2D;
-            float &sx = view.scaleVector()[0];
-            float &sy = view.scaleVector()[1];
-            float &tx = view.translation()[0];
-            float &ty = view.translation()[1];
-            float factor = (e.wheel.y > 0) ? 1.1f : 1.0f / 1.1f;
-            float newSx = std::clamp(sx * factor, 0.05f, 32.0f);
-            float newSy = std::clamp(sy * factor, 0.05f, 32.0f);
-            // Compute image coords under cursor
-            float ix = (static_cast<float>(mx) - tx) / (sx != 0.0f ? sx : 1.0f);
-            float iy = (static_cast<float>(my) - ty) / (sy != 0.0f ? sy : 1.0f);
-            // Update translation so the point under cursor remains fixed
-            tx = static_cast<float>(mx) - ix * newSx;
-            ty = static_cast<float>(my) - iy * newSy;
-            sx = newSx; sy = newSy;
-            g_invalidated.store(true, std::memory_order_release);
-          }
+          g_input.onMouseWheel(e.wheel.y, mx, my, g_lastRects, g_channels);
 #if defined(RAVL2_WITH_IMGUI) && defined(RAVL2_WITH_BGFX)
           // Forward scroll to ImGui bgfx backend (accumulate this frame)
           g_scroll += e.wheel.y;
