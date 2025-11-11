@@ -47,7 +47,7 @@ namespace Ravl2 {
       return toIndex<N>(pnt);
     }
 
-    //! Get the center of a bin
+    //! Get the centre of a bin
     [[nodiscard]] constexpr Point<RealT,N> center(const Index<N> &bin) const
     {
       return toPoint(bin).array() * mBinSize.array();
