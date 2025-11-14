@@ -22,7 +22,7 @@ int RAVL2_MAIN(int argc, char** argv)
 {
   // Set logging early before any DebugDisplay initialization
   spdlog::set_pattern("[%Y-%m-%d %T.%e] [%^%l%$] [%t] %v");
-  spdlog::set_level(spdlog::level::debug);
+  spdlog::set_level(spdlog::level::info);
 
   Ravl2::DebugDisplay::initDisplay();
   Ravl2::initOpenCVImageIO();
