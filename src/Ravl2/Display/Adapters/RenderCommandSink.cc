@@ -127,7 +127,7 @@ static std::shared_ptr<IRenderCommand> makeCmdFromPointSet3f(const Ravl2::PointS
 
 // Register type conversions when this TU is loaded.
 [[maybe_unused]] bool g_registerConverters = [](){
-  SPDLOG_INFO("Registering TypeConverter: Array<u8,2>/Array<f32,2>/PolyLine2f/PointSet3f -> shared_ptr<IRenderCommand>");
+  SPDLOG_DEBUG("Registering TypeConverter: Array<u8,2>/Array<f32,2>/PolyLine2f/PointSet3f -> shared_ptr<IRenderCommand>");
   bool ok1 = registerConversion(makeCmdFromU8Array, 1.0f);
   bool ok2 = registerConversion(makeCmdFromF32Array, 0.95f);
   bool ok3 = registerConversion(makeCmdFromPolyLine2f, 1.0f);
@@ -331,7 +331,7 @@ struct OutputFormatDebugDisplayCmdSink : public Ravl2::OutputFormat {
 };
 
 [[maybe_unused]] bool g_registerCmdSink = [](){
-  SPDLOG_INFO("Registering DebugDisplay @debug command sink (shared_ptr<IRenderCommand>)");
+  SPDLOG_DEBUG("Registering DebugDisplay @debug command sink (shared_ptr<IRenderCommand>)");
   return outputFormatMap().add(std::make_shared<OutputFormatDebugDisplayCmdSink>());
 }();
 
