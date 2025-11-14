@@ -19,6 +19,7 @@
 #include "Ravl2/Geometry/PointSet.hh"
 #include "Ravl2/Types.hh"
 #include "Ravl2/Display/Commands/SetPointCloud3D.hh"
+#include "Ravl2/Pixel/Pixel.hh"
 
 namespace Ravl2::DebugDisplay {
   void initDisplay()
@@ -76,14 +77,13 @@ struct ClearChannelCommand : public IRenderCommand {
 // Converters: Array<uint8_t,2> -> shared_ptr<IRenderCommand>
 static std::shared_ptr<IRenderCommand> makeCmdFromU8Array(const Array<uint8_t,2> &img)
 {
-  auto cmd = std::make_shared<SetBaseImage2D>(std::string{} /*channel set by sink from URL*/);
+  auto cmd = std::make_shared<SetBaseImage2D_U8>(std::string{} /*channel set by sink from URL*/);
   cmd->width = img.range()[1].size();
   cmd->height = img.range()[0].size();
-  cmd->isFloat = false;
-  cmd->u8.resize(static_cast<size_t>(cmd->width) * static_cast<size_t>(cmd->height));
+  cmd->data.resize(static_cast<size_t>(cmd->width) * static_cast<size_t>(cmd->height));
   for (int y=0; y<cmd->height; ++y) {
     for (int x=0; x<cmd->width; ++x) {
-      cmd->u8[size_t(y)*size_t(cmd->width) + size_t(x)] = img[{y, x}];
+      cmd->data[size_t(y)*size_t(cmd->width) + size_t(x)] = img[{y, x}];
     }
   }
   return cmd;
@@ -92,14 +92,28 @@ static std::shared_ptr<IRenderCommand> makeCmdFromU8Array(const Array<uint8_t,2>
 // Converters: Array<float,2> -> shared_ptr<IRenderCommand>
 static std::shared_ptr<IRenderCommand> makeCmdFromF32Array(const Array<float,2> &img)
 {
-  auto cmd = std::make_shared<SetBaseImage2D>(std::string{} /*channel set by sink from URL*/);
+  auto cmd = std::make_shared<SetBaseImage2D_F32>(std::string{} /*channel set by sink from URL*/);
   cmd->width = img.range()[1].size();
   cmd->height = img.range()[0].size();
-  cmd->isFloat = true;
-  cmd->f32.resize(static_cast<size_t>(cmd->width) * static_cast<size_t>(cmd->height));
+  cmd->data.resize(static_cast<size_t>(cmd->width) * static_cast<size_t>(cmd->height));
   for (int y=0; y<cmd->height; ++y) {
     for (int x=0; x<cmd->width; ++x) {
-      cmd->f32[size_t(y)*size_t(cmd->width) + size_t(x)] = img[{y, x}];
+      cmd->data[size_t(y)*size_t(cmd->width) + size_t(x)] = img[{y, x}];
+    }
+  }
+  return cmd;
+}
+
+// Converter: Array<PixelRGB8,2> -> shared_ptr<IRenderCommand>
+static std::shared_ptr<IRenderCommand> makeCmdFromRGB8Array(const Array<PixelRGB8,2> &img)
+{
+  auto cmd = std::make_shared<SetBaseImage2D_RGB8>(std::string{} /*channel set by sink from URL*/);
+  cmd->width = img.range()[1].size();
+  cmd->height = img.range()[0].size();
+  cmd->data.resize(static_cast<size_t>(cmd->width) * static_cast<size_t>(cmd->height));
+  for (int y=0; y<cmd->height; ++y) {
+    for (int x=0; x<cmd->width; ++x) {
+      cmd->data[size_t(y)*size_t(cmd->width) + size_t(x)] = img[{y, x}];
     }
   }
   return cmd;
@@ -127,12 +141,13 @@ static std::shared_ptr<IRenderCommand> makeCmdFromPointSet3f(const Ravl2::PointS
 
 // Register type conversions when this TU is loaded.
 [[maybe_unused]] bool g_registerConverters = [](){
-  SPDLOG_DEBUG("Registering TypeConverter: Array<u8,2>/Array<f32,2>/PolyLine2f/PointSet3f -> shared_ptr<IRenderCommand>");
+  SPDLOG_DEBUG("Registering TypeConverter: Array<u8,2>/Array<f32,2>/Array<RGB8,2>/PolyLine2f/PointSet3f -> shared_ptr<IRenderCommand>");
   bool ok1 = registerConversion(makeCmdFromU8Array, 1.0f);
   bool ok2 = registerConversion(makeCmdFromF32Array, 0.95f);
-  bool ok3 = registerConversion(makeCmdFromPolyLine2f, 1.0f);
-  bool ok4 = registerConversion(makeCmdFromPointSet3f, 1.0f);
-  (void)ok1; (void)ok2; (void)ok3; (void)ok4;
+  bool ok3 = registerConversion(makeCmdFromRGB8Array, 1.0f);
+  bool ok4 = registerConversion(makeCmdFromPolyLine2f, 1.0f);
+  bool ok5 = registerConversion(makeCmdFromPointSet3f, 1.0f);
+  (void)ok1; (void)ok2; (void)ok3; (void)ok4; (void)ok5;
   return true;
 }();
 
@@ -279,9 +294,20 @@ struct OutputFormatDebugDisplayCmdSink : public Ravl2::OutputFormat {
 
       // If this is a recognized command, adjust with URL context
       if (cmd) {
-        if (auto *setImg = dynamic_cast<SetBaseImage2D*>(cmd.get())) {
-          // Enforce channel from URL for images
-          setImg->channel = parsed2->channel;
+        // Check if it's any of the SetBaseImage2D template instantiations
+        bool isImageCmd = false;
+        if (auto *setImgU8 = dynamic_cast<SetBaseImage2D_U8*>(cmd.get())) {
+          setImgU8->channel = parsed2->channel;
+          isImageCmd = true;
+        } else if (auto *setImgF32 = dynamic_cast<SetBaseImage2D_F32*>(cmd.get())) {
+          setImgF32->channel = parsed2->channel;
+          isImageCmd = true;
+        } else if (auto *setImgRGB = dynamic_cast<SetBaseImage2D_RGB8*>(cmd.get())) {
+          setImgRGB->channel = parsed2->channel;
+          isImageCmd = true;
+        }
+
+        if (isImageCmd) {
           DebugDisplay::enqueue(cmd);
         } else if (auto *poly = dynamic_cast<AddPolylineOverlay2D*>(cmd.get())) {
           // Optional: clear overlays first

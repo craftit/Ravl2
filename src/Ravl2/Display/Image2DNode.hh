@@ -8,6 +8,7 @@
 
 #include "Ravl2/Display/Image2DNodeBase.hh"
 #include "Ravl2/Display/Normalization.hh"
+#include "Ravl2/Pixel/Pixel.hh"
 
 namespace Ravl2::DebugDisplay {
 
@@ -162,6 +163,31 @@ public:
   // For compatibility with existing code
   float getCachedMin() const { return cachedMin; }
   float getCachedMax() const { return cachedMax; }
+};
+
+//! Specialization for PixelRGB8 (RGB color images)
+template<>
+class Image2DNode<PixelRGB8> : public Image2DNodeBase {
+private:
+  std::vector<PixelRGB8> pixelData;
+
+protected:
+  std::string formatValue(const PixelRGB8& value) const;
+
+public:
+  Image2DNode() = default;
+  ~Image2DNode() override = default;
+
+  void setData(std::vector<PixelRGB8> data, int w, int h);
+  void setData(const PixelRGB8* data, int w, int h);
+
+  PixelQueryResult queryPixelInfo(int x, int y) const override;
+  void uploadToGPU() override;
+
+  const std::vector<PixelRGB8>& getData() const { return pixelData; }
+  const PixelRGB8& samplePixel(int x, int y) const {
+    return pixelData[static_cast<size_t>(y * width + x)];
+  }
 };
 
 } // namespace Ravl2::DebugDisplay

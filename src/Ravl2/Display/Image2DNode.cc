@@ -195,4 +195,71 @@ std::pair<float, float> Image2DNode<float>::sample(int x, int y) const noexcept 
   return {v, n};
 }
 
+// ============================================================================
+// Image2DNode<PixelRGB8> specialization
+// ============================================================================
+
+void Image2DNode<PixelRGB8>::setData(std::vector<PixelRGB8> data, int w, int h) {
+  pixelData = std::move(data);
+  width = w;
+  height = h;
+#if defined(RAVL2_WITH_BGFX)
+  gpuDirty = true;
+#endif
+}
+
+void Image2DNode<PixelRGB8>::setData(const PixelRGB8* data, int w, int h) {
+  const size_t sz = static_cast<size_t>(w) * static_cast<size_t>(h);
+  pixelData.assign(data, data + sz);
+  width = w;
+  height = h;
+#if defined(RAVL2_WITH_BGFX)
+  gpuDirty = true;
+#endif
+}
+
+std::string Image2DNode<PixelRGB8>::formatValue(const PixelRGB8& value) const {
+  return std::format("R:{} G:{} B:{}",
+                     static_cast<int>(value.template get<ImageChannel::Red>()),
+                     static_cast<int>(value.template get<ImageChannel::Green>()),
+                     static_cast<int>(value.template get<ImageChannel::Blue>()));
+}
+
+PixelQueryResult Image2DNode<PixelRGB8>::queryPixelInfo(int x, int y) const {
+  if (x < 0 || x >= width || y < 0 || y >= height) {
+    return {.valid = false, .coordinateText = "", .valueText = "", .extraInfo = std::nullopt};
+  }
+
+  const PixelRGB8& value = pixelData[static_cast<size_t>(y * width + x)];
+
+  return {
+    .valid = true,
+    .coordinateText = std::format("x: {}, y: {}", x, y),
+    .valueText = formatValue(value),
+    .extraInfo = std::nullopt
+  };
+}
+
+void Image2DNode<PixelRGB8>::uploadToGPU() {
+#if defined(RAVL2_WITH_BGFX)
+  if (pixelData.empty()) return;
+
+  bgfx::TextureHandle thdl{textureHandleIdx};
+  if (!bgfx::isValid(thdl)) return;
+
+  const size_t sz = static_cast<size_t>(width) * static_cast<size_t>(height);
+  // Convert RGB to RGBA8 by adding alpha channel (255 = opaque)
+  std::vector<uint8_t> rgba(sz * 4);
+  for (size_t i = 0; i < sz; ++i) {
+    const PixelRGB8& pixel = pixelData[i];
+    rgba[i*4 + 0] = pixel.template get<ImageChannel::Red>();
+    rgba[i*4 + 1] = pixel.template get<ImageChannel::Green>();
+    rgba[i*4 + 2] = pixel.template get<ImageChannel::Blue>();
+    rgba[i*4 + 3] = 255; // A
+  }
+  const bgfx::Memory* mem = bgfx::copy(rgba.data(), static_cast<uint32_t>(rgba.size()));
+  bgfx::updateTexture2D(thdl, 0, 0, 0, 0, texWidth, texHeight, mem);
+#endif
+}
+
 } // namespace Ravl2::DebugDisplay
