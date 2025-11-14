@@ -190,4 +190,54 @@ public:
   }
 };
 
+//! Specialization for int16_t (label/ID images with smaller range)
+template<>
+class Image2DNode<int16_t> : public Image2DNodeBase {
+private:
+  std::vector<int16_t> pixelData;
+
+protected:
+  std::string formatValue(const int16_t& value) const;
+
+public:
+  Image2DNode() = default;
+  ~Image2DNode() override = default;
+
+  void setData(std::vector<int16_t> data, int w, int h);
+  void setData(const int16_t* data, int w, int h);
+
+  PixelQueryResult queryPixelInfo(int x, int y) const override;
+  void uploadToGPU() override;
+
+  const std::vector<int16_t>& getData() const { return pixelData; }
+  const int16_t& samplePixel(int x, int y) const {
+    return pixelData[static_cast<size_t>(y * width + x)];
+  }
+};
+
+//! Specialization for int32_t (label/ID images with full range)
+template<>
+class Image2DNode<int32_t> : public Image2DNodeBase {
+private:
+  std::vector<int32_t> pixelData;
+
+protected:
+  std::string formatValue(const int32_t& value) const;
+
+public:
+  Image2DNode() = default;
+  ~Image2DNode() override = default;
+
+  void setData(std::vector<int32_t> data, int w, int h);
+  void setData(const int32_t* data, int w, int h);
+
+  PixelQueryResult queryPixelInfo(int x, int y) const override;
+  void uploadToGPU() override;
+
+  const std::vector<int32_t>& getData() const { return pixelData; }
+  const int32_t& samplePixel(int x, int y) const {
+    return pixelData[static_cast<size_t>(y * width + x)];
+  }
+};
+
 } // namespace Ravl2::DebugDisplay

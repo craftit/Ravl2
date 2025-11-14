@@ -32,7 +32,7 @@ public:
     if (index >= m_children.size()) {
       m_children.push_back(std::move(node));
     } else {
-      m_children.insert(m_children.begin() + index, std::move(node));
+      m_children.insert(m_children.begin() + static_cast<std::vector<std::unique_ptr<ISceneNode>>::difference_type>(index), std::move(node));
     }
   }
 

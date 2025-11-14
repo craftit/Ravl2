@@ -119,6 +119,36 @@ static std::shared_ptr<IRenderCommand> makeCmdFromRGB8Array(const Array<PixelRGB
   return cmd;
 }
 
+// Converter: Array<int16_t,2> -> shared_ptr<IRenderCommand>
+static std::shared_ptr<IRenderCommand> makeCmdFromI16Array(const Array<int16_t,2> &img)
+{
+  auto cmd = std::make_shared<SetBaseImage2D_I16>(std::string{} /*channel set by sink from URL*/);
+  cmd->width = img.range()[1].size();
+  cmd->height = img.range()[0].size();
+  cmd->data.resize(static_cast<size_t>(cmd->width) * static_cast<size_t>(cmd->height));
+  for (int y=0; y<cmd->height; ++y) {
+    for (int x=0; x<cmd->width; ++x) {
+      cmd->data[size_t(y)*size_t(cmd->width) + size_t(x)] = img[{y, x}];
+    }
+  }
+  return cmd;
+}
+
+// Converter: Array<int32_t,2> -> shared_ptr<IRenderCommand>
+static std::shared_ptr<IRenderCommand> makeCmdFromI32Array(const Array<int32_t,2> &img)
+{
+  auto cmd = std::make_shared<SetBaseImage2D_I32>(std::string{} /*channel set by sink from URL*/);
+  cmd->width = img.range()[1].size();
+  cmd->height = img.range()[0].size();
+  cmd->data.resize(static_cast<size_t>(cmd->width) * static_cast<size_t>(cmd->height));
+  for (int y=0; y<cmd->height; ++y) {
+    for (int x=0; x<cmd->width; ++x) {
+      cmd->data[size_t(y)*size_t(cmd->width) + size_t(x)] = img[{y, x}];
+    }
+  }
+  return cmd;
+}
+
 // Converter: PolyLine<float,2> -> shared_ptr<IRenderCommand> (AddPolylineOverlay2D)
 static std::shared_ptr<IRenderCommand> makeCmdFromPolyLine2f(const Ravl2::PolyLine<float,2> &poly)
 {
@@ -141,13 +171,15 @@ static std::shared_ptr<IRenderCommand> makeCmdFromPointSet3f(const Ravl2::PointS
 
 // Register type conversions when this TU is loaded.
 [[maybe_unused]] bool g_registerConverters = [](){
-  SPDLOG_DEBUG("Registering TypeConverter: Array<u8,2>/Array<f32,2>/Array<RGB8,2>/PolyLine2f/PointSet3f -> shared_ptr<IRenderCommand>");
+  SPDLOG_DEBUG("Registering TypeConverter: Array<u8,2>/Array<f32,2>/Array<RGB8,2>/Array<i16,2>/Array<i32,2>/PolyLine2f/PointSet3f -> shared_ptr<IRenderCommand>");
   bool ok1 = registerConversion(makeCmdFromU8Array, 1.0f);
   bool ok2 = registerConversion(makeCmdFromF32Array, 0.95f);
   bool ok3 = registerConversion(makeCmdFromRGB8Array, 1.0f);
-  bool ok4 = registerConversion(makeCmdFromPolyLine2f, 1.0f);
-  bool ok5 = registerConversion(makeCmdFromPointSet3f, 1.0f);
-  (void)ok1; (void)ok2; (void)ok3; (void)ok4; (void)ok5;
+  bool ok4 = registerConversion(makeCmdFromI16Array, 1.0f);
+  bool ok5 = registerConversion(makeCmdFromI32Array, 1.0f);
+  bool ok6 = registerConversion(makeCmdFromPolyLine2f, 1.0f);
+  bool ok7 = registerConversion(makeCmdFromPointSet3f, 1.0f);
+  (void)ok1; (void)ok2; (void)ok3; (void)ok4; (void)ok5; (void)ok6; (void)ok7;
   return true;
 }();
 
@@ -304,6 +336,12 @@ struct OutputFormatDebugDisplayCmdSink : public Ravl2::OutputFormat {
           isImageCmd = true;
         } else if (auto *setImgRGB = dynamic_cast<SetBaseImage2D_RGB8*>(cmd.get())) {
           setImgRGB->channel = parsed2->channel;
+          isImageCmd = true;
+        } else if (auto *setImgI16 = dynamic_cast<SetBaseImage2D_I16*>(cmd.get())) {
+          setImgI16->channel = parsed2->channel;
+          isImageCmd = true;
+        } else if (auto *setImgI32 = dynamic_cast<SetBaseImage2D_I32*>(cmd.get())) {
+          setImgI32->channel = parsed2->channel;
           isImageCmd = true;
         }
 

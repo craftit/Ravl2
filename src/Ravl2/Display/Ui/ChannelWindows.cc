@@ -172,6 +172,11 @@ void build(uint16_t fbw, uint16_t fbh,
         }
       }
 
+      // Populate RenderContext with overlay rendering information
+      rc.imguiDrawList = ImGui::GetWindowDrawList();
+      rc.origin = origin;
+      rc.view2D = ch.view2D;
+
       // Render the scene content (includes overlays if using CompositeNode)
       ch.sceneContent->render(rc);
   #endif

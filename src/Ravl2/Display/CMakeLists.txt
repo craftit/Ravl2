@@ -15,6 +15,7 @@ add_library(Ravl2Display
     InputController2D.cc InputController2D.hh
     PixelInspector2D.cc PixelInspector2D.hh
     Overlays/OverlayRenderer2D.cc Overlays/OverlayRenderer2D.hh
+    Overlays/Polyline2DNode.cc Overlays/Polyline2DNode.hh
     IRenderCommand.hh ISceneNode.hh Channel.hh
     RenderContext.hh Normalization.hh
     CompositeNode.hh
