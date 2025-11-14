@@ -13,9 +13,10 @@
 
 #include <SDL2/SDL.h>
 
+#include "Ravl2/Display/ISceneNode.hh"
 #include "Ravl2/Display/Image2DNode.hh"
+#include "Ravl2/Display/Image2DNodeBase.hh"
 #include "Ravl2/Display/Viewport3DNode.hh"
-#include "Ravl2/Display/Overlays/OverlayRenderer2D.hh"
 #include <algorithm>
 #include <cmath>
 #include "Ravl2/Types.hh"
@@ -95,18 +96,25 @@ void build(uint16_t fbw, uint16_t fbh,
     ImGui::SameLine();
     bool doFit = ImGui::Button("Fit");
 
-    if (ch.baseImage2D) {
-      auto *node = static_cast<Image2DNode*>(ch.baseImage2D.get());
-      node->prepare(rc);
+    if (ch.sceneContent) {
+      // Prepare the scene content (could be Image2DNode or CompositeNode)
+      ch.sceneContent->prepare(rc);
+
+      // Try to find an Image2DNodeBase to determine dimensions for fit/pan/zoom
+      Image2DNodeBase* imageNode = nullptr;
+      if (auto *img = dynamic_cast<Image2DNodeBase*>(ch.sceneContent.get())) {
+        imageNode = img;
+      }
+
   #if defined(RAVL2_WITH_BGFX)
-      if (node->width > 0 && node->height > 0 && node->textureHandleIdx != UINT16_MAX) {
+      if (imageNode && imageNode->width > 0 && imageNode->height > 0 && imageNode->textureHandleIdx != UINT16_MAX) {
         if (doFit) {
           // Compute fit using the full content region size, not the remaining avail after the toolbar
           const float contentW = cRect.w;
           const float contentH = cRect.h;
           if (contentW > 1.0f && contentH > 1.0f) {
-            const float imgWf = static_cast<float>(node->width);
-            const float imgHf = static_cast<float>(node->height);
+            const float imgWf = static_cast<float>(imageNode->width);
+            const float imgHf = static_cast<float>(imageNode->height);
             const float sFit = std::max(0.0001f, std::min(contentW / imgWf, contentH / imgHf));
             auto v = ch.view2D.scaleVector(); v[0] = sFit; v[1] = sFit; ch.view2D.scale(v);
             auto tr = ch.view2D.translation();
@@ -116,14 +124,14 @@ void build(uint16_t fbw, uint16_t fbh,
             invalidated.store(true, std::memory_order_release);
           }
         }
-        bgfx::TextureHandle thdl{node->textureHandleIdx};
+        bgfx::TextureHandle thdl{imageNode->textureHandleIdx};
         const float sx = ch.view2D.scaleVector()[0];
         const float sy = ch.view2D.scaleVector()[1];
         const float tx = ch.view2D.translation()[0];
         const float ty = ch.view2D.translation()[1];
         // Compute position in screen space anchored at the content origin
         ImVec2 pos = ImVec2(origin.x + tx, origin.y + ty);
-        ImVec2 size = ImVec2(static_cast<float>(node->width) * sx, static_cast<float>(node->height) * sy);
+        ImVec2 size = ImVec2(static_cast<float>(imageNode->width) * sx, static_cast<float>(imageNode->height) * sy);
         // Set cursor to the computed position and draw
         ImGui::SetCursorScreenPos(pos);
         ImGui::Image(thdl, size);
@@ -133,18 +141,39 @@ void build(uint16_t fbw, uint16_t fbh,
         // If the drawn image item is hovered, remember this channel as the top-most hovered image
         if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenBlockedByActiveItem)) {
           hoveredImageChannelOut = ch.name;
-        }
 
-        // Render any registered overlays using ImGui draw list
-        ImDrawList* drawList = ImGui::GetWindowDrawList();
-        if (drawList) {
-          for (const auto& ov : ch.overlays) {
-            if (ov) {
-              ov->render(drawList, origin, ch.view2D, node->width, node->height);
+          // Display pixel information tooltip
+          // Note: We do this inline instead of using PixelInspector2D to avoid deadlock
+          // (we're already inside forEachChannel which holds the registry lock)
+          if (ch.sceneContent && ch.sceneContent->supportsPixelQuery()) {
+            ImGuiIO& io = ImGui::GetIO();
+            const float fx = io.MousePos.x;
+            const float fy = io.MousePos.y;
+
+            // Map mouse to image pixel using image origin + view2D transform (reuse sx,sy,tx,ty from above)
+            const float denomX = (sx != 0.0f) ? sx : 1.0f;
+            const float denomY = (sy != 0.0f) ? sy : 1.0f;
+            const int ix = static_cast<int>((fx - (origin.x + tx)) / denomX);
+            const int iy = static_cast<int>((fy - (origin.y + ty)) / denomY);
+
+            // Query pixel information
+            PixelQueryResult queryResult = ch.sceneContent->queryPixelInfo(ix, iy);
+            if (queryResult.valid) {
+              ImGui::BeginTooltip();
+              ImGui::Text("%s", queryResult.coordinateText.c_str());
+              ImGui::Text("%s", queryResult.valueText.c_str());
+              if (queryResult.extraInfo) {
+                ImGui::Separator();
+                ImGui::Text("%s", queryResult.extraInfo->c_str());
+              }
+              ImGui::EndTooltip();
             }
           }
         }
       }
+
+      // Render the scene content (includes overlays if using CompositeNode)
+      ch.sceneContent->render(rc);
   #endif
     }
 
@@ -152,10 +181,15 @@ void build(uint16_t fbw, uint16_t fbh,
 
     // --- Phase 6a: 3D Viewport scaffolding with OrbitCamera input mapping ---
     if (enable3D) {
-    if (!ch.viewport3D) {
-      ch.viewport3D = std::make_unique<Viewport3DNode>();
+    if (!ch.sceneContent) {
+      ch.sceneContent = std::make_unique<Viewport3DNode>();
     }
-    auto *vp3d = static_cast<Viewport3DNode*>(ch.viewport3D.get());
+    auto *vp3d = dynamic_cast<Viewport3DNode*>(ch.sceneContent.get());
+    if (!vp3d) {
+      // Scene content exists but isn't a Viewport3DNode, replace it
+      ch.sceneContent = std::make_unique<Viewport3DNode>();
+      vp3d = static_cast<Viewport3DNode*>(ch.sceneContent.get());
+    }
 
   #if defined(RAVL2_WITH_IMGUI)
     // Full-window 3D viewport child (fills content region)

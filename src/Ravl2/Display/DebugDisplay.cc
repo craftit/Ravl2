@@ -650,8 +650,9 @@ namespace {
 
     // Enumerate channels and render their base images with view transform
     g_channels.forEachChannel([](ChannelState &ch){
-      if (!ch.baseImage2D) return;
-      auto *node = static_cast<Image2DNode*>(ch.baseImage2D.get());
+      if (!ch.sceneContent) return;
+      auto *node = dynamic_cast<Image2DNodeBase*>(ch.sceneContent.get());
+      if (!node) return;
       const int w = node->width, h = node->height;
       if (w <= 0 || h <= 0) return;
 
@@ -659,22 +660,31 @@ namespace {
       auto it = g_textures.find(ch.name);
       if (it == g_textures.end() || !it->second.tex) return;
 
-      if (node->format == Image2DFormat::U8 && !node->dataU8.empty()) {
-        uploadGrayscaleToTexture(it->second.tex, node->dataU8.data(), w, h);
-      } else if (node->format == Image2DFormat::F32 && !node->dataF32.empty()) {
-        // Choose normalization based on channel settings
-        float mn = node->cachedMin, mx = node->cachedMax;
-        switch (ch.norm.policy) {
-          case NormalizationPolicy::Auto:
-            // already set via cachedMin/Max
-            break;
-          case NormalizationPolicy::Fixed:
-            mn = ch.norm.minVal; mx = ch.norm.maxVal; break;
-          case NormalizationPolicy::Percentile: {
-            auto mm = percentiles(node->dataF32.data(), w, h, w*int(sizeof(float)), ch.norm.lowPct, ch.norm.highPct);
-            mn = mm.first; mx = mm.second; break; }
+      // Try uint8 node
+      if (auto* u8node = dynamic_cast<Image2DNode<uint8_t>*>(node)) {
+        const auto& data = u8node->getData();
+        if (!data.empty()) {
+          uploadGrayscaleToTexture(it->second.tex, data.data(), w, h);
         }
-        uploadFloatToTexture(it->second.tex, node->dataF32.data(), w, h, mn, mx);
+      }
+      // Try float node
+      else if (auto* f32node = dynamic_cast<Image2DNode<float>*>(node)) {
+        const auto& data = f32node->getData();
+        if (!data.empty()) {
+          // Choose normalization based on channel settings
+          float mn = f32node->getCachedMin(), mx = f32node->getCachedMax();
+          switch (ch.norm.policy) {
+            case NormalizationPolicy::Auto:
+              // already set via cachedMin/Max
+              break;
+            case NormalizationPolicy::Fixed:
+              mn = ch.norm.minVal; mx = ch.norm.maxVal; break;
+            case NormalizationPolicy::Percentile: {
+              auto mm = percentiles(data.data(), w, h, w*int(sizeof(float)), ch.norm.lowPct, ch.norm.highPct);
+              mn = mm.first; mx = mm.second; break; }
+          }
+          uploadFloatToTexture(it->second.tex, data.data(), w, h, mn, mx);
+        }
       } else {
         return;
       }
@@ -700,8 +710,9 @@ namespace {
     g_lastRects.clear();
     RenderContext rc{}; rc.framebufferWidth = fbw; rc.framebufferHeight = fbh;
     g_channels.forEachChannel([&](ChannelState &ch){
-      if (!ch.baseImage2D) return;
-      auto *node = static_cast<Image2DNode*>(ch.baseImage2D.get());
+      if (!ch.sceneContent) return;
+      auto *node = dynamic_cast<Image2DNodeBase*>(ch.sceneContent.get());
+      if (!node) return;
       node->prepare(rc);
       if (node->width > 0 && node->height > 0 && node->textureHandleIdx != UINT16_MAX) {
         const float sx = ch.view2D.scaleVector()[0];

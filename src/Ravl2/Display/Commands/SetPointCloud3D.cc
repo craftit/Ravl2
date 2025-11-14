@@ -13,11 +13,18 @@ void SetPointCloud3D::apply(ChannelRegistry &channels) {
   // Switch to 3D view for 3D payloads by default
   ch.viewMode = ViewMode::View3D;
   ch.flags.wantsFocus3D = true; // request focus on the 3D window next frame
-  // Ensure a 3D viewport node exists
-  if (!ch.viewport3D) {
-    ch.viewport3D = std::make_unique<Viewport3DNode>();
+
+  // Get or create the Viewport3DNode
+  Viewport3DNode* vp3d = nullptr;
+  if (auto* vp = dynamic_cast<Viewport3DNode*>(ch.sceneContent.get())) {
+    vp3d = vp;
+  } else {
+    // Create new Viewport3DNode as the scene content
+    auto newVp = std::make_unique<Viewport3DNode>();
+    vp3d = newVp.get();
+    ch.sceneContent = std::move(newVp);
   }
-  auto *vp3d = static_cast<Viewport3DNode*>(ch.viewport3D.get());
+
   if (vp3d) {
     vp3d->lastPointCount = positions.size();
   }

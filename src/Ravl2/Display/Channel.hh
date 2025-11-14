@@ -15,8 +15,6 @@
 
 namespace Ravl2::DebugDisplay {
 
-namespace Overlays { struct OverlayRenderer2D; }
-
 //! Exclusive view mode per channel.
 enum class ViewMode {
   View2D,
@@ -24,7 +22,7 @@ enum class ViewMode {
 };
 
 //! Per-channel state.
-//! Holds per-view settings and top-level scene nodes.
+//! Holds per-view settings and top-level scene node.
 struct ChannelState {
   std::string name;
 
@@ -44,14 +42,10 @@ struct ChannelState {
   // Display normalization settings for float images (per-view)
   NormalizationSettings norm = {};
 
-  // Base image node for 2D view (optional)
-  std::unique_ptr<ISceneNode> baseImage2D;
-
-  // 3D viewport node (optional, Phase 6a+). Manages camera and 3D view state per channel.
-  std::unique_ptr<ISceneNode> viewport3D;
-
-  // Registered overlays to render over the base image (composition over inheritance)
-  std::vector<std::shared_ptr<Overlays::OverlayRenderer2D>> overlays;
+  // Single scene content node - either 2D or 3D based on viewMode
+  // For 2D: typically a CompositeNode containing Image2DNode + Overlay2DNodes
+  // For 3D: typically a Viewport3DNode
+  std::unique_ptr<ISceneNode> sceneContent;
 };
 
 //! Registry of channels with basic thread-safe access helpers.

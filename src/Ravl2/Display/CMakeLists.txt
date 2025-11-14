@@ -17,6 +17,8 @@ add_library(Ravl2Display
     Overlays/OverlayRenderer2D.cc Overlays/OverlayRenderer2D.hh
     IRenderCommand.hh ISceneNode.hh Channel.hh
     RenderContext.hh Normalization.hh
+    CompositeNode.hh
+    Image2DNodeBase.cc Image2DNodeBase.hh
     Image2DNode.cc Image2DNode.hh
     Commands/SetBaseImage2D.cc Commands/SetBaseImage2D.hh
     Commands/SetNormalization2D.hh Commands/SetNormalization2D.cc

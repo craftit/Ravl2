@@ -19,24 +19,18 @@ static inline std::vector<SDL_FPoint> toFPoints(const Ravl2::PolyLine<float,2>& 
 
 void AddPolylineOverlay2D::apply(ChannelRegistry &channels) {
   auto &ch = channels.getOrCreateChannel(channel);
-  using namespace Ravl2::DebugDisplay::Overlays;
-  auto ov = std::make_shared<Lines2DOverlay>();
-  ov->vertices = toFPoints(poly);
-  ov->rgba = rgba;
-  ov->thickness = widthPx;
-  ov->closed = closed;
-  if (mode == Mode::Replace) {
-    ch.overlays.clear();
-  }
-  ch.overlays.push_back(std::move(ov));
-  SPDLOG_INFO("DebugDisplay: overlay polyline applied to '{}' ({} vertices, mode={}, closed={}, width={})",
-              ch.name, poly.size(), (mode==Mode::Append?"Append":"Replace"), closed?"true":"false", widthPx);
+  // TODO Phase 4: Migrate overlays to ISceneNode architecture
+  // For now, overlays are temporarily disabled during Phase 0 refactoring
+  (void)rgba;
+  (void)widthPx;
+  (void)mode;
+  SPDLOG_WARN("DebugDisplay: overlay polyline not yet supported in unified scene graph (Phase 0) - channel '{}'", ch.name);
 }
 
 void ClearOverlays2D::apply(ChannelRegistry &channels) {
   auto &ch = channels.getOrCreateChannel(channel);
-  ch.overlays.clear();
-  SPDLOG_INFO("DebugDisplay: cleared overlays for channel '{}'", ch.name);
+  // TODO Phase 4: Migrate overlays to ISceneNode architecture
+  SPDLOG_INFO("DebugDisplay: cleared overlays for channel '{}' (no-op in Phase 0)", ch.name);
 }
 
 } // namespace Ravl2::DebugDisplay
