@@ -16,6 +16,7 @@
 #include "Ravl2/Display/ISceneNode.hh"
 #include "Ravl2/Display/Image2DNode.hh"
 #include "Ravl2/Display/Image2DNodeBase.hh"
+#include "Ravl2/Display/CompositeNode.hh"
 #include "Ravl2/Display/Viewport3DNode.hh"
 #include <algorithm>
 #include <cmath>
@@ -104,6 +105,11 @@ void build(uint16_t fbw, uint16_t fbh,
       Image2DNodeBase* imageNode = nullptr;
       if (auto *img = dynamic_cast<Image2DNodeBase*>(ch.sceneContent.get())) {
         imageNode = img;
+      } else if (auto *composite = dynamic_cast<CompositeNode*>(ch.sceneContent.get())) {
+        // If it's a CompositeNode, the base image is typically the first child
+        if (composite->childCount() > 0) {
+          imageNode = dynamic_cast<Image2DNodeBase*>(composite->children()[0].get());
+        }
       }
 
   #if defined(RAVL2_WITH_BGFX)
