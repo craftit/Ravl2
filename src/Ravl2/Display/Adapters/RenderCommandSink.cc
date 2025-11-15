@@ -24,6 +24,11 @@
 namespace Ravl2::DebugDisplay {
   void initDisplay()
   {
+    // In headless mode we do not initialize SDL at all.
+    if (isHeadless()) {
+      SPDLOG_INFO("DebugDisplay: headless mode — skipping SDL initialization");
+      return;
+    }
     // Initialize SDL on the main thread (required for macOS)
     // macOS requires SDL initialization, particularly for window/menu system, on main thread
 #ifdef __APPLE__

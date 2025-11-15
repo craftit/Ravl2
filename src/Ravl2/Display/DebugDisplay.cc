@@ -17,6 +17,7 @@
 #include <SDL2/SDL.h>
 #include <algorithm>
 #include <cstdio>
+#include <cstdlib>
 #include "Ravl2/Display/Backends/BGFXContext.hh"
 #include "Ravl2/Display/Backends/ImguiBgfxBridge.hh"
 #include "Ravl2/Display/Ui/Dockspace.hh"
@@ -213,6 +214,14 @@ static std::atomic_bool g_headless{false};
 
 void setHeadlessForTests(bool on) noexcept {
   g_headless.store(on, std::memory_order_release);
+}
+
+void setHeadless(bool on) noexcept {
+  g_headless.store(on, std::memory_order_release);
+}
+
+bool isHeadless() noexcept {
+  return g_headless.load(std::memory_order_acquire);
 }
 
 // Simple Clear command used by shim and controls parsing
@@ -917,6 +926,13 @@ namespace {
 void ensureStarted(const InitOptions &opts) {
   (void)opts;
   std::call_once(g_startOnce, []() {
+    // Optionally honor environment variable to force headless in CI
+    if (!g_headless.load(std::memory_order_acquire)) {
+      if (const char* env = std::getenv("RAVL2_HEADLESS"); env && env[0] == '1') {
+        g_headless.store(true, std::memory_order_release);
+        SPDLOG_INFO("DebugDisplay: headless enabled via environment RAVL2_HEADLESS=1");
+      }
+    }
     // Note: SDL should be initialized on the main thread before this is called (via initDisplay())
 #ifdef __APPLE__
     // On macOS, when using RAVL2_MAIN, the GUI thread is the main thread

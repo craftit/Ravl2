@@ -562,6 +562,47 @@ if (ImGui::IsItemHovered()) {
 
 ## Implementation Phases
 
+### Status snapshot (2025-11-15)
+
+This section summarizes current progress versus the phases defined below. File paths refer to `src/Ravl2/Display/...` unless otherwise stated.
+
+- Phase 0 — CompositeNode + Unified ChannelState: DONE
+  - Implemented `CompositeNode` with forwarded pixel-query: `CompositeNode.hh`
+  - Unified `ChannelState` with single `sceneContent` and `ViewMode`: `Channel.hh`
+  - UI renders via `sceneContent->prepare/render`: `Ui/ChannelWindows.cc`
+  - Overlay command composes overlays: `Commands/AddPolylineOverlay2D.cc`
+
+- Phase 1 — Image2D class hierarchy: DONE
+  - `Image2DNodeBase` with final `prepare/render` and common fields: `Image2DNodeBase.hh/.cc`
+  - Templated `Image2DNode<T>` plus specializations for `uint8_t`, `float`, `PixelRGB8`: `Image2DNode.hh/.cc`
+  - SetBaseImage2D templated command wired via sink: `Commands/SetBaseImage2D.hh`, `Adapters/RenderCommandSink.cc`
+
+- Phase 2 — Query interface: MOSTLY DONE
+  - `ISceneNode` exposes `PixelQueryResult`, `supportsPixelQuery`, `queryPixelInfo`: `ISceneNode.hh`
+  - Implemented per-type formatting and queries in image nodes: `Image2DNode.hh/.cc`
+  - ImGui tooltip on hover using interface: `Ui/ChannelWindows.cc`
+  - Remaining cleanup: retire legacy `PixelInspector2D::inspect(...)` dynamic-cast path; standardize callers on interface or keep only `inspectWithQuery(...)`.
+
+- Phase 3 — RGB support: DONE (verify at runtime)
+  - `Image2DNode<PixelRGB8>` specialization present; converter registered: `Image2DNode.hh`, `Adapters/RenderCommandSink.cc`
+  - GPU upload path indicated; confirm visually with a sample RGB image.
+
+- Phase 4 — Overlays as ISceneNode: PARTIAL
+  - `Polyline2DNode` implemented as `ISceneNode`: `Overlays/Polyline2DNode.hh/.cc`
+  - Composition with base image via `CompositeNode`: `Commands/AddPolylineOverlay2D.cc`
+  - Remaining: introduce `Overlay2DNode` base; add `Points2DNode`, `Lines2DNode`; migrate any remaining overlay renderers.
+
+- Phase 5 — Integer type support: NOT STARTED
+  - Add `Image2DNode<int16_t>` and `Image2DNode<int32_t>` with normalization-to-U8 visualization.
+  - Add optional label map on `int32_t` specialization and an API/command to set it.
+  - Register converters for `Array<int16_t,2>` and `Array<int32_t,2>` in `RenderCommandSink.cc`.
+
+- Phase 6 — Advanced features: NOT STARTED
+  - Per-channel normalization for float RGB; histogram display; value statistics; copy-to-clipboard, etc.
+
+Additionally requested (2025-11-15):
+- Headless mode for tests and an API to disable the display window. See new section “Headless Mode & Testability”.
+
 ### Phase 0: Introduce CompositeNode and Unified ChannelState
 **Goal:** Unify scene graph architecture first
 
@@ -580,6 +621,10 @@ if (ImGui::IsItemHovered()) {
 - `Ui/ChannelWindows.cc` - Render via `sceneContent` interface
 - Commands that manage overlays - Use `CompositeNode`
 
+Status: Completed
+- Implemented `CompositeNode` (`CompositeNode.hh`) and unified `ChannelState` (`Channel.hh`).
+- UI and overlay commands use `sceneContent` and compose overlays (`Ui/ChannelWindows.cc`, `Commands/AddPolylineOverlay2D.cc`).
+
 ### Phase 1: Introduce Image2D Class Hierarchy
 **Goal:** Refactor image nodes without breaking functionality
 
@@ -595,6 +640,10 @@ if (ImGui::IsItemHovered()) {
 - `Image2DNode.hh` - Split into base + template
 - `Image2DNode.cc` - Split implementation
 - `Commands/SetBaseImage2D.hh/.cc` - Template command
+
+Status: Completed
+- `Image2DNodeBase` and templated/specialized `Image2DNode<T>` implemented (`Image2DNodeBase.hh/.cc`, `Image2DNode.hh/.cc`).
+- SetBaseImage2D templated command created and integrated via sink (`Commands/SetBaseImage2D.hh`, `Adapters/RenderCommandSink.cc`).
 
 ### Phase 2: Add Query Interface
 **Goal:** Enable pixel inspection through interface
@@ -612,6 +661,11 @@ if (ImGui::IsItemHovered()) {
 - `PixelInspector2D.hh/.cc` - Use interface
 - `Ui/ChannelWindows.cc` - Add tooltip rendering
 
+Status: Mostly completed
+- Interface is in `ISceneNode.hh`; `Image2DNode<T>` specializations implement `queryPixelInfo`.
+- Tooltip implemented inline in `Ui/ChannelWindows.cc` when image is hovered.
+- Remaining: remove/deprecate legacy `PixelInspector2D::inspect(...)` dynamic-cast path and standardize on interface; keep `inspectWithQuery(...)` as needed.
+
 ### Phase 3: Add RGB Support
 **Goal:** Support multi-channel color images
 
@@ -625,6 +679,10 @@ if (ImGui::IsItemHovered()) {
 - `Image2DNode.cc` - Add RGB specialization
 - `Adapters/RenderCommandSink.cc` - Register converter
 - Test with `doDisplay` using RGB images
+
+Status: Completed (pending runtime verification)
+- `Image2DNode<PixelRGB8>` present; converter registered in `RenderCommandSink.cc`.
+- Verify visually with a small RGB test image.
 
 ### Phase 4: Migrate Overlays to ISceneNode
 **Goal:** Convert overlays to unified scene node architecture
@@ -645,6 +703,10 @@ if (ImGui::IsItemHovered()) {
 - Commands that add overlays - Create nodes instead of renderers
 - Remove `ChannelState::overlays` vector (now use CompositeNode)
 
+Status: Partial
+- `Overlays/Polyline2DNode` exists and is used by `AddPolylineOverlay2D`.
+- Remaining: add `Overlay2DNode` base; add `Points2DNode`, `Lines2DNode`; migrate any remaining overlay types.
+
 ### Phase 5: Add Integer Type Support
 **Goal:** Support int16, int32 for labels/IDs
 
@@ -660,6 +722,11 @@ if (ImGui::IsItemHovered()) {
 - `Commands/SetLabelMap2D.hh/.cc` - New command (optional)
 - `Adapters/RenderCommandSink.cc` - Register converters
 
+Status: Not started
+- To implement: `Image2DNode<int16_t>` and `Image2DNode<int32_t>` with simple normalization to U8 display (per your note: “scale like HDR”).
+- Add optional label map on `int32_t` specialization and API/command for setting it.
+- Register converters for `Array<int16_t,2>` and `Array<int32_t,2>`.
+
 ### Phase 6: Advanced Features
 **Goal:** Polish and enhance usability
 
@@ -674,6 +741,48 @@ if (ImGui::IsItemHovered()) {
 - `Ui/ControlsPanel.cc` - Add channel selection
 - `Image2DNode.hh` - Add colormap support
 - `Ui/Plots.cc` - Add histogram display
+
+Status: Not started
+- Leave for later after integer types and overlay base are complete.
+
+## Headless Mode & Testability
+
+Unit tests for Display must run in environments without opening a window. Provide an API to disable window creation and UI rendering so tests can exercise data paths (commands, node queries, normalization, converters) without graphics.
+
+### Requirements
+- Tests run in CI/console without an SDL window, bgfx context, or ImGui frame loop.
+- Optionally still support pixel-query/formatting unit tests through `Image2DNode<T>::queryPixelInfo(...)` without GPU.
+- Maintain current behavior when headless mode is not enabled.
+
+### Design
+- Add a global/process-level switch to run the display in headless mode.
+  - Expose as an API call (e.g., `DebugDisplay::setHeadless(bool on)`), default OFF.
+  - Optionally support environment variable `RAVL2_HEADLESS=1` to force headless in CI.
+- When headless:
+  - Skip SDL window creation and bgfx initialization.
+  - Skip ImGui setup and UI rendering paths.
+  - Guard GPU-only fields/paths behind `RAVL2_WITH_BGFX` and headless checks.
+  - Allow constructing nodes and applying render commands so channel state can be validated.
+- Ensure image nodes’ CPU-side methods (`setData`, `queryPixelInfo`, normalization helpers) work without GPU.
+
+### Implementation tasks
+1. API toggle
+   - Add `DebugDisplay::setHeadless(bool)` and `DebugDisplay::isHeadless()`.
+   - In `Adapters/RenderCommandSink.cc`/Display startup, respect the flag and short-circuit window creation.
+2. Conditional rendering
+   - In `Ui/ChannelWindows.cc`, early-out render path if headless, but still run per-channel bookkeeping needed by tests if applicable.
+   - Ensure `RenderContext` can be default-constructed and safely used without bgfx/imgui in headless.
+3. GPU guards
+   - Audit `Image2DNodeBase::prepare/render` and specializations to no-op when headless or when `RAVL2_WITH_BGFX` is off.
+4. Tests
+   - Add unit tests that:
+     - Construct channels and push `SetBaseImage2D_*` commands for `uint8_t`, `float`, `PixelRGB8` (and later `int16_t`, `int32_t`).
+     - Validate node types, dimensions, cached min/max, and `queryPixelInfo` formatting.
+     - Run under headless mode to ensure no window is opened.
+
+### Notes
+- Current code already guards many GPU calls behind `RAVL2_WITH_BGFX` and keeps CPU arrays in nodes. This lowers the cost of adding headless mode.
+- The inline tooltip in `ChannelWindows.cc` is already optional (depends on ImGui hover state); headless mode should skip UI entirely.
 
 ## Migration Strategy
 
@@ -713,6 +822,8 @@ Public interfaces remain stable:
 
 **Recommendation:** Start with A, add C later for performance.
 
+By default scale them like they were HDR image, we can add a option to introduce false colours later.
+
 ### 2. Label Map Management
 
 **Question:** How do users provide label maps for semantic images?
@@ -723,6 +834,8 @@ Public interfaces remain stable:
 - **C. Command chaining** - Second command after image
 
 **Recommendation:** Start with A (programmatic), add B for convenience.
+
+A is fine for now.  Being able to save the mapping in the same was as a overlay maybe the best overall.
 
 ### 3. Multi-Channel Float Images
 
@@ -735,6 +848,8 @@ Public interfaces remain stable:
 
 **Recommendation:** A initially, add C with UI controls.
 
+For pixel types assume the range for floats is 0 to 1.   Normalisation is used for processing data. 
+
 ### 4. Custom Pixel Types
 
 **Question:** How do users define formatting for custom types?
@@ -745,6 +860,8 @@ Public interfaces remain stable:
 - **C. ToString() method requirement** - Simple, limited
 
 **Recommendation:** A for now (debug system, recompilation acceptable).
+
+An overloaded 'toString' method is used in quite a bit of the code already.  
 
 ## Benefits Summary
 

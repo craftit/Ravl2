@@ -15,7 +15,16 @@ void initDisplay();
 //! Optional: disable window/thread creation for tests or headless runs.
 //! When enabled, ensureStarted() will not create an SDL window nor a GUI thread.
 //! Routing and command enqueue remain available, but no frames are rendered.
+//! Prefer `setHeadless` for general use; this alias remains for test code.
 void setHeadlessForTests(bool on) noexcept;
+
+//! Enable/disable headless mode for the process.
+//! When true, no window or GUI thread will be started. Safe to call anytime
+//! before or after `ensureStarted()`; if called before, startup will be headless.
+void setHeadless(bool on) noexcept;
+
+//! Query whether headless mode is enabled.
+bool isHeadless() noexcept;
 
 //! Run the main event loop (blocking). Only needed on macOS when using RAVL2_MAIN wrapper.
 //! @param appMain Function pointer to the application's main logic

@@ -17,6 +17,8 @@ TEST_CASE("Display3D defaults to 3D when saving PointSet<float,3>") {
   using Ravl2::Point;
 
   // Ensure display stack can start; on some platforms this is required on main thread
+  // Enable headless mode so tests run without opening a window or initializing graphics backends
+  Ravl2::DebugDisplay::setHeadless(true);
   Ravl2::DebugDisplay::initDisplay();
 
   // Construct a tiny 3-point set (triangle in XY plane)

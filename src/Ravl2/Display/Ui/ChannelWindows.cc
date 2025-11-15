@@ -1,4 +1,5 @@
 #include "Ravl2/Display/Ui/ChannelWindows.hh"
+#include "Ravl2/Display/DebugDisplay.hh"
 
 #if defined(RAVL2_WITH_IMGUI) && defined(RAVL2_WITH_BGFX)
 #pragma GCC diagnostic push
@@ -40,6 +41,11 @@ void build(uint16_t fbw, uint16_t fbh,
   contentRects.clear();
   hoveredChannelOut.clear();
   hoveredImageChannelOut.clear();
+  // In headless mode we don't render any UI. Returning early keeps
+  // bookkeeping maps cleared so tests can run without a window.
+  if (DebugDisplay::isHeadless()) {
+    return;
+  }
   RenderContext rc{}; rc.framebufferWidth = fbw; rc.framebufferHeight = fbh;
   channels.forEachChannel([&](ChannelState &ch){
 #if defined(RAVL2_WITH_IMGUI)
