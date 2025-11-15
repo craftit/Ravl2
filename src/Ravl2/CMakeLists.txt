@@ -78,6 +78,7 @@ add_library(Ravl2Core
     SpatialHash.cc SpatialHash.hh
     Catch2checks.hh
     Logging.cc Logging.hh
+    EntryPnt.cc EntryPnt.hh
 )
 
 add_library(ravl2::Ravl2Core ALIAS Ravl2Core)

@@ -1,10 +1,3 @@
-#include "Ravl2/Display/DebugDisplay.hh"
-#include "Ravl2/Display/IRenderCommand.hh"
-#include "Ravl2/Display/Channel.hh"
-#include "Ravl2/Display/Image2DNode.hh"
-#include "Ravl2/Display/Normalization.hh"
-
-#include "Ravl2/ThreadedQueue.hh"
 
 #include <atomic>
 #include <chrono>
@@ -18,6 +11,15 @@
 #include <algorithm>
 #include <cstdio>
 #include <cstdlib>
+
+#include "Ravl2/EntryPnt.hh"
+#include "Ravl2/Display/DebugDisplay.hh"
+#include "Ravl2/Display/IRenderCommand.hh"
+#include "Ravl2/Display/Channel.hh"
+#include "Ravl2/Display/Image2DNode.hh"
+#include "Ravl2/Display/Normalization.hh"
+#include "Ravl2/ThreadedQueue.hh"
+
 #include "Ravl2/Display/Backends/BGFXContext.hh"
 #include "Ravl2/Display/Backends/ImguiBgfxBridge.hh"
 #include "Ravl2/Display/Ui/Dockspace.hh"
@@ -34,6 +36,7 @@
 
 #if defined(RAVL2_WITH_BGFX)
 namespace {
+
   struct NonImGuiBgfxRenderer {
     bgfx::ProgramHandle program{bgfx::kInvalidHandle};
     bgfx::UniformHandle uSampler{bgfx::kInvalidHandle};
@@ -978,9 +981,11 @@ std::expected<void, std::string> enqueue(std::shared_ptr<IRenderCommand> command
   return {};
 }
 
-int runMainLoop(int (*appMain)(int, char**), int argc, char** argv)
-{
+  namespace {
 #ifdef __APPLE__
+int runMainLoop(int argc, char** argv,FuncMainCallT appMain)
+{
+  SPDLOG_INFO("DebugDisplay: runMainLoop called on main thread (macOS)");
   g_runningOnMainThread.store(true, std::memory_order_release);
   
   // Initialize SDL on the main thread (must happen here on macOS)
@@ -994,7 +999,7 @@ int runMainLoop(int (*appMain)(int, char**), int argc, char** argv)
     SPDLOG_INFO("DebugDisplay: SDL initialized on main thread (via runMainLoop)");
   }
   
-  // Start the application main in a background thread
+  // Start the main application in a background thread
   int exitCode = 0;
   std::stop_source stopSource;
   std::stop_token stopToken = stopSource.get_token();
@@ -1012,7 +1017,7 @@ int runMainLoop(int (*appMain)(int, char**), int argc, char** argv)
     std::this_thread::sleep_for(std::chrono::milliseconds(10));
   }
   
-  // Run the GUI loop on main thread until app signals stop
+  // Run the GUI loop on the main thread until app signals stop
   guiThreadMain(stopToken);
   
   // Wait for app thread to complete
@@ -1021,9 +1026,9 @@ int runMainLoop(int (*appMain)(int, char**), int argc, char** argv)
   }
   
   return exitCode;
-#else
-  // On non-macOS platforms, just run appMain directly
-  return appMain(argc, argv);
+}
+
+  [[maybe_unused]] bool gRegisterCallback = Ravl2::setMainCall(runMainLoop);
 #endif
 }
 
