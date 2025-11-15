@@ -73,5 +73,9 @@ if(NOT TARGET imgui)
             ${imgui_external_SOURCE_DIR}
             ${imguizmo_external_SOURCE_DIR}
     )
-    #target_link_libraries(imgui PUBLIC ${GLFW_LIBRARIES} )
+
+    if(GLFW_FOUND)
+        target_link_libraries(imgui PUBLIC ${GLFW_LIBRARIES} )
+    endif()
+
 endif()
