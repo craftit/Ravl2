@@ -111,7 +111,7 @@ int RAVL2_MAIN(int argc, char** argv)
   }
 
   const std::string channel2 = "@debug:Image2:Clear";
-  if (!ioSave(channel2, imgGray)) {
+  if (!ioSave(channel2, imgRgb)) {
     SPDLOG_WARN("ioSave('{}', imgGray) did not find a writer.", channel2);
   } else {
     SPDLOG_INFO("Queued image to {}", channel2);

@@ -8,13 +8,11 @@ namespace Ravl2::DebugDisplay {
 void SetNormalization2D::apply(ChannelRegistry &channels) {
   auto &ch = channels.getOrCreateChannel(channel);
   ch.norm = settings;
-  if (ch.baseImage2D) {
+  if (ch.sceneContent) {
     // Keep node's local settings in sync for sampling paths that consult the node.
-    if (auto *node = dynamic_cast<Image2DNode*>(ch.baseImage2D.get())) {
-      node->norm = settings;
-#if defined(RAVL2_WITH_BGFX)
-      node->gpuDirty = true; // ensure GPU upload reflects new normalization for F32
-#endif
+    // Only float images use normalization
+    if (auto *node = dynamic_cast<Image2DNode<float>*>(ch.sceneContent.get())) {
+      node->setNormalization(settings);
     }
   }
   SPDLOG_INFO("DebugDisplay: Set normalization on '{}' to policy={} (fixed: [{},{}], pct: [{},{}])",

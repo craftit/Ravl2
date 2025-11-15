@@ -15,10 +15,13 @@ add_library(Ravl2Display
     InputController2D.cc InputController2D.hh
     PixelInspector2D.cc PixelInspector2D.hh
     Overlays/OverlayRenderer2D.cc Overlays/OverlayRenderer2D.hh
+    Overlays/Polyline2DNode.cc Overlays/Polyline2DNode.hh
     IRenderCommand.hh ISceneNode.hh Channel.hh
     RenderContext.hh Normalization.hh
+    CompositeNode.hh
+    Image2DNodeBase.cc Image2DNodeBase.hh
     Image2DNode.cc Image2DNode.hh
-    Commands/SetBaseImage2D.cc Commands/SetBaseImage2D.hh
+    Commands/SetBaseImage2D.hh
     Commands/SetNormalization2D.hh Commands/SetNormalization2D.cc
     Commands/AddPolylineOverlay2D.cc Commands/AddPolylineOverlay2D.hh
     Commands/SetPointCloud3D.cc Commands/SetPointCloud3D.hh
