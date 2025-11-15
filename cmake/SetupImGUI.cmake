@@ -37,6 +37,16 @@ if(NOT TARGET imgui)
         )
     endif ()
 
+    message(STATUS "Including OpenGL2 support in imgui")
+    list(APPEND _IMGUI_SRC ${IMGUI_DIR}/backends/imgui_impl_opengl2.cpp
+    )
+
+    if(GLFW_FOUND)
+        message(STATUS "Including glfw support in imgui")
+        list(APPEND _IMGUI_SRC ${IMGUI_DIR}/backends/imgui_impl_glfw.cpp
+        )
+    endif ()
+
     add_library(imgui STATIC ${_IMGUI_SRC})
 
     if(SDL2_FOUND)
