@@ -52,7 +52,7 @@ Legend: [ ] = todo, [*] = in progress, [x] = done
 - [x] Implement `enqueue()` push with backpressure / drop-oldest policy
 - [x] Channel registry (create/find/reset) and parse `:Clear` control
 - [x] Back-compat shim (optional): convert old payload-based enqueue to commands (temporary)
-- [x] ioSave → `std::shared_ptr<IRenderCommand>` via `TypeConverter` and generic `@debug` OutputFormat (command sink)
+- [x] ioSave → `std::shared_ptr<IRenderCommand>` via `TypeConverter` and generic `display://` OutputFormat (command sink)
 
 ## Phase 4 — 2D image path (MVP)
 - [x] Command sink via TypeConverter for `Array<uint8_t,2]` → `SetBaseImage2D`
@@ -88,7 +88,7 @@ Legend: [ ] = todo, [*] = in progress, [x] = done
   11. [x] Prepare extension points: define `OverlayRenderer2D` interface and trivial stubs (points/lines); add small overlay registry hook in channel windows
   11.1 [x] Define PolyLine overlay command and conversion pipeline (see Phase 5) — AddPolylineOverlay2D (Append/Replace/Closed/Color/Width).
   11.2 [x] Register TypeConverter: `PolyLine<float,2>` → `shared_ptr<IRenderCommand>` producing `AddPolylineOverlay2D`.
-  11.3 [x] Extend `@debug` sink controls: `:Mode`, `:Color`, `:Width`, `:Closed`, `:ClearOverlays`; inject channel and hints; enqueue.
+  11.3 [x] Extend `display://` sink controls: `:Mode`, `:Color`, `:Width`, `:Closed`, `:ClearOverlays`; inject channel and hints; enqueue.
   11.4 [x] Ensure `Lines2DOverlay` supports `closed` and style; render closing segment when requested.
   11.5 [x] Build + manual verify with two images and multiple overlays per channel.
   12. [x] Isolate ImPlot integration hooks so Phase 7 can add plots without touching the rendering core
@@ -135,7 +135,7 @@ Legend: [ ] = todo, [*] = in progress, [x] = done
     - [ ] Ravl2 `PointCloud3f` → `SetPointCloud3D` (positions [+ optional colors]).
     - [ ] Ravl2 `Mesh3f` (or thin adapter via `Vertex.hh` + `Tri.hh`) → `SetMesh3D` (positions, normals, indices, optional colors). Defer `TriMesh` specifics if incomplete.
     - [ ] Eigen interop: `std::vector<Eigen::Vector3f>` (and `std::span`) → `SetPointCloud3D`; optional `std::vector<uint32_t>` colors.
-  - [ ] Extend `@debug` sink URLs, e.g.: `@debug:channel=cloud:mode=3d:replace`, `@debug:channel=mesh:mode=3d:replace`.
+  - [ ] Extend `display://` sink URLs, e.g.: `display://:channel=cloud:mode=3d:replace`, `@display://channel=mesh:mode=3d:replace`.
   - [ ] Controls: `:Clear3D`, `:Camera(fov,near,far)`, `:PointSize(x)`, `:Shading(Lambert/Normals/Color)`; apply to channel state.
   - [ ] Acceptance: data pushed via either Ravl2 geometry or Eigen containers renders identically.
 

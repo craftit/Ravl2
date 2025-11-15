@@ -797,7 +797,7 @@ All existing code continues to work:
 ### API Stability
 
 Public interfaces remain stable:
-- `ioSave("@debug:Channel", array)` unchanged
+- `ioSave("display://Channel", array)` unchanged
 - URL parameters (`:Clear`, `:Norm=`) unchanged
 - Channel registry interface unchanged
 - Commands remain copyable/movable
@@ -829,8 +829,8 @@ By default scale them like they were HDR image, we can add a option to introduce
 **Question:** How do users provide label maps for semantic images?
 
 **Options:**
-- **A. Separate API call** - `setLabelMap("@debug:Channel", map)`
-- **B. URL parameter** - `@debug:Channel:Labels=path/to/json`
+- **A. Separate API call** - `setLabelMap("display://Channel", map)`
+- **B. URL parameter** - `display://Channel:Labels=path/to/json`
 - **C. Command chaining** - Second command after image
 
 **Recommendation:** Start with A (programmatic), add B for convenience.

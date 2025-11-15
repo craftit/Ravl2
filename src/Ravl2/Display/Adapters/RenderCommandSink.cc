@@ -21,7 +21,8 @@
 #include "Ravl2/Display/Commands/SetPointCloud3D.hh"
 #include "Ravl2/Pixel/Pixel.hh"
 
-namespace Ravl2::DebugDisplay {
+namespace Ravl2::DebugDisplay
+{
   void initDisplay()
   {
     // In headless mode we do not initialize SDL at all.
@@ -44,6 +45,7 @@ namespace Ravl2::DebugDisplay {
       SPDLOG_INFO("DebugDisplay: SDL initialized on main thread");
     }
   }
+
 namespace {
 
 // Parse @debug URL of the form "@debug:Channel[:Control[:Control...]]"
@@ -52,8 +54,9 @@ struct DebugUrlParse {
   std::string controls; // concatenated suffix starting from first ':' after channel
 };
 
-static std::optional<DebugUrlParse> parseDebugUrl(const std::string &url) {
-  constexpr std::string_view kPrefix = "@debug:";
+std::optional<DebugUrlParse> parseDisplayUrl(const std::string &url) {
+  constexpr std::string_view kPrefix = "display://";
+  SPDLOG_INFO("Parsing url: '{}' ",url);
   if (url.rfind(kPrefix.data(), 0) != 0) return std::nullopt;
   DebugUrlParse out;
   std::string rest = url.substr(kPrefix.size());
@@ -80,7 +83,8 @@ struct ClearChannelCommand : public IRenderCommand {
 };
 
 // Converters: Array<uint8_t,2> -> shared_ptr<IRenderCommand>
-static std::shared_ptr<IRenderCommand> makeCmdFromU8Array(const Array<uint8_t,2> &img)
+
+std::shared_ptr<IRenderCommand> makeCmdFromU8Array(const Array<uint8_t,2> &img)
 {
   auto cmd = std::make_shared<SetBaseImage2D_U8>(std::string{} /*channel set by sink from URL*/);
   cmd->width = img.range()[1].size();
@@ -95,7 +99,7 @@ static std::shared_ptr<IRenderCommand> makeCmdFromU8Array(const Array<uint8_t,2>
 }
 
 // Converters: Array<float,2> -> shared_ptr<IRenderCommand>
-static std::shared_ptr<IRenderCommand> makeCmdFromF32Array(const Array<float,2> &img)
+std::shared_ptr<IRenderCommand> makeCmdFromF32Array(const Array<float,2> &img)
 {
   auto cmd = std::make_shared<SetBaseImage2D_F32>(std::string{} /*channel set by sink from URL*/);
   cmd->width = img.range()[1].size();
@@ -110,7 +114,7 @@ static std::shared_ptr<IRenderCommand> makeCmdFromF32Array(const Array<float,2> 
 }
 
 // Converter: Array<PixelRGB8,2> -> shared_ptr<IRenderCommand>
-static std::shared_ptr<IRenderCommand> makeCmdFromRGB8Array(const Array<PixelRGB8,2> &img)
+ std::shared_ptr<IRenderCommand> makeCmdFromRGB8Array(const Array<PixelRGB8,2> &img)
 {
   auto cmd = std::make_shared<SetBaseImage2D_RGB8>(std::string{} /*channel set by sink from URL*/);
   cmd->width = img.range()[1].size();
@@ -125,7 +129,7 @@ static std::shared_ptr<IRenderCommand> makeCmdFromRGB8Array(const Array<PixelRGB
 }
 
 // Converter: Array<int16_t,2> -> shared_ptr<IRenderCommand>
-static std::shared_ptr<IRenderCommand> makeCmdFromI16Array(const Array<int16_t,2> &img)
+ std::shared_ptr<IRenderCommand> makeCmdFromI16Array(const Array<int16_t,2> &img)
 {
   auto cmd = std::make_shared<SetBaseImage2D_I16>(std::string{} /*channel set by sink from URL*/);
   cmd->width = img.range()[1].size();
@@ -140,7 +144,7 @@ static std::shared_ptr<IRenderCommand> makeCmdFromI16Array(const Array<int16_t,2
 }
 
 // Converter: Array<int32_t,2> -> shared_ptr<IRenderCommand>
-static std::shared_ptr<IRenderCommand> makeCmdFromI32Array(const Array<int32_t,2> &img)
+ std::shared_ptr<IRenderCommand> makeCmdFromI32Array(const Array<int32_t,2> &img)
 {
   auto cmd = std::make_shared<SetBaseImage2D_I32>(std::string{} /*channel set by sink from URL*/);
   cmd->width = img.range()[1].size();
@@ -155,7 +159,7 @@ static std::shared_ptr<IRenderCommand> makeCmdFromI32Array(const Array<int32_t,2
 }
 
 // Converter: PolyLine<float,2> -> shared_ptr<IRenderCommand> (AddPolylineOverlay2D)
-static std::shared_ptr<IRenderCommand> makeCmdFromPolyLine2f(const Ravl2::PolyLine<float,2> &poly)
+ std::shared_ptr<IRenderCommand> makeCmdFromPolyLine2f(const Ravl2::PolyLine<float,2> &poly)
 {
   auto cmd = std::make_shared<AddPolylineOverlay2D>(poly);
   // Channel + style hints configured by sink from URL
@@ -163,7 +167,7 @@ static std::shared_ptr<IRenderCommand> makeCmdFromPolyLine2f(const Ravl2::PolyLi
 }
 
 // Converter: PointSet<float,3> -> shared_ptr<IRenderCommand> (SetPointCloud3D)
-static std::shared_ptr<IRenderCommand> makeCmdFromPointSet3f(const Ravl2::PointSet<float,3> &ps)
+ std::shared_ptr<IRenderCommand> makeCmdFromPointSet3f(const Ravl2::PointSet<float,3> &ps)
 {
   auto cmd = std::make_shared<SetPointCloud3D>(std::string{} /*channel set by sink from URL*/);
   cmd->positions.reserve(ps.size());
@@ -188,11 +192,11 @@ static std::shared_ptr<IRenderCommand> makeCmdFromPointSet3f(const Ravl2::PointS
   return true;
 }();
 
-static inline uint32_t packColorRGBA255(uint8_t r,uint8_t g,uint8_t b,uint8_t a) noexcept {
+ inline uint32_t packColorRGBA255(uint8_t r,uint8_t g,uint8_t b,uint8_t a) noexcept {
   return (uint32_t(a) << 24) | (uint32_t(b) << 16) | (uint32_t(g) << 8) | uint32_t(r);
 }
 
-static inline bool parseColorRgba(std::string val, uint32_t &out) {
+ inline bool parseColorRgba(std::string val, uint32_t &out) {
   // Accept #RRGGBBAA or r,g,b,a (floats 0..1)
   if (!val.empty() && val[0] == '#') {
     if (val.size() == 9) {
@@ -224,7 +228,7 @@ static inline bool parseColorRgba(std::string val, uint32_t &out) {
 }
 
 struct OutputFormatDebugDisplayCmdSink : public Ravl2::OutputFormat {
-  OutputFormatDebugDisplayCmdSink() : OutputFormat("DebugDisplayCmdSink", "", "", 1100) {}
+  OutputFormatDebugDisplayCmdSink() : OutputFormat("DebugDisplayCmdSink", "", "display", 1100) {}
 
   static std::optional<NormalizationSettings> parseNormControls(const std::string &controls) {
     if (controls.empty()) return std::nullopt;
@@ -294,7 +298,7 @@ struct OutputFormatDebugDisplayCmdSink : public Ravl2::OutputFormat {
   }
 
   std::optional<StreamOutputPlan> probe(const ProbeOutputContext &ctx) override {
-    auto parsed = parseDebugUrl(ctx.m_url);
+    auto parsed = parseDisplayUrl(ctx.m_url);
     if (!parsed) return std::nullopt;
 
     // Target sink type: shared_ptr<IRenderCommand>
@@ -310,7 +314,7 @@ struct OutputFormatDebugDisplayCmdSink : public Ravl2::OutputFormat {
 
     auto stream = std::make_shared<StreamOutputCall<CmdPtr>>([url=ctx.m_url](const CmdPtr &cmd, std::streampos pos) -> std::streampos {
       (void)pos;
-      auto parsed2 = parseDebugUrl(url);
+      auto parsed2 = parseDisplayUrl(url);
       if (!parsed2) return std::streampos(0);
 
       DebugDisplay::ensureStarted({});
@@ -400,7 +404,7 @@ struct OutputFormatDebugDisplayCmdSink : public Ravl2::OutputFormat {
 };
 
 [[maybe_unused]] bool g_registerCmdSink = [](){
-  SPDLOG_DEBUG("Registering DebugDisplay @debug command sink (shared_ptr<IRenderCommand>)");
+  SPDLOG_DEBUG("Registering DebugDisplay 'display' command sink (shared_ptr<IRenderCommand>)");
   return outputFormatMap().add(std::make_shared<OutputFormatDebugDisplayCmdSink>());
 }();
 

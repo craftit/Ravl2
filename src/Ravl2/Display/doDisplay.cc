@@ -103,14 +103,14 @@ int RAVL2_MAIN(int argc, char** argv)
   //Ravl2::DebugDisplay::ensureStarted({});
 
   // Save to the debug display channel. This will enqueue a SetBaseImage2D command via the @debug adapter.
-  const std::string channel1 = "@debug:Image1:Clear";
+  const std::string channel1 = "display://Image1:Clear";
   if (!ioSave(channel1, imgGray)) {
     SPDLOG_WARN("ioSave('{}', imgGray) did not find a writer.", channel1);
   } else {
     SPDLOG_INFO("Queued image to {}", channel1);
   }
 
-  const std::string channel2 = "@debug:Image2:Clear";
+  const std::string channel2 = "display://Image2:Clear";
   if (!ioSave(channel2, imgRgb)) {
     SPDLOG_WARN("ioSave('{}', imgGray) did not find a writer.", channel2);
   } else {
@@ -122,7 +122,7 @@ int RAVL2_MAIN(int argc, char** argv)
                          Point<float,3>{1.f, 0.f, 0.f},
                          Point<float,3>{0.f, 1.f, 0.f} });
 
-  const std::string url = "@debug:Cloud1"; // no mode hint; should infer 3D by payload type
+  const std::string url = "display://Cloud1"; // no mode hint; should infer 3D by payload type
   bool ok = ioSave(url, ps);
 
   // Add a simple test polyline overlay to Image1 so we can verify overlay rendering
@@ -131,7 +131,7 @@ int RAVL2_MAIN(int argc, char** argv)
     const int H = imgGray.range()[0].size();
     const int W = imgGray.range()[1].size();
     Poly2f poly({ {10.f, 10.f}, {static_cast<float>(W-10), 10.f}, {static_cast<float>(W-10), static_cast<float>(H-10)} });
-    const std::string overlay1 = "@debug:Image1:Mode=Append:Color=#00ff00ff:Width=2"; // green 2px line
+    const std::string overlay1 = "display://Image1:Mode=Append:Color=#00ff00ff:Width=2"; // green 2px line
     if (!ioSave(overlay1, poly)) {
       SPDLOG_WARN("ioSave('{}', polyline) did not find a writer.", overlay1);
     } else {

@@ -3,7 +3,7 @@
 
 The goal of this c++ module is to allow 1d, 2d and 3d image processing to be debugged with minimal impact on the code.
 
-The mechanism to interface to the library is the Ravl2::ioSave("@debug:[Name]",xyz). Where xyz maybe an image or other object. There is an automatic type converter mechanism that 
+The mechanism to interface to the library is the Ravl2::ioSave("display://[Name]",xyz). Where xyz maybe an image or other object. There is an automatic type converter mechanism that 
 allows type conversion, which can convert the native types to render objects. These render objects can then manage interactions such as querying the pixel values.
 When floating point data is saved the range can be normalised to that which is displayed, but the original values should be queueable.
 It should be possible to zoom and pan around the 2d workspace. 
@@ -56,14 +56,14 @@ namespace Ravl2 {
   ... do some processing ...
   
   // Save the image we're processing to the display
-  ioSave("@debug:EdgeMap",edgemap);
+  ioSave("display://EdgeMap",edgemap);
   
   std::vector<Point<float,2> > edges;
 
   ... some more processing ...
   
   // Add an overlay with the points we found
-  ioSave("@debug:EdgeMap",edges);
+  ioSave("display://EdgeMap",edges);
   
 }  
 ```
@@ -81,12 +81,12 @@ namespace Ravl2 {
     
     ... do some processing ...
     
-    ioSave("@debug:EdgeMap:Clear",edgemap);
+    ioSave("display://EdgeMap:Clear",edgemap);
 
     ... some more processing ...
     
     // Add an overlay with the points we found
-    ioSave("@debug:EdgeMap",edges);
+    ioSave("display://EdgeMap",edges);
     
   }
 }  
