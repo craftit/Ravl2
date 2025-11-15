@@ -13,7 +13,6 @@ add_library(Ravl2Display
     Ui/StatusBar.cc Ui/StatusBar.hh
     Ui/Plots.cc Ui/Plots.hh
     InputController2D.cc InputController2D.hh
-    Overlays/OverlayRenderer2D.cc Overlays/OverlayRenderer2D.hh
     Overlays/Polyline2DNode.cc Overlays/Polyline2DNode.hh
     IRenderCommand.hh ISceneNode.hh Channel.hh
     RenderContext.hh Normalization.hh
