@@ -8,8 +8,8 @@
 
 namespace Ravl2::DebugDisplay {
 
-//! Initialize display subsystem. Must be called on the main thread.
-//! On macOS, this initializes SDL which must happen on the main thread.
+//! Initialise the display subsystem. Must be called on the main thread.
+//! On macOS, this initialises SDL which must happen on the main thread.
 void initDisplay();
 
 //! Optional: disable window/thread creation for tests or headless runs.
@@ -35,7 +35,7 @@ int runMainLoop(int (*appMain)(int, char**), int argc, char** argv);
 
 struct IRenderCommand; // fwd decl
 
-//! Initialization options for the debug display subsystem.
+//! Initialisation options for the debug display subsystem.
 struct InitOptions {
   int maxFps = 60;            //!< Target max FPS for rendering.
   bool startHidden = false;   //!< Start minimized/hidden (if supported).
@@ -49,17 +49,8 @@ void ensureStarted(const InitOptions &opts = {});
 //! Thread-safe.
 //! @param command Shared pointer to a command; may be referenced elsewhere until applied.
 //! @return std::expected<void, std::string> with error message on failure.
-std::expected<void, std::string> enqueue(
-    std::shared_ptr<IRenderCommand> command);
+std::expected<void, std::string> enqueue(std::shared_ptr<IRenderCommand> command);
 
-//! Deprecated shim: payload-based enqueue retained temporarily for migration.
-[[deprecated("Use enqueue(shared_ptr<IRenderCommand>) instead")]]
-std::expected<void, std::string> enqueue(
-    std::string_view channel,
-    std::type_index type,
-    std::shared_ptr<const void> payload,
-    uint32_t flags,
-    std::string_view controls);
 
 } // namespace Ravl2::DebugDisplay
 

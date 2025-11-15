@@ -26,7 +26,7 @@
 #include "Ravl2/Display/Ui/StatusBar.hh"
 #include "Ravl2/Display/Ui/Plots.hh"
 #include "Ravl2/Display/InputController2D.hh"
-#include "Ravl2/Display/PixelInspector2D.hh"
+
 #if defined(RAVL2_WITH_BGFX)
 #include <bgfx/bgfx.h>
 #include <bgfx/platform.h>
@@ -975,25 +975,6 @@ std::expected<void, std::string> enqueue(std::shared_ptr<IRenderCommand> command
   } else {
     g_invalidated.store(true, std::memory_order_release);
   }
-  return {};
-}
-
-// Deprecated shim: type-erased payload path — currently only honors :Clear
-std::expected<void, std::string> enqueue(std::string_view channel,
-                                         std::type_index type,
-                                         std::shared_ptr<const void> payload,
-                                         uint32_t flags,
-                                         std::string_view controls)
-{
-  (void)type; (void)payload; (void)flags;
-  // Convert :Clear control to a command; otherwise no-op and success
-  std::shared_ptr<IRenderCommand> cmd;
-  const bool hasClearCtrl = (!controls.empty() && controls.find(":Clear") != std::string_view::npos);
-  if (hasClearCtrl) {
-    cmd = std::make_shared<Commands::ClearChannelCommand>(std::string{channel});
-    return enqueue(cmd);
-  }
-  // No recognized control; accept as no-op for backward compatibility
   return {};
 }
 
