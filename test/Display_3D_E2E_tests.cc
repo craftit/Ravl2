@@ -26,7 +26,7 @@ TEST_CASE("Display3D defaults to 3D when saving PointSet<float,3>") {
                          Point<float,3>{1.f, 0.f, 0.f},
                          Point<float,3>{0.f, 1.f, 0.f} });
 
-  const std::string url = "@debug:Cloud1"; // no mode hint; should infer 3D by payload type
+  const std::string url = "display://Cloud1"; // no mode hint; should infer 3D by payload type
   bool ok = ioSave(url, ps);
 
   REQUIRE(ok); // Writer (debug display sink) should accept PointSet<float,3>
