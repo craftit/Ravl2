@@ -9,7 +9,9 @@ namespace Ravl2
 {
   // Call to ensure that the conversion functions are registered
   void initPlaneConversion()
-  {}
+  {
+    initPixel();
+  }
 
   // Explicit instantiations for common plane types
   // 2D planes with various scaling factors - Luminance planes
@@ -36,6 +38,11 @@ namespace Ravl2
   template class PixelPlane<uint8_t, 2, ImageChannel::Green, 1, 1>;
   template class PixelPlane<uint8_t, 2, ImageChannel::Blue, 1, 1>;
   template class PixelPlane<uint8_t, 2, ImageChannel::Alpha, 1, 1>;
+
+  template class PixelPlane<float, 2, ImageChannel::Red, 1, 1>;
+  template class PixelPlane<float, 2, ImageChannel::Green, 1, 1>;
+  template class PixelPlane<float, 2, ImageChannel::Blue, 1, 1>;
+  template class PixelPlane<float, 2, ImageChannel::Alpha, 1, 1>;
 
   // 3D volumes
   template class PixelPlane<uint8_t, 3, ImageChannel::Red, 1, 1, 1>;
@@ -71,6 +78,12 @@ namespace Ravl2
     PixelPlane<uint8_t, 2, ImageChannel::Red, 1, 1>,
     PixelPlane<uint8_t, 2, ImageChannel::Green, 1, 1>,
     PixelPlane<uint8_t, 2, ImageChannel::Blue, 1, 1>
+  >;
+
+  template class PlanarImage<2,
+  PixelPlane<float, 2, ImageChannel::Red, 1, 1>,
+  PixelPlane<float, 2, ImageChannel::Green, 1, 1>,
+  PixelPlane<float, 2, ImageChannel::Blue, 1, 1>
   >;
 
   // 3D volume example

@@ -13,6 +13,7 @@
 #include "Ravl2/IO/InputStreamContainer.hh"
 #include "Ravl2/IO/Save.hh"
 #include "Ravl2/Pixel/Pixel.hh"
+#include "Ravl2/Pixel/PixelPlane.hh"
 #include "Ravl2/Pixel/Colour.hh"
 #include "Ravl2/OpenCV/Display.hh"
 
@@ -94,15 +95,21 @@ namespace Ravl2
       // Ideally this would be delt with in the type converter, but opencv gives
       // us no information about the colour space of the image.
       int readMode = cv::IMREAD_UNCHANGED;
-      if(ctx.m_targetType == typeid(Array<uint8_t, 2>) ) {
+      if(ctx.m_targetType == typeid(Array<uint8_t, 2>) || ctx.m_targetType == typeid(Array<PixelY8, 2>)) {
         readMode = cv::IMREAD_GRAYSCALE;
-      } else if(ctx.m_targetType == typeid(Array<uint16_t, 2>) || ctx.m_targetType == typeid(Array<int16_t, 2>) || ctx.m_targetType == typeid(Array<PixelZ16, 2>)
+      } else if(ctx.m_targetType == typeid(Array<uint16_t, 2>)
+        || ctx.m_targetType == typeid(Array<int16_t, 2>)
+        || ctx.m_targetType == typeid(Array<PixelZ16, 2>)
+        || ctx.m_targetType == typeid(Array<PixelY16, 2>)
          || ctx.m_targetType == typeid(Array<int8_t, 2>)
          || ctx.m_targetType == typeid(Array<int32_t, 2>)
          || ctx.m_targetType == typeid(Array<float, 2>) || ctx.m_targetType == typeid(Array<double, 2>)) {
         readMode = cv::IMREAD_GRAYSCALE + cv::IMREAD_ANYDEPTH;
       } else if(ctx.m_targetType == typeid(Array<PixelBGR8, 2>) || ctx.m_targetType == typeid(Array<PixelRGB8, 2>)
-                || ctx.m_targetType == typeid(Array<PixelRGBA8, 2>) || ctx.m_targetType == typeid(Array<PixelBGRA8, 2>)) {
+                || ctx.m_targetType == typeid(Array<PixelRGBA8, 2>) || ctx.m_targetType == typeid(Array<PixelBGRA8, 2>)
+                || ctx.m_targetType == typeid(RGBPlanarImage<float>) || ctx.m_targetType == typeid(RGBAPlanarImage<float>)
+                || ctx.m_targetType == typeid(RGBPlanarImage<uint8_t>) || ctx.m_targetType == typeid(RGBPlanarImage<uint16_t>)
+                ) {
         readMode = cv::IMREAD_COLOR;
       }
 
@@ -218,9 +225,6 @@ namespace Ravl2
         case CV_64FC1: {
           thePlan = conversionPlan<double>(ctx);
         } break;
-        case CV_8UC3: {
-          thePlan = conversionPlan<PixelBGR8>(ctx);
-        } break;
         default: break;
       }
 
@@ -286,6 +290,7 @@ namespace Ravl2
     [[maybe_unused]] bool g_reg5 = registerConversion([](Array<float, 2> img) -> cv::Mat { return toCvMat(img); }, 0.95f);
     [[maybe_unused]] bool g_reg6 = registerConversion([](Array<double, 2> img) -> cv::Mat { return toCvMat(img); }, 0.95f);
     [[maybe_unused]] bool g_reg7 = registerConversion([](Array<PixelBGR8, 2> img) -> cv::Mat { return toCvMat(img); }, 0.95f);
+    //[[maybe_unused]] bool g_reg8 = registerConversion([](Array<PixelBGR32F, 2> img) -> cv::Mat { return toCvMat(img); }, 0.95f);
 
   }// namespace
 }// namespace Ravl2

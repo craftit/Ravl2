@@ -85,6 +85,14 @@ namespace Ravl2
     [[maybe_unused]] bool g_reg12 = registerConversion(convert<Array<PixelZ32F, 2>, Array<PixelZ16, 2>>, 1.0f);
     [[maybe_unused]] bool g_reg13 = registerConversion(convert<Array<uint8_t, 2>, Array<PixelY8, 2>>, 0.33f);
 
+    [[maybe_unused]] bool g_reg14 = registerConversion(convert<Array<PixelRGB32F, 2>, Array<PixelRGB8, 2>>, 1.0f);
+    [[maybe_unused]] bool g_reg15 = registerConversion(convert<Array<PixelRGB8, 2>, Array<PixelRGB32F, 2>>, 0.25f);
+    [[maybe_unused]] bool g_reg16 = registerConversion(convert<Array<PixelY8, 2>, Array<PixelY32F, 2>>, 0.25f);
+    [[maybe_unused]] bool g_reg17 = registerConversion(convert<Array<PixelY32F, 2>, Array<PixelY8, 2>>, 0.25f);
+    [[maybe_unused]] bool g_reg18 = registerConversion(convert<Array<PixelY32F, 2>, Array<PixelRGB32F, 2>>, 0.33f);
+    [[maybe_unused]] bool g_reg19 = registerConversion(convert<Array<PixelRGB8, 2>, Array<PixelY8, 2>>, 1.00f);
+    [[maybe_unused]] bool g_reg20 = registerConversion(convert<Array<PixelBGR8, 2>, Array<PixelY8, 2>>, 1.00f);
+
   }// namespace
 
   const std::array<int, 256> ColorConversion::mRGBcYUV_ubLookup = UBLookup();
