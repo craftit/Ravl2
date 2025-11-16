@@ -128,6 +128,23 @@ std::shared_ptr<IRenderCommand> makeCmdFromF32Array(const Array<float,2> &img)
   return cmd;
 }
 
+#if 0
+  // Converter: Array<PixelRGB8,2> -> shared_ptr<IRenderCommand>
+  std::shared_ptr<IRenderCommand> makeCmdFromRGB32FArray(const Array<PixelRGB32F,2> &img)
+{
+  auto cmd = std::make_shared<SetBaseImage2D_RGB32F>(std::string{} /*channel set by sink from URL*/);
+  cmd->width = img.range()[1].size();
+  cmd->height = img.range()[0].size();
+  cmd->data.resize(static_cast<size_t>(cmd->width) * static_cast<size_t>(cmd->height));
+  for (int y=0; y<cmd->height; ++y) {
+    for (int x=0; x<cmd->width; ++x) {
+      cmd->data[size_t(y)*size_t(cmd->width) + size_t(x)] = img[{y, x}];
+    }
+  }
+  return cmd;
+}
+#endif
+
 // Converter: Array<int16_t,2> -> shared_ptr<IRenderCommand>
  std::shared_ptr<IRenderCommand> makeCmdFromI16Array(const Array<int16_t,2> &img)
 {
@@ -181,14 +198,14 @@ std::shared_ptr<IRenderCommand> makeCmdFromF32Array(const Array<float,2> &img)
 // Register type conversions when this TU is loaded.
 [[maybe_unused]] bool g_registerConverters = [](){
   SPDLOG_DEBUG("Registering TypeConverter: Array<u8,2>/Array<f32,2>/Array<RGB8,2>/Array<i16,2>/Array<i32,2>/PolyLine2f/PointSet3f -> shared_ptr<IRenderCommand>");
-  bool ok1 = registerConversion(makeCmdFromU8Array, 1.0f);
-  bool ok2 = registerConversion(makeCmdFromF32Array, 0.95f);
-  bool ok3 = registerConversion(makeCmdFromRGB8Array, 1.0f);
-  bool ok4 = registerConversion(makeCmdFromI16Array, 1.0f);
-  bool ok5 = registerConversion(makeCmdFromI32Array, 1.0f);
-  bool ok6 = registerConversion(makeCmdFromPolyLine2f, 1.0f);
-  bool ok7 = registerConversion(makeCmdFromPointSet3f, 1.0f);
-  (void)ok1; (void)ok2; (void)ok3; (void)ok4; (void)ok5; (void)ok6; (void)ok7;
+  [[maybe_unused]] bool ok1 = registerConversion(makeCmdFromU8Array, 1.0f);
+  [[maybe_unused]] bool ok2 = registerConversion(makeCmdFromF32Array, 0.95f);
+  [[maybe_unused]] bool ok3 = registerConversion(makeCmdFromRGB8Array, 1.0f);
+  [[maybe_unused]] bool ok4 = registerConversion(makeCmdFromI16Array, 1.0f);
+  [[maybe_unused]] bool ok5 = registerConversion(makeCmdFromI32Array, 1.0f);
+  [[maybe_unused]] bool ok6 = registerConversion(makeCmdFromPolyLine2f, 1.0f);
+  [[maybe_unused]] bool ok7 = registerConversion(makeCmdFromPointSet3f, 1.0f);
+  //[[maybe_unused]] bool ok8 = registerConversion(makeCmdFromRGB32FArray, 1.0f);
   return true;
 }();
 

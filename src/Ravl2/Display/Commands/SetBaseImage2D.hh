@@ -48,6 +48,7 @@ struct SetBaseImage2D : public IRenderCommand {
 using SetBaseImage2D_U8 = SetBaseImage2D<uint8_t>;
 using SetBaseImage2D_F32 = SetBaseImage2D<float>;
 using SetBaseImage2D_RGB8 = SetBaseImage2D<PixelRGB8>;
+//using SetBaseImage2D_RGB32F = SetBaseImage2D<PixelRGB32F>;
 using SetBaseImage2D_I16 = SetBaseImage2D<int16_t>;
 using SetBaseImage2D_I32 = SetBaseImage2D<int32_t>;
 
