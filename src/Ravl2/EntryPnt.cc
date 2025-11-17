@@ -20,7 +20,7 @@ namespace Ravl2
 
   bool setMainCall(FuncMainCallManagerT entryPoint)
   {
-    SPDLOG_INFO("Ravl2::setMainCall: setting custom main call manager {} ",static_cast<bool>(entryPoint));
+    SPDLOG_TRACE("Ravl2::setMainCall: setting custom main call manager {} ",static_cast<bool>(entryPoint));
     mainFuncPtr() = entryPoint;
     return true;
   }

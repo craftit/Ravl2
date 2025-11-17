@@ -16,6 +16,8 @@ if(PROJECT_IS_TOP_LEVEL OR TEST_INSTALLED_VERSION)
 endif()
 
 # ---- Dependencies ----
+# The following prevents the tests from being deleted if test discovery fails
+#set(CMAKE_CATCH_DISCOVER_TESTS_DISCOVERY_MODE PRE_TEST)
 
 find_package(Catch2 3 REQUIRED)
 
@@ -77,6 +79,7 @@ add_executable(tests
         test_MemoryMediaContainer.cc
         test_VideoFrame.cc
         test_VideoIO.cc
+        test_imageio_jpeg.cc
         test_types_duration.cc
         test_types.cc
         Display_Normalization_tests.cc
@@ -94,6 +97,7 @@ target_link_libraries(
           ravl2::Ravl2ImageSegmentation
           ravl2::Ravl2x3D
           ravl2::Ravl2OpenCV
+          ravl2::Ravl2ImageIO
           ravl2::Ravl2Video
           ravl2::Ravl2Optimise
           Catch2::Catch2WithMain

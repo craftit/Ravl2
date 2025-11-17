@@ -50,6 +50,7 @@ namespace Ravl2
     }
 
     //! Loading images.
+    //! Given a probe 'ctx' load the image in the format with the lowest conversion loss.
 
     template <typename ViaPixelT, unsigned N = 2>
     std::optional<ConversionChain> conversionPlan(const ProbeInputContext &ctx)
