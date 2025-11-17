@@ -147,7 +147,7 @@ namespace Ravl2
     //! @return true if the element was removed from the queue, false if the queue is empty
     bool tryPop(DataT &data)
     {
-      std::unique_lock<std::mutex> lock(m_mutex);
+      std::unique_lock lock(m_mutex);
       if(m_queue.empty()) {
         return false;
       }
@@ -155,6 +155,16 @@ namespace Ravl2
       m_queue.pop();
       m_conditionPush.notify_one();
       return true;
+    }
+
+    //! @brief Drain the queue of all entries.
+    void drain()
+    {
+      std::unique_lock lock(m_mutex);
+      while(!m_queue.empty()) {
+        m_queue.pop();
+      }
+      m_conditionPush.notify_all();
     }
 
     //! @brief Get the number of elements in the queue.
