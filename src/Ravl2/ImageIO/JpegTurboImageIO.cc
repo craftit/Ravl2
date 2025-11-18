@@ -32,8 +32,42 @@ namespace Ravl2
 
     using FilePtr = std::unique_ptr<FILE, FileCloser>;
 
+    //! RAII context that keeps the file open and a prepared jpeg_decompress_struct
+    //! Header is read in the constructor so we don't need to reopen/parse again later.
+    struct JpegDecodeContext {
+      FilePtr file;                // Open file handle (stdin source for libjpeg)
+      jpeg_decompress_struct cinfo{}; // Decompress struct
+      jpeg_error_mgr jerr{};          // Error manager
+      bool created{false};
+      bool headerOk{false};
+      bool consumed{false};          // Ensure single-use
+
+      explicit JpegDecodeContext(const std::string &filename)
+      {
+        file.reset(std::fopen(filename.c_str(), "rb"));
+        if (!file) {
+          return;
+        }
+        cinfo.err = jpeg_std_error(&jerr);
+        jpeg_create_decompress(&cinfo);
+        created = true;
+        jpeg_stdio_src(&cinfo, file.get());
+        headerOk = (jpeg_read_header(&cinfo, TRUE) == JPEG_HEADER_OK);
+      }
+
+      ~JpegDecodeContext()
+      {
+        if (created) {
+          jpeg_destroy_decompress(&cinfo);
+        }
+      }
+      // Non-copyable
+      JpegDecodeContext(const JpegDecodeContext&) = delete;
+      JpegDecodeContext& operator=(const JpegDecodeContext&) = delete;
+    };
+
     template <typename ViaT>
-    std::optional<StreamInputPlan> buildPlanFor(const ProbeInputContext &ctx)
+    std::optional<StreamInputPlan> buildPlanFor(const ProbeInputContext &ctx, std::shared_ptr<JpegDecodeContext> sharedCtx)
     {
       // Find conversion chain from ViaT -> target
       auto chainOpt = typeConverterMap().find(ctx.m_targetType, typeid(ViaT));
@@ -45,29 +79,18 @@ namespace Ravl2
       }
 
       // Create a decoder stream that emits ViaT once
-      auto strm = std::make_shared<StreamInputCall<ViaT>>([filename = ctx.m_filename](std::streampos &pos) -> std::optional<ViaT>
+      auto strm = std::make_shared<StreamInputCall<ViaT>>([sharedCtx, verbose = ctx.m_verbose](std::streampos &pos) -> std::optional<ViaT>
       {
         if (pos != 0) {
           return std::nullopt;
         }
-
-        FilePtr infile(std::fopen(filename.c_str(), "rb"));
-        if (!infile) {
-          SPDLOG_WARN("JPEGTurbo: failed to open file {}", filename);
+        if (!sharedCtx || !sharedCtx->created || !sharedCtx->headerOk || sharedCtx->consumed) {
+          if (verbose) {
+            SPDLOG_INFO("JPEGTurbo: decode context invalid or already consumed");
+          }
           return std::nullopt;
         }
-
-        jpeg_decompress_struct cinfo{};
-        jpeg_error_mgr jerr{};
-        cinfo.err = jpeg_std_error(&jerr);
-        jpeg_create_decompress(&cinfo);
-        jpeg_stdio_src(&cinfo, infile.get());
-
-        if (jpeg_read_header(&cinfo, TRUE) != JPEG_HEADER_OK) {
-          jpeg_destroy_decompress(&cinfo);
-          SPDLOG_WARN("JPEGTurbo: invalid JPEG header in {}", filename);
-          return std::nullopt;
-        }
+        auto &cinfo = sharedCtx->cinfo;
 
         // Configure output colorspace based on ViaT
         if constexpr (std::is_same_v<ViaT, Array<uint8_t, 2>>) {
@@ -80,61 +103,46 @@ namespace Ravl2
 #endif
         } else {
           // Unsupported ViaT in this minimal implementation
-          jpeg_destroy_decompress(&cinfo);
           return std::nullopt;
         }
 
         if (!jpeg_start_decompress(&cinfo)) {
-          jpeg_destroy_decompress(&cinfo);
-          SPDLOG_WARN("JPEGTurbo: failed to start decompression for {}", filename);
+          SPDLOG_WARN("JPEGTurbo: failed to start decompression");
           return std::nullopt;
         }
 
         const JDIMENSION width = cinfo.output_width;
         const JDIMENSION height = cinfo.output_height;
-        const int comps = cinfo.output_components; // 1 for gray, 3 for RGB
-        const JDIMENSION rowStride = width * static_cast<JDIMENSION>(comps);
-
-        JSAMPARRAY buffer = (*cinfo.mem->alloc_sarray)(reinterpret_cast<j_common_ptr>(&cinfo), JPOOL_IMAGE, rowStride, 1);
 
         if constexpr (std::is_same_v<ViaT, Array<uint8_t, 2>>) {
           ViaT out({int(height), int(width)});
-          JDIMENSION y = 0;
-          while (cinfo.output_scanline < height) {
-            jpeg_read_scanlines(&cinfo, buffer, 1);
-            auto rowPtr = buffer[0];
-            for (JDIMENSION x = 0; x < width; ++x) {
-              out[{int(y), int(x)}] = rowPtr[x];
-            }
-            ++y;
+          for (JDIMENSION y = 0; y < height; ++y) {
+            // Directly decode into destination row buffer
+            JSAMPROW row = reinterpret_cast<JSAMPROW>(&out[{int(y), 0}]);
+            JSAMPARRAY rows = &row;
+            jpeg_read_scanlines(&cinfo, rows, 1);
           }
           jpeg_finish_decompress(&cinfo);
-          jpeg_destroy_decompress(&cinfo);
+          sharedCtx->consumed = true;
           pos = 1;
           return out;
         } else if constexpr (std::is_same_v<ViaT, Array<PixelRGB8, 2>>) {
-          ViaT out({int(height), int(width)});
-          JDIMENSION y = 0;
-          while (cinfo.output_scanline < height) {
-            jpeg_read_scanlines(&cinfo, buffer, 1);
-            const uint8_t* rowPtr = buffer[0];
-            for (JDIMENSION x = 0; x < width; ++x) {
-              const uint8_t r = rowPtr[x * 3 + 0];
-              const uint8_t g = rowPtr[x * 3 + 1];
-              const uint8_t b = rowPtr[x * 3 + 2];
-              out[{int(y), int(x)}] = PixelRGB8{r, g, b};
-            }
-            ++y;
+          ViaT out({static_cast<int>(height), static_cast<int>(width)});
+          static_assert(sizeof(PixelRGB8) == 3, "PixelRGB8 must be 3 bytes");
+          for (JDIMENSION y = 0; y < height; ++y) {
+            JSAMPROW row = reinterpret_cast<JSAMPROW>(&out[{int(y), 0}]);
+            JSAMPARRAY rows = &row;
+            jpeg_read_scanlines(&cinfo, rows, 1);
           }
           jpeg_finish_decompress(&cinfo);
-          jpeg_destroy_decompress(&cinfo);
+          sharedCtx->consumed = true;
           pos = 1;
           return out;
         }
 
         // Not reached
         jpeg_finish_decompress(&cinfo);
-        jpeg_destroy_decompress(&cinfo);
+        sharedCtx->consumed = true;
         return std::nullopt;
       });
 
@@ -152,45 +160,32 @@ namespace Ravl2
       [](const ProbeInputContext &ctx) -> std::optional<StreamInputPlan>
       {
 #ifdef RAVL2_HAVE_JPEG
-        // Open and read header to decide between gray and color decode
-        FilePtr infile(std::fopen(ctx.m_filename.c_str(), "rb"));
-        if (!infile) {
+        // Create a persistent decode context so we don't reopen or re-read header twice
+        auto decodeCtx = std::make_shared<JpegDecodeContext>(ctx.m_filename);
+        if (!decodeCtx->file || !decodeCtx->created || !decodeCtx->headerOk) {
           if (ctx.m_verbose) {
-            SPDLOG_INFO("JPEGTurbo: cannot open {}", ctx.m_filename);
+            SPDLOG_INFO("JPEGTurbo: cannot open or parse JPEG: {}", ctx.m_filename);
           }
           return std::nullopt;
         }
 
-        jpeg_decompress_struct cinfo{};
-        jpeg_error_mgr jerr{};
-        cinfo.err = jpeg_std_error(&jerr);
-        jpeg_create_decompress(&cinfo);
-        jpeg_stdio_src(&cinfo, infile.get());
-        if (jpeg_read_header(&cinfo, TRUE) != JPEG_HEADER_OK) {
-          jpeg_destroy_decompress(&cinfo);
-          if (ctx.m_verbose) {
-            SPDLOG_INFO("JPEGTurbo: not a valid JPEG: {}", ctx.m_filename);
-          }
-          return std::nullopt;
-        }
-
-        const bool isGray = (cinfo.num_components == 1) || (cinfo.jpeg_color_space == JCS_GRAYSCALE);
-        const unsigned w = cinfo.image_width;
-        const unsigned h = cinfo.image_height;
+        const bool isGray = (decodeCtx->cinfo.num_components == 1) || (decodeCtx->cinfo.jpeg_color_space == JCS_GRAYSCALE);
+        const unsigned w = decodeCtx->cinfo.image_width;
+        const unsigned h = decodeCtx->cinfo.image_height;
 
         if (ctx.m_verbose) {
-          SPDLOG_INFO("JPEGTurbo probe: {}x{}, comps={}, colorspace={} for {}", w, h, cinfo.num_components, int(cinfo.jpeg_color_space), ctx.m_filename);
+          SPDLOG_INFO("JPEGTurbo probe: {}x{}, comps={}, colorspace={} for {}", w, h, decodeCtx->cinfo.num_components, int(decodeCtx->cinfo.jpeg_color_space), ctx.m_filename);
         }
 
         // Try grayscale first if file is grayscale
         if (isGray) {
-          if (auto plan = buildPlanFor<Array<uint8_t, 2>>(ctx)) {
+          if (auto plan = buildPlanFor<Array<uint8_t, 2>>(ctx, decodeCtx)) {
             return plan;
           }
         }
 
         // Otherwise, use RGB packed as a minimal supported path
-        if (auto plan = buildPlanFor<Array<PixelRGB8, 2>>(ctx)) {
+        if (auto plan = buildPlanFor<Array<PixelRGB8, 2>>(ctx, decodeCtx)) {
           return plan;
         }
 
