@@ -80,6 +80,8 @@ add_executable(tests
         test_VideoFrame.cc
         test_VideoIO.cc
         test_imageio_jpeg.cc
+        test_imageio_jpeg_save.cc
+        test_imageio_jpeg_planar.cc
         test_types_duration.cc
         test_types.cc
         Display_Normalization_tests.cc

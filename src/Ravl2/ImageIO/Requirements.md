@@ -15,3 +15,8 @@ They support HDR images.
 
 
 See JpegLoaderPlan.md in this directory for a detailed plan to implement a JPEG loader that integrates directly with Ravl2 Array and PlanarImage types while participating in the IO probing and conversion-loss selection mechanism.
+
+
+Further reading
+----------------
+- ImageIO_Overview.md provides a step-by-step guide to authoring Image IO handlers in Ravl2, covering probing (InputFormat/ProbeInputContext), planning (StreamInputPlan/StreamOutputPlan), conversion-loss scoring with the TypeConverter system, and testing/CMake guidance.
