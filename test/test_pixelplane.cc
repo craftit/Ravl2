@@ -131,6 +131,7 @@ namespace Ravl2
         RGBPlanarImage<uint8_t> rgbImage(range);
 
         // All planes should have the same size
+        CHECK(rgbImage.range() == range);
         CHECK(rgbImage.plane<0>().range() == range);
         CHECK(rgbImage.plane<1>().range() == range);
         CHECK(rgbImage.plane<2>().range() == range);
@@ -166,7 +167,7 @@ namespace Ravl2
         CHECK(yuvImage.plane<0>().range().max(0) == masterRange.max(0));
         CHECK(yuvImage.plane<0>().range().max(1) == masterRange.max(1));
 
-        // U and V planes should be half size in both dimensions
+        // U and V planes should be half-size in both dimensions
         // The formula in PlaneScale is: (master + scale - 1) / scale
         // For min: (0 + 2 - 1) / 2 = 0
         // For max: (10 + 2 - 1) / 2 = 5

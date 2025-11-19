@@ -54,7 +54,7 @@ include(SetupImGUI)
 
 target_link_libraries(Ravl2Display
   PRIVATE RAVL2_options RAVL2_warnings
-  PUBLIC spdlog::spdlog SDL2::SDL2 Ravl2Core Ravl2Geometry
+  PUBLIC spdlog::spdlog SDL2::SDL2 Ravl2Core Ravl2Geometry Ravl2ImageIO
 )
 
 # On macOS, link required frameworks for Metal and Cocoa
