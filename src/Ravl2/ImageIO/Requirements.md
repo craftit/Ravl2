@@ -16,6 +16,8 @@ They support HDR images.
 
 See JpegLoaderPlan.md in this directory for a detailed plan to implement a JPEG loader that integrates directly with Ravl2 Array and PlanarImage types while participating in the IO probing and conversion-loss selection mechanism.
 
+See PngLoaderPlan.md in this directory for a detailed plan to implement a PNG loader/saver using libpng that decodes/encodes directly to Ravl2 packed containers (8-bit and 16-bit), integrates with the IO probing system, and leverages TypeConverter for best preserved-bits selection.
+
 
 Further reading
 ----------------

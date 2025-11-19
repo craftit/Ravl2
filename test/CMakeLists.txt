@@ -82,6 +82,7 @@ add_executable(tests
         test_imageio_jpeg.cc
         test_imageio_jpeg_save.cc
         test_imageio_jpeg_planar.cc
+        test_imageio_png.cc
         test_types_duration.cc
         test_types.cc
         Display_Normalization_tests.cc

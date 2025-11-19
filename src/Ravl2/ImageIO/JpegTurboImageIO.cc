@@ -180,11 +180,10 @@ namespace Ravl2
                              std::is_same_v<ViaT, YUV420Image<uint8_t>>) {
           // Raw planar decode path
           // Build planar image with master range = height x width
-          // Build explicit min/max indices to avoid constructor ambiguity
-          Index<2> minIdx{0, 0};
-          Index<2> maxIdx{static_cast<int>(height - 1), static_cast<int>(width - 1)};
-          ViaT out(IndexRange<2>(minIdx, maxIdx));
-
+          ViaT out(IndexRange<2>({height,width}));
+          SPDLOG_INFO("Image size: {} from {} x {} for type {} ",out.range(),height,width,typeName(out));
+          assert(out.range().size(0) == static_cast<int>(height));
+          assert(out.range().size(1) == static_cast<int>(width));
           // Compute iMCU-based row counts per component
           const int max_v = sharedCtx->maxVs; // typically 2 for 420, 2 for 422 (vertical 1), 1 for 444
           const JDIMENSION y_lines_per_iMCU = static_cast<JDIMENSION>(max_v * DCTSIZE);
@@ -225,8 +224,8 @@ namespace Ravl2
             auto &uPlane = out.template planeByChannel<ImageChannel::ChrominanceU>();
             auto &vPlane = out.template planeByChannel<ImageChannel::ChrominanceV>();
             for (JDIMENSION r = 0; r < chromaRows && (yPosChroma + r) < chromaHeight; ++r) {
-              uint8_t *udst = &uPlane.data()[{static_cast<int>(yPosChroma + r), 0}];
-              uint8_t *vdst = &vPlane.data()[{static_cast<int>(yPosChroma + r), 0}];
+              uint8_t *udst = uPlane.data()[static_cast<int>(r)].origin_address();
+              uint8_t *vdst = vPlane.data()[static_cast<int>(r)].origin_address();
               std::memcpy(udst, cbbuf[r], static_cast<size_t>(cb_width));
               std::memcpy(vdst, crbuf[r], static_cast<size_t>(cb_width));
             }

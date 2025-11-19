@@ -6,6 +6,8 @@ include(GenerateExportHeader)
 add_library(Ravl2ImageIO
     JpegTurboImageIO.hh
     JpegTurboImageIO.cc
+    PngImageIO.hh
+    PngImageIO.cc
 )
 
 add_library(ravl2::Ravl2ImageIO ALIAS Ravl2ImageIO)
@@ -28,6 +30,15 @@ if(JPEG_FOUND)
   target_include_directories(Ravl2ImageIO PRIVATE ${JPEG_INCLUDE_DIR})
 else()
   message(STATUS "libjpeg not found; JPEGTurbo loader will remain a stub (no decode)")
+endif()
+
+# Optional PNG (libpng)
+find_package(PNG QUIET)
+if(PNG_FOUND)
+  target_link_libraries(Ravl2ImageIO PRIVATE PNG::PNG)
+  target_compile_definitions(Ravl2ImageIO PRIVATE RAVL2_HAVE_PNG=1)
+else()
+  message(STATUS "libpng not found; PNG loader/saver will remain a stub (fallback to OpenCV)")
 endif()
 
 set_target_properties(
