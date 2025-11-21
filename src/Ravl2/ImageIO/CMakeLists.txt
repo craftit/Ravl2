@@ -4,10 +4,9 @@
 include(GenerateExportHeader)
 
 add_library(Ravl2ImageIO
-    JpegTurboImageIO.hh
-    JpegTurboImageIO.cc
-    PngImageIO.hh
-    PngImageIO.cc
+  JpegTurboImageIO.cc JpegTurboImageIO.hh
+  PngImageIO.cc PngImageIO.hh
+  ImageIOInit.cc ImageIOInit.hh
 )
 
 add_library(ravl2::Ravl2ImageIO ALIAS Ravl2ImageIO)
