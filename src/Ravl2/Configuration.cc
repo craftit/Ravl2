@@ -179,7 +179,18 @@ namespace Ravl2
     }
     return x->value();
   }
-  
+
+  //! Initialise a vector field
+  [[nodiscard]] std::any ConfigNode::initVector(const std::string_view &name, const std::string_view &description, int defaultValue, int min, int max,size_t size)
+  {
+    std::vector<int> vec(size,defaultValue);
+    auto x = setChild(std::string(name), std::string(description),vec);
+    for(auto &v : std::any_cast<std::vector<int>>(x->value())) {
+      checkRange(v, min, max);
+    }
+    return x->value();
+  }
+
   
   std::any ConfigNode::initObject(const std::string_view &name,
                                   const std::string_view &description,
