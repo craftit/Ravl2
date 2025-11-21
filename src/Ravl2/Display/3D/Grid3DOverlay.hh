@@ -14,23 +14,24 @@
 #pragma GCC diagnostic pop
 #endif
 
-namespace Ravl2::DebugDisplay::Render3D {
+namespace Ravl2::DebugDisplay::Render3D
+{
 
-//! Renders a simple XZ grid at y=0 into an ImGui draw list using CPU projection.
-//! Depth is not considered; grid is drawn as an overlay (always visible).
-//! @param cam Orbit camera providing view/projection parameters.
-//! @param rect Viewport rect in screen coordinates (pixels).
-//! @param drawList ImGui draw list to emit line segments into.
-//! @param cellSize Grid cell size in world units.
-//! @param halfCells Number of cells from origin to each side (extent = halfCells * cellSize).
-void drawGridImGui(const OrbitCamera &cam,
-                   const Viewport3DNode::Rect &rect,
+  //! Renders a simple XZ grid at y=0 into an ImGui draw list using CPU projection.
+  //! Depth is not considered; grid is drawn as an overlay (always visible).
+  //! @param cam Orbit camera providing view/projection parameters.
+  //! @param rect Viewport rect in screen coordinates (pixels).
+  //! @param drawList ImGui draw list to emit line segments into.
+  //! @param cellSize Grid cell size in world units.
+  //! @param halfCells Number of cells from origin to each side (extent = halfCells * cellSize).
+  void drawGridImGui(const OrbitCamera &cam,
+                     const Viewport3DNode::Rect &rect,
 #if defined(RAVL2_WITH_IMGUI)
-                   ImDrawList *drawList,
+                     ImDrawList *drawList,
 #else
-                   void* /*drawList*/,
+                     void * /*drawList*/,
 #endif
-                   float cellSize,
-                   int halfCells) noexcept;
+                     float cellSize,
+                     int halfCells) noexcept;
 
-} // namespace Ravl2::DebugDisplay::Render3D
+}// namespace Ravl2::DebugDisplay::Render3D

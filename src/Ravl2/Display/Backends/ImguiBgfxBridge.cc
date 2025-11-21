@@ -12,64 +12,75 @@
 #pragma GCC diagnostic pop
 #endif
 
-namespace Ravl2::DebugDisplay {
+namespace Ravl2::DebugDisplay
+{
 
-std::expected<void, std::string> ImguiBgfxBridge::initEx(float fontSize) noexcept {
+  std::expected<void, std::string> ImguiBgfxBridge::initEx(float fontSize) noexcept
+  {
 #if defined(RAVL2_WITH_IMGUI) && defined(RAVL2_WITH_BGFX)
-  if (mInitialized) return {};
-  // imguiCreate does not provide error reporting; assume success if it returns.
-  imguiCreate(fontSize, nullptr);
-  mInitialized = true;
-  return {};
+    if(mInitialized) return {};
+    // imguiCreate does not provide error reporting; assume success if it returns.
+    imguiCreate(fontSize, nullptr);
+    mInitialized = true;
+    return {};
 #else
-  (void)fontSize;
-  return std::unexpected{"ImguiBgfxBridge: ImGui/bgfx backend not available at compile time"};
+    (void)fontSize;
+    return std::unexpected {"ImguiBgfxBridge: ImGui/bgfx backend not available at compile time"};
 #endif
-}
-
-bool ImguiBgfxBridge::init(float fontSize) noexcept {
-#if defined(RAVL2_WITH_IMGUI) && defined(RAVL2_WITH_BGFX)
-  auto res = initEx(fontSize);
-  if (!res.has_value()) {
-    SPDLOG_WARN("ImguiBgfxBridge: init failed: {}", res.error());
-    return false;
   }
-  SPDLOG_INFO("ImguiBgfxBridge: initialized (fontSize={})", fontSize);
-  return true;
+
+  bool ImguiBgfxBridge::init(float fontSize) noexcept
+  {
+#if defined(RAVL2_WITH_IMGUI) && defined(RAVL2_WITH_BGFX)
+    auto res = initEx(fontSize);
+    if(!res.has_value()) {
+      SPDLOG_WARN("ImguiBgfxBridge: init failed: {}", res.error());
+      return false;
+    }
+    SPDLOG_INFO("ImguiBgfxBridge: initialized (fontSize={})", fontSize);
+    return true;
 #else
-  (void)fontSize;
-  return false;
+    (void)fontSize;
+    return false;
 #endif
-}
+  }
 
-void ImguiBgfxBridge::shutdown() noexcept {
+  void ImguiBgfxBridge::shutdown() noexcept
+  {
 #if defined(RAVL2_WITH_IMGUI) && defined(RAVL2_WITH_BGFX)
-  if (!mInitialized) return;
-  imguiDestroy();
-  mInitialized = false;
-  SPDLOG_INFO("ImguiBgfxBridge: shutdown");
+    if(!mInitialized) return;
+    imguiDestroy();
+    mInitialized = false;
+    SPDLOG_INFO("ImguiBgfxBridge: shutdown");
 #endif
-}
+  }
 
-void ImguiBgfxBridge::beginFrame(int mouseX,
-                                 int mouseY,
-                                 uint8_t mouseButtons,
-                                 int32_t scroll,
-                                 uint16_t fbWidth,
-                                 uint16_t fbHeight) noexcept {
+  void ImguiBgfxBridge::beginFrame(int mouseX,
+                                   int mouseY,
+                                   uint8_t mouseButtons,
+                                   int32_t scroll,
+                                   uint16_t fbWidth,
+                                   uint16_t fbHeight) noexcept
+  {
 #if defined(RAVL2_WITH_IMGUI) && defined(RAVL2_WITH_BGFX)
-  if (!mInitialized) return;
-  imguiBeginFrame(mouseX, mouseY, mouseButtons, scroll, fbWidth, fbHeight);
+    if(!mInitialized) return;
+    imguiBeginFrame(mouseX, mouseY, mouseButtons, scroll, fbWidth, fbHeight);
 #else
-  (void)mouseX; (void)mouseY; (void)mouseButtons; (void)scroll; (void)fbWidth; (void)fbHeight;
+    (void)mouseX;
+    (void)mouseY;
+    (void)mouseButtons;
+    (void)scroll;
+    (void)fbWidth;
+    (void)fbHeight;
 #endif
-}
+  }
 
-void ImguiBgfxBridge::endFrame() noexcept {
+  void ImguiBgfxBridge::endFrame() noexcept
+  {
 #if defined(RAVL2_WITH_IMGUI) && defined(RAVL2_WITH_BGFX)
-  if (!mInitialized) return;
-  imguiEndFrame();
+    if(!mInitialized) return;
+    imguiEndFrame();
 #endif
-}
+  }
 
-} // namespace Ravl2::DebugDisplay
+}// namespace Ravl2::DebugDisplay
