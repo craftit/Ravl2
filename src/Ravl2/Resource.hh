@@ -2,6 +2,7 @@
 #pragma once
 
 #include <string>
+#include <filesystem>
 
 namespace Ravl2
 {
@@ -19,7 +20,7 @@ namespace Ravl2
   //! @param section Section name
   //! @param key Key name, maybe empty
   //! @return Directory path, it will be empty if not found
-  [[nodiscard]] std::string findDirectoryResource(const std::string_view &section, const std::string_view &key = "");
+  [[nodiscard]] std::string findDirectoryResource(const std::string_view &section, const std::string_view &key = "", bool verbose = false);
 
   //! Dump the resource paths to a string
   //! @return String containing the resource paths
