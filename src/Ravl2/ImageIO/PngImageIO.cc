@@ -471,7 +471,9 @@ namespace Ravl2
             png_write_info(pngPtr, infoPtr);
             std::vector<png_bytep> rows(static_cast<size_t>(rng.size(0)));
 #pragma GCC diagnostic push
+#ifndef __clang__
 #pragma GCC diagnostic ignored "-Wuseless-cast"
+#endif
             for(int y = 0; y < rng.size(0); ++y) rows[static_cast<size_t>(y)] = reinterpret_cast<png_bytep>(const_cast<uint8_t *>(&img[{y, 0}]));
 #pragma GCC diagnostic pop
             png_write_image(pngPtr, rows.data());

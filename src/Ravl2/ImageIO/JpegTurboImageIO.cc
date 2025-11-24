@@ -194,7 +194,9 @@ namespace Ravl2
           const JDIMENSION maxHs = static_cast<JDIMENSION>(sharedCtx->maxHs);
           const JDIMENSION maxVs = static_cast<JDIMENSION>(sharedCtx->maxVs);
 #pragma GCC diagnostic push
+#ifndef __clang__
 #pragma GCC diagnostic ignored "-Wuseless-cast"
+#endif
           // Casts that are useless on one platform, aren't useless on others.
 
           const JDIMENSION cb_width = static_cast<JDIMENSION>((cinfo.output_width * cb_hs + maxHs - 1) / maxHs);
@@ -548,7 +550,9 @@ namespace Ravl2
             const JDIMENSION height = cinfo.image_height;
             (void)width;
 #pragma GCC diagnostic push
+#ifndef __clang__
 #pragma GCC diagnostic ignored "-Wuseless-cast"
+#endif
             for(JDIMENSION y = 0; y < height; ++y) {
               JSAMPROW row = reinterpret_cast<JSAMPROW>(const_cast<uint8_t *>(&img[{static_cast<int>(y), 0}]));
               JSAMPARRAY rows = &row;
