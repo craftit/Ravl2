@@ -174,6 +174,7 @@ namespace Ravl2::Video
         Ravl2::Video::DeviceParameters params;
         params.devicePath = ctx.m_filename;
 
+        SPDLOG_INFO("Opening : {} ", ctx.m_filename);
         // Attempt open.
         auto openRes = FfmpegMediaContainer::openDevice(params);
         if (!openRes.isSuccess())

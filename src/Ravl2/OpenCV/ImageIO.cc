@@ -270,11 +270,15 @@ namespace Ravl2
     [[maybe_unused]] bool g_regFmt3 = inputFormatMap().add(std::make_shared<InputFormatCall>("OpenCV", "", "camera", -1, [](const ProbeInputContext &ctx) -> std::optional<StreamInputPlan> {
       cv::VideoCapture videoCapture;
       // Convert the filename to an integer.
-      int cameraId = std::stoi(ctx.m_filename);
-      if(!videoCapture.open(cameraId)) {
-        if(ctx.m_verbose) {
-          SPDLOG_INFO("Failed to open video stream '{}'", ctx.m_filename);
+      try {
+        int cameraId = std::stoi(ctx.m_filename);
+        if(!videoCapture.open(cameraId)) {
+          if(ctx.m_verbose) {
+            SPDLOG_INFO("Failed to open video stream '{}'", ctx.m_filename);
+          }
+          return std::nullopt;
         }
+      } catch(std::exception& e) {
         return std::nullopt;
       }
       return makeVideoCapturePlan(videoCapture, ctx);
