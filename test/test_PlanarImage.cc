@@ -55,6 +55,14 @@ namespace Ravl2
       auto rgbPixel = planarImage.createPackedPixel<Pixel, uint8_t,
                           ImageChannel::Red, ImageChannel::Green, ImageChannel::Blue>(testCoord);
 
+
+      auto atPackedYUV = planarImage.at(testCoord);
+
+      REQUIRE(atPackedYUV.get<ImageChannel::Luminance>() == packedYUV.get<ImageChannel::Luminance>());
+      REQUIRE(atPackedYUV.get<ImageChannel::ChrominanceU>() == packedYUV.get<ImageChannel::ChrominanceU>());
+      REQUIRE(atPackedYUV.get<ImageChannel::ChrominanceV>() == packedYUV.get<ImageChannel::ChrominanceV>());
+
+
       SPDLOG_INFO("Converted RGB Pixel from planar YUV: {}, expected {} ", rgbPixel,packedRGB);
 
       // The conversion should match the plain packed one.
@@ -71,8 +79,8 @@ namespace Ravl2
 
       // Fill each plane with different values
       planarImage.plane<0>().fill(128); // Y = 128
-      planarImage.plane<1>().fill(64);  // U = 64 (blueish)
-      planarImage.plane<2>().fill(192); // V = 192 (reddish)
+      planarImage.plane<1>().fill(64);  // U = 64
+      planarImage.plane<2>().fill(192); // V = 192
 
       // Test at both even and odd coordinates to check subsampling handling
       // In 4:2:0, U and V planes are half resolution in both dimensions
@@ -93,13 +101,11 @@ namespace Ravl2
       REQUIRE(pixel1.get<ImageChannel::Green>() == pixel2.get<ImageChannel::Green>());
       REQUIRE(pixel1.get<ImageChannel::Blue>() == pixel2.get<ImageChannel::Blue>());
 
-      // With Y=128, U=64 (blueish), V=192 (reddish), we expect:
-      // - Red component to be high (due to high V)
-      // - Blue component to be high (due to low U)
-      // - Green component to be lower
-      REQUIRE(pixel1.get<ImageChannel::Red>() > 128);
-      REQUIRE(pixel1.get<ImageChannel::Blue>() > 128);
+      SPDLOG_INFO("Got pixel {}, expected {} ", pixel1, pixel2);
+      // Do a sanity check
+      REQUIRE(pixel1.get<ImageChannel::Red>() > 190);
       REQUIRE(pixel1.get<ImageChannel::Green>() < 128);
+      REQUIRE(pixel1.get<ImageChannel::Blue>() < 30);
     }
 
     SECTION("Test with component type conversion")

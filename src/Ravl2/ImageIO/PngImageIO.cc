@@ -470,7 +470,10 @@ namespace Ravl2
             if(filter != PNG_ALL_FILTERS) png_set_filter(pngPtr, 0, filter);
             png_write_info(pngPtr, infoPtr);
             std::vector<png_bytep> rows(static_cast<size_t>(rng.size(0)));
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wuseless-cast"
             for(int y = 0; y < rng.size(0); ++y) rows[static_cast<size_t>(y)] = reinterpret_cast<png_bytep>(const_cast<uint8_t *>(&img[{y, 0}]));
+#pragma GCC diagnostic pop
             png_write_image(pngPtr, rows.data());
             png_write_end(pngPtr, nullptr);
             png_destroy_write_struct(&pngPtr, &infoPtr);

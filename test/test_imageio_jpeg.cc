@@ -34,9 +34,10 @@ namespace Ravl2
     CHECK(rng.size(1) > 0);
 
     // Spot-check a pixel is within 0..255 range and structure looks sane
-    auto p = img[{rng.min(0), rng.min(1)}];
-    CHECK(p[0] <= 255);
-    CHECK(p[1] <= 255);
-    CHECK(p[2] <= 255);
+    [[maybe_unused]] auto p = img[{rng.min(0), rng.min(1)}];
+    // FIXME: This test will always pass for bytes, what else can we do?
+    // CHECK(p[0] <= 255);
+    // CHECK(p[1] <= 255);
+    // CHECK(p[2] <= 255);
   }
 }

@@ -8,8 +8,10 @@
 #include <tuple>
 #include <utility>
 #include <array>
+#include <type_traits>
 #include <spdlog/spdlog.h>
 #include "Ravl2/Pixel/Pixel.hh"
+#include "Ravl2/Pixel/Colour.hh"
 #include "Ravl2/Array.hh"
 #include "Ravl2/Types.hh"
 
@@ -114,6 +116,7 @@ namespace Ravl2
     using value_type = DataT;
     using array_type = Array<DataT, Dims>;
     using scale_type = PlaneScale<Dims, Scales...>;
+    static constexpr ImageChannel channel = Channel;
 
     //! Default constructor
     PixelPlane() = default;
@@ -342,6 +345,23 @@ namespace Ravl2
       applyToEachPlane(std::forward<FuncT>(func), Indices {});
     }
 
+    //! Make a packed pixel with the same channels as the planar image for a given location.
+    //! @return A pixel sampled across the planes in the image for the given location.
+    auto at(const Index<Dims> &masterIndex) const
+    {
+      static_assert(sizeof...(PlaneTypes) > 0, "PlanarImage::at requires at least one plane");
+      return samplePackedPixel(masterIndex, std::make_index_sequence<sizeof...(PlaneTypes)> {});
+    }
+
+    //! Make a packed pixel with the same channels as the planar image for a given location of the given type.
+    //! @return A pixel sampled across the planes in the image for the given location.
+    template <typename ComponentT>
+    auto cast(const Index<Dims> &masterIndex) const
+    {
+      static_assert(sizeof...(PlaneTypes) > 0, "PlanarImage::at requires at least one plane");
+      return sampleTypedPackedPixel<ComponentT>(masterIndex, std::make_index_sequence<sizeof...(PlaneTypes)> {});
+    }
+
     //! Create a packed pixel of type PixelT at the given master coordinate
     //! @tparam PixelT The packed pixel type to create
     //! @tparam CompT The component type to use for the pixel
@@ -352,31 +372,12 @@ namespace Ravl2
     {
       // Create the pixel with default values
       PixelT<CompT, Channels...> result;
-
-      // Helper lambda to set an individual channel value by scanning planes
-      auto setChannel = [&]<ImageChannel Channel>() {
-        bool channelFound = false;
-        // Iterate over planes using existing helper; stop when found
-        applyToEachPlane([&](const auto &plane) {
-          if(channelFound) return;// early exit guard
-          if(plane.getChannelType() == Channel) {
-            if(plane.containsMaster(masterIndex)) {
-              auto rawValue = plane.atMaster(masterIndex);// raw plane component
-              result.template set<Channel>(get<Channel, CompT>(rawValue));
-              channelFound = true;
-            }
-          }
-        },
-                         std::make_index_sequence<sizeof...(PlaneTypes)> {});
-
-        // If channel doesn't present in the planar image populate default
-        if(!channelFound) {
-          result.template set<Channel>(PixelTypeTraits<CompT, Channel>::defaultValue);
-        }
-      };
-
-      // Expand over requested channels
-      (setChannel.template operator()<Channels>(), ...);
+      if constexpr(std::is_floating_point_v<CompT>) {
+        // Make sure we go via floating point for better interpolation.
+        assign(result, cast<CompT>(masterIndex));
+      } else {
+        assign(result, at(masterIndex));
+      }
       return result;
     }
 
@@ -516,8 +517,50 @@ namespace Ravl2
       return std::get<PlaneIndex>(m_planes).atMaster(masterIndex);
     }
 
+    template <std::size_t... Is>
+    [[nodiscard]] auto samplePackedPixel(const Index<Dims> &masterIndex, std::index_sequence<Is...>) const
+    {
+      using PlaneTuple = std::tuple<PlaneTypes...>;
+      using ComponentT = typename std::tuple_element_t<0, PlaneTuple>::value_type;
+      constexpr bool allComponentsMatch = ((std::is_same_v<ComponentT, typename std::tuple_element_t<Is, PlaneTuple>::value_type>) && ...);
+      static_assert(allComponentsMatch, "PlanarImage::at requires homogeneous component types across planes");
+      using PackedPixelT = Pixel<ComponentT, planeChannelType<Is>()...>;
+      PackedPixelT packed {};
+      auto assignChannel = [&]<std::size_t I>() {
+        constexpr ImageChannel channel = planeChannelType<I>();
+        const auto &plane = std::get<I>(m_planes);
+        if(plane.containsMaster(masterIndex)) {
+          const auto rawValue = plane.atMaster(masterIndex);
+          packed.template set<channel>(get<channel, ComponentT>(rawValue));
+        } else {
+          packed.template set<channel>(PixelTypeTraits<ComponentT, channel>::defaultValue);
+        }
+      };
+      (assignChannel.template operator()<Is>(), ...);
+      return packed;
+    }
+
+    template <typename ComponentT, std::size_t... Is>
+    [[nodiscard]] auto sampleTypedPackedPixel(const Index<Dims> &masterIndex, std::index_sequence<Is...>) const
+    {
+      using PackedPixelT = Pixel<ComponentT, planeChannelType<Is>()...>;
+      PackedPixelT packed {};
+      auto assignChannel = [&]<std::size_t I>() {
+        constexpr ImageChannel channel = planeChannelType<I>();
+        const auto &plane = std::get<I>(m_planes);
+        if(plane.containsMaster(masterIndex)) {
+          const auto rawValue = plane.atMaster(masterIndex);
+          packed.template set<channel>(get<channel, ComponentT>(rawValue));
+        } else {
+          packed.template set<channel>(PixelTypeTraits<ComponentT, channel>::defaultValue);
+        }
+      };
+      (assignChannel.template operator()<Is>(), ...);
+      return packed;
+    }
+
     std::tuple<PlaneTypes...> m_planes;
-  };
+   };
 
   namespace detail
   {

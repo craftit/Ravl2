@@ -141,6 +141,13 @@ namespace Ravl2
     {
       return PixelTypeTraits<CompT, ImageChannel::ChrominanceV>::defaultValue;
     }
+    // If we want Alpha, but there is non in the source.
+    template <typename CompT, typename PixelType>
+      requires  (!PixelType::template hasChannel<ImageChannel::Alpha>())
+    constexpr CompT convert(const PixelType &, std::integral_constant<ImageChannel, ImageChannel::Alpha>)
+    {
+      return PixelTypeTraits<CompT, ImageChannel::Alpha>::defaultValue;
+    }
 
     // Just change datatype as needed
     template <typename CompT, typename PixelType, ImageChannel channel>
@@ -149,6 +156,8 @@ namespace Ravl2
     {
       return pixel.template get<channel, CompT>();
     }
+
+
   };
 
   //! Get the value of channel from the pixel, compute if possible

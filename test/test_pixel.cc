@@ -39,6 +39,18 @@ namespace Ravl2
       //    SPDLOG_INFO("V {}", get<ImageChannel::ChrominanceV,float>(pixel));
       //    SPDLOG_INFO("U {}", get<ImageChannel::ChrominanceU,float>(pixel));
     }
+
+    SECTION("PixelRGB, add alpha")
+    {
+      // What happens if we request an alpha channel with no source
+      const Pixel<uint8_t, ImageChannel::Red, ImageChannel::Green, ImageChannel::Blue> pixel(1, 2, 3);
+
+      Pixel<uint8_t, ImageChannel::Red, ImageChannel::Green, ImageChannel::Blue, ImageChannel::Alpha> pixel2(0,0,0,0);
+
+      assign(pixel2, pixel);
+
+    }
+
     SECTION("PixelRGB32F")
     {
       PixelRGB32F pixel(1.0, 1.0, 0.0);

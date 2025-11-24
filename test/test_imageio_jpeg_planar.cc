@@ -51,8 +51,9 @@ namespace Ravl2
     CHECK(vPlane.data().range().size(1) == (master.size(1) + 1) / 2);
 
     // Basic pixel sanity: read a top-left packed pixel assembled from planes
-    auto packed = yuv.template createPackedPixel<Pixel, uint8_t,
+    [[maybe_unused]] auto packed = yuv.template createPackedPixel<Pixel, uint8_t,
       ImageChannel::Luminance, ImageChannel::ChrominanceU, ImageChannel::ChrominanceV>({master.min(0), master.min(1)});
-    CHECK(packed[0] <= 255);
+    // FIXME: This test will always pass for bytes, what else can we do?
+    //CHECK(packed[0] <= 255);
   }
 }

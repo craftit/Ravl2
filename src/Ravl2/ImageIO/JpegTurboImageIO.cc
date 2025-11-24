@@ -193,6 +193,10 @@ namespace Ravl2
           const JDIMENSION cb_hs = static_cast<JDIMENSION>((sharedCtx->cinfo.num_components > 1) ? sharedCtx->cinfo.comp_info[1].h_samp_factor : 1);
           const JDIMENSION maxHs = static_cast<JDIMENSION>(sharedCtx->maxHs);
           const JDIMENSION maxVs = static_cast<JDIMENSION>(sharedCtx->maxVs);
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wuseless-cast"
+          // Casts that are useless on one platform, aren't useless on others.
+
           const JDIMENSION cb_width = static_cast<JDIMENSION>((cinfo.output_width * cb_hs + maxHs - 1) / maxHs);
           const JDIMENSION cb_lines_per_iMCU = static_cast<JDIMENSION>(cb_vs * DCTSIZE);
           JSAMPARRAY cbbuf = (*cinfo.mem->alloc_sarray)(reinterpret_cast<j_common_ptr>(&cinfo), JPOOL_IMAGE,
@@ -231,6 +235,7 @@ namespace Ravl2
 
             yPos += nread;
           }
+#pragma GCC diagnostic pop
 
           jpeg_finish_decompress(&cinfo);
           sharedCtx->consumed = true;
@@ -314,7 +319,7 @@ namespace Ravl2
           if(hRatio == 1 && vRatio == 1) subs = Subsampling::S444;
           else if(hRatio == 2 && vRatio == 1)
             subs = Subsampling::S422;
-          else if((hRatio == 2 && vRatio == 2) || (hRatio == 2 && vRatio == 2))
+          else if(hRatio == 2 && vRatio == 2)
             subs = Subsampling::S420;
           else
             subs = Subsampling::Unknown;
@@ -542,12 +547,14 @@ namespace Ravl2
             const JDIMENSION width = cinfo.image_width;
             const JDIMENSION height = cinfo.image_height;
             (void)width;
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wuseless-cast"
             for(JDIMENSION y = 0; y < height; ++y) {
               JSAMPROW row = reinterpret_cast<JSAMPROW>(const_cast<uint8_t *>(&img[{static_cast<int>(y), 0}]));
               JSAMPARRAY rows = &row;
               jpeg_write_scanlines(&cinfo, rows, 1);
             }
-
+#pragma GCC diagnostic pop
             jpeg_finish_compress(&cinfo);
             jpeg_destroy_compress(&cinfo);
             return 0;

@@ -42,10 +42,11 @@ namespace Ravl2
     CHECK(loaded.range().size(1) == img.range().size(1));
 
     // Basic sanity on pixel values
-    auto p = loaded[{loaded.range().min(0), loaded.range().min(1)}];
-    CHECK(p[0] <= 255);
-    CHECK(p[1] <= 255);
-    CHECK(p[2] <= 255);
+    [[maybe_unused]] auto p = loaded[{loaded.range().min(0), loaded.range().min(1)}];
+    // FIXME: This test will always pass for bytes, what else can we do?
+    // CHECK(p[0] <= 255);
+    // CHECK(p[1] <= 255);
+    // CHECK(p[2] <= 255);
 
     // Cleanup
     std::remove(filename.c_str());
