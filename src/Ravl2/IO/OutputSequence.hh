@@ -1,6 +1,7 @@
 //
 // Created by charles on 25/08/24.
 //
+#pragma once
 
 #include "Ravl2/IO/Save.hh"
 

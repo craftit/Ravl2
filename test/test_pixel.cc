@@ -2,7 +2,9 @@
 // Created by charles galambos on 06/08/2024.
 //
 
+#include <catch2/catch_approx.hpp>
 #include <catch2/catch_test_macros.hpp>
+#include <catch2/matchers/catch_matchers_floating_point.hpp>
 
 #include <spdlog/spdlog.h>
 #include "Ravl2/Pixel/Pixel.hh"
@@ -124,9 +126,30 @@ namespace Ravl2
       CHECK(std::abs(pixel3.template get<ImageChannel::ChrominanceV>() - pixel2.template get<ImageChannel::ChrominanceV>()) < 2);
     }
 
+    SECTION("PixelYUV8 colour conversion")
+    {
+
+      const PixelYUV8 pixel1(128, 64, 192); // Y 128, U 64, V 192
+
+      PixelRGB8 pixel2(0,0,0);
+      assign(pixel2,pixel1);
+      SPDLOG_INFO("Pixel YUV {} ->  RGB {} ",pixel1,pixel2);
+
+      // Both pixels should have the same color since they map to the same chroma samples
+      REQUIRE(pixel2.get<ImageChannel::Red>() == pixel2.get<ImageChannel::Red>());
+      REQUIRE(pixel2.get<ImageChannel::Green>() == pixel2.get<ImageChannel::Green>());
+      REQUIRE(pixel2.get<ImageChannel::Blue>() == pixel2.get<ImageChannel::Blue>());
+
+
+      REQUIRE_THAT(pixel2.get<ImageChannel::Red>(), Catch::Matchers::WithinAbs(201,2));
+      REQUIRE_THAT(pixel2.get<ImageChannel::Green>(), Catch::Matchers::WithinAbs(116,2) );
+      REQUIRE_THAT(pixel2.get<ImageChannel::Blue>(), Catch::Matchers::WithinAbs(0,2)  );
+    }
+
     SECTION("PixelRGBA")
     {
       PixelRGBA8 pixel(1, 2, 3, 4);
     }
   }
+
 }

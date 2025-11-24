@@ -318,7 +318,7 @@ namespace Ravl2
 
   //! Stream output
   template <class CompT, ImageChannel... Channels>
-  inline std::ostream &operator<<(std::ostream &strm, const Pixel<CompT, Channels...> &val)
+  std::ostream &operator<<(std::ostream &strm, const Pixel<CompT, Channels...> &val)
   {
     for(std::size_t i = 0; i < sizeof...(Channels); ++i) {
       if(i != 0) {
@@ -326,9 +326,9 @@ namespace Ravl2
       }
       // If we're working with int8_t or uint8_t make sure they are treated as numeric.
       if constexpr(std::is_same_v<CompT, int8_t> || std::is_same_v<CompT, uint8_t>) {
-        strm << int(val[i]);
+        strm << static_cast<int>(val[static_cast<int>(i)]);
       } else {
-        strm << val[i];
+        strm << val[static_cast<int>(i)];
       }
     }
     return strm;
@@ -336,7 +336,7 @@ namespace Ravl2
 
   //! Stream input
   template <class CompT, ImageChannel... Channels>
-  inline std::istream &operator>>(std::istream &strm, Pixel<CompT, Channels...> &val)
+  std::istream &operator>>(std::istream &strm, Pixel<CompT, Channels...> &val)
   {
     for(std::size_t i = 0; i < sizeof...(Channels); ++i) {
       CompT tmp;
