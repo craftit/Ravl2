@@ -156,5 +156,71 @@ namespace Ravl2::Video
         return plan;
       }
     ));
+
+
+        // Register FFmpeg-based video input loader (similar style to OpenCV/ImageIO.cc video handlers).
+    // Priority kept modest (-2) so that specialised handlers can override if needed.
+    [[maybe_unused]] bool g_regFfmpegCapture = inputFormatMap().add(std::make_shared<InputFormatCall>(
+      "FFmpegCapture",
+      "",
+      "camera",
+      -2,
+      [](const ProbeInputContext &ctx) -> std::optional<StreamInputPlan>
+      {
+        if (ctx.m_verbose) {
+          SPDLOG_INFO("FFmpeg: probing '{}' target {}", ctx.m_filename, typeName(ctx.m_targetType));
+        }
+
+        Ravl2::Video::DeviceParameters params;
+        params.devicePath = ctx.m_filename;
+
+        // Attempt open.
+        auto openRes = FfmpegMediaContainer::openDevice(params);
+        if (!openRes.isSuccess())
+        {
+          if (ctx.m_verbose)
+            SPDLOG_DEBUG("FFmpeg: openFile failed code {}", static_cast<int>(openRes.error()));
+          return std::nullopt; // Allow other formats to try.
+        }
+        auto container = std::static_pointer_cast<MediaContainer>(openRes.value());
+
+        // Find the first video stream.
+        std::size_t vIndex = container->streamCount();
+        for (std::size_t i = 0; i < container->streamCount(); ++i)
+        {
+          if (container->streamType(i) == StreamType::Video)
+            { vIndex = i; break; }
+        }
+        if (vIndex == container->streamCount())
+        {
+          if (ctx.m_verbose) {
+            SPDLOG_INFO("FFmpeg: no video stream in '{}'", ctx.m_filename);
+          }
+          return std::nullopt; // Not our case.
+        }
+
+        auto iterRes = container->createIterator(vIndex);
+        if (!iterRes.isSuccess())
+        {
+          if (ctx.m_verbose)
+            SPDLOG_INFO("FFmpeg: createIterator failed code {}", static_cast<int>(iterRes.error()));
+          return std::nullopt;
+        }
+        auto iterator = iterRes.value();
+
+        // Build plan around iterator & initial frame.
+        auto plan = buildFfmpegVideoPlan(ctx, container, iterator);
+        if (!plan)
+        {
+          if (ctx.m_verbose)
+            SPDLOG_INFO("FFmpeg: unable to build plan for '{}' (frame type {})", ctx.m_filename, typeName(iterator->dataType()));
+          return std::nullopt;
+        }
+        if (ctx.m_verbose)
+          SPDLOG_INFO("FFmpeg: plan ready for '{}'", ctx.m_filename);
+        return plan;
+      }
+    ));
+
   } // namespace
 }

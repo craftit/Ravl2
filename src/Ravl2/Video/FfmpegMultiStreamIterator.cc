@@ -1250,10 +1250,10 @@ namespace Ravl2::Video
     // Set up each plane in the PlanarImage
     int planeIndex = 0;
     SPDLOG_DEBUG("Setting up plane {} ({}) with range {}  Data:{} {} {} LineSize:{} ", planeIndex, typeName(typeid(PixelT)),  range,static_cast<void *>(newFrame->data[planeIndex]), static_cast<void *>(newFrame->data[1]),static_cast<void *>(newFrame->data[2]), newFrame->linesize[planeIndex]);
-    RavlAssert((newFrame->linesize[planeIndex] % static_cast<int>(sizeof(PixelYUYV8))) == 0);
+    RavlAssert((newFrame->linesize[planeIndex] % static_cast<int>(sizeof(PixelT))) == 0);
     img = Ravl2::Array<PixelT, 2>(pixelPtr,
                            range,
-                           {newFrame->linesize[planeIndex]/static_cast<int>(sizeof(PixelYUYV8)), 1},
+                           {newFrame->linesize[planeIndex]/static_cast<int>(sizeof(PixelT)), 1},
                            avFrameHandle
     );
 

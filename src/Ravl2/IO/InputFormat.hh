@@ -88,7 +88,7 @@ namespace Ravl2
     std::string m_filename;
     //! Access protocol (e.g., "file", "camera", "http"). Used to filter handlers.
     std::string m_protocol;
-    //! Lowercase file extension (without leading dot). Used to select candidate handlers.
+    //! Lowercase file extension (without the leading dot). Used to select candidate handlers.
     std::string m_extension;
     //! Free-form JSON hints affecting probing/decoding policy.
     nlohmann::json m_formatHint;
