@@ -58,7 +58,7 @@ namespace Ravl2::DebugDisplay
     std::optional<DebugUrlParse> parseDisplayUrl(const std::string &url)
     {
       constexpr std::string_view kPrefix = "display://";
-      SPDLOG_INFO("Parsing url: '{}' ", url);
+      SPDLOG_DEBUG("Parsing url: '{}' ", url);
       if(url.rfind(kPrefix.data(), 0) != 0) return std::nullopt;
       DebugUrlParse out;
       std::string rest = url.substr(kPrefix.size());

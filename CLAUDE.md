@@ -10,8 +10,8 @@ RAVL2 (Recognition And Vision Library 2) is a computer vision library written in
 
 ### Standard Build
 ```bash
-mkdir build
-cd build
+mkdir cmake-build-debug
+cd cmake-build-debug
 cmake ..
 cmake --build .
 ```
@@ -24,7 +24,7 @@ cmake --build .
 
 ### Running Tests
 ```bash
-cd build
+cd cmake-build-debug
 ctest
 ```
 

@@ -6,6 +6,13 @@
 #include "Ravl2/Video/FfmpegMultiStreamIterator.hh"
 #include <iostream>
 
+#ifdef __linux__
+#include <sys/ioctl.h>
+#include <linux/videodev2.h>
+#include <fcntl.h>
+#include <unistd.h>
+#endif
+
 #pragma GCC diagnostic ignored "-Wold-style-cast"
 
 namespace Ravl2::Video
@@ -35,6 +42,9 @@ namespace Ravl2::Video
 #if LIBAVFORMAT_VERSION_INT < AV_VERSION_INT(58, 9, 100)
       av_register_all();
 #endif
+
+      // Register all device input/output handlers
+      avdevice_register_all();
 
       avformat_network_init();
       s_ffmpegInitialized = true;
@@ -117,6 +127,192 @@ namespace Ravl2::Video
     container->extractMetadata();
 
     return VideoResult<std::shared_ptr<MediaContainer>>(std::static_pointer_cast<MediaContainer>(container));
+  }
+
+  VideoResult<std::shared_ptr<MediaContainer>> FfmpegMediaContainer::openDevice(const DeviceParameters& params)
+  {
+    SPDLOG_DEBUG("openDevice called");
+
+    // Create a new instance of FfmpegMediaContainer
+    auto container = std::make_shared<FfmpegMediaContainer>();
+
+    SPDLOG_DEBUG("Container created");
+
+    // Determine the device path
+    std::string devicePath = params.devicePath;
+    if (devicePath.empty())
+    {
+      // Use default device
+      devicePath = "/dev/video0";
+    }
+
+    SPDLOG_DEBUG("Device path: {}", devicePath);
+
+    // Find the v4l2 input format (try both names)
+    const AVInputFormat* inputFormat = av_find_input_format("v4l2");
+    if (!inputFormat)
+    {
+      inputFormat = av_find_input_format("video4linux2");
+    }
+    if (!inputFormat)
+    {
+      SPDLOG_ERROR("V4L2 input format not found. Make sure FFmpeg was compiled with V4L2 support.");
+      return VideoResult<std::shared_ptr<MediaContainer>>(VideoErrorCode::UnsupportedFormat);
+    }
+
+    // Set up device options
+    AVDictionary* options = nullptr;
+
+    // Set resolution if specified
+    if (params.width > 0 && params.height > 0)
+    {
+      std::string videoSize = std::to_string(params.width) + "x" + std::to_string(params.height);
+      av_dict_set(&options, "video_size", videoSize.c_str(), 0);
+    }
+
+    // Set frame rate if specified
+    if (params.frameRate > 0.0f)
+    {
+      std::string frameRate = std::to_string(static_cast<int>(params.frameRate));
+      av_dict_set(&options, "framerate", frameRate.c_str(), 0);
+    }
+
+    // Set pixel format if specified
+    if (!params.pixelFormat.empty())
+    {
+      av_dict_set(&options, "pixel_format", params.pixelFormat.c_str(), 0);
+    }
+
+    // Open the device
+    AVFormatContext* formatContext = nullptr;
+    int result = avformat_open_input(&formatContext, devicePath.c_str(), inputFormat, &options);
+
+    // Free the option dictionary
+    av_dict_free(&options);
+
+    if (result < 0)
+    {
+      char errorBuffer[AV_ERROR_MAX_STRING_SIZE];
+      av_strerror(result, errorBuffer, AV_ERROR_MAX_STRING_SIZE);
+      SPDLOG_ERROR("FFmpeg error: Could not open capture device: {} - {}", devicePath, errorBuffer);
+      return VideoResult<std::shared_ptr<MediaContainer>>(convertFfmpegError(result));
+    }
+
+    // Store the format context
+    container->m_formatContext = formatContext;
+
+    // Read stream information
+    result = avformat_find_stream_info(formatContext, nullptr);
+    if (result < 0)
+    {
+      container->close();
+      return VideoResult<std::shared_ptr<MediaContainer>>(convertFfmpegError(result));
+    }
+
+    // Initialise codec contexts for each stream
+    container->m_codecContexts.resize(formatContext->nb_streams, nullptr);
+    container->m_streamTypes.resize(formatContext->nb_streams, StreamType::Unknown);
+
+    for (unsigned int i = 0; i < formatContext->nb_streams; ++i)
+    {
+      AVStream* stream = formatContext->streams[i];
+
+      // Find the decoder for this stream
+      const AVCodec* codec = avcodec_find_decoder(stream->codecpar->codec_id);
+      if (!codec)
+      {
+        container->m_streamTypes[i] = StreamType::Unknown;
+        continue;
+      }
+
+      // Create a new codec context
+      AVCodecContext* codecContext = avcodec_alloc_context3(codec);
+      if (!codecContext)
+      {
+        continue;
+      }
+
+      // Copy the codec parameters to the codec context
+      if (avcodec_parameters_to_context(codecContext, stream->codecpar) < 0)
+      {
+        avcodec_free_context(&codecContext);
+        continue;
+      }
+
+      // Open the codec
+      if (avcodec_open2(codecContext, codec, nullptr) < 0)
+      {
+        avcodec_free_context(&codecContext);
+        continue;
+      }
+
+      // Store the codec context
+      container->m_codecContexts[i] = codecContext;
+
+      // Map the FFmpeg stream type to our StreamType enum
+      container->m_streamTypes[i] = mapFfmpegStreamType(stream->codecpar->codec_type);
+    }
+
+    // Extract metadata from the format context
+    container->extractMetadata();
+
+    return VideoResult<std::shared_ptr<MediaContainer>>(std::static_pointer_cast<MediaContainer>(container));
+  }
+
+  VideoResult<std::vector<DeviceInfo>> FfmpegMediaContainer::enumerateDevices()
+  {
+    std::vector<DeviceInfo> devices;
+
+#ifdef __linux__
+    // On Linux, enumerate V4L2 devices
+    // Try to open video devices from /dev/video0 to /dev/video31
+    for (int i = 0; i < 32; ++i)
+    {
+      std::string devicePath = "/dev/video" + std::to_string(i);
+
+      // Try to open the device
+      int fd = ::open(devicePath.c_str(), O_RDONLY);
+      if (fd < 0)
+      {
+        continue;
+      }
+
+      // Query device capabilities
+      struct v4l2_capability cap;
+      if (::ioctl(fd, VIDIOC_QUERYCAP, &cap) == 0)
+      {
+        // Check if this is a video capture device
+        if (cap.device_caps & V4L2_CAP_VIDEO_CAPTURE || cap.capabilities & V4L2_CAP_VIDEO_CAPTURE)
+        {
+          DeviceInfo info;
+          info.path = devicePath;
+          info.name = reinterpret_cast<const char*>(cap.card);
+          info.driver = reinterpret_cast<const char*>(cap.driver);
+          info.busInfo = reinterpret_cast<const char*>(cap.bus_info);
+
+          // Query supported formats
+          struct v4l2_fmtdesc fmtDesc;
+          fmtDesc.index = 0;
+          fmtDesc.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+
+          while (::ioctl(fd, VIDIOC_ENUM_FMT, &fmtDesc) == 0)
+          {
+            info.supportedFormats.push_back(reinterpret_cast<const char*>(fmtDesc.description));
+            fmtDesc.index++;
+          }
+
+          devices.push_back(info);
+        }
+      }
+
+      ::close(fd);
+    }
+#else
+    SPDLOG_WARN("Device enumeration is only supported on Linux");
+    return VideoResult<std::vector<DeviceInfo>>(VideoErrorCode::NotImplemented);
+#endif
+
+    return VideoResult<std::vector<DeviceInfo>>(devices);
   }
 
   bool FfmpegMediaContainer::isOpen() const

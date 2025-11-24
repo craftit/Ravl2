@@ -6,6 +6,7 @@
 
 #include <cstdint>
 #include <string>
+#include <vector>
 #include <chrono>
 #include "Ravl2/Types.hh"
 
@@ -90,6 +91,27 @@ namespace Ravl2::Video
     MediaTime duration; //!< Total duration
     int64_t totalItems; //!< Total number of metadata items (may be estimated)
     float sampleRate; //!< Items per second (if applicable)
+  };
+
+  //! Structure to represent information about a capture device
+  struct DeviceInfo
+  {
+    std::string path; //!< Device path (e.g., "/dev/video0")
+    std::string name; //!< Human-readable device name
+    std::string driver; //!< Driver name
+    std::string busInfo; //!< Bus information
+    std::vector<std::string> supportedFormats; //!< List of supported pixel formats
+  };
+
+  //! Parameters for opening a capture device
+  struct DeviceParameters
+  {
+    std::string devicePath; //!< Device path (e.g., "/dev/video0", empty for default)
+    int width = 0; //!< Requested width (0 for device default)
+    int height = 0; //!< Requested height (0 for device default)
+    float frameRate = 0.0f; //!< Requested frame rate (0 for device default)
+    std::string pixelFormat; //!< Requested pixel format (empty for device default, e.g., "mjpeg", "yuyv422")
+    int bufferCount = 4; //!< Number of capture buffers
   };
 
   //! Seeking behavior flags

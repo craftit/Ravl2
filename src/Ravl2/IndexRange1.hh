@@ -279,6 +279,12 @@ namespace Ravl2
       return {m_min + ind, m_max + ind};
     }
 
+    //! Scale range
+    [[nodiscard]] constexpr IndexRange<1> operator*(int scale) const
+    {
+      return {m_min * scale, (m_max+1) * scale - 1};
+    }
+
     //! Add offset to range
     [[nodiscard]] constexpr IndexRange<1> operator-(int ind) const
     {

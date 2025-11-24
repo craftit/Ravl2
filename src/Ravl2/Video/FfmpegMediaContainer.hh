@@ -24,6 +24,7 @@ extern "C" {
 #include <libavutil/samplefmt.h>
 #include <libswscale/swscale.h>
 #include <libswresample/swresample.h>
+#include <libavdevice/avdevice.h>
 }
 #pragma GCC diagnostic pop
 
@@ -45,6 +46,12 @@ namespace Ravl2::Video
 
     //! Factory method to create an FFmpeg-based media container from a file
     [[nodiscard]] static VideoResult<std::shared_ptr<MediaContainer>> openFile(const std::string&filePath);
+
+    //! Factory method to create an FFmpeg-based media container from a capture device
+    [[nodiscard]] static VideoResult<std::shared_ptr<MediaContainer>> openDevice(const DeviceParameters&params);
+
+    //! Enumerate available capture devices
+    [[nodiscard]] static VideoResult<std::vector<DeviceInfo>> enumerateDevices();
 
     //! Check if the container is open
     [[nodiscard]] bool isOpen() const override;
@@ -110,7 +117,7 @@ namespace Ravl2::Video
     //! Metadata dictionary
     std::map<std::string, std::string> m_metadata;
 
-    //! Flag indicating if FFmpeg has been initialized
+    //! Flag indicating if FFmpeg has been initialised
     static bool s_ffmpegInitialized;
 
     //! Friend class declaration to allow the iterator to access private members

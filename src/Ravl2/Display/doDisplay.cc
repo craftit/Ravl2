@@ -9,10 +9,14 @@
 #include "Ravl2/Pixel/Pixel.hh"
 #include "Ravl2/IO/Load.hh"
 #include "Ravl2/IO/Save.hh"
+#include "Ravl2/IO/OutputSequence.hh"
 #include "Ravl2/Resource.hh"
 #include "Ravl2/ImageIO/JpegTurboImageIO.hh"
 #include "Ravl2/Display/DebugDisplay.hh"
 #include "Ravl2/Geometry/PolyLine.hh"
+#include "Ravl2/Image/DrawText.hh"
+#include "Ravl2/ImageIO/ImageIOInit.hh"
+
 #include <cxxopts.hpp>
 
 using namespace std::chrono_literals;
@@ -21,7 +25,7 @@ int RAVL2_MAIN(int argc, char **argv)
 {
   SPDLOG_INFO("Started main.");
   Ravl2::DebugDisplay::initDisplay();
-  Ravl2::initJpegTurboImageIO();
+  Ravl2::initImageIO();
 
   Ravl2::addResourcePath("data", RAVL_SOURCE_DIR "/data");
 
@@ -134,6 +138,26 @@ int RAVL2_MAIN(int argc, char **argv)
     } else {
       SPDLOG_INFO("Queued test polyline overlay to {} ({} points)", overlay1, poly.size());
     }
+  }
+
+
+  {
+    std::string outPath = "display://Video1";
+    Ravl2::StreamOutputProxy<Ravl2::Array<PixelRGB8,2>> outputStream;
+    if ( !outPath.empty()) {
+      outputStream = Ravl2::openOutputStream<Ravl2::Array<PixelRGB8,2>>(outPath,Ravl2::defaultSaveFormatHint(true));
+      const int maxCount = 20;
+      for(int i = 0; i < maxCount; ++i) {
+        auto newImg = clone(imgRgb);
+        Ravl2::DrawText(newImg,
+                PixelRGB8(255,255,255),
+                Ravl2::Index<2>({10,10}),
+                fmt::format("{}/{}", i, maxCount));
+        outputStream.put(newImg);
+        std::this_thread::sleep_for(100ms);
+      }
+    }
+
   }
 
   // Keep the process alive briefly so the SDL window (from the debug display thread) is visible.

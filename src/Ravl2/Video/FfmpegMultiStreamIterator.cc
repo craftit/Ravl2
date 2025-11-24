@@ -834,7 +834,11 @@ namespace Ravl2::Video
                 return typeid(YUV422Image<uint8_t>);
               case AV_PIX_FMT_YUV444P:
                 return typeid(YUV444Image<uint8_t>);
+              case AV_PIX_FMT_YUYV422:
+                return typeid(Array<PixelYUYV8,2>);
               default:
+                SPDLOG_ERROR("Unsupported pixel format {} ", static_cast<int>(codecContext->pix_fmt));
+                RavlAlwaysAssertMsg(false, "Unsupported pixel format");
                 // Default to RGB for other formats
                 return typeid(RGBPlanarImage<uint8_t>);
             }
@@ -1002,9 +1006,12 @@ namespace Ravl2::Video
               return createVideoFrame<YUV422Image<uint8_t>>(frame, localIndex, id);
             case AV_PIX_FMT_YUV444P:
               return createVideoFrame<YUV444Image<uint8_t>>(frame, localIndex, id);
-            default:
-              // Default to RGB for other formats
-              return createVideoFrame<RGBPlanarImage<uint8_t>>(frame, localIndex, id);
+            case AV_PIX_FMT_YUYV422:
+              return createVideoFrame<Array<PixelYUYV8,2>>(frame, localIndex, id);
+            default: {
+              SPDLOG_ERROR("Unsupported pixel format: {}", static_cast<int>(codecContext->pix_fmt));
+              throw std::runtime_error("Unsupported pixel format");
+            }
           }
         }
       case StreamType::Audio:
@@ -1160,7 +1167,7 @@ namespace Ravl2::Video
   {
     int width = frame->width;
     int height = frame->height;
-    IndexRange<2> range({{0, height}, {0, width}});
+    IndexRange<2> range({{0, height-1}, {0, width-1}});
 
     // Make a new handle to the frame
     AVFrame* newFrame = av_frame_alloc();
@@ -1186,11 +1193,12 @@ namespace Ravl2::Video
 
     // Set up each plane in the PlanarImage
     int planeIndex = 0;
-    img.forEachPlane([avFrameHandle,range,&planeIndex,newFrame]<typename PlaneArgT>(PlaneArgT&plane)
+    img.forEachPlane([avFrameHandle,range,&planeIndex,newFrame]<typename PlaneArgT>(PlaneArgT& plane)
       {
         using PlaneT = std::decay_t<PlaneArgT>;
         auto localRange = PlaneT::scale_type::calculateRange(range);
-        //SPDLOG_INFO("Setting up plane {} ({}) with range {} (master range {})", planeIndex, toString(plane.getChannelType()), localRange, range);
+        SPDLOG_INFO("Setting up plane {} ({}) with range {} (master range {})  Data:{} ", planeIndex, toString(plane.getChannelType()), localRange, range,static_cast<void *>(newFrame->data[planeIndex]));
+        assert(newFrame->data[planeIndex] != nullptr);
         plane.data() = Array<uint8_t, 2>(newFrame->data[planeIndex],
                                          localRange,
                                          {newFrame->linesize[planeIndex], 1},
@@ -1198,6 +1206,55 @@ namespace Ravl2::Video
         );
         planeIndex++;
       }
+    );
+
+    return true;
+  }
+
+  template<typename PixelT>
+  bool FfmpegMultiStreamIterator::makeImage(Array<PixelT,2>&img,const AVFrame* frame) const
+  {
+    int width = frame->width;
+    int height = frame->height;
+    IndexRange<2> range;
+    if constexpr (std::is_same<PixelT, PixelYUYV8>::value) {
+      // Two pixels packed into 1.
+      range = IndexRange<2>({{0, height-1}, {0, width/2-1}});
+    } else {
+      range = IndexRange<2>({{0, height-1}, {0, width-1}});
+    }
+
+    // Make a new handle to the frame
+    AVFrame* newFrame = av_frame_alloc();
+    if (!newFrame)
+    {
+      SPDLOG_ERROR("Failed to allocate new frame");
+      return false;
+    }
+    if (av_frame_ref(newFrame, frame) != 0) {
+      SPDLOG_ERROR("Failed to reference frame");
+      av_frame_free(&newFrame);
+      return false;
+    }
+
+    // Create a shared_ptr with a custom deleter to free the frame when done
+    auto *pixelPtr = reinterpret_cast<PixelT *>(newFrame->data[0]);
+    std::shared_ptr avFrameHandle = std::shared_ptr<PixelT []>(pixelPtr,
+                                                               [newFrame](PixelT* data) mutable
+                                                               {
+                                                                 (void)data;
+                                                                 av_frame_free(&newFrame);
+                                                               }
+    );
+
+    // Set up each plane in the PlanarImage
+    int planeIndex = 0;
+    SPDLOG_DEBUG("Setting up plane {} ({}) with range {}  Data:{} {} {} LineSize:{} ", planeIndex, typeName(typeid(PixelT)),  range,static_cast<void *>(newFrame->data[planeIndex]), static_cast<void *>(newFrame->data[1]),static_cast<void *>(newFrame->data[2]), newFrame->linesize[planeIndex]);
+    RavlAssert((newFrame->linesize[planeIndex] % static_cast<int>(sizeof(PixelYUYV8))) == 0);
+    img = Ravl2::Array<PixelT, 2>(pixelPtr,
+                           range,
+                           {newFrame->linesize[planeIndex]/static_cast<int>(sizeof(PixelYUYV8)), 1},
+                           avFrameHandle
     );
 
     return true;

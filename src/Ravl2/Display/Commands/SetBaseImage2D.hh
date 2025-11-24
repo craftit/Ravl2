@@ -41,7 +41,7 @@ namespace Ravl2::DebugDisplay
 
       if(!data.empty()) {
         node->setData(data.data(), width, height);
-        SPDLOG_INFO("DebugDisplay: Updated image {}x{} on channel '{}'", width, height, channel);
+        SPDLOG_DEBUG("DebugDisplay: Updated image {}x{} on channel '{}'", width, height, channel);
       }
     }
   };

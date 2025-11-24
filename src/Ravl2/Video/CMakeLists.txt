@@ -13,6 +13,7 @@ if(WITH_FFMPEG)
             libavutil
             libswscale
             libswresample
+            libavdevice
         )
     endif()
 

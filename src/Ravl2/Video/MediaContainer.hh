@@ -31,6 +31,9 @@ namespace Ravl2::Video
     //! Open a media container from a file path
     static VideoResult<std::shared_ptr<MediaContainer>> openFile(const std::string&filePath);
 
+    //! Open a capture device (e.g., webcam)
+    static VideoResult<std::shared_ptr<MediaContainer>> openDevice(const DeviceParameters&params);
+
     //! Check if the container is open
     virtual bool isOpen() const = 0;
 
@@ -74,5 +77,9 @@ namespace Ravl2::Video
     //! Mutex for thread-safe operations
     mutable std::shared_mutex m_mutex;
   };
+
+  //! Enumerate available capture devices
+  //! @return List of available capture devices
+  VideoResult<std::vector<DeviceInfo>> enumerateDevices();
 
 } // namespace Ravl2::Video

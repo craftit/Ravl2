@@ -103,6 +103,9 @@ namespace Ravl2::Video
     //! Make an image from AVFrame data
     template<typename... PlaneTypes> bool makeImage(PlanarImage<2, PlaneTypes...>&img, const AVFrame* frame) const;
 
+    //! Make a packed image from AVFrame data
+    template<typename PixelT> bool makeImage(Array<PixelT,2>&img,const AVFrame* frame) const;
+
     //! Get direct access to the FfmpegMediaContainer
     [[nodiscard]] FfmpegMediaContainer& ffmpegContainer() const;
 
