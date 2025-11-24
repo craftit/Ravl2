@@ -153,10 +153,11 @@ namespace Ravl2
     return "";
   }
 
-  std::string findDirectoryResource(const std::string_view &section, const std::string_view &key)
+  std::string findDirectoryResource(const std::string_view &section, const std::string_view &key, bool verbose)
   {
-    if(std::filesystem::is_directory(key))
+    if(std::filesystem::is_directory(key)) {
       return std::string(key);
+    }
     // Start searching
     auto &paths = resourcePaths();
     std::lock_guard<std::mutex> lock(paths.m_access);
@@ -165,6 +166,9 @@ namespace Ravl2
     // Go through paths and check if file exists on any of them
     for(auto &p : entry) {
       std::string path = fmt::format("{}/{}", p, key);
+      if(verbose) {
+        SPDLOG_INFO("Checking for directory '{}'  : {} ", path, std::filesystem::is_directory(path));
+      }
       if(std::filesystem::is_directory(path))
         return path;
     }

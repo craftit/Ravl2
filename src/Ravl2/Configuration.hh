@@ -329,7 +329,10 @@ namespace Ravl2
     
     //! Initialise a vector field
     [[nodiscard]] virtual std::any initVector(const std::string_view &name, const std::string_view &description, float defaultValue, float min, float max,size_t size);
-    
+
+    //! Initialise a vector field
+    [[nodiscard]] virtual std::any initVector(const std::string_view &name, const std::string_view &description, int defaultValue, int min, int max,size_t size);
+
     //! Initialise a string field
     [[nodiscard]] virtual std::any initString(const std::string_view &name, const std::string_view &description, const std::string_view &defaultValue);
 
@@ -600,7 +603,15 @@ namespace Ravl2
       assert(m_node);
       std::any value = m_node->getValue(name, typeid(std::vector<DataT>));
       if(!value.has_value()) {
-        value = m_node->initVector(name, description, static_cast<float>(defaultValue), static_cast<float>(min), static_cast<float>(max),size);
+        if constexpr (std::is_floating_point<DataT>::value) {
+          value = m_node->initVector(name, description, static_cast<float>(defaultValue), static_cast<float>(min), static_cast<float>(max),size);
+        } else {
+          value = m_node->initVector(name, description, static_cast<int>(defaultValue), static_cast<int>(min), static_cast<int>(max),size);
+        }
+      }
+      if(value.type() != typeid(std::vector<DataT>)) {
+        SPDLOG_ERROR("Expected vector of type {}, got {} ", Ravl2::typeName(typeid(std::vector<DataT>)), Ravl2::typeName(value.type()));
+        RavlAlwaysAssertMsg(false, "Unexpected type");
       }
       return std::any_cast<std::vector<DataT> >(value);
     }
