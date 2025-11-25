@@ -53,7 +53,7 @@ namespace Ravl2
     std::shared_ptr<GLShaderProgram> mShaderProgram;
     GLint mViewProjectionLocation = 0;
     Vector<float,3> mDiag = {1, 1, 1};
-    PixelRGB8 mColour = {255, 128, 128};
+    [[maybe_unused]] PixelRGB8 mColour = {255, 128, 128};
 
     std::shared_ptr<GLVertexBuffer> mVertexBuffer;
     GLVertexArray mVertexArray;
