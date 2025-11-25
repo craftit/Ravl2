@@ -1222,7 +1222,7 @@ namespace Ravl2::Video
       {
         using PlaneT = std::decay_t<PlaneArgT>;
         auto localRange = PlaneT::scale_type::calculateRange(range);
-        SPDLOG_INFO("Setting up plane {} ({}) with range {} (master range {})  Data:{} ", planeIndex, toString(plane.getChannelType()), localRange, range,static_cast<void *>(newFrame->data[planeIndex]));
+        SPDLOG_DEBUG("Setting up plane {} ({}) with range {} (master range {})  Data:{} ", planeIndex, toString(plane.getChannelType()), localRange, range,static_cast<void *>(newFrame->data[planeIndex]));
         assert(newFrame->data[planeIndex] != nullptr);
         plane.data() = Array<uint8_t, 2>(newFrame->data[planeIndex],
                                          localRange,
@@ -1281,7 +1281,7 @@ namespace Ravl2::Video
 
     // Set up each plane in the PlanarImage
     int planeIndex = 0;
-    SPDLOG_INFO("Setting up plane {} ({}) with range {}  Data:{} {} {} LineSize:{} Clone:{}", planeIndex, typeName(typeid(PixelT)),  range,static_cast<void *>(newFrame->data[planeIndex]), static_cast<void *>(newFrame->data[1]),static_cast<void *>(newFrame->data[2]), newFrame->linesize[planeIndex],m_needsFrameClone);
+    SPDLOG_DEBUG("Setting up plane {} ({}) with range {}  Data:{} {} {} LineSize:{} Clone:{}", planeIndex, typeName(typeid(PixelT)),  range,static_cast<void *>(newFrame->data[planeIndex]), static_cast<void *>(newFrame->data[1]),static_cast<void *>(newFrame->data[2]), newFrame->linesize[planeIndex],m_needsFrameClone);
     RavlAssert((newFrame->linesize[planeIndex] % static_cast<int>(sizeof(PixelT))) == 0);
     img = Ravl2::Array<PixelT, 2>(pixelPtr,
                            range,
@@ -1431,7 +1431,7 @@ namespace Ravl2::Video
       }
     }
 
-    // If keyframe index is empty, return invalid keyframe
+    // If keyframe index is empty, return an invalid keyframe
     if (m_keyframeIndex.empty())
     {
       SPDLOG_DEBUG("Keyframe index is empty");
