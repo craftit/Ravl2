@@ -368,6 +368,7 @@ namespace Ravl2
   using PixelYUVA8 = Pixel<uint8_t, ImageChannel::Luminance, ImageChannel::ChrominanceU, ImageChannel::ChrominanceV, ImageChannel::Alpha>;
   using PixelYUV32F = Pixel<float, ImageChannel::Luminance, ImageChannel::ChrominanceU, ImageChannel::ChrominanceV>;
   using PixelYUYV8 = Pixel<uint8_t, ImageChannel::Luminance, ImageChannel::ChrominanceU, ImageChannel::Luminance2, ImageChannel::ChrominanceV>;
+  using PixelUYVY8 = Pixel<uint8_t, ImageChannel::ChrominanceU, ImageChannel::Luminance, ImageChannel::ChrominanceV, ImageChannel::Luminance2>;
 
   // Let the compiler know there's instantiations of the template
   extern template class Pixel<uint8_t, ImageChannel::Red, ImageChannel::Green, ImageChannel::Blue>;

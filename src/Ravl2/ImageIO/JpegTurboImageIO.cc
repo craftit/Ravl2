@@ -251,7 +251,7 @@ namespace Ravl2
         return std::nullopt;
       });
 
-      const float intrinsicLoss = 1.0f;// no implicit conversion loss for basic gray/RGB paths
+      constexpr float intrinsicLoss = 1.0f;// no implicit conversion loss for basic gray/RGB paths
       auto chain = chainOpt.value();
       const float loss = chain.conversionLoss() * intrinsicLoss;
       return StreamInputPlan {strm, chain, loss};

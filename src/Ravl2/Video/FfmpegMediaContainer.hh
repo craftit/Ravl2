@@ -48,9 +48,21 @@ namespace Ravl2::Video
     [[nodiscard]] static VideoResult<std::shared_ptr<MediaContainer>> openFile(const std::string&filePath);
 
     //! Factory method to create an FFmpeg-based media container from a capture device
+    //!
+    //! Platform-specific requirements:
+    //! - Linux: Requires FFmpeg compiled with V4L2 support (--enable-v4l2 or --enable-indev=v4l2)
+    //! - macOS: Requires FFmpeg compiled with AVFoundation support (--enable-avfoundation or --enable-indev=avfoundation)
+    //! - Windows: Requires FFmpeg compiled with DirectShow support (--enable-dshow or --enable-indev=dshow)
+    //!
+    //! @param params Device parameters including path, resolution, frame rate, etc.
+    //! @return VideoResult containing the MediaContainer or an error code
     [[nodiscard]] static VideoResult<std::shared_ptr<MediaContainer>> openDevice(const DeviceParameters&params);
 
     //! Enumerate available capture devices
+    //!
+    //! Platform-specific requirements: Same as openDevice()
+    //!
+    //! @return VideoResult containing a vector of DeviceInfo or an error code
     [[nodiscard]] static VideoResult<std::vector<DeviceInfo>> enumerateDevices();
 
     //! Check if the container is open

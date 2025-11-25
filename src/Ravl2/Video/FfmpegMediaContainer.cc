@@ -13,6 +13,7 @@
 #include <unistd.h>
 #endif
 
+
 #pragma GCC diagnostic ignored "-Wold-style-cast"
 
 namespace Ravl2::Video
@@ -138,18 +139,25 @@ namespace Ravl2::Video
 
     SPDLOG_DEBUG("Container created");
 
-    // Determine the device path
+    // Determine the device path and input format based on platform
+    // Device path formats:
+    //   Linux: "/dev/videoN" (e.g., "/dev/video0")
+    //   macOS: "N" where N is device index (e.g., "0" for first camera)
+    //   Windows: "video=Device Name" (e.g., "video=Integrated Camera")
     std::string devicePath = params.devicePath;
+    const AVInputFormat* inputFormat = nullptr;
+
+#ifdef __linux__
+    // Linux: Use V4L2
     if (devicePath.empty())
     {
-      // Use default device
       devicePath = "/dev/video0";
     }
 
-    SPDLOG_DEBUG("Device path: {}", devicePath);
+    SPDLOG_DEBUG("Device path (Linux): {}", devicePath);
 
     // Find the v4l2 input format (try both names)
-    const AVInputFormat* inputFormat = av_find_input_format("v4l2");
+    inputFormat = av_find_input_format("v4l2");
     if (!inputFormat)
     {
       inputFormat = av_find_input_format("video4linux2");
@@ -159,6 +167,40 @@ namespace Ravl2::Video
       SPDLOG_ERROR("V4L2 input format not found. Make sure FFmpeg was compiled with V4L2 support.");
       return VideoResult<std::shared_ptr<MediaContainer>>(VideoErrorCode::UnsupportedFormat);
     }
+#elif defined(__APPLE__)
+    // macOS: Use AVFoundation
+    if (devicePath.empty())
+    {
+      devicePath = "0"; // Default to first camera
+    }
+
+    SPDLOG_DEBUG("Device path (macOS): {}", devicePath);
+
+    inputFormat = av_find_input_format("avfoundation");
+    if (!inputFormat)
+    {
+      SPDLOG_ERROR("AVFoundation input format not found. Make sure FFmpeg was compiled with AVFoundation support.");
+      return VideoResult<std::shared_ptr<MediaContainer>>(VideoErrorCode::UnsupportedFormat);
+    }
+#elif defined(_WIN32)
+    // Windows: Use DirectShow
+    if (devicePath.empty())
+    {
+      devicePath = "video=Integrated Camera"; // Common default
+    }
+
+    SPDLOG_DEBUG("Device path (Windows): {}", devicePath);
+
+    inputFormat = av_find_input_format("dshow");
+    if (!inputFormat)
+    {
+      SPDLOG_ERROR("DirectShow input format not found. Make sure FFmpeg was compiled with DirectShow support.");
+      return VideoResult<std::shared_ptr<MediaContainer>>(VideoErrorCode::UnsupportedFormat);
+    }
+#else
+    SPDLOG_ERROR("Video capture not supported on this platform");
+    return VideoResult<std::shared_ptr<MediaContainer>>(VideoErrorCode::NotImplemented);
+#endif
 
     // Set up device options
     AVDictionary* options = nullptr;
@@ -173,15 +215,38 @@ namespace Ravl2::Video
     // Set frame rate if specified
     if (params.frameRate > 0.0f)
     {
-      std::string frameRate = std::to_string(static_cast<int>(params.frameRate));
+      // Round to nearest integer for better compatibility with device constraints
+      // AVFoundation and other capture APIs typically support exact integer frame rates
+      int roundedFrameRate = static_cast<int>(params.frameRate + 0.5f);
+      std::string frameRate = std::to_string(roundedFrameRate);
       av_dict_set(&options, "framerate", frameRate.c_str(), 0);
+
+      SPDLOG_DEBUG("Setting frame rate: {} (rounded from {})", frameRate, params.frameRate);
     }
+#ifdef __APPLE__
+    else
+    {
+      // On macOS, explicitly set a common default frame rate to avoid issues
+      // Most webcams support 30 fps as a safe default
+      av_dict_set(&options, "framerate", "30", 0);
+      SPDLOG_DEBUG("Using default frame rate of 30 fps for AVFoundation");
+    }
+#endif
 
     // Set pixel format if specified
+    // Note: On macOS, AVFoundation will automatically select a compatible format if not specified
     if (!params.pixelFormat.empty())
     {
       av_dict_set(&options, "pixel_format", params.pixelFormat.c_str(), 0);
     }
+
+#ifdef __APPLE__
+    // macOS-specific options for better device initialization
+    // Increase probesize to properly detect stream parameters
+    av_dict_set(&options, "probesize", "10M", 0);
+    // Allow more time for stream analysis
+    av_dict_set(&options, "analyzeduration", "2000000", 0);
+#endif
 
     // Open the device
     AVFormatContext* formatContext = nullptr;
@@ -307,8 +372,82 @@ namespace Ravl2::Video
 
       ::close(fd);
     }
+#elif defined(__APPLE__)
+    // On macOS, enumerate AVFoundation devices using FFmpeg's avdevice API
+    const AVInputFormat* inputFormat = av_find_input_format("avfoundation");
+    if (!inputFormat)
+    {
+      SPDLOG_ERROR("AVFoundation input format not found");
+      return VideoResult<std::vector<DeviceInfo>>(VideoErrorCode::UnsupportedFormat);
+    }
+
+    // Use FFmpeg's device enumeration
+    AVDeviceInfoList* deviceList = nullptr;
+    AVDictionary* options = nullptr;
+
+    int result = avdevice_list_input_sources(inputFormat, nullptr, options, &deviceList);
+    if (result >= 0 && deviceList)
+    {
+      for (int i = 0; i < deviceList->nb_devices; ++i)
+      {
+        AVDeviceInfo* devInfo = deviceList->devices[i];
+
+        DeviceInfo info;
+        info.path = std::to_string(i);
+        info.name = devInfo->device_description ? devInfo->device_description : devInfo->device_name;
+        info.driver = "AVFoundation";
+        info.busInfo = devInfo->device_name;
+
+        // List common formats supported by AVFoundation
+        info.supportedFormats.push_back("YUV 4:2:2");
+        info.supportedFormats.push_back("BGRA");
+
+        devices.push_back(info);
+      }
+
+      avdevice_free_list_devices(&deviceList);
+    }
+    else
+    {
+      SPDLOG_WARN("Failed to enumerate AVFoundation devices");
+    }
+#elif defined(_WIN32)
+    // On Windows, enumerate DirectShow devices using FFmpeg's avdevice API
+    const AVInputFormat* inputFormat = av_find_input_format("dshow");
+    if (!inputFormat)
+    {
+      SPDLOG_ERROR("DirectShow input format not found");
+      return VideoResult<std::vector<DeviceInfo>>(VideoErrorCode::UnsupportedFormat);
+    }
+
+    // Use FFmpeg's device enumeration
+    AVDeviceInfoList* deviceList = nullptr;
+    AVDictionary* options = nullptr;
+
+    int result = avdevice_list_input_sources(inputFormat, nullptr, options, &deviceList);
+    if (result >= 0 && deviceList)
+    {
+      for (int i = 0; i < deviceList->nb_devices; ++i)
+      {
+        AVDeviceInfo* devInfo = deviceList->devices[i];
+
+        DeviceInfo info;
+        info.path = std::string("video=") + devInfo->device_name;
+        info.name = devInfo->device_description ? devInfo->device_description : devInfo->device_name;
+        info.driver = "DirectShow";
+        info.busInfo = "";
+
+        devices.push_back(info);
+      }
+
+      avdevice_free_list_devices(&deviceList);
+    }
+    else
+    {
+      SPDLOG_WARN("Failed to enumerate DirectShow devices");
+    }
 #else
-    SPDLOG_WARN("Device enumeration is only supported on Linux");
+    SPDLOG_WARN("Device enumeration is not supported on this platform");
     return VideoResult<std::vector<DeviceInfo>>(VideoErrorCode::NotImplemented);
 #endif
 

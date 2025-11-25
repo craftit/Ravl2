@@ -199,5 +199,9 @@ namespace Ravl2::Video
 
     //! Max frame search when looking for a time code.
     static constexpr int MAX_FRAME_SEARCH = 30;
+
+    //! Flag indicating if frames need to be cloned immediately to free buffers
+    //! This is required for capture devices with limited buffer pools (e.g., AVFoundation on macOS)
+    bool m_needsFrameClone = false;
   };
 } // namespace Ravl2::Video

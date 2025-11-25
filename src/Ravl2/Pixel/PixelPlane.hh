@@ -706,4 +706,23 @@ namespace Ravl2
                                      PixelPlane<ComponentT, 3, ImageChannel::Blue>  // B volume
                                      >;
 
+  //! Clone a PlanarImage by deep-copying all planes
+  //! This is useful for releasing references to capture device buffers
+  //! @tparam Dims The number of dimensions
+  //! @tparam PlaneTypes The types of planes in the image
+  //! @param img The planar image to clone
+  //! @return A new PlanarImage with all planes deep-copied
+  template <unsigned Dims, typename... PlaneTypes>
+  [[nodiscard]] inline auto clone(const PlanarImage<Dims, PlaneTypes...> &img)
+  {
+    PlanarImage<Dims, PlaneTypes...> result;
+
+    // Clone each plane individually using fold expression
+    [&]<std::size_t... Is>(std::index_sequence<Is...>) {
+      ((result.template plane<Is>().data() = clone(img.template plane<Is>().data())), ...);
+    }(std::make_index_sequence<sizeof...(PlaneTypes)>{});
+
+    return result;
+  }
+
 }// namespace Ravl2
