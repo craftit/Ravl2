@@ -3,6 +3,8 @@
 //
 
 #include "Ravl2/Pixel/PixelPlane.hh"
+
+#include "Ravl2/Assert.hh"
 #include "Ravl2/IO/TypeConverter.hh"
 
 namespace Ravl2
@@ -12,6 +14,94 @@ namespace Ravl2
   {
     initPixel();
   }
+
+  namespace
+  {
+
+    template<typename CompT, typename SrcPixelT = PixelYUYV8>
+    YUV422Image<CompT> convertYUYV2Planar422( const Array<SrcPixelT, 2> &src)
+    {
+      IndexRange<2> fullRange({src.range(0),src.range(1) * 2});
+      YUV422Image<CompT> ret(fullRange);
+      SPDLOG_DEBUG("Converting frame {} to {} ",src.range(),fullRange);
+
+      auto &destY = ret.template planeByChannel<ImageChannel::Luminance>().data();
+      auto &destU = ret.template planeByChannel<ImageChannel::ChrominanceU>().data();
+      auto &destV = ret.template planeByChannel<ImageChannel::ChrominanceV>().data();
+      assert(destY.range(0) == src.range(0));
+      assert(destU.range(0) == src.range(0));
+      assert(destV.range(0) == src.range(0));
+
+      assert(destY.range(1) == src.range(1));
+      assert(destU.range(1).size() == src.range(1).size()/2);
+      assert(destV.range(1).size() == src.range(1).size()/2);
+
+      for(auto atRow : src.range(0)) {
+
+        auto srcRow = src[atRow];
+
+        CompT *destYPix = destY[atRow].origin_address();
+        CompT *destUPix = destU[atRow].origin_address();
+        CompT *destVPix = destV[atRow].origin_address();
+
+        for(const auto &srcPix : srcRow) {
+          *destYPix = srcPix.template get<ImageChannel::Luminance,CompT>();
+          ++destYPix;
+          *destYPix = srcPix.template get<ImageChannel::Luminance2,CompT>();
+          ++destYPix;
+          *destUPix = srcPix.template get<ImageChannel::ChrominanceU,CompT>();
+          ++destUPix;
+          *destVPix = srcPix.template get<ImageChannel::ChrominanceV,CompT>();
+          ++destVPix;
+        }
+      }
+      return ret;
+    }
+  }
+
+  template<typename CompT, typename SrcPixelT = PixelYUYV8>
+  YUV444Image<CompT> convertYUYV2Planar444( const Array<SrcPixelT, 2> &src)
+  {
+    IndexRange<2> fullRange({src.range(0),src.range(1) * 2});
+    YUV444Image<CompT> ret(fullRange);
+    SPDLOG_DEBUG("Converting frame {} to {} ",src.range(),fullRange);
+
+    auto &destY = ret.template planeByChannel<ImageChannel::Luminance>().data();
+    auto &destU = ret.template planeByChannel<ImageChannel::ChrominanceU>().data();
+    auto &destV = ret.template planeByChannel<ImageChannel::ChrominanceV>().data();
+
+    assert(destY.range(0) == src.range(0));
+    assert(destU.range(0) == src.range(0));
+    assert(destV.range(0) == src.range(0));
+
+    assert(destY.range(1) == src.range(1)*2);
+    assert(destU.range(1) == src.range(1)*2);
+    assert(destV.range(1) == src.range(1)*2);
+
+    for(auto atRow : src.range(0)) {
+
+      auto srcRow = src[atRow];
+
+      CompT *destYPix = destY[atRow].origin_address();
+      CompT *destUPix = destU[atRow].origin_address();
+      CompT *destVPix = destV[atRow].origin_address();
+
+      for(const auto &srcPix : srcRow) {
+        *destYPix = srcPix.template get<ImageChannel::Luminance,CompT>();
+        ++destYPix;
+        *destYPix = srcPix.template get<ImageChannel::Luminance2,CompT>();
+        ++destYPix;
+        *destUPix = srcPix.template get<ImageChannel::ChrominanceU,CompT>();
+        destUPix[1] = *destUPix;
+        destUPix += 2;
+        *destVPix = srcPix.template get<ImageChannel::ChrominanceV,CompT>();
+        destVPix[1] = *destVPix;
+        destVPix += 2;
+      }
+    }
+    return ret;
+  }
+
 
   // Explicit instantiations for common plane types
   // 2D planes with various scaling factors - Luminance planes
@@ -119,21 +209,6 @@ namespace Ravl2
   template auto convertToPlanar<2, PixelY16>(const Array<PixelY16, 2> &packedArray);
   template auto convertToPlanar<2, PixelY32F>(const Array<PixelY32F, 2> &packedArray);
 
-  [[maybe_unused]] bool g_reg1 = registerConversion(convertToPlanar<2, PixelRGB8>, 1.00f);
-  [[maybe_unused]] bool g_reg2 = registerConversion(convertToPlanar<2, PixelRGBA8>, 1.00f);
-  [[maybe_unused]] bool g_reg3 = registerConversion(convertToPlanar<2, PixelRGB16>, 1.00f);
-  [[maybe_unused]] bool g_reg4 = registerConversion(convertToPlanar<2, PixelRGBA16>, 1.00f);
-  [[maybe_unused]] bool g_reg5 = registerConversion(convertToPlanar<2, PixelRGB32F>, 1.00f);
-  [[maybe_unused]] bool g_reg6 = registerConversion(convertToPlanar<2, PixelRGBA32F>, 1.00f);
-  [[maybe_unused]] bool g_reg7 = registerConversion(convertToPlanar<2, PixelBGR8>, 1.00f);
-  [[maybe_unused]] bool g_reg8 = registerConversion(convertToPlanar<2, PixelBGRA8>, 1.00f);
-  [[maybe_unused]] bool g_reg9 = registerConversion(convertToPlanar<2, PixelYUV8>, 1.00f);
-  [[maybe_unused]] bool g_reg10 = registerConversion(convertToPlanar<2, PixelYUVA8>, 1.00f);
-  [[maybe_unused]] bool g_reg11 = registerConversion(convertToPlanar<2, PixelYUV32F>, 1.00f);
-  [[maybe_unused]] bool g_reg12 = registerConversion(convertToPlanar<2, PixelY8>, 1.00f);
-  [[maybe_unused]] bool g_reg13 = registerConversion(convertToPlanar<2, PixelYA8>, 1.00f);
-  [[maybe_unused]] bool g_reg14 = registerConversion(convertToPlanar<2, PixelY16>, 1.00f);
-  [[maybe_unused]] bool g_reg15 = registerConversion(convertToPlanar<2, PixelY32F>, 1.00f);
 
   template <typename PixelT, typename PlanarImageT>
   Array<PixelT, 2> helperConvertToPacked(const PlanarImageT &planarImage)
@@ -170,6 +245,21 @@ namespace Ravl2
 
   namespace
   {
+    [[maybe_unused]] bool g_reg1 = registerConversion(convertToPlanar<2, PixelRGB8>, 1.00f);
+    [[maybe_unused]] bool g_reg2 = registerConversion(convertToPlanar<2, PixelRGBA8>, 1.00f);
+    [[maybe_unused]] bool g_reg3 = registerConversion(convertToPlanar<2, PixelRGB16>, 1.00f);
+    [[maybe_unused]] bool g_reg4 = registerConversion(convertToPlanar<2, PixelRGBA16>, 1.00f);
+    [[maybe_unused]] bool g_reg5 = registerConversion(convertToPlanar<2, PixelRGB32F>, 1.00f);
+    [[maybe_unused]] bool g_reg6 = registerConversion(convertToPlanar<2, PixelRGBA32F>, 1.00f);
+    [[maybe_unused]] bool g_reg7 = registerConversion(convertToPlanar<2, PixelBGR8>, 1.00f);
+    [[maybe_unused]] bool g_reg8 = registerConversion(convertToPlanar<2, PixelBGRA8>, 1.00f);
+    [[maybe_unused]] bool g_reg9 = registerConversion(convertToPlanar<2, PixelYUV8>, 1.00f);
+    [[maybe_unused]] bool g_reg10 = registerConversion(convertToPlanar<2, PixelYUVA8>, 1.00f);
+    [[maybe_unused]] bool g_reg11 = registerConversion(convertToPlanar<2, PixelYUV32F>, 1.00f);
+    [[maybe_unused]] bool g_reg12 = registerConversion(convertToPlanar<2, PixelY8>, 1.00f);
+    [[maybe_unused]] bool g_reg13 = registerConversion(convertToPlanar<2, PixelYA8>, 1.00f);
+    [[maybe_unused]] bool g_reg14 = registerConversion(convertToPlanar<2, PixelY16>, 1.00f);
+    [[maybe_unused]] bool g_reg15 = registerConversion(convertToPlanar<2, PixelY32F>, 1.00f);
 
     // Register the helperConvertToPacked function for common types
     [[maybe_unused]] bool g_reg16 = registerConversion(helperConvertToPacked<PixelRGB8, RGBPlanarImage<uint8_t>>, 1.00f);
@@ -189,6 +279,13 @@ namespace Ravl2
     [[maybe_unused]] bool g_reg28 = registerConversion(helperConvertToPacked<PixelYA8, PlanarImage2D<PixelPlane<uint8_t, 2, ImageChannel::Luminance, 1, 1>, PixelPlane<uint8_t, 2, ImageChannel::Alpha, 1, 1>>>, 1.00f);
     [[maybe_unused]] bool g_reg29 = registerConversion(helperConvertToPacked<PixelY16, PlanarImage2D<PixelPlane<uint16_t, 2, ImageChannel::Luminance, 1, 1>>>, 1.00f);
     [[maybe_unused]] bool g_reg30 = registerConversion(helperConvertToPacked<PixelY32F, PlanarImage2D<PixelPlane<float, 2, ImageChannel::Luminance, 1, 1>>>, 1.00f);
+
+
+    [[maybe_unused]] bool g_reg31 =  registerConversion(convertYUYV2Planar422<uint8_t,PixelYUYV8>, 1.00f);
+    [[maybe_unused]] bool g_reg32 =  registerConversion(convertYUYV2Planar422<uint8_t,PixelUYVY8>, 1.00f);
+
+    [[maybe_unused]] bool g_reg33 =  registerConversion(convertYUYV2Planar444<uint8_t,PixelYUYV8>, 1.00f);
+    [[maybe_unused]] bool g_reg34 =  registerConversion(convertYUYV2Planar444<uint8_t,PixelUYVY8>, 1.00f);
   }// namespace
 
 }// namespace Ravl2

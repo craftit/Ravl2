@@ -88,7 +88,7 @@ namespace Ravl2
       auto chainOpt = typeConverterMap().find(ctx.m_targetType, typeid(ViaT));
       if(!chainOpt) return std::nullopt;
 
-      auto strm = std::make_shared<StreamInputCall<ViaT>>([dctx, verbose = ctx.m_verbose](std::streampos &pos) -> std::optional<ViaT> {
+      auto strm = std::make_shared<StreamInputCall<ViaT>>([dctx, verbose = ctx.mVerbose](std::streampos &pos) -> std::optional<ViaT> {
         if(pos != 0) return std::nullopt;
         if(!dctx || !dctx->created || !dctx->headerOk || dctx->consumed) return std::nullopt;
 
@@ -215,17 +215,17 @@ namespace Ravl2
         if(!ctx.m_data.empty()) {
           static const unsigned char kPngSig[8] = {0x89, 'P', 'N', 'G', 0x0D, 0x0A, 0x1A, 0x0A};
           if(ctx.m_data.size() < 8 || !std::equal(ctx.m_data.begin(), ctx.m_data.begin() + 8, kPngSig)) {
-            if(ctx.m_verbose) {
-              SPDLOG_INFO("PNGNative: signature mismatch for {}", ctx.m_filename);
+            if(ctx.mVerbose) {
+              SPDLOG_INFO("PNGNative: signature mismatch for {}", ctx.mFilename);
             }
             return std::nullopt;
           }
         }
         // Open and parse header, keep context for plan
-        auto dctx = std::make_shared<PngDecodeContext>(ctx.m_filename);
+        auto dctx = std::make_shared<PngDecodeContext>(ctx.mFilename);
         if(!dctx->created || !dctx->headerOk) {
-          if(ctx.m_verbose) {
-            SPDLOG_INFO("PNGNative: cannot open or parse PNG: {}", ctx.m_filename);
+          if(ctx.mVerbose) {
+            SPDLOG_INFO("PNGNative: cannot open or parse PNG: {}", ctx.mFilename);
           }
           return std::nullopt;
         }
@@ -267,9 +267,9 @@ namespace Ravl2
         }
 
         if(!best) return std::nullopt;
-        if(ctx.m_verbose) {
+        if(ctx.mVerbose) {
           SPDLOG_INFO("PNGNative probe: {}x{} depth={} colorType={} → selected kind {} for {}",
-                      dctx->height, dctx->width, dctx->bitDepth, dctx->colorType, int(best->kind), ctx.m_filename);
+                      dctx->height, dctx->width, dctx->bitDepth, dctx->colorType, int(best->kind), ctx.mFilename);
         }
 
         switch(best->kind) {
@@ -282,8 +282,8 @@ namespace Ravl2
         }
         return std::nullopt;
 #else
-        if(ctx.m_verbose) {
-          SPDLOG_INFO("PNGNative probe active for {} (no libpng found)", ctx.m_filename);
+        if(ctx.mVerbose) {
+          SPDLOG_INFO("PNGNative probe active for {} (no libpng found)", ctx.mFilename);
         }
         return std::nullopt;
 #endif

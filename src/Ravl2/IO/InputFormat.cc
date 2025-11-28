@@ -27,24 +27,24 @@ namespace Ravl2
   std::optional<StreamInputPlan> InputFormatMap::probe(const ProbeInputContext &ctx)
   {
     std::shared_lock lock(m_mutex);
-    if(ctx.m_verbose) {
-      SPDLOG_INFO("Probing input for file: {}. Protocol:{}  Have {} entries in map '{}' ", ctx.m_filename, ctx.m_protocol, m_formatByExtension.size(), static_cast<void *>(this));
+    if(ctx.mVerbose) {
+      SPDLOG_INFO("Probing input for file: {}. Protocol:{}  Have {} entries in map '{}' ", ctx.mFilename, ctx.m_protocol, m_formatByExtension.size(), static_cast<void *>(this));
     }
     auto extIt = m_formatByExtension.find(ctx.m_extension);
     if(extIt != m_formatByExtension.end()) {
       const auto &fmtList = extIt->second;
-      if(ctx.m_verbose) {
+      if(ctx.mVerbose) {
         SPDLOG_INFO("Probing for extension: {}, found {} handlers. ", ctx.m_extension, fmtList.size());
       }
       for(const auto &fmt : fmtList) {
-        if(ctx.m_verbose) {
+        if(ctx.mVerbose) {
           SPDLOG_INFO("Probing format: {}. Supports Protocol:{} ({})", fmt->name(), fmt->supportsProtocol(ctx.m_protocol), fmt->protocol());
         }
         if(!fmt->supportsProtocol(ctx.m_protocol))
           continue;
         auto plan = fmt->probe(ctx);
         if(plan.has_value()) {
-          if(ctx.m_verbose) {
+          if(ctx.mVerbose) {
             SPDLOG_INFO("Found plan.");
           }
           return plan;
@@ -57,8 +57,8 @@ namespace Ravl2
       if(defIt != m_formatByExtension.end()) {
         const auto &fmtList = m_formatByExtension.at("");
         for(const auto &fmt : fmtList) {
-          if(ctx.m_verbose) {
-            SPDLOG_INFO("Probing format: {}. Supports Protocol:{} ", fmt->name(), ctx.m_filename, fmt->supportsProtocol(ctx.m_protocol));
+          if(ctx.mVerbose) {
+            SPDLOG_INFO("Probing format: {}. Supports Protocol:{} ", fmt->name(), ctx.mFilename, fmt->supportsProtocol(ctx.m_protocol));
           }
           if(!fmt->supportsProtocol(ctx.m_protocol))
             continue;
@@ -66,7 +66,7 @@ namespace Ravl2
             continue;
           auto plan = fmt->probe(ctx);
           if(plan.has_value()) {
-            if(ctx.m_verbose) {
+            if(ctx.mVerbose) {
               SPDLOG_INFO("Fond plan.");
             }
             return plan;

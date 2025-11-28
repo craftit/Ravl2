@@ -133,6 +133,7 @@ namespace Ravl2
     [[maybe_unused]] bool g_reg14 = registerCerealFormats<Array<PixelYUV32F,2>>();
     [[maybe_unused]] bool g_reg15 = registerCerealFormats<Array<PixelY32F,2>>();
     [[maybe_unused]] bool g_reg16 = registerCerealFormats<Array<PixelYUYV8,2>>();
+    [[maybe_unused]] bool g_reg17 = registerCerealFormats<Array<PixelUYVY8,2>>();
 
     // Make the pixel type names more readable
     [[maybe_unused]] bool g_typeReg1 = registerTypeName(typeid(PixelI8),"Ravl2::PixelI8");
@@ -143,6 +144,7 @@ namespace Ravl2
     [[maybe_unused]] bool g_typeReg6 = registerTypeName(typeid(PixelRGBA8),"Ravl2::PixelRGBA8");
     [[maybe_unused]] bool g_typeReg7 = registerTypeName(typeid(PixelRGB16),"Ravl2::PixelRGB16");
     [[maybe_unused]] bool g_typeReg8 = registerTypeName(typeid(PixelYUYV8),"Ravl2::PixelYUYV8");
+    [[maybe_unused]] bool g_typeReg9 = registerTypeName(typeid(PixelUYVY8),"Ravl2::PixelUYVY8");
   }
 
 }// namespace Ravl2

@@ -382,7 +382,7 @@ namespace Ravl2
     }
 
     // Helper to get a plane's channel type by runtime index
-    [[nodiscard]] ImageChannel getPlaneChannelType(std::size_t index) const
+    [[nodiscard]] constexpr ImageChannel getPlaneChannelType(std::size_t index) const
     {
       ImageChannel result = ImageChannel::Unused;
       auto getChannelForIndex = [&]<std::size_t I>() {
@@ -399,7 +399,7 @@ namespace Ravl2
     }
 
     // Helper to get a plane by runtime index
-    [[nodiscard]] const auto &getPlaneByIndex(std::size_t index) const
+    [[nodiscard]] constexpr auto &getPlaneByIndex(std::size_t index) const
     {
 
       auto getPlaneForIndex = [index]<std::size_t I>() {
@@ -420,7 +420,7 @@ namespace Ravl2
 
     // Helper to access a plane by runtime index
     template <std::size_t... Is>
-    [[nodiscard]] const auto &accessPlaneImpl(std::size_t index, std::index_sequence<Is...>) const
+    [[nodiscard]] constexpr const auto &accessPlaneImpl(std::size_t index, std::index_sequence<Is...>) const
     {
       // We need to use a reference to avoid copying, so create a tuple of references
       // and select the one we need
@@ -439,7 +439,7 @@ namespace Ravl2
 
     // Helper to apply a function for a specific index
     template <typename Func, std::size_t... Is>
-    void applyForIndex(Func &&func, std::index_sequence<Is...>) const
+    constexpr void applyForIndex(Func &&func, std::index_sequence<Is...>) const
     {
       (func.template operator()<Is>() || ...);
     }
@@ -447,14 +447,14 @@ namespace Ravl2
   private:
     // Helper to apply a function to each plane using index sequence
     template <typename FuncT, std::size_t... Is>
-    void applyToEachPlane(FuncT &&func, std::index_sequence<Is...>) const
+    constexpr void applyToEachPlane(FuncT &&func, std::index_sequence<Is...>) const
     {
       (func(std::get<Is>(m_planes)), ...);
     }
 
     // Non-const version
     template <typename FuncT, std::size_t... Is>
-    void applyToEachPlane(FuncT &&func, std::index_sequence<Is...>)
+    constexpr void applyToEachPlane(FuncT &&func, std::index_sequence<Is...>)
     {
       (func(std::get<Is>(m_planes)), ...);
     }
@@ -566,7 +566,7 @@ namespace Ravl2
   {
     // Implementation helper for convertToPlanar that unpacks the channels from PixelT
     template <unsigned Dims, typename PixelT, std::size_t... Is>
-    static auto convertToPlanarImpl(const Array<PixelT, Dims> &packedArray, std::index_sequence<Is...>)
+    auto convertToPlanarImpl(const Array<PixelT, Dims> &packedArray, std::index_sequence<Is...>)
     {
       // Get the component type from the pixel
       using ComponentT = typename PixelT::value_type;
@@ -582,7 +582,7 @@ namespace Ravl2
         const auto &pixel = *it;
         const auto &idx = it.index();
 
-        // Simply extract values by index position and assign to corresponding plane
+        // Simply extract values by index position and assign to the corresponding plane
         // Since both pixel and planes have the same component type, this is safe
         ((result.template plane<Is>()[idx] = pixel[Is]), ...);
       }
@@ -592,7 +592,7 @@ namespace Ravl2
 
     // Implementation helper for convertToPacked that combines planar channels into a packed pixel array
     template <typename ComponentT, template <typename, ImageChannel...> class PixelT, unsigned Dims, typename PlanarT, ImageChannel... Channels>
-    static auto convertToPackedImpl(const PlanarT &planarImage, const IndexRange<Dims> &masterRange)
+    auto convertToPackedImpl(const PlanarT &planarImage, const IndexRange<Dims> &masterRange)
     {
       // Create the packed array with the same master range
       Array<PixelT<ComponentT, Channels...>, Dims> result(masterRange);
@@ -605,7 +605,7 @@ namespace Ravl2
 
     // NEW: helper for fully instantiated pixel types (e.g. PixelRGB8)
     template <unsigned Dims, typename PackedPixelT, typename PlanarT, std::size_t... Is>
-    static auto convertToPackedInstantiatedImpl(const PlanarT &planarImage, std::index_sequence<Is...>)
+    auto convertToPackedInstantiatedImpl(const PlanarT &planarImage, std::index_sequence<Is...>)
     {
       using ComponentT = typename PackedPixelT::value_type;
       Array<PackedPixelT, Dims> result(planarImage.range());
@@ -713,7 +713,7 @@ namespace Ravl2
   //! @param img The planar image to clone
   //! @return A new PlanarImage with all planes deep-copied
   template <unsigned Dims, typename... PlaneTypes>
-  [[nodiscard]] inline auto clone(const PlanarImage<Dims, PlaneTypes...> &img)
+  [[nodiscard]] auto clone(const PlanarImage<Dims, PlaneTypes...> &img)
   {
     PlanarImage<Dims, PlaneTypes...> result;
 
@@ -723,6 +723,21 @@ namespace Ravl2
     }(std::make_index_sequence<sizeof...(PlaneTypes)>{});
 
     return result;
+  }
+
+  //! Convert a planar image to a packed one.
+  template <typename DestPixelT, unsigned Dims, typename... PlaneTypes>
+  void convert(Array<DestPixelT,Dims> &dest,const PlanarImage<Dims, PlaneTypes...> &src)
+  {
+    dest = convertToPacked<DestPixelT, Dims, PlaneTypes...>(src);
+  }
+
+  //! Convert a packed image to a planar one.
+  //! This doesn't deal with colour and type conversions yet.
+  template <typename SrcPixelT, unsigned Dims, typename... PlaneTypes>
+  void convert(PlanarImage<Dims, PlaneTypes...> &dest, const Array<SrcPixelT,Dims> &src)
+  {
+    dest = convertToPlanar(src);
   }
 
 }// namespace Ravl2

@@ -32,18 +32,21 @@ namespace Ravl2::Video
                                                    const std::shared_ptr<MediaContainer> &/*container*/, // reserved for future use
                                                    const std::shared_ptr<StreamIterator> &iterator)
     {
-      if (iterator->dataType() != typeid(ImageT))
+      if (iterator->dataType() != typeid(ImageT)) {
         return std::nullopt; // Not this underlying type.
+      }
+      SPDLOG_INFO("Got type match {} ",Ravl2::typeName(typeid(ImageT)));
 
-      // Find conversion chain only if caller requested a different target type.
+      // Find conversion chain only if the caller requested a different target type.
       std::optional<ConversionChain> convChain;
       if (ctx.m_targetType != typeid(ImageT))
       {
         convChain = typeConverterMap().find(ctx.m_targetType, typeid(ImageT));
         if (!convChain)
         {
-          if (ctx.m_verbose)
+          if (ctx.mVerbose) {
             SPDLOG_INFO("FFmpeg: No conversion from {} to requested {}", typeName(typeid(ImageT)), typeName(ctx.m_targetType));
+          }
           return std::nullopt; // Can't satisfy requested type with this base.
         }
       }
@@ -53,24 +56,27 @@ namespace Ravl2::Video
         [iterator](std::streampos &pos) mutable -> std::optional<ImageT>
         {
           (void)pos; // Seeking not supported in this simple streaming adapter.
-          if (!iterator->currentFrame())
+          if (!iterator->currentFrame()) {
             return std::nullopt;
+          }
 
             // Extract image (copy lightweight wrapper / shared planes).
           auto vf = std::dynamic_pointer_cast<VideoFrame<ImageT>>(iterator->currentFrame());
-          if (!vf)
+          if (!vf) {
             return std::nullopt;
+          }
           ImageT img = vf->image();
 
           // Advance for next request. Failure other than EndOfStream is logged and stream ends.
           auto nextRes = iterator->next();
-          if (!nextRes.isSuccess() && nextRes.error() != VideoErrorCode::EndOfStream)
-            SPDLOG_DEBUG("FFmpeg: iterator->next() error {}", static_cast<int>(nextRes.error()));
+          if (!nextRes.isSuccess() && nextRes.error() != VideoErrorCode::EndOfStream) {
+            SPDLOG_INFO("FFmpeg: iterator->next() error {}", static_cast<int>(nextRes.error()));
+          }
           return img;
         }
       );
 
-      if (ctx.m_verbose)
+      if (ctx.mVerbose)
       {
         SPDLOG_INFO("FFmpeg: Plan created underlying {} -> target {} (loss {})",
                     typeName(typeid(ImageT)), typeName(ctx.m_targetType),
@@ -87,14 +93,22 @@ namespace Ravl2::Video
                                                         const std::shared_ptr<MediaContainer> &container,
                                                         const std::shared_ptr<StreamIterator> &iterator)
     {
+      if(ctx.mVerbose) {
+        SPDLOG_INFO("FFmpeg: Building video plan for iterator type {} ",Ravl2::typeName(iterator->dataType()));
+      }
       if (auto p = makePlanForType<YUV420Image<uint8_t>>(ctx, container, iterator)) return p;
       if (auto p = makePlanForType<YUV422Image<uint8_t>>(ctx, container, iterator)) return p;
       if (auto p = makePlanForType<YUV444Image<uint8_t>>(ctx, container, iterator)) return p;
       if (auto p = makePlanForType<RGBPlanarImage<uint8_t>>(ctx, container, iterator)) return p;
       if (auto p = makePlanForType<RGBAPlanarImage<uint8_t>>(ctx, container, iterator)) return p;
+      if (auto p = makePlanForType<Array<PixelYUYV8,2>>(ctx, container, iterator)) return p;
+      if (auto p = makePlanForType<Array<PixelUYVY8,2>>(ctx, container, iterator)) return p;
+      if (auto p = makePlanForType<Array<PixelY8,2>>(ctx, container, iterator)) return p;
 
       // Fallback: not a type we currently adapt explicitly.
-      SPDLOG_DEBUG("FFmpeg: Unhandled base frame type '{}'", typeName(iterator->dataType()));
+      if(ctx.mVerbose) {
+        SPDLOG_WARN("FFmpeg: Unhandled base frame type '{}'", typeName(iterator->dataType()));
+      }
       return std::nullopt;
     }
 
@@ -107,16 +121,17 @@ namespace Ravl2::Video
       -2,
       [](const ProbeInputContext &ctx) -> std::optional<StreamInputPlan>
       {
-        if (ctx.m_verbose) {
-          SPDLOG_INFO("FFmpeg: probing '{}' target {}", ctx.m_filename, typeName(ctx.m_targetType));
+        if (ctx.mVerbose) {
+          SPDLOG_INFO("FFmpeg: probing '{}' target {}", ctx.mFilename, typeName(ctx.m_targetType));
         }
 
         // Attempt open.
-        auto openRes = FfmpegMediaContainer::openFile(ctx.m_filename);
+        auto openRes = FfmpegMediaContainer::openFile(ctx.mFilename);
         if (!openRes.isSuccess())
         {
-          if (ctx.m_verbose)
+          if (ctx.mVerbose) {
             SPDLOG_DEBUG("FFmpeg: openFile failed code {}", static_cast<int>(openRes.error()));
+          }
           return std::nullopt; // Allow other formats to try.
         }
         auto container = std::static_pointer_cast<MediaContainer>(openRes.value());
@@ -129,16 +144,18 @@ namespace Ravl2::Video
         }
         if (vIndex == container->streamCount())
         {
-          if (ctx.m_verbose)
-            SPDLOG_INFO("FFmpeg: no video stream in '{}'", ctx.m_filename);
+          if (ctx.mVerbose) {
+            SPDLOG_INFO("FFmpeg: no video stream in '{}'", ctx.mFilename);
+          }
           return std::nullopt; // Not our case.
         }
 
         auto iterRes = container->createIterator(vIndex);
         if (!iterRes.isSuccess())
         {
-          if (ctx.m_verbose)
+          if (ctx.mVerbose) {
             SPDLOG_INFO("FFmpeg: createIterator failed code {}", static_cast<int>(iterRes.error()));
+          }
           return std::nullopt;
         }
         auto iterator = iterRes.value();
@@ -147,12 +164,12 @@ namespace Ravl2::Video
         auto plan = buildFfmpegVideoPlan(ctx, container, iterator);
         if (!plan)
         {
-          if (ctx.m_verbose)
-            SPDLOG_INFO("FFmpeg: unable to build plan for '{}' (frame type {})", ctx.m_filename, typeName(iterator->dataType()));
+          if (ctx.mVerbose)
+            SPDLOG_INFO("FFmpeg: unable to build plan for '{}' (frame type {})", ctx.mFilename, typeName(iterator->dataType()));
           return std::nullopt;
         }
-        if (ctx.m_verbose)
-          SPDLOG_INFO("FFmpeg: plan ready for '{}'", ctx.m_filename);
+        if (ctx.mVerbose)
+          SPDLOG_INFO("FFmpeg: plan ready for '{}'", ctx.mFilename);
         return plan;
       }
     ));
@@ -167,19 +184,19 @@ namespace Ravl2::Video
       -2,
       [](const ProbeInputContext &ctx) -> std::optional<StreamInputPlan>
       {
-        if (ctx.m_verbose) {
-          SPDLOG_INFO("FFmpeg: probing '{}' target {}", ctx.m_filename, typeName(ctx.m_targetType));
+        if (ctx.mVerbose) {
+          SPDLOG_INFO("FFmpeg: probing '{}' target {}", ctx.mFilename, typeName(ctx.m_targetType));
         }
 
         Ravl2::Video::DeviceParameters params;
-        params.devicePath = ctx.m_filename;
+        params.devicePath = ctx.mFilename;
 
-        SPDLOG_INFO("Opening : {} ", ctx.m_filename);
+        SPDLOG_INFO("Opening : {}   Verbose={} ", ctx.mFilename,ctx.mVerbose);
         // Attempt open.
         auto openRes = FfmpegMediaContainer::openDevice(params);
         if (!openRes.isSuccess())
         {
-          if (ctx.m_verbose)
+          if (ctx.mVerbose)
             SPDLOG_DEBUG("FFmpeg: openFile failed code {}", static_cast<int>(openRes.error()));
           return std::nullopt; // Allow other formats to try.
         }
@@ -194,8 +211,8 @@ namespace Ravl2::Video
         }
         if (vIndex == container->streamCount())
         {
-          if (ctx.m_verbose) {
-            SPDLOG_INFO("FFmpeg: no video stream in '{}'", ctx.m_filename);
+          if (ctx.mVerbose) {
+            SPDLOG_INFO("FFmpeg: no video stream in '{}'", ctx.mFilename);
           }
           return std::nullopt; // Not our case.
         }
@@ -203,8 +220,9 @@ namespace Ravl2::Video
         auto iterRes = container->createIterator(vIndex);
         if (!iterRes.isSuccess())
         {
-          if (ctx.m_verbose)
+          if (ctx.mVerbose) {
             SPDLOG_INFO("FFmpeg: createIterator failed code {}", static_cast<int>(iterRes.error()));
+          }
           return std::nullopt;
         }
         auto iterator = iterRes.value();
@@ -213,12 +231,13 @@ namespace Ravl2::Video
         auto plan = buildFfmpegVideoPlan(ctx, container, iterator);
         if (!plan)
         {
-          if (ctx.m_verbose)
-            SPDLOG_INFO("FFmpeg: unable to build plan for '{}' (frame type {})", ctx.m_filename, typeName(iterator->dataType()));
+          if (ctx.mVerbose) {
+            SPDLOG_INFO("FFmpeg: unable to build plan for '{}' (frame type {})", ctx.mFilename, typeName(iterator->dataType()));
+          }
           return std::nullopt;
         }
-        if (ctx.m_verbose)
-          SPDLOG_INFO("FFmpeg: plan ready for '{}'", ctx.m_filename);
+        if (ctx.mVerbose)
+          SPDLOG_INFO("FFmpeg: plan ready for '{}'", ctx.mFilename);
         return plan;
       }
     ));

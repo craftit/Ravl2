@@ -396,7 +396,7 @@ namespace Ravl2
     {
       std::lock_guard lock(m_mutex);
       m_streamInputFactory[typeName(typeid(ObjectT))] = [](const ProbeInputContext &ctx) {
-	auto stream = std::make_shared<std::ifstream>(ctx.m_filename, std::ios::binary);
+	auto stream = std::make_shared<std::ifstream>(ctx.mFilename, std::ios::binary);
 	return std::make_unique<StreamInputCerealArchive<ObjectT, ArchiveT>>(std::move(stream));
       };
       return true;

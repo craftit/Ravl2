@@ -105,14 +105,14 @@ namespace Ravl2
       // Find conversion chain from ViaT -> target
       auto chainOpt = typeConverterMap().find(ctx.m_targetType, typeid(ViaT));
       if(!chainOpt.has_value()) {
-        if(ctx.m_verbose) {
+        if(ctx.mVerbose) {
           SPDLOG_INFO("JPEGTurbo: no conversion path from {} to {}", typeName(typeid(ViaT)), typeName(ctx.m_targetType));
         }
         return std::nullopt;
       }
 
       // Create a decoder stream that emits ViaT once
-      auto strm = std::make_shared<StreamInputCall<ViaT>>([sharedCtx, verbose = ctx.m_verbose](std::streampos &pos) -> std::optional<ViaT> {
+      auto strm = std::make_shared<StreamInputCall<ViaT>>([sharedCtx, verbose = ctx.mVerbose](std::streampos &pos) -> std::optional<ViaT> {
         if(pos != 0) {
           return std::nullopt;
         }
@@ -277,18 +277,18 @@ namespace Ravl2
         if(!ctx.m_data.empty()) {
           if(ctx.m_data.size() < 2 || ctx.m_data[0] != 0xFF || ctx.m_data[1] != 0xD8) {
             // Not a JPEG SOI; decline quietly unless verbose
-            if(ctx.m_verbose) {
-              SPDLOG_INFO("JPEGTurbo: look-ahead does not match JPEG magic for {}", ctx.m_filename);
+            if(ctx.mVerbose) {
+              SPDLOG_INFO("JPEGTurbo: look-ahead does not match JPEG magic for {}", ctx.mFilename);
             }
             return std::nullopt;
           }
         }
 
         // Create a persistent decode context so we don't reopen or re-read header twice
-        auto decodeCtx = std::make_shared<JpegDecodeContext>(ctx.m_filename);
+        auto decodeCtx = std::make_shared<JpegDecodeContext>(ctx.mFilename);
         if(!decodeCtx->file || !decodeCtx->created || !decodeCtx->headerOk) {
-          if(ctx.m_verbose) {
-            SPDLOG_INFO("JPEGTurbo: cannot open or parse JPEG: {}", ctx.m_filename);
+          if(ctx.mVerbose) {
+            SPDLOG_INFO("JPEGTurbo: cannot open or parse JPEG: {}", ctx.mFilename);
           }
           return std::nullopt;
         }
@@ -297,8 +297,8 @@ namespace Ravl2
         const unsigned w = decodeCtx->cinfo.image_width;
         const unsigned h = decodeCtx->cinfo.image_height;
 
-        if(ctx.m_verbose) {
-          SPDLOG_INFO("JPEGTurbo probe: {}x{}, comps={}, colorspace={} for {}", w, h, decodeCtx->cinfo.num_components, int(decodeCtx->cinfo.jpeg_color_space), ctx.m_filename);
+        if(ctx.mVerbose) {
+          SPDLOG_INFO("JPEGTurbo probe: {}x{}, comps={}, colorspace={} for {}", w, h, decodeCtx->cinfo.num_components, int(decodeCtx->cinfo.jpeg_color_space), ctx.mFilename);
         }
 
         // Detect subsampling category for color JPEG (only when native JPEG colorspace is YCbCr)
@@ -382,7 +382,7 @@ namespace Ravl2
           return std::nullopt;
         }
 
-        if(ctx.m_verbose) {
+        if(ctx.mVerbose) {
           const char *choiceName = "None";
           switch(bestChoice) {
             case Choice::Gray: choiceName = "Gray"; break;
@@ -406,8 +406,8 @@ namespace Ravl2
         return std::nullopt;// Shouldn't happen
 #else
         // No JPEG library available; behave as stub
-        if(ctx.m_verbose) {
-          SPDLOG_INFO("JPEGTurbo probe active for file: {} (no libjpeg found)", ctx.m_filename);
+        if(ctx.mVerbose) {
+          SPDLOG_INFO("JPEGTurbo probe active for file: {} (no libjpeg found)", ctx.mFilename);
         }
         return std::nullopt;
 #endif

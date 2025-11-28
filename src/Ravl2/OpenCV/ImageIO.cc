@@ -82,13 +82,13 @@ namespace Ravl2
     [[maybe_unused]] bool g_regFmt = inputFormatMap().add(std::make_shared<InputFormatCall>("OpenCV", "png,jpg,jpeg,bmp,tiff", "file", -1, [](const ProbeInputContext &ctx) -> std::optional<StreamInputPlan> {
       //! If we are looking for a cv::Mat, we can just read the file directly.
       if(ctx.m_targetType == typeid(cv::Mat)) {
-        auto strm = std::make_shared<StreamInputCall<cv::Mat>>([filename = ctx.m_filename](std::streampos &pos) -> std::optional<cv::Mat> {
+        auto strm = std::make_shared<StreamInputCall<cv::Mat>>([filename = ctx.mFilename](std::streampos &pos) -> std::optional<cv::Mat> {
           if(pos != 0)
             return std::nullopt;
           return cv::imread(filename, cv::IMREAD_UNCHANGED);
         });
-        if(ctx.m_verbose) {
-          SPDLOG_INFO("Plan made for opened OpenCV image file: {}", ctx.m_filename);
+        if(ctx.mVerbose) {
+          SPDLOG_INFO("Plan made for opened OpenCV image file: {}", ctx.mFilename);
         }
         return StreamInputPlan {strm, {}, 1.0f};
       }
@@ -115,10 +115,10 @@ namespace Ravl2
       }
 
       // The best we can do is loaded it directly and look for a conversion.
-      cv::Mat img = cv::imread(ctx.m_filename, readMode);
+      cv::Mat img = cv::imread(ctx.mFilename, readMode);
       if(img.empty()) {
-        if(ctx.m_verbose) {
-          SPDLOG_INFO("Failed to load image: {}", ctx.m_filename);
+        if(ctx.mVerbose) {
+          SPDLOG_INFO("Failed to load image: {}", ctx.mFilename);
         }
         return std::nullopt;
       }
@@ -127,8 +127,8 @@ namespace Ravl2
       int baseType = CV_MAT_TYPE(img.type());
 
 
-      if(ctx.m_verbose) {
-        SPDLOG_INFO("Got opencv image type: {} for {} ", cvMatType2str(img.type()), ctx.m_filename);
+      if(ctx.mVerbose) {
+        SPDLOG_INFO("Got opencv image type: {} for {} ", cvMatType2str(img.type()), ctx.mFilename);
       }
 
       switch(img.type()) {
@@ -257,9 +257,9 @@ namespace Ravl2
     //! Load a video file
     [[maybe_unused]] bool g_regFmt2 = inputFormatMap().add(std::make_shared<InputFormatCall>("OpenCV", "avi,mp4,mov", "file", -1, [](const ProbeInputContext &ctx) -> std::optional<StreamInputPlan> {
       cv::VideoCapture videoCapture;
-      if(!videoCapture.open(ctx.m_filename)) {
-        if(ctx.m_verbose) {
-          SPDLOG_INFO("Failed to open video stream '{}'", ctx.m_filename);
+      if(!videoCapture.open(ctx.mFilename)) {
+        if(ctx.mVerbose) {
+          SPDLOG_INFO("Failed to open video stream '{}'", ctx.mFilename);
         }
         return std::nullopt;
       }
@@ -271,10 +271,10 @@ namespace Ravl2
       cv::VideoCapture videoCapture;
       // Convert the filename to an integer.
       try {
-        int cameraId = std::stoi(ctx.m_filename);
+        int cameraId = std::stoi(ctx.mFilename);
         if(!videoCapture.open(cameraId)) {
-          if(ctx.m_verbose) {
-            SPDLOG_INFO("Failed to open video stream '{}'", ctx.m_filename);
+          if(ctx.mVerbose) {
+            SPDLOG_INFO("Failed to open video stream '{}'", ctx.mFilename);
           }
           return std::nullopt;
         }

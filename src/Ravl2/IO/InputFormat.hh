@@ -71,7 +71,7 @@ namespace Ravl2
     //!   type and then use the TypeConverter system to finish the conversion.
     ProbeInputContext(std::string url, std::string filename, std::string protocol, std::string ext, nlohmann::json formatHint, const std::type_info &targetType)
         : m_url(std::move(url)),
-          m_filename(std::move(filename)),
+          mFilename(std::move(filename)),
           m_protocol(std::move(protocol)),
           m_extension(std::move(ext)),
           m_formatHint(std::move(formatHint)),
@@ -85,7 +85,7 @@ namespace Ravl2
     //! Original URL provided by the user (scheme + path or opaque id)
     std::string m_url;
     //! Filename or resource id portion of the URL (often a filesystem path)
-    std::string m_filename;
+    std::string mFilename;
     //! Access protocol (e.g., "file", "camera", "http"). Used to filter handlers.
     std::string m_protocol;
     //! Lowercase file extension (without the leading dot). Used to select candidate handlers.
@@ -99,7 +99,7 @@ namespace Ravl2
     std::vector<uint8_t> m_data;
     //! Convenience flag mirrored from m_formatHint["verbose"]. If true, handlers
     //! should emit SPDLOG_INFO messages for state transitions.
-    bool m_verbose = false;
+    bool mVerbose = false;
   };
 
   //! Abstract base class describing an input file/stream format.
