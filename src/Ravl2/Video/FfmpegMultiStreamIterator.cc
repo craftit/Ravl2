@@ -859,6 +859,8 @@ namespace Ravl2::Video
                 return typeid(Array<PixelYUYV8,2>);
               case AV_PIX_FMT_UYVY422:
                 return typeid(Array<PixelUYVY8,2>);
+              case AV_PIX_FMT_GRAY8:
+                return typeid(Array<PixelI8,2>);
               default:
                 SPDLOG_ERROR("Unsupported pixel format {} ", static_cast<int>(codecContext->pix_fmt));
                 RavlAlwaysAssertMsg(false, "Unsupported pixel format");
@@ -1033,6 +1035,8 @@ namespace Ravl2::Video
               return createVideoFrame<Array<PixelYUYV8,2>>(frame, localIndex, id);
             case AV_PIX_FMT_UYVY422:
               return createVideoFrame<Array<PixelUYVY8,2>>(frame, localIndex, id);
+            case AV_PIX_FMT_GRAY8:
+              return createVideoFrame<Array<PixelI8,2>>(frame, localIndex, id);
             default: {
               SPDLOG_ERROR("Unsupported pixel format: {}", static_cast<int>(codecContext->pix_fmt));
               throw std::runtime_error("Unsupported pixel format");
@@ -1222,7 +1226,7 @@ namespace Ravl2::Video
       {
         using PlaneT = std::decay_t<PlaneArgT>;
         auto localRange = PlaneT::scale_type::calculateRange(range);
-        SPDLOG_DEBUG("Setting up plane {} ({}) with range {} (master range {})  Data:{} ", planeIndex, toString(plane.getChannelType()), localRange, range,static_cast<void *>(newFrame->data[planeIndex]));
+        SPDLOG_INFO("Setting up plane {} ({}) with range {} (master range {})  Data:{} ", planeIndex, toString(plane.getChannelType()), localRange, range,static_cast<void *>(newFrame->data[planeIndex]));
         assert(newFrame->data[planeIndex] != nullptr);
         plane.data() = Array<uint8_t, 2>(newFrame->data[planeIndex],
                                          localRange,
@@ -1232,13 +1236,6 @@ namespace Ravl2::Video
         planeIndex++;
       }
     );
-
-    // Clone the image immediately if needed to free the buffer for capture devices
-    // with limited buffer pools (e.g., AVFoundation typically has only 3-4 buffers)
-    if (m_needsFrameClone)
-    {
-      img = Ravl2::clone(img);
-    }
 
     return true;
   }
@@ -1281,20 +1278,13 @@ namespace Ravl2::Video
 
     // Set up each plane in the PlanarImage
     int planeIndex = 0;
-    SPDLOG_DEBUG("Setting up plane {} ({}) with range {}  Data:{} {} {} LineSize:{} Clone:{}", planeIndex, typeName(typeid(PixelT)),  range,static_cast<void *>(newFrame->data[planeIndex]), static_cast<void *>(newFrame->data[1]),static_cast<void *>(newFrame->data[2]), newFrame->linesize[planeIndex],m_needsFrameClone);
+    SPDLOG_DEBUG("Setting up plane {} ({}) with range {}  Data:{} {} {} LineSize:{} ", planeIndex, typeName(typeid(PixelT)),  range,static_cast<void *>(newFrame->data[planeIndex]), static_cast<void *>(newFrame->data[1]),static_cast<void *>(newFrame->data[2]), newFrame->linesize[planeIndex]);
     RavlAssert((newFrame->linesize[planeIndex] % static_cast<int>(sizeof(PixelT))) == 0);
     img = Ravl2::Array<PixelT, 2>(pixelPtr,
                            range,
                            {newFrame->linesize[planeIndex]/static_cast<int>(sizeof(PixelT)), 1},
                            avFrameHandle
     );
-
-    // Clone the image immediately if needed to free the buffer for capture devices
-    // with limited buffer pools (e.g., AVFoundation typically has only 3-4 buffers)
-    if (m_needsFrameClone)
-    {
-      img = clone(img);
-    }
 
     return true;
   }

@@ -139,6 +139,9 @@ namespace Ravl2
     [[maybe_unused]] bool g_reg27 = registerConversion(convertYUYV<PixelBGR8,PixelUYVY8>, 0.75f);
     [[maybe_unused]] bool g_reg28 = registerConversion(convertYUYV<PixelY8,PixelUYVY8>, 0.5f);
 
+    [[maybe_unused]] bool g_reg29 = registerConversion(convert<Array<PixelI8, 2>, Array<PixelY8, 2>>, 1.0f);
+    [[maybe_unused]] bool g_reg30 = registerConversion(convert<Array<PixelY8, 2>, Array<PixelI8, 2>>, 1.0f);
+
   }// namespace
 
   const std::array<int, 256> ColorConversion::mRGBcYUV_ubLookup = UBLookup();
