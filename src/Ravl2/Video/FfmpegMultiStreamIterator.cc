@@ -836,6 +836,8 @@ namespace Ravl2::Video
                 return typeid(YUV444Image<uint8_t>);
               case AV_PIX_FMT_YUYV422:
                 return typeid(Array<PixelYUYV8,2>);
+              case AV_PIX_FMT_GRAY8:
+                return typeid(Array<PixelI8,2>);
               default:
                 SPDLOG_ERROR("Unsupported pixel format {} ", static_cast<int>(codecContext->pix_fmt));
                 RavlAlwaysAssertMsg(false, "Unsupported pixel format");
@@ -1008,6 +1010,8 @@ namespace Ravl2::Video
               return createVideoFrame<YUV444Image<uint8_t>>(frame, localIndex, id);
             case AV_PIX_FMT_YUYV422:
               return createVideoFrame<Array<PixelYUYV8,2>>(frame, localIndex, id);
+            case AV_PIX_FMT_GRAY8:
+              return createVideoFrame<Array<PixelI8,2>>(frame, localIndex, id);
             default: {
               SPDLOG_ERROR("Unsupported pixel format: {}", static_cast<int>(codecContext->pix_fmt));
               throw std::runtime_error("Unsupported pixel format");
