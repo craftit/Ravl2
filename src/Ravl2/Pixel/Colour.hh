@@ -141,12 +141,28 @@ namespace Ravl2
     {
       return PixelTypeTraits<CompT, ImageChannel::ChrominanceV>::defaultValue;
     }
+
     // If we want Alpha, but there is non in the source.
     template <typename CompT, typename PixelType>
       requires  (!PixelType::template hasChannel<ImageChannel::Alpha>())
     constexpr CompT convert(const PixelType &, std::integral_constant<ImageChannel, ImageChannel::Alpha>)
     {
       return PixelTypeTraits<CompT, ImageChannel::Alpha>::defaultValue;
+    }
+
+    // If we want Intensity, but there is non in the source.
+    template <typename CompT, typename PixelType>
+      requires  (!PixelType::template hasChannel<ImageChannel::Intensity>() && PixelType::template hasChannel<ImageChannel::Luminance>())
+    constexpr CompT convert(const PixelType &pixel, std::integral_constant<ImageChannel, ImageChannel::Intensity>)
+    {
+      return pixel.template get<ImageChannel::Luminance, CompT>();
+    }
+
+    template <typename CompT, typename PixelType>
+    requires  (!PixelType::template hasChannel<ImageChannel::Luminance>() && PixelType::template hasChannel<ImageChannel::Intensity>())
+    constexpr CompT convert(const PixelType &pixel, std::integral_constant<ImageChannel, ImageChannel::Luminance>)
+    {
+      return pixel.template get<ImageChannel::Intensity, CompT>();
     }
 
     // Just change datatype as needed
