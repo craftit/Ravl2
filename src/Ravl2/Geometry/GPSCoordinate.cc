@@ -376,7 +376,7 @@ namespace Ravl2
   //! Interpolate between two GPS positions.
   //! Fraction is between 0.0 and 1.0, where 0 is p1, and 1 is p2.
 
-  bool GPSCoordinate::bilinearInterpolate(RealT fraction,
+  void GPSCoordinate::bilinearInterpolate(RealT fraction,
                                            const GPSCoordinate &p1,
                                            const GPSCoordinate &p2,
                                            GPSCoordinate &position)
@@ -390,13 +390,12 @@ namespace Ravl2
                               p1.horizontalErrorBounds() * mf + p2.horizontalErrorBounds() * fraction,
                               p1.verticalErrorBounds() * mf + p2.verticalErrorBounds() * fraction
                               );
-    return true;
   }
 
 
   //! Compute the differential 
   
-  bool GPSCoordinate::differential(Vector<double,3> &diffLat,Vector<double,3> &diffLong,Vector<double,3> &diffHeight) const
+  void GPSCoordinate::differential(Vector<double,3> &diffLat,Vector<double,3> &diffLong,Vector<double,3> &diffHeight) const
   {
     RealT latRad = deg2rad(mAt[0]);
     RealT longRad = deg2rad(mAt[1]);
@@ -436,9 +435,6 @@ namespace Ravl2
       diffHeight[1] = cosTheta * sinLambda;
       diffHeight[2] = sinTheta;
     }
-    
-    
-    return true;
   }
 
 
