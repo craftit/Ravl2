@@ -53,6 +53,7 @@ namespace Ravl2::Video
     //! Default constructor
     Frame() = default;
 
+  private:
     StreamItemId m_id = 0; //!< Unique identifier for this frame
     MediaTime m_timestamp{0}; //!< Timestamp of when this frame starts.
   };

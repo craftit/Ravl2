@@ -39,8 +39,8 @@ namespace Ravl2::GoPro
     [[nodiscard]] std::vector<Vector3f> asVectorArray() const
     {
       std::vector<Vector3f> result;
-      result.reserve(mData.size());
-      for (const auto& sample : mData) {
+      result.reserve(data().size());
+      for (const auto& sample : data()) {
         result.push_back(sample.acceleration);
       }
       return result;

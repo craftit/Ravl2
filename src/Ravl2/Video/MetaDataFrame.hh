@@ -13,6 +13,7 @@
 #include <map>
 #include "Ravl2/Video/VideoTypes.hh"
 #include "Ravl2/Video/Frame.hh"
+#include "Ravl2/Types.hh"
 
 namespace Ravl2::Video
 {
@@ -60,7 +61,7 @@ namespace Ravl2::Video
     //! Get the data type name
     [[nodiscard]] virtual std::string dataTypeName() const
     {
-      return typeid(DataT).name();
+      return typeName(typeid(DataT));
     }
 
     //! Check if the frame has valid data
@@ -85,6 +86,7 @@ namespace Ravl2::Video
     //! Default constructor
     MetaDataFrame() = default;
 
+  private:
     DataT mData; //!< The metadata
   };
 } // namespace Ravl2::Video

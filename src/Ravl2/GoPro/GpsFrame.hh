@@ -28,7 +28,7 @@ namespace Ravl2::GoPro
     }
 
     //! Convenience: Get the GPSCoordinate directly
-    [[nodiscard]] const GPSCoordinate& location() const { return mData.location; }
+    [[nodiscard]] const GPSCoordinate& location() const { return data().location; }
   };
 
 } // namespace Ravl2::GoPro
