@@ -46,21 +46,20 @@ namespace Ravl2::GoPro
   }
 
   std::vector<Quaternion<float>> integrateGyroToOrientation(
-    const std::vector<GyroSample>& gyroSamples,
-    float sampleRate,
+    const GyroSamples& gyroData,
     const Quaternion<float>& initialOrientation)
   {
     std::vector<Quaternion<float>> orientations;
-    orientations.reserve(gyroSamples.size());
+    orientations.reserve(gyroData.samples.size());
 
-    if (gyroSamples.empty() || sampleRate <= 0) {
+    if (gyroData.samples.empty() || gyroData.sampleRate <= 0) {
       return orientations;
     }
 
-    float deltaTime = 1.0f / sampleRate;
+    float deltaTime = 1.0f / gyroData.sampleRate;
     Quaternion<float> currentOrientation = initialOrientation;
 
-    for (const auto& sample : gyroSamples) {
+    for (const auto& sample : gyroData.samples) {
       // Create a quaternion from angular velocity
       // For small rotations: q ≈ [1, ω*dt/2]
       Vector3f angularVelocityDt = sample.angularVelocity * (deltaTime * 0.5f);

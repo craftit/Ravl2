@@ -53,27 +53,28 @@ namespace Ravl2::GoPro
     if (GPMF_FindNext(&stream, MAKEID('G', 'P', 'S', '5'), GPMF_RECURSE_LEVELS) == GPMF_OK) {
       auto gpsFix = parseGps(&stream);
       if (gpsFix.has_value()) {
-        frames.push_back(std::make_shared<GpsFrame>(gpsFix.value(), streamId + mNextId++, timestamp));
+        frames.push_back(std::make_shared<Video::MetaDataFrame<GpsFix>>(
+          gpsFix.value(), streamId + mNextId++, timestamp));
       }
       GPMF_ResetState(&stream); // Reset for next search
     }
 
     // Search for gyroscope data (FourCC: GYRO)
     if (GPMF_FindNext(&stream, MAKEID('G', 'Y', 'R', 'O'), GPMF_RECURSE_LEVELS) == GPMF_OK) {
-      float sampleRate = 0;
-      auto gyroSamples = parseGyro(&stream, sampleRate);
-      if (!gyroSamples.empty()) {
-        frames.push_back(std::make_shared<GyroFrame>(gyroSamples, streamId + mNextId++, timestamp, sampleRate));
+      auto gyroSamples = parseGyro(&stream);
+      if (gyroSamples.has_value()) {
+        frames.push_back(std::make_shared<Video::MetaDataFrame<GyroSamples>>(
+          gyroSamples.value(), streamId + mNextId++, timestamp));
       }
       GPMF_ResetState(&stream);
     }
 
     // Search for accelerometer data (FourCC: ACCL)
     if (GPMF_FindNext(&stream, MAKEID('A', 'C', 'C', 'L'), GPMF_RECURSE_LEVELS) == GPMF_OK) {
-      float sampleRate = 0;
-      auto accelSamples = parseAccel(&stream, sampleRate);
-      if (!accelSamples.empty()) {
-        frames.push_back(std::make_shared<AccelFrame>(accelSamples, streamId + mNextId++, timestamp, sampleRate));
+      auto accelSamples = parseAccel(&stream);
+      if (accelSamples.has_value()) {
+        frames.push_back(std::make_shared<Video::MetaDataFrame<AccelSamples>>(
+          accelSamples.value(), streamId + mNextId++, timestamp));
       }
     }
 
@@ -130,19 +131,17 @@ namespace Ravl2::GoPro
     return fix;
   }
 
-  std::vector<GyroSample> GpmfParser::parseGyro(GPMF_stream* stream, float& sampleRate)
+  std::optional<GyroSamples> GpmfParser::parseGyro(GPMF_stream* stream)
   {
-    std::vector<GyroSample> samples;
-
     if (stream == nullptr) {
       SPDLOG_WARN("parseGyro: null stream pointer");
-      return samples;
+      return std::nullopt;
     }
 
     uint32_t sampleCount = GPMF_Repeat(stream);
     if (sampleCount == 0) {
       SPDLOG_DEBUG("parseGyro: GYRO stream has 0 samples");
-      return samples;
+      return std::nullopt;
     }
 
     // Get scale factor
@@ -153,15 +152,16 @@ namespace Ravl2::GoPro
     }
 
     // Get sample rate
-    sampleRate = getSampleRate(stream);
+    float sampleRate = getSampleRate(stream);
 
     // Get raw data (3 int16 values per sample: x, y, z)
     auto* rawData = static_cast<int16_t*>(GPMF_RawData(stream));
     if (rawData == nullptr) {
       SPDLOG_ERROR("parseGyro: failed to get raw data from GPMF stream (sampleCount={})", sampleCount);
-      return samples;
+      return std::nullopt;
     }
 
+    std::vector<GyroSample> samples;
     samples.reserve(sampleCount);
     for (uint32_t i = 0; i < sampleCount; i++) {
       size_t offset = i * 3;
@@ -173,22 +173,28 @@ namespace Ravl2::GoPro
       samples.emplace_back(angularVelocity);
     }
 
-    return samples;
+    // Validate sample rate
+    if (sampleRate <= 0.0F) {
+      SPDLOG_ERROR("Invalid gyro sample rate: {} Hz (must be > 0)", sampleRate);
+      sampleRate = 0.0F;
+    } else if (sampleRate < 50.0F || sampleRate > 1000.0F) {
+      SPDLOG_WARN("Unusual gyro sample rate: {} Hz (typical GoPro: 200-400 Hz)", sampleRate);
+    }
+
+    return GyroSamples(samples, sampleRate);
   }
 
-  std::vector<AccelSample> GpmfParser::parseAccel(GPMF_stream* stream, float& sampleRate)
+  std::optional<AccelSamples> GpmfParser::parseAccel(GPMF_stream* stream)
   {
-    std::vector<AccelSample> samples;
-
     if (stream == nullptr) {
       SPDLOG_WARN("parseAccel: null stream pointer");
-      return samples;
+      return std::nullopt;
     }
 
     uint32_t sampleCount = GPMF_Repeat(stream);
     if (sampleCount == 0) {
       SPDLOG_DEBUG("parseAccel: ACCL stream has 0 samples");
-      return samples;
+      return std::nullopt;
     }
 
     // Get scale factor
@@ -199,15 +205,16 @@ namespace Ravl2::GoPro
     }
 
     // Get sample rate
-    sampleRate = getSampleRate(stream);
+    float sampleRate = getSampleRate(stream);
 
     // Get raw data (3 int16 values per sample: x, y, z)
     auto* rawData = static_cast<int16_t*>(GPMF_RawData(stream));
     if (rawData == nullptr) {
       SPDLOG_ERROR("parseAccel: failed to get raw data from GPMF stream (sampleCount={})", sampleCount);
-      return samples;
+      return std::nullopt;
     }
 
+    std::vector<AccelSample> samples;
     samples.reserve(sampleCount);
     for (uint32_t i = 0; i < sampleCount; i++) {
       size_t offset = i * 3;
@@ -219,7 +226,15 @@ namespace Ravl2::GoPro
       samples.emplace_back(acceleration);
     }
 
-    return samples;
+    // Validate sample rate
+    if (sampleRate <= 0.0F) {
+      SPDLOG_ERROR("Invalid accel sample rate: {} Hz (must be > 0)", sampleRate);
+      sampleRate = 0.0F;
+    } else if (sampleRate < 50.0F || sampleRate > 1000.0F) {
+      SPDLOG_WARN("Unusual accel sample rate: {} Hz (typical GoPro: 200-400 Hz)", sampleRate);
+    }
+
+    return AccelSamples(samples, sampleRate);
   }
 
   float GpmfParser::getScaleFactor(GPMF_stream* stream, [[maybe_unused]] uint32_t fourcc) const

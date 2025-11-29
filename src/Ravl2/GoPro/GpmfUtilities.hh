@@ -35,8 +35,7 @@ namespace Ravl2::GoPro
   //! Integrate gyroscope data to estimate orientation changes
   //! Returns a vector of Quaternions representing orientation over time
   std::vector<Quaternion<float>> integrateGyroToOrientation(
-    const std::vector<GyroSample>& gyroSamples,
-    float sampleRate,
+    const GyroSamples& gyroData,
     const Quaternion<float>& initialOrientation = Quaternion<float>::identity());
 
   //! Remove gravity from accelerometer data using orientation

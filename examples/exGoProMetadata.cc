@@ -15,9 +15,8 @@
 #include "Ravl2/EntryPnt.hh"
 
 #ifdef WITH_GPMF
-#include "Ravl2/GoPro/GpsFrame.hh"
-#include "Ravl2/GoPro/GyroFrame.hh"
-#include "Ravl2/GoPro/AccelFrame.hh"
+#include "Ravl2/GoPro/GpmfTypes.hh"
+#include "Ravl2/Video/MetaDataFrame.hh"
 #endif
 
 //! Example program that reads GoPro GPMF metadata from a video file
@@ -145,7 +144,7 @@ int RAVL2_MAIN(int argc, char *argv[])
 
     if (frame) {
       // Check if this is a GPS frame
-      auto* gpsFrame = dynamic_cast<Ravl2::GoPro::GpsFrame*>(frame.get());
+      auto* gpsFrame = dynamic_cast<Ravl2::Video::MetaDataFrame<Ravl2::GoPro::GpsFix>*>(frame.get());
       if (gpsFrame) {
         gpsCount++;
         if (verbose || gpsCount == 1) {
@@ -164,19 +163,19 @@ int RAVL2_MAIN(int argc, char *argv[])
       }
 
       // Check if this is a gyroscope frame
-      auto* gyroFrame = dynamic_cast<Ravl2::GoPro::GyroFrame*>(frame.get());
+      auto* gyroFrame = dynamic_cast<Ravl2::Video::MetaDataFrame<Ravl2::GoPro::GyroSamples>*>(frame.get());
       if (gyroFrame) {
         gyroCount++;
         if (verbose || gyroCount == 1) {
-          const auto& samples = gyroFrame->data();
+          const auto& gyroData = gyroFrame->data();
           auto timestamp = gyroFrame->timestamp();
           double timeSecs = std::chrono::duration<double>(timestamp).count();
 
           fmt::print("\nGyro Frame #{} at {:.3f}s:\n", gyroCount, timeSecs);
           fmt::print("  Samples: {}, Rate: {:.1f} Hz\n",
-                    samples.size(), gyroFrame->sampleRate());
-          if (!samples.empty()) {
-            const auto& first = samples[0];
+                    gyroData.size(), gyroData.sampleRate);
+          if (!gyroData.samples.empty()) {
+            const auto& first = gyroData.samples[0];
             fmt::print("  First sample: [{:.3f}, {:.3f}, {:.3f}] rad/s\n",
                       first.x(), first.y(), first.z());
           }
@@ -184,19 +183,19 @@ int RAVL2_MAIN(int argc, char *argv[])
       }
 
       // Check if this is an accelerometer frame
-      auto* accelFrame = dynamic_cast<Ravl2::GoPro::AccelFrame*>(frame.get());
+      auto* accelFrame = dynamic_cast<Ravl2::Video::MetaDataFrame<Ravl2::GoPro::AccelSamples>*>(frame.get());
       if (accelFrame) {
         accelCount++;
         if (verbose || accelCount == 1) {
-          const auto& samples = accelFrame->data();
+          const auto& accelData = accelFrame->data();
           auto timestamp = accelFrame->timestamp();
           double timeSecs = std::chrono::duration<double>(timestamp).count();
 
           fmt::print("\nAccel Frame #{} at {:.3f}s:\n", accelCount, timeSecs);
           fmt::print("  Samples: {}, Rate: {:.1f} Hz\n",
-                    samples.size(), accelFrame->sampleRate());
-          if (!samples.empty()) {
-            const auto& first = samples[0];
+                    accelData.size(), accelData.sampleRate);
+          if (!accelData.samples.empty()) {
+            const auto& first = accelData.samples[0];
             fmt::print("  First sample: [{:.2f}, {:.2f}, {:.2f}] m/s²\n",
                       first.x(), first.y(), first.z());
           }

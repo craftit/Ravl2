@@ -5,10 +5,7 @@
 #pragma once
 
 #include "Ravl2/GoPro/GpmfTypes.hh"
-#include "Ravl2/GoPro/GpsFrame.hh"
-#include "Ravl2/GoPro/GyroFrame.hh"
-#include "Ravl2/GoPro/AccelFrame.hh"
-#include "Ravl2/Video/Frame.hh"
+#include "Ravl2/Video/MetaDataFrame.hh"
 #include <optional>
 #include <vector>
 #include <memory>
@@ -56,15 +53,13 @@ namespace Ravl2::GoPro
 
     //! Parse gyroscope data from GPMF stream
     //! @param stream GPMF stream positioned at gyro data
-    //! @param sampleRate Output parameter for sample rate
-    //! @return Vector of gyro samples
-    [[nodiscard]] std::vector<GyroSample> parseGyro(GPMF_stream* stream, float& sampleRate);
+    //! @return Gyro samples with sample rate (empty if parsing failed)
+    [[nodiscard]] std::optional<GyroSamples> parseGyro(GPMF_stream* stream);
 
     //! Parse accelerometer data from GPMF stream
     //! @param stream GPMF stream positioned at accel data
-    //! @param sampleRate Output parameter for sample rate
-    //! @return Vector of accel samples
-    [[nodiscard]] std::vector<AccelSample> parseAccel(GPMF_stream* stream, float& sampleRate);
+    //! @return Accel samples with sample rate (empty if parsing failed)
+    [[nodiscard]] std::optional<AccelSamples> parseAccel(GPMF_stream* stream);
 
   private:
     //! Get scaling factor for a given FourCC

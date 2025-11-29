@@ -8,6 +8,8 @@
 #include "Ravl2/Geometry/GPSCoordinate.hh"
 #include "Ravl2/Geometry/Quaternion.hh"
 #include <cereal/cereal.hpp>
+#include <span>
+#include <vector>
 
 namespace Ravl2::GoPro
 {
@@ -73,6 +75,53 @@ namespace Ravl2::GoPro
     }
   };
 
+  //! Collection of gyroscope samples with sample rate metadata
+  //! High-frequency sensors like gyro typically have multiple samples per frame
+  //! to match the GPMF packet structure (typically 200+ samples at 200 Hz)
+  struct GyroSamples
+  {
+    std::vector<GyroSample> samples;  //!< Vector of gyroscope samples
+    float sampleRate = 0.0F;          //!< Samples per second (0 indicates invalid/unset)
+
+    //! Default constructor
+    GyroSamples() = default;
+
+    //! Construct with samples and sample rate
+    GyroSamples(const std::vector<GyroSample>& s, float rate)
+      : samples(s), sampleRate(rate)
+    {
+      if (rate <= 0.0F) {
+        sampleRate = 0.0F;
+      }
+    }
+
+    //! Get number of samples
+    [[nodiscard]] size_t size() const { return samples.size(); }
+    [[nodiscard]] bool empty() const { return samples.empty(); }
+
+    //! Access samples
+    [[nodiscard]] const std::vector<GyroSample>& data() const { return samples; }
+
+    //! Convenience: Get raw Vector3f values for processing
+    //! Returns a span over the internal data (zero-copy)
+    [[nodiscard]] std::span<const Vector3f> asVectorSpan() const
+    {
+      // Safe because GyroSample is a trivial wrapper around Vector3f
+      // and both have standard layout
+      return std::span<const Vector3f>(
+        reinterpret_cast<const Vector3f*>(samples.data()),
+        samples.size()
+      );
+    }
+
+    //! Serialization support
+    template<class Archive>
+    void serialize(Archive& archive)
+    {
+      archive(samples, sampleRate);
+    }
+  };
+
   //! 3-axis accelerometer reading (linear acceleration)
   //! Using Vector3f for easy integration with physics calculations
   struct AccelSample
@@ -95,6 +144,53 @@ namespace Ravl2::GoPro
     void serialize(Archive& archive)
     {
       archive(acceleration);
+    }
+  };
+
+  //! Collection of accelerometer samples with sample rate metadata
+  //! High-frequency sensors like accelerometer typically have multiple samples per frame
+  //! to match the GPMF packet structure (typically 200+ samples at 200 Hz)
+  struct AccelSamples
+  {
+    std::vector<AccelSample> samples;  //!< Vector of accelerometer samples
+    float sampleRate = 0.0F;           //!< Samples per second (0 indicates invalid/unset)
+
+    //! Default constructor
+    AccelSamples() = default;
+
+    //! Construct with samples and sample rate
+    AccelSamples(const std::vector<AccelSample>& s, float rate)
+      : samples(s), sampleRate(rate)
+    {
+      if (rate <= 0.0F) {
+        sampleRate = 0.0F;
+      }
+    }
+
+    //! Get number of samples
+    [[nodiscard]] size_t size() const { return samples.size(); }
+    [[nodiscard]] bool empty() const { return samples.empty(); }
+
+    //! Access samples
+    [[nodiscard]] const std::vector<AccelSample>& data() const { return samples; }
+
+    //! Convenience: Get raw Vector3f values for processing
+    //! Returns a span over the internal data (zero-copy)
+    [[nodiscard]] std::span<const Vector3f> asVectorSpan() const
+    {
+      // Safe because AccelSample is a trivial wrapper around Vector3f
+      // and both have standard layout
+      return std::span<const Vector3f>(
+        reinterpret_cast<const Vector3f*>(samples.data()),
+        samples.size()
+      );
+    }
+
+    //! Serialization support
+    template<class Archive>
+    void serialize(Archive& archive)
+    {
+      archive(samples, sampleRate);
     }
   };
 
