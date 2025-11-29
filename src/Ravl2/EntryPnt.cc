@@ -27,10 +27,10 @@ namespace Ravl2
 
   int ravlMain(int argc, char* argv[],FuncMainCallT func) {
     if(!mainFuncPtr()) {
-      SPDLOG_INFO("No main func defined. ");
+      SPDLOG_DEBUG("No main func defined. ");
       return func(argc,argv);
     }
-    SPDLOG_INFO("Passing control through...");
+    SPDLOG_DEBUG("Passing control through...");
     return mainFuncPtr()(argc,argv,func);
   }
 }
