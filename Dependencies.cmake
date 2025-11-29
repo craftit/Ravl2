@@ -148,6 +148,39 @@ function(RAVL2_setup_dependencies)
 #    cpmaddpackage("gh:lefticus/tools#update_build_system")
 #  endif()
 
+  # Optional GoPro GPMF parser support
+  option(WITH_GPMF "Build with GoPro GPMF metadata support" ON)
+
+  if(WITH_GPMF AND NOT RAVL2_MIN_DEPS)
+    if(NOT TARGET GPMF_PARSER_LIB)
+      cpmaddpackage(
+        NAME gpmf-parser
+        GITHUB_REPOSITORY gopro/gpmf-parser
+        GIT_TAG main
+        OPTIONS
+          "BUILD_SHARED_LIBS OFF"
+      )
+
+      if(gpmf-parser_ADDED)
+        message(STATUS "GoPro GPMF parser: Built from GitHub")
+        set(HAVE_GPMF 1 PARENT_SCOPE)
+        set(GPMF_INCLUDE_DIR "${gpmf-parser_SOURCE_DIR}" PARENT_SCOPE)
+      else()
+        message(WARNING "Failed to add gpmf-parser")
+        set(WITH_GPMF OFF)
+      endif()
+    else()
+      message(STATUS "Found gpmf-parser library")
+      set(HAVE_GPMF 1 PARENT_SCOPE)
+    endif()
+  else()
+    if(RAVL2_MIN_DEPS)
+      message(STATUS "RAVL2_MIN_DEPS=ON: GoPro GPMF support disabled")
+    else()
+      message(STATUS "GoPro GPMF support: disabled (set WITH_GPMF=ON to enable)")
+    endif()
+  endif()
+
   # Optional Display Stack (SDL2 + bgfx + ImGui + ImPlot), minimal wiring
   if(RAVL2_ENABLE_DISPLAY_STACK AND NOT RAVL2_MIN_DEPS)
     message(STATUS "Ravl2 Display Stack: enabled")

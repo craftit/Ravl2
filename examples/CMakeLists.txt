@@ -23,6 +23,13 @@ target_link_libraries(exMediaContainer PRIVATE Ravl2Video Ravl2Display)
 add_executable(exWebcamCapture exWebcamCapture.cc)
 target_link_libraries(exWebcamCapture PRIVATE Ravl2Video Ravl2Display)
 
+# Create the exGoProMetadata example (conditional on GPMF support)
+if(WITH_GPMF AND HAVE_GPMF)
+    add_executable(exGoProMetadata exGoProMetadata.cc)
+    target_link_libraries(exGoProMetadata PRIVATE Ravl2Video Ravl2GoPro CLI11::CLI11)
+    target_compile_definitions(exGoProMetadata PRIVATE WITH_GPMF=1)
+endif()
+
 find_package(CLI11 CONFIG REQUIRED)
 add_executable(intro intro.cc)
 target_link_libraries (intro PUBLIC Ravl2Core CLI11::CLI11)

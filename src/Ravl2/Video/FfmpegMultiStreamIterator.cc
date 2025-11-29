@@ -12,6 +12,11 @@
 #include <spdlog/spdlog.h>
 #include <libswscale/swscale.h>
 
+// Optional GoPro GPMF support
+#ifdef WITH_GPMF
+#include "Ravl2/GoPro/GpmfParser.hh"
+#endif
+
 #pragma GCC diagnostic ignored "-Wold-style-cast"
 
 namespace Ravl2::Video
@@ -91,29 +96,37 @@ namespace Ravl2::Video
 
       // Get the codec context
       AVCodecContext* codecContext = m_ffmpegContainer->m_codecContexts[streamIndex];
-      if (!codecContext)
+
+      // DATA streams (like GPMF) may not have a codec context - that's okay
+      bool isDataStream = stream && stream->codecpar->codec_type == AVMEDIA_TYPE_DATA;
+
+      if (!codecContext && !isDataStream)
       {
-        SPDLOG_WARN("No codec context available for stream {}", streamIndex);
+        SPDLOG_WARN("No codec context available for stream {} (type: {})", streamIndex, static_cast<int>(stream->codecpar->codec_type));
         // Clean up
         av_packet_free(&m_packet);
         throw std::runtime_error("No codec context available for stream");
       }
-      m_codecContexts.push_back(codecContext);
+      m_codecContexts.push_back(codecContext);  // May be nullptr for DATA streams
 
-      // Allocate a frame for this stream
-      AVFrame* frame = av_frame_alloc();
-      if (!frame)
+      // Allocate a frame for this stream (not needed for DATA streams, but keep consistent)
+      AVFrame* frame = nullptr;
+      if (!isDataStream)
       {
-        SPDLOG_WARN("Failed to allocate frame for stream {}", streamIndex);
-        // Clean up
-        av_packet_free(&m_packet);
-        for (auto* f : m_frames)
+        frame = av_frame_alloc();
+        if (!frame)
         {
-          av_frame_free(&f);
+          SPDLOG_WARN("Failed to allocate frame for stream {}", streamIndex);
+          // Clean up
+          av_packet_free(&m_packet);
+          for (auto* f : m_frames)
+          {
+            if (f) av_frame_free(&f);
+          }
+          throw std::runtime_error("Failed to allocate frame");
         }
-        throw std::runtime_error("Failed to allocate frame");
       }
-      m_frames.push_back(frame);
+      m_frames.push_back(frame);  // May be nullptr for DATA streams
 
       // Initialize frame ID counter for this stream
       m_nextFrameIds.push_back(0);
@@ -150,6 +163,11 @@ namespace Ravl2::Video
       SPDLOG_WARN("Failed to pre-fill packet queue: {}", toString(queueResult.error()));
     }
 
+#ifdef WITH_GPMF
+    // Initialize GPMF parser for this iterator instance
+    m_gpmfParser = std::make_unique<GoPro::GpmfParser>();
+#endif
+
     // Read the first frame
     auto result = next();
     if (!result.isSuccess() && result.error() != VideoErrorCode::EndOfStream)
@@ -158,7 +176,7 @@ namespace Ravl2::Video
       av_packet_free(&m_packet);
       for (auto* f : m_frames)
       {
-        av_frame_free(&f);
+        if (f) av_frame_free(&f);
       }
       SPDLOG_WARN("Failed to read first frame: {}", toString(result.error()));
       throw std::runtime_error("Failed to read first frame");
@@ -170,7 +188,9 @@ namespace Ravl2::Video
     // Free FFmpeg resources
     for (auto* frame : m_frames)
     {
-      av_frame_free(&frame);
+      if (frame) {
+        av_frame_free(&frame);
+      }
     }
 
     if (m_packet)
@@ -214,6 +234,20 @@ namespace Ravl2::Video
           // Check if we've reached the end of the stream
           if (result == AVERROR_EOF)
           {
+#ifdef WITH_GPMF
+            // Drain any remaining GPMF frames from the buffer
+            // This ensures we don't lose buffered frames when hitting EOF
+            if (!m_gpmfFrameBuffer.empty())
+            {
+              // Return the first buffered frame instead of EndOfStream
+              // The buffer will continue to drain on subsequent calls
+              auto bufferedFrame = m_gpmfFrameBuffer.front();
+              m_gpmfFrameBuffer.erase(m_gpmfFrameBuffer.begin());
+              setCurrentFrame(bufferedFrame);
+              m_frameCounter++;
+              return VideoResult<void>();
+            }
+#endif
             m_isAtEnd = true;
             return VideoResult<void>(VideoErrorCode::EndOfStream);
           }
@@ -842,6 +876,10 @@ namespace Ravl2::Video
       {
         case StreamType::Video:
           {
+            if (!codecContext) {
+              // No codec context for this stream
+              return typeid(void);
+            }
             // Determine the pixel format to convert to based on FFmpeg's format
             switch (codecContext->pix_fmt)
             {
@@ -850,10 +888,13 @@ namespace Ravl2::Video
               case AV_PIX_FMT_RGBA:
                 return typeid(RGBAPlanarImage<uint8_t>);
               case AV_PIX_FMT_YUV420P:
+              case AV_PIX_FMT_YUVJ420P:
                 return typeid(YUV420Image<uint8_t>);
               case AV_PIX_FMT_YUV422P:
+              case AV_PIX_FMT_YUVJ422P:
                 return typeid(YUV422Image<uint8_t>);
               case AV_PIX_FMT_YUV444P:
+              case AV_PIX_FMT_YUVJ444P:
                 return typeid(YUV444Image<uint8_t>);
               case AV_PIX_FMT_YUYV422:
                 return typeid(Array<PixelYUYV8,2>);
@@ -870,6 +911,10 @@ namespace Ravl2::Video
           }
         case StreamType::Audio:
           {
+            if (!codecContext) {
+              // No codec context for this stream
+              return typeid(void);
+            }
             // Determine the sample format to convert to based on FFmpeg's format
             switch (codecContext->sample_fmt)
             {
@@ -920,7 +965,93 @@ namespace Ravl2::Video
     auto* codecContext = m_codecContexts[localIndex];
     auto* frame = m_frames[localIndex];
 
-    if (!codecContext || !packet || !frame)
+    if (!packet)
+    {
+      return VideoResult<std::shared_ptr<Frame>>(VideoErrorCode::InvalidOperation);
+    }
+
+#ifdef WITH_GPMF
+    // Handle DATA streams (e.g., GoPro GPMF metadata)
+    // Check if this is a DATA stream first, regardless of codec context
+    if (localIndex < m_streams.size())
+    {
+      auto* stream = m_streams[localIndex];
+      if (stream && stream->codecpar->codec_type == AVMEDIA_TYPE_DATA)
+      {
+        // Check if this is a GPMF metadata stream (codec_tag should be 'gpmd')
+        // In FFmpeg, codec_tag is stored as a FourCC: 'gpmd' = 0x646d7067
+        constexpr uint32_t GPMD_TAG = (static_cast<uint32_t>('g') << 0) | (static_cast<uint32_t>('p') << 8) |
+                                       (static_cast<uint32_t>('m') << 16) | (static_cast<uint32_t>('d') << 24);
+
+        if (stream->codecpar->codec_tag != GPMD_TAG)
+        {
+          // Not a GPMF stream, skip it (might be timecode or other data)
+          SPDLOG_DEBUG("Skipping non-GPMF DATA stream at localIndex={}, codec_tag=0x{:08x}",
+                       localIndex, stream->codecpar->codec_tag);
+          return VideoResult<std::shared_ptr<Frame>>(VideoErrorCode::NeedMoreData);
+        }
+
+        SPDLOG_DEBUG("Processing GPMF stream at localIndex={}, packet size={} bytes",
+                     localIndex, packet->size);
+
+        // If we have buffered frames from a previous GPMF packet, return the next one
+        // This allows us to return multiple frame types (GPS, gyro, accel) from a single packet
+        if (!m_gpmfFrameBuffer.empty())
+        {
+          auto nextFrame = m_gpmfFrameBuffer.front();
+          m_gpmfFrameBuffer.erase(m_gpmfFrameBuffer.begin());
+          return VideoResult<std::shared_ptr<Frame>>(nextFrame);
+        }
+
+        // Ensure parser is initialized
+        if (!m_gpmfParser)
+        {
+          SPDLOG_ERROR("GPMF parser not initialized");
+          return VideoResult<std::shared_ptr<Frame>>(VideoErrorCode::InvalidOperation);
+        }
+
+        // Calculate timestamp
+        MediaTime timestamp(0);
+        if (packet->pts != AV_NOPTS_VALUE)
+        {
+          int64_t pts_us = av_rescale_q(packet->pts, stream->time_base, AVRational{1, AV_TIME_BASE});
+          timestamp = MediaTime(pts_us);
+        }
+
+        // Generate stream ID based on PTS
+        int64_t pts = 0;
+        if (packet->pts != AV_NOPTS_VALUE)
+        {
+          pts = av_rescale_q(packet->pts, stream->time_base, AVRational{1, AV_TIME_BASE});
+        }
+        else
+        {
+          pts = m_nextFrameIds[localIndex]++;
+        }
+        StreamItemId streamId = (pts << m_streamBits) | (static_cast<int64_t>(localIndex) & ((1LL << m_streamBits) - 1));
+
+        // Parse GPMF data - this may return multiple frames (GPS, gyro, accel)
+        auto frames = m_gpmfParser->parse(packet->data, static_cast<size_t>(packet->size), streamId, timestamp);
+
+        if (frames.empty())
+        {
+          // No frames parsed, need more data
+          return VideoResult<std::shared_ptr<Frame>>(VideoErrorCode::NeedMoreData);
+        }
+
+        // Return the first frame and buffer the rest
+        auto firstFrame = frames[0];
+        if (frames.size() > 1)
+        {
+          m_gpmfFrameBuffer.insert(m_gpmfFrameBuffer.end(), frames.begin() + 1, frames.end());
+        }
+
+        return VideoResult<std::shared_ptr<Frame>>(firstFrame);
+      }
+    }
+#endif
+
+    if (!codecContext || !frame)
     {
       return VideoResult<std::shared_ptr<Frame>>(VideoErrorCode::InvalidOperation);
     }
@@ -1018,6 +1149,10 @@ namespace Ravl2::Video
     {
       case StreamType::Video:
         {
+          if (!codecContext) {
+            SPDLOG_ERROR("No codec context for video stream");
+            return nullptr;
+          }
           // Determine the pixel format to convert to based on FFmpeg's format
           switch (codecContext->pix_fmt)
           {
@@ -1026,10 +1161,13 @@ namespace Ravl2::Video
             case AV_PIX_FMT_RGBA:
               return createVideoFrame<RGBAPlanarImage<uint8_t>>(frame, localIndex, id);
             case AV_PIX_FMT_YUV420P:
+            case AV_PIX_FMT_YUVJ420P:  // JPEG-range YUV420 (deprecated, treat as YUV420P)
               return createVideoFrame<YUV420Image<uint8_t>>(frame, localIndex, id);
             case AV_PIX_FMT_YUV422P:
+            case AV_PIX_FMT_YUVJ422P:  // JPEG-range YUV422 (deprecated, treat as YUV422P)
               return createVideoFrame<YUV422Image<uint8_t>>(frame, localIndex, id);
             case AV_PIX_FMT_YUV444P:
+            case AV_PIX_FMT_YUVJ444P:  // JPEG-range YUV444 (deprecated, treat as YUV444P)
               return createVideoFrame<YUV444Image<uint8_t>>(frame, localIndex, id);
             case AV_PIX_FMT_YUYV422:
               return createVideoFrame<Array<PixelYUYV8,2>>(frame, localIndex, id);
@@ -1045,6 +1183,10 @@ namespace Ravl2::Video
         }
       case StreamType::Audio:
         {
+          if (!codecContext) {
+            SPDLOG_ERROR("No codec context for audio stream");
+            return nullptr;
+          }
           // Determine the sample format to convert to based on FFmpeg's format
           switch (codecContext->sample_fmt)
           {
@@ -1226,7 +1368,7 @@ namespace Ravl2::Video
       {
         using PlaneT = std::decay_t<PlaneArgT>;
         auto localRange = PlaneT::scale_type::calculateRange(range);
-        SPDLOG_INFO("Setting up plane {} ({}) with range {} (master range {})  Data:{} ", planeIndex, toString(plane.getChannelType()), localRange, range,static_cast<void *>(newFrame->data[planeIndex]));
+        //SPDLOG_INFO("Setting up plane {} ({}) with range {} (master range {})  Data:{} ", planeIndex, toString(plane.getChannelType()), localRange, range,static_cast<void *>(newFrame->data[planeIndex]));
         assert(newFrame->data[planeIndex] != nullptr);
         plane.data() = Array<uint8_t, 2>(newFrame->data[planeIndex],
                                          localRange,
@@ -1309,6 +1451,7 @@ namespace Ravl2::Video
     }
 
     // If we're at the end of all streams, don't try to read more
+    // (buffered GPMF frames were already drained when we hit EOF)
     if (m_isAtEnd)
     {
       return VideoResult<void>(VideoErrorCode::EndOfStream);
@@ -1329,8 +1472,30 @@ namespace Ravl2::Video
         // Check if we've reached the end of the stream
         if (result == AVERROR_EOF)
         {
+#ifdef WITH_GPMF
+          // Drain any remaining GPMF frames from the buffer into the packet queue
+          // This must happen BEFORE setting m_isAtEnd
+          if (!m_gpmfFrameBuffer.empty())
+          {
+            while (!m_gpmfFrameBuffer.empty())
+            {
+              auto bufferedFrame = m_gpmfFrameBuffer.front();
+              m_gpmfFrameBuffer.erase(m_gpmfFrameBuffer.begin());
+
+              int64_t bufferedPts = bufferedFrame->timestamp().count();
+              PacketInfo bufferedInfo{
+                bufferedFrame,
+                0, // Stream index doesn't matter for buffered frames
+                bufferedPts
+              };
+              m_packetQueue.push(bufferedInfo);
+            }
+          }
+#endif
+
           m_isAtEnd = true;
-          // We may still have frames in the queue
+
+          // We may still have frames in the queue (including drained GPMF frames)
           return m_packetQueue.empty() ? VideoResult<void>(VideoErrorCode::EndOfStream) : VideoResult<void>();
         }
         else

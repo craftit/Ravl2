@@ -70,6 +70,13 @@ target_link_libraries(Ravl2Video
         RAVL2_warnings
 )
 
+# Optional GoPro GPMF support
+if(WITH_GPMF AND HAVE_GPMF)
+    target_link_libraries(Ravl2Video PRIVATE ravl2::Ravl2GoPro)
+    target_compile_definitions(Ravl2Video PRIVATE WITH_GPMF=1)
+    message(STATUS "Ravl2Video: linking with GoPro GPMF support")
+endif()
+
 # Add FFmpeg libraries if available
 if(WITH_FFMPEG)
     target_link_libraries(Ravl2Video

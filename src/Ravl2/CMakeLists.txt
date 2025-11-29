@@ -18,6 +18,11 @@ add_subdirectory(3D)
 add_subdirectory(OpenCV)
 add_subdirectory(Video)
 
+# Optional GoPro GPMF metadata support
+if(WITH_GPMF AND HAVE_GPMF)
+    add_subdirectory(GoPro)
+endif()
+
 # Optional Debug Display stack
 if(RAVL2_ENABLE_DISPLAY_STACK)
     add_subdirectory(Display)

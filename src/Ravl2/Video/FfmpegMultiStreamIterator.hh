@@ -19,6 +19,13 @@ struct AVPacket;
 struct AVFrame;
 struct AVStream;
 
+#ifdef WITH_GPMF
+namespace Ravl2::GoPro
+{
+  class GpmfParser;
+}
+#endif
+
 namespace Ravl2::Video
 {
   //! Implementation of StreamIterator that provides frames for multiple streams in a FFmpeg-based media container
@@ -203,5 +210,16 @@ namespace Ravl2::Video
     //! Flag indicating if frames need to be cloned immediately to free buffers
     //! This is required for capture devices with limited buffer pools (e.g., AVFoundation on macOS)
     bool m_needsFrameClone = false;
+
+#ifdef WITH_GPMF
+    //! Buffer for multiple frames from a single GPMF packet
+    //! GPMF packets can contain GPS, gyro, and accel data, but decodePacket()
+    //! returns one frame at a time. This buffer holds the remaining frames.
+    std::vector<std::shared_ptr<Frame>> m_gpmfFrameBuffer;
+
+    //! GPMF parser instance for this iterator
+    //! Each iterator needs its own parser to maintain independent state (mNextId)
+    std::unique_ptr<GoPro::GpmfParser> m_gpmfParser;
+#endif
   };
 } // namespace Ravl2::Video

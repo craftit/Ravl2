@@ -88,11 +88,14 @@ namespace Ravl2::Video
     {
       AVStream* stream = formatContext->streams[i];
 
+      // Always map the stream type first (even if there's no codec)
+      container->m_streamTypes[i] = mapFfmpegStreamType(stream->codecpar->codec_type);
+
       // Find the decoder for this stream
       const AVCodec* codec = avcodec_find_decoder(stream->codecpar->codec_id);
       if (!codec)
       {
-        container->m_streamTypes[i] = StreamType::Unknown;
+        // No codec available - this is normal for DATA streams
         continue;
       }
 
@@ -119,9 +122,6 @@ namespace Ravl2::Video
 
       // Store the codec context
       container->m_codecContexts[i] = codecContext;
-
-      // Map the FFmpeg stream type to our StreamType enum
-      container->m_streamTypes[i] = mapFfmpegStreamType(stream->codecpar->codec_type);
     }
 
     // Extract metadata from the format context
@@ -282,11 +282,14 @@ namespace Ravl2::Video
     {
       AVStream* stream = formatContext->streams[i];
 
+      // Always map the stream type first (even if there's no codec)
+      container->m_streamTypes[i] = mapFfmpegStreamType(stream->codecpar->codec_type);
+
       // Find the decoder for this stream
       const AVCodec* codec = avcodec_find_decoder(stream->codecpar->codec_id);
       if (!codec)
       {
-        container->m_streamTypes[i] = StreamType::Unknown;
+        // No codec available - this is normal for DATA streams
         continue;
       }
 
@@ -313,9 +316,6 @@ namespace Ravl2::Video
 
       // Store the codec context
       container->m_codecContexts[i] = codecContext;
-
-      // Map the FFmpeg stream type to our StreamType enum
-      container->m_streamTypes[i] = mapFfmpegStreamType(stream->codecpar->codec_type);
     }
 
     // Extract metadata from the format context
