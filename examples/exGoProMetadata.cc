@@ -177,7 +177,7 @@ int RAVL2_MAIN(int argc, char *argv[])
           if (!gyroData.samples.empty()) {
             const auto& first = gyroData.samples[0];
             fmt::print("  First sample: [{:.3f}, {:.3f}, {:.3f}] rad/s\n",
-                      first.x(), first.y(), first.z());
+                      first[0], first[1], first[2]);
           }
         }
       }
@@ -197,7 +197,7 @@ int RAVL2_MAIN(int argc, char *argv[])
           if (!accelData.samples.empty()) {
             const auto& first = accelData.samples[0];
             fmt::print("  First sample: [{:.2f}, {:.2f}, {:.2f}] m/s²\n",
-                      first.x(), first.y(), first.z());
+                      first[0], first[1], first[2]);
           }
         }
       }

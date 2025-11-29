@@ -21,18 +21,18 @@ namespace Ravl2::GoPro
   {
   public:
     //! Constructor
-    GpmfParser();
+    GpmfParser() = default;
 
     //! Destructor
-    ~GpmfParser();
+    ~GpmfParser() = default;
 
     // Disable copy (contains pointer to C struct)
     GpmfParser(const GpmfParser&) = delete;
     GpmfParser& operator=(const GpmfParser&) = delete;
 
     // Enable move
-    GpmfParser(GpmfParser&&) noexcept;
-    GpmfParser& operator=(GpmfParser&&) noexcept;
+    GpmfParser(GpmfParser&&) noexcept  = default;
+    GpmfParser& operator=(GpmfParser&&) noexcept  = default;
 
     //! Parse GPMF data from a packet and extract frames
     //! @param data Raw GPMF data

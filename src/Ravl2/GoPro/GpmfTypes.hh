@@ -6,9 +6,7 @@
 
 #include "Ravl2/Types.hh"
 #include "Ravl2/Geometry/GPSCoordinate.hh"
-#include "Ravl2/Geometry/Quaternion.hh"
 #include <cereal/cereal.hpp>
-#include <span>
 #include <vector>
 
 namespace Ravl2::GoPro
@@ -50,44 +48,20 @@ namespace Ravl2::GoPro
     }
   };
 
-  //! 3-axis gyroscope reading (angular velocity)
-  //! Using Vector3f for easy integration with rotation calculations
-  struct GyroSample
-  {
-    Vector3f angularVelocity{0, 0, 0}; //!< Angular velocity in rad/s [x, y, z]
-
-    //! Default constructor
-    GyroSample() = default;
-
-    //! Construct from vector
-    explicit GyroSample(const Vector3f& av) : angularVelocity(av) {}
-
-    //! Convenience accessors
-    [[nodiscard]] float x() const { return angularVelocity[0]; }
-    [[nodiscard]] float y() const { return angularVelocity[1]; }
-    [[nodiscard]] float z() const { return angularVelocity[2]; }
-
-    //! Serialization support
-    template<class Archive>
-    void serialize(Archive& archive)
-    {
-      archive(angularVelocity);
-    }
-  };
-
   //! Collection of gyroscope samples with sample rate metadata
   //! High-frequency sensors like gyro typically have multiple samples per frame
   //! to match the GPMF packet structure (typically 200+ samples at 200 Hz)
+  //! Each sample is a Vector3f representing angular velocity in rad/s [x, y, z]
   struct GyroSamples
   {
-    std::vector<GyroSample> samples;  //!< Vector of gyroscope samples
-    float sampleRate = 0.0F;          //!< Samples per second (0 indicates invalid/unset)
+    std::vector<Vector3f> samples;  //!< Angular velocity samples in rad/s
+    float sampleRate = 0.0F;        //!< Samples per second (0 indicates invalid/unset)
 
     //! Default constructor
     GyroSamples() = default;
 
     //! Construct with samples and sample rate
-    GyroSamples(const std::vector<GyroSample>& s, float rate)
+    GyroSamples(const std::vector<Vector3f>& s, float rate)
       : samples(s), sampleRate(rate)
     {
       if (rate <= 0.0F) {
@@ -99,67 +73,31 @@ namespace Ravl2::GoPro
     [[nodiscard]] size_t size() const { return samples.size(); }
     [[nodiscard]] bool empty() const { return samples.empty(); }
 
-    //! Access samples
-    [[nodiscard]] const std::vector<GyroSample>& data() const { return samples; }
-
-    //! Convenience: Get raw Vector3f values for processing
-    //! Returns a span over the internal data (zero-copy)
-    [[nodiscard]] std::span<const Vector3f> asVectorSpan() const
-    {
-      // Safe because GyroSample is a trivial wrapper around Vector3f
-      // and both have standard layout
-      return std::span<const Vector3f>(
-        reinterpret_cast<const Vector3f*>(samples.data()),
-        samples.size()
-      );
-    }
+    //! Direct access to samples vector
+    [[nodiscard]] const std::vector<Vector3f>& data() const { return samples; }
 
     //! Serialization support
     template<class Archive>
     void serialize(Archive& archive)
     {
       archive(samples, sampleRate);
-    }
-  };
-
-  //! 3-axis accelerometer reading (linear acceleration)
-  //! Using Vector3f for easy integration with physics calculations
-  struct AccelSample
-  {
-    Vector3f acceleration{0, 0, 0};    //!< Acceleration in m/s² [x, y, z]
-
-    //! Default constructor
-    AccelSample() = default;
-
-    //! Construct from vector
-    explicit AccelSample(const Vector3f& acc) : acceleration(acc) {}
-
-    //! Convenience accessors
-    [[nodiscard]] float x() const { return acceleration[0]; }
-    [[nodiscard]] float y() const { return acceleration[1]; }
-    [[nodiscard]] float z() const { return acceleration[2]; }
-
-    //! Serialization support
-    template<class Archive>
-    void serialize(Archive& archive)
-    {
-      archive(acceleration);
     }
   };
 
   //! Collection of accelerometer samples with sample rate metadata
   //! High-frequency sensors like accelerometer typically have multiple samples per frame
   //! to match the GPMF packet structure (typically 200+ samples at 200 Hz)
+  //! Each sample is a Vector3f representing acceleration in m/s² [x, y, z]
   struct AccelSamples
   {
-    std::vector<AccelSample> samples;  //!< Vector of accelerometer samples
-    float sampleRate = 0.0F;           //!< Samples per second (0 indicates invalid/unset)
+    std::vector<Vector3f> samples;  //!< Acceleration samples in m/s²
+    float sampleRate = 0.0F;        //!< Samples per second (0 indicates invalid/unset)
 
     //! Default constructor
     AccelSamples() = default;
 
     //! Construct with samples and sample rate
-    AccelSamples(const std::vector<AccelSample>& s, float rate)
+    AccelSamples(const std::vector<Vector3f>& s, float rate)
       : samples(s), sampleRate(rate)
     {
       if (rate <= 0.0F) {
@@ -171,20 +109,8 @@ namespace Ravl2::GoPro
     [[nodiscard]] size_t size() const { return samples.size(); }
     [[nodiscard]] bool empty() const { return samples.empty(); }
 
-    //! Access samples
-    [[nodiscard]] const std::vector<AccelSample>& data() const { return samples; }
-
-    //! Convenience: Get raw Vector3f values for processing
-    //! Returns a span over the internal data (zero-copy)
-    [[nodiscard]] std::span<const Vector3f> asVectorSpan() const
-    {
-      // Safe because AccelSample is a trivial wrapper around Vector3f
-      // and both have standard layout
-      return std::span<const Vector3f>(
-        reinterpret_cast<const Vector3f*>(samples.data()),
-        samples.size()
-      );
-    }
+    //! Direct access to samples vector
+    [[nodiscard]] const std::vector<Vector3f>& data() const { return samples; }
 
     //! Serialization support
     template<class Archive>
@@ -194,79 +120,5 @@ namespace Ravl2::GoPro
     }
   };
 
-  //! Temperature reading
-  struct TemperatureSample
-  {
-    float celsius = 0;        //!< Temperature in Celsius
-
-    //! Default constructor
-    TemperatureSample() = default;
-
-    //! Construct from value
-    explicit TemperatureSample(float c) : celsius(c) {}
-
-    //! Serialization support
-    template<class Archive>
-    void serialize(Archive& archive)
-    {
-      archive(celsius);
-    }
-  };
-
-  //! Magnetometer reading (magnetic field strength)
-  //! Using Vector3f for easy integration with orientation calculations
-  struct MagnetometerSample
-  {
-    Vector3f magneticField{0, 0, 0};   //!< Magnetic field in μT [x, y, z]
-
-    //! Default constructor
-    MagnetometerSample() = default;
-
-    //! Construct from vector
-    explicit MagnetometerSample(const Vector3f& field) : magneticField(field) {}
-
-    //! Convenience accessors
-    [[nodiscard]] float x() const { return magneticField[0]; }
-    [[nodiscard]] float y() const { return magneticField[1]; }
-    [[nodiscard]] float z() const { return magneticField[2]; }
-
-    //! Serialization support
-    template<class Archive>
-    void serialize(Archive& archive)
-    {
-      archive(magneticField);
-    }
-  };
-
-  //! Camera orientation (derived from accelerometer/gyro/magnetometer fusion)
-  //! Using RAVL2 Quaternion for rotation representation
-  struct OrientationSample
-  {
-    Quaternion<float> orientation = Quaternion<float>::identity(); //!< Camera orientation as quaternion
-    Vector3f eulerAngles{0, 0, 0};          //!< Euler angles (roll, pitch, yaw) in radians
-
-    //! Default constructor
-    OrientationSample() = default;
-
-    //! Construct from quaternion
-    explicit OrientationSample(const Quaternion<float>& q)
-      : orientation(q)
-    {
-      // Convert quaternion to Euler angles
-      eulerAngles = q.eulerAngles();
-    }
-
-    //! Convenience accessors
-    [[nodiscard]] float roll() const { return eulerAngles[0]; }
-    [[nodiscard]] float pitch() const { return eulerAngles[1]; }
-    [[nodiscard]] float yaw() const { return eulerAngles[2]; }
-
-    //! Serialization support
-    template<class Archive>
-    void serialize(Archive& archive)
-    {
-      archive(orientation, eulerAngles);
-    }
-  };
 
 } // namespace Ravl2::GoPro

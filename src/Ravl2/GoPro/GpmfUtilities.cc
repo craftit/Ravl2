@@ -59,10 +59,10 @@ namespace Ravl2::GoPro
     float deltaTime = 1.0f / gyroData.sampleRate;
     Quaternion<float> currentOrientation = initialOrientation;
 
-    for (const auto& sample : gyroData.samples) {
+    for (const auto& angularVelocity : gyroData.samples) {
       // Create a quaternion from angular velocity
       // For small rotations: q ≈ [1, ω*dt/2]
-      Vector3f angularVelocityDt = sample.angularVelocity * (deltaTime * 0.5f);
+      Vector3f angularVelocityDt = angularVelocity * (deltaTime * 0.5f);
       float angle = angularVelocityDt.norm();
 
       Quaternion<float> deltaQ;

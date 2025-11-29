@@ -14,13 +14,6 @@ extern "C" {
 
 namespace Ravl2::GoPro
 {
-  GpmfParser::GpmfParser() = default;
-
-  GpmfParser::~GpmfParser() = default;
-
-  GpmfParser::GpmfParser(GpmfParser&&) noexcept = default;
-
-  GpmfParser& GpmfParser::operator=(GpmfParser&&) noexcept = default;
 
   std::vector<std::shared_ptr<Video::Frame>> GpmfParser::parse(
     const uint8_t* data,
@@ -161,16 +154,15 @@ namespace Ravl2::GoPro
       return std::nullopt;
     }
 
-    std::vector<GyroSample> samples;
+    std::vector<Vector3f> samples;
     samples.reserve(sampleCount);
     for (uint32_t i = 0; i < sampleCount; i++) {
       size_t offset = i * 3;
-      Vector3f angularVelocity(
+      samples.emplace_back(
         static_cast<float>(rawData[offset + 0]) * scale,
         static_cast<float>(rawData[offset + 1]) * scale,
         static_cast<float>(rawData[offset + 2]) * scale
       );
-      samples.emplace_back(angularVelocity);
     }
 
     // Validate sample rate
@@ -214,16 +206,15 @@ namespace Ravl2::GoPro
       return std::nullopt;
     }
 
-    std::vector<AccelSample> samples;
+    std::vector<Vector3f> samples;
     samples.reserve(sampleCount);
     for (uint32_t i = 0; i < sampleCount; i++) {
       size_t offset = i * 3;
-      Vector3f acceleration(
+      samples.emplace_back(
         static_cast<float>(rawData[offset + 0]) * scale,
         static_cast<float>(rawData[offset + 1]) * scale,
         static_cast<float>(rawData[offset + 2]) * scale
       );
-      samples.emplace_back(acceleration);
     }
 
     // Validate sample rate
