@@ -78,7 +78,8 @@ namespace Ravl2::Video
 
   private:
     //! Decode a packet for a specific stream
-    VideoResult<std::shared_ptr<Frame>> decodePacket(AVPacket* packet, std::size_t streamIndex);
+    //! Returns a vector of frames (GPMF packets may produce multiple frames: GPS, gyro, accel)
+    VideoResult<std::vector<std::shared_ptr<Frame>>> decodePacket(AVPacket* packet, std::size_t streamIndex);
 
     //! Convert an FFmpeg frame to our Frame type
     [[nodiscard]] std::shared_ptr<Frame> convertFrameToFrame(AVFrame* frame, std::size_t streamIndex, StreamItemId id);
@@ -188,18 +189,25 @@ namespace Ravl2::Video
       std::shared_ptr<Frame> frame;
       std::size_t streamIndex;
       int64_t pts;
+    };
 
-      bool operator<(const PacketInfo&other) const
+    //! Comparator for min-heap (smallest PTS has highest priority)
+    struct PacketInfoComparator
+    {
+      bool operator()(const PacketInfo& a, const PacketInfo& b) const
       {
-        return pts > other.pts; // Priority queue is a max-heap, so invert comparison
+        // Return true if a should come AFTER b (lower priority)
+        // For min-heap: larger PTS = lower priority
+        return a.pts > b.pts;
       }
     };
 
-    //! Priority queue for presentation ordering
-    std::priority_queue<PacketInfo> m_packetQueue;
+    //! Priority queue for presentation ordering (min-heap by PTS)
+    std::priority_queue<PacketInfo, std::vector<PacketInfo>, PacketInfoComparator> m_packetQueue;
 
     //! Minimum buffer size for presentation ordering
-    static constexpr std::size_t MIN_QUEUE_SIZE = 16;
+    //! Must be large enough to contain all frames needed for temporal reordering (including B-frames)
+    static constexpr std::size_t MIN_QUEUE_SIZE = 32;
 
     //! Maximum number of keyframes we will index on open.
     static constexpr std::size_t MAX_KEYFRAME_INDEX= 10000;
@@ -212,11 +220,6 @@ namespace Ravl2::Video
     bool m_needsFrameClone = false;
 
 #ifdef WITH_GPMF
-    //! Buffer for multiple frames from a single GPMF packet
-    //! GPMF packets can contain GPS, gyro, and accel data, but decodePacket()
-    //! returns one frame at a time. This buffer holds the remaining frames.
-    std::vector<std::shared_ptr<Frame>> m_gpmfFrameBuffer;
-
     //! GPMF parser instance for this iterator
     //! Each iterator needs its own parser to maintain independent state (mNextId)
     std::unique_ptr<GoPro::GpmfParser> m_gpmfParser;

@@ -208,99 +208,56 @@ namespace Ravl2::Video
 
   VideoResult<void> FfmpegMultiStreamIterator::next()
   {
-    // If we're already at the end, return EndOfStream
-    if (m_isAtEnd)
-    {
-      return VideoResult<void>(VideoErrorCode::EndOfStream);
-    }
-
     // Reset the last seek operation flag
     m_wasSeekOperation = false;
 
     try
     {
-      // Keep reading packets until we find one for a stream we're interested in
-      while (true)
+      // Ensure the priority queue has enough frames for proper temporal ordering
+      // Fill the queue if it's empty or below the minimum threshold
+      if (m_packetQueue.empty() || (!m_isAtEnd && m_packetQueue.size() < MIN_QUEUE_SIZE))
       {
-        // Clear any previous packet data
-        av_packet_unref(m_packet);
+        auto fillResult = fillPacketQueue();
 
-        // Read a packet
-        auto&container = ffmpegContainer();
-        int result = av_read_frame(container.m_formatContext, m_packet);
-
-        if (result < 0)
+        // If filling failed with something other than EndOfStream, return the error
+        if (!fillResult.isSuccess() && fillResult.error() != VideoErrorCode::EndOfStream)
         {
-          // Check if we've reached the end of the stream
-          if (result == AVERROR_EOF)
-          {
-#ifdef WITH_GPMF
-            // Drain any remaining GPMF frames from the buffer
-            // This ensures we don't lose buffered frames when hitting EOF
-            if (!m_gpmfFrameBuffer.empty())
-            {
-              // Return the first buffered frame instead of EndOfStream
-              // The buffer will continue to drain on subsequent calls
-              auto bufferedFrame = m_gpmfFrameBuffer.front();
-              m_gpmfFrameBuffer.erase(m_gpmfFrameBuffer.begin());
-              setCurrentFrame(bufferedFrame);
-              m_frameCounter++;
-              return VideoResult<void>();
-            }
-#endif
-            m_isAtEnd = true;
-            return VideoResult<void>(VideoErrorCode::EndOfStream);
-          }
-          else
-          {
-            return VideoResult<void>(FfmpegMediaContainer::convertFfmpegError(result));
-          }
+          return fillResult;
         }
-
-        // Check if this packet belongs to one of our streams
-        auto streamIndex = static_cast<size_t>(m_packet->stream_index);
-        auto it = std::find(m_streamIndices.begin(), m_streamIndices.end(), streamIndex);
-
-        if (it != m_streamIndices.end())
-        {
-          // This packet is for a stream we're interested in
-          auto localIndex = static_cast<std::size_t>(std::distance(m_streamIndices.begin(), it));
-
-          // Try to decode the packet
-          auto frameResult = decodePacket(m_packet, localIndex);
-
-          if (frameResult.isSuccess())
-          {
-            // Update the current stream index
-            m_currentStreamIndex = localIndex;
-            mStreamIndex = m_streamIndices[localIndex];
-
-            // Update the current frame
-            setCurrentFrame(frameResult.value());
-
-            // Increment frame counter
-            m_frameCounter++;
-
-            return VideoResult<void>();
-          }
-
-          // If we need more data, continue reading packets
-          if (frameResult.error() == VideoErrorCode::NeedMoreData)
-          {
-            continue;
-          }
-
-          // For other errors, return the error
-          return VideoResult<void>(frameResult.error());
-        }
-
-        // This packet doesn't belong to any of our streams, discard it
-        av_packet_unref(m_packet);
       }
+
+      // If the queue is empty, we've reached the end
+      if (m_packetQueue.empty())
+      {
+        m_isAtEnd = true;
+        return VideoResult<void>(VideoErrorCode::EndOfStream);
+      }
+
+      // Pop the next frame in temporal (PTS) order from the priority queue
+      PacketInfo nextPacket = m_packetQueue.top();
+      m_packetQueue.pop();
+
+      SPDLOG_TRACE("Popped frame from queue: PTS={} us, streamIndex={}, queue size now={}",
+                   nextPacket.pts, nextPacket.streamIndex, m_packetQueue.size());
+
+      // Update the current frame and stream index
+      setCurrentFrame(nextPacket.frame);
+      m_currentStreamIndex = nextPacket.streamIndex;
+
+      // Update the global stream index from the local index
+      if (m_currentStreamIndex < m_streamIndices.size())
+      {
+        mStreamIndex = m_streamIndices[m_currentStreamIndex];
+      }
+
+      // Increment frame counter
+      m_frameCounter++;
+
+      return VideoResult<void>();
     }
     catch (std::exception&e)
     {
-      SPDLOG_ERROR("Exception caught: {}", e.what());
+      SPDLOG_ERROR("Exception caught in next(): {}", e.what());
       return VideoResult<void>(VideoErrorCode::DecodingError);
     }
   }
@@ -364,7 +321,7 @@ namespace Ravl2::Video
       m_isAtEnd = false;
 
       // Clear packet queue after seeking
-      std::priority_queue<PacketInfo> emptyQueue;
+      std::priority_queue<PacketInfo, std::vector<PacketInfo>, PacketInfoComparator> emptyQueue;
       m_packetQueue.swap(emptyQueue);
 
       // If we're seeking to a specific keyframe but not exactly at the requested timestamp,
@@ -544,7 +501,7 @@ namespace Ravl2::Video
     m_isAtEnd = false;
 
     // Clear packet queue after seeking
-    std::priority_queue<PacketInfo> emptyQueue;
+    std::priority_queue<PacketInfo, std::vector<PacketInfo>, PacketInfoComparator> emptyQueue;
     m_packetQueue.swap(emptyQueue);
 
     // Reset frame ID counters for frames without PTS after seeking
@@ -955,11 +912,11 @@ namespace Ravl2::Video
     return 0;
   }
 
-  VideoResult<std::shared_ptr<Frame>> FfmpegMultiStreamIterator::decodePacket(AVPacket* packet, std::size_t localIndex)
+  VideoResult<std::vector<std::shared_ptr<Frame>>> FfmpegMultiStreamIterator::decodePacket(AVPacket* packet, std::size_t localIndex)
   {
     if (localIndex >= m_codecContexts.size() || localIndex >= m_frames.size())
     {
-      return VideoResult<std::shared_ptr<Frame>>(VideoErrorCode::InvalidArgument);
+      return VideoResult<std::vector<std::shared_ptr<Frame>>>(VideoErrorCode::InvalidArgument);
     }
 
     auto* codecContext = m_codecContexts[localIndex];
@@ -967,7 +924,7 @@ namespace Ravl2::Video
 
     if (!packet)
     {
-      return VideoResult<std::shared_ptr<Frame>>(VideoErrorCode::InvalidOperation);
+      return VideoResult<std::vector<std::shared_ptr<Frame>>>(VideoErrorCode::InvalidOperation);
     }
 
 #ifdef WITH_GPMF
@@ -988,26 +945,17 @@ namespace Ravl2::Video
           // Not a GPMF stream, skip it (might be timecode or other data)
           SPDLOG_DEBUG("Skipping non-GPMF DATA stream at localIndex={}, codec_tag=0x{:08x}",
                        localIndex, stream->codecpar->codec_tag);
-          return VideoResult<std::shared_ptr<Frame>>(VideoErrorCode::NeedMoreData);
+          return VideoResult<std::vector<std::shared_ptr<Frame>>>(VideoErrorCode::NeedMoreData);
         }
 
         SPDLOG_DEBUG("Processing GPMF stream at localIndex={}, packet size={} bytes",
                      localIndex, packet->size);
 
-        // If we have buffered frames from a previous GPMF packet, return the next one
-        // This allows us to return multiple frame types (GPS, gyro, accel) from a single packet
-        if (!m_gpmfFrameBuffer.empty())
-        {
-          auto nextFrame = m_gpmfFrameBuffer.front();
-          m_gpmfFrameBuffer.erase(m_gpmfFrameBuffer.begin());
-          return VideoResult<std::shared_ptr<Frame>>(nextFrame);
-        }
-
         // Ensure parser is initialized
         if (!m_gpmfParser)
         {
           SPDLOG_ERROR("GPMF parser not initialized");
-          return VideoResult<std::shared_ptr<Frame>>(VideoErrorCode::InvalidOperation);
+          return VideoResult<std::vector<std::shared_ptr<Frame>>>(VideoErrorCode::InvalidOperation);
         }
 
         // Calculate timestamp
@@ -1036,24 +984,18 @@ namespace Ravl2::Video
         if (frames.empty())
         {
           // No frames parsed, need more data
-          return VideoResult<std::shared_ptr<Frame>>(VideoErrorCode::NeedMoreData);
+          return VideoResult<std::vector<std::shared_ptr<Frame>>>(VideoErrorCode::NeedMoreData);
         }
 
-        // Return the first frame and buffer the rest
-        auto firstFrame = frames[0];
-        if (frames.size() > 1)
-        {
-          m_gpmfFrameBuffer.insert(m_gpmfFrameBuffer.end(), frames.begin() + 1, frames.end());
-        }
-
-        return VideoResult<std::shared_ptr<Frame>>(firstFrame);
+        // Return all frames directly
+        return VideoResult<std::vector<std::shared_ptr<Frame>>>(frames);
       }
     }
 #endif
 
     if (!codecContext || !frame)
     {
-      return VideoResult<std::shared_ptr<Frame>>(VideoErrorCode::InvalidOperation);
+      return VideoResult<std::vector<std::shared_ptr<Frame>>>(VideoErrorCode::InvalidOperation);
     }
 
     // Send the packet to the decoder
@@ -1062,7 +1004,7 @@ namespace Ravl2::Video
     if (result < 0)
     {
       SPDLOG_WARN("Error sending packet to decoder: {}", toString(FfmpegMediaContainer::convertFfmpegError(result)));
-      return VideoResult<std::shared_ptr<Frame>>(FfmpegMediaContainer::convertFfmpegError(result));
+      return VideoResult<std::vector<std::shared_ptr<Frame>>>(FfmpegMediaContainer::convertFfmpegError(result));
     }
 
     // Receive a frame from the decoder
@@ -1073,20 +1015,14 @@ namespace Ravl2::Video
       // If the decoder needs more data, that's not an error
       if (result == AVERROR(EAGAIN))
       {
-        return VideoResult<std::shared_ptr<Frame>>(VideoErrorCode::NeedMoreData);
+        return VideoResult<std::vector<std::shared_ptr<Frame>>>(VideoErrorCode::NeedMoreData);
       }
       SPDLOG_WARN("Error receiving frame from decoder: {}", toString(FfmpegMediaContainer::convertFfmpegError(result)));
-      return VideoResult<std::shared_ptr<Frame>>(FfmpegMediaContainer::convertFfmpegError(result));
-    }
-
-    // Check if we need to increment the counter for frames without PTS
-    if (frame->pts == AV_NOPTS_VALUE)
-    {
-      // Increment the frame ID counter for this stream since the frame has no PTS
-      m_nextFrameIds[localIndex]++;
+      return VideoResult<std::vector<std::shared_ptr<Frame>>>(FfmpegMediaContainer::convertFfmpegError(result));
     }
 
     // Generate a unique frame ID based on PTS and stream index
+    // Note: generateUniqueFrameId() handles counter increment internally for frames without PTS
     StreamItemId id = generateUniqueFrameId(frame, localIndex);
 
     // Convert the FFmpeg frame to our Frame type
@@ -1095,10 +1031,11 @@ namespace Ravl2::Video
     if (!decodedFrame)
     {
       SPDLOG_WARN("Failed to convert frame to Frame");
-      return VideoResult<std::shared_ptr<Frame>>(VideoErrorCode::DecodingError);
+      return VideoResult<std::vector<std::shared_ptr<Frame>>>(VideoErrorCode::DecodingError);
     }
 
-    return VideoResult<std::shared_ptr<Frame>>(decodedFrame);
+    // For video/audio frames, return a single-element vector
+    return VideoResult<std::vector<std::shared_ptr<Frame>>>({decodedFrame});
   }
 
   StreamItemId FfmpegMultiStreamIterator::generateUniqueFrameId(AVFrame* frame, std::size_t localIndex)
@@ -1443,7 +1380,7 @@ namespace Ravl2::Video
     if (m_wasSeekOperation)
     {
       // Empty the queue after a seek operation
-      std::priority_queue<PacketInfo> emptyQueue;
+      std::priority_queue<PacketInfo, std::vector<PacketInfo>, PacketInfoComparator> emptyQueue;
       m_packetQueue.swap(emptyQueue);
 
       // Reset the seek flag after handling it
@@ -1472,30 +1409,9 @@ namespace Ravl2::Video
         // Check if we've reached the end of the stream
         if (result == AVERROR_EOF)
         {
-#ifdef WITH_GPMF
-          // Drain any remaining GPMF frames from the buffer into the packet queue
-          // This must happen BEFORE setting m_isAtEnd
-          if (!m_gpmfFrameBuffer.empty())
-          {
-            while (!m_gpmfFrameBuffer.empty())
-            {
-              auto bufferedFrame = m_gpmfFrameBuffer.front();
-              m_gpmfFrameBuffer.erase(m_gpmfFrameBuffer.begin());
-
-              int64_t bufferedPts = bufferedFrame->timestamp().count();
-              PacketInfo bufferedInfo{
-                bufferedFrame,
-                0, // Stream index doesn't matter for buffered frames
-                bufferedPts
-              };
-              m_packetQueue.push(bufferedInfo);
-            }
-          }
-#endif
-
           m_isAtEnd = true;
 
-          // We may still have frames in the queue (including drained GPMF frames)
+          // Return success if we still have frames in the queue, otherwise EndOfStream
           return m_packetQueue.empty() ? VideoResult<void>(VideoErrorCode::EndOfStream) : VideoResult<void>();
         }
         else
@@ -1521,33 +1437,40 @@ namespace Ravl2::Video
 
         if (frameResult.isSuccess())
         {
-          // Get the frame's presentation timestamp
-          int64_t pts = 0;
           auto* stream = m_streams[localIndex];
 
-          // Get the timestamp from the frame
-          if (frameResult.value() && frameResult.value()->timestamp().count() != 0)
+          // Add all frames to the queue (GPMF packets may produce multiple frames)
+          for (const auto& frame : frameResult.value())
           {
-            pts = frameResult.value()->timestamp().count();
-          }
-          else if (m_packet->pts != AV_NOPTS_VALUE)
-          {
-            // If the frame doesn't have a timestamp, use the packet's timestamp
-            pts = av_rescale_q(m_packet->pts, stream->time_base, AVRational{1, AV_TIME_BASE});
-          }
-          else if (m_packet->dts != AV_NOPTS_VALUE)
-          {
-            // As a last resort, use the decoding timestamp
-            pts = av_rescale_q(m_packet->dts, stream->time_base, AVRational{1, AV_TIME_BASE});
-          }
+            // Get the frame's presentation timestamp
+            int64_t pts = 0;
 
-          // Add the frame to the queue
-          PacketInfo packetInfo{
-            frameResult.value(), // The decoded frame
-            localIndex, // Local stream index
-            pts // Presentation timestamp
-          };
-          m_packetQueue.push(packetInfo);
+            // Get the timestamp, checking packet-level timestamps first
+            // Priority: packet PTS > packet DTS > frame timestamp
+            if (m_packet->pts != AV_NOPTS_VALUE)
+            {
+              // Use the packet's presentation timestamp
+              pts = av_rescale_q(m_packet->pts, stream->time_base, AVRational{1, AV_TIME_BASE});
+            }
+            else if (m_packet->dts != AV_NOPTS_VALUE)
+            {
+              // Use the decoding timestamp as fallback
+              pts = av_rescale_q(m_packet->dts, stream->time_base, AVRational{1, AV_TIME_BASE});
+            }
+            else if (frame && frame->timestamp().count() != 0)
+            {
+              // Use frame timestamp if packet timestamps unavailable
+              pts = frame->timestamp().count();
+            }
+
+            // Add the frame to the queue
+            PacketInfo packetInfo{
+              frame, // The decoded frame
+              localIndex, // Local stream index
+              pts // Presentation timestamp
+            };
+            m_packetQueue.push(packetInfo);
+          }
         }
         else if (frameResult.error() == VideoErrorCode::NeedMoreData)
         {
