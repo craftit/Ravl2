@@ -83,11 +83,13 @@ namespace Ravl2::GoPro
   std::optional<GpsFix> GpmfParser::parseGps(GPMF_stream* stream)
   {
     if (stream == nullptr) {
+      SPDLOG_WARN("parseGps: null stream pointer");
       return std::nullopt;
     }
 
     uint32_t samples = GPMF_Repeat(stream);
     if (samples == 0) {
+      SPDLOG_DEBUG("parseGps: GPS5 stream has 0 samples");
       return std::nullopt;
     }
 
@@ -95,12 +97,14 @@ namespace Ravl2::GoPro
     // All values are scaled integers
     float scale = getScaleFactor(stream, MAKEID('G', 'P', 'S', '5'));
     if (scale == 0) {
+      SPDLOG_WARN("parseGps: invalid scale factor, using default 1.0");
       scale = 1.0f; // Default scale
     }
 
     // Get raw data
     auto* rawData = static_cast<int16_t*>(GPMF_RawData(stream));
     if (rawData == nullptr) {
+      SPDLOG_ERROR("parseGps: failed to get raw data from GPMF stream (samples={})", samples);
       return std::nullopt;
     }
 
@@ -131,17 +135,20 @@ namespace Ravl2::GoPro
     std::vector<GyroSample> samples;
 
     if (stream == nullptr) {
+      SPDLOG_WARN("parseGyro: null stream pointer");
       return samples;
     }
 
     uint32_t sampleCount = GPMF_Repeat(stream);
     if (sampleCount == 0) {
+      SPDLOG_DEBUG("parseGyro: GYRO stream has 0 samples");
       return samples;
     }
 
     // Get scale factor
     float scale = getScaleFactor(stream, MAKEID('G', 'Y', 'R', 'O'));
     if (scale == 0) {
+      SPDLOG_WARN("parseGyro: invalid scale factor, using default 1.0");
       scale = 1.0f;
     }
 
@@ -151,6 +158,7 @@ namespace Ravl2::GoPro
     // Get raw data (3 int16 values per sample: x, y, z)
     auto* rawData = static_cast<int16_t*>(GPMF_RawData(stream));
     if (rawData == nullptr) {
+      SPDLOG_ERROR("parseGyro: failed to get raw data from GPMF stream (sampleCount={})", sampleCount);
       return samples;
     }
 
@@ -173,17 +181,20 @@ namespace Ravl2::GoPro
     std::vector<AccelSample> samples;
 
     if (stream == nullptr) {
+      SPDLOG_WARN("parseAccel: null stream pointer");
       return samples;
     }
 
     uint32_t sampleCount = GPMF_Repeat(stream);
     if (sampleCount == 0) {
+      SPDLOG_DEBUG("parseAccel: ACCL stream has 0 samples");
       return samples;
     }
 
     // Get scale factor
     float scale = getScaleFactor(stream, MAKEID('A', 'C', 'C', 'L'));
     if (scale == 0) {
+      SPDLOG_WARN("parseAccel: invalid scale factor, using default 1.0");
       scale = 1.0f;
     }
 
@@ -193,6 +204,7 @@ namespace Ravl2::GoPro
     // Get raw data (3 int16 values per sample: x, y, z)
     auto* rawData = static_cast<int16_t*>(GPMF_RawData(stream));
     if (rawData == nullptr) {
+      SPDLOG_ERROR("parseAccel: failed to get raw data from GPMF stream (sampleCount={})", sampleCount);
       return samples;
     }
 
@@ -219,15 +231,25 @@ namespace Ravl2::GoPro
     // Save current position
     GPMF_stream tempStream = *stream;
 
-    // Look for SCAL (scale) field
+    // Look for SCAL (scale) field at the current level (sibling of current FourCC)
+    // GPMF_CURRENT_LEVEL ensures we only look at siblings, not parent/child SCAL tags
     if (GPMF_FindPrev(&tempStream, MAKEID('S', 'C', 'A', 'L'), GPMF_CURRENT_LEVEL) == GPMF_OK) {
       auto* scaleData = static_cast<uint32_t*>(GPMF_RawData(&tempStream));
       if (scaleData != nullptr) {
-        // Scale is typically stored as an integer divisor
-        return 1.0f / static_cast<float>(*scaleData);
+        uint32_t scaleCount = GPMF_Repeat(&tempStream);
+        if (scaleCount > 0) {
+          // Scale is typically stored as an integer divisor
+          // For multi-component data (e.g., XYZ), SCAL may have multiple values
+          // Use the first scale value (they're usually all the same for sensor data)
+          float scale = 1.0f / static_cast<float>(scaleData[0]);
+          SPDLOG_DEBUG("getScaleFactor: found SCAL with {} values, using first: 1/{} = {}",
+                       scaleCount, scaleData[0], scale);
+          return scale;
+        }
       }
     }
 
+    SPDLOG_DEBUG("getScaleFactor: no SCAL found at current level, using default 1.0");
     return 1.0f;
   }
 
@@ -237,10 +259,21 @@ namespace Ravl2::GoPro
       return 0.0f;
     }
 
-    // Look for ORIN (original sample rate) or similar
-    // This is a simplified version - actual implementation may vary
-    // For now, return a default value
-    return 200.0f; // Typical GoPro gyro/accel rate
+    // NOTE: Proper sample rate calculation requires analyzing multiple GPMF packets
+    // over time using GetGPMFSampleRate() from GPMF_utils, which needs access to
+    // the entire MP4 container and all payloads. Since we're parsing packets
+    // one-at-a-time in the FFmpeg iterator, we can't perform this calculation here.
+    //
+    // The GPMF format doesn't embed a simple "sample rate" field in each packet.
+    // Fields like ORIN, TSMP, and TIMO have different meanings and can't be
+    // directly interpreted as Hz without cross-packet analysis.
+    //
+    // For now, we return the typical GoPro Hero 8 sensor rate (200 Hz).
+    // TODO: Enhance FfmpegMultiStreamIterator to track sample timing across
+    // packets and calculate actual rates, or expose GetGPMFSampleRate() via
+    // a higher-level API that has access to the full container.
+
+    return 200.0f; // Typical GoPro Hero 8 gyro/accel sample rate
   }
 
 } // namespace Ravl2::GoPro

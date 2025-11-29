@@ -4,8 +4,9 @@
 
 #pragma once
 
-#include "Ravl2/GoPro/GpmfFrame.hh"
+#include "Ravl2/Video/MetaDataFrame.hh"
 #include "Ravl2/GoPro/GpmfTypes.hh"
+#include "Ravl2/Logging.hh"
 #include <vector>
 
 namespace Ravl2::GoPro
@@ -17,13 +18,26 @@ namespace Ravl2::GoPro
   {
   public:
     //! Constructor with accel data, ID, timestamp, and sample rate
+    //! @param data Vector of accelerometer samples
+    //! @param id Unique stream item identifier
+    //! @param timestamp Media timestamp for this frame
+    //! @param sampleRate Samples per second (must be > 0, typical GoPro: 200-400 Hz)
     AccelFrame(const std::vector<AccelSample>& data,
                Video::StreamItemId id,
                Video::MediaTime timestamp,
                float sampleRate)
       : Video::MetaDataFrame<std::vector<AccelSample>>(data, id, timestamp)
         , mSampleRate(sampleRate)
-    {}
+    {
+      // Validate sample rate
+      if (sampleRate <= 0.0F) {
+        SPDLOG_ERROR("Invalid accel sample rate: {} Hz (must be > 0)", sampleRate);
+        mSampleRate = 0.0F;
+      } else if (sampleRate < 50.0F || sampleRate > 1000.0F) {
+        // Warn for unusual rates outside typical GoPro range (200-400 Hz)
+        SPDLOG_WARN("Unusual accel sample rate: {} Hz (typical GoPro: 200-400 Hz)", sampleRate);
+      }
+    }
 
     //! Get the sample rate
     [[nodiscard]] float sampleRate() const { return mSampleRate; }
@@ -47,7 +61,7 @@ namespace Ravl2::GoPro
     }
 
   private:
-    float mSampleRate = 0; //!< Samples per second
+    float mSampleRate = 0.0F; //!< Samples per second (0 indicates invalid/unset)
   };
 
 } // namespace Ravl2::GoPro

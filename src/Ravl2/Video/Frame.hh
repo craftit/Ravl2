@@ -15,6 +15,9 @@
 namespace Ravl2::Video
 {
   //! Base class for all media frames (video frames, audio chunks, etc.)
+  //! We don't want to use a variant here as it means all types would need
+  //! to be known in advance.
+
   class Frame
   {
   public:

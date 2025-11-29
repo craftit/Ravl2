@@ -11,7 +11,6 @@ endif()
 set(GOPRO_SOURCES
     GpmfTypes.cc GpmfTypes.hh
     GpmfParser.cc GpmfParser.hh
-    GpmfFrame.cc GpmfFrame.hh
     GpsFrame.cc GpsFrame.hh
     GyroFrame.cc GyroFrame.hh
     AccelFrame.cc AccelFrame.hh

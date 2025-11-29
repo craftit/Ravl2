@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include "Ravl2/GoPro/GpmfFrame.hh"
+#include "Ravl2/Video/MetaDataFrame.hh"
 #include "Ravl2/GoPro/GpmfTypes.hh"
 
 namespace Ravl2::GoPro

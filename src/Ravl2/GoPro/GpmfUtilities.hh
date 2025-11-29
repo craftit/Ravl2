@@ -46,6 +46,9 @@ namespace Ravl2::GoPro
     const Quaternion<float>& orientation);
 
   //! Apply low-pass filter to vector data (for smoothing)
+  //! @param data Input data vector
+  //! @param alpha Filter coefficient (clamped to [0, 1]). Higher = more responsive, lower = smoother
+  //! @note alpha values outside [0,1] are clamped to prevent instability
   template<typename VectorT>
   std::vector<VectorT> lowPassFilter(
     const std::vector<VectorT>& data,
@@ -54,6 +57,10 @@ namespace Ravl2::GoPro
     if (data.empty()) {
       return {};
     }
+
+    // Clamp alpha to [0, 1] to prevent filter instability
+    // alpha < 0 would cause negative feedback, alpha > 1 would amplify changes
+    alpha = std::clamp(alpha, 0.0f, 1.0f);
 
     std::vector<VectorT> filtered;
     filtered.reserve(data.size());

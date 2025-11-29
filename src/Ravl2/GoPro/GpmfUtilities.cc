@@ -72,8 +72,11 @@ namespace Ravl2::GoPro
         Vector3f axis = angularVelocityDt / angle;
         deltaQ = Quaternion<float>::fromAngleAxis(2.0f * angle, axis);
       } else {
-        // Small angle approximation
-        deltaQ = Quaternion<float>::identity();
+        // Small angle approximation: q ≈ [1, ω*dt/2]
+        // Even for very small rotations, we should apply the linearized update
+        // rather than treating them as zero rotation
+        deltaQ = Quaternion<float>(1.0f, angularVelocityDt[0], angularVelocityDt[1], angularVelocityDt[2]);
+        deltaQ.normalise();
       }
 
       // Integrate
