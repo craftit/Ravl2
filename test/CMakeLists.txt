@@ -88,6 +88,7 @@ add_executable(tests
         test_types.cc
         Display_Normalization_tests.cc
         Display_3D_E2E_tests.cc
+        test_gps.cc
 )
 target_compile_definitions(tests PRIVATE -DRAVL_SOURCE_DIR="${PROJECT_SOURCE_DIR}")
 target_link_libraries(
