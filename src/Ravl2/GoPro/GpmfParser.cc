@@ -16,6 +16,46 @@ extern "C" {
 
 namespace Ravl2::GoPro
 {
+  //! Convert GPMF ASCII string to UTF-8
+  //! GPMF uses extended ASCII with special characters (per spec):
+  //! 0xB0 (°), 0xB2 (²), 0xB3 (³), 0xB5 (µ)
+  static std::string gpmfAsciiToUtf8(const char* data, size_t size)
+  {
+    std::string result;
+    result.reserve(size * 2); // Reserve extra space for multi-byte UTF-8
+
+    for (size_t i = 0; i < size; i++) {
+      auto ch = static_cast<unsigned char>(data[i]);
+
+      if (ch == 0) break; // Null terminator
+
+      switch (ch) {
+        case 0xB0: // ° (degree symbol)
+          result += "\u00B0";
+          break;
+        case 0xB2: // ² (superscript 2)
+          result += "\u00B2";
+          break;
+        case 0xB3: // ³ (superscript 3)
+          result += "\u00B3";
+          break;
+        case 0xB5: // µ (micro symbol)
+          result += "\u00B5";
+          break;
+        default:
+          if (ch < 128) {
+            result += static_cast<char>(ch);
+          } else {
+            // Unknown extended ASCII - skip or replace with ?
+            SPDLOG_WARN("Unknown extended ASCII character: 0x{:02X} in GPMF string", ch);
+            result += '?';
+          }
+          break;
+      }
+    }
+    return result;
+  }
+
   GpmfParser::GpmfParser(bool enableJson)
     : mEnableJson(enableJson)
   {
@@ -50,52 +90,93 @@ namespace Ravl2::GoPro
       return frames;
     }
 
-    // Single-pass traversal: iterate through all entries using GPMF_Next
-    GPMF_ResetState(&stream);
+    // Helper function to process a stream level (including sensor data and JSON)
+    std::function<void(GPMF_stream*, bool)> processLevel = [&](GPMF_stream* levelStream, bool isTopLevel) {
+      do {
+        uint32_t fourcc = GPMF_Key(levelStream);
 
-    do {
-      uint32_t fourcc = GPMF_Key(&stream);
+        // Process known sensor data types
+        switch (fourcc) {
+          case MAKEID('G', 'P', 'S', '5'):
+          case MAKEID('G', 'P', 'S', '9'):
+            parseGps(levelStream, frames, streamId, timestamp);
+            break;
 
-      // Process known sensor data types
-      switch (fourcc) {
-        case MAKEID('G', 'P', 'S', '5'):
-        case MAKEID('G', 'P', 'S', '9'):
-          parseGps(&stream, frames, streamId, timestamp);
-          break;
+          case MAKEID('G', 'Y', 'R', 'O'):
+            parseGyro(levelStream, frames, streamId, timestamp);
+            break;
 
-        case MAKEID('G', 'Y', 'R', 'O'):
-          parseGyro(&stream, frames, streamId, timestamp);
-          break;
+          case MAKEID('A', 'C', 'C', 'L'):
+            parseAccel(levelStream, frames, streamId, timestamp);
+            break;
 
-        case MAKEID('A', 'C', 'C', 'L'):
-          parseAccel(&stream, frames, streamId, timestamp);
-          break;
+          // DEVC: enter and process children
+          case MAKEID('D', 'E', 'V', 'C'): {
+            if (isTopLevel) {
+              // Process DEVC children (STRM containers, etc.)
+              GPMF_stream devcStream = *levelStream;
+              if (GPMF_OK == GPMF_Next(&devcStream, GPMF_RECURSE_LEVELS)) {
+                processLevel(&devcStream, false);
+              }
+            }
+          } break;
 
-        default:
+          // STRM: enter and process children
+          case MAKEID('S', 'T', 'R', 'M'): {
+            // Process STRM children (GPS9, GYRO, ACCL, etc.)
+            GPMF_stream strmStream = *levelStream;
+            if (GPMF_OK == GPMF_Next(&strmStream, GPMF_RECURSE_LEVELS)) {
+              processLevel(&strmStream, false);
+            }
+          } break;
+
+          default:
           // Unknown FourCC - convert to JSON if enabled
           if (mEnableJson) {
-            // Check if this is a data entry (has samples)
-            uint32_t sampleCount = GPMF_Repeat(&stream);
-            if (sampleCount > 0) {
-              nlohmann::json unknownJson;
-              unknownJson["fourcc"] = fourccToString(fourcc);
-              unknownJson["type"] = std::string(1, static_cast<char>(GPMF_Type(&stream)));
-              unknownJson["sample_count"] = sampleCount;
-              unknownJson["elements"] = GPMF_ElementsInStruct(&stream);
+            // Skip items that are nested inside STRM or other containers
+            // We only want top-level items and DEVC/STRM containers
+            // Nest level 0 = outside DEVC, 1 = inside DEVC, 2+ = inside STRM/nested
+            uint32_t nestLevel = GPMF_NestLevel(&stream);
 
-              unknownJson["samples"] = samplesToJson(&stream,fourcc);
+            // Debug: log nest level for unknown items
+            if (nestLevel > 1) {
+              SPDLOG_DEBUG("Skipping {} at nest level {} (already in parent JSON)",
+                          fourccToString(fourcc), nestLevel);
+            }
 
-              // Create JSON frame
-              auto jsonFrame = std::make_shared<Video::MetaDataFrame<nlohmann::json>>(
-                unknownJson,
-                streamId + mNextId++,
-                timestamp);
-              frames.push_back(jsonFrame);
+            // Only create JSON frames for top-level items (nest level 0 or 1)
+            // Level 0: top-level (before DEVC)
+            // Level 1: inside DEVC (device-level items, STRM containers themselves)
+            // Level 2+: inside STRM or other nests (skip - already in nested JSON)
+            if (nestLevel <= 1) {
+              // Check if this is a data entry (has samples)
+              uint32_t sampleCount = GPMF_Repeat(&stream);
+              if (sampleCount > 0) {
+                nlohmann::json unknownJson;
+                unknownJson["fourcc"] = fourccToString(fourcc);
+                unknownJson["type"] = std::string(1, static_cast<char>(GPMF_Type(&stream)));
+                unknownJson["sample_count"] = sampleCount;
+                unknownJson["elements"] = GPMF_ElementsInStruct(&stream);
+
+                unknownJson["samples"] = samplesToJson(&stream,fourcc);
+
+                // Create JSON frame
+                auto jsonFrame = std::make_shared<Video::MetaDataFrame<nlohmann::json>>(
+                  unknownJson,
+                  streamId + mNextId++,
+                  timestamp);
+                frames.push_back(jsonFrame);
+              }
             }
           }
           break;
-      }
-    } while (GPMF_OK == GPMF_Next(&stream, GPMF_RECURSE_LEVELS));
+        }
+      } while (GPMF_OK == GPMF_Next(levelStream, GPMF_CURRENT_LEVEL));
+    };
+
+    // Start processing at the top level
+    GPMF_ResetState(&stream);
+    processLevel(&stream, true);
 
     return frames;
   }
@@ -337,8 +418,8 @@ namespace Ravl2::GoPro
     GPMF_stream tempStream = *stream;
 
     // Look for SCAL (scale) field at the current level (sibling of current FourCC)
-    // GPMF_CURRENT_LEVEL ensures we only look at siblings, not parent/child SCAL tags
-    if (GPMF_FindPrev(&tempStream, MAKEID('S', 'C', 'A', 'L'), GPMF_CURRENT_LEVEL) == GPMF_OK) {
+    // GPMF_RECURSE_LEVELS allows searching within the current container
+    if (GPMF_FindPrev(&tempStream, MAKEID('S', 'C', 'A', 'L'), GPMF_RECURSE_LEVELS) == GPMF_OK) {
       auto* scaleData = static_cast<uint32_t*>(GPMF_RawData(&tempStream));
       if (scaleData != nullptr) {
         uint32_t scaleCount = GPMF_Repeat(&tempStream);
@@ -371,7 +452,7 @@ namespace Ravl2::GoPro
 
     // Strategy 1: Look for TSMP (Time Stamp) field - the most accurate
     // TSMP contains the time span for all samples in this packet (in microseconds)
-    if (GPMF_FindPrev(&tempStream, MAKEID('T', 'S', 'M', 'P'), GPMF_CURRENT_LEVEL) == GPMF_OK) {
+    if (GPMF_FindPrev(&tempStream, MAKEID('T', 'S', 'M', 'P'), GPMF_RECURSE_LEVELS) == GPMF_OK) {
       auto* tsmpData = static_cast<uint32_t*>(GPMF_RawData(&tempStream));
       if (tsmpData != nullptr) {
         uint32_t sampleCount = GPMF_Repeat(&tempStream);
@@ -397,19 +478,11 @@ namespace Ravl2::GoPro
     tempStream = *stream;
 
     // Strategy 2: Look for ORIN (Original Sample Rate) field
-    // This is the nominal sample rate from the device
-    if (GPMF_FindPrev(&tempStream, MAKEID('O', 'R', 'I', 'N'), GPMF_CURRENT_LEVEL) == GPMF_OK) {
-      auto* orinData = static_cast<uint32_t*>(GPMF_RawData(&tempStream));
-      if (orinData != nullptr) {
-        uint32_t sampleCount = GPMF_Repeat(&tempStream);
-        if (sampleCount > 0) {
-          // IMPORTANT: GPMF data is big-endian, must byte-swap!
-          uint32_t orinValue = BYTESWAP32(orinData[0]); // ORIN in Hz
-          SPDLOG_INFO("Found ORIN (original sample rate): {} Hz", orinValue);
-          return static_cast<float>(orinValue);
-        }
-      }
-    }
+    // NOTE: ORIN is type 'c' (string) containing axis orientation like "ZXY", NOT a sample rate!
+    // This strategy is disabled - ORIN does not contain sample rate information
+    // if (GPMF_FindPrev(&tempStream, MAKEID('O', 'R', 'I', 'N'), GPMF_RECURSE_LEVELS) == GPMF_OK) {
+    //   // This was incorrectly trying to read ORIN as a numeric sample rate
+    // }
 
     // Strategy 3: Detect based on FourCC of the current stream (fallback)
     uint32_t fourcc = GPMF_Key(stream);
@@ -430,7 +503,7 @@ namespace Ravl2::GoPro
       SPDLOG_DEBUG("Using default accel rate: 200 Hz");
       return 200.0f; // Typical GoPro accel rate
     }
-    if (fourcc == MAKEID('G', 'P', 'S', '5')) {
+    if (fourcc == MAKEID('G', 'P', 'S', '5') || fourcc == MAKEID('G', 'P', 'S', '9')) {
       SPDLOG_DEBUG("Using default GPS rate: 18 Hz (GoPro Hero 8+ typical max)");
       return 18.0f; // Typical GoPro GPS rate (can be 1, 5, 10, or 18 Hz)
     }
@@ -472,9 +545,7 @@ namespace Ravl2::GoPro
       auto* dvnmData = static_cast<char*>(GPMF_RawData(&tempStream));
       uint32_t dvnmSize = GPMF_RawDataSize(&tempStream);
       if (dvnmData != nullptr && dvnmSize > 0) {
-        std::string dvnm(dvnmData, dvnmSize);
-        // Trim null terminators
-        dvnm.erase(std::find(dvnm.begin(), dvnm.end(), '\0'), dvnm.end());
+        std::string dvnm = gpmfAsciiToUtf8(dvnmData, dvnmSize);
         if (!dvnm.empty()) {
           deviceInfo["device_name"] = dvnm;
         }
@@ -489,8 +560,7 @@ namespace Ravl2::GoPro
       auto* versData = static_cast<char*>(GPMF_RawData(&tempStream));
       uint32_t versSize = GPMF_RawDataSize(&tempStream);
       if (versData != nullptr && versSize > 0) {
-        std::string vers(versData, versSize);
-        vers.erase(std::find(vers.begin(), vers.end(), '\0'), vers.end());
+        std::string vers = gpmfAsciiToUtf8(versData, versSize);
         if (!vers.empty()) {
           deviceInfo["version"] = vers;
         }
@@ -551,8 +621,8 @@ namespace Ravl2::GoPro
       auto* siunData = static_cast<char*>(GPMF_RawData(&tempStream));
       uint32_t siunSize = GPMF_RawDataSize(&tempStream);
       if (siunData != nullptr && siunSize > 0) {
-        std::string siun(siunData, siunSize);
-        siun.erase(std::find(siun.begin(), siun.end(), '\0'), siun.end());
+        // SIUN may contain special characters like °, ², ³, µ
+        std::string siun = gpmfAsciiToUtf8(siunData, siunSize);
         if (!siun.empty()) {
           metadata["units"]["siun"] = siun;
         }
@@ -567,8 +637,8 @@ namespace Ravl2::GoPro
       auto* unitData = static_cast<char*>(GPMF_RawData(&tempStream));
       uint32_t unitSize = GPMF_RawDataSize(&tempStream);
       if (unitData != nullptr && unitSize > 0) {
-        std::string unit(unitData, unitSize);
-        unit.erase(std::find(unit.begin(), unit.end(), '\0'), unit.end());
+        // UNIT may contain special characters like °, ², ³, µ
+        std::string unit = gpmfAsciiToUtf8(unitData, unitSize);
         if (!unit.empty()) {
           metadata["units"]["unit"] = unit;
         }
@@ -601,8 +671,7 @@ namespace Ravl2::GoPro
       } else if (orinType == GPMF_TYPE_STRING_ASCII) {
         // String: orientation
         uint32_t orinSize = GPMF_RawDataSize(&tempStream);
-        std::string orin(static_cast<char*>(orinData), orinSize);
-        orin.erase(std::find(orin.begin(), orin.end(), '\0'), orin.end());
+        std::string orin = gpmfAsciiToUtf8(static_cast<char*>(orinData), orinSize);
         if (!orin.empty()) {
           metadata["orientation"]["input"] = orin;
         }
@@ -617,8 +686,7 @@ namespace Ravl2::GoPro
       auto* orioData = static_cast<char*>(GPMF_RawData(&tempStream));
       uint32_t orioSize = GPMF_RawDataSize(&tempStream);
       if (orioData != nullptr && orioSize > 0) {
-        std::string orio(orioData, orioSize);
-        orio.erase(std::find(orio.begin(), orio.end(), '\0'), orio.end());
+        std::string orio = gpmfAsciiToUtf8(orioData, orioSize);
         if (!orio.empty()) {
           metadata["orientation"]["output"] = orio;
         }
@@ -654,11 +722,37 @@ namespace Ravl2::GoPro
   nlohmann::json GpmfParser::nestedToJson(GPMF_stream *stream, [[maybe_unused]] uint32_t fourcc)
   {
     nlohmann::json ret;
+
+    // Copy the stream to avoid modifying the original
+    GPMF_stream tempStream = *stream;
+
+    // First, we need to "enter" the nest by calling GPMF_Next to descend into children
+    GPMF_ERR err = GPMF_Next(&tempStream, GPMF_RECURSE_LEVELS);
+    if (err != GPMF_OK) {
+      // Empty nest or error
+      return ret;
+    }
+
+    // Now iterate through children at the current level
+    // Handle duplicate keys (like multiple STRM entries) by using arrays
     do {
-      uint32_t fourXcc = GPMF_Key(stream);
+      uint32_t fourXcc = GPMF_Key(&tempStream);
       std::string strFourCC = fourccToString(fourXcc);
-      ret[strFourCC] = samplesToJson(stream, fourXcc);
-    } while (GPMF_OK == GPMF_Next(stream, GPMF_RECURSE_LEVELS));
+      nlohmann::json childJson = samplesToJson(&tempStream, fourXcc);
+
+      // If this key already exists, convert to array or append
+      if (ret.contains(strFourCC)) {
+        if (ret[strFourCC].is_array()) {
+          ret[strFourCC].push_back(childJson);
+        } else {
+          // Convert single value to array with both old and new
+          nlohmann::json oldValue = ret[strFourCC];
+          ret[strFourCC] = nlohmann::json::array({oldValue, childJson});
+        }
+      } else {
+        ret[strFourCC] = childJson;
+      }
+    } while (GPMF_OK == GPMF_Next(&tempStream, GPMF_CURRENT_LEVEL));
 
     return ret;
   }
@@ -680,14 +774,22 @@ namespace Ravl2::GoPro
     GPMF_SampleType sampleType = GPMF_Type(stream);
     uint32_t sampleCount = GPMF_Repeat(stream);
     uint32_t elements = GPMF_ElementsInStruct(stream);
+
+    // Handle NEST types specially - they don't have samples, just child KLVs
+    // We need to recursively parse the children and build a nested JSON object
+    if (sampleType == GPMF_TYPE_NEST) {
+      return nestedToJson(stream, fourcc);
+    }
+
     if(elements == 0) {
       return {};
     }
 
     switch (sampleType) {
       case GPMF_TYPE_STRING_ASCII: {
-        std::string_view strView(static_cast<const char *>(GPMF_RawData(stream)), GPMF_RawDataSize(stream));
-        return std::string(strView);
+        // GPMF ASCII strings may contain extended ASCII characters (°, ², ³, µ)
+        // Convert to proper UTF-8 for JSON compatibility
+        return gpmfAsciiToUtf8(static_cast<const char *>(GPMF_RawData(stream)), GPMF_RawDataSize(stream));
       }
 
       case GPMF_TYPE_SIGNED_BYTE: {
@@ -957,8 +1059,13 @@ namespace Ravl2::GoPro
       }
 
       case GPMF_TYPE_STRING_UTF8: {
-        std::string_view strView(static_cast<const char*>(GPMF_RawData(stream)), GPMF_RawDataSize(stream));
-        return std::string(strView);
+        // UTF-8 strings should already be valid, just need to handle null terminators
+        const char* data = static_cast<const char*>(GPMF_RawData(stream));
+        size_t size = GPMF_RawDataSize(stream);
+        std::string str(data, size);
+        // Remove null terminators
+        str.erase(std::find(str.begin(), str.end(), '\0'), str.end());
+        return str;
       }
 
       case GPMF_TYPE_COMPLEX: {
@@ -967,7 +1074,6 @@ namespace Ravl2::GoPro
         result["type"] = "complex";
         result["size_bytes"] = GPMF_RawDataSize(stream);
         result["sample_count"] = sampleCount;
-        result["note"] = "Complex type - opaque data structure";
         return result;
       }
 
@@ -977,11 +1083,12 @@ namespace Ravl2::GoPro
         result["type"] = "compressed";
         result["size_bytes"] = GPMF_RawDataSize(stream);
         result["sample_count"] = sampleCount;
-        result["note"] = "Compressed data - needs decompression";
         return result;
       }
 
       case GPMF_TYPE_NEST: {
+        // Should never reach here - NEST is handled before the switch
+        SPDLOG_WARN("GPMF_TYPE_NEST reached in switch - this is a bug");
         return nestedToJson(stream, fourcc);
       }
 

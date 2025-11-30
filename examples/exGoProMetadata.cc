@@ -207,7 +207,7 @@ int RAVL2_MAIN(int argc, char *argv[])
       auto* jsonFrame = dynamic_cast<Ravl2::Video::MetaDataFrame<nlohmann::json> *>(frame.get());
       if(jsonFrame) {
         if (verbose) {
-          fmt::print("Json: {}\n", jsonFrame->data().dump());
+          fmt::print("Json: {}\n", jsonFrame->data().dump(2));
         }
       }
 
