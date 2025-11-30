@@ -11,6 +11,7 @@
 #include <stdexcept>
 #include <spdlog/spdlog.h>
 #include <libswscale/swscale.h>
+#include <fmt/format.h>
 
 // Optional GoPro GPMF support
 #ifdef WITH_GPMF
@@ -21,6 +22,36 @@
 
 namespace Ravl2::Video
 {
+  namespace
+  {
+    std::string fourCC2str(uint32_t fourCC)
+    {
+      // Interpret FourCC as four bytes in little-endian order (FFmpeg stores codec_tag this way).
+      char cc[5];
+      cc[0] = static_cast<char>((fourCC      ) & 0xFF);
+      cc[1] = static_cast<char>((fourCC >>  8) & 0xFF);
+      cc[2] = static_cast<char>((fourCC >> 16) & 0xFF);
+      cc[3] = static_cast<char>((fourCC >> 24) & 0xFF);
+      cc[4] = '\0';
+
+      // If all characters are printable ASCII, return the 4-char string
+      bool printable = true;
+      for (int i = 0; i < 4; ++i)
+      {
+        unsigned char ch = static_cast<unsigned char>(cc[i]);
+        if (ch < 0x20 || ch > 0x7E) { printable = false; break; }
+      }
+
+      if (printable)
+      {
+        return std::string(cc);
+      }
+
+      // Otherwise return a hex representation so callers can still see the value
+      return fmt::format("0x{:08x}", fourCC);
+    }
+  }
+
   FfmpegMultiStreamIterator::FfmpegMultiStreamIterator(std::shared_ptr<FfmpegMediaContainer> container,
                                                        const std::vector<std::size_t>&streamIndices)
     : StreamIterator(container, 0) // Temporary stream index, will be updated when we get the first frame
@@ -102,7 +133,7 @@ namespace Ravl2::Video
 
       if (!codecContext && !isDataStream)
       {
-        SPDLOG_WARN("No codec context available for stream {} (type: {})", streamIndex, static_cast<int>(stream->codecpar->codec_type));
+        SPDLOG_WARN("No codec context available for stream {} (type: {} '{}')", streamIndex, static_cast<int>(stream->codecpar->codec_type),fourCC2str(stream->codecpar->codec_tag));
         // Clean up
         av_packet_free(&m_packet);
         throw std::runtime_error("No codec context available for stream");
@@ -912,6 +943,7 @@ namespace Ravl2::Video
     return 0;
   }
 
+
   VideoResult<std::vector<std::shared_ptr<Frame>>> FfmpegMultiStreamIterator::decodePacket(AVPacket* packet, std::size_t localIndex)
   {
     if (localIndex >= m_codecContexts.size() || localIndex >= m_frames.size())
@@ -943,8 +975,8 @@ namespace Ravl2::Video
         if (stream->codecpar->codec_tag != GPMD_TAG)
         {
           // Not a GPMF stream, skip it (might be timecode or other data)
-          SPDLOG_INFO("Skipping non-GPMF DATA stream at localIndex={}, codec_tag=0x{:08x}",
-                       localIndex, stream->codecpar->codec_tag);
+          SPDLOG_INFO("Skipping non-GPMF DATA stream at localIndex={}, codec_tag=0x{:08x} '{}'",
+                       localIndex, stream->codecpar->codec_tag,fourCC2str(stream->codecpar->codec_tag));
           return VideoResult<std::vector<std::shared_ptr<Frame>>>(VideoErrorCode::NeedMoreData);
         }
 
