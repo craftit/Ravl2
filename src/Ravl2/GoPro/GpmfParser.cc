@@ -10,10 +10,16 @@ extern "C" {
 #include <GPMF_parser.h>
 }
 
+#include <nlohmann/json.hpp>
 #include <cstring>
+#include <algorithm>
 
 namespace Ravl2::GoPro
 {
+  GpmfParser::GpmfParser(bool enableJson)
+    : mEnableJson(enableJson)
+  {
+  }
 
   std::vector<std::shared_ptr<Video::Frame>> GpmfParser::parse(
     const uint8_t* data,
@@ -93,6 +99,14 @@ namespace Ravl2::GoPro
       if (accelSamples.has_value()) {
         frames.push_back(std::make_shared<Video::MetaDataFrame<AccelSamples>>(
           accelSamples.value(), streamId + mNextId++, timestamp));
+      }
+    }
+
+    // If JSON generation is enabled, add JSON frames
+    if (mEnableJson) {
+      auto jsonFrames = parseToJson(data, size, streamId, timestamp);
+      for (auto& frame : jsonFrames) {
+        frames.push_back(frame);
       }
     }
 
@@ -380,6 +394,385 @@ namespace Ravl2::GoPro
     // Fallback: return 0 to indicate unknown
     SPDLOG_WARN("Could not determine sample rate for FourCC: {}, returning 0", fourccStr);
     return 0.0f;
+  }
+
+  std::string GpmfParser::fourccToString(uint32_t fourcc)
+  {
+    std::string result(4, ' ');
+    result[0] = static_cast<char>((fourcc >> 0) & 0xFF);
+    result[1] = static_cast<char>((fourcc >> 8) & 0xFF);
+    result[2] = static_cast<char>((fourcc >> 16) & 0xFF);
+    result[3] = static_cast<char>((fourcc >> 24) & 0xFF);
+    return result;
+  }
+
+  nlohmann::json GpmfParser::extractDeviceInfo(GPMF_stream* stream)
+  {
+    nlohmann::json deviceInfo;
+
+    if (stream == nullptr) {
+      return deviceInfo;
+    }
+
+    // Get device ID (DVID)
+    uint32_t deviceId = GPMF_DeviceID(stream);
+    if (deviceId > 0) {
+      deviceInfo["device_id"] = deviceId;
+    }
+
+    // Save current position
+    GPMF_stream tempStream = *stream;
+
+    // Look for device name (DVNM)
+    if (GPMF_FindPrev(&tempStream, MAKEID('D', 'V', 'N', 'M'), GPMF_CURRENT_LEVEL) == GPMF_OK) {
+      auto* dvnmData = static_cast<char*>(GPMF_RawData(&tempStream));
+      uint32_t dvnmSize = GPMF_RawDataSize(&tempStream);
+      if (dvnmData != nullptr && dvnmSize > 0) {
+        std::string dvnm(dvnmData, dvnmSize);
+        // Trim null terminators
+        dvnm.erase(std::find(dvnm.begin(), dvnm.end(), '\0'), dvnm.end());
+        if (!dvnm.empty()) {
+          deviceInfo["device_name"] = dvnm;
+        }
+      }
+    }
+
+    // Reset for next search
+    tempStream = *stream;
+
+    // Look for version (VERS)
+    if (GPMF_FindPrev(&tempStream, MAKEID('V', 'E', 'R', 'S'), GPMF_CURRENT_LEVEL) == GPMF_OK) {
+      auto* versData = static_cast<char*>(GPMF_RawData(&tempStream));
+      uint32_t versSize = GPMF_RawDataSize(&tempStream);
+      if (versData != nullptr && versSize > 0) {
+        std::string vers(versData, versSize);
+        vers.erase(std::find(vers.begin(), vers.end(), '\0'), vers.end());
+        if (!vers.empty()) {
+          deviceInfo["version"] = vers;
+        }
+      }
+    }
+
+    return deviceInfo;
+  }
+
+  nlohmann::json GpmfParser::extractStreamMetadata(GPMF_stream* stream, [[maybe_unused]] uint32_t fourcc)
+  {
+    nlohmann::json metadata;
+
+    if (stream == nullptr) {
+      return metadata;
+    }
+
+    // Get sample count
+    uint32_t sampleCount = GPMF_Repeat(stream);
+    metadata["sample_count"] = sampleCount;
+
+    // Get type information
+    GPMF_SampleType type = GPMF_Type(stream);
+    metadata["type_info"]["gpmf_type"] = std::string(1, static_cast<char>(type));
+    metadata["type_info"]["struct_size"] = GPMF_StructSize(stream);
+    metadata["type_info"]["elements_per_sample"] = GPMF_ElementsInStruct(stream);
+
+    // Get sample rate
+    float sampleRate = getSampleRate(stream);
+    if (sampleRate > 0) {
+      metadata["sample_rate_hz"] = sampleRate;
+    }
+
+    // Save current position for metadata searches
+    GPMF_stream tempStream = *stream;
+
+    // Get scaling factors (SCAL)
+    if (GPMF_FindPrev(&tempStream, MAKEID('S', 'C', 'A', 'L'), GPMF_CURRENT_LEVEL) == GPMF_OK) {
+      auto* scaleData = static_cast<uint32_t*>(GPMF_RawData(&tempStream));
+      uint32_t scaleCount = GPMF_Repeat(&tempStream);
+      if (scaleData != nullptr && scaleCount > 0) {
+        std::vector<uint32_t> scales;
+        for (uint32_t i = 0; i < scaleCount; i++) {
+          scales.push_back(scaleData[i]);
+        }
+        metadata["units"]["scale"] = scales;
+      }
+    }
+
+    // Reset for next search
+    tempStream = *stream;
+
+    // Get SI units (SIUN)
+    if (GPMF_FindPrev(&tempStream, MAKEID('S', 'I', 'U', 'N'), GPMF_CURRENT_LEVEL) == GPMF_OK) {
+      auto* siunData = static_cast<char*>(GPMF_RawData(&tempStream));
+      uint32_t siunSize = GPMF_RawDataSize(&tempStream);
+      if (siunData != nullptr && siunSize > 0) {
+        std::string siun(siunData, siunSize);
+        siun.erase(std::find(siun.begin(), siun.end(), '\0'), siun.end());
+        if (!siun.empty()) {
+          metadata["units"]["siun"] = siun;
+        }
+      }
+    }
+
+    // Reset for next search
+    tempStream = *stream;
+
+    // Get units (UNIT)
+    if (GPMF_FindPrev(&tempStream, MAKEID('U', 'N', 'I', 'T'), GPMF_CURRENT_LEVEL) == GPMF_OK) {
+      auto* unitData = static_cast<char*>(GPMF_RawData(&tempStream));
+      uint32_t unitSize = GPMF_RawDataSize(&tempStream);
+      if (unitData != nullptr && unitSize > 0) {
+        std::string unit(unitData, unitSize);
+        unit.erase(std::find(unit.begin(), unit.end(), '\0'), unit.end());
+        if (!unit.empty()) {
+          metadata["units"]["unit"] = unit;
+        }
+      }
+    }
+
+    // Reset for next search
+    tempStream = *stream;
+
+    // Get timestamp info (TSMP)
+    if (GPMF_FindPrev(&tempStream, MAKEID('T', 'S', 'M', 'P'), GPMF_CURRENT_LEVEL) == GPMF_OK) {
+      auto* tsmpData = static_cast<uint32_t*>(GPMF_RawData(&tempStream));
+      if (tsmpData != nullptr) {
+        metadata["timestamp_info"]["tsmp"] = tsmpData[0];
+      }
+    }
+
+    // Reset for next search
+    tempStream = *stream;
+
+    // Get ORIN (original sample rate or orientation)
+    if (GPMF_FindPrev(&tempStream, MAKEID('O', 'R', 'I', 'N'), GPMF_CURRENT_LEVEL) == GPMF_OK) {
+      GPMF_SampleType orinType = GPMF_Type(&tempStream);
+      auto* orinData = GPMF_RawData(&tempStream);
+
+      if (orinType == GPMF_TYPE_UNSIGNED_LONG || orinType == GPMF_TYPE_SIGNED_LONG) {
+        // Numeric: sample rate
+        uint32_t orinValue = *static_cast<uint32_t*>(orinData);
+        metadata["timestamp_info"]["orin"] = orinValue;
+      } else if (orinType == GPMF_TYPE_STRING_ASCII) {
+        // String: orientation
+        uint32_t orinSize = GPMF_RawDataSize(&tempStream);
+        std::string orin(static_cast<char*>(orinData), orinSize);
+        orin.erase(std::find(orin.begin(), orin.end(), '\0'), orin.end());
+        if (!orin.empty()) {
+          metadata["orientation"]["input"] = orin;
+        }
+      }
+    }
+
+    // Reset for next search
+    tempStream = *stream;
+
+    // Get ORIO (output orientation)
+    if (GPMF_FindPrev(&tempStream, MAKEID('O', 'R', 'I', 'O'), GPMF_CURRENT_LEVEL) == GPMF_OK) {
+      auto* orioData = static_cast<char*>(GPMF_RawData(&tempStream));
+      uint32_t orioSize = GPMF_RawDataSize(&tempStream);
+      if (orioData != nullptr && orioSize > 0) {
+        std::string orio(orioData, orioSize);
+        orio.erase(std::find(orio.begin(), orio.end(), '\0'), orio.end());
+        if (!orio.empty()) {
+          metadata["orientation"]["output"] = orio;
+        }
+      }
+    }
+
+    // Reset for next search
+    tempStream = *stream;
+
+    // Get TICK (start time)
+    if (GPMF_FindPrev(&tempStream, MAKEID('T', 'I', 'C', 'K'), GPMF_CURRENT_LEVEL) == GPMF_OK) {
+      auto* tickData = static_cast<uint32_t*>(GPMF_RawData(&tempStream));
+      if (tickData != nullptr) {
+        metadata["timestamp_info"]["tick"] = tickData[0];
+      }
+    }
+
+    // Reset for next search
+    tempStream = *stream;
+
+    // Get TOCK (end time)
+    if (GPMF_FindPrev(&tempStream, MAKEID('T', 'O', 'C', 'K'), GPMF_CURRENT_LEVEL) == GPMF_OK) {
+      auto* tockData = static_cast<uint32_t*>(GPMF_RawData(&tempStream));
+      if (tockData != nullptr) {
+        metadata["timestamp_info"]["tock"] = tockData[0];
+      }
+    }
+
+    return metadata;
+  }
+
+  nlohmann::json GpmfParser::samplesToJson(GPMF_stream* stream, [[maybe_unused]] const std::vector<double>& scale)
+  {
+    nlohmann::json samples = nlohmann::json::array();
+
+    if (stream == nullptr) {
+      return samples;
+    }
+
+    uint32_t sampleCount = GPMF_Repeat(stream);
+    uint32_t elements = GPMF_ElementsInStruct(stream);
+
+    // Use GPMF_ScaledData for automatic type conversion and scaling
+    uint32_t bufferSize = sampleCount * elements * sizeof(double);
+    std::vector<double> buffer(sampleCount * elements);
+
+    GPMF_ERR err = GPMF_ScaledData(stream, buffer.data(), bufferSize, 0, sampleCount, GPMF_TYPE_DOUBLE);
+
+    if (err == GPMF_OK) {
+      // Convert to JSON array
+      for (uint32_t i = 0; i < sampleCount; i++) {
+        if (elements == 1) {
+          // Scalar value
+          samples.push_back(buffer[i]);
+        } else {
+          // Array of values
+          nlohmann::json sample = nlohmann::json::array();
+          for (uint32_t j = 0; j < elements; j++) {
+            sample.push_back(buffer[i * elements + j]);
+          }
+          samples.push_back(sample);
+        }
+      }
+    } else {
+      SPDLOG_WARN("Failed to extract scaled data for JSON conversion (error={})", static_cast<int>(err));
+    }
+
+    return samples;
+  }
+
+  nlohmann::json GpmfParser::streamToJson(GPMF_stream* stream, [[maybe_unused]] const nlohmann::json& deviceInfo)
+  {
+    nlohmann::json streamJson;
+
+    if (stream == nullptr) {
+      return streamJson;
+    }
+
+    // Get the stream's data FourCC by seeking to samples
+    GPMF_stream dataStream = *stream;
+    if (GPMF_SeekToSamples(&dataStream) != GPMF_OK) {
+      SPDLOG_WARN("Failed to seek to samples in STRM");
+      return streamJson;
+    }
+
+    uint32_t fourcc = GPMF_Key(&dataStream);
+    std::string fourccStr = fourccToString(fourcc);
+
+    streamJson["stream_type"] = fourccStr;
+
+    // Get stream name (STNM) if available
+    GPMF_stream tempStream = dataStream;
+    if (GPMF_FindPrev(&tempStream, MAKEID('S', 'T', 'N', 'M'), GPMF_CURRENT_LEVEL) == GPMF_OK) {
+      auto* stnmData = static_cast<char*>(GPMF_RawData(&tempStream));
+      uint32_t stnmSize = GPMF_RawDataSize(&tempStream);
+      if (stnmData != nullptr && stnmSize > 0) {
+        std::string stnm(stnmData, stnmSize);
+        // Trim null terminators and whitespace
+        stnm.erase(std::find(stnm.begin(), stnm.end(), '\0'), stnm.end());
+        if (!stnm.empty()) {
+          streamJson["stream_name"] = stnm;
+        }
+      }
+    }
+
+    // Extract metadata
+    streamJson["metadata"] = extractStreamMetadata(&dataStream, fourcc);
+
+    // Extract scale factors for data conversion
+    std::vector<double> scales;
+    if (streamJson["metadata"].contains("units") && streamJson["metadata"]["units"].contains("scale")) {
+      for (auto& s : streamJson["metadata"]["units"]["scale"]) {
+        scales.push_back(1.0 / s.get<double>());
+      }
+    } else {
+      // Default scale of 1.0
+      uint32_t elements = GPMF_ElementsInStruct(&dataStream);
+      scales.resize(elements, 1.0);
+    }
+
+    // Extract samples
+    streamJson["samples"] = samplesToJson(&dataStream, scales);
+
+    return streamJson;
+  }
+
+  std::vector<std::shared_ptr<Video::MetaDataFrame<nlohmann::json>>> GpmfParser::parseToJson(
+    const uint8_t* data,
+    size_t size,
+    Video::StreamItemId streamId,
+    Video::MediaTime timestamp)
+  {
+    std::vector<std::shared_ptr<Video::MetaDataFrame<nlohmann::json>>> frames;
+
+    if (data == nullptr || size == 0) {
+      return frames;
+    }
+
+    // Initialize GPMF stream
+    GPMF_stream stream;
+    GPMF_ERR initResult = GPMF_Init(&stream, const_cast<uint32_t*>(reinterpret_cast<const uint32_t*>(data)), static_cast<uint32_t>(size));
+    if (initResult != GPMF_OK) {
+      SPDLOG_WARN("Failed to initialize GPMF stream for JSON parsing (error={})", static_cast<int>(initResult));
+      return frames;
+    }
+
+    // Validate the stream structure
+    if (GPMF_Validate(&stream, static_cast<GPMF_LEVELS>(GPMF_RECURSE_LEVELS | GPMF_TOLERANT)) != GPMF_OK) {
+      SPDLOG_WARN("GPMF stream validation failed for JSON parsing");
+      return frames;
+    }
+
+    // Create top-level JSON object for this packet
+    nlohmann::json packetJson;
+    packetJson["packet_info"]["timestamp_us"] = timestamp.count();
+    packetJson["packet_info"]["stream_id"] = streamId;
+    packetJson["packet_info"]["packet_size_bytes"] = size;
+
+    // Find all DEVC (device) containers
+    GPMF_ResetState(&stream);
+
+    while (GPMF_FindNext(&stream, MAKEID('D', 'E', 'V', 'C'), static_cast<GPMF_LEVELS>(GPMF_RECURSE_LEVELS | GPMF_TOLERANT)) == GPMF_OK) {
+      // Extract device info
+      nlohmann::json deviceInfo = extractDeviceInfo(&stream);
+      packetJson["device"] = deviceInfo;
+
+      // Find all STRM (stream) containers within this DEVC
+      GPMF_stream deviceStream = stream;
+
+      nlohmann::json streams = nlohmann::json::array();
+
+      while (GPMF_FindNext(&deviceStream, MAKEID('S', 'T', 'R', 'M'), static_cast<GPMF_LEVELS>(GPMF_CURRENT_LEVEL | GPMF_TOLERANT)) == GPMF_OK) {
+        nlohmann::json streamJson = streamToJson(&deviceStream, deviceInfo);
+        if (!streamJson.empty()) {
+          streams.push_back(streamJson);
+        }
+      }
+
+      if (!streams.empty()) {
+        packetJson["streams"] = streams;
+      }
+
+      // For now, we only process the first DEVC
+      // In theory, there could be multiple devices, but GoPro cameras typically have one
+      break;
+    }
+
+    // Create a single frame with all the JSON data for this packet
+    if (!packetJson.empty() && packetJson.contains("streams")) {
+      auto jsonFrame = std::make_shared<Video::MetaDataFrame<nlohmann::json>>(
+        packetJson,
+        streamId + mNextId++,
+        timestamp
+      );
+      frames.push_back(jsonFrame);
+
+      SPDLOG_DEBUG("Created JSON frame from GPMF packet at timestamp {} μs with {} streams",
+                   timestamp.count(), packetJson["streams"].size());
+    }
+
+    return frames;
   }
 
 } // namespace Ravl2::GoPro
