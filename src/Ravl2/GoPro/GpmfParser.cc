@@ -59,6 +59,7 @@ namespace Ravl2::GoPro
       // Process known sensor data types
       switch (fourcc) {
         case MAKEID('G', 'P', 'S', '5'):
+        case MAKEID('G', 'P', 'S', '9'):
           parseGps(&stream, frames, streamId, timestamp);
           break;
 
@@ -69,16 +70,6 @@ namespace Ravl2::GoPro
         case MAKEID('A', 'C', 'C', 'L'):
           parseAccel(&stream, frames, streamId, timestamp);
           break;
-        case MAKEID('D', 'E', 'V', 'C'): {
-          auto metaJson = extractStreamMetadata(&stream,fourcc);
-          if(!metaJson.empty()) {
-            auto jsonFrame = std::make_shared<Video::MetaDataFrame<nlohmann::json>>(
-              metaJson,
-              streamId + mNextId++,
-              timestamp);
-            frames.push_back(jsonFrame);
-          }
-        } break;
 
         default:
           // Unknown FourCC - convert to JSON if enabled
@@ -118,13 +109,23 @@ namespace Ravl2::GoPro
 
     uint32_t sampleCount = GPMF_Repeat(stream);
     if (sampleCount == 0) {
-      SPDLOG_DEBUG("parseGps: GPS5 stream has 0 samples");
+      SPDLOG_DEBUG("parseGps: GPS stream has 0 samples");
       return;
     }
 
-    // GPS5 format: latitude, longitude, altitude, 2D speed, 3D speed
+    // Determine GPS format from number of elements
+    uint32_t elements = GPMF_ElementsInStruct(stream);
+    uint32_t fourcc = GPMF_Key(stream);
+
+    // GPS5 format: latitude, longitude, altitude, 2D speed, 3D speed (5 values)
+    // GPS9 format: latitude, longitude, altitude, 2D speed, 3D speed, days, secs, DOP, fix (9 values)
+    if (elements != 5 && elements != 9) {
+      SPDLOG_WARN("parseGps: unexpected element count {} for GPS data (expected 5 or 9)", elements);
+      return;
+    }
+
     // All values are scaled integers
-    float scale = getScaleFactor(stream, MAKEID('G', 'P', 'S', '5'));
+    float scale = getScaleFactor(stream, fourcc);
     if (scale == 0) {
       SPDLOG_WARN("parseGps: invalid scale factor, using default 1.0");
       scale = 1.0f;
@@ -158,14 +159,32 @@ namespace Ravl2::GoPro
 
     // Parse ALL GPS samples and create individual frames
     for (uint32_t i = 0; i < sampleCount; i++) {
-      size_t offset = i * 5; // 5 values per sample (lat, lon, alt, speed2d, speed3d)
+      size_t offset = i * elements; // elements = 5 for GPS5, 9 for GPS9
 
       // IMPORTANT: GPMF data is big-endian, must byte-swap all int32_t values!
+      // Common fields (present in both GPS5 and GPS9):
       double latitude = static_cast<double>(BYTESWAP32(rawData[offset + 0])) * static_cast<double>(scale);
       double longitude = static_cast<double>(BYTESWAP32(rawData[offset + 1])) * static_cast<double>(scale);
       double altitude = static_cast<double>(BYTESWAP32(rawData[offset + 2])) * static_cast<double>(scale);
       float speed2d = static_cast<float>(BYTESWAP32(rawData[offset + 3])) * scale;
       float speed3d = static_cast<float>(BYTESWAP32(rawData[offset + 4])) * scale;
+
+      // GPS9-specific fields (if available):
+      int fixType = 3; // Default to 3D fix
+      int satellites = 0; // Default to unknown
+      float precision = 0.0f; // DOP value
+
+      if (elements == 9) {
+        // GPS9 additional fields: days, secs, DOP, fix
+        // int32_t days = BYTESWAP32(rawData[offset + 5]); // Not used yet
+        // int32_t secs = BYTESWAP32(rawData[offset + 6]); // Not used yet
+        int32_t dopRaw = BYTESWAP32(rawData[offset + 7]);
+        float dop = static_cast<float>(dopRaw) * scale;
+        int32_t fixRaw = BYTESWAP32(rawData[offset + 8]);
+        // Fix type is NOT scaled - it's a raw integer (0=no lock, 2=2D, 3=3D)
+        fixType = fixRaw;
+        precision = dop;
+      }
 
       // Create GPSCoordinate
       GPSCoordinate location(latitude, longitude, altitude);
@@ -174,9 +193,9 @@ namespace Ravl2::GoPro
       GpsFix fix;
       fix.location = location;
       fix.speed = Point<float, 2>(speed2d, speed3d);
-      fix.fix = 3; // Assume 3D fix (we have altitude)
-      fix.satellites = 0; // Not available in GPS5
-      fix.precision = 0; // Not available in GPS5
+      fix.fix = fixType;
+      fix.satellites = satellites; // Not available in either GPS5 or GPS9
+      fix.precision = precision;
 
       // Interpolate timestamp for this specific fix
       Video::MediaTime fixTimestamp = timestamp;
@@ -347,10 +366,10 @@ namespace Ravl2::GoPro
       return 0.0f;
     }
 
-    // Save current position
+    // Save the current position
     GPMF_stream tempStream = *stream;
 
-    // Strategy 1: Look for TSMP (Time Stamp) field - most accurate
+    // Strategy 1: Look for TSMP (Time Stamp) field - the most accurate
     // TSMP contains the time span for all samples in this packet (in microseconds)
     if (GPMF_FindPrev(&tempStream, MAKEID('T', 'S', 'M', 'P'), GPMF_CURRENT_LEVEL) == GPMF_OK) {
       auto* tsmpData = static_cast<uint32_t*>(GPMF_RawData(&tempStream));
@@ -366,7 +385,7 @@ namespace Ravl2::GoPro
             // Calculate rate: (samples - 1) / (time span in seconds)
             // Example: 18 samples over 944444 μs → 17 / 0.944444 = 18.0 Hz
             float rate = (static_cast<float>(dataRepeat - 1) * 1000000.0f) / static_cast<float>(tsmpValue);
-            SPDLOG_DEBUG("Calculated sample rate from TSMP: {:.2f} Hz (samples={}, tsmp={}μs)",
+            SPDLOG_INFO("Calculated sample rate from TSMP: {:.2f} Hz (samples={}, tsmp={}μs)",
                          rate, dataRepeat, tsmpValue);
             return rate;
           }
@@ -386,13 +405,13 @@ namespace Ravl2::GoPro
         if (sampleCount > 0) {
           // IMPORTANT: GPMF data is big-endian, must byte-swap!
           uint32_t orinValue = BYTESWAP32(orinData[0]); // ORIN in Hz
-          SPDLOG_DEBUG("Found ORIN (original sample rate): {} Hz", orinValue);
+          SPDLOG_INFO("Found ORIN (original sample rate): {} Hz", orinValue);
           return static_cast<float>(orinValue);
         }
       }
     }
 
-    // Strategy 3: Detect based on FourCC of current stream (fallback)
+    // Strategy 3: Detect based on FourCC of the current stream (fallback)
     uint32_t fourcc = GPMF_Key(stream);
     char fourccStr[5] = {0};
     fourccStr[0] = static_cast<char>((fourcc >> 0) & 0xFF);
@@ -400,7 +419,7 @@ namespace Ravl2::GoPro
     fourccStr[2] = static_cast<char>((fourcc >> 16) & 0xFF);
     fourccStr[3] = static_cast<char>((fourcc >> 24) & 0xFF);
 
-    SPDLOG_DEBUG("Detecting sample rate for FourCC: {}", fourccStr);
+    SPDLOG_INFO("Detecting sample rate for FourCC: {}", fourccStr);
 
     // Use typical rates for known sensor types
     if (fourcc == MAKEID('G', 'Y', 'R', 'O')) {
@@ -445,10 +464,10 @@ namespace Ravl2::GoPro
       deviceInfo["device_id"] = deviceId;
     }
 
-    // Save current position
+    // Save the current position
     GPMF_stream tempStream = *stream;
 
-    // Look for device name (DVNM)
+    // Look for the device name (DVNM)
     if (GPMF_FindPrev(&tempStream, MAKEID('D', 'V', 'N', 'M'), GPMF_CURRENT_LEVEL) == GPMF_OK) {
       auto* dvnmData = static_cast<char*>(GPMF_RawData(&tempStream));
       uint32_t dvnmSize = GPMF_RawDataSize(&tempStream);
@@ -508,7 +527,7 @@ namespace Ravl2::GoPro
     }
 #endif
 
-    // Save current position for metadata searches
+    // Save the current position for metadata searches
     GPMF_stream tempStream = *stream;
 
     // Get scaling factors (SCAL)
@@ -518,7 +537,7 @@ namespace Ravl2::GoPro
       if (scaleData != nullptr && scaleCount > 0) {
         std::vector<uint32_t> scales;
         for (uint32_t i = 0; i < scaleCount; i++) {
-          scales.push_back(scaleData[i]);
+          scales.push_back(BYTESWAP32(scaleData[i]));
         }
         metadata["units"]["scale"] = scales;
       }
@@ -563,7 +582,7 @@ namespace Ravl2::GoPro
     if (GPMF_FindPrev(&tempStream, MAKEID('T', 'S', 'M', 'P'), GPMF_CURRENT_LEVEL) == GPMF_OK) {
       auto* tsmpData = static_cast<uint32_t*>(GPMF_RawData(&tempStream));
       if (tsmpData != nullptr) {
-        metadata["timestamp_info"]["tsmp"] = tsmpData[0];
+        metadata["timestamp_info"]["tsmp"] = BYTESWAP32(tsmpData[0]);
       }
     }
 
@@ -576,8 +595,8 @@ namespace Ravl2::GoPro
       auto* orinData = GPMF_RawData(&tempStream);
 
       if (orinType == GPMF_TYPE_UNSIGNED_LONG || orinType == GPMF_TYPE_SIGNED_LONG) {
-        // Numeric: sample rate
-        uint32_t orinValue = *static_cast<uint32_t*>(orinData);
+        // Numeric: sample rate - IMPORTANT: byte swap for big-endian data
+        uint32_t orinValue = BYTESWAP32(*static_cast<uint32_t*>(orinData));
         metadata["timestamp_info"]["orin"] = orinValue;
       } else if (orinType == GPMF_TYPE_STRING_ASCII) {
         // String: orientation
@@ -613,7 +632,7 @@ namespace Ravl2::GoPro
     if (GPMF_FindPrev(&tempStream, MAKEID('T', 'I', 'C', 'K'), GPMF_CURRENT_LEVEL) == GPMF_OK) {
       auto* tickData = static_cast<uint32_t*>(GPMF_RawData(&tempStream));
       if (tickData != nullptr) {
-        metadata["timestamp_info"]["tick"] = tickData[0];
+        metadata["timestamp_info"]["tick"] = BYTESWAP32(tickData[0]);
       }
     }
 
@@ -624,7 +643,7 @@ namespace Ravl2::GoPro
     if (GPMF_FindPrev(&tempStream, MAKEID('T', 'O', 'C', 'K'), GPMF_CURRENT_LEVEL) == GPMF_OK) {
       auto* tockData = static_cast<uint32_t*>(GPMF_RawData(&tempStream));
       if (tockData != nullptr) {
-        metadata["timestamp_info"]["tock"] = tockData[0];
+        metadata["timestamp_info"]["tock"] = BYTESWAP32(tockData[0]);
       }
     }
 

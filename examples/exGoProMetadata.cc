@@ -159,8 +159,8 @@ int RAVL2_MAIN(int argc, char *argv[])
                     fix.latitude(), fix.longitude(), fix.height());
           fmt::print("  Speed: {:.2f} m/s (2D), {:.2f} m/s (3D)\n",
                     fix.speed2d(), fix.speed3d());
-          fmt::print("  Fix type: {}, Satellites: {}\n",
-                    fix.fix, fix.satellites);
+          fmt::print("  Fix type: {}, Satellites: {} precision: {} \n",
+                    fix.fix, fix.satellites, fix.precision);
         }
       }
 
