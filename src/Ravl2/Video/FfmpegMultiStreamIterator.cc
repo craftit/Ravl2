@@ -187,17 +187,19 @@ namespace Ravl2::Video
       }
     }
 
+#ifdef WITH_GPMF
+    // Initialize GPMF parser BEFORE filling packet queue or reading frames
+    // because fillPacketQueue() and next() may call decodePacket() which needs the parser
+    m_gpmfParser = std::make_unique<GoPro::GpmfParser>();
+    SPDLOG_DEBUG("GPMF parser initialized");
+#endif
+
     // Pre-fill the packet queue before reading the first frame
     auto queueResult = fillPacketQueue();
     if (!queueResult.isSuccess() && queueResult.error() != VideoErrorCode::EndOfStream)
     {
       SPDLOG_WARN("Failed to pre-fill packet queue: {}", toString(queueResult.error()));
     }
-
-#ifdef WITH_GPMF
-    // Initialize GPMF parser for this iterator instance
-    m_gpmfParser = std::make_unique<GoPro::GpmfParser>();
-#endif
 
     // Read the first frame
     auto result = next();

@@ -133,8 +133,8 @@ namespace Ravl2::GoPro
     // Get sample rate
     float sampleRate = getSampleRate(stream);
 
-    // Get raw data
-    auto* rawData = static_cast<int16_t*>(GPMF_RawData(stream));
+    // Get raw data - GPS5 uses int32_t (GPMF_TYPE_SIGNED_LONG 'l'), not int16_t!
+    auto* rawData = static_cast<int32_t*>(GPMF_RawData(stream));
     if (rawData == nullptr) {
       SPDLOG_ERROR("parseGps: failed to get raw data from GPMF stream (sampleCount={})", sampleCount);
       return;
@@ -160,11 +160,12 @@ namespace Ravl2::GoPro
     for (uint32_t i = 0; i < sampleCount; i++) {
       size_t offset = i * 5; // 5 values per sample (lat, lon, alt, speed2d, speed3d)
 
-      double latitude = static_cast<double>(rawData[offset + 0]) * static_cast<double>(scale);
-      double longitude = static_cast<double>(rawData[offset + 1]) * static_cast<double>(scale);
-      double altitude = static_cast<double>(rawData[offset + 2]) * static_cast<double>(scale);
-      float speed2d = static_cast<float>(rawData[offset + 3]) * scale;
-      float speed3d = static_cast<float>(rawData[offset + 4]) * scale;
+      // IMPORTANT: GPMF data is big-endian, must byte-swap all int32_t values!
+      double latitude = static_cast<double>(BYTESWAP32(rawData[offset + 0])) * static_cast<double>(scale);
+      double longitude = static_cast<double>(BYTESWAP32(rawData[offset + 1])) * static_cast<double>(scale);
+      double altitude = static_cast<double>(BYTESWAP32(rawData[offset + 2])) * static_cast<double>(scale);
+      float speed2d = static_cast<float>(BYTESWAP32(rawData[offset + 3])) * scale;
+      float speed3d = static_cast<float>(BYTESWAP32(rawData[offset + 4])) * scale;
 
       // Create GPSCoordinate
       GPSCoordinate location(latitude, longitude, altitude);
@@ -227,10 +228,11 @@ namespace Ravl2::GoPro
     samples.reserve(sampleCount);
     for (uint32_t i = 0; i < sampleCount; i++) {
       size_t offset = i * 3;
+      // IMPORTANT: GPMF data is big-endian, must byte-swap all int16_t values!
       samples.emplace_back(
-        static_cast<float>(rawData[offset + 0]) * scale,
-        static_cast<float>(rawData[offset + 1]) * scale,
-        static_cast<float>(rawData[offset + 2]) * scale
+        static_cast<float>(BYTESWAP16(rawData[offset + 0])) * scale,
+        static_cast<float>(BYTESWAP16(rawData[offset + 1])) * scale,
+        static_cast<float>(BYTESWAP16(rawData[offset + 2])) * scale
       );
     }
 
@@ -283,10 +285,11 @@ namespace Ravl2::GoPro
     samples.reserve(sampleCount);
     for (uint32_t i = 0; i < sampleCount; i++) {
       size_t offset = i * 3;
+      // IMPORTANT: GPMF data is big-endian, must byte-swap all int16_t values!
       samples.emplace_back(
-        static_cast<float>(rawData[offset + 0]) * scale,
-        static_cast<float>(rawData[offset + 1]) * scale,
-        static_cast<float>(rawData[offset + 2]) * scale
+        static_cast<float>(BYTESWAP16(rawData[offset + 0])) * scale,
+        static_cast<float>(BYTESWAP16(rawData[offset + 1])) * scale,
+        static_cast<float>(BYTESWAP16(rawData[offset + 2])) * scale
       );
     }
 
@@ -324,9 +327,11 @@ namespace Ravl2::GoPro
           // Scale is typically stored as an integer divisor
           // For multi-component data (e.g., XYZ), SCAL may have multiple values
           // Use the first scale value (they're usually all the same for sensor data)
-          float scale = 1.0f / static_cast<float>(scaleData[0]);
+          // IMPORTANT: GPMF data is big-endian, must byte-swap!
+          uint32_t scaleDivisor = BYTESWAP32(scaleData[0]);
+          float scale = 1.0f / static_cast<float>(scaleDivisor);
           SPDLOG_DEBUG("getScaleFactor: found SCAL with {} values, using first: 1/{} = {}",
-                       scaleCount, scaleData[0], scale);
+                       scaleCount, scaleDivisor, scale);
           return scale;
         }
       }
@@ -352,7 +357,8 @@ namespace Ravl2::GoPro
       if (tsmpData != nullptr) {
         uint32_t sampleCount = GPMF_Repeat(&tempStream);
         if (sampleCount > 0) {
-          uint32_t tsmpValue = tsmpData[0]; // TSMP in microseconds
+          // IMPORTANT: GPMF data is big-endian, must byte-swap!
+          uint32_t tsmpValue = BYTESWAP32(tsmpData[0]); // TSMP in microseconds
 
           // Get number of samples from the parent data stream
           uint32_t dataRepeat = GPMF_Repeat(stream);
@@ -378,7 +384,8 @@ namespace Ravl2::GoPro
       if (orinData != nullptr) {
         uint32_t sampleCount = GPMF_Repeat(&tempStream);
         if (sampleCount > 0) {
-          uint32_t orinValue = orinData[0]; // ORIN in Hz
+          // IMPORTANT: GPMF data is big-endian, must byte-swap!
+          uint32_t orinValue = BYTESWAP32(orinData[0]); // ORIN in Hz
           SPDLOG_DEBUG("Found ORIN (original sample rate): {} Hz", orinValue);
           return static_cast<float>(orinValue);
         }
