@@ -900,13 +900,13 @@ namespace Ravl2::GoPro
         for (uint32_t i = 0; i < sampleCount; i++) {
           if (elements == 1) {
             uint32_t swap = BYTESWAP32(data[i]);
-            float f = *reinterpret_cast<float*>(&swap);
+            float f = std::bit_cast<float>(swap);
             samples.push_back(f);
           } else {
             nlohmann::json sample = nlohmann::json::array();
             for (uint32_t j = 0; j < elements; j++) {
               uint32_t swap = BYTESWAP32(data[i * elements + j]);
-              float f = *reinterpret_cast<float*>(&swap);
+              float f = std::bit_cast<float>(swap);
               sample.push_back(f);
             }
             samples.push_back(sample);
@@ -921,13 +921,13 @@ namespace Ravl2::GoPro
         for (uint32_t i = 0; i < sampleCount; i++) {
           if (elements == 1) {
             uint64_t swap = BYTESWAP64(data[i]);
-            double d = *reinterpret_cast<double*>(&swap);
+            double d = std::bit_cast<double>(swap);
             samples.push_back(d);
           } else {
             nlohmann::json sample = nlohmann::json::array();
             for (uint32_t j = 0; j < elements; j++) {
               uint64_t swap = BYTESWAP64(data[i * elements + j]);
-              double d = *reinterpret_cast<double*>(&swap);
+              double d = std::bit_cast<double>(swap);
               sample.push_back(d);
             }
             samples.push_back(sample);
