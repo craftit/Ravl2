@@ -9,6 +9,7 @@
 #include <string>
 #include <CLI/CLI.hpp>
 #include <spdlog/spdlog.h>
+#include <nlohmann/json.hpp>
 
 #include "Ravl2/config.hh"
 #include "Ravl2/Resource.hh"
@@ -201,6 +202,14 @@ int RAVL2_MAIN(int argc, char *argv[])
           }
         }
       }
+
+      auto* jsonFrame = dynamic_cast<Ravl2::Video::MetaDataFrame<nlohmann::json> *>(frame.get());
+      if(jsonFrame) {
+        if (verbose) {
+          fmt::print("Json: {}", jsonFrame->data().dump());
+        }
+      }
+
     }
 
     // Move to the next frame

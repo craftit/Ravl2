@@ -48,33 +48,26 @@ namespace Ravl2::GoPro
       Video::StreamItemId streamId,
       Video::MediaTime timestamp);
 
-    //! Parse GPS data from GPMF stream
+    //! Parse GPS data from GPMF stream and append frames
     //! @param stream GPMF stream positioned at GPS data
-    //! @return GPS samples with sample rate if found and valid
-    [[nodiscard]] std::optional<GpsSamples> parseGps(GPMF_stream* stream);
-
-    //! Parse gyroscope data from GPMF stream
-    //! @param stream GPMF stream positioned at gyro data
-    //! @return Gyro samples with sample rate (empty if parsing failed)
-    [[nodiscard]] std::optional<GyroSamples> parseGyro(GPMF_stream* stream);
-
-    //! Parse accelerometer data from GPMF stream
-    //! @param stream GPMF stream positioned at accel data
-    //! @return Accel samples with sample rate (empty if parsing failed)
-    [[nodiscard]] std::optional<AccelSamples> parseAccel(GPMF_stream* stream);
-
-    //! Parse GPMF data to comprehensive JSON representation
-    //! Captures all GPMF streams (GPS, GYRO, ACCL, and any others) with complete metadata
-    //! @param data Raw GPMF data
-    //! @param size Size of data in bytes
+    //! @param frames Vector to append GPS frames to
     //! @param streamId Stream identifier for creating frames
     //! @param timestamp Base timestamp for this packet
-    //! @return Vector of JSON frames, one per GPMF packet with all streams
-    [[nodiscard]] std::vector<std::shared_ptr<Video::MetaDataFrame<nlohmann::json>>> parseToJson(
-      const uint8_t* data,
-      size_t size,
-      Video::StreamItemId streamId,
-      Video::MediaTime timestamp);
+    void parseGps(GPMF_stream* stream, std::vector<std::shared_ptr<Video::Frame>>& frames, Video::StreamItemId streamId, Video::MediaTime timestamp);
+
+    //! Parse gyroscope data from GPMF stream and append frame
+    //! @param stream GPMF stream positioned at gyro data
+    //! @param frames Vector to append gyro frame to
+    //! @param streamId Stream identifier for creating frames
+    //! @param timestamp Base timestamp for this packet
+    void parseGyro(GPMF_stream* stream, std::vector<std::shared_ptr<Video::Frame>>& frames, Video::StreamItemId streamId, Video::MediaTime timestamp);
+
+    //! Parse accelerometer data from GPMF stream and append frame
+    //! @param stream GPMF stream positioned at accel data
+    //! @param frames Vector to append accel frame to
+    //! @param streamId Stream identifier for creating frames
+    //! @param timestamp Base timestamp for this packet
+    void parseAccel(GPMF_stream* stream, std::vector<std::shared_ptr<Video::Frame>>& frames, Video::StreamItemId streamId, Video::MediaTime timestamp);
 
   private:
     //! Get scaling factor for a given FourCC

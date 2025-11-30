@@ -30,6 +30,7 @@ namespace Ravl2::GoPro
     std::vector<std::shared_ptr<Video::Frame>> frames;
 
     if (data == nullptr || size == 0) {
+      SPDLOG_DEBUG("parse() called with null/empty data");
       return frames;
     }
 
@@ -43,87 +44,78 @@ namespace Ravl2::GoPro
     }
 
     // Validate the stream structure
-    if (GPMF_Validate(&stream, GPMF_RECURSE_LEVELS) != GPMF_OK) {
-      SPDLOG_WARN("GPMF stream validation failed");
+    GPMF_ERR validateResult = GPMF_Validate(&stream, static_cast<GPMF_LEVELS>(GPMF_RECURSE_LEVELS | GPMF_TOLERANT));
+    if (validateResult != GPMF_OK) {
+      SPDLOG_WARN("GPMF stream validation failed (error={})", static_cast<int>(validateResult));
       return frames;
     }
 
-    // Search for GPS data (FourCC: GPS5)
-    if (GPMF_FindNext(&stream, MAKEID('G', 'P', 'S', '5'), GPMF_RECURSE_LEVELS) == GPMF_OK) {
-      auto gpsSamples = parseGps(&stream);
-      if (gpsSamples.has_value() && !gpsSamples->empty()) {
-        const auto& samples = gpsSamples.value();
-        float sampleRate = samples.sampleRate;
+    // Single-pass traversal: iterate through all entries using GPMF_Next
+    GPMF_ResetState(&stream);
 
-        // Calculate time delta between samples for timestamp interpolation
-        Video::MediaTime timeDelta(0);
-        if (sampleRate > 0.0F && samples.size() > 1) {
-          // Convert sample rate to microseconds per sample
-          int64_t deltaUs = static_cast<int64_t>((1.0F / sampleRate) * 1000000.0F);
-          timeDelta = Video::MediaTime(deltaUs);
-        }
+    do {
+      uint32_t fourcc = GPMF_Key(&stream);
 
-        // Create a separate MetaDataFrame<GpsFix> for each GPS fix
-        for (size_t i = 0; i < samples.size(); i++) {
-          // Interpolate timestamp for this specific fix
-          Video::MediaTime fixTimestamp = timestamp;
-          if (timeDelta.count() > 0) {
-            fixTimestamp = timestamp + Video::MediaTime(timeDelta.count() * static_cast<int64_t>(i));
+      // Process known sensor data types
+      switch (fourcc) {
+        case MAKEID('G', 'P', 'S', '5'):
+          parseGps(&stream, frames, streamId, timestamp);
+          break;
+
+        case MAKEID('G', 'Y', 'R', 'O'):
+          parseGyro(&stream, frames, streamId, timestamp);
+          break;
+
+        case MAKEID('A', 'C', 'C', 'L'):
+          parseAccel(&stream, frames, streamId, timestamp);
+          break;
+
+        default:
+          // Unknown FourCC - convert to JSON if enabled
+          if (mEnableJson) {
+            // Check if this is a data entry (has samples)
+            uint32_t sampleCount = GPMF_Repeat(&stream);
+            if (sampleCount > 0) {
+              nlohmann::json unknownJson;
+              unknownJson["fourcc"] = fourccToString(fourcc);
+              unknownJson["type"] = std::string(1, static_cast<char>(GPMF_Type(&stream)));
+              unknownJson["sample_count"] = sampleCount;
+              unknownJson["elements"] = GPMF_ElementsInStruct(&stream);
+
+              // Extract samples using GPMF_ScaledData
+              std::vector<double> scales;
+              float scaleFactor = getScaleFactor(&stream, fourcc);
+              uint32_t elements = GPMF_ElementsInStruct(&stream);
+              scales.resize(elements, scaleFactor);
+
+              unknownJson["samples"] = samplesToJson(&stream, scales);
+
+              // Create JSON frame
+              auto jsonFrame = std::make_shared<Video::MetaDataFrame<nlohmann::json>>(
+                unknownJson,
+                streamId + mNextId++,
+                timestamp);
+              frames.push_back(jsonFrame);
+            }
           }
-
-          frames.push_back(std::make_shared<Video::MetaDataFrame<GpsFix>>(
-            samples.data()[i],
-            streamId + mNextId++,
-            fixTimestamp));
-        }
-
-        SPDLOG_DEBUG("Created {} GPS frames from GPMF packet at timestamp {} μs",
-                     samples.size(), timestamp.count());
+          break;
       }
-      GPMF_ResetState(&stream); // Reset for next search
-    }
-
-    // Search for gyroscope data (FourCC: GYRO)
-    if (GPMF_FindNext(&stream, MAKEID('G', 'Y', 'R', 'O'), GPMF_RECURSE_LEVELS) == GPMF_OK) {
-      auto gyroSamples = parseGyro(&stream);
-      if (gyroSamples.has_value()) {
-        frames.push_back(std::make_shared<Video::MetaDataFrame<GyroSamples>>(
-          gyroSamples.value(), streamId + mNextId++, timestamp));
-      }
-      GPMF_ResetState(&stream);
-    }
-
-    // Search for accelerometer data (FourCC: ACCL)
-    if (GPMF_FindNext(&stream, MAKEID('A', 'C', 'C', 'L'), GPMF_RECURSE_LEVELS) == GPMF_OK) {
-      auto accelSamples = parseAccel(&stream);
-      if (accelSamples.has_value()) {
-        frames.push_back(std::make_shared<Video::MetaDataFrame<AccelSamples>>(
-          accelSamples.value(), streamId + mNextId++, timestamp));
-      }
-    }
-
-    // If JSON generation is enabled, add JSON frames
-    if (mEnableJson) {
-      auto jsonFrames = parseToJson(data, size, streamId, timestamp);
-      for (auto& frame : jsonFrames) {
-        frames.push_back(frame);
-      }
-    }
+    } while (GPMF_OK == GPMF_Next(&stream, GPMF_RECURSE_LEVELS));
 
     return frames;
   }
 
-  std::optional<GpsSamples> GpmfParser::parseGps(GPMF_stream* stream)
+  void GpmfParser::parseGps(GPMF_stream* stream, std::vector<std::shared_ptr<Video::Frame>>& frames, Video::StreamItemId streamId, Video::MediaTime timestamp)
   {
     if (stream == nullptr) {
       SPDLOG_WARN("parseGps: null stream pointer");
-      return std::nullopt;
+      return;
     }
 
     uint32_t sampleCount = GPMF_Repeat(stream);
     if (sampleCount == 0) {
       SPDLOG_DEBUG("parseGps: GPS5 stream has 0 samples");
-      return std::nullopt;
+      return;
     }
 
     // GPS5 format: latitude, longitude, altitude, 2D speed, 3D speed
@@ -141,12 +133,26 @@ namespace Ravl2::GoPro
     auto* rawData = static_cast<int16_t*>(GPMF_RawData(stream));
     if (rawData == nullptr) {
       SPDLOG_ERROR("parseGps: failed to get raw data from GPMF stream (sampleCount={})", sampleCount);
-      return std::nullopt;
+      return;
     }
 
-    // Parse ALL GPS samples (not just the last one!)
-    std::vector<GpsFix> samples;
-    samples.reserve(sampleCount);
+    // Validate sample rate
+    if (sampleRate <= 0.0F) {
+      SPDLOG_ERROR("Invalid GPS sample rate: {} Hz (must be > 0)", sampleRate);
+      sampleRate = 0.0F;
+    } else if (sampleRate < 1.0F || sampleRate > 20.0F) {
+      SPDLOG_WARN("Unusual GPS sample rate: {} Hz (typical GoPro: 1-18 Hz)", sampleRate);
+    }
+
+    // Calculate time delta between samples for timestamp interpolation
+    Video::MediaTime timeDelta(0);
+    if (sampleRate > 0.0F && sampleCount > 1) {
+      // Convert sample rate to microseconds per sample
+      int64_t deltaUs = static_cast<int64_t>((1.0F / sampleRate) * 1000000.0F);
+      timeDelta = Video::MediaTime(deltaUs);
+    }
+
+    // Parse ALL GPS samples and create individual frames
     for (uint32_t i = 0; i < sampleCount; i++) {
       size_t offset = i * 5; // 5 values per sample (lat, lon, alt, speed2d, speed3d)
 
@@ -167,33 +173,33 @@ namespace Ravl2::GoPro
       fix.satellites = 0; // Not available in GPS5
       fix.precision = 0; // Not available in GPS5
 
-      samples.emplace_back(fix);
+      // Interpolate timestamp for this specific fix
+      Video::MediaTime fixTimestamp = timestamp;
+      if (timeDelta.count() > 0) {
+        fixTimestamp = timestamp + Video::MediaTime(timeDelta.count() * static_cast<int64_t>(i));
+      }
+
+      // Create and append frame
+      frames.push_back(std::make_shared<Video::MetaDataFrame<GpsFix>>(
+        fix,
+        streamId + mNextId++,
+        fixTimestamp));
     }
 
-    // Validate sample rate
-    if (sampleRate <= 0.0F) {
-      SPDLOG_ERROR("Invalid GPS sample rate: {} Hz (must be > 0)", sampleRate);
-      sampleRate = 0.0F;
-    } else if (sampleRate < 1.0F || sampleRate > 20.0F) {
-      SPDLOG_WARN("Unusual GPS sample rate: {} Hz (typical GoPro: 1-18 Hz)", sampleRate);
-    }
-
-    SPDLOG_DEBUG("parseGps: extracted {} GPS samples at {} Hz", sampleCount, sampleRate);
-
-    return GpsSamples(samples, sampleRate);
+    SPDLOG_DEBUG("Created {} GPS frames from GPMF packet at timestamp {} μs", sampleCount, timestamp.count());
   }
 
-  std::optional<GyroSamples> GpmfParser::parseGyro(GPMF_stream* stream)
+  void GpmfParser::parseGyro(GPMF_stream* stream, std::vector<std::shared_ptr<Video::Frame>>& frames, Video::StreamItemId streamId, Video::MediaTime timestamp)
   {
     if (stream == nullptr) {
       SPDLOG_WARN("parseGyro: null stream pointer");
-      return std::nullopt;
+      return;
     }
 
     uint32_t sampleCount = GPMF_Repeat(stream);
     if (sampleCount == 0) {
       SPDLOG_DEBUG("parseGyro: GYRO stream has 0 samples");
-      return std::nullopt;
+      return;
     }
 
     // Get scale factor
@@ -210,7 +216,7 @@ namespace Ravl2::GoPro
     auto* rawData = static_cast<int16_t*>(GPMF_RawData(stream));
     if (rawData == nullptr) {
       SPDLOG_ERROR("parseGyro: failed to get raw data from GPMF stream (sampleCount={})", sampleCount);
-      return std::nullopt;
+      return;
     }
 
     std::vector<Vector3f> samples;
@@ -232,20 +238,24 @@ namespace Ravl2::GoPro
       SPDLOG_WARN("Unusual gyro sample rate: {} Hz (typical GoPro: 200-400 Hz)", sampleRate);
     }
 
-    return GyroSamples(samples, sampleRate);
+    // Create and append frame
+    frames.push_back(std::make_shared<Video::MetaDataFrame<GyroSamples>>(
+      GyroSamples(samples, sampleRate),
+      streamId + mNextId++,
+      timestamp));
   }
 
-  std::optional<AccelSamples> GpmfParser::parseAccel(GPMF_stream* stream)
+  void GpmfParser::parseAccel(GPMF_stream* stream, std::vector<std::shared_ptr<Video::Frame>>& frames, Video::StreamItemId streamId, Video::MediaTime timestamp)
   {
     if (stream == nullptr) {
       SPDLOG_WARN("parseAccel: null stream pointer");
-      return std::nullopt;
+      return;
     }
 
     uint32_t sampleCount = GPMF_Repeat(stream);
     if (sampleCount == 0) {
       SPDLOG_DEBUG("parseAccel: ACCL stream has 0 samples");
-      return std::nullopt;
+      return;
     }
 
     // Get scale factor
@@ -262,7 +272,7 @@ namespace Ravl2::GoPro
     auto* rawData = static_cast<int16_t*>(GPMF_RawData(stream));
     if (rawData == nullptr) {
       SPDLOG_ERROR("parseAccel: failed to get raw data from GPMF stream (sampleCount={})", sampleCount);
-      return std::nullopt;
+      return;
     }
 
     std::vector<Vector3f> samples;
@@ -284,7 +294,11 @@ namespace Ravl2::GoPro
       SPDLOG_WARN("Unusual accel sample rate: {} Hz (typical GoPro: 200-400 Hz)", sampleRate);
     }
 
-    return AccelSamples(samples, sampleRate);
+    // Create and append frame
+    frames.push_back(std::make_shared<Video::MetaDataFrame<AccelSamples>>(
+      AccelSamples(samples, sampleRate),
+      streamId + mNextId++,
+      timestamp));
   }
 
   float GpmfParser::getScaleFactor(GPMF_stream* stream, [[maybe_unused]] uint32_t fourcc) const
@@ -696,83 +710,6 @@ namespace Ravl2::GoPro
     streamJson["samples"] = samplesToJson(&dataStream, scales);
 
     return streamJson;
-  }
-
-  std::vector<std::shared_ptr<Video::MetaDataFrame<nlohmann::json>>> GpmfParser::parseToJson(
-    const uint8_t* data,
-    size_t size,
-    Video::StreamItemId streamId,
-    Video::MediaTime timestamp)
-  {
-    std::vector<std::shared_ptr<Video::MetaDataFrame<nlohmann::json>>> frames;
-
-    if (data == nullptr || size == 0) {
-      return frames;
-    }
-
-    // Initialize GPMF stream
-    GPMF_stream stream;
-    GPMF_ERR initResult = GPMF_Init(&stream, const_cast<uint32_t*>(reinterpret_cast<const uint32_t*>(data)), static_cast<uint32_t>(size));
-    if (initResult != GPMF_OK) {
-      SPDLOG_WARN("Failed to initialize GPMF stream for JSON parsing (error={})", static_cast<int>(initResult));
-      return frames;
-    }
-
-    // Validate the stream structure
-    if (GPMF_Validate(&stream, static_cast<GPMF_LEVELS>(GPMF_RECURSE_LEVELS | GPMF_TOLERANT)) != GPMF_OK) {
-      SPDLOG_WARN("GPMF stream validation failed for JSON parsing");
-      return frames;
-    }
-
-    // Create top-level JSON object for this packet
-    nlohmann::json packetJson;
-    packetJson["packet_info"]["timestamp_us"] = timestamp.count();
-    packetJson["packet_info"]["stream_id"] = streamId;
-    packetJson["packet_info"]["packet_size_bytes"] = size;
-
-    // Find all DEVC (device) containers
-    GPMF_ResetState(&stream);
-
-    while (GPMF_FindNext(&stream, MAKEID('D', 'E', 'V', 'C'), static_cast<GPMF_LEVELS>(GPMF_RECURSE_LEVELS | GPMF_TOLERANT)) == GPMF_OK) {
-      // Extract device info
-      nlohmann::json deviceInfo = extractDeviceInfo(&stream);
-      packetJson["device"] = deviceInfo;
-
-      // Find all STRM (stream) containers within this DEVC
-      GPMF_stream deviceStream = stream;
-
-      nlohmann::json streams = nlohmann::json::array();
-
-      while (GPMF_FindNext(&deviceStream, MAKEID('S', 'T', 'R', 'M'), static_cast<GPMF_LEVELS>(GPMF_CURRENT_LEVEL | GPMF_TOLERANT)) == GPMF_OK) {
-        nlohmann::json streamJson = streamToJson(&deviceStream, deviceInfo);
-        if (!streamJson.empty()) {
-          streams.push_back(streamJson);
-        }
-      }
-
-      if (!streams.empty()) {
-        packetJson["streams"] = streams;
-      }
-
-      // For now, we only process the first DEVC
-      // In theory, there could be multiple devices, but GoPro cameras typically have one
-      break;
-    }
-
-    // Create a single frame with all the JSON data for this packet
-    if (!packetJson.empty() && packetJson.contains("streams")) {
-      auto jsonFrame = std::make_shared<Video::MetaDataFrame<nlohmann::json>>(
-        packetJson,
-        streamId + mNextId++,
-        timestamp
-      );
-      frames.push_back(jsonFrame);
-
-      SPDLOG_DEBUG("Created JSON frame from GPMF packet at timestamp {} μs with {} streams",
-                   timestamp.count(), packetJson["streams"].size());
-    }
-
-    return frames;
   }
 
 } // namespace Ravl2::GoPro
