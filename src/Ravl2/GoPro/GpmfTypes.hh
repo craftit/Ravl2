@@ -120,5 +120,40 @@ namespace Ravl2::GoPro
     }
   };
 
+  //! Collection of GPS fix samples with sample rate metadata
+  //! Low-frequency sensor (1-18 Hz typically) that may have multiple fixes per GPMF packet
+  //! Each sample is a complete GpsFix with location, speed, and quality metrics
+  struct GpsSamples
+  {
+    std::vector<GpsFix> samples;    //!< GPS fix samples
+    float sampleRate = 0.0F;        //!< Samples per second (0 indicates invalid/unset)
+
+    //! Default constructor
+    GpsSamples() = default;
+
+    //! Construct with samples and sample rate
+    GpsSamples(const std::vector<GpsFix>& s, float rate)
+      : samples(s), sampleRate(rate)
+    {
+      if (rate <= 0.0F) {
+        sampleRate = 0.0F;
+      }
+    }
+
+    //! Get number of samples
+    [[nodiscard]] size_t size() const { return samples.size(); }
+    [[nodiscard]] bool empty() const { return samples.empty(); }
+
+    //! Direct access to samples vector
+    [[nodiscard]] const std::vector<GpsFix>& data() const { return samples; }
+
+    //! Serialization support
+    template<class Archive>
+    void serialize(Archive& archive)
+    {
+      archive(samples, sampleRate);
+    }
+  };
+
 
 } // namespace Ravl2::GoPro

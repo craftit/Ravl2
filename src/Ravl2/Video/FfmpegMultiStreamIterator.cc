@@ -943,12 +943,12 @@ namespace Ravl2::Video
         if (stream->codecpar->codec_tag != GPMD_TAG)
         {
           // Not a GPMF stream, skip it (might be timecode or other data)
-          SPDLOG_DEBUG("Skipping non-GPMF DATA stream at localIndex={}, codec_tag=0x{:08x}",
+          SPDLOG_INFO("Skipping non-GPMF DATA stream at localIndex={}, codec_tag=0x{:08x}",
                        localIndex, stream->codecpar->codec_tag);
           return VideoResult<std::vector<std::shared_ptr<Frame>>>(VideoErrorCode::NeedMoreData);
         }
 
-        SPDLOG_DEBUG("Processing GPMF stream at localIndex={}, packet size={} bytes",
+        SPDLOG_INFO("Processing GPMF stream at localIndex={}, packet size={} bytes",
                      localIndex, packet->size);
 
         // Ensure parser is initialized
@@ -980,6 +980,7 @@ namespace Ravl2::Video
 
         // Parse GPMF data - this may return multiple frames (GPS, gyro, accel)
         auto frames = m_gpmfParser->parse(packet->data, static_cast<size_t>(packet->size), streamId, timestamp);
+        SPDLOG_INFO("Got {} frames from buffer {} bytes ",frames.size(), packet->size);
 
         if (frames.empty())
         {

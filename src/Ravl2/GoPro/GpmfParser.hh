@@ -48,8 +48,8 @@ namespace Ravl2::GoPro
 
     //! Parse GPS data from GPMF stream
     //! @param stream GPMF stream positioned at GPS data
-    //! @return GPS fix if found and valid
-    [[nodiscard]] std::optional<GpsFix> parseGps(GPMF_stream* stream);
+    //! @return GPS samples with sample rate if found and valid
+    [[nodiscard]] std::optional<GpsSamples> parseGps(GPMF_stream* stream);
 
     //! Parse gyroscope data from GPMF stream
     //! @param stream GPMF stream positioned at gyro data
