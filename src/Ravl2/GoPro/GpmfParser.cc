@@ -69,6 +69,16 @@ namespace Ravl2::GoPro
         case MAKEID('A', 'C', 'C', 'L'):
           parseAccel(&stream, frames, streamId, timestamp);
           break;
+        case MAKEID('D', 'E', 'V', 'C'): {
+          auto metaJson = extractStreamMetadata(&stream,fourcc);
+          if(!metaJson.empty()) {
+            auto jsonFrame = std::make_shared<Video::MetaDataFrame<nlohmann::json>>(
+              metaJson,
+              streamId + mNextId++,
+              timestamp);
+            frames.push_back(jsonFrame);
+          }
+        } break;
 
         default:
           // Unknown FourCC - convert to JSON if enabled
@@ -82,13 +92,7 @@ namespace Ravl2::GoPro
               unknownJson["sample_count"] = sampleCount;
               unknownJson["elements"] = GPMF_ElementsInStruct(&stream);
 
-              // Extract samples using GPMF_ScaledData
-              std::vector<double> scales;
-              float scaleFactor = getScaleFactor(&stream, fourcc);
-              uint32_t elements = GPMF_ElementsInStruct(&stream);
-              scales.resize(elements, scaleFactor);
-
-              unknownJson["samples"] = samplesToJson(&stream, scales);
+              unknownJson["samples"] = samplesToJson(&stream,fourcc);
 
               // Create JSON frame
               auto jsonFrame = std::make_shared<Video::MetaDataFrame<nlohmann::json>>(
@@ -472,6 +476,7 @@ namespace Ravl2::GoPro
 
   nlohmann::json GpmfParser::extractStreamMetadata(GPMF_stream* stream, [[maybe_unused]] uint32_t fourcc)
   {
+    SPDLOG_INFO("Extracting stream metadata");
     nlohmann::json metadata;
 
     if (stream == nullptr) {
@@ -488,11 +493,13 @@ namespace Ravl2::GoPro
     metadata["type_info"]["struct_size"] = GPMF_StructSize(stream);
     metadata["type_info"]["elements_per_sample"] = GPMF_ElementsInStruct(stream);
 
+#if 0
     // Get sample rate
     float sampleRate = getSampleRate(stream);
     if (sampleRate > 0) {
       metadata["sample_rate_hz"] = sampleRate;
     }
+#endif
 
     // Save current position for metadata searches
     GPMF_stream tempStream = *stream;
@@ -617,99 +624,357 @@ namespace Ravl2::GoPro
     return metadata;
   }
 
-  nlohmann::json GpmfParser::samplesToJson(GPMF_stream* stream, [[maybe_unused]] const std::vector<double>& scale)
+  //! Convert nested object to JSON.
+  nlohmann::json GpmfParser::nestedToJson(GPMF_stream *stream, [[maybe_unused]] uint32_t fourcc)
   {
-    nlohmann::json samples = nlohmann::json::array();
+    nlohmann::json ret;
+    do {
+      uint32_t fourXcc = GPMF_Key(stream);
+      std::string strFourCC = fourccToString(fourXcc);
+      ret[strFourCC] = samplesToJson(stream, fourXcc);
+    } while (GPMF_OK == GPMF_Next(stream, GPMF_RECURSE_LEVELS));
 
-    if (stream == nullptr) {
-      return samples;
-    }
-
-    uint32_t sampleCount = GPMF_Repeat(stream);
-    uint32_t elements = GPMF_ElementsInStruct(stream);
-
-    // Use GPMF_ScaledData for automatic type conversion and scaling
-    uint32_t bufferSize = sampleCount * elements * sizeof(double);
-    std::vector<double> buffer(sampleCount * elements);
-
-    GPMF_ERR err = GPMF_ScaledData(stream, buffer.data(), bufferSize, 0, sampleCount, GPMF_TYPE_DOUBLE);
-
-    if (err == GPMF_OK) {
-      // Convert to JSON array
-      for (uint32_t i = 0; i < sampleCount; i++) {
-        if (elements == 1) {
-          // Scalar value
-          samples.push_back(buffer[i]);
-        } else {
-          // Array of values
-          nlohmann::json sample = nlohmann::json::array();
-          for (uint32_t j = 0; j < elements; j++) {
-            sample.push_back(buffer[i * elements + j]);
-          }
-          samples.push_back(sample);
-        }
-      }
-    } else {
-      SPDLOG_WARN("Failed to extract scaled data for JSON conversion (error={})", static_cast<int>(err));
-    }
-
-    return samples;
+    return ret;
   }
 
-  nlohmann::json GpmfParser::streamToJson(GPMF_stream* stream, [[maybe_unused]] const nlohmann::json& deviceInfo)
+  nlohmann::json GpmfParser::samplesToJson(GPMF_stream *stream, [[maybe_unused]] uint32_t fourcc)
   {
-    nlohmann::json streamJson;
-
     if (stream == nullptr) {
-      return streamJson;
+      return {};
     }
 
-    // Get the stream's data FourCC by seeking to samples
-    GPMF_stream dataStream = *stream;
-    if (GPMF_SeekToSamples(&dataStream) != GPMF_OK) {
-      SPDLOG_WARN("Failed to seek to samples in STRM");
-      return streamJson;
-    }
-
-    uint32_t fourcc = GPMF_Key(&dataStream);
-    std::string fourccStr = fourccToString(fourcc);
-
-    streamJson["stream_type"] = fourccStr;
-
-    // Get stream name (STNM) if available
-    GPMF_stream tempStream = dataStream;
-    if (GPMF_FindPrev(&tempStream, MAKEID('S', 'T', 'N', 'M'), GPMF_CURRENT_LEVEL) == GPMF_OK) {
-      auto* stnmData = static_cast<char*>(GPMF_RawData(&tempStream));
-      uint32_t stnmSize = GPMF_RawDataSize(&tempStream);
-      if (stnmData != nullptr && stnmSize > 0) {
-        std::string stnm(stnmData, stnmSize);
-        // Trim null terminators and whitespace
-        stnm.erase(std::find(stnm.begin(), stnm.end(), '\0'), stnm.end());
-        if (!stnm.empty()) {
-          streamJson["stream_name"] = stnm;
-        }
-      }
-    }
-
-    // Extract metadata
-    streamJson["metadata"] = extractStreamMetadata(&dataStream, fourcc);
-
-    // Extract scale factors for data conversion
+    // Extract samples using GPMF_ScaledData
+#if 0
     std::vector<double> scales;
-    if (streamJson["metadata"].contains("units") && streamJson["metadata"]["units"].contains("scale")) {
-      for (auto& s : streamJson["metadata"]["units"]["scale"]) {
-        scales.push_back(1.0 / s.get<double>());
-      }
-    } else {
-      // Default scale of 1.0
-      uint32_t elements = GPMF_ElementsInStruct(&dataStream);
-      scales.resize(elements, 1.0);
+    float scaleFactor = getScaleFactor(stream, fourcc);
+    uint32_t elements = GPMF_ElementsInStruct(stream);
+    scales.resize(elements, scaleFactor);
+#endif
+
+    GPMF_SampleType sampleType = GPMF_Type(stream);
+    uint32_t sampleCount = GPMF_Repeat(stream);
+    uint32_t elements = GPMF_ElementsInStruct(stream);
+    if(elements == 0) {
+      return {};
     }
 
-    // Extract samples
-    streamJson["samples"] = samplesToJson(&dataStream, scales);
+    switch (sampleType) {
+      case GPMF_TYPE_STRING_ASCII: {
+        std::string_view strView(static_cast<const char *>(GPMF_RawData(stream)), GPMF_RawDataSize(stream));
+        return std::string(strView);
+      }
 
-    return streamJson;
+      case GPMF_TYPE_SIGNED_BYTE: {
+        auto* data = static_cast<const int8_t*>(GPMF_RawData(stream));
+        nlohmann::json samples = nlohmann::json::array();
+        for (uint32_t i = 0; i < sampleCount; i++) {
+          if (elements == 1) {
+            samples.push_back(static_cast<int>(data[i]));
+          } else {
+            nlohmann::json sample = nlohmann::json::array();
+            for (uint32_t j = 0; j < elements; j++) {
+              sample.push_back(static_cast<int>(data[i * elements + j]));
+            }
+            samples.push_back(sample);
+          }
+        }
+        return samples;
+      }
+
+      case GPMF_TYPE_UNSIGNED_BYTE: {
+        auto* data = static_cast<const uint8_t*>(GPMF_RawData(stream));
+        nlohmann::json samples = nlohmann::json::array();
+        for (uint32_t i = 0; i < sampleCount; i++) {
+          if (elements == 1) {
+            samples.push_back(static_cast<unsigned>(data[i]));
+          } else {
+            nlohmann::json sample = nlohmann::json::array();
+            for (uint32_t j = 0; j < elements; j++) {
+              sample.push_back(static_cast<unsigned>(data[i * elements + j]));
+            }
+            samples.push_back(sample);
+          }
+        }
+        return samples;
+      }
+
+      case GPMF_TYPE_SIGNED_SHORT: {
+        auto* data = static_cast<const int16_t*>(GPMF_RawData(stream));
+        nlohmann::json samples = nlohmann::json::array();
+        for (uint32_t i = 0; i < sampleCount; i++) {
+          if (elements == 1) {
+            samples.push_back(BYTESWAP16(data[i]));
+          } else {
+            nlohmann::json sample = nlohmann::json::array();
+            for (uint32_t j = 0; j < elements; j++) {
+              sample.push_back(BYTESWAP16(data[i * elements + j]));
+            }
+            samples.push_back(sample);
+          }
+        }
+        return samples;
+      }
+
+      case GPMF_TYPE_UNSIGNED_SHORT: {
+        auto* data = static_cast<const uint16_t*>(GPMF_RawData(stream));
+        nlohmann::json samples = nlohmann::json::array();
+        for (uint32_t i = 0; i < sampleCount; i++) {
+          if (elements == 1) {
+            samples.push_back(BYTESWAP16(data[i]));
+          } else {
+            nlohmann::json sample = nlohmann::json::array();
+            for (uint32_t j = 0; j < elements; j++) {
+              sample.push_back(BYTESWAP16(data[i * elements + j]));
+            }
+            samples.push_back(sample);
+          }
+        }
+        return samples;
+      }
+
+      case GPMF_TYPE_SIGNED_LONG: {
+        auto* data = static_cast<const int32_t*>(GPMF_RawData(stream));
+        nlohmann::json samples = nlohmann::json::array();
+        for (uint32_t i = 0; i < sampleCount; i++) {
+          if (elements == 1) {
+            samples.push_back(BYTESWAP32(data[i]));
+          } else {
+            nlohmann::json sample = nlohmann::json::array();
+            for (uint32_t j = 0; j < elements; j++) {
+              sample.push_back(BYTESWAP32(data[i * elements + j]));
+            }
+            samples.push_back(sample);
+          }
+        }
+        return samples;
+      }
+
+      case GPMF_TYPE_UNSIGNED_LONG: {
+        auto* data = static_cast<const uint32_t*>(GPMF_RawData(stream));
+        nlohmann::json samples = nlohmann::json::array();
+        for (uint32_t i = 0; i < sampleCount; i++) {
+          if (elements == 1) {
+            samples.push_back(BYTESWAP32(data[i]));
+          } else {
+            nlohmann::json sample = nlohmann::json::array();
+            for (uint32_t j = 0; j < elements; j++) {
+              sample.push_back(BYTESWAP32(data[i * elements + j]));
+            }
+            samples.push_back(sample);
+          }
+        }
+        return samples;
+      }
+
+      case GPMF_TYPE_FLOAT: {
+        auto* data = static_cast<const uint32_t*>(GPMF_RawData(stream));
+        nlohmann::json samples = nlohmann::json::array();
+        for (uint32_t i = 0; i < sampleCount; i++) {
+          if (elements == 1) {
+            uint32_t swap = BYTESWAP32(data[i]);
+            float f = *reinterpret_cast<float*>(&swap);
+            samples.push_back(f);
+          } else {
+            nlohmann::json sample = nlohmann::json::array();
+            for (uint32_t j = 0; j < elements; j++) {
+              uint32_t swap = BYTESWAP32(data[i * elements + j]);
+              float f = *reinterpret_cast<float*>(&swap);
+              sample.push_back(f);
+            }
+            samples.push_back(sample);
+          }
+        }
+        return samples;
+      }
+
+      case GPMF_TYPE_DOUBLE: {
+        auto* data = static_cast<const uint64_t*>(GPMF_RawData(stream));
+        nlohmann::json samples = nlohmann::json::array();
+        for (uint32_t i = 0; i < sampleCount; i++) {
+          if (elements == 1) {
+            uint64_t swap = BYTESWAP64(data[i]);
+            double d = *reinterpret_cast<double*>(&swap);
+            samples.push_back(d);
+          } else {
+            nlohmann::json sample = nlohmann::json::array();
+            for (uint32_t j = 0; j < elements; j++) {
+              uint64_t swap = BYTESWAP64(data[i * elements + j]);
+              double d = *reinterpret_cast<double*>(&swap);
+              sample.push_back(d);
+            }
+            samples.push_back(sample);
+          }
+        }
+        return samples;
+      }
+
+      case GPMF_TYPE_Q15_16_FIXED_POINT: {
+        auto* data = static_cast<const int32_t*>(GPMF_RawData(stream));
+        nlohmann::json samples = nlohmann::json::array();
+        for (uint32_t i = 0; i < sampleCount; i++) {
+          if (elements == 1) {
+            double dq = static_cast<double>(BYTESWAP32(data[i])) / 65536.0;
+            samples.push_back(dq);
+          } else {
+            nlohmann::json sample = nlohmann::json::array();
+            for (uint32_t j = 0; j < elements; j++) {
+              double dq = static_cast<double>(BYTESWAP32(data[i * elements + j])) / 65536.0;
+              sample.push_back(dq);
+            }
+            samples.push_back(sample);
+          }
+        }
+        return samples;
+      }
+
+      case GPMF_TYPE_Q31_32_FIXED_POINT: {
+        auto* data = static_cast<const int64_t*>(GPMF_RawData(stream));
+        nlohmann::json samples = nlohmann::json::array();
+        for (uint32_t i = 0; i < sampleCount; i++) {
+          if (elements == 1) {
+            uint64_t Q64 = BYTESWAP64(static_cast<uint64_t>(data[i]));
+            double dq = static_cast<double>(Q64 >> 32);
+            dq += static_cast<double>(Q64 & 0xFFFFFFFF) / 4294967296.0;
+            samples.push_back(dq);
+          } else {
+            nlohmann::json sample = nlohmann::json::array();
+            for (uint32_t j = 0; j < elements; j++) {
+              uint64_t Q64 = BYTESWAP64(static_cast<uint64_t>(data[i * elements + j]));
+              double dq = static_cast<double>(Q64 >> 32);
+              dq += static_cast<double>(Q64 & 0xFFFFFFFF) / 4294967296.0;
+              sample.push_back(dq);
+            }
+            samples.push_back(sample);
+          }
+        }
+        return samples;
+      }
+
+      case GPMF_TYPE_SIGNED_64BIT_INT: {
+        auto* data = static_cast<const int64_t*>(GPMF_RawData(stream));
+        nlohmann::json samples = nlohmann::json::array();
+        for (uint32_t i = 0; i < sampleCount; i++) {
+          if (elements == 1) {
+            samples.push_back(BYTESWAP64(data[i]));
+          } else {
+            nlohmann::json sample = nlohmann::json::array();
+            for (uint32_t j = 0; j < elements; j++) {
+              sample.push_back(BYTESWAP64(data[i * elements + j]));
+            }
+            samples.push_back(sample);
+          }
+        }
+        return samples;
+      }
+
+      case GPMF_TYPE_UNSIGNED_64BIT_INT: {
+        auto* data = static_cast<const uint64_t*>(GPMF_RawData(stream));
+        nlohmann::json samples = nlohmann::json::array();
+        for (uint32_t i = 0; i < sampleCount; i++) {
+          if (elements == 1) {
+            samples.push_back(BYTESWAP64(data[i]));
+          } else {
+            nlohmann::json sample = nlohmann::json::array();
+            for (uint32_t j = 0; j < elements; j++) {
+              sample.push_back(BYTESWAP64(data[i * elements + j]));
+            }
+            samples.push_back(sample);
+          }
+        }
+        return samples;
+      }
+
+      case GPMF_TYPE_FOURCC: {
+        auto* data = static_cast<const uint32_t*>(GPMF_RawData(stream));
+        nlohmann::json samples = nlohmann::json::array();
+        for (uint32_t i = 0; i < sampleCount; i++) {
+          if (elements == 1) {
+            samples.push_back(fourccToString(data[i]));
+          } else {
+            nlohmann::json sample = nlohmann::json::array();
+            for (uint32_t j = 0; j < elements; j++) {
+              sample.push_back(fourccToString(data[i * elements + j]));
+            }
+            samples.push_back(sample);
+          }
+        }
+        return samples;
+      }
+
+      case GPMF_TYPE_GUID: {
+        auto* data = static_cast<const uint8_t*>(GPMF_RawData(stream));
+        nlohmann::json samples = nlohmann::json::array();
+        uint32_t guidSize = 16; // GUIDs are 128 bits = 16 bytes
+        for (uint32_t i = 0; i < sampleCount; i++) {
+          std::string guid;
+          for (uint32_t j = 0; j < guidSize; j++) {
+            char hex[3];
+            snprintf(hex, sizeof(hex), "%02X", data[i * guidSize + j]);
+            guid += hex;
+          }
+          samples.push_back(guid);
+        }
+        return samples;
+      }
+
+      case GPMF_TYPE_UTC_DATE_TIME: {
+        auto* data = static_cast<const char*>(GPMF_RawData(stream));
+        nlohmann::json samples = nlohmann::json::array();
+        uint32_t dateSize = 16; // UTC dates are 16 bytes: yymmddhhmmss.sss
+        for (uint32_t i = 0; i < sampleCount; i++) {
+          std::string dateStr(data + i * dateSize, dateSize);
+          // Trim null terminators
+          dateStr.erase(std::find(dateStr.begin(), dateStr.end(), '\0'), dateStr.end());
+          samples.push_back(dateStr);
+        }
+        return samples;
+      }
+
+      case GPMF_TYPE_STRING_UTF8: {
+        std::string_view strView(static_cast<const char*>(GPMF_RawData(stream)), GPMF_RawDataSize(stream));
+        return std::string(strView);
+      }
+
+      case GPMF_TYPE_COMPLEX: {
+        // Complex types have opaque data - return as hex string or raw info
+        nlohmann::json result;
+        result["type"] = "complex";
+        result["size_bytes"] = GPMF_RawDataSize(stream);
+        result["sample_count"] = sampleCount;
+        result["note"] = "Complex type - opaque data structure";
+        return result;
+      }
+
+      case GPMF_TYPE_COMPRESSED: {
+        // Compressed data needs decompression first
+        nlohmann::json result;
+        result["type"] = "compressed";
+        result["size_bytes"] = GPMF_RawDataSize(stream);
+        result["sample_count"] = sampleCount;
+        result["note"] = "Compressed data - needs decompression";
+        return result;
+      }
+
+      case GPMF_TYPE_NEST: {
+        return nestedToJson(stream, fourcc);
+      }
+
+      case GPMF_TYPE_EMPTY: {
+        nlohmann::json result;
+        result["type"] = "empty";
+        result["note"] = "Empty payload";
+        return result;
+      }
+
+      case GPMF_TYPE_ERROR: {
+        nlohmann::json result;
+        result["type"] = "error";
+        result["note"] = "Error type";
+        return result;
+      }
+    }
+
+    return {};
   }
 
 } // namespace Ravl2::GoPro

@@ -97,22 +97,21 @@ namespace Ravl2::GoPro
     //! @return JSON object with stream metadata
     [[nodiscard]] nlohmann::json extractStreamMetadata(GPMF_stream* stream, uint32_t fourcc);
 
-    //! Convert GPMF FourCC to string
-    //! @param fourcc 32-bit FourCC value
-    //! @return String representation (4 characters)
-    [[nodiscard]] nlohmann::json samplesToJson(GPMF_stream* stream, const std::vector<double>& scale);
+    //! Convert GPMF data to JSON based on type
+    //! Handles all GPMF types including numeric, string, and complex types
+    //! @param stream GPMF stream positioned at data
+    //! @param fourcc The FourCC of the data stream
+    //! @return JSON representation of the data (array, object, or scalar)
+    [[nodiscard]] nlohmann::json samplesToJson(GPMF_stream *stream, uint32_t fourcc);
 
-    //! Convert GPMF stream to JSON object
-    //! @param stream GPMF stream positioned at a STRM element
-    //! @param deviceInfo JSON object with DEVC-level info
-    //! @return JSON object representing the stream, or empty if parsing failed
-    [[nodiscard]] nlohmann::json streamToJson(GPMF_stream* stream, const nlohmann::json& deviceInfo);
+    //! Convert nested object to JSON.
+    [[nodiscard]] nlohmann::json nestedToJson(GPMF_stream *stream, uint32_t fourcc);
 
     //! Internal stream counter for generating unique IDs
     Video::StreamItemId mNextId = 0;
 
     //! Whether to generate JSON metadata frames
-    bool mEnableJson = false;
+    bool mEnableJson = true;
   };
 
 } // namespace Ravl2::GoPro
