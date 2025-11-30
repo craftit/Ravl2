@@ -880,6 +880,8 @@ namespace Ravl2::Video
               case AV_PIX_FMT_YUV420P:
               case AV_PIX_FMT_YUVJ420P:
                 return typeid(YUV420Image<uint8_t>);
+              case AV_PIX_FMT_YUV420P10LE:
+                return typeid(YUV420Image<uint16_t>);
               case AV_PIX_FMT_YUV422P:
               case AV_PIX_FMT_YUVJ422P:
                 return typeid(YUV422Image<uint8_t>);
@@ -1135,6 +1137,8 @@ namespace Ravl2::Video
             case AV_PIX_FMT_YUV420P:
             case AV_PIX_FMT_YUVJ420P:  // JPEG-range YUV420 (deprecated, treat as YUV420P)
               return createVideoFrame<YUV420Image<uint8_t>>(frame, localIndex, id);
+            case AV_PIX_FMT_YUV420P10LE:
+              return createVideoFrame<YUV420Image<uint16_t>>(frame, localIndex, id);
             case AV_PIX_FMT_YUV422P:
             case AV_PIX_FMT_YUVJ422P:  // JPEG-range YUV422 (deprecated, treat as YUV422P)
               return createVideoFrame<YUV422Image<uint8_t>>(frame, localIndex, id);
@@ -1148,7 +1152,13 @@ namespace Ravl2::Video
             case AV_PIX_FMT_GRAY8:
               return createVideoFrame<Array<PixelI8,2>>(frame, localIndex, id);
             default: {
-              SPDLOG_ERROR("Unsupported pixel format: {}", static_cast<int>(codecContext->pix_fmt));
+              std::array<char,128> buff {};
+              const char *strOfType = av_get_pix_fmt_string (buff.data(),buff.size(), codecContext->pix_fmt);
+              if(strOfType == nullptr) {
+                strOfType = "*Unknown*";
+              }
+
+              SPDLOG_ERROR("Unsupported pixel format: {} '{}', {} ", static_cast<int>(codecContext->pix_fmt),av_get_pix_fmt_name(codecContext->pix_fmt),strOfType);
               throw std::runtime_error("Unsupported pixel format");
             }
           }
@@ -1342,11 +1352,32 @@ namespace Ravl2::Video
         auto localRange = PlaneT::scale_type::calculateRange(range);
         //SPDLOG_INFO("Setting up plane {} ({}) with range {} (master range {})  Data:{} ", planeIndex, toString(plane.getChannelType()), localRange, range,static_cast<void *>(newFrame->data[planeIndex]));
         assert(newFrame->data[planeIndex] != nullptr);
-        plane.data() = Array<uint8_t, 2>(newFrame->data[planeIndex],
-                                         localRange,
-                                         {newFrame->linesize[planeIndex], 1},
-                                         avFrameHandle
-        );
+        //using value_type = DataT;
+        //using array_type = Array<DataT, Dims>;
+        using PixelTypeT = typename PlaneT::value_type;
+        PixelTypeT *pixelData = reinterpret_cast<PixelTypeT *>(newFrame->data[planeIndex]);
+        if constexpr (std::is_same_v<PixelTypeT, uint8_t>) {
+          plane.data() = Array<PixelTypeT, 2>(pixelData,
+                                           localRange,
+                                           {newFrame->linesize[planeIndex], 1},
+                                           avFrameHandle
+          );
+        } else {
+          std::shared_ptr avFramePlaneHandle = std::shared_ptr<PixelTypeT[]>(pixelData,
+                                                                     [avFrameHandle](PixelTypeT* data) mutable
+                                                                     {
+                                                                       (void)data;
+                                                                       avFrameHandle.reset();
+                                                                     }
+          );
+          int stride = newFrame->linesize[planeIndex]/static_cast<int>(sizeof(PixelTypeT));
+          RavlAlwaysAssert(newFrame->linesize[planeIndex] % static_cast<int>(sizeof(PixelTypeT)) == 0);
+          plane.data() = Array<PixelTypeT, 2>(pixelData,
+                                           localRange,
+                                           {stride, 1},
+                                           avFramePlaneHandle
+          );
+        }
         planeIndex++;
       }
     );

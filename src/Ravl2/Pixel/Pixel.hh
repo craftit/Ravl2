@@ -365,6 +365,7 @@ namespace Ravl2
   using PixelBGR32F = Pixel<float, ImageChannel::Blue, ImageChannel::Green, ImageChannel::Red>;
   using PixelBGRA8 = Pixel<uint8_t, ImageChannel::Blue, ImageChannel::Green, ImageChannel::Red, ImageChannel::Alpha>;
   using PixelYUV8 = Pixel<uint8_t, ImageChannel::Luminance, ImageChannel::ChrominanceU, ImageChannel::ChrominanceV>;
+  using PixelYUV16 = Pixel<uint16_t, ImageChannel::Luminance, ImageChannel::ChrominanceU, ImageChannel::ChrominanceV>;
   using PixelYUVA8 = Pixel<uint8_t, ImageChannel::Luminance, ImageChannel::ChrominanceU, ImageChannel::ChrominanceV, ImageChannel::Alpha>;
   using PixelYUV32F = Pixel<float, ImageChannel::Luminance, ImageChannel::ChrominanceU, ImageChannel::ChrominanceV>;
   using PixelYUYV8 = Pixel<uint8_t, ImageChannel::Luminance, ImageChannel::ChrominanceU, ImageChannel::Luminance2, ImageChannel::ChrominanceV>;

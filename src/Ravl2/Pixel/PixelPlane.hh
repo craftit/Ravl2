@@ -616,7 +616,93 @@ namespace Ravl2
       }
       return result;
     }
-  }// namespace detail
+
+    template <typename PlanarT>
+    struct PlanarImageTraits;
+
+    template <unsigned Dims, typename... PlaneTypes>
+    struct PlanarImageTraits<PlanarImage<Dims, PlaneTypes...>> {
+      static constexpr unsigned dimensions = Dims;
+      using plane_tuple = std::tuple<PlaneTypes...>;
+      using value_type = typename std::tuple_element_t<0, std::tuple<PlaneTypes...>>::value_type;
+    };
+
+    template <ImageChannel Channel, typename TupleT>
+    struct TupleHasChannel;
+
+    template <ImageChannel Channel, typename... PlaneTypes>
+    struct TupleHasChannel<Channel, std::tuple<PlaneTypes...>> : std::bool_constant<((PlaneTypes::getChannelType() == Channel) || ...)> {};
+
+    template <ImageChannel Channel, typename TupleT>
+    inline constexpr bool TupleHasChannelV = TupleHasChannel<Channel, TupleT>::value;
+
+    template <ImageChannel Channel, typename DestPlaneT, typename SrcPlaneT>
+    void copyPlaneDataMatchingChannel(DestPlaneT &destPlane, const SrcPlaneT &srcPlane)
+    {
+      using DestValueT = typename DestPlaneT::value_type;
+      bool missingCoverage = false;
+      for(auto it = destPlane.data().begin(); it != destPlane.data().end(); ++it) {
+        const auto &planeIndex = it.index();
+        auto masterIndex = DestPlaneT::scale_type::planeToMaster(planeIndex);
+        if(srcPlane.containsMaster(masterIndex)) {
+          const auto &srcValue = srcPlane.atMaster(masterIndex);
+          *it = get<Channel, DestValueT>(srcValue);
+        } else {
+          missingCoverage = true;
+          *it = PixelTypeTraits<DestValueT, Channel>::defaultValue;
+        }
+      }
+      if(missingCoverage) {
+        SPDLOG_WARN("Planar conversion for channel {} used default values outside source coverage", toString(Channel));
+      }
+    }
+
+    template <ImageChannel Channel, typename DestPlaneT, typename SrcPlanarT>
+    void copyPlaneDataFromPacked(DestPlaneT &destPlane, const SrcPlanarT &srcPlanar)
+    {
+      using DestValueT = typename DestPlaneT::value_type;
+      using SrcValueT = typename PlanarImageTraits<SrcPlanarT>::value_type;
+      bool missingCoverage = false;
+      for(auto it = destPlane.data().begin(); it != destPlane.data().end(); ++it) {
+        const auto &planeIndex = it.index();
+        auto masterIndex = DestPlaneT::scale_type::planeToMaster(planeIndex);
+        if(srcPlanar.range().contains(masterIndex)) {
+          auto packed = srcPlanar.template cast<SrcValueT>(masterIndex);
+          *it = get<Channel, DestValueT>(packed);
+        } else {
+          missingCoverage = true;
+          *it = PixelTypeTraits<DestValueT, Channel>::defaultValue;
+        }
+      }
+      if(missingCoverage) {
+        SPDLOG_WARN("Planar conversion for channel {} via packed path used default values outside source coverage", toString(Channel));
+      }
+    }
+
+    template <std::size_t DestIndex, typename DestPlanarT, typename SrcPlanarT>
+    void convertSinglePlane(DestPlanarT &dest, const SrcPlanarT &src)
+    {
+      using DestPlaneRef = decltype(dest.template plane<DestIndex>());
+      using DestPlaneT = std::remove_reference_t<DestPlaneRef>;
+      constexpr ImageChannel channel = DestPlaneT::getChannelType();
+      auto &destPlane = dest.template plane<DestIndex>();
+
+      using SrcPlaneTuple = typename PlanarImageTraits<SrcPlanarT>::plane_tuple;
+      if constexpr(TupleHasChannelV<channel, SrcPlaneTuple>) {
+        const auto &srcPlane = src.template planeByChannel<channel>();
+        copyPlaneDataMatchingChannel<channel>(destPlane, srcPlane);
+      } else {
+        SPDLOG_DEBUG("Planar conversion falling back to colour conversion for channel {}", toString(channel));
+        copyPlaneDataFromPacked<channel>(destPlane, src);
+      }
+    }
+
+    template <typename DestPlanarT, typename SrcPlanarT, std::size_t... DestIs>
+    void convertMatchingPlanes(DestPlanarT &dest, const SrcPlanarT &src, std::index_sequence<DestIs...>)
+    {
+      (convertSinglePlane<DestIs>(dest, src), ...);
+    }
+   }// namespace detail
 
   //! Convert a packed pixel array to a planar image
   //! This generic implementation extracts channels from the pixel type and creates a corresponding planar image
@@ -717,7 +803,7 @@ namespace Ravl2
   {
     PlanarImage<Dims, PlaneTypes...> result;
 
-    // Clone each plane individually using fold expression
+    // Clone each plane individually using a fold expression
     [&]<std::size_t... Is>(std::index_sequence<Is...>) {
       ((result.template plane<Is>().data() = clone(img.template plane<Is>().data())), ...);
     }(std::make_index_sequence<sizeof...(PlaneTypes)>{});
@@ -740,4 +826,15 @@ namespace Ravl2
     dest = convertToPlanar(src);
   }
 
-}// namespace Ravl2
+  //! Convert between planar images with potentially different component types.
+  //! Channels missing in the source are filled with channel defaults.
+  template <unsigned Dims, typename... DestPlaneTypes, typename... SrcPlaneTypes>
+  void convert(PlanarImage<Dims, DestPlaneTypes...> &dest, const PlanarImage<Dims, SrcPlaneTypes...> &src)
+  {
+    dest = PlanarImage<Dims, DestPlaneTypes...>(src.range());
+    [&]<std::size_t... Is>(std::index_sequence<Is...>) {
+      (detail::convertSinglePlane<Is>(dest, src), ...);
+    }(std::make_index_sequence<sizeof...(DestPlaneTypes)>{});
+  }
+
+ }// namespace Ravl2

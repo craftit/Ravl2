@@ -217,6 +217,14 @@ namespace Ravl2
     return convertToPacked<PixelT>(planarImage);
   }
 
+  template <typename PackedPlaneDestT, typename PackedPlaneSrcT>
+  PackedPlaneDestT convertTo(const PackedPlaneSrcT &planarImage)
+  {
+    PackedPlaneDestT dest;
+    convert(dest,planarImage);
+    return dest;
+  }
+
   // Explicitly instantiate the helperConvertToPacked function for common types
   // RGB conversions
   template Array<PixelRGB8, 2> helperConvertToPacked<PixelRGB8>(const RGBPlanarImage<uint8_t> &image);
@@ -286,6 +294,18 @@ namespace Ravl2
 
     [[maybe_unused]] bool g_reg33 =  registerConversion(convertYUYV2Planar444<uint8_t,PixelYUYV8>, 1.00f);
     [[maybe_unused]] bool g_reg34 =  registerConversion(convertYUYV2Planar444<uint8_t,PixelUYVY8>, 1.00f);
+
+
+    [[maybe_unused]] bool g_reg35 =  registerConversion(convertTo<YUV420Image<float>, YUV420Image<uint16_t>>, 1.00f);
+    [[maybe_unused]] bool g_reg36 =  registerConversion(convertTo<YUV420Image<uint8_t>, YUV420Image<uint16_t>>, 0.50f);
+    [[maybe_unused]] bool g_reg37 =  registerConversion(convertTo<YUV420Image<float>, YUV420Image<uint8_t>>, 1.00f);
+    [[maybe_unused]] bool g_reg38 =  registerConversion(convertTo<YUV444Image<uint16_t>, YUV420Image<uint16_t>>, 1.00f);
+    [[maybe_unused]] bool g_reg39 =  registerConversion(convertTo<YUV444Image<float>, YUV444Image<uint16_t>>, 1.00f);
+
+    [[maybe_unused]] bool g_reg40 = registerConversion(helperConvertToPacked<PixelYUV16, YUV420Image<uint16_t>>, 1.00f);
+    [[maybe_unused]] bool g_reg41 = registerConversion(helperConvertToPacked<PixelYUV8, YUV420Image<uint16_t>>, 1.00f);
+
+
   }// namespace
 
 }// namespace Ravl2

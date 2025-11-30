@@ -141,6 +141,7 @@ namespace Ravl2
 
     [[maybe_unused]] bool g_reg29 = registerConversion(convert<Array<PixelI8, 2>, Array<PixelY8, 2>>, 1.0f);
     [[maybe_unused]] bool g_reg30 = registerConversion(convert<Array<PixelY8, 2>, Array<PixelI8, 2>>, 1.0f);
+    [[maybe_unused]] bool g_reg31 = registerConversion(convert<Array<PixelYUV8, 2>, Array<PixelYUV16, 2>>, 0.5f);
 
   }// namespace
 
