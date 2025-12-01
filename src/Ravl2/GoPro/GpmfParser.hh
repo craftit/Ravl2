@@ -132,6 +132,14 @@ namespace Ravl2::GoPro
     //! @return JSON representation of the data (array, object, or scalar)
     [[nodiscard]] nlohmann::json samplesToJson(GPMF_stream *stream, uint32_t fourcc, int level);
 
+    //! Parse complex type data to JSON using TYPE descriptor
+    //! @param stream GPMF stream positioned at complex data
+    //! @param typeDesc TYPE descriptor string (e.g., "lllllllSS", "Ff", "bb")
+    //! @param scales Scale factors for each field (empty if no SCAL)
+    //! @param sampleCount Number of samples
+    //! @return JSON array of parsed samples
+    [[nodiscard]] nlohmann::json parseComplexTypeToJson(GPMF_stream *stream, const std::string& typeDesc, const std::vector<int32_t>& scales, uint32_t sampleCount) const;
+
     //! Convert nested object to JSON.
     [[nodiscard]] nlohmann::json nestedToJson(GPMF_stream *stream, uint32_t fourcc, int level);
 

@@ -1000,6 +1000,144 @@ namespace Ravl2::GoPro
     return ret;
   }
 
+  nlohmann::json GpmfParser::parseComplexTypeToJson(GPMF_stream *stream, const std::string& typeDesc, const std::vector<int32_t>& scales, uint32_t sampleCount) const
+  {
+    nlohmann::json samples = nlohmann::json::array();
+
+    auto *rawData = static_cast<const uint8_t *>(GPMF_RawData(stream));
+    if(rawData == nullptr) {
+      return samples;
+    }
+
+    // Calculate sample size from TYPE descriptor
+    size_t sampleSize = 0;
+    for(char typeChar : typeDesc) {
+      switch(typeChar) {
+        case 'b': case 'B': sampleSize += 1; break;  // signed/unsigned byte
+        case 's': case 'S': sampleSize += 2; break;  // signed/unsigned short
+        case 'l': case 'L': sampleSize += 4; break;  // signed/unsigned long
+        case 'f': sampleSize += 4; break;            // 32-bit float
+        case 'F': sampleSize += 4; break;            // FourCC (4-char code)
+        case 'd': sampleSize += 8; break;            // 64-bit double
+        case 'j': case 'J': sampleSize += 8; break;  // signed/unsigned 64-bit
+        case 'q': case 'Q': sampleSize += 4; break;  // Q15.16 and Q31.32
+        default:
+          SPDLOG_WARN("Unknown TYPE descriptor character: '{}'", typeChar);
+          return samples;
+      }
+    }
+
+    // Parse each sample
+    for(uint32_t i = 0; i < sampleCount; i++) {
+      nlohmann::json sample = nlohmann::json::array();
+      size_t offset = i * sampleSize;
+      size_t fieldOffset = 0;
+
+      for(size_t fieldIdx = 0; fieldIdx < typeDesc.size(); fieldIdx++) {
+        char typeChar = typeDesc[fieldIdx];
+        int32_t scale = (fieldIdx < scales.size()) ? scales[fieldIdx] : 1;
+
+        switch(typeChar) {
+          case 'b': {  // signed byte
+            int8_t val = static_cast<int8_t>(rawData[offset + fieldOffset]);
+            sample.push_back(scale != 1 ? static_cast<double>(val) / scale : val);
+            fieldOffset += 1;
+            break;
+          }
+          case 'B': {  // unsigned byte
+            uint8_t val = rawData[offset + fieldOffset];
+            sample.push_back(scale != 1 ? static_cast<double>(val) / scale : val);
+            fieldOffset += 1;
+            break;
+          }
+          case 's': {  // signed short
+            int16_t val = BYTESWAP16(*reinterpret_cast<const int16_t*>(rawData + offset + fieldOffset));
+            sample.push_back(scale != 1 ? static_cast<double>(val) / scale : val);
+            fieldOffset += 2;
+            break;
+          }
+          case 'S': {  // unsigned short
+            uint16_t val = BYTESWAP16(*reinterpret_cast<const uint16_t*>(rawData + offset + fieldOffset));
+            sample.push_back(scale != 1 ? static_cast<double>(val) / scale : val);
+            fieldOffset += 2;
+            break;
+          }
+          case 'l': {  // signed long
+            int32_t val = BYTESWAP32(*reinterpret_cast<const int32_t*>(rawData + offset + fieldOffset));
+            sample.push_back(scale != 1 ? static_cast<double>(val) / scale : val);
+            fieldOffset += 4;
+            break;
+          }
+          case 'L': {  // unsigned long
+            uint32_t val = BYTESWAP32(*reinterpret_cast<const uint32_t*>(rawData + offset + fieldOffset));
+            sample.push_back(scale != 1 ? static_cast<double>(val) / scale : val);
+            fieldOffset += 4;
+            break;
+          }
+          case 'f': {  // 32-bit float
+            uint32_t rawVal = BYTESWAP32(*reinterpret_cast<const uint32_t*>(rawData + offset + fieldOffset));
+            float val = std::bit_cast<float>(rawVal);
+            sample.push_back(scale != 1 ? val / static_cast<float>(scale) : val);
+            fieldOffset += 4;
+            break;
+          }
+          case 'F': {  // FourCC (4-character code)
+            // FourCC is stored as readable ASCII in big-endian, don't byte-swap
+            uint32_t fourcc = *reinterpret_cast<const uint32_t*>(rawData + offset + fieldOffset);
+            sample.push_back(fourccToString(fourcc));
+            fieldOffset += 4;
+            break;
+          }
+          case 'd': {  // 64-bit double
+            uint64_t rawVal = BYTESWAP64(*reinterpret_cast<const uint64_t*>(rawData + offset + fieldOffset));
+            double val = std::bit_cast<double>(rawVal);
+            sample.push_back(scale != 1 ? val / scale : val);
+            fieldOffset += 8;
+            break;
+          }
+          case 'j': {  // signed 64-bit int
+            int64_t val = BYTESWAP64(*reinterpret_cast<const int64_t*>(rawData + offset + fieldOffset));
+            sample.push_back(scale != 1 ? static_cast<double>(val) / scale : static_cast<double>(val));
+            fieldOffset += 8;
+            break;
+          }
+          case 'J': {  // unsigned 64-bit int
+            uint64_t val = BYTESWAP64(*reinterpret_cast<const uint64_t*>(rawData + offset + fieldOffset));
+            sample.push_back(scale != 1 ? static_cast<double>(val) / scale : static_cast<double>(val));
+            fieldOffset += 8;
+            break;
+          }
+          case 'q': {  // Q15.16 fixed point
+            int32_t rawVal = BYTESWAP32(*reinterpret_cast<const int32_t*>(rawData + offset + fieldOffset));
+            double val = static_cast<double>(rawVal) / 65536.0;
+            sample.push_back(scale != 1 ? val / scale : val);
+            fieldOffset += 4;
+            break;
+          }
+          case 'Q': {  // Q31.32 fixed point
+            int64_t rawVal = BYTESWAP64(*reinterpret_cast<const int64_t*>(rawData + offset + fieldOffset));
+            double val = static_cast<double>(rawVal) / 4294967296.0;
+            sample.push_back(scale != 1 ? val / scale : val);
+            fieldOffset += 8;
+            break;
+          }
+          default:
+            // Unknown type - skip
+            break;
+        }
+      }
+
+      // If only one field, don't wrap in array
+      if(sample.size() == 1) {
+        samples.push_back(sample[0]);
+      } else {
+        samples.push_back(sample);
+      }
+    }
+
+    return samples;
+  }
+
   nlohmann::json GpmfParser::samplesToJson(GPMF_stream *stream, [[maybe_unused]] uint32_t fourcc, int level)
   {
     if(stream == nullptr) {
@@ -1315,12 +1453,25 @@ namespace Ravl2::GoPro
       }
 
       case GPMF_TYPE_COMPLEX: {
-        // Complex types have opaque data - return as hex string or raw info
-        nlohmann::json result;
-        result["type"] = "complex";
-        result["size_bytes"] = GPMF_RawDataSize(stream);
-        result["sample_count"] = sampleCount;
-        return result;
+        // Complex types use TYPE descriptor to define their structure
+        // Try to parse using TYPE descriptor if available
+        std::string typeDesc = getTypeDescriptor(stream);
+
+        if(typeDesc.empty()) {
+          // No TYPE descriptor - return basic info
+          nlohmann::json result;
+          result["type"] = "complex";
+          result["size_bytes"] = GPMF_RawDataSize(stream);
+          result["sample_count"] = sampleCount;
+          result["note"] = "No TYPE descriptor found";
+          return result;
+        }
+
+        // Get SCAL values if present
+        std::vector<int32_t> scales = getScaleFactors(stream, static_cast<uint32_t>(typeDesc.size()));
+
+        // Parse complex data using TYPE descriptor
+        return parseComplexTypeToJson(stream, typeDesc, scales, sampleCount);
       }
 
       case GPMF_TYPE_COMPRESSED: {
