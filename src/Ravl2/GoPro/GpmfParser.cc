@@ -542,6 +542,7 @@ namespace Ravl2::GoPro
             auto subFrames = processLevel(&strmStream, streamId, timestamp, level+1);
             frames.insert(frames.end(), subFrames.begin(), subFrames.end());
           }
+          processed = true;
         } break;
 #endif
 
