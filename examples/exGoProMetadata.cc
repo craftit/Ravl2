@@ -128,77 +128,80 @@ int RAVL2_MAIN(int argc, char *argv[])
   int gpsCount = 0;
   int gyroCount = 0;
   int accelCount = 0;
+  std::map<std::string, std::size_t> messageTypeCounts;
 
   while (!iterator->isAtEnd() && frameCount < maxFrames) {
     auto frame = iterator->currentFrame();
+    if(!frame) {
+      SPDLOG_ERROR("NULL frame found.");
+      break;
+    }
+    messageTypeCounts[Ravl2::typeName(typeid(*frame))]++;
 
-    if (frame) {
-      // Check if this is a GPS frame
-      auto* gpsFrame = dynamic_cast<Ravl2::Video::MetaDataFrame<Ravl2::GoPro::GpsFix>*>(frame.get());
-      if (gpsFrame) {
-        gpsCount++;
-        if (verbose || gpsCount == 1) {
-          const auto& fix = gpsFrame->data();
-          auto timestamp = gpsFrame->timestamp();
-          double timeSecs = std::chrono::duration<double>(timestamp).count();
+    // Check if this is a GPS frame
+    auto* gpsFrame = dynamic_cast<Ravl2::Video::MetaDataFrame<Ravl2::GoPro::GpsFix>*>(frame.get());
+    if (gpsFrame) {
+      gpsCount++;
+      if (verbose || gpsCount == 1) {
+        const auto& fix = gpsFrame->data();
+        auto timestamp = gpsFrame->timestamp();
+        double timeSecs = std::chrono::duration<double>(timestamp).count();
 
-          fmt::print("\nGPS Fix #{} at {:.3f}s:\n", gpsCount, timeSecs);
-          fmt::print("  Location: {:.6f}°, {:.6f}° (alt: {:.1f}m)\n",
-                    fix.latitude(), fix.longitude(), fix.height());
-          fmt::print("  Speed: {:.2f} m/s (2D), {:.2f} m/s (3D)\n",
-                    fix.speed2d(), fix.speed3d());
-          fmt::print("  Fix type: {}, Satellites: {} precision: {} \n",
-                    fix.fix, fix.satellites, fix.precision);
+        fmt::print("\nGPS Fix #{} at {:.3f}s:\n", gpsCount, timeSecs);
+        fmt::print("  Location: {:.6f}°, {:.6f}° (alt: {:.1f}m)\n",
+                  fix.latitude(), fix.longitude(), fix.height());
+        fmt::print("  Speed: {:.2f} m/s (2D), {:.2f} m/s (3D)\n",
+                  fix.speed2d(), fix.speed3d());
+        fmt::print("  Fix type: {}, Satellites: {} precision: {} \n",
+                  fix.fix, fix.satellites, fix.precision);
+      }
+    }
+
+    // Check if this is a gyroscope frame
+    auto* gyroFrame = dynamic_cast<Ravl2::Video::MetaDataFrame<Ravl2::GoPro::GyroSamples>*>(frame.get());
+    if (gyroFrame) {
+      gyroCount++;
+      if (verbose || gyroCount == 1) {
+        const auto& gyroData = gyroFrame->data();
+        auto timestamp = gyroFrame->timestamp();
+        double timeSecs = std::chrono::duration<double>(timestamp).count();
+
+        fmt::print("\nGyro Frame #{} at {:.3f}s:\n", gyroCount, timeSecs);
+        fmt::print("  Samples: {}, Rate: {:.1f} Hz\n",
+                  gyroData.size(), gyroData.sampleRate);
+        if (!gyroData.samples.empty()) {
+          const auto& first = gyroData.samples[0];
+          fmt::print("  First sample: [{:.3f}, {:.3f}, {:.3f}] rad/s\n",
+                    first[0], first[1], first[2]);
         }
       }
+    }
 
-      // Check if this is a gyroscope frame
-      auto* gyroFrame = dynamic_cast<Ravl2::Video::MetaDataFrame<Ravl2::GoPro::GyroSamples>*>(frame.get());
-      if (gyroFrame) {
-        gyroCount++;
-        if (verbose || gyroCount == 1) {
-          const auto& gyroData = gyroFrame->data();
-          auto timestamp = gyroFrame->timestamp();
-          double timeSecs = std::chrono::duration<double>(timestamp).count();
+    // Check if this is an accelerometer frame
+    auto* accelFrame = dynamic_cast<Ravl2::Video::MetaDataFrame<Ravl2::GoPro::AccelSamples>*>(frame.get());
+    if (accelFrame) {
+      accelCount++;
+      if (verbose || accelCount == 1) {
+        const auto& accelData = accelFrame->data();
+        auto timestamp = accelFrame->timestamp();
+        double timeSecs = std::chrono::duration<double>(timestamp).count();
 
-          fmt::print("\nGyro Frame #{} at {:.3f}s:\n", gyroCount, timeSecs);
-          fmt::print("  Samples: {}, Rate: {:.1f} Hz\n",
-                    gyroData.size(), gyroData.sampleRate);
-          if (!gyroData.samples.empty()) {
-            const auto& first = gyroData.samples[0];
-            fmt::print("  First sample: [{:.3f}, {:.3f}, {:.3f}] rad/s\n",
-                      first[0], first[1], first[2]);
-          }
+        fmt::print("\nAccel Frame #{} at {:.3f}s:\n", accelCount, timeSecs);
+        fmt::print("  Samples: {}, Rate: {:.1f} Hz\n",
+                  accelData.size(), accelData.sampleRate);
+        if (!accelData.samples.empty()) {
+          const auto& first = accelData.samples[0];
+          fmt::print("  First sample: [{:.2f}, {:.2f}, {:.2f}] m/s²\n",
+                    first[0], first[1], first[2]);
         }
       }
+    }
 
-      // Check if this is an accelerometer frame
-      auto* accelFrame = dynamic_cast<Ravl2::Video::MetaDataFrame<Ravl2::GoPro::AccelSamples>*>(frame.get());
-      if (accelFrame) {
-        accelCount++;
-        if (verbose || accelCount == 1) {
-          const auto& accelData = accelFrame->data();
-          auto timestamp = accelFrame->timestamp();
-          double timeSecs = std::chrono::duration<double>(timestamp).count();
-
-          fmt::print("\nAccel Frame #{} at {:.3f}s:\n", accelCount, timeSecs);
-          fmt::print("  Samples: {}, Rate: {:.1f} Hz\n",
-                    accelData.size(), accelData.sampleRate);
-          if (!accelData.samples.empty()) {
-            const auto& first = accelData.samples[0];
-            fmt::print("  First sample: [{:.2f}, {:.2f}, {:.2f}] m/s²\n",
-                      first[0], first[1], first[2]);
-          }
-        }
+    auto* jsonFrame = dynamic_cast<Ravl2::Video::MetaDataFrame<nlohmann::json> *>(frame.get());
+    if(jsonFrame) {
+      if (verbose) {
+        fmt::print("Json: {}\n", jsonFrame->data().dump(-1));
       }
-
-      auto* jsonFrame = dynamic_cast<Ravl2::Video::MetaDataFrame<nlohmann::json> *>(frame.get());
-      if(jsonFrame) {
-        if (verbose) {
-          fmt::print("Json: {}\n", jsonFrame->data().dump(2));
-        }
-      }
-
     }
 
     // Move to the next frame
@@ -225,6 +228,12 @@ int RAVL2_MAIN(int argc, char *argv[])
   fmt::print("GPS fixes found: {}\n", gpsCount);
   fmt::print("Gyro frames found: {}\n", gyroCount);
   fmt::print("Accel frames found: {}\n", accelCount);
+
+  //messageTypeCounts[Ravl2::typeName(typeid(*frame))]++;
+  SPDLOG_INFO("Counts:");
+  for(auto entry : messageTypeCounts) {
+    SPDLOG_INFO(" {} {}", entry.first, entry.second);
+  }
 
   // Close the container
   auto closeResult = container->close();

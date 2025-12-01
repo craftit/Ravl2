@@ -141,3 +141,177 @@ COMPUTED SAMPLERATES:
   GYRO sampling rate = 29.976029Hz (time -0.000000 to 761.241585)",
   GPS9 sampling rate = 29.976029Hz (time -0.000000 to 761.2
 ```    
+
+
+./cmake-build-debug/gpmf-parser samples/hero8.mp4 -g
+
+Part of the output:
+```
+GPMF STRUCTURE:
+  DEVC nest size 6660 
+    DVID type 'L' size 4 data: 1,
+    DVNM type 'c' size 11 data: "HERO8 Black"
+    STRM nest size 1376 
+      STMP type 'J' size 8 data: 80669,
+      TSMP type 'L' size 4 data: 202,
+      STNM type 'c' size 13 data: "Accelerometer"
+      MTRX type 'f' size 36 data: -1.000,0.000,0.000,0.000,-1.000,0.000,0.000,0.000,1.000,...
+      ORIN type 'c' size 3 data: "zxY"
+      ORIO type 'c' size 3 data: "ZXY"
+      SIUN type 'c' size 4 data: "m/s�"
+      SCAL type 's' size 2 data: 417,
+      TMPC type 'f' size 4 data: 32.783,
+      ACCL type 's' samplesize 6 repeat 202 data: -4100,-433,-22, -4180,-335,24, -4209,-364,132,...
+    STRM nest size 1376 
+      STMP type 'J' size 8 data: 80669,
+      TSMP type 'L' size 4 data: 202,
+      STNM type 'c' size 9 data: "Gyroscope"
+      MTRX type 'f' size 36 data: -1.000,0.000,0.000,0.000,-1.000,0.000,0.000,0.000,1.000,...
+      ORIN type 'c' size 3 data: "zxY"
+      ORIO type 'c' size 3 data: "ZXY"
+      SIUN type 'c' size 5 data: "rad/s"
+      SCAL type 's' size 2 data: 939,
+      TMPC type 'f' size 4 data: 32.783,
+      GYRO type 's' samplesize 6 repeat 202 data: -35,66,1, -11,81,-15, 2,83,-33,...
+    STRM nest size 208 
+      STMP type 'J' size 8 data: 81772,
+      TSMP type 'L' size 4 data: 30,
+      STNM type 'c' size 29 data: "Exposure time (shutter speed)"
+      SIUN type 'c' size 1 data: "s"
+      SHUT type 'f' samplesize 4 repeat 30 data: 0.001, 0.001, 0.001, 0.001, 0.001, 0.001,...
+    STRM nest size 100 
+      STMP type 'J' size 8 data: 81772,
+      TSMP type 'L' size 4 data: 9,
+      STNM type 'c' size 34 data: "White Balance temperature (Kelvin)"
+      WBAL type 'S' samplesize 2 repeat 9 data: 4922, 4922, 4922, 4922, 4922, 4905,...
+    STRM nest size 176 
+      STMP type 'J' size 8 data: 81772,
+      TSMP type 'L' size 4 data: 9,
+      STNM type 'c' size 23 data: "White Balance RGB gains"
+      WRGB type 'f' samplesize 12 repeat 9 data: 1.723,1.000,1.941, 1.723,1.000,1.938, 1.723,1.000,1.938,...
+    STRM nest size 116 
+      STMP type 'J' size 8 data: 81772,
+      TSMP type 'L' size 4 data: 30,
+      STNM type 'c' size 10 data: "Sensor ISO"
+      ISOE type 'S' samplesize 2 repeat 30 data: 204, 204, 203, 203, 200, 197,...
+    STRM nest size 76 
+      STMP type 'J' size 8 data: 81772,
+      TSMP type 'L' size 4 data: 9,
+      STNM type 'c' size 17 data: "Average luminance"
+      YAVG type 'B' size 9 data: 108, 108, 108, 107, 107, 106,...
+    STRM nest size 96 
+      STMP type 'J' size 8 data: 81772,
+      TSMP type 'L' size 4 data: 9,
+      STNM type 'c' size 16 data: "Image uniformity"
+      UNIF type 'f' samplesize 4 repeat 9 data: 0.344, 0.344, 0.344, 0.372, 0.372, 0.372,...
+    STRM nest size 604 
+      STMP type 'J' size 8 data: 81772,
+      TSMP type 'L' size 4 data: 9,
+      STNM type 'c' size 52 data: "Scene classification[[CLASSIFIER_FOUR_CC,prob], ...]"
+      TYPE type 'c' size 2 data: "Ff"
+      SCEN type '?' samplesize 8 repeat 6 data: SNOW,0.110, URBA,0.290, INDO,0.330, WATR,0.060,...
+      SCEN type '?' samplesize 8 repeat 6 data: SNOW,0.150, URBA,0.340, INDO,0.230, WATR,0.070,...
+      SCEN type '?' samplesize 8 repeat 6 data: SNOW,0.140, URBA,0.350, INDO,0.200, WATR,0.050,...
+      SCEN type '?' samplesize 8 repeat 6 data: SNOW,0.180, URBA,0.340, INDO,0.190, WATR,0.040,...
+      SCEN type '?' samplesize 8 repeat 6 data: SNOW,0.140, URBA,0.300, INDO,0.210, WATR,0.110,...
+      SCEN type '?' samplesize 8 repeat 6 data: SNOW,0.160, URBA,0.370, INDO,0.170, WATR,0.120,...
+      SCEN type '?' samplesize 8 repeat 6 data: SNOW,0.140, URBA,0.220, INDO,0.250, WATR,0.140,...
+      SCEN type '?' samplesize 8 repeat 6 data: SNOW,0.160, URBA,0.260, INDO,0.290, WATR,0.070,...
+      SCEN type '?' samplesize 8 repeat 6 data: SNOW,0.200, URBA,0.250, INDO,0.240, WATR,0.080,...
+    STRM nest size 228 
+      STMP type 'J' size 8 data: 81772,
+      TSMP type 'L' size 4 data: 9,
+      STNM type 'c' size 35 data: "Predominant hue[[hue, weight], ...]"
+      TYPE type 'c' size 2 data: "BB"
+      HUES type '?' samplesize 2 repeat 3 data: 125,155, 86,60, 24,21,
+      HUES type '?' samplesize 2 repeat 3 data: 125,154, 86,61, 24,21,
+      HUES type '?' samplesize 2 repeat 3 data: 125,154, 86,60, 24,22,
+      HUES type '?' samplesize 2 repeat 3 data: 125,152, 86,61, 24,22,
+      HUES type '?' samplesize 2 repeat 3 data: 125,151, 86,62, 24,22,
+      HUES type '?' samplesize 2 repeat 3 data: 125,150, 86,63, 24,22,
+      HUES type '?' samplesize 2 repeat 3 data: 125,148, 86,64, 24,22,
+      HUES type '?' samplesize 2 repeat 3 data: 125,145, 86,68, 24,20,
+      HUES type '?' samplesize 2 repeat 3 data: 125,143, 86,69, 24,21,
+    STRM nest size 320 
+      STMP type 'J' size 8 data: 81772,
+      TSMP type 'L' size 4 data: 30,
+      STNM type 'c' size 28 data: "Face Coordinates and details"
+      TYPE type 'c' size 7 data: "Lffffff"
+      FACE type '?' samplesize 28 repeat 0 
+      FACE type '?' samplesize 28 repeat 0 
+      FACE type '?' samplesize 28 repeat 0 
+      FACE type '?' samplesize 28 repeat 0 
+      FACE type '?' samplesize 28 repeat 0 
+      FACE type '?' samplesize 28 repeat 0 
+      FACE type '?' samplesize 28 repeat 0 
+      FACE type '?' samplesize 28 repeat 0 
+      FACE type '?' samplesize 28 repeat 0 
+      FACE type '?' samplesize 28 repeat 0 
+      FACE type '?' samplesize 28 repeat 0 
+      FACE type '?' samplesize 28 repeat 0 
+      FACE type '?' samplesize 28 repeat 0 
+      FACE type '?' samplesize 28 repeat 0 
+      FACE type '?' samplesize 28 repeat 0 
+      FACE type '?' samplesize 28 repeat 0 
+      FACE type '?' samplesize 28 repeat 0 
+      FACE type '?' samplesize 28 repeat 0 
+      FACE type '?' samplesize 28 repeat 0 
+      FACE type '?' samplesize 28 repeat 0 
+      FACE type '?' samplesize 28 repeat 0 
+      FACE type '?' samplesize 28 repeat 0 
+      FACE type '?' samplesize 28 repeat 0 
+      FACE type '?' samplesize 28 repeat 0 
+      FACE type '?' samplesize 28 repeat 0 
+      FACE type '?' samplesize 28 repeat 0 
+      FACE type '?' samplesize 28 repeat 0 
+      FACE type '?' samplesize 28 repeat 0 
+      FACE type '?' samplesize 28 repeat 0 
+      FACE type '?' samplesize 28 repeat 0 
+    STRM nest size 568 
+      STMP type 'J' size 8 data: 18164,
+      TSMP type 'L' size 4 data: 19,
+      STNM type 'c' size 43 data: "GPS (Lat., Long., Alt., 2D speed, 3D speed)"
+      GPSF type 'L' size 4 data: 0,
+      GPSU type 'U' size 16 data: "191118234208.645",
+      GPSP type 'S' size 2 data: 9999,
+      UNIT type 'c' samplesize 3 repeat 5 data: "deg", "deg", "m", ...
+      SCAL type 'l' samplesize 4 repeat 5 data: 10000000, 10000000, 1000, 1000, 100,
+      GPS5 type 'l' samplesize 20 repeat 19 data: 420266244,-1292943386,9540240,0,0, 420264665,-1292940227,9540182,0,0,...
+    STRM nest size 308 
+      STMP type 'J' size 8 data: 81772,
+      TSMP type 'L' size 4 data: 29,
+      STNM type 'c' size 17 data: "CameraOrientation"
+      SCAL type 's' size 2 data: 32767,
+      CORI type 's' samplesize 8 repeat 29 data: 32766,46,69,34, 32766,-3,29,-7,...
+    STRM nest size 304 
+      STMP type 'J' size 8 data: 81772,
+      TSMP type 'L' size 4 data: 29,
+      STNM type 'c' size 16 data: "ImageOrientation"
+      SCAL type 's' size 2 data: 32767,
+      IORI type 's' samplesize 8 repeat 29 data: 32766,47,-57,22, 32766,156,-88,94,...
+    STRM nest size 248 
+      STMP type 'J' size 8 data: 81772,
+      TSMP type 'L' size 4 data: 29,
+      STNM type 'c' size 14 data: "Gravity Vector"
+      SCAL type 's' size 2 data: 32767,
+      GRAV type 's' samplesize 6 repeat 29 data: 0,0,0, 0,0,0, 0,0,0,...
+    STRM nest size 128 
+      STMP type 'J' size 8 data: 100,
+      TSMP type 'L' size 4 data: 10,
+      STNM type 'c' size 50 data: "Wind Processing[wind_enable, meter_value(0 - 100)]"
+      TYPE type 'c' size 2 data: "BB"
+      WNDM type '?' samplesize 2 repeat 10 data: 1,99, 1,93, 1,86, 1,77,...
+    STRM nest size 136 
+      STMP type 'J' size 8 data: 100,
+      TSMP type 'L' size 4 data: 10,
+      STNM type 'c' size 48 data: "Microphone is Wet[mic_wet, all_mics, confidence]"
+      TYPE type 'c' size 3 data: "BBB"
+      MWET type '?' samplesize 3 repeat 10 data: 0,1,0, 0,1,0, 0,1,0,...
+    STRM nest size 116 
+      STMP type 'J' size 8 data: 100,
+      TSMP type 'L' size 4 data: 10,
+      STNM type 'c' size 38 data: "AGC audio level[rms_level ,peak_level]"
+      TYPE type 'c' size 2 data: "bb"
+      AALP type '?' samplesize 2 repeat 10 data: 0,-63, 0,-40, -101,-30, -101,-22,...
+
+```

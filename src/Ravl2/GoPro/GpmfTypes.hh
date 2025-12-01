@@ -24,6 +24,8 @@ namespace Ravl2::GoPro
     int fix = 0;              //!< GPS fix type (0=no lock, 2=2D, 3=3D)
     int satellites = 0;       //!< Number of satellites
     float precision = 0;      //!< Dilution of precision (DOP)
+    int32_t days = 0;
+    int32_t seconds = 0;
 
     //! Default constructor
     GpsFix() = default;
@@ -140,7 +142,7 @@ namespace Ravl2::GoPro
       }
     }
 
-    //! Get number of samples
+    //! Get the number of samples
     [[nodiscard]] size_t size() const { return samples.size(); }
     [[nodiscard]] bool empty() const { return samples.empty(); }
 

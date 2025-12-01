@@ -2017,4 +2017,31 @@ namespace Ravl2::Video
 
     return VideoResult<void>();
   }
+
+  namespace
+  {
+    // return typeid(RGBPlanarImage<uint8_t>);
+    // return typeid(RGBAPlanarImage<uint8_t>);
+    // return typeid(YUV420Image<uint8_t>);
+    // return typeid(YUV420Image<uint16_t>);
+    // return typeid(YUV422Image<uint8_t>);
+    // return typeid(YUV444Image<uint8_t>);
+
+    // return typeid(Array<PixelYUYV8,2>);
+    // return typeid(Array<PixelUYVY8,2>);
+    // return typeid(Array<PixelI8,2>);
+
+    [[maybe_unused]] bool reg1 = registerTypeName(typeid(Ravl2::Video::VideoFrame<Ravl2::RGBPlanarImage<uint8_t>>),"Ravl2::Video::VideoFrame<Ravl2::RGBPlanarImage<uint8_t>>");
+    [[maybe_unused]] bool reg2 = registerTypeName(typeid(Ravl2::Video::VideoFrame<Ravl2::RGBAPlanarImage<uint8_t>>), "Ravl2::Video::VideoFrame<Ravl2::RGBAPlanarImage<uint8_t>>");
+    [[maybe_unused]] bool reg3 = registerTypeName(typeid(Ravl2::Video::VideoFrame<Ravl2::YUV420Image<uint8_t>>), "Ravl2::Video::VideoFrame<Ravl2::YUV420Image<uint8_t>>");
+    [[maybe_unused]] bool reg4 = registerTypeName(typeid(Ravl2::Video::VideoFrame<Ravl2::YUV420Image<uint16_t>>), "Ravl2::Video::VideoFrame<Ravl2::YUV420Image<uint16_t>>");
+    [[maybe_unused]] bool reg5 = registerTypeName(typeid(Ravl2::Video::VideoFrame<Ravl2::YUV422Image<uint8_t>>), "Ravl2::Video::VideoFrame<Ravl2::YUV422Image<uint8_t>>");
+    [[maybe_unused]] bool reg6 = registerTypeName(typeid(Ravl2::Video::VideoFrame<Ravl2::YUV444Image<uint8_t>>), "Ravl2::Video::VideoFrame<Ravl2::YUV444Image<uint8_t>>");
+    [[maybe_unused]] bool reg7 = registerTypeName(typeid(Ravl2::Video::VideoFrame<Ravl2::Array<PixelYUYV8,2>>), "Ravl2::Video::VideoFrame<Ravl2::Array<Ravl2::PixelYUYV8,2>>");
+    [[maybe_unused]] bool reg8 = registerTypeName(typeid(Ravl2::Video::VideoFrame<Ravl2::Array<PixelUYVY8,2>>), "Ravl2::Video::VideoFrame<Ravl2::Array<Ravl2::PixelUYVY8,2>>");
+    [[maybe_unused]] bool reg9 = registerTypeName(typeid(Ravl2::Video::VideoFrame<Ravl2::Array<PixelI8,2>>), "Ravl2::Video::VideoFrame<Ravl2::Array<Ravl2::PixelI8,2>>");
+
+
+
+  }
 } // namespace Ravl2::Video

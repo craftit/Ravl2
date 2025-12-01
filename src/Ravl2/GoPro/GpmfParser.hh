@@ -69,14 +69,21 @@ namespace Ravl2::GoPro
     //! @param timestamp Base timestamp for this packet
     void parseAccel(GPMF_stream* stream, std::vector<std::shared_ptr<Video::Frame>>& frames, Video::StreamItemId streamId, Video::MediaTime timestamp);
 
+    //! Set verbose mode
+    void setVerbose(bool verbose)
+    { mVerbose = verbose; }
+
   private:
+    //! Process a level
+    std::vector<std::shared_ptr<Video::Frame>> processLevel(GPMF_stream* levelStream, Video::StreamItemId streamId, Video::MediaTime timestamp, int level);
+
     //! Get scaling factor for a given FourCC
     //! @param stream GPMF stream
     //! @param fourcc FourCC identifier
     //! @return Scale factor (1.0 if not found)
     [[nodiscard]] float getScaleFactor(GPMF_stream* stream, uint32_t fourcc) const;
 
-    //! Get sample rate for a stream
+    //! Get the sample rate for a stream
     //! @param stream GPMF stream
     //! @return Sample rate in Hz (0 if not found)
     [[nodiscard]] float getSampleRate(GPMF_stream* stream) const;
@@ -101,17 +108,19 @@ namespace Ravl2::GoPro
     //! Handles all GPMF types including numeric, string, and complex types
     //! @param stream GPMF stream positioned at data
     //! @param fourcc The FourCC of the data stream
+    //! @param level
     //! @return JSON representation of the data (array, object, or scalar)
-    [[nodiscard]] nlohmann::json samplesToJson(GPMF_stream *stream, uint32_t fourcc);
+    [[nodiscard]] nlohmann::json samplesToJson(GPMF_stream *stream, uint32_t fourcc, int level);
 
     //! Convert nested object to JSON.
-    [[nodiscard]] nlohmann::json nestedToJson(GPMF_stream *stream, uint32_t fourcc);
+    [[nodiscard]] nlohmann::json nestedToJson(GPMF_stream *stream, uint32_t fourcc, int level);
 
     //! Internal stream counter for generating unique IDs
     Video::StreamItemId mNextId = 0;
 
     //! Whether to generate JSON metadata frames
     bool mEnableJson = true;
+    bool mVerbose = false;
   };
 
 } // namespace Ravl2::GoPro
