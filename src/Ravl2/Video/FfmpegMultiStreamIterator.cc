@@ -402,10 +402,7 @@ namespace Ravl2::Video
       }
 
       // Flush buffers for all codec contexts
-      for (auto* codecContext : m_codecContexts)
-      {
-        avcodec_flush_buffers(codecContext);
-      }
+      flushAllCodecs();
 
       // Set the flag indicating we've just performed a seek
       m_wasSeekOperation = true;
@@ -571,21 +568,15 @@ namespace Ravl2::Video
 
     // If all seek attempts failed, return the error
     if (!seekSuccess) {
-      SPDLOG_WARN("All seeking attempts failed for timestamp: {} ({})",
-                  toString(FfmpegMediaContainer::convertFfmpegError(result)),
-                  result
+      SPDLOG_ERROR("All seeking attempts failed for timestamp: {} - error code: {}",
+                   timestamp.count(),
+                   toString(FfmpegMediaContainer::convertFfmpegError(result))
       );
-
-      // Still try to continue by returning success
-      // This is a workaround for some files where seeking fails but we can still read frames
-      SPDLOG_DEBUG("Attempting to continue despite seek failure");
+      return VideoResult<void>(FfmpegMediaContainer::convertFfmpegError(result));
     }
 
     // Flush buffers for all codec contexts regardless of seek result
-    for (auto* codecContext : m_codecContexts)
-    {
-      avcodec_flush_buffers(codecContext);
-    }
+    flushAllCodecs();
 
     // Set the flag indicating we've just performed a seek
     m_wasSeekOperation = true;
@@ -636,9 +627,7 @@ namespace Ravl2::Video
 
         if (result >= 0) {
           // Flush codecs again
-          for (auto* codecContext : m_codecContexts) {
-            avcodec_flush_buffers(codecContext);
-          }
+          flushAllCodecs();
 
           // Try to get a frame at this position
           nextResult = next();
@@ -651,9 +640,9 @@ namespace Ravl2::Video
         }
       }
 
-      // As a last resort, try to read from current position even if seeking failed
-      SPDLOG_DEBUG("All seeking approaches failed, returning success anyway to allow recovery");
-      return VideoResult<void>();
+      // If all recovery attempts failed, return error
+      SPDLOG_ERROR("All seeking and recovery attempts failed");
+      return nextResult;
     }
 
     return VideoResult<void>();
@@ -661,10 +650,34 @@ namespace Ravl2::Video
 
   VideoResult<void> FfmpegMultiStreamIterator::seekToIndex(int64_t index)
   {
-    // FFmpeg doesn't have direct frame index seeking for most formats
-    // We would need to estimate the timestamp and use timestamp-based seeking
+    // Try timestamp-based seeking if we know the frame rate (much faster than frame-by-frame)
+    for (size_t i = 0; i < m_streams.size(); ++i)
+    {
+      auto* stream = m_streams[i];
+      if (stream && stream->avg_frame_rate.num > 0 && stream->avg_frame_rate.den > 0)
+      {
+        // Calculate estimated timestamp from frame index and frame rate
+        double fps = static_cast<double>(stream->avg_frame_rate.num) / stream->avg_frame_rate.den;
+        int64_t estimatedTime = static_cast<int64_t>((static_cast<double>(index) / fps) * static_cast<double>(AV_TIME_BASE));
 
-    // For simplicity, we'll reset to the beginning and advance index times
+        SPDLOG_DEBUG("Seeking to index {} using estimated timestamp {} us (fps: {})",
+                     index, estimatedTime, fps);
+
+        auto result = seek(MediaTime(estimatedTime), SeekFlags::Precise);
+        if (result.isSuccess())
+        {
+          // May not be exactly at index, but close enough for most use cases
+          return result;
+        }
+
+        SPDLOG_DEBUG("Timestamp-based seek failed, falling back to frame-by-frame");
+        break;
+      }
+    }
+
+    // Fallback to frame-by-frame if no frame rate available or timestamp seek failed
+    SPDLOG_DEBUG("Using frame-by-frame seeking to index {}", index);
+
     auto result = reset();
     if (!result.isSuccess())
     {
@@ -750,41 +763,10 @@ namespace Ravl2::Video
       }
     }
 
-    // If we didn't find it going forward, try going backward
-    // First seek again to get back near our target
-    seekResult = iteratorCopy->seek(targetTime, SeekFlags::Previous);
-    if (!seekResult.isSuccess())
-    {
-      SPDLOG_WARN("Failed to seek backward to PTS {}: {}", pts, toString(seekResult.error()));
-      return VideoResult<std::shared_ptr<Frame>>(seekResult.error());
-    }
-
-    // Now search backward
-    for (int i = 0; i < MAX_FRAME_SEARCH && !iteratorCopy->isAtEnd(); i++)
-    {
-      if (iteratorCopy->currentFrame() && iteratorCopy->currentFrame()->id() == id)
-      {
-        return VideoResult<std::shared_ptr<Frame>>(iteratorCopy->currentFrame());
-      }
-
-      // Try to read previous (if implemented) or break
-      auto prevResult = iteratorCopy->previous();
-      if (!prevResult.isSuccess())
-      {
-        // If previous() is not implemented, we can't search backward
-        break;
-      }
-
-      // If we've gone too far back, stop searching
-      if (iteratorCopy->currentFrame() &&
-          iteratorCopy->currentFrame()->timestamp() < targetTime - MediaTime(AV_TIME_BASE / 2)) // 500ms before
-      {
-        break;
-      }
-    }
-
-    // If all attempts failed, return not found
-    SPDLOG_WARN("Could not find frame with ID: {}", id);
+    // NOTE: Backward frame search not implemented since previous() is not supported.
+    // If frame not found going forward, we return NotFound rather than attempting
+    // backward search. This is a known limitation.
+    SPDLOG_WARN("Could not find frame with ID: {} (backward search not implemented)", id);
     return VideoResult<std::shared_ptr<Frame>>(VideoErrorCode::NotFound);
   }
 
@@ -805,10 +787,7 @@ namespace Ravl2::Video
     }
 
     // Flush buffers for all codec contexts
-    for (auto* codecContext : m_codecContexts)
-    {
-      avcodec_flush_buffers(codecContext);
-    }
+    flushAllCodecs();
 
     // Reset state
     m_isAtEnd = false;
@@ -1150,6 +1129,15 @@ namespace Ravl2::Video
       pts = m_nextFrameIds[localIndex]++;
     }
 
+    // Check for overflow - ensure PTS fits in the available bits
+    const int64_t maxPts = (INT64_MAX >> m_streamBits);
+    if (pts > maxPts)
+    {
+      SPDLOG_WARN("PTS {} exceeds maximum {} for frame ID encoding with {} stream bits - clamping to max",
+                  pts, maxPts, m_streamBits);
+      pts = maxPts;  // Clamp to maximum representable value
+    }
+
     // Create a unique ID by combining the pts and stream index
     // Format: [pts value in higher bits] | [stream index in lower bits]
     StreamItemId id = (pts << m_streamBits) | (static_cast<int64_t>(localIndex) & ((1LL << m_streamBits) - 1));
@@ -1273,26 +1261,56 @@ namespace Ravl2::Video
 
     auto* stream = m_streams[localIndex];
 
+    // Clone frame if needed for device captures to prevent buffer pool exhaustion
+    AVFrame* frameToUse = frame;
+    AVFrame* clonedFrame = nullptr;
+    if (m_needsFrameClone)
+    {
+      clonedFrame = av_frame_clone(frame);
+      if (!clonedFrame)
+      {
+        SPDLOG_ERROR("Failed to clone frame for device input");
+        return nullptr;
+      }
+      frameToUse = clonedFrame;
+      SPDLOG_TRACE("Cloned video frame for device capture");
+    }
+
     // Get the timestamp in our MediaTime format
     MediaTime timestamp(0);
 
     // Use int64_t comparison instead of direct AV_NOPTS_VALUE to avoid old-style cast warning
     int64_t nopts = AV_NOPTS_VALUE;
-    if (frame->pts != nopts)
+    if (frameToUse->pts != nopts)
     {
-      int64_t pts_us = av_rescale_q(frame->pts, stream->time_base, AVRational{1, AV_TIME_BASE});
+      int64_t pts_us = av_rescale_q(frameToUse->pts, stream->time_base, AVRational{1, AV_TIME_BASE});
       timestamp = MediaTime(pts_us);
     }
 
     // Create the image data from the frame
     ImageT frameData;
-    makeImage(frameData, frame);
+    bool success = makeImage(frameData, frameToUse);
+
+    // Note: If we cloned the frame, DON'T free it here - makeImage() creates shared_ptr
+    // references that will manage the frame's lifetime. The frame will be freed when
+    // the last reference (in the ImageT) is destroyed.
+
+    if (!success)
+    {
+      SPDLOG_ERROR("Failed to create image from frame");
+      // On error, free the cloned frame if we created one
+      if (clonedFrame)
+      {
+        av_frame_free(&clonedFrame);
+      }
+      return nullptr;
+    }
 
     // Create a new video frame
     auto videoFrame = std::make_shared<VideoFrame<ImageT>>(frameData, id, timestamp);
 
     // Set keyframe flag
-    videoFrame->setKeyFrame(frame->pict_type == AV_PICTURE_TYPE_I);
+    videoFrame->setKeyFrame(frameToUse->pict_type == AV_PICTURE_TYPE_I);
 
     return videoFrame;
   }
@@ -1310,10 +1328,26 @@ namespace Ravl2::Video
     auto* stream = m_streams[localIndex];
     auto* codecContext = m_codecContexts[localIndex];
 
+    // Clone frame if needed for device captures to prevent buffer pool exhaustion
+    AVFrame* frameToUse = frame;
+    AVFrame* clonedFrame = nullptr;
+    if (m_needsFrameClone)
+    {
+      clonedFrame = av_frame_clone(frame);
+      if (!clonedFrame)
+      {
+        SPDLOG_ERROR("Failed to clone frame for device input");
+        return nullptr;
+      }
+      frameToUse = clonedFrame;
+      SPDLOG_TRACE("Cloned audio frame for device capture");
+    }
+
     // Get number of channels from codec context
     int channels = codecContext->ch_layout.nb_channels;
     if (channels <= 0)
     {
+      if (clonedFrame) av_frame_free(&clonedFrame);
       return nullptr;
     }
 
@@ -1322,20 +1356,28 @@ namespace Ravl2::Video
 
     // Use int64_t comparison instead of direct AV_NOPTS_VALUE to avoid old-style cast warning
     int64_t nopts = AV_NOPTS_VALUE;
-    if (frame->pts != nopts)
+    if (frameToUse->pts != nopts)
     {
-      int64_t pts_us = av_rescale_q(frame->pts, stream->time_base, AVRational{1, AV_TIME_BASE});
+      int64_t pts_us = av_rescale_q(frameToUse->pts, stream->time_base, AVRational{1, AV_TIME_BASE});
       timestamp = MediaTime(pts_us);
     }
 
     // Create a 2D array for the audio data (samples x channels)
-    Array<SampleT, 2> audioData({static_cast<size_t>(frame->nb_samples), static_cast<size_t>(channels)});
+    Array<SampleT, 2> audioData({static_cast<size_t>(frameToUse->nb_samples), static_cast<size_t>(channels)});
 
     // Copy audio data from frame to audioData
-    if (!copyAudioSamples(frame, audioData, channels, codecContext->sample_fmt))
+    if (!copyAudioSamples(frameToUse, audioData, channels, codecContext->sample_fmt))
     {
       SPDLOG_ERROR("Failed to copy audio samples for frame");
+      if (clonedFrame) av_frame_free(&clonedFrame);
       return nullptr;
+    }
+
+    // Note: Audio data is copied into audioData, so we CAN safely free the cloned frame
+    // (unlike video frames where makeImage() creates references to the frame data)
+    if (clonedFrame)
+    {
+      av_frame_free(&clonedFrame);
     }
 
     // Create a new audio chunk
@@ -1397,49 +1439,35 @@ namespace Ravl2::Video
       return false;
     }
 
-    // Create a shared_ptr with a custom deleter to free the frame when done
-    std::shared_ptr avFrameHandle = std::shared_ptr<uint8_t[]>(newFrame->data[0],
-                                                               [newFrame](uint8_t* data) mutable
-                                                               {
-                                                                 (void)data;
-                                                                 av_frame_free(&newFrame);
-                                                               }
-    );
+    // Create a shared_ptr for the frame with custom deleter
+    // Use AVFrame* as the managed type for clarity
+    std::shared_ptr<AVFrame> frameHandle(newFrame, [](AVFrame* f) {
+      av_frame_free(&f);
+    });
 
     // Set up each plane in the PlanarImage
     int planeIndex = 0;
-    img.forEachPlane([avFrameHandle,range,&planeIndex,newFrame]<typename PlaneArgT>(PlaneArgT& plane)
+    img.forEachPlane([frameHandle, range, &planeIndex]<typename PlaneArgT>(PlaneArgT& plane)
       {
         using PlaneT = std::decay_t<PlaneArgT>;
         auto localRange = PlaneT::scale_type::calculateRange(range);
-        //SPDLOG_INFO("Setting up plane {} ({}) with range {} (master range {})  Data:{} ", planeIndex, toString(plane.getChannelType()), localRange, range,static_cast<void *>(newFrame->data[planeIndex]));
-        assert(newFrame->data[planeIndex] != nullptr);
-        //using value_type = DataT;
-        //using array_type = Array<DataT, Dims>;
         using PixelTypeT = typename PlaneT::value_type;
-        PixelTypeT *pixelData = reinterpret_cast<PixelTypeT *>(newFrame->data[planeIndex]);
-        if constexpr (std::is_same_v<PixelTypeT, uint8_t>) {
-          plane.data() = Array<PixelTypeT, 2>(pixelData,
-                                           localRange,
-                                           {newFrame->linesize[planeIndex], 1},
-                                           avFrameHandle
-          );
-        } else {
-          std::shared_ptr avFramePlaneHandle = std::shared_ptr<PixelTypeT[]>(pixelData,
-                                                                     [avFrameHandle](PixelTypeT* data) mutable
-                                                                     {
-                                                                       (void)data;
-                                                                       avFrameHandle.reset();
-                                                                     }
-          );
-          int stride = newFrame->linesize[planeIndex]/static_cast<int>(sizeof(PixelTypeT));
-          RavlAlwaysAssert(newFrame->linesize[planeIndex] % static_cast<int>(sizeof(PixelTypeT)) == 0);
-          plane.data() = Array<PixelTypeT, 2>(pixelData,
-                                           localRange,
-                                           {stride, 1},
-                                           avFramePlaneHandle
-          );
-        }
+
+        AVFrame* avFrame = frameHandle.get();
+        assert(avFrame->data[planeIndex] != nullptr);
+
+        PixelTypeT* pixelData = reinterpret_cast<PixelTypeT*>(avFrame->data[planeIndex]);
+        int stride = avFrame->linesize[planeIndex] / static_cast<int>(sizeof(PixelTypeT));
+        RavlAlwaysAssert(avFrame->linesize[planeIndex] % static_cast<int>(sizeof(PixelTypeT)) == 0);
+
+        // Use aliasing constructor: shares ownership with frameHandle but stores pixelData pointer
+        std::shared_ptr<PixelTypeT[]> planeHandle(frameHandle, pixelData);
+
+        plane.data() = Array<PixelTypeT, 2>(pixelData,
+                                             localRange,
+                                             {stride, 1},
+                                             planeHandle
+        );
         planeIndex++;
       }
     );
@@ -1473,24 +1501,26 @@ namespace Ravl2::Video
       return false;
     }
 
-    // Create a shared_ptr with a custom deleter to free the frame when done
-    auto *pixelPtr = reinterpret_cast<PixelT *>(newFrame->data[0]);
-    std::shared_ptr avFrameHandle = std::shared_ptr<PixelT []>(pixelPtr,
-                                                               [newFrame](PixelT* data) mutable
-                                                               {
-                                                                 (void)data;
-                                                                 av_frame_free(&newFrame);
-                                                               }
-    );
+    // Create a shared_ptr for the frame with custom deleter
+    std::shared_ptr<AVFrame> frameHandle(newFrame, [](AVFrame* f) {
+      av_frame_free(&f);
+    });
 
-    // Set up each plane in the PlanarImage
-    int planeIndex = 0;
-    SPDLOG_DEBUG("Setting up plane {} ({}) with range {}  Data:{} {} {} LineSize:{} ", planeIndex, typeName(typeid(PixelT)),  range,static_cast<void *>(newFrame->data[planeIndex]), static_cast<void *>(newFrame->data[1]),static_cast<void *>(newFrame->data[2]), newFrame->linesize[planeIndex]);
-    RavlAssert((newFrame->linesize[planeIndex] % static_cast<int>(sizeof(PixelT))) == 0);
+    auto* pixelPtr = reinterpret_cast<PixelT*>(newFrame->data[0]);
+    int stride = newFrame->linesize[0] / static_cast<int>(sizeof(PixelT));
+    RavlAssert((newFrame->linesize[0] % static_cast<int>(sizeof(PixelT))) == 0);
+
+    SPDLOG_DEBUG("Setting up packed pixel plane ({}) with range {} Data:{} LineSize:{}",
+                 typeName(typeid(PixelT)), range,
+                 static_cast<void*>(newFrame->data[0]), newFrame->linesize[0]);
+
+    // Use aliasing constructor: shares ownership with frameHandle but stores pixelPtr
+    std::shared_ptr<PixelT[]> pixelHandle(frameHandle, pixelPtr);
+
     img = Ravl2::Array<PixelT, 2>(pixelPtr,
-                           range,
-                           {newFrame->linesize[planeIndex]/static_cast<int>(sizeof(PixelT)), 1},
-                           avFrameHandle
+                                   range,
+                                   {stride, 1},
+                                   pixelHandle
     );
 
     return true;
@@ -1500,6 +1530,18 @@ namespace Ravl2::Video
   {
     // Cast the container to FfmpegMediaContainer
     return *m_ffmpegContainer;
+  }
+
+  void FfmpegMultiStreamIterator::flushAllCodecs()
+  {
+    // Flush buffers for all codec contexts (skip nullptr for DATA streams)
+    for (auto* codecContext : m_codecContexts)
+    {
+      if (codecContext)
+      {
+        avcodec_flush_buffers(codecContext);
+      }
+    }
   }
 
   VideoResult<void> FfmpegMultiStreamIterator::fillPacketQueue()
@@ -1623,7 +1665,7 @@ namespace Ravl2::Video
     MediaTime timestamp,
     SeekFlags flags)
   {
-    // Initialize with invalid values
+    // Initialise with invalid values
     KeyframeInfo nearestKeyframe{-1, -1, false, 0};
 
     // Build keyframe index if it hasn't been built yet
@@ -1637,7 +1679,7 @@ namespace Ravl2::Video
       }
     }
 
-    // If keyframe index is empty, return an invalid keyframe
+    // If the keyframe index is empty, return an invalid keyframe
     if (m_keyframeIndex.empty())
     {
       SPDLOG_DEBUG("Keyframe index is empty");
@@ -1850,10 +1892,7 @@ namespace Ravl2::Video
     }
 
     // Flush all codec contexts to reset state
-    for (auto* codecContext : m_codecContexts)
-    {
-      avcodec_flush_buffers(codecContext);
-    }
+    flushAllCodecs();
 
     SPDLOG_DEBUG("Keyframe index built with {} keyframes across {} streams",
                  keyframesFound,

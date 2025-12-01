@@ -29,6 +29,19 @@ namespace Ravl2::GoPro
 namespace Ravl2::Video
 {
   //! Implementation of StreamIterator that provides frames for multiple streams in a FFmpeg-based media container
+  //!
+  //! This iterator maintains temporal ordering across all streams by buffering decoded frames
+  //! in a priority queue sorted by presentation timestamp (PTS).
+  //!
+  //! @note Thread Safety: This class is NOT thread-safe. Each thread must create its own iterator instance.
+  //!       Multiple iterators may share the same FfmpegMediaContainer, but the container must provide
+  //!       thread-safe access if used concurrently.
+  //!
+  //! @note Frame Cloning: For device capture inputs (webcam, AVFoundation, V4L2, DirectShow), frames are
+  //!       automatically cloned to prevent buffer pool exhaustion. This is detected automatically based
+  //!       on the input format.
+  //!
+  //! @note Keyframe Index: The keyframe index is built lazily on first seek.
   class FfmpegMultiStreamIterator final : public StreamIterator
   {
   public:
@@ -56,6 +69,9 @@ namespace Ravl2::Video
     VideoResult<void> seekToIndex(int64_t index) override;
 
     //! Get a specific frame by its unique ID
+    //! @note This method creates a temporary iterator to seek to the frame, so it's not thread-safe
+    //!       with respect to the original iterator. Do not call while using the iterator from another thread.
+    //! @note Backward search is not implemented - only searches forward from the seek position.
     [[nodiscard]] VideoResult<std::shared_ptr<Frame>> getFrameById(StreamItemId id) const override;
 
     //! Reset the iterator to the beginning of all streams
@@ -116,6 +132,9 @@ namespace Ravl2::Video
 
     //! Get direct access to the FfmpegMediaContainer
     [[nodiscard]] FfmpegMediaContainer& ffmpegContainer() const;
+
+    //! Flush all codec contexts (skipping nullptr for DATA streams)
+    void flushAllCodecs();
 
     //! Container for the media file
     std::shared_ptr<FfmpegMediaContainer> m_ffmpegContainer;
