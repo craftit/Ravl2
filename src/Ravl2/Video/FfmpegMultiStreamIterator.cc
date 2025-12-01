@@ -259,6 +259,9 @@ namespace Ravl2::Video
       SPDLOG_WARN("Failed to pre-fill packet queue: {}", toString(queueResult.error()));
     }
 
+    // Calculate appropriate queue size based on stream properties
+    calculateQueueSize();
+
     // Read the first frame
     auto result = next();
     if (!result.isSuccess() && result.error() != VideoErrorCode::EndOfStream)
@@ -272,6 +275,67 @@ namespace Ravl2::Video
       SPDLOG_WARN("Failed to read first frame: {}", toString(result.error()));
       throw std::runtime_error("Failed to read first frame");
     }
+  }
+
+  void FfmpegMultiStreamIterator::calculateQueueSize()
+  {
+    // Start with a reasonable default
+    m_minQueueSize = 64;
+
+    // Check each video stream for GOP size
+    for (size_t i = 0; i < m_streamIndices.size(); ++i)
+    {
+      if (i >= m_streams.size() || i >= m_codecContexts.size())
+        continue;
+
+      auto* stream = m_streams[i];
+      if (!stream || stream->codecpar->codec_type != AVMEDIA_TYPE_VIDEO)
+        continue;
+
+      // Try to get GOP size from codec context
+      int gopSize = 0;
+      auto* codecContext = m_codecContexts[i];
+      if (codecContext && codecContext->gop_size > 0)
+      {
+        gopSize = codecContext->gop_size;
+        SPDLOG_DEBUG("Video stream {} has GOP size: {}", i, gopSize);
+      }
+      else
+      {
+        // Try to get from codec parameters or stream
+        // For most codecs, we can estimate from frame rate and keyframe interval
+        if (stream->avg_frame_rate.num > 0 && stream->avg_frame_rate.den > 0)
+        {
+          // Assume 2 second keyframe interval if not known
+          double fps = static_cast<double>(stream->avg_frame_rate.num) / stream->avg_frame_rate.den;
+          gopSize = static_cast<int>(fps * 2.0);
+          SPDLOG_DEBUG("Video stream {} estimated GOP size: {} (based on fps {})",
+                       i, gopSize, fps);
+        }
+        else
+        {
+          // Conservative default for unknown
+          gopSize = 60;
+          SPDLOG_DEBUG("Video stream {} using default GOP size: {}", i, gopSize);
+        }
+      }
+
+      // Need at least 2x GOP size for safe B-frame reordering
+      // Plus extra buffer for multi-stream scenarios
+      std::size_t requiredSize = static_cast<std::size_t>(gopSize * 2);
+      if (m_streamIndices.size() > 1)
+      {
+        // Add extra buffer for multi-stream interleaving
+        requiredSize = static_cast<std::size_t>(gopSize * 3);
+      }
+
+      m_minQueueSize = std::max(m_minQueueSize, requiredSize);
+    }
+
+    // Cap at reasonable maximum to avoid excessive memory (512 frames ~ 17s at 30fps)
+    m_minQueueSize = std::min(m_minQueueSize, std::size_t(512));
+
+    SPDLOG_INFO("Set packet queue minimum size to: {}", m_minQueueSize);
   }
 
   FfmpegMultiStreamIterator::~FfmpegMultiStreamIterator()
@@ -306,7 +370,7 @@ namespace Ravl2::Video
     {
       // Ensure the priority queue has enough frames for proper temporal ordering
       // Fill the queue if it's empty or below the minimum threshold
-      if (m_packetQueue.empty() || (!m_isAtEnd && m_packetQueue.size() < MIN_QUEUE_SIZE))
+      if (m_packetQueue.empty() || (!m_isAtEnd && m_packetQueue.size() < m_minQueueSize))
       {
         auto fillResult = fillPacketQueue();
 
@@ -330,6 +394,17 @@ namespace Ravl2::Video
 
       SPDLOG_TRACE("Popped frame from queue: PTS={} us, streamIndex={}, queue size now={}",
                    nextPacket.pts, nextPacket.streamIndex, m_packetQueue.size());
+
+#ifndef NDEBUG
+      // Validate timestamp ordering in debug builds
+      if (m_lastDeliveredPts >= 0 && nextPacket.pts < m_lastDeliveredPts)
+      {
+        SPDLOG_WARN("Non-monotonic PTS detected: current={} < previous={}, delta={} us (stream {})",
+                    nextPacket.pts, m_lastDeliveredPts,
+                    nextPacket.pts - m_lastDeliveredPts, nextPacket.streamIndex);
+      }
+      m_lastDeliveredPts = nextPacket.pts;
+#endif
 
       // Update the current frame and stream index
       setCurrentFrame(nextPacket.frame);
@@ -411,6 +486,11 @@ namespace Ravl2::Video
       // Clear packet queue after seeking
       std::priority_queue<PacketInfo, std::vector<PacketInfo>, PacketInfoComparator> emptyQueue;
       m_packetQueue.swap(emptyQueue);
+
+#ifndef NDEBUG
+      // Reset timestamp validation after seek
+      m_lastDeliveredPts = -1;
+#endif
 
       // If we're seeking to a specific keyframe but not exactly at the requested timestamp,
       // we may need to advance to get closer to the target
@@ -585,6 +665,11 @@ namespace Ravl2::Video
     // Clear packet queue after seeking
     std::priority_queue<PacketInfo, std::vector<PacketInfo>, PacketInfoComparator> emptyQueue;
     m_packetQueue.swap(emptyQueue);
+
+#ifndef NDEBUG
+    // Reset timestamp validation after seek
+    m_lastDeliveredPts = -1;
+#endif
 
     // Reset frame ID counters for frames without PTS after seeking
     // This ensures we generate appropriate frame IDs that reflect the new position
@@ -1565,7 +1650,7 @@ namespace Ravl2::Video
     }
 
     // Keep reading packets until we have enough in the queue
-    while (m_packetQueue.size() < MIN_QUEUE_SIZE)
+    while (m_packetQueue.size() < m_minQueueSize)
     {
       // Clear any previous packet data
       av_packet_unref(m_packet);
@@ -1615,22 +1700,29 @@ namespace Ravl2::Video
             // Get the frame's presentation timestamp
             int64_t pts = 0;
 
-            // Get the timestamp, checking packet-level timestamps first
-            // Priority: packet PTS > packet DTS > frame timestamp
-            if (m_packet->pts != AV_NOPTS_VALUE)
+            // Priority: frame PTS > packet PTS > packet DTS
+            // Frame PTS is set correctly by the decoder and handles B-frames, multi-frame packets, etc.
+            if (frame)
             {
-              // Use the packet's presentation timestamp
+              // Use frame timestamp (decoder sets this correctly for each frame)
+              // Note: timestamp can legitimately be 0 for the first frame
+              pts = frame->timestamp().count();
+            }
+            else if (m_packet->pts != AV_NOPTS_VALUE)
+            {
+              // Fallback to packet PTS if frame has no timestamp
               pts = av_rescale_q(m_packet->pts, stream->time_base, AVRational{1, AV_TIME_BASE});
             }
             else if (m_packet->dts != AV_NOPTS_VALUE)
             {
-              // Use the decoding timestamp as fallback
+              // Last resort: use DTS (can be incorrect for B-frames, but better than nothing)
               pts = av_rescale_q(m_packet->dts, stream->time_base, AVRational{1, AV_TIME_BASE});
             }
-            else if (frame && frame->timestamp().count() != 0)
+            else
             {
-              // Use frame timestamp if packet timestamps unavailable
-              pts = frame->timestamp().count();
+              // Generate synthetic timestamp if nothing available
+              SPDLOG_WARN("No timestamp available for frame in stream {}, using synthetic", localIndex);
+              pts = m_nextFrameIds[localIndex]++;
             }
 
             // Add the frame to the queue

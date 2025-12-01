@@ -226,10 +226,19 @@ namespace Ravl2::Video
 
     //! The minimum buffer size for presentation ordering
     //! Must be large enough to contain all frames needed for temporal reordering (including B-frames)
-    static constexpr std::size_t MIN_QUEUE_SIZE = 32;
+    //! This is calculated based on GOP size in constructor
+    std::size_t m_minQueueSize = 64; // Default, updated in constructor
+
+    //! Calculate appropriate queue size based on stream properties
+    void calculateQueueSize();
 
     //! Maximum number of keyframes we will index on open.
     static constexpr std::size_t MAX_KEYFRAME_INDEX= 10000;
+
+#ifndef NDEBUG
+    //! Last delivered PTS for timestamp validation (debug builds only)
+    int64_t m_lastDeliveredPts = -1;
+#endif
 
     //! Max frame search when looking for a time code.
     static constexpr int MAX_FRAME_SEARCH = 30;
