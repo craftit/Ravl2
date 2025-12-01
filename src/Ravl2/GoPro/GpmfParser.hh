@@ -10,6 +10,7 @@
 #include <optional>
 #include <vector>
 #include <memory>
+#include <map>
 
 // Forward declare GPMF_stream to avoid including C header in our header
 struct GPMF_stream;
@@ -128,16 +129,6 @@ namespace Ravl2::GoPro
     //! @return String representation (4 characters)
     [[nodiscard]] static std::string fourccToString(uint32_t fourcc);
 
-    //! Extract device-level metadata (DVID, DVNM, VERS) from GPMF stream
-    //! @param stream GPMF stream positioned at DEVC level
-    //! @return JSON object with device info
-    [[nodiscard]] nlohmann::json extractDeviceInfo(GPMF_stream* stream);
-
-    //! Extract stream metadata (SCAL, SIUN, TSMP, ORIN, etc.)
-    //! @param stream GPMF stream positioned at a data FourCC
-    //! @param fourcc The FourCC of the data stream
-    //! @return JSON object with stream metadata
-    [[nodiscard]] nlohmann::json extractStreamMetadata(GPMF_stream* stream, uint32_t fourcc);
 
     //! Convert GPMF data to JSON based on type
     //! Handles all GPMF types including numeric, string, and complex types
@@ -164,6 +155,16 @@ namespace Ravl2::GoPro
     //! Whether to generate JSON metadata frames
     bool mEnableJson = true;
     bool mVerbose = false;
+
+    //! Track timing information for sample rate calculation
+    //! Maps FourCC -> {last_stmp, last_sample_count, calculated_rate}
+    struct TimingInfo {
+      uint64_t lastStmp = 0;      // Last STMP value (microseconds)
+      uint32_t lastSampleCount = 0; // Last TSMP value (sample count)
+      float calculatedRate = 0.0f;   // Calculated sample rate (Hz)
+      bool hasData = false;          // Whether we have previous data
+    };
+    mutable std::map<uint32_t, TimingInfo> mTimingInfo;
   };
 
 } // namespace Ravl2::GoPro

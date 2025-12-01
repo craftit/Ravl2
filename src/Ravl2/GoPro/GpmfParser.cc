@@ -631,39 +631,34 @@ namespace Ravl2::GoPro
     return 1.0f;
   }
 
-  float GpmfParser::getSampleRate([[maybe_unused]] GPMF_stream *stream) const
+  float GpmfParser::getSampleRate(GPMF_stream *stream) const
   {
     if(stream == nullptr) {
       return 0.0f;
     }
 
+    uint32_t fourcc = GPMF_Key(stream);
+
     // Save the current position
     GPMF_stream tempStream = *stream;
 
-    // Strategy 1: Look for TSMP (Total SaMPles) field
-    // IMPORTANT: TSMP is the NUMBER OF SAMPLES in this packet, NOT a timestamp!
-    // It should match the repeat count of the data field. It's a redundant field for validation.
-    // DO NOT use TSMP to calculate sample rate - it's just a sample count.
-    // For Hero 8: TSMP=19 means 19 GPS samples in packet
-    // For Hero 13: TSMP=1 means 1 GPS sample in packet
-    if(GPMF_FindPrev(&tempStream, MAKEID('T', 'S', 'M', 'P'), GPMF_RECURSE_LEVELS) == GPMF_OK) {
-      auto *tsmpData = static_cast<uint32_t *>(GPMF_RawData(&tempStream));
-      if(tsmpData != nullptr) {
-        uint32_t sampleCount = GPMF_Repeat(&tempStream);
-        if(sampleCount > 0) {
-          // IMPORTANT: GPMF data is big-endian, must byte-swap!
-          uint32_t tsmpValue = BYTESWAP32(tsmpData[0]);// TSMP is sample count
+    // Strategy 1: Calculate from STMP (start time) differences between packets
+    // STMP is the arrival time in microseconds for the first sample
+    // TSMP is the number of samples in this packet
+    uint64_t currentStmp = 0;
+    uint32_t currentTsmp = 0;
+    bool hasStmp = false;
+    bool hasTsmp = false;
 
-          // Get number of samples from the parent data stream
-          uint32_t dataRepeat = GPMF_Repeat(stream);
-
-          // Validate TSMP matches data repeat count
-          if(tsmpValue != dataRepeat) {
-            SPDLOG_WARN("TSMP value ({}) does not match data repeat count ({})", tsmpValue, dataRepeat);
-          }
-
-          // TSMP doesn't tell us the sample rate - fall through to other strategies
-          SPDLOG_DEBUG("Found TSMP: {} samples (matches data repeat: {})", tsmpValue, dataRepeat);
+    // Look for STMP (start time in microseconds)
+    if(GPMF_FindPrev(&tempStream, MAKEID('S', 'T', 'M', 'P'), GPMF_RECURSE_LEVELS) == GPMF_OK) {
+      auto *stmpData = static_cast<uint64_t *>(GPMF_RawData(&tempStream));
+      if(stmpData != nullptr) {
+        // STMP is type 'J' (64-bit unsigned), big-endian
+        currentStmp = BYTESWAP64(stmpData[0]);
+        hasStmp = true;
+        if(mVerbose) {
+          SPDLOG_INFO("Found STMP: {} μs for FourCC: {}", currentStmp, fourccToString(fourcc));
         }
       }
     }
@@ -671,39 +666,75 @@ namespace Ravl2::GoPro
     // Reset temp stream
     tempStream = *stream;
 
-    // Strategy 2: Look for ORIN (Original Sample Rate) field
-    // NOTE: ORIN is type 'c' (string) containing axis orientation like "ZXY", NOT a sample rate!
-    // This strategy is disabled - ORIN does not contain sample rate information
-    // if (GPMF_FindPrev(&tempStream, MAKEID('O', 'R', 'I', 'N'), GPMF_RECURSE_LEVELS) == GPMF_OK) {
-    //   // This was incorrectly trying to read ORIN as a numeric sample rate
-    // }
+    // Get sample count from the data repeat field (not TSMP, which may be cumulative)
+    currentTsmp = GPMF_Repeat(stream);
+    hasTsmp = (currentTsmp > 0);
 
-    // Strategy 3: Detect based on FourCC of the current stream (fallback)
-    uint32_t fourcc = GPMF_Key(stream);
-    char fourccStr[5] = {0};
-    fourccStr[0] = static_cast<char>((fourcc >> 0) & 0xFF);
-    fourccStr[1] = static_cast<char>((fourcc >> 8) & 0xFF);
-    fourccStr[2] = static_cast<char>((fourcc >> 16) & 0xFF);
-    fourccStr[3] = static_cast<char>((fourcc >> 24) & 0xFF);
+    // Also log TSMP for comparison (for debugging)
+    tempStream = *stream;
+    if(GPMF_FindPrev(&tempStream, MAKEID('T', 'S', 'M', 'P'), GPMF_RECURSE_LEVELS) == GPMF_OK) {
+      auto *tsmpData = static_cast<uint32_t *>(GPMF_RawData(&tempStream));
+      if(tsmpData != nullptr) {
+        uint32_t tsmpValue = BYTESWAP32(tsmpData[0]);
+        if(mVerbose) {
+          SPDLOG_INFO("Found TSMP: {} (repeat count: {}) for FourCC: {}", tsmpValue, currentTsmp, fourccToString(fourcc));
+        }
+      }
+    } else {
+      if(mVerbose) {
+        SPDLOG_INFO("Using repeat count: {} samples for FourCC: {}", currentTsmp, fourccToString(fourcc));
+      }
+    }
 
-    SPDLOG_INFO("Detecting sample rate for FourCC: {}", fourccStr);
+    // If we have both STMP and TSMP, calculate rate from timing deltas
+    if(hasStmp && hasTsmp) {
+      auto& timingInfo = mTimingInfo[fourcc];
 
-    // Use typical rates for known sensor types
+      if(timingInfo.hasData && currentStmp > timingInfo.lastStmp) {
+        // Calculate time delta in seconds
+        double timeDelta = static_cast<double>(currentStmp - timingInfo.lastStmp) / 1000000.0;
+
+        // Calculate sample rate: samples / time
+        // TSMP tells us how many samples are in THIS packet (currentTsmp)
+        // BUT those samples were collected between lastStmp and currentStmp
+        // So we use lastSampleCount (samples from the previous packet that filled the time gap)
+        if(timeDelta > 0.0 && timingInfo.lastSampleCount > 0) {
+          float calculatedRate = static_cast<float>(timingInfo.lastSampleCount) / static_cast<float>(timeDelta);
+          timingInfo.calculatedRate = calculatedRate;
+
+          SPDLOG_INFO("Calculated sample rate for {}: {:.2f} Hz (Δt={:.6f}s, samples={})",
+                      fourccToString(fourcc), calculatedRate, timeDelta, timingInfo.lastSampleCount);
+        }
+      }
+
+      // Update timing info for next packet
+      timingInfo.lastStmp = currentStmp;
+      timingInfo.lastSampleCount = currentTsmp;
+      timingInfo.hasData = true;
+
+      // Return calculated rate if we have one
+      if(timingInfo.calculatedRate > 0.0f) {
+        return timingInfo.calculatedRate;
+      }
+    }
+
+    // Strategy 2: Fallback to typical rates for known sensor types
+    // This is used for the first packet before we can calculate from deltas
     if(fourcc == MAKEID('G', 'Y', 'R', 'O')) {
-      SPDLOG_DEBUG("Using default gyro rate: 200 Hz");
-      return 200.0f;// Typical GoPro gyro rate
+      SPDLOG_DEBUG("Using default gyro rate: 200 Hz (will calculate from STMP on next packet)");
+      return 200.0f;
     }
     if(fourcc == MAKEID('A', 'C', 'C', 'L')) {
-      SPDLOG_DEBUG("Using default accel rate: 200 Hz");
-      return 200.0f;// Typical GoPro accel rate
+      SPDLOG_DEBUG("Using default accel rate: 200 Hz (will calculate from STMP on next packet)");
+      return 200.0f;
     }
     if(fourcc == MAKEID('G', 'P', 'S', '5') || fourcc == MAKEID('G', 'P', 'S', '9')) {
-      SPDLOG_DEBUG("Using default GPS rate: 18 Hz (GoPro Hero 8+ typical max)");
-      return 18.0f;// Typical GoPro GPS rate (can be 1, 5, 10, or 18 Hz)
+      SPDLOG_DEBUG("Using default GPS rate: 18 Hz (will calculate from STMP on next packet)");
+      return 18.0f;
     }
 
     // Fallback: return 0 to indicate unknown
-    SPDLOG_WARN("Could not determine sample rate for FourCC: {}, returning 0", fourccStr);
+    SPDLOG_WARN("Could not determine sample rate for FourCC: {}, returning 0", fourccToString(fourcc));
     return 0.0f;
   }
 
@@ -854,201 +885,6 @@ namespace Ravl2::GoPro
     result[2] = static_cast<char>((fourcc >> 16) & 0xFF);
     result[3] = static_cast<char>((fourcc >> 24) & 0xFF);
     return result;
-  }
-
-  nlohmann::json GpmfParser::extractDeviceInfo(GPMF_stream *stream)
-  {
-    nlohmann::json deviceInfo;
-
-    if(stream == nullptr) {
-      return deviceInfo;
-    }
-
-    // Get device ID (DVID)
-    uint32_t deviceId = GPMF_DeviceID(stream);
-    if(deviceId > 0) {
-      deviceInfo["device_id"] = deviceId;
-    }
-
-    // Save the current position
-    GPMF_stream tempStream = *stream;
-
-    // Look for the device name (DVNM)
-    if(GPMF_FindPrev(&tempStream, MAKEID('D', 'V', 'N', 'M'), GPMF_CURRENT_LEVEL) == GPMF_OK) {
-      auto *dvnmData = static_cast<char *>(GPMF_RawData(&tempStream));
-      uint32_t dvnmSize = GPMF_RawDataSize(&tempStream);
-      if(dvnmData != nullptr && dvnmSize > 0) {
-        std::string dvnm = gpmfAsciiToUtf8(dvnmData, dvnmSize);
-        if(!dvnm.empty()) {
-          deviceInfo["device_name"] = dvnm;
-        }
-      }
-    }
-
-    // Reset for next search
-    tempStream = *stream;
-
-    // Look for version (VERS)
-    if(GPMF_FindPrev(&tempStream, MAKEID('V', 'E', 'R', 'S'), GPMF_CURRENT_LEVEL) == GPMF_OK) {
-      auto *versData = static_cast<char *>(GPMF_RawData(&tempStream));
-      uint32_t versSize = GPMF_RawDataSize(&tempStream);
-      if(versData != nullptr && versSize > 0) {
-        std::string vers = gpmfAsciiToUtf8(versData, versSize);
-        if(!vers.empty()) {
-          deviceInfo["version"] = vers;
-        }
-      }
-    }
-
-    return deviceInfo;
-  }
-
-  nlohmann::json GpmfParser::extractStreamMetadata(GPMF_stream *stream, [[maybe_unused]] uint32_t fourcc)
-  {
-    SPDLOG_INFO("Extracting stream metadata");
-    nlohmann::json metadata;
-
-    if(stream == nullptr) {
-      return metadata;
-    }
-
-    // Get sample count
-    uint32_t sampleCount = GPMF_Repeat(stream);
-    metadata["sample_count"] = sampleCount;
-
-    // Get type information
-    GPMF_SampleType type = GPMF_Type(stream);
-    metadata["type_info"]["gpmf_type"] = std::string(1, static_cast<char>(type));
-    metadata["type_info"]["struct_size"] = GPMF_StructSize(stream);
-    metadata["type_info"]["elements_per_sample"] = GPMF_ElementsInStruct(stream);
-
-#if 0
-    // Get sample rate
-    float sampleRate = getSampleRate(stream);
-    if (sampleRate > 0) {
-      metadata["sample_rate_hz"] = sampleRate;
-    }
-#endif
-
-    // Save the current position for metadata searches
-    GPMF_stream tempStream = *stream;
-
-    // Get scaling factors (SCAL)
-    if(GPMF_FindPrev(&tempStream, MAKEID('S', 'C', 'A', 'L'), GPMF_CURRENT_LEVEL) == GPMF_OK) {
-      auto *scaleData = static_cast<uint32_t *>(GPMF_RawData(&tempStream));
-      uint32_t scaleCount = GPMF_Repeat(&tempStream);
-      if(scaleData != nullptr && scaleCount > 0) {
-        std::vector<uint32_t> scales;
-        for(uint32_t i = 0; i < scaleCount; i++) {
-          scales.push_back(BYTESWAP32(scaleData[i]));
-        }
-        metadata["units"]["scale"] = scales;
-      }
-    }
-
-    // Reset for next search
-    tempStream = *stream;
-
-    // Get SI units (SIUN)
-    if(GPMF_FindPrev(&tempStream, MAKEID('S', 'I', 'U', 'N'), GPMF_CURRENT_LEVEL) == GPMF_OK) {
-      auto *siunData = static_cast<char *>(GPMF_RawData(&tempStream));
-      uint32_t siunSize = GPMF_RawDataSize(&tempStream);
-      if(siunData != nullptr && siunSize > 0) {
-        // SIUN may contain special characters like °, ², ³, µ
-        std::string siun = gpmfAsciiToUtf8(siunData, siunSize);
-        if(!siun.empty()) {
-          metadata["units"]["siun"] = siun;
-        }
-      }
-    }
-
-    // Reset for next search
-    tempStream = *stream;
-
-    // Get units (UNIT)
-    if(GPMF_FindPrev(&tempStream, MAKEID('U', 'N', 'I', 'T'), GPMF_CURRENT_LEVEL) == GPMF_OK) {
-      auto *unitData = static_cast<char *>(GPMF_RawData(&tempStream));
-      uint32_t unitSize = GPMF_RawDataSize(&tempStream);
-      if(unitData != nullptr && unitSize > 0) {
-        // UNIT may contain special characters like °, ², ³, µ
-        std::string unit = gpmfAsciiToUtf8(unitData, unitSize);
-        if(!unit.empty()) {
-          metadata["units"]["unit"] = unit;
-        }
-      }
-    }
-
-    // Reset for next search
-    tempStream = *stream;
-
-    // Get timestamp info (TSMP)
-    if(GPMF_FindPrev(&tempStream, MAKEID('T', 'S', 'M', 'P'), GPMF_CURRENT_LEVEL) == GPMF_OK) {
-      auto *tsmpData = static_cast<uint32_t *>(GPMF_RawData(&tempStream));
-      if(tsmpData != nullptr) {
-        metadata["timestamp_info"]["tsmp"] = BYTESWAP32(tsmpData[0]);
-      }
-    }
-
-    // Reset for next search
-    tempStream = *stream;
-
-    // Get ORIN (original sample rate or orientation)
-    if(GPMF_FindPrev(&tempStream, MAKEID('O', 'R', 'I', 'N'), GPMF_CURRENT_LEVEL) == GPMF_OK) {
-      GPMF_SampleType orinType = GPMF_Type(&tempStream);
-      auto *orinData = GPMF_RawData(&tempStream);
-
-      if(orinType == GPMF_TYPE_UNSIGNED_LONG || orinType == GPMF_TYPE_SIGNED_LONG) {
-        // Numeric: sample rate - IMPORTANT: byte swap for big-endian data
-        uint32_t orinValue = BYTESWAP32(*static_cast<uint32_t *>(orinData));
-        metadata["timestamp_info"]["orin"] = orinValue;
-      } else if(orinType == GPMF_TYPE_STRING_ASCII) {
-        // String: orientation
-        uint32_t orinSize = GPMF_RawDataSize(&tempStream);
-        std::string orin = gpmfAsciiToUtf8(static_cast<char *>(orinData), orinSize);
-        if(!orin.empty()) {
-          metadata["orientation"]["input"] = orin;
-        }
-      }
-    }
-
-    // Reset for next search
-    tempStream = *stream;
-
-    // Get ORIO (output orientation)
-    if(GPMF_FindPrev(&tempStream, MAKEID('O', 'R', 'I', 'O'), GPMF_CURRENT_LEVEL) == GPMF_OK) {
-      auto *orioData = static_cast<char *>(GPMF_RawData(&tempStream));
-      uint32_t orioSize = GPMF_RawDataSize(&tempStream);
-      if(orioData != nullptr && orioSize > 0) {
-        std::string orio = gpmfAsciiToUtf8(orioData, orioSize);
-        if(!orio.empty()) {
-          metadata["orientation"]["output"] = orio;
-        }
-      }
-    }
-
-    // Reset for next search
-    tempStream = *stream;
-
-    // Get TICK (start time)
-    if(GPMF_FindPrev(&tempStream, MAKEID('T', 'I', 'C', 'K'), GPMF_CURRENT_LEVEL) == GPMF_OK) {
-      auto *tickData = static_cast<uint32_t *>(GPMF_RawData(&tempStream));
-      if(tickData != nullptr) {
-        metadata["timestamp_info"]["tick"] = BYTESWAP32(tickData[0]);
-      }
-    }
-
-    // Reset for next search
-    tempStream = *stream;
-
-    // Get TOCK (end time)
-    if(GPMF_FindPrev(&tempStream, MAKEID('T', 'O', 'C', 'K'), GPMF_CURRENT_LEVEL) == GPMF_OK) {
-      auto *tockData = static_cast<uint32_t *>(GPMF_RawData(&tempStream));
-      if(tockData != nullptr) {
-        metadata["timestamp_info"]["tock"] = BYTESWAP32(tockData[0]);
-      }
-    }
-
-    return metadata;
   }
 
   //! Convert nested object to JSON.
