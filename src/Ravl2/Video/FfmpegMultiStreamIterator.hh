@@ -205,7 +205,7 @@ namespace Ravl2::Video
     //! Priority queue for presentation ordering (min-heap by PTS)
     std::priority_queue<PacketInfo, std::vector<PacketInfo>, PacketInfoComparator> m_packetQueue;
 
-    //! Minimum buffer size for presentation ordering
+    //! The minimum buffer size for presentation ordering
     //! Must be large enough to contain all frames needed for temporal reordering (including B-frames)
     static constexpr std::size_t MIN_QUEUE_SIZE = 32;
 

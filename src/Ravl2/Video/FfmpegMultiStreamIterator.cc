@@ -157,9 +157,9 @@ namespace Ravl2::Video
           throw std::runtime_error("Failed to allocate frame");
         }
       }
-      m_frames.push_back(frame);  // May be nullptr for DATA streams
+      m_frames.push_back(frame);  // Maybe nullptr for DATA streams
 
-      // Initialize frame ID counter for this stream
+      // Initialise frame ID counter for this stream
       m_nextFrameIds.push_back(0);
     }
 
@@ -1075,8 +1075,8 @@ namespace Ravl2::Video
     return VideoResult<std::vector<std::shared_ptr<Frame>>>({decodedFrame});
   }
 
-  StreamItemId FfmpegMultiStreamIterator::generateUniqueFrameId(AVFrame* frame, std::size_t localIndex)
 
+  StreamItemId FfmpegMultiStreamIterator::generateUniqueFrameId(AVFrame* frame, std::size_t localIndex)
   {
     // Get the pts value
     int64_t pts = 0;
