@@ -346,6 +346,16 @@ namespace Ravl2
     return strm;
   }
 
+  //! Test if a pixel has a given channel
+  template<typename T, ImageChannel Channel, typename = void>
+  struct pixelHasChannel : std::false_type {};
+
+  //! Test if a pixel has a given channel
+  template<typename T, ImageChannel Channel>
+  struct pixelHasChannel<T, Channel, std::void_t<decltype(T::template hasChannel<Channel>())>>
+    : std::bool_constant<T::template hasChannel<Channel>()> {};
+
+
   //! Define some common formats to save typing
   using PixelY8 = Pixel<uint8_t, ImageChannel::Luminance>;
   using PixelI8 = Pixel<uint8_t, ImageChannel::Intensity>;

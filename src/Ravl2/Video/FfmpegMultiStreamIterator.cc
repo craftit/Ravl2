@@ -233,14 +233,19 @@ namespace Ravl2::Video
       {
         std::string format(formatName);
         // Check if this is a device input format with limited buffer pools
-        // AVFoundation (macOS), V4L2 (Linux), and DirectShow (Windows) all have limited buffers
-        if (format.find("avfoundation") != std::string::npos ||
-            format.find("v4l2") != std::string::npos ||
-            format.find("video4linux") != std::string::npos ||
-            format.find("dshow") != std::string::npos)
+        // AVFoundation on macOS is known to have buffer pool exhaustion issues
+        // Other capture formats (V4L2, DirectShow) may work without cloning
+        if (format.find("avfoundation") != std::string::npos)
         {
           m_needsFrameClone = true;
-          SPDLOG_DEBUG("Detected device input format '{}' - enabling immediate frame cloning to avoid buffer exhaustion", format);
+          SPDLOG_DEBUG("Detected AVFoundation input - enabling frame cloning to avoid buffer exhaustion");
+        }
+        else if (format.find("v4l2") != std::string::npos ||
+                 format.find("video4linux") != std::string::npos ||
+                 format.find("dshow") != std::string::npos)
+        {
+          // These formats don't seem to require cloning in practice, but log for awareness
+          SPDLOG_DEBUG("Detected device input format '{}' - frame cloning disabled (not required)", format);
         }
       }
     }
@@ -1358,6 +1363,10 @@ namespace Ravl2::Video
     auto* stream = m_streams[localIndex];
 
     // Clone frame if needed for device captures to prevent buffer pool exhaustion
+    // We clone all frames from device captures because:
+    // 1. Frames may be held by user code during multi-threaded processing
+    // 2. We can't track when user code releases frames
+    // 3. Device buffer pools are very small (3-8 buffers)
     AVFrame* frameToUse = frame;
     AVFrame* clonedFrame = nullptr;
     if (m_needsFrameClone)
@@ -1425,6 +1434,7 @@ namespace Ravl2::Video
     auto* codecContext = m_codecContexts[localIndex];
 
     // Clone frame if needed for device captures to prevent buffer pool exhaustion
+    // We clone all frames from device captures because frames may be held by user code
     AVFrame* frameToUse = frame;
     AVFrame* clonedFrame = nullptr;
     if (m_needsFrameClone)
@@ -1577,7 +1587,7 @@ namespace Ravl2::Video
     int width = frame->width;
     int height = frame->height;
     IndexRange<2> range;
-    if constexpr (std::is_same<PixelT, PixelYUYV8>::value) {
+    if constexpr (pixelHasChannel<PixelT, ImageChannel::Luminance2>::value) {
       // Two pixels packed into 1.
       range = IndexRange<2>({{0, height-1}, {0, width/2-1}});
     } else {

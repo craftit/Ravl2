@@ -39,9 +39,9 @@ namespace Ravl2::Video
   //!       Multiple iterators may share the same FfmpegMediaContainer, but the container must provide
   //!       thread-safe access if used concurrently.
   //!
-  //! @note Frame Cloning: For device capture inputs (webcam, AVFoundation, V4L2, DirectShow), frames are
-  //!       automatically cloned to prevent buffer pool exhaustion. This is detected automatically based
-  //!       on the input format.
+  //! @note Frame Cloning: For AVFoundation device captures on macOS, frames are automatically cloned
+  //!       to prevent buffer pool exhaustion. This is detected automatically based on the input format.
+  //!       Other capture formats (V4L2, DirectShow) do not currently require cloning.
   //!
   //! @note Keyframe Index: The keyframe index is built lazily on first seek.
   //!
@@ -251,8 +251,13 @@ namespace Ravl2::Video
     //! Max frame search when looking for a time code.
     static constexpr int MAX_FRAME_SEARCH = 30;
 
-    //! Flag indicating if frames need to be cloned immediately to free buffers
-    //! This is required for capture devices with limited buffer pools (e.g., AVFoundation on macOS)
+    //! Flag indicating if frames need to be cloned to prevent buffer pool exhaustion
+    //! Currently only required for AVFoundation on macOS, which has very limited buffer pools.
+    //! Frames are cloned immediately because:
+    //! 1. Frames may be held by user code in another thread during processing
+    //! 2. Multiple frames may be queued internally before delivery
+    //! 3. AVFoundation's buffer pool is very small (typically 3-4 buffers)
+    //! Other capture formats (V4L2, DirectShow) don't exhibit this issue in practice.
     bool m_needsFrameClone = false;
 
 #ifdef WITH_GPMF
