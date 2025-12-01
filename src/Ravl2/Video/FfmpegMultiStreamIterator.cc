@@ -50,6 +50,64 @@ namespace Ravl2::Video
       // Otherwise return a hex representation so callers can still see the value
       return fmt::format("0x{:08x}", fourCC);
     }
+
+    template<typename SampleT>
+    bool copyPlanarAudioSamples(const AVFrame* frame, Array<SampleT, 2>& audioData, int channels)
+    {
+      auto* dest = audioData.origin_address();
+      const int sampleStride = audioData.stride(0);
+      const int channelStride = audioData.stride(1);
+
+      for (int channel = 0; channel < channels; ++channel)
+      {
+        const auto* channelSrc = reinterpret_cast<const SampleT*>(frame->extended_data[channel]);
+        if (!channelSrc)
+        {
+          SPDLOG_ERROR("Missing planar audio data for channel {}", channel);
+          return false;
+        }
+        for (int sample = 0; sample < frame->nb_samples; ++sample)
+        {
+          dest[sample * sampleStride + channel * channelStride] = channelSrc[sample];
+        }
+      }
+      return true;
+    }
+
+    template<typename SampleT>
+    bool copyInterleavedAudioSamples(const AVFrame* frame, Array<SampleT, 2>& audioData, int channels)
+    {
+      auto* dest = audioData.origin_address();
+      const int sampleStride = audioData.stride(0);
+      const int channelStride = audioData.stride(1);
+      const auto* src = reinterpret_cast<const SampleT*>(frame->extended_data[0]);
+      if (!src)
+      {
+        SPDLOG_ERROR("Missing interleaved audio data");
+        return false;
+      }
+
+      for (int sample = 0; sample < frame->nb_samples; ++sample)
+      {
+        const int baseIndex = sample * channels;
+        for (int channel = 0; channel < channels; ++channel)
+        {
+          dest[sample * sampleStride + channel * channelStride] = src[baseIndex + channel];
+        }
+      }
+      return true;
+    }
+
+    template<typename SampleT>
+    bool copyAudioSamples(const AVFrame* frame, Array<SampleT, 2>& audioData, int channels, AVSampleFormat fmt)
+    {
+      const bool isPlanar = av_sample_fmt_is_planar(fmt) != 0;
+      if (isPlanar)
+      {
+        return copyPlanarAudioSamples(frame, audioData, channels);
+      }
+      return copyInterleavedAudioSamples(frame, audioData, channels);
+    }
   }
 
   FfmpegMultiStreamIterator::FfmpegMultiStreamIterator(std::shared_ptr<FfmpegMediaContainer> container,
@@ -1273,8 +1331,12 @@ namespace Ravl2::Video
     // Create a 2D array for the audio data (samples x channels)
     Array<SampleT, 2> audioData({static_cast<size_t>(frame->nb_samples), static_cast<size_t>(channels)});
 
-    // TODO: Copy audio data from frame to audioData
-    // This would depend on the specific audio format and layout
+    // Copy audio data from frame to audioData
+    if (!copyAudioSamples(frame, audioData, channels, codecContext->sample_fmt))
+    {
+      SPDLOG_ERROR("Failed to copy audio samples for frame");
+      return nullptr;
+    }
 
     // Create a new audio chunk
     auto audioChunk = std::make_shared<AudioChunk<SampleT>>(audioData, id, timestamp);
