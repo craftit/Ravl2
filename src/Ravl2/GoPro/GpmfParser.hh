@@ -108,6 +108,21 @@ namespace Ravl2::GoPro
     //! @return Vector of scale factors (empty if not found)
     [[nodiscard]] std::vector<int32_t> getScaleFactors(GPMF_stream* stream, uint32_t expectedCount) const;
 
+    //! Find and read STNM (stream name) for a stream
+    //! @param stream GPMF stream
+    //! @return Stream name (empty if not found)
+    [[nodiscard]] std::string getStreamName(GPMF_stream* stream) const;
+
+    //! Find and read SIUN (SI units) for a stream
+    //! @param stream GPMF stream
+    //! @return SI units string (empty if not found)
+    [[nodiscard]] std::string getSiUnits(GPMF_stream* stream) const;
+
+    //! Find and read UNIT (per-field units) for a stream
+    //! @param stream GPMF stream
+    //! @return Vector of unit strings (empty if not found)
+    [[nodiscard]] std::vector<std::string> getUnits(GPMF_stream* stream) const;
+
     //! Convert GPMF FourCC to string representation
     //! @param fourcc 32-bit FourCC value
     //! @return String representation (4 characters)

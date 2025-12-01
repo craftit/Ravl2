@@ -564,6 +564,22 @@ namespace Ravl2::GoPro
           unknownJson["sample_count"] = sampleCount;
           unknownJson["elements"] = GPMF_ElementsInStruct(levelStream);
 
+          // Add metadata if available
+          std::string streamName = getStreamName(levelStream);
+          if(!streamName.empty()) {
+            unknownJson["stream_name"] = streamName;
+          }
+
+          std::string siUnits = getSiUnits(levelStream);
+          if(!siUnits.empty()) {
+            unknownJson["units"] = siUnits;
+          }
+
+          std::vector<std::string> units = getUnits(levelStream);
+          if(!units.empty()) {
+            unknownJson["field_units"] = units;
+          }
+
           unknownJson["samples"] = samplesToJson(levelStream, lastFourcc, level+1);
 
           // Create JSON frame
@@ -753,6 +769,81 @@ namespace Ravl2::GoPro
     }
 
     return scales;
+  }
+
+  std::string GpmfParser::getStreamName(GPMF_stream *stream) const
+  {
+    if(stream == nullptr) {
+      return "";
+    }
+
+    GPMF_stream tempStream = *stream;
+
+    // Look for STNM (stream name) field at the current level
+    if(GPMF_FindPrev(&tempStream, MAKEID('S', 'T', 'N', 'M'), GPMF_RECURSE_LEVELS) == GPMF_OK) {
+      auto *nameData = static_cast<const char *>(GPMF_RawData(&tempStream));
+      uint32_t nameSize = GPMF_RawDataSize(&tempStream);
+      if(nameData != nullptr && nameSize > 0) {
+        std::string name = gpmfAsciiToUtf8(nameData, nameSize);
+        // Remove null terminators
+        name.erase(std::find(name.begin(), name.end(), '\0'), name.end());
+        return name;
+      }
+    }
+
+    return "";
+  }
+
+  std::string GpmfParser::getSiUnits(GPMF_stream *stream) const
+  {
+    if(stream == nullptr) {
+      return "";
+    }
+
+    GPMF_stream tempStream = *stream;
+
+    // Look for SIUN (SI units) field at the current level
+    if(GPMF_FindPrev(&tempStream, MAKEID('S', 'I', 'U', 'N'), GPMF_RECURSE_LEVELS) == GPMF_OK) {
+      auto *unitData = static_cast<const char *>(GPMF_RawData(&tempStream));
+      uint32_t unitSize = GPMF_RawDataSize(&tempStream);
+      if(unitData != nullptr && unitSize > 0) {
+        std::string units = gpmfAsciiToUtf8(unitData, unitSize);
+        // Remove null terminators
+        units.erase(std::find(units.begin(), units.end(), '\0'), units.end());
+        return units;
+      }
+    }
+
+    return "";
+  }
+
+  std::vector<std::string> GpmfParser::getUnits(GPMF_stream *stream) const
+  {
+    std::vector<std::string> units;
+
+    if(stream == nullptr) {
+      return units;
+    }
+
+    GPMF_stream tempStream = *stream;
+
+    // Look for UNIT field at the current level
+    if(GPMF_FindPrev(&tempStream, MAKEID('U', 'N', 'I', 'T'), GPMF_RECURSE_LEVELS) == GPMF_OK) {
+      auto *unitData = static_cast<const char *>(GPMF_RawData(&tempStream));
+      uint32_t unitCount = GPMF_Repeat(&tempStream);
+      uint32_t unitSize = GPMF_StructSize(&tempStream);
+
+      if(unitData != nullptr && unitCount > 0) {
+        for(uint32_t i = 0; i < unitCount; i++) {
+          std::string unit = gpmfAsciiToUtf8(unitData + i * unitSize, unitSize);
+          // Remove null terminators
+          unit.erase(std::find(unit.begin(), unit.end(), '\0'), unit.end());
+          units.push_back(unit);
+        }
+      }
+    }
+
+    return units;
   }
 
   std::string GpmfParser::fourccToString(uint32_t fourcc)
