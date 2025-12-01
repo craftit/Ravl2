@@ -118,19 +118,7 @@ int RAVL2_MAIN(int argc, char *argv[])
     return EXIT_SUCCESS;
   }
 
-  // Create a multi-stream iterator that includes all streams
-  // Cast to FfmpegMediaContainer to access multi-stream functionality
-  auto ffmpegContainer = std::dynamic_pointer_cast<Ravl2::Video::FfmpegMediaContainer>(container);
-  if (!ffmpegContainer) {
-    SPDLOG_ERROR("Container is not an FfmpegMediaContainer");
-    return EXIT_FAILURE;
-  }
-
-  // Create multi-stream iterator with empty vector to include all streams
-  auto iterator = std::make_shared<Ravl2::Video::FfmpegMultiStreamIterator>(
-    ffmpegContainer,
-    std::vector<std::size_t>{}  // Empty = all streams
-  );
+  auto iterator = container->createIterator(std::vector<std::size_t>{}).value();
 
   // Process frames and extract GoPro metadata
   fmt::print("\nProcessing GoPro GPMF metadata:\n");

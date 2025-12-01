@@ -781,6 +781,36 @@ namespace Ravl2::Video
     }
   }
 
+  //! Create an iterator for a set of streams.
+  [[nodiscard]] VideoResult<std::shared_ptr<StreamIterator>> FfmpegMediaContainer::createIterator(std::vector<std::size_t> streams)
+  {
+    std::shared_lock lock(m_mutex);
+
+    if (!m_formatContext)
+    {
+      return VideoResult<std::shared_ptr<StreamIterator>>(VideoErrorCode::InvalidOperation);
+    }
+
+    // Create a new iterator for the specified stream
+    try
+    {
+      auto iterator = std::make_shared<FfmpegMultiStreamIterator>(
+        std::static_pointer_cast<FfmpegMediaContainer>(shared_from_this()),
+        streams
+      );
+
+      return VideoResult<std::shared_ptr<StreamIterator>>(
+        std::static_pointer_cast<StreamIterator>(iterator)
+      );
+    }
+    catch (const std::exception&e)
+    {
+      SPDLOG_ERROR("Exception creating stream iterator: {}", e.what());
+      return VideoResult<std::shared_ptr<StreamIterator>>(VideoErrorCode::ResourceAllocationError);
+    }
+  }
+
+
   std::map<std::string, std::string> FfmpegMediaContainer::metadata() const
   {
     std::shared_lock lock(m_mutex);

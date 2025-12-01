@@ -92,6 +92,9 @@ namespace Ravl2::Video
     //! Create an iterator for a specific stream
     [[nodiscard]] VideoResult<std::shared_ptr<StreamIterator>> createIterator(std::size_t streamIndex) override;
 
+    //! Create an iterator for a set of streams.
+    [[nodiscard]] VideoResult<std::shared_ptr<StreamIterator>> createIterator(std::vector<std::size_t> streams) override;
+
     //! Get global container metadata
     [[nodiscard]] std::map<std::string, std::string> metadata() const override;
 

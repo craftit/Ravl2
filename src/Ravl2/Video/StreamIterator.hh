@@ -130,7 +130,7 @@ namespace Ravl2::Video
 
   private:
     std::size_t mStreamIndex = 0;
-    MediaTime mPosition;
+    MediaTime mPosition {};
     std::shared_ptr<MediaContainer> mContainer;
     std::shared_ptr<Frame> mCurrentFrame;
   };

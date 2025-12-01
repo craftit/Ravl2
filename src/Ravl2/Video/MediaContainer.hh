@@ -61,6 +61,9 @@ namespace Ravl2::Video
     //! Create an iterator for a specific stream
     virtual VideoResult<std::shared_ptr<StreamIterator>> createIterator(std::size_t streamIndex) = 0;
 
+    //! Create an iterator for a set of streams.
+    virtual VideoResult<std::shared_ptr<StreamIterator>> createIterator(std::vector<std::size_t> streams) = 0;
+
     //! Get global container metadata
     virtual std::map<std::string, std::string> metadata() const = 0;
 
