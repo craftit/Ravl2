@@ -279,10 +279,10 @@ namespace Ravl2::Video
 
   void FfmpegMultiStreamIterator::calculateQueueSize()
   {
-    // Start with a reasonable default
-    m_minQueueSize = 64;
+    // Start with a reasonable minimum
+    m_minQueueSize = 32;
 
-    // Check each video stream for GOP size
+    // Check each video stream for B-frame reordering requirements
     for (size_t i = 0; i < m_streamIndices.size(); ++i)
     {
       if (i >= m_streams.size() || i >= m_codecContexts.size())
@@ -292,50 +292,56 @@ namespace Ravl2::Video
       if (!stream || stream->codecpar->codec_type != AVMEDIA_TYPE_VIDEO)
         continue;
 
-      // Try to get GOP size from codec context
-      int gopSize = 0;
       auto* codecContext = m_codecContexts[i];
-      if (codecContext && codecContext->gop_size > 0)
+      if (!codecContext)
+        continue;
+
+      // Get actual B-frame reordering distance (NOT GOP size!)
+      // GOP size is keyframe interval and is irrelevant for frame ordering
+      int maxReorder = 0;
+
+      // Check max_b_frames - this is the actual reordering distance
+      if (codecContext->max_b_frames > 0)
       {
-        gopSize = codecContext->gop_size;
-        SPDLOG_DEBUG("Video stream {} has GOP size: {}", i, gopSize);
+        // Need buffer for B-frames plus reference frames
+        maxReorder = codecContext->max_b_frames + 2;
+        SPDLOG_DEBUG("Video stream {} has max_b_frames: {} (reorder distance: {})",
+                     i, codecContext->max_b_frames, maxReorder);
+      }
+      else if (codecContext->has_b_frames)
+      {
+        // Codec reports it has B-frames but doesn't specify count
+        // Use conservative default
+        maxReorder = 16;
+        SPDLOG_DEBUG("Video stream {} has B-frames but unknown count, using default: {}",
+                     i, maxReorder);
       }
       else
       {
-        // Try to get from codec parameters or stream
-        // For most codecs, we can estimate from frame rate and keyframe interval
-        if (stream->avg_frame_rate.num > 0 && stream->avg_frame_rate.den > 0)
-        {
-          // Assume 2 second keyframe interval if not known
-          double fps = static_cast<double>(stream->avg_frame_rate.num) / stream->avg_frame_rate.den;
-          gopSize = static_cast<int>(fps * 2.0);
-          SPDLOG_DEBUG("Video stream {} estimated GOP size: {} (based on fps {})",
-                       i, gopSize, fps);
-        }
-        else
-        {
-          // Conservative default for unknown
-          gopSize = 60;
-          SPDLOG_DEBUG("Video stream {} using default GOP size: {}", i, gopSize);
-        }
+        // No B-frames (e.g., baseline H.264, MJPEG, most webcams)
+        // Minimal buffering needed
+        maxReorder = 2;
+        SPDLOG_DEBUG("Video stream {} has no B-frames, minimal buffering: {}", i, maxReorder);
       }
 
-      // Need at least 2x GOP size for safe B-frame reordering
-      // Plus extra buffer for multi-stream scenarios
-      std::size_t requiredSize = static_cast<std::size_t>(gopSize * 2);
+      // Calculate required size: reordering distance × safety factor
+      // Safety factor accounts for multi-frame packets and decoder delays
+      std::size_t requiredSize = static_cast<std::size_t>(maxReorder * 4);
+
+      // Multi-stream: add extra buffer for interleaving different streams
       if (m_streamIndices.size() > 1)
       {
-        // Add extra buffer for multi-stream interleaving
-        requiredSize = static_cast<std::size_t>(gopSize * 3);
+        requiredSize += 32;
       }
 
       m_minQueueSize = std::max(m_minQueueSize, requiredSize);
     }
 
-    // Cap at reasonable maximum to avoid excessive memory (512 frames ~ 17s at 30fps)
-    m_minQueueSize = std::min(m_minQueueSize, std::size_t(512));
+    // Cap at reasonable maximum (128 frames = ~4s at 30fps, ~600MB for 4K)
+    m_minQueueSize = std::min(m_minQueueSize, std::size_t(128));
 
-    SPDLOG_INFO("Set packet queue minimum size to: {}", m_minQueueSize);
+    SPDLOG_INFO("Set packet queue size to: {} (based on B-frame reordering, not GOP size)",
+                m_minQueueSize);
   }
 
   FfmpegMultiStreamIterator::~FfmpegMultiStreamIterator()
