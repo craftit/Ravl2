@@ -31,7 +31,9 @@ namespace Ravl2::Video
   //! Implementation of StreamIterator that provides frames for multiple streams in a FFmpeg-based media container
   //!
   //! This iterator maintains temporal ordering across all streams by buffering decoded frames
-  //! in a priority queue sorted by presentation timestamp (PTS).
+  //! in a priority queue sorted by presentation timestamp (PTS). The queue size is automatically
+  //! calculated based on B-frame reordering requirements to minimize memory usage while ensuring
+  //! correct temporal ordering (typically 32-128 frames depending on codec parameters).
   //!
   //! @note Thread Safety: This class is NOT thread-safe. Each thread must create its own iterator instance.
   //!       Multiple iterators may share the same FfmpegMediaContainer, but the container must provide
@@ -42,6 +44,9 @@ namespace Ravl2::Video
   //!       on the input format.
   //!
   //! @note Keyframe Index: The keyframe index is built lazily on first seek.
+  //!
+  //! @note Timestamp Ordering: Frames are delivered in strict presentation timestamp order using frame PTS
+  //!       (not packet PTS), which correctly handles B-frame reordering and multi-frame packets.
   class FfmpegMultiStreamIterator final : public StreamIterator
   {
   public:
@@ -200,14 +205,16 @@ namespace Ravl2::Video
     bool m_wasSeekOperation = false;
 
     //! Fill the packet queue with decoded frames in presentation order
+    //! Reads and decodes packets from all streams until the queue reaches m_minQueueSize.
+    //! Frames are sorted by their presentation timestamp (frame PTS) to handle B-frame reordering.
     VideoResult<void> fillPacketQueue();
 
     //! Packet buffer for presentation timestamp ordering
     struct PacketInfo
     {
-      std::shared_ptr<Frame> frame;
-      std::size_t streamIndex;
-      int64_t pts;
+      std::shared_ptr<Frame> frame;  //!< Decoded frame
+      std::size_t streamIndex;       //!< Local stream index (index into m_streamIndices)
+      int64_t pts;                   //!< Presentation timestamp in microseconds
     };
 
     //! Comparator for min-heap (smallest PTS has highest priority)
@@ -226,7 +233,8 @@ namespace Ravl2::Video
 
     //! The minimum buffer size for presentation ordering
     //! Must be large enough to contain all frames needed for temporal reordering (including B-frames)
-    //! This is calculated based on GOP size in constructor
+    //! This is calculated based on B-frame reordering distance (max_b_frames), not GOP size,
+    //! to minimize memory usage while ensuring correct temporal ordering.
     std::size_t m_minQueueSize = 64; // Default, updated in constructor
 
     //! Calculate appropriate queue size based on stream properties

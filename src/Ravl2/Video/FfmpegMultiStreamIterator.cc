@@ -192,7 +192,7 @@ namespace Ravl2::Video
       if (!codecContext && !isDataStream)
       {
         SPDLOG_WARN("No codec context available for stream {} (type: {} '{}')", streamIndex, static_cast<int>(stream->codecpar->codec_type),fourCC2str(stream->codecpar->codec_tag));
-        // Clean up
+        // Clean upDop
         av_packet_free(&m_packet);
         throw std::runtime_error("No codec context available for stream");
       }
@@ -889,6 +889,11 @@ namespace Ravl2::Video
     {
       id = 0;
     }
+
+#ifndef NDEBUG
+    // Reset timestamp validation after reset
+    m_lastDeliveredPts = -1;
+#endif
 
     // Read the first frame
     return next();

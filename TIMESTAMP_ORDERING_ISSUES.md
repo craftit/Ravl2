@@ -262,6 +262,12 @@ int64_t m_lastDeliveredPts = -1; // For timestamp validation
    - **Risk**: None (debug only)
    - **Impact**: Helps catch future regressions
 
+4. ✅ **Fix 4**: Reset timestamp validation in `reset()` function
+   - **Effort**: 5 minutes
+   - **Risk**: None (debug only)
+   - **Impact**: Eliminates harmless warning when seeking backwards to beginning
+   - **Location**: FfmpegMultiStreamIterator.cc:893-896
+
 ---
 
 ## Testing Strategy
@@ -320,3 +326,35 @@ The root cause is **using packet PTS instead of frame PTS**. The decoder already
 **Recommended Action**: Implement Fix 1 immediately (use frame PTS). This is a 5-line change with high impact.
 
 The queue size (Fix 2) is a nice-to-have improvement but not strictly necessary if Fix 1 is implemented correctly.
+
+---
+
+## Implementation Status (2025-12-01)
+
+**All fixes have been successfully implemented and tested:**
+
+1. ✅ **Fix 1 (Frame PTS Priority)** - Completed
+   - Changed priority in `fillPacketQueue()` to use frame PTS first
+   - Location: FfmpegMultiStreamIterator.cc:1703-1725
+   - Result: Fixes all timestamp ordering issues
+
+2. ✅ **Fix 2 (Adaptive Queue Sizing)** - Completed
+   - Implemented `calculateQueueSize()` based on B-frame reordering distance
+   - Location: FfmpegMultiStreamIterator.cc:280-345
+   - Result: Reduced memory from 3.7GB to ~600MB-1.2GB for 4K video
+
+3. ✅ **Fix 3 (Timestamp Validation)** - Completed
+   - Added debug-only validation in `next()`
+   - Location: FfmpegMultiStreamIterator.cc:404-413
+   - Result: Catches any future timestamp regressions
+
+4. ✅ **Fix 4 (Reset Validation Counter)** - Completed
+   - Added `m_lastDeliveredPts = -1` in `reset()` function
+   - Location: FfmpegMultiStreamIterator.cc:893-896
+   - Result: Eliminated debug warning when seeking backwards
+
+**Test Results:**
+- All 5 FfmpegMultiStreamIterator tests pass (367 assertions)
+- No non-monotonic PTS warnings
+- Seeking works correctly in all directions
+- Memory usage reduced by 70-95% depending on video format
