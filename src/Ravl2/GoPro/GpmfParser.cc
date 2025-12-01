@@ -220,6 +220,141 @@ namespace Ravl2::GoPro
     SPDLOG_DEBUG("Created {} GPS frames from GPMF packet at timestamp {} μs", sampleCount, timestamp.count());
   }
 
+  void GpmfParser::parseGps9Complex(GPMF_stream *stream, std::vector<std::shared_ptr<Video::Frame>> &frames, Video::StreamItemId streamId, Video::MediaTime timestamp)
+  {
+    SPDLOG_INFO("Extracting GPS9 (complex type with TYPE descriptor).");
+    if(stream == nullptr) {
+      SPDLOG_WARN("parseGps9Complex: null stream pointer");
+      return;
+    }
+
+    uint32_t sampleCount = GPMF_Repeat(stream);
+    if(sampleCount == 0) {
+      SPDLOG_DEBUG("parseGps9Complex: GPS9 stream has 0 samples");
+      return;
+    }
+
+    // Get TYPE descriptor - should be "lllllllSS" for GPS9
+    std::string typeDesc = getTypeDescriptor(stream);
+    if(typeDesc.empty()) {
+      SPDLOG_ERROR("parseGps9Complex: no TYPE descriptor found for GPS9 complex type");
+      return;
+    }
+
+    // Validate TYPE descriptor matches expected GPS9 format
+    if(typeDesc != "lllllllSS") {
+      SPDLOG_ERROR("parseGps9Complex: unexpected TYPE descriptor \"{}\" (expected \"lllllllSS\")", typeDesc);
+      return;
+    }
+
+    // Get SCAL (scale) values - should be 9 values for GPS9
+    std::vector<int32_t> scales = getScaleFactors(stream, 9);
+    if(scales.empty()) {
+      SPDLOG_WARN("parseGps9Complex: no SCAL found, using default scale of 1 for all fields");
+      scales.resize(9, 1);
+    } else if(scales.size() != 9) {
+      SPDLOG_WARN("parseGps9Complex: expected 9 scale values, found {}, padding with 1", scales.size());
+      scales.resize(9, 1);
+    }
+
+    // Get sample rate
+    float sampleRate = getSampleRate(stream);
+
+    // Calculate time delta between samples for timestamp interpolation
+    Video::MediaTime timeDelta(0);
+    if(sampleRate > 0.0F && sampleCount > 1) {
+      int64_t deltaUs = static_cast<int64_t>((1.0F / sampleRate) * 1000000.0F);
+      timeDelta = Video::MediaTime(deltaUs);
+    }
+
+    // Get raw data
+    auto *rawData = static_cast<uint8_t *>(GPMF_RawData(stream));
+    if(rawData == nullptr) {
+      SPDLOG_ERROR("parseGps9Complex: failed to get raw data from GPMF stream (sampleCount={})", sampleCount);
+      return;
+    }
+
+    // Get sample size - should be 32 bytes (7 longs = 28 bytes + 2 shorts = 4 bytes)
+    uint32_t sampleSize = GPMF_StructSize(stream);
+    if(sampleSize != 32) {
+      SPDLOG_ERROR("parseGps9Complex: unexpected sample size {} bytes (expected 32 for \"lllllllSS\")", sampleSize);
+      return;
+    }
+
+    // Parse ALL GPS9 samples and create individual frames
+    for(uint32_t i = 0; i < sampleCount; i++) {
+      size_t offset = i * sampleSize;
+
+      // Parse according to TYPE descriptor "lllllllSS":
+      // 7 signed 32-bit longs (l) = 28 bytes
+      auto *longPtr = reinterpret_cast<const int32_t *>(rawData + offset);
+
+      // Field 0: Latitude (scale by SCAL[0])
+      int32_t latRaw = BYTESWAP32(longPtr[0]);
+      double latitude = static_cast<double>(latRaw) / static_cast<double>(scales[0]);
+
+      // Field 1: Longitude (scale by SCAL[1])
+      int32_t lonRaw = BYTESWAP32(longPtr[1]);
+      double longitude = static_cast<double>(lonRaw) / static_cast<double>(scales[1]);
+
+      // Field 2: Altitude (scale by SCAL[2])
+      int32_t altRaw = BYTESWAP32(longPtr[2]);
+      double altitude = static_cast<double>(altRaw) / static_cast<double>(scales[2]);
+
+      // Field 3: 2D Speed (scale by SCAL[3])
+      int32_t speed2dRaw = BYTESWAP32(longPtr[3]);
+      float speed2d = static_cast<float>(speed2dRaw) / static_cast<float>(scales[3]);
+
+      // Field 4: 3D Speed (scale by SCAL[4])
+      int32_t speed3dRaw = BYTESWAP32(longPtr[4]);
+      float speed3d = static_cast<float>(speed3dRaw) / static_cast<float>(scales[4]);
+
+      // Field 5: Days since 2000-01-01 (scale by SCAL[5])
+      int32_t daysRaw = BYTESWAP32(longPtr[5]);
+      int32_t days = daysRaw / scales[5];
+
+      // Field 6: Seconds (scale by SCAL[6])
+      int32_t secsRaw = BYTESWAP32(longPtr[6]);
+      int32_t seconds = secsRaw / scales[6];
+
+      // 2 unsigned 16-bit shorts (S) = 4 bytes
+      offset += 7 * 4;// Advance past 7 longs
+      auto *shortPtr = reinterpret_cast<const uint16_t *>(rawData + offset);
+
+      // Field 7: DOP (Dilution of Precision) (scale by SCAL[7])
+      uint16_t dopRaw = BYTESWAP16(shortPtr[0]);
+      float dop = static_cast<float>(dopRaw) / static_cast<float>(scales[7]);
+
+      // Field 8: Fix type (0=no lock, 2=2D, 3=3D) (scale by SCAL[8], but typically 1)
+      uint16_t fixRaw = BYTESWAP16(shortPtr[1]);
+      uint16_t fixType = fixRaw / static_cast<uint16_t>(scales[8]);
+
+      // Create GpsFix
+      GpsFix fix;
+      fix.location = GPSCoordinate(latitude, longitude, altitude);
+      fix.speed = Point<float, 2>(speed2d, speed3d);
+      fix.days = days;
+      fix.seconds = seconds;
+      fix.precision = dop;
+      fix.fix = fixType;
+      fix.satellites = -1;// Not available in GPS9
+
+      // Interpolate the timestamp for this specific fix
+      Video::MediaTime fixTimestamp = timestamp;
+      if(timeDelta.count() > 0) {
+        fixTimestamp = timestamp + Video::MediaTime(timeDelta.count() * static_cast<int64_t>(i));
+      }
+
+      // Create and append frame
+      frames.push_back(std::make_shared<Video::MetaDataFrame<GpsFix>>(
+        fix,
+        streamId + mNextId++,
+        fixTimestamp));
+    }
+
+    SPDLOG_DEBUG("Created {} GPS9 frames from GPMF packet at timestamp {} μs", sampleCount, timestamp.count());
+  }
+
   void GpmfParser::parseGyro(GPMF_stream *stream, std::vector<std::shared_ptr<Video::Frame>> &frames, Video::StreamItemId streamId, Video::MediaTime timestamp)
   {
     if(stream == nullptr) {
@@ -353,8 +488,23 @@ namespace Ravl2::GoPro
       switch(fourcc) {
         case MAKEID('G', 'P', 'S', '5'):
         case MAKEID('G', 'P', 'S', '9'):
-          parseGps(levelStream, frames, streamId, timestamp);
-          processed = true;
+          {
+            // Detect GPS format by checking the sample type
+            // Hero 8: GPS5/GPS9 are type 'l' (signed long) - simple arrays
+            // Hero 13: GPS9 is type '?' (complex) with TYPE descriptor "lllllllSS"
+            GPMF_SampleType sampleType = GPMF_Type(levelStream);
+
+            if(sampleType == GPMF_TYPE_COMPLEX) {
+              // Hero 13 format: GPS9 as complex type with TYPE descriptor
+              SPDLOG_DEBUG("Detected GPS complex type (Hero 13+ format)");
+              parseGps9Complex(levelStream, frames, streamId, timestamp);
+            } else {
+              // Hero 8 format: GPS5/GPS9 as simple 'l' (int32) arrays
+              SPDLOG_DEBUG("Detected GPS simple type (Hero 8 format)");
+              parseGps(levelStream, frames, streamId, timestamp);
+            }
+            processed = true;
+          }
           break;
 
         case MAKEID('G', 'Y', 'R', 'O'):
@@ -473,26 +623,30 @@ namespace Ravl2::GoPro
     // Save the current position
     GPMF_stream tempStream = *stream;
 
-    // Strategy 1: Look for TSMP (Time Stamp) field - the most accurate
-    // TSMP contains the time span for all samples in this packet (in microseconds)
+    // Strategy 1: Look for TSMP (Total SaMPles) field
+    // IMPORTANT: TSMP is the NUMBER OF SAMPLES in this packet, NOT a timestamp!
+    // It should match the repeat count of the data field. It's a redundant field for validation.
+    // DO NOT use TSMP to calculate sample rate - it's just a sample count.
+    // For Hero 8: TSMP=19 means 19 GPS samples in packet
+    // For Hero 13: TSMP=1 means 1 GPS sample in packet
     if(GPMF_FindPrev(&tempStream, MAKEID('T', 'S', 'M', 'P'), GPMF_RECURSE_LEVELS) == GPMF_OK) {
       auto *tsmpData = static_cast<uint32_t *>(GPMF_RawData(&tempStream));
       if(tsmpData != nullptr) {
         uint32_t sampleCount = GPMF_Repeat(&tempStream);
         if(sampleCount > 0) {
           // IMPORTANT: GPMF data is big-endian, must byte-swap!
-          uint32_t tsmpValue = BYTESWAP32(tsmpData[0]);// TSMP in microseconds
+          uint32_t tsmpValue = BYTESWAP32(tsmpData[0]);// TSMP is sample count
 
           // Get number of samples from the parent data stream
           uint32_t dataRepeat = GPMF_Repeat(stream);
-          if(dataRepeat > 1 && tsmpValue > 0) {
-            // Calculate rate: (samples - 1) / (time span in seconds)
-            // Example: 18 samples over 944444 μs → 17 / 0.944444 = 18.0 Hz
-            float rate = (static_cast<float>(dataRepeat - 1) * 1000000.0f) / static_cast<float>(tsmpValue);
-            SPDLOG_INFO("Calculated sample rate from TSMP: {:.2f} Hz (samples={}, tsmp={}μs)",
-                        rate, dataRepeat, tsmpValue);
-            return rate;
+
+          // Validate TSMP matches data repeat count
+          if(tsmpValue != dataRepeat) {
+            SPDLOG_WARN("TSMP value ({}) does not match data repeat count ({})", tsmpValue, dataRepeat);
           }
+
+          // TSMP doesn't tell us the sample rate - fall through to other strategies
+          SPDLOG_DEBUG("Found TSMP: {} samples (matches data repeat: {})", tsmpValue, dataRepeat);
         }
       }
     }
@@ -534,6 +688,70 @@ namespace Ravl2::GoPro
     // Fallback: return 0 to indicate unknown
     SPDLOG_WARN("Could not determine sample rate for FourCC: {}, returning 0", fourccStr);
     return 0.0f;
+  }
+
+  std::string GpmfParser::getTypeDescriptor(GPMF_stream *stream) const
+  {
+    if(stream == nullptr) {
+      return "";
+    }
+
+    // Save the current position
+    GPMF_stream tempStream = *stream;
+
+    // Look for TYPE field at the current level (sibling of current FourCC)
+    if(GPMF_FindPrev(&tempStream, MAKEID('T', 'Y', 'P', 'E'), GPMF_RECURSE_LEVELS) == GPMF_OK) {
+      auto *typeData = static_cast<char *>(GPMF_RawData(&tempStream));
+      uint32_t typeSize = GPMF_RawDataSize(&tempStream);
+      if(typeData != nullptr && typeSize > 0) {
+        // TYPE is stored as ASCII string (e.g., "lllllllSS")
+        std::string typeDesc(typeData, typeSize);
+        // Remove any null terminators or padding
+        typeDesc.erase(std::find(typeDesc.begin(), typeDesc.end(), '\0'), typeDesc.end());
+        SPDLOG_DEBUG("getTypeDescriptor: found TYPE: \"{}\"", typeDesc);
+        return typeDesc;
+      }
+    }
+
+    SPDLOG_DEBUG("getTypeDescriptor: no TYPE found at current level");
+    return "";
+  }
+
+  std::vector<int32_t> GpmfParser::getScaleFactors(GPMF_stream *stream, uint32_t expectedCount) const
+  {
+    std::vector<int32_t> scales;
+
+    if(stream == nullptr) {
+      return scales;
+    }
+
+    // Save the current position
+    GPMF_stream tempStream = *stream;
+
+    // Look for SCAL (scale) field at the current level
+    if(GPMF_FindPrev(&tempStream, MAKEID('S', 'C', 'A', 'L'), GPMF_RECURSE_LEVELS) == GPMF_OK) {
+      auto *scaleData = static_cast<int32_t *>(GPMF_RawData(&tempStream));
+      if(scaleData != nullptr) {
+        uint32_t scaleCount = GPMF_Repeat(&tempStream);
+        if(scaleCount > 0) {
+          scales.reserve(scaleCount);
+          for(uint32_t i = 0; i < scaleCount; i++) {
+            // IMPORTANT: GPMF data is big-endian, must byte-swap!
+            scales.push_back(BYTESWAP32(scaleData[i]));
+          }
+          SPDLOG_DEBUG("getScaleFactors: found {} scale values", scaleCount);
+
+          // Warn if count doesn't match expected
+          if(expectedCount > 0 && scaleCount != expectedCount) {
+            SPDLOG_WARN("getScaleFactors: expected {} scale values, found {}", expectedCount, scaleCount);
+          }
+        }
+      }
+    } else {
+      SPDLOG_DEBUG("getScaleFactors: no SCAL found at current level");
+    }
+
+    return scales;
   }
 
   std::string GpmfParser::fourccToString(uint32_t fourcc)

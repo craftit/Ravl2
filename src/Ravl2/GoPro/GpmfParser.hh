@@ -53,7 +53,16 @@ namespace Ravl2::GoPro
     //! @param frames Vector to append GPS frames to
     //! @param streamId Stream identifier for creating frames
     //! @param timestamp Base timestamp for this packet
+    //! @note This handles both GPS5 (Hero 8) and GPS9 (Hero 13+) formats by detecting the type
     void parseGps(GPMF_stream* stream, std::vector<std::shared_ptr<Video::Frame>>& frames, Video::StreamItemId streamId, Video::MediaTime timestamp);
+
+    //! Parse GPS9 complex type data using TYPE descriptor
+    //! @param stream GPMF stream positioned at GPS9 data (type '?')
+    //! @param frames Vector to append GPS frames to
+    //! @param streamId Stream identifier for creating frames
+    //! @param timestamp Base timestamp for this packet
+    //! @note GPS9 uses complex type '?' with TYPE descriptor "lllllllSS" (7 longs + 2 shorts)
+    void parseGps9Complex(GPMF_stream* stream, std::vector<std::shared_ptr<Video::Frame>>& frames, Video::StreamItemId streamId, Video::MediaTime timestamp);
 
     //! Parse gyroscope data from GPMF stream and append frame
     //! @param stream GPMF stream positioned at gyro data
@@ -87,6 +96,17 @@ namespace Ravl2::GoPro
     //! @param stream GPMF stream
     //! @return Sample rate in Hz (0 if not found)
     [[nodiscard]] float getSampleRate(GPMF_stream* stream) const;
+
+    //! Find and read TYPE descriptor for complex types
+    //! @param stream GPMF stream positioned at complex data
+    //! @return TYPE descriptor string (e.g., "lllllllSS"), or empty if not found
+    [[nodiscard]] std::string getTypeDescriptor(GPMF_stream* stream) const;
+
+    //! Find and read SCAL (scale) values for a stream
+    //! @param stream GPMF stream
+    //! @param expectedCount Expected number of scale values
+    //! @return Vector of scale factors (empty if not found)
+    [[nodiscard]] std::vector<int32_t> getScaleFactors(GPMF_stream* stream, uint32_t expectedCount) const;
 
     //! Convert GPMF FourCC to string representation
     //! @param fourcc 32-bit FourCC value
