@@ -1,4 +1,4 @@
-#include "Ravl2/Display/Overlays/Polyline2DNode.hh"
+#include "Ravl2/Display/Polyline2DNode.hh"
 #include "Ravl2/Display/RenderContext.hh"
 
 #if defined(RAVL2_WITH_IMGUI)

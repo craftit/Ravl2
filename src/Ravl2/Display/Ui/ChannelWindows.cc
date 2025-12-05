@@ -8,7 +8,7 @@
 #pragma GCC diagnostic ignored "-Wgnu-zero-variadic-macro-arguments"
 #endif
 #include <imgui.h>
-#include "Ravl2/Display/bgfx_imgui/ImGUI/imgui.hh"
+#include "Ravl2/Display/ThirdParty/bgfx_imgui/ImGUI/imgui.hh"
 #pragma GCC diagnostic pop
 #endif
 
@@ -22,7 +22,7 @@
 #include <algorithm>
 #include <cmath>
 #include "Ravl2/Types.hh"
-#include "Ravl2/Display/3D/Grid3DOverlay.hh"
+#include "Ravl2/Display/Grid3DOverlay.hh"
 
 namespace Ravl2::DebugDisplay::Ui::ChannelWindows
 {

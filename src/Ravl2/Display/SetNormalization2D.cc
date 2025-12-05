@@ -1,4 +1,4 @@
-#include "Ravl2/Display/Commands/SetNormalization2D.hh"
+#include "Ravl2/Display/SetNormalization2D.hh"
 #include "Ravl2/Display/Channel.hh"
 #include "Ravl2/Display/Image2DNode.hh"
 #include <spdlog/spdlog.h>

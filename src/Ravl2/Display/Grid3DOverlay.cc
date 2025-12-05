@@ -1,4 +1,4 @@
-#include "Ravl2/Display/3D/Grid3DOverlay.hh"
+#include "Ravl2/Display/Grid3DOverlay.hh"
 
 #if defined(RAVL2_WITH_IMGUI)
 #pragma GCC diagnostic push

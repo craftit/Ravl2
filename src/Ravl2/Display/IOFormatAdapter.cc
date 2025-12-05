@@ -12,13 +12,13 @@
 #include "Ravl2/Display/DebugDisplay.hh"
 #include "Ravl2/Display/IRenderCommand.hh"
 #include "Ravl2/Display/Channel.hh"
-#include "Ravl2/Display/Commands/SetBaseImage2D.hh"
-#include "Ravl2/Display/Commands/SetNormalization2D.hh"
-#include "Ravl2/Display/Commands/AddPolylineOverlay2D.hh"
+#include "Ravl2/Display/SetBaseImage2D.hh"
+#include "Ravl2/Display/SetNormalization2D.hh"
+#include "Ravl2/Display/AddPolylineOverlay2D.hh"
 #include "Ravl2/Geometry/PolyLine.hh"
 #include "Ravl2/Geometry/PointSet.hh"
 #include "Ravl2/Types.hh"
-#include "Ravl2/Display/Commands/SetPointCloud3D.hh"
+#include "Ravl2/Display/SetPointCloud3D.hh"
 #include "Ravl2/Pixel/Pixel.hh"
 
 namespace Ravl2::DebugDisplay

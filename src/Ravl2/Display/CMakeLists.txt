@@ -4,29 +4,40 @@
 list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
 
 add_library(Ravl2Display
+    # Core API and infrastructure
     DebugDisplay.cc DebugDisplay.hh
+    IRenderCommand.hh ISceneNode.hh Channel.hh
+    RenderContext.hh Normalization.hh
+    CompositeNode.hh
+
+    # Backends (platform abstraction)
     Backends/BGFXContext.cc Backends/BGFXContext.hh
     Backends/ImguiBgfxBridge.cc Backends/ImguiBgfxBridge.hh
+
+    # UI components
     Ui/Dockspace.cc Ui/Dockspace.hh
     Ui/ControlsPanel.cc Ui/ControlsPanel.hh
     Ui/ChannelWindows.cc Ui/ChannelWindows.hh
     Ui/StatusBar.cc Ui/StatusBar.hh
     Ui/Plots.cc Ui/Plots.hh
+
+    # Scene nodes and controllers
     InputController2D.cc InputController2D.hh
-    Overlays/Polyline2DNode.cc Overlays/Polyline2DNode.hh
-    IRenderCommand.hh ISceneNode.hh Channel.hh
-    RenderContext.hh Normalization.hh
-    CompositeNode.hh
     Image2DNodeBase.cc Image2DNodeBase.hh
     Image2DNode.cc Image2DNode.hh
-    Commands/SetBaseImage2D.hh
-    Commands/SetNormalization2D.hh Commands/SetNormalization2D.cc
-    Commands/AddPolylineOverlay2D.cc Commands/AddPolylineOverlay2D.hh
-    Commands/SetPointCloud3D.cc Commands/SetPointCloud3D.hh
-    Adapters/RenderCommandSink.cc
+    Polyline2DNode.cc Polyline2DNode.hh
     OrbitCamera.cc OrbitCamera.hh
     Viewport3DNode.cc Viewport3DNode.hh
-    3D/Grid3DOverlay.cc 3D/Grid3DOverlay.hh
+    Grid3DOverlay.cc Grid3DOverlay.hh
+
+    # Render commands
+    SetBaseImage2D.hh
+    SetNormalization2D.hh SetNormalization2D.cc
+    AddPolylineOverlay2D.cc AddPolylineOverlay2D.hh
+    SetPointCloud3D.cc SetPointCloud3D.hh
+
+    # I/O integration
+    IOFormatAdapter.cc
 )
 
 # On macOS, compile BGFXContext.cc as Objective-C++ to use Cocoa framework
@@ -179,9 +190,9 @@ endif()
 if(TARGET imgui AND TARGET bgfx)
   message(STATUS "Ravl2Display: using ImGui bgfx backend ")
   add_library(bgfx_imgui STATIC
-          ${CMAKE_CURRENT_LIST_DIR}/bgfx_imgui/ImGUI/imgui.cpp
-          ${CMAKE_CURRENT_LIST_DIR}/bgfx_imgui/ImGUI/dock.cc
-# ${CMAKE_CURRENT_LIST_DIR}/bgfx_imgui/bgfx_utils.cpp
+          ${CMAKE_CURRENT_LIST_DIR}/ThirdParty/bgfx_imgui/ImGUI/imgui.cpp
+          ${CMAKE_CURRENT_LIST_DIR}/ThirdParty/bgfx_imgui/ImGUI/dock.cc
+# ${CMAKE_CURRENT_LIST_DIR}/ThirdParty/bgfx_imgui/bgfx_utils.cpp
   )
 
   target_include_directories(bgfx_imgui PUBLIC ${bgfx_SOURCE_DIR}/bgfx/3rdparty)

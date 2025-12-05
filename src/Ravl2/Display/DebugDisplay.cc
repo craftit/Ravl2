@@ -215,15 +215,15 @@ namespace
 #include <imgui.h>
 #include <backends/imgui_impl_sdl2.h>
 #include <backends/imgui_impl_sdlrenderer2.h>
-#include "Ravl2/Display/bgfx_imgui/ImGUI/imgui.hh"
-#include "Ravl2/Display/Commands/SetNormalization2D.hh"
+#include "Ravl2/Display/ThirdParty/bgfx_imgui/ImGUI/imgui.hh"
+#include "Ravl2/Display/SetNormalization2D.hh"
 #pragma GCC diagnostic pop
 #elif defined(RAVL2_WITH_IMGUI)
 // ImGui (SDL2 + SDL_Renderer2 backend)
 #include <imgui.h>
 #include <backends/imgui_impl_sdl2.h>
 #include <backends/imgui_impl_sdlrenderer2.h>
-#include "Ravl2/Display/Commands/SetNormalization2D.hh"
+#include "Ravl2/Display/SetNormalization2D.hh"
 #endif
 
 #ifdef __APPLE__

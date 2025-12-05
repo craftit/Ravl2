@@ -15,7 +15,7 @@
 #endif
 
 #include "Ravl2/Display/Normalization.hh"
-#include "Ravl2/Display/Commands/SetNormalization2D.hh"
+#include "Ravl2/Display/SetNormalization2D.hh"
 #include "Ravl2/Display/Image2DNode.hh"
 
 namespace Ravl2::DebugDisplay::Ui

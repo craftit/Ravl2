@@ -1,4 +1,4 @@
-#include "Ravl2/Display/Commands/SetPointCloud3D.hh"
+#include "Ravl2/Display/SetPointCloud3D.hh"
 
 #include <spdlog/spdlog.h>
 

@@ -8,7 +8,7 @@
 #pragma GCC diagnostic ignored "-Wgnu-zero-variadic-macro-arguments"
 #endif
 #include <imgui.h>
-#include "Ravl2/Display/bgfx_imgui/ImGUI/imgui.hh"
+#include "Ravl2/Display/ThirdParty/bgfx_imgui/ImGUI/imgui.hh"
 #pragma GCC diagnostic pop
 #endif
 

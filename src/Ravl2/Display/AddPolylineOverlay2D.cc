@@ -1,10 +1,10 @@
-#include "Ravl2/Display/Commands/AddPolylineOverlay2D.hh"
+#include "Ravl2/Display/AddPolylineOverlay2D.hh"
 
 #include <utility>
 
 #include "Ravl2/Display/Channel.hh"
 #include "Ravl2/Display/CompositeNode.hh"
-#include "Ravl2/Display/Overlays/Polyline2DNode.hh"
+#include "Ravl2/Display/Polyline2DNode.hh"
 #include "Ravl2/Display/Image2DNodeBase.hh"
 #include <spdlog/spdlog.h>
 
