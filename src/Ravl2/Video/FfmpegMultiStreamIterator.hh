@@ -260,6 +260,9 @@ namespace Ravl2::Video
     //! Other capture formats (V4L2, DirectShow) don't exhibit this issue in practice.
     bool m_needsFrameClone = false;
 
+    //! Verbose logging.
+    bool mVerbose = false;
+
 #ifdef WITH_GPMF
     //! GPMF parser instance for this iterator
     //! Each iterator needs its own parser to maintain independent state (mNextId)

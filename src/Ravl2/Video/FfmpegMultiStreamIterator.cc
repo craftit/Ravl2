@@ -1122,10 +1122,11 @@ namespace Ravl2::Video
           return VideoResult<std::vector<std::shared_ptr<Frame>>>(VideoErrorCode::NeedMoreData);
         }
 
-        SPDLOG_INFO("Processing GPMF stream at localIndex={}, packet size={} bytes",
-                     localIndex, packet->size);
+        if(mVerbose) {
+          SPDLOG_INFO("Processing GPMF stream at localIndex={}, packet size={} bytes", localIndex, packet->size);
+        }
 
-        // Ensure parser is initialized
+        // Ensure parser is initialised
         if (!m_gpmfParser)
         {
           SPDLOG_ERROR("GPMF parser not initialized");
@@ -1154,7 +1155,9 @@ namespace Ravl2::Video
 
         // Parse GPMF data - this may return multiple frames (GPS, gyro, accel)
         auto frames = m_gpmfParser->parse(packet->data, static_cast<size_t>(packet->size), streamId, timestamp);
-        SPDLOG_INFO("Got {} frames from buffer {} bytes ",frames.size(), packet->size);
+        if(mVerbose) {
+          SPDLOG_INFO("Got {} frames from buffer {} bytes ",frames.size(), packet->size);
+        }
 
         if (frames.empty())
         {

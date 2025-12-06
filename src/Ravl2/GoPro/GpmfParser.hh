@@ -165,6 +165,8 @@ namespace Ravl2::GoPro
       bool hasData = false;          // Whether we have previous data
     };
     mutable std::map<uint32_t, TimingInfo> mTimingInfo;
+    bool mHaveReportedGyroFPS = false;
+    bool mHaveReportedAccelFPS = false;
   };
 
 } // namespace Ravl2::GoPro
