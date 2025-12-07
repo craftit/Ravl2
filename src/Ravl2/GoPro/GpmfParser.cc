@@ -19,6 +19,11 @@ extern "C" {
 
 namespace Ravl2::GoPro
 {
+  void init()
+  {
+    typeInit();
+  }
+
   std::string toString(GPMF_SampleType stype)
   {
     switch(stype) {

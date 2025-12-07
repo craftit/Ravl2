@@ -178,7 +178,7 @@ int RAVL2_MAIN(int argc, char **argv)
   }
 
   using ImageT = Ravl2::Array<PixelT, 2>;
-  Ravl2::Video::TypedStreamIterator<ImageT> iterator(iterResult.value());
+  auto iterator = container->createIterator<ImageT>(videoStreamIndex);
 
   // Set up an output stream if needed
   Ravl2::StreamOutputProxy<ImageT> outputStream;

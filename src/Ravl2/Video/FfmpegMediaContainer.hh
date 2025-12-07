@@ -89,6 +89,8 @@ namespace Ravl2::Video
     //! Get the total duration of the container (the longest stream)
     [[nodiscard]] MediaTime duration() const override;
 
+    using MediaContainer::createIterator;
+
     //! Create an iterator for a specific stream
     [[nodiscard]] VideoResult<std::shared_ptr<StreamIterator>> createIterator(std::size_t streamIndex) override;
 

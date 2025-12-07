@@ -15,6 +15,8 @@
 #include "Ravl2/Video/AudioChunk.hh"
 #include "Ravl2/IO/TypeConverter.hh"
 
+#include <Ravl2/Pixel/PixelPlane.hh>
+
 namespace Ravl2::Video
 {
   // Forward declarations
@@ -137,19 +139,16 @@ namespace Ravl2::Video
   template<typename ImageTypeT>
   class TypedStreamIterator
   {
-  public:
-    //! Constructor taking a StreamIterator
-    explicit TypedStreamIterator(std::shared_ptr<StreamIterator> iterator)
-      : m_iterator(std::move(iterator))
+    bool buildConverter(std::type_info const&srcType)
     {
-      if (!m_iterator)
-      {
-        throw std::runtime_error("StreamIterator is null");
+      if (!m_iterator) {
+        return false;
       }
+
       auto&targetType = typeid(ImageTypeT);
-      if (targetType != m_iterator->dataType())
+      if (targetType !=srcType && srcType != typeid(void))
       {
-        mConversionChain = Ravl2::typeConverterMap().find(targetType, m_iterator->dataType());
+        mConversionChain = Ravl2::typeConverterMap().find(targetType, srcType);
         if (!mConversionChain)
         {
           SPDLOG_WARN("No conversion available from {} to {}",
@@ -163,6 +162,25 @@ namespace Ravl2::Video
           throw std::runtime_error("Cannot convert frames to the requested type");
         }
       }
+      return true;
+    }
+
+  public:
+    //! Constructor taking a StreamIterator
+    explicit TypedStreamIterator(std::shared_ptr<StreamIterator> iterator)
+      : m_iterator(std::move(iterator))
+    {
+      if (!m_iterator)
+      {
+        throw std::runtime_error("StreamIterator is null");
+      }
+      buildConverter(m_iterator->dataType());
+    }
+
+    explicit TypedStreamIterator(VideoResult<std::shared_ptr<StreamIterator>> result)
+      : m_iterator(std::move(result.value()))
+    {
+      buildConverter();
     }
 
     //! Move to the next frame
@@ -198,6 +216,9 @@ namespace Ravl2::Video
     //! Get the current frame
     [[nodiscard]] ImageTypeT data()
     {
+      if(m_iterator->currentFrame()->dataType() != typeid(ImageTypeT) && !mConversionChain) {
+        buildConverter(m_iterator->currentFrame()->dataType());
+      }
       if (mConversionChain)
       {
         return std::any_cast<ImageTypeT>(mConversionChain->convert(m_iterator->currentFrame()->frameData()));
@@ -207,7 +228,7 @@ namespace Ravl2::Video
         SPDLOG_ERROR("Unexpected data type. Got {}, wanted {}  ",Ravl2::typeName(m_iterator->dataType()), typeName<ImageTypeT>());
         throw std::runtime_error("Frame type does not match iterator data type and no conversion available");
       }
-      return currentFrame().data();
+      return m_iterator->currentFrame()->cast<ImageTypeT>();
     }
 
     //! Seek to a specific timestamp
