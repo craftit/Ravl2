@@ -17,7 +17,7 @@
 
 #ifdef WITH_GPMF
 #include "Ravl2/GoPro/GpmfTypes.hh"
-#include "Ravl2/Video/MetaDataFrame.hh"
+#include "Ravl2/Video/Frame.hh"
 #endif
 
 //! Example program that reads GoPro GPMF metadata from a video file
@@ -139,7 +139,7 @@ int RAVL2_MAIN(int argc, char *argv[])
     messageTypeCounts[Ravl2::typeName(typeid(*frame))]++;
 
     // Check if this is a GPS frame
-    auto* gpsFrame = dynamic_cast<Ravl2::Video::MetaDataFrame<Ravl2::GoPro::GpsFix>*>(frame.get());
+    auto* gpsFrame = dynamic_cast<Ravl2::Video::FrameData<Ravl2::GoPro::GpsFix>*>(frame.get());
     if (gpsFrame) {
       gpsCount++;
       if (verbose || gpsCount == 1) {
@@ -158,7 +158,7 @@ int RAVL2_MAIN(int argc, char *argv[])
     }
 
     // Check if this is a gyroscope frame
-    auto* gyroFrame = dynamic_cast<Ravl2::Video::MetaDataFrame<Ravl2::GoPro::GyroSamples>*>(frame.get());
+    auto* gyroFrame = dynamic_cast<Ravl2::Video::FrameData<Ravl2::GoPro::GyroSamples>*>(frame.get());
     if (gyroFrame) {
       gyroCount++;
       if (verbose || gyroCount == 1) {
@@ -178,7 +178,7 @@ int RAVL2_MAIN(int argc, char *argv[])
     }
 
     // Check if this is an accelerometer frame
-    auto* accelFrame = dynamic_cast<Ravl2::Video::MetaDataFrame<Ravl2::GoPro::AccelSamples>*>(frame.get());
+    auto* accelFrame = dynamic_cast<Ravl2::Video::FrameData<Ravl2::GoPro::AccelSamples>*>(frame.get());
     if (accelFrame) {
       accelCount++;
       if (verbose || accelCount == 1) {
@@ -197,7 +197,7 @@ int RAVL2_MAIN(int argc, char *argv[])
       }
     }
 
-    auto* jsonFrame = dynamic_cast<Ravl2::Video::MetaDataFrame<nlohmann::json> *>(frame.get());
+    auto* jsonFrame = dynamic_cast<Ravl2::Video::FrameData<nlohmann::json> *>(frame.get());
     if(jsonFrame) {
       if (verbose) {
         fmt::print("Json: {}\n", jsonFrame->data().dump(-1));

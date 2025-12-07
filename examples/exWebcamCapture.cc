@@ -7,11 +7,11 @@
 #include <spdlog/spdlog.h>
 
 #include "Ravl2/config.hh"
-#include "Ravl2/Video/VideoFrame.hh"
 #include "Ravl2/Video/StreamIterator.hh"
 #include "Ravl2/Display/DebugDisplay.hh"
 #include "Ravl2/ImageIO/ImageIOInit.hh"
 #include "Ravl2/Pixel/Colour.hh"
+#include "Ravl2/Pixel/PixelPlane.hh"
 #include "Ravl2/IO/OutputSequence.hh"
 #include "Ravl2/EntryPnt.hh"
 
@@ -178,7 +178,7 @@ int RAVL2_MAIN(int argc, char **argv)
   }
 
   using ImageT = Ravl2::Array<PixelT, 2>;
-  Ravl2::Video::VideoStreamIterator<ImageT> iterator(iterResult.value());
+  Ravl2::Video::TypedStreamIterator<ImageT> iterator(iterResult.value());
 
   // Set up an output stream if needed
   Ravl2::StreamOutputProxy<ImageT> outputStream;
@@ -201,7 +201,7 @@ int RAVL2_MAIN(int argc, char **argv)
 
   while (iterator.isValid()) {
     // Get the current frame
-    auto frameResult = iterator.videoFrame();
+    auto frameResult = iterator.data();
 
     if (outputStream.valid()) {
       outputStream.put(frameResult);

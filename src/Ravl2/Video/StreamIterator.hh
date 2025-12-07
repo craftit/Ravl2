@@ -196,7 +196,7 @@ namespace Ravl2::Video
     }
 
     //! Get the current frame
-    [[nodiscard]] ImageTypeT videoFrame()
+    [[nodiscard]] ImageTypeT data()
     {
       if (mConversionChain)
       {
@@ -204,9 +204,10 @@ namespace Ravl2::Video
       }
       if (typeid(ImageTypeT) != m_iterator->dataType())
       {
+        SPDLOG_ERROR("Unexpected data type. Got {}, wanted {}  ",Ravl2::typeName(m_iterator->dataType()), typeName<ImageTypeT>());
         throw std::runtime_error("Frame type does not match iterator data type and no conversion available");
       }
-      return currentFrame().image();
+      return currentFrame().data();
     }
 
     //! Seek to a specific timestamp
