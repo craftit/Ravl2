@@ -8,7 +8,6 @@
 #include "Ravl2/IO/StreamInput.hh"            // For StreamInputCall
 #include "Ravl2/Video/FfmpegMediaContainer.hh" // FFmpeg media container implementation
 #include "Ravl2/Video/StreamIterator.hh"       // Generic stream iterator API
-#include "Ravl2/Video/VideoFrame.hh"           // VideoFrame template
 #include "Ravl2/Video/VideoTypes.hh"           // VideoErrorCode / MediaTime
 #include "Ravl2/Video/VideoIO.hh"              // initIO()
 #include "Ravl2/Pixel/PixelPlane.hh"           // Planar image types (YUV/RGB)
@@ -61,11 +60,11 @@ namespace Ravl2::Video
           }
 
             // Extract image (copy lightweight wrapper / shared planes).
-          auto vf = std::dynamic_pointer_cast<VideoFrame<ImageT>>(iterator->currentFrame());
+          auto vf = std::dynamic_pointer_cast<FrameData<ImageT>>(iterator->currentFrame());
           if (!vf) {
             return std::nullopt;
           }
-          ImageT img = vf->image();
+          ImageT img = vf->data();
 
           // Advance for next request. Failure other than EndOfStream is logged and stream ends.
           auto nextRes = iterator->next();

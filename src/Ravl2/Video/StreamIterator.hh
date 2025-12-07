@@ -12,9 +12,7 @@
 #include "Ravl2/Assert.hh"
 #include "Ravl2/Video/VideoTypes.hh"
 #include "Ravl2/Video/Frame.hh"
-#include "Ravl2/Video/VideoFrame.hh"
 #include "Ravl2/Video/AudioChunk.hh"
-#include "Ravl2/Video/MetaDataFrame.hh"
 #include "Ravl2/IO/TypeConverter.hh"
 
 namespace Ravl2::Video
@@ -135,21 +133,18 @@ namespace Ravl2::Video
     std::shared_ptr<Frame> mCurrentFrame;
   };
 
-  //! Helper class for simpler type-safe iteration over video frames
-  template<typename ImageTypeT> class VideoStreamIterator
+  //! Helper class for simpler type-safe iteration over data frames
+  template<typename ImageTypeT>
+  class TypedStreamIterator
   {
   public:
     //! Constructor taking a StreamIterator
-    explicit VideoStreamIterator(std::shared_ptr<StreamIterator> iterator)
+    explicit TypedStreamIterator(std::shared_ptr<StreamIterator> iterator)
       : m_iterator(std::move(iterator))
     {
       if (!m_iterator)
       {
         throw std::runtime_error("StreamIterator is null");
-      }
-      if (m_iterator->streamType() != StreamType::Video)
-      {
-        throw std::runtime_error("StreamIterator is not for a video stream");
       }
       auto&targetType = typeid(ImageTypeT);
       if (targetType != m_iterator->dataType())
@@ -189,10 +184,10 @@ namespace Ravl2::Video
     }
 
     //! Get the current frame
-    [[nodiscard]] VideoFrame<ImageTypeT>& currentFrame() const
+    [[nodiscard]] FrameData<ImageTypeT>& currentFrame() const
     {
       assert(m_iterator->currentFrame());
-      auto ptr = std::dynamic_pointer_cast<VideoFrame<ImageTypeT>>(m_iterator->currentFrame());
+      auto ptr = std::dynamic_pointer_cast<FrameData<ImageTypeT>>(m_iterator->currentFrame());
       if(!ptr) {
         SPDLOG_ERROR("Unexpected frame type.");
         RavlAlwaysAssertMsg(false, "Unexpected frame type.");
@@ -231,99 +226,4 @@ namespace Ravl2::Video
     std::optional<ConversionChain> mConversionChain;
   };
 
-  //! Helper class for simpler type-safe iteration over audio chunks
-  template<typename SampleT> class AudioStreamIterator
-  {
-  public:
-    //! Constructor taking a StreamIterator
-    explicit AudioStreamIterator(std::shared_ptr<StreamIterator> iterator)
-      : m_iterator(std::move(iterator))
-    {
-      if (m_iterator->streamType() != StreamType::Audio)
-      {
-        throw std::runtime_error("StreamIterator is not for an audio stream");
-      }
-    }
-
-    //! Move to the next chunk
-    VideoResult<void> next()
-    {
-      return m_iterator->next();
-    }
-
-    //! Move to the previous chunk
-    VideoResult<void> previous()
-    {
-      return m_iterator->previous();
-    }
-
-    //! Get the current frame
-    [[nodiscard]] AudioChunk<SampleT>& currentFrame() const
-    {
-      return *std::dynamic_pointer_cast<AudioChunk<SampleT>>(m_iterator->currentFrame());
-    }
-
-    //! Seek to a specific timestamp
-    VideoResult<void> seek(MediaTime timestamp, SeekFlags flags = SeekFlags::Precise)
-    {
-      return m_iterator->seek(timestamp, flags);
-    }
-
-    //! Get the underlying iterator
-    [[nodiscard]] std::shared_ptr<StreamIterator> iterator() const
-    {
-      return m_iterator;
-    }
-
-  private:
-    std::shared_ptr<StreamIterator> m_iterator;
-  };
-
-  //! Helper class for simpler type-safe iteration over metadata frames
-  template<typename DataT> class MetaDataStreamIterator
-  {
-  public:
-    //! Constructor taking a StreamIterator
-    explicit MetaDataStreamIterator(std::shared_ptr<StreamIterator> iterator)
-      : m_iterator(std::move(iterator))
-    {
-      if (m_iterator->streamType() != StreamType::Data)
-      {
-        throw std::runtime_error("StreamIterator is not for a metadata stream");
-      }
-    }
-
-    //! Move to the next frame
-    VideoResult<void> next()
-    {
-      return m_iterator->next();
-    }
-
-    //! Move to the previous frame
-    VideoResult<void> previous()
-    {
-      return m_iterator->previous();
-    }
-
-    //! Get the current metadata frame
-    [[nodiscard]] const MetaDataFrame<DataT>& currentFrame() const
-    {
-      return *std::dynamic_pointer_cast<MetaDataFrame<DataT>>(m_iterator->currentFrame());
-    }
-
-    //! Seek to a specific timestamp
-    VideoResult<void> seek(MediaTime timestamp, SeekFlags flags = SeekFlags::Precise)
-    {
-      return m_iterator->seek(timestamp, flags);
-    }
-
-    //! Get the underlying iterator
-    [[nodiscard]] std::shared_ptr<StreamIterator> iterator() const
-    {
-      return m_iterator;
-    }
-
-  private:
-    std::shared_ptr<StreamIterator> m_iterator;
-  };
 } // namespace Ravl2::Video

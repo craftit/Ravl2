@@ -3,6 +3,7 @@
 //
 
 #include "Ravl2/GoPro/GpmfParser.hh"
+#include "Ravl2/Video/VideoTypes.hh"
 
 #include "Ravl2/Assert.hh"
 #include "Ravl2/Logging.hh"
@@ -213,10 +214,12 @@ namespace Ravl2::GoPro
       }
 
       // Create and append frame
-      frames.push_back(std::make_shared<Video::MetaDataFrame<GpsFix>>(
+      frames.push_back(std::make_shared<Video::FrameData<GpsFix>>(
         fix,
         streamId + mNextId++,
-        fixTimestamp));
+        fixTimestamp,
+        Ravl2::Video::StreamType::Data
+        ));
     }
 
     SPDLOG_DEBUG("Created {} GPS frames from GPMF packet at timestamp {} μs", sampleCount, timestamp.count());
@@ -350,10 +353,11 @@ namespace Ravl2::GoPro
       }
 
       // Create and append frame
-      frames.push_back(std::make_shared<Video::MetaDataFrame<GpsFix>>(
+      frames.push_back(std::make_shared<Video::FrameData<GpsFix>>(
         fix,
         streamId + mNextId++,
-        fixTimestamp));
+        fixTimestamp,
+        Video::StreamType::Data));
     }
 
     SPDLOG_DEBUG("Created {} GPS9 frames from GPMF packet at timestamp {} μs", sampleCount, timestamp.count());
@@ -412,10 +416,11 @@ namespace Ravl2::GoPro
     }
 
     // Create and append frame
-    frames.push_back(std::make_shared<Video::MetaDataFrame<GyroSamples>>(
+    frames.push_back(std::make_shared<Video::FrameData<GyroSamples>>(
       GyroSamples(samples, sampleRate),
       streamId + mNextId++,
-      timestamp));
+      timestamp,
+      Video::StreamType::Data));
   }
 
   void GpmfParser::parseAccel(GPMF_stream *stream, std::vector<std::shared_ptr<Video::Frame>> &frames, Video::StreamItemId streamId, Video::MediaTime timestamp)
@@ -471,10 +476,11 @@ namespace Ravl2::GoPro
     }
 
     // Create and append frame
-    frames.push_back(std::make_shared<Video::MetaDataFrame<AccelSamples>>(
+    frames.push_back(std::make_shared<Video::FrameData<AccelSamples>>(
       AccelSamples(samples, sampleRate),
       streamId + mNextId++,
-      timestamp));
+      timestamp,
+      Video::StreamType::Data));
   }
 
   std::vector<std::shared_ptr<Video::Frame>> GpmfParser::processLevel(GPMF_stream *levelStream, Video::StreamItemId streamId, Video::MediaTime timestamp,  int level)
@@ -593,10 +599,11 @@ namespace Ravl2::GoPro
           unknownJson["samples"] = samplesToJson(levelStream, lastFourcc, level+1);
 
           // Create JSON frame
-          auto jsonFrame = std::make_shared<Video::MetaDataFrame<nlohmann::json>>(
+          auto jsonFrame = std::make_shared<Video::FrameData<nlohmann::json>>(
             unknownJson,
             streamId + mNextId++,
-            timestamp);
+            timestamp,
+            Video::StreamType::Data);
           frames.push_back(jsonFrame);
         }
       }
@@ -1448,7 +1455,7 @@ namespace Ravl2::GoPro
 
   namespace
   {
-    [[maybe_unused]] bool reg1 = registerTypeName(typeid(Video::MetaDataFrame<nlohmann::json>),"Ravl2::Video::MetaDataFrame<nlohmann::json>");
+    [[maybe_unused]] bool reg1 = registerTypeName(typeid(Video::FrameData<nlohmann::json>),"Ravl2::Video::MetaDataFrame<nlohmann::json>");
 
   }
 

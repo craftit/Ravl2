@@ -14,9 +14,6 @@
 #include <variant>
 #include "Ravl2/Video/MediaContainer.hh"
 #include "Ravl2/Video/VideoTypes.hh"
-#include "Ravl2/Video/VideoFrame.hh"
-#include "Ravl2/Video/AudioChunk.hh"
-#include "Ravl2/Video/MetaDataFrame.hh"
 #include "Ravl2/Video/Frame.hh"
 #include "Ravl2/Video/StreamIterator.hh"
 

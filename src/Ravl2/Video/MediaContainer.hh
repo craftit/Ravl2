@@ -12,9 +12,7 @@
 #include <shared_mutex>
 #include <variant>
 #include "Ravl2/Video/VideoTypes.hh"
-#include "Ravl2/Video/VideoFrame.hh"
-#include "Ravl2/Video/AudioChunk.hh"
-#include "Ravl2/Video/MetaDataFrame.hh"
+#include "Ravl2/Video/Frame.hh"
 
 namespace Ravl2::Video
 {
@@ -55,7 +53,7 @@ namespace Ravl2::Video
     //! Get properties for a data stream
     virtual VideoResult<DataProperties> dataProperties(std::size_t streamIndex) const = 0;
 
-    //! Get the total duration of the container (longest stream)
+    //! Get the total duration of the container (the longest stream)
     virtual MediaTime duration() const = 0;
 
     //! Create an iterator for a specific stream

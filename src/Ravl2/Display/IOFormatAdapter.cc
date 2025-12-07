@@ -20,6 +20,7 @@
 #include "Ravl2/Types.hh"
 #include "Ravl2/Display/SetPointCloud3D.hh"
 #include "Ravl2/Pixel/Pixel.hh"
+#include "Ravl2/Pixel/Colour.hh"
 
 namespace Ravl2::DebugDisplay
 {
@@ -44,6 +45,7 @@ namespace Ravl2::DebugDisplay
       }
       SPDLOG_INFO("DebugDisplay: SDL initialized on main thread");
     }
+    Ravl2::initColourConversion();
   }
 
   namespace
