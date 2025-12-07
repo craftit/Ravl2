@@ -14,7 +14,8 @@
 
 namespace Ravl2::Video
 {
-  //! Base class for audio chunks, regardless of sample type
+  //! Audio chunks, this wrapper mainly exists to distinguish the data from images.
+
   template<typename SampleT>
   class AudioChunk
   {
