@@ -1353,7 +1353,8 @@ namespace Ravl2::Video
     }
   }
 
-  template<typename ImageT> std::shared_ptr<VideoFrame<ImageT>> FfmpegMultiStreamIterator::createVideoFrame(
+  template<typename ImageT>
+  std::shared_ptr<FrameData<ImageT>> FfmpegMultiStreamIterator::createVideoFrame(
     AVFrame* frame,
     std::size_t localIndex,
     StreamItemId id)
@@ -1414,17 +1415,15 @@ namespace Ravl2::Video
       return nullptr;
     }
 
-    // Create a new video frame
-    auto videoFrame = std::make_shared<VideoFrame<ImageT>>(frameData, id, timestamp);
-
     // Set keyframe flag
-    videoFrame->setKeyFrame(frameToUse->pict_type == AV_PICTURE_TYPE_I);
+     //videoFrame->setKeyFrame(frameToUse->pict_type == AV_PICTURE_TYPE_I);
 
-    return videoFrame;
+    return std::make_shared<FrameData<ImageT>>(frameData, id, timestamp,StreamType::Video);
   }
 
-  template<typename SampleT> std::shared_ptr<AudioChunk<SampleT>> FfmpegMultiStreamIterator::createAudioChunk(
-    AVFrame* frame,
+  template<typename SampleT>
+  std::shared_ptr<FrameData<AudioChunk<SampleT>>> FfmpegMultiStreamIterator::createAudioChunk(
+    AVFrame *frame,
     std::size_t localIndex,
     StreamItemId id)
   {
@@ -1490,13 +1489,12 @@ namespace Ravl2::Video
     }
 
     // Create a new audio chunk
-    auto audioChunk = std::make_shared<AudioChunk<SampleT>>(audioData, id, timestamp);
-
-    return audioChunk;
+    return std::make_shared<FrameData<AudioChunk<SampleT>>>(AudioChunk<SampleT>(audioData), id, timestamp,StreamType::Audio);
   }
 
-  template<typename DataT> std::shared_ptr<MetaDataFrame<DataT>> FfmpegMultiStreamIterator::createMetadataFrame(
-    AVFrame* frame,
+  template<typename DataT>
+  std::shared_ptr<FrameData<DataT>> FfmpegMultiStreamIterator::createMetadataFrame(
+    AVFrame *frame,
     std::size_t localIndex,
     StreamItemId id)
   {
@@ -1522,9 +1520,7 @@ namespace Ravl2::Video
     DataT data;
 
     // Create a new metadata frame
-    auto metadataFrame = std::make_shared<MetaDataFrame<DataT>>(data, id, timestamp);
-
-    return metadataFrame;
+    return std::make_shared<FrameData<DataT>>(data, id, timestamp, StreamType::Data);
   }
 
   template<typename... PlaneTypes> bool FfmpegMultiStreamIterator::makeImage(
@@ -2023,14 +2019,14 @@ namespace Ravl2::Video
 
   namespace
   {
-    [[maybe_unused]] bool reg1 = registerTypeName(typeid(Ravl2::Video::VideoFrame<Ravl2::RGBPlanarImage<uint8_t>>),"Ravl2::Video::VideoFrame<Ravl2::RGBPlanarImage<uint8_t>>");
-    [[maybe_unused]] bool reg2 = registerTypeName(typeid(Ravl2::Video::VideoFrame<Ravl2::RGBAPlanarImage<uint8_t>>), "Ravl2::Video::VideoFrame<Ravl2::RGBAPlanarImage<uint8_t>>");
-    [[maybe_unused]] bool reg3 = registerTypeName(typeid(Ravl2::Video::VideoFrame<Ravl2::YUV420Image<uint8_t>>), "Ravl2::Video::VideoFrame<Ravl2::YUV420Image<uint8_t>>");
-    [[maybe_unused]] bool reg4 = registerTypeName(typeid(Ravl2::Video::VideoFrame<Ravl2::YUV420Image<uint16_t>>), "Ravl2::Video::VideoFrame<Ravl2::YUV420Image<uint16_t>>");
-    [[maybe_unused]] bool reg5 = registerTypeName(typeid(Ravl2::Video::VideoFrame<Ravl2::YUV422Image<uint8_t>>), "Ravl2::Video::VideoFrame<Ravl2::YUV422Image<uint8_t>>");
-    [[maybe_unused]] bool reg6 = registerTypeName(typeid(Ravl2::Video::VideoFrame<Ravl2::YUV444Image<uint8_t>>), "Ravl2::Video::VideoFrame<Ravl2::YUV444Image<uint8_t>>");
-    [[maybe_unused]] bool reg7 = registerTypeName(typeid(Ravl2::Video::VideoFrame<Ravl2::Array<PixelYUYV8,2>>), "Ravl2::Video::VideoFrame<Ravl2::Array<Ravl2::PixelYUYV8,2>>");
-    [[maybe_unused]] bool reg8 = registerTypeName(typeid(Ravl2::Video::VideoFrame<Ravl2::Array<PixelUYVY8,2>>), "Ravl2::Video::VideoFrame<Ravl2::Array<Ravl2::PixelUYVY8,2>>");
-    [[maybe_unused]] bool reg9 = registerTypeName(typeid(Ravl2::Video::VideoFrame<Ravl2::Array<PixelI8,2>>), "Ravl2::Video::VideoFrame<Ravl2::Array<Ravl2::PixelI8,2>>");
+    [[maybe_unused]] bool reg1 = registerTypeName(typeid(Ravl2::Video::FrameData<Ravl2::RGBPlanarImage<uint8_t>>),"Ravl2::Video::FrameData<Ravl2::RGBPlanarImage<uint8_t>>");
+    [[maybe_unused]] bool reg2 = registerTypeName(typeid(Ravl2::Video::FrameData<Ravl2::RGBAPlanarImage<uint8_t>>), "Ravl2::Video::FrameData<Ravl2::RGBAPlanarImage<uint8_t>>");
+    [[maybe_unused]] bool reg3 = registerTypeName(typeid(Ravl2::Video::FrameData<Ravl2::YUV420Image<uint8_t>>), "Ravl2::Video::FrameData<Ravl2::YUV420Image<uint8_t>>");
+    [[maybe_unused]] bool reg4 = registerTypeName(typeid(Ravl2::Video::FrameData<Ravl2::YUV420Image<uint16_t>>), "Ravl2::Video::FrameData<Ravl2::YUV420Image<uint16_t>>");
+    [[maybe_unused]] bool reg5 = registerTypeName(typeid(Ravl2::Video::FrameData<Ravl2::YUV422Image<uint8_t>>), "Ravl2::Video::FrameData<Ravl2::YUV422Image<uint8_t>>");
+    [[maybe_unused]] bool reg6 = registerTypeName(typeid(Ravl2::Video::FrameData<Ravl2::YUV444Image<uint8_t>>), "Ravl2::Video::FrameData<Ravl2::YUV444Image<uint8_t>>");
+    [[maybe_unused]] bool reg7 = registerTypeName(typeid(Ravl2::Video::FrameData<Ravl2::Array<PixelYUYV8,2>>), "Ravl2::Video::FrameData<Ravl2::Array<Ravl2::PixelYUYV8,2>>");
+    [[maybe_unused]] bool reg8 = registerTypeName(typeid(Ravl2::Video::FrameData<Ravl2::Array<PixelUYVY8,2>>), "Ravl2::Video::FrameData<Ravl2::Array<Ravl2::PixelUYVY8,2>>");
+    [[maybe_unused]] bool reg9 = registerTypeName(typeid(Ravl2::Video::FrameData<Ravl2::Array<PixelI8,2>>), "Ravl2::Video::FrameData<Ravl2::Array<Ravl2::PixelI8,2>>");
   }
 } // namespace Ravl2::Video

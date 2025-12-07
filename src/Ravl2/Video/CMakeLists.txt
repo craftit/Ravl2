@@ -31,9 +31,7 @@ endif()
 set(VIDEO_SOURCES
     VideoTypes.cc VideoTypes.hh
     Frame.cc Frame.hh
-    VideoFrame.cc VideoFrame.hh
     AudioChunk.cc AudioChunk.hh
-    MetaDataFrame.cc MetaDataFrame.hh
     MediaContainer.cc MediaContainer.hh
     MemoryMediaContainer.cc MemoryMediaContainer.hh
     StreamIterator.cc StreamIterator.hh

@@ -10,8 +10,8 @@
 #include "Ravl2/IO/OutputSequence.hh"
 #include "Ravl2/IO/InputSequence.hh"
 #include "Ravl2/Resource.hh"
-#include "Ravl2/Video/VideoFrame.hh"
 #include "Ravl2/Video/StreamIterator.hh"
+#include "Ravl2/Pixel/PixelPlane.hh"
 #include "Ravl2/Display/DebugDisplay.hh"
 #include "Ravl2/ImageIO/ImageIOInit.hh"
 #include "Ravl2/Pixel/Colour.hh"
@@ -190,7 +190,7 @@ int RAVL2_MAIN(int argc, char *argv[])
       return EXIT_FAILURE;
     }
     using ImageT = Ravl2::Array<PixelT,2>;
-    Ravl2::Video::VideoStreamIterator<ImageT> iterator(iterResult.value());
+    Ravl2::Video::TypedStreamIterator<ImageT> iterator(iterResult.value());
 
     // Set up an output stream if needed
     Ravl2::StreamOutputProxy<Ravl2::Array<PixelT,2>> outputStream;
@@ -213,7 +213,7 @@ int RAVL2_MAIN(int argc, char *argv[])
       auto startTime = std::chrono::steady_clock::now();
 
       // Get the next frame
-      auto frameResult = iterator.videoFrame();
+      auto frameResult = iterator.data();
 
       if (outputStream.valid()) {
         fmt::print("Writing frame {} to output stream\n", frameCount);

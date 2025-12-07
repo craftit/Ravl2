@@ -154,7 +154,8 @@ namespace Ravl2::Video
   };
 
   // Specialization for void results
-  template<> class VideoResult<void>
+  template<>
+  class VideoResult<void>
   {
   public:
     //! Construct a successful result

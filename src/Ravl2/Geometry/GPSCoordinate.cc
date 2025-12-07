@@ -376,15 +376,15 @@ namespace Ravl2
   //! Interpolate between two GPS positions.
   //! Fraction is between 0.0 and 1.0, where 0 is p1, and 1 is p2.
 
-  void GPSCoordinate::bilinearInterpolate(RealT fraction,
+  GPSCoordinate GPSCoordinate::bilinearInterpolate(RealT fraction,
                                            const GPSCoordinate &p1,
-                                           const GPSCoordinate &p2,
-                                           GPSCoordinate &position)
+                                           const GPSCoordinate &p2)
   {
+
     RealT mf = 1.0 - fraction;
     // FIXME: This isn't ideal.  We really want to find the shortest path over a sphere,
     // but it'll do for now.
-    position = GPSCoordinate(p1.latitude() * mf + p2.latitude() * fraction,
+    return GPSCoordinate(p1.latitude() * mf + p2.latitude() * fraction,
                               p1.longitude() * mf + p2.longitude() * fraction,
                               p1.height() * mf + p2.height() * fraction,
                               p1.horizontalErrorBounds() * mf + p2.horizontalErrorBounds() * fraction,

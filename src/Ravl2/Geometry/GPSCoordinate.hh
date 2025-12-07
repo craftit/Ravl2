@@ -86,7 +86,7 @@ namespace Ravl2
     //! Interpolate between two GPS positions.
     //! Fraction is between 0.0 and 1.0, where 0 is p1, and 1 is p2.
     //! This currently just does a linear interpolation of all the gps parameters.
-    static void bilinearInterpolate(RealT fraction,const GPSCoordinate &p1,const GPSCoordinate &p2,GPSCoordinate &position);
+    static GPSCoordinate bilinearInterpolate(RealT fraction,const GPSCoordinate &p1,const GPSCoordinate &p2);
 
     //! Access latitude in degree's
     [[nodiscard]] const RealT &latitude() const

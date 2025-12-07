@@ -4,7 +4,7 @@
 //
 
 #include "Ravl2/Catch2checks.hh"
-#include "Ravl2/Video/VideoFrame.hh"
+#include "Ravl2/Video/Frame.hh"
 #include "Ravl2/Array.hh"
 #include "Ravl2/Pixel/Pixel.hh"
 
@@ -13,82 +13,57 @@ namespace Ravl2::Video
   // For simplicity, using a simple pixel type
   using TestPixel = uint8_t;
 
-  TEST_CASE("VideoFrameBase properties", "[VideoFrame]")
+  TEST_CASE("VideoFrameBase properties", "[FrameDat]")
   {
     // Create a test frame
     Array<TestPixel, 2> frameData({10, 8}, 42); // rows=10 (height), cols=8 (width)
     StreamItemId id = 123;
     MediaTime timestamp = std::chrono::milliseconds(1000);
 
-    VideoFrame<Array<TestPixel, 2>> frame(frameData, id, timestamp);
+    FrameData<Array<TestPixel, 2>> frame(frameData, id, timestamp,StreamType::Video);
 
     SECTION("Basic properties")
     {
       CHECK(frame.id() == id);
       CHECK(frame.timestamp() == timestamp);
       CHECK(frame.streamType() == StreamType::Video);
-      CHECK(frame.width() == 8);
-      CHECK(frame.height() == 10);
     }
 
-    SECTION("Keyframe flag")
-    {
-      CHECK_FALSE(frame.isKeyFrame());
-      frame.setKeyFrame(true);
-      CHECK(frame.isKeyFrame());
-      frame.setKeyFrame(false);
-      CHECK_FALSE(frame.isKeyFrame());
-    }
   }
 
-  TEST_CASE("VideoFrame template class", "[VideoFrame]")
+  TEST_CASE("FrameData template class", "[FrameData]")
   {
     // Create a test frame
     Array<TestPixel, 2> frameData({5, 5}, 100); // 5x5 frame filled with value 100
     StreamItemId id = 456;
     MediaTime timestamp = std::chrono::milliseconds(2000);
 
-    VideoFrame<Array<TestPixel, 2>> frame(frameData, id, timestamp);
+    FrameData<Array<TestPixel, 2>> frame(frameData, id, timestamp,StreamType::Video);
 
     SECTION("Frame data access")
     {
-      const auto&data = frame.image();
+      const auto&data = frame.data();
       CHECK(data.range().size(0) == 5);
       CHECK(data.range().size(1) == 5);
       CHECK(data[0][0] == 100);
       CHECK(data[4][4] == 100);
     }
 
-    SECTION("Frame validity")
-    {
-      CHECK(frame.isValid());
-
-      // Create an empty frame
-      Array<TestPixel, 2> emptyData({0, 0}, 0);
-      VideoFrame<Array<TestPixel, 2>> emptyFrame(emptyData, 789, std::chrono::milliseconds(3000));
-      CHECK_FALSE(emptyFrame.isValid());
-    }
   }
 
-  TEST_CASE("VideoFrame dimensions", "[VideoFrame]")
+  TEST_CASE("FrameData dimensions", "[FrameData]")
   {
     SECTION("Various dimensions")
     {
       // Test different dimensions
       Array<TestPixel, 2> frame1({1, 1}, 1); // rows=1, cols=1
-      VideoFrame<Array<TestPixel, 2>> vf1(frame1, 1, std::chrono::milliseconds(100));
-      CHECK(vf1.width() == 1);
-      CHECK(vf1.height() == 1);
+      FrameData<Array<TestPixel, 2>> vf1(frame1, 1, std::chrono::milliseconds(100),StreamType::Video);
 
       Array<TestPixel, 2> frame2({9, 16}, 1); // rows=9, cols=16 (16:9)
-      VideoFrame<Array<TestPixel, 2>> vf2(frame2, 2, std::chrono::milliseconds(200));
-      CHECK(vf2.width() == 16);
-      CHECK(vf2.height() == 9);
+      FrameData<Array<TestPixel, 2>> vf2(frame2, 2, std::chrono::milliseconds(200),StreamType::Video);
 
       Array<TestPixel, 2> frame3({1080, 1920}, 1); // rows=1080, cols=1920 (FullHD 16:9)
-      VideoFrame<Array<TestPixel, 2>> vf3(frame3, 3, std::chrono::milliseconds(300));
-      CHECK(vf3.width() == 1920);
-      CHECK(vf3.height() == 1080);
+      FrameData<Array<TestPixel, 2>> vf3(frame3, 3, std::chrono::milliseconds(300),StreamType::Video);
     }
   }
 
@@ -103,7 +78,7 @@ namespace Ravl2::Video
     }
   };
 
-  TEST_CASE("VideoFrame with complex pixel type", "[VideoFrame]")
+  TEST_CASE("FrameData with complex pixel type", "[FrameData]")
   {
     Array<RGBPixelV, 2> frameData({3, 2}); // rows=3, cols=2
 
@@ -119,13 +94,11 @@ namespace Ravl2::Video
         };
       }
     }
-    VideoFrame<Array<RGBPixelV, 2>> frame(frameData, 999, std::chrono::milliseconds(5000));
+    FrameData<Array<RGBPixelV, 2>> frame(frameData, 999, std::chrono::milliseconds(5000),StreamType::Video);
 
-    CHECK(frame.width() == 2);
-    CHECK(frame.height() == 3);
     CHECK(frame.isValid());
 
-    const auto&data = frame.image();
+    const auto&data = frame.data();
     CHECK(data[0][0] == RGBPixelV{0, 0, 0});
     CHECK(data[1][0] == RGBPixelV{50, 0, 25});
     CHECK(data[2][0] == RGBPixelV{100, 0, 50});

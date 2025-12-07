@@ -11,6 +11,8 @@
 
 namespace Ravl2::GoPro
 {
+  void typeInit();
+
   //! GPS fix data from GoPro GPMF stream
   //! Uses RAVL2's GPSCoordinate which provides:
   //! - GRS84 ellipsoid calculations
@@ -50,7 +52,7 @@ namespace Ravl2::GoPro
     }
   };
 
-  //! Collection of gyroscope samples with sample rate metadata
+  //! A collection of gyroscope samples with sample rate metadata
   //! High-frequency sensors like gyro typically have multiple samples per frame
   //! to match the GPMF packet structure (typically 200+ samples at 200 Hz)
   //! Each sample is a Vector3f representing angular velocity in rad/s [x, y, z]
@@ -71,7 +73,7 @@ namespace Ravl2::GoPro
       }
     }
 
-    //! Get number of samples
+    //! Get the number of samples
     [[nodiscard]] size_t size() const { return samples.size(); }
     [[nodiscard]] bool empty() const { return samples.empty(); }
 

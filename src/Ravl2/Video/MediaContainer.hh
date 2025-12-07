@@ -4,6 +4,8 @@
 
 #pragma once
 
+#include "StreamIterator.hh"
+
 #include <string>
 #include <vector>
 #include <memory>
@@ -12,9 +14,7 @@
 #include <shared_mutex>
 #include <variant>
 #include "Ravl2/Video/VideoTypes.hh"
-#include "Ravl2/Video/VideoFrame.hh"
-#include "Ravl2/Video/AudioChunk.hh"
-#include "Ravl2/Video/MetaDataFrame.hh"
+#include "Ravl2/Video/Frame.hh"
 
 namespace Ravl2::Video
 {
@@ -27,6 +27,9 @@ namespace Ravl2::Video
   public:
     //! Virtual destructor
     virtual ~MediaContainer() = default;
+
+    //! Register a type
+    static bool registerDataType(const std::type_index& type,StreamType streamType);
 
     //! Open a media container from a file path
     static VideoResult<std::shared_ptr<MediaContainer>> openFile(const std::string&filePath);
@@ -55,14 +58,23 @@ namespace Ravl2::Video
     //! Get properties for a data stream
     virtual VideoResult<DataProperties> dataProperties(std::size_t streamIndex) const = 0;
 
-    //! Get the total duration of the container (longest stream)
+    //! Get the total duration of the container (the longest stream)
     virtual MediaTime duration() const = 0;
+
+    //! Create an iterator for a specific stream with a target type
+    virtual VideoResult<std::shared_ptr<StreamIterator>> createIterator(const std::type_info &dataType,std::size_t streamIndex = std::numeric_limits<std::size_t>::max());
 
     //! Create an iterator for a specific stream
     virtual VideoResult<std::shared_ptr<StreamIterator>> createIterator(std::size_t streamIndex) = 0;
 
     //! Create an iterator for a set of streams.
     virtual VideoResult<std::shared_ptr<StreamIterator>> createIterator(std::vector<std::size_t> streams) = 0;
+
+    template<typename DataT>
+    TypedStreamIterator<DataT> createIterator(std::size_t streamIndex = std::numeric_limits<std::size_t>::max())
+    {
+      return TypedStreamIterator<DataT>(createIterator(typeid(DataT),streamIndex).value());
+    }
 
     //! Get global container metadata
     virtual std::map<std::string, std::string> metadata() const = 0;

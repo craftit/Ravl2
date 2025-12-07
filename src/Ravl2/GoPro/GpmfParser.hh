@@ -5,7 +5,7 @@
 #pragma once
 
 #include "Ravl2/GoPro/GpmfTypes.hh"
-#include "Ravl2/Video/MetaDataFrame.hh"
+#include "Ravl2/Video/Frame.hh"
 #include <nlohmann/json.hpp>
 #include <optional>
 #include <vector>

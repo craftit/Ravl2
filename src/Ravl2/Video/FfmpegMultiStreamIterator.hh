@@ -11,6 +11,7 @@
 #include <queue>
 #include "Ravl2/Video/StreamIterator.hh"
 #include "Ravl2/Video/FfmpegMediaContainer.hh"
+#include "Ravl2/Pixel/PixelPlane.hh"
 
 // Forward declarations for FFmpeg structures
 struct AVFormatContext;
@@ -112,19 +113,19 @@ namespace Ravl2::Video
     VideoResult<void> traditionalSeek(MediaTime timestamp, SeekFlags flags);
 
     //! Create a video frame from FFmpeg data
-    template<typename ImageT> [[nodiscard]] std::shared_ptr<VideoFrame<ImageT>> createVideoFrame(
+    template<typename ImageT> [[nodiscard]] std::shared_ptr<FrameData<ImageT>> createVideoFrame(
       AVFrame* frame,
       std::size_t streamIndex,
       StreamItemId id);
 
     //! Create an audio chunk from FFmpeg data
-    template<typename SampleT> [[nodiscard]] std::shared_ptr<AudioChunk<SampleT>> createAudioChunk(
-      AVFrame* frame,
+    template<typename SampleT> [[nodiscard]] std::shared_ptr<FrameData<AudioChunk<SampleT>>> createAudioChunk(
+      AVFrame *frame,
       std::size_t streamIndex,
       StreamItemId id);
 
     //! Create a metadata frame from FFmpeg data
-    template<typename DataT> [[nodiscard]] std::shared_ptr<MetaDataFrame<DataT>> createMetadataFrame(
+    template<typename DataT> [[nodiscard]] std::shared_ptr<FrameData<DataT>> createMetadataFrame(
       AVFrame* frame,
       std::size_t streamIndex,
       StreamItemId id);
