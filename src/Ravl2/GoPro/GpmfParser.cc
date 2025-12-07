@@ -110,7 +110,9 @@ namespace Ravl2::GoPro
     GPMF_ResetState(&stream);
 
     frames = processLevel(&stream, streamId, timestamp, 0);
-    SPDLOG_INFO("Generated {} frames.",frames.size());
+    if(mVerbose) {
+      SPDLOG_INFO("Generated {} frames.",frames.size());
+    }
     return frames;
   }
 
@@ -222,7 +224,9 @@ namespace Ravl2::GoPro
 
   void GpmfParser::parseGps9Complex(GPMF_stream *stream, std::vector<std::shared_ptr<Video::Frame>> &frames, Video::StreamItemId streamId, Video::MediaTime timestamp)
   {
-    SPDLOG_INFO("Extracting GPS9 (complex type with TYPE descriptor).");
+    if(mVerbose) {
+      SPDLOG_INFO("Extracting GPS9 (complex type with TYPE descriptor).");
+    }
     if(stream == nullptr) {
       SPDLOG_WARN("parseGps9Complex: null stream pointer");
       return;
@@ -401,7 +405,10 @@ namespace Ravl2::GoPro
       SPDLOG_ERROR("Invalid gyro sample rate: {} Hz (must be > 0)", sampleRate);
       sampleRate = 0.0F;
     } else if(sampleRate < 50.0F || sampleRate > 1000.0F) {
-      SPDLOG_WARN("Unusual gyro sample rate: {} Hz (typical GoPro: 200-400 Hz)", sampleRate);
+      if(!mHaveReportedGyroFPS) {
+        mHaveReportedGyroFPS = true;
+        SPDLOG_WARN("Unusual gyro sample rate: {} Hz (typical GoPro: 200-400 Hz)", sampleRate);
+      }
     }
 
     // Create and append frame
@@ -457,7 +464,10 @@ namespace Ravl2::GoPro
       SPDLOG_ERROR("Invalid accel sample rate: {} Hz (must be > 0)", sampleRate);
       sampleRate = 0.0F;
     } else if(sampleRate < 50.0F || sampleRate > 1000.0F) {
-      SPDLOG_WARN("Unusual accel sample rate: {} Hz (typical GoPro: 200-400 Hz)", sampleRate);
+      if(!mHaveReportedAccelFPS) {
+        SPDLOG_WARN("Unusual accel sample rate: {} Hz (typical GoPro: 200-400 Hz)", sampleRate);
+        mHaveReportedAccelFPS = true;
+      }
     }
 
     // Create and append frame
@@ -701,9 +711,10 @@ namespace Ravl2::GoPro
         if(timeDelta > 0.0 && timingInfo.lastSampleCount > 0) {
           float calculatedRate = static_cast<float>(timingInfo.lastSampleCount) / static_cast<float>(timeDelta);
           timingInfo.calculatedRate = calculatedRate;
-
-          SPDLOG_INFO("Calculated sample rate for {}: {:.2f} Hz (Δt={:.6f}s, samples={})",
-                      fourccToString(fourcc), calculatedRate, timeDelta, timingInfo.lastSampleCount);
+          if(mVerbose) {
+            SPDLOG_INFO("Calculated sample rate for {}: {:.2f} Hz (Δt={:.6f}s, samples={})",
+                        fourccToString(fourcc), calculatedRate, timeDelta, timingInfo.lastSampleCount);
+          }
         }
       }
 
