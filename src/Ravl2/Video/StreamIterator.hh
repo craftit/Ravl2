@@ -196,13 +196,13 @@ namespace Ravl2::Video
     }
 
     //! Are we at a valid frame?
-    bool isValid() const
+    [[nodiscard]] bool isValid() const
     {
       return m_iterator->currentFrame() && m_iterator->currentFrame()->isValid();
     }
 
     //! Get the current frame
-    [[nodiscard]] FrameData<ImageTypeT>& currentFrame() const
+    [[nodiscard]] const FrameData<ImageTypeT>& currentFrame() const
     {
       assert(m_iterator->currentFrame());
       auto ptr = std::dynamic_pointer_cast<FrameData<ImageTypeT>>(m_iterator->currentFrame());
