@@ -342,11 +342,11 @@ namespace Ravl2::Video
       m_minQueueSize = std::max(m_minQueueSize, requiredSize);
     }
 
-    // Cap at reasonable maximum (128 frames = ~4s at 30fps, ~600MB for 4K)
-    m_minQueueSize = std::min(m_minQueueSize, std::size_t(128));
+    // Cap at a reasonable maximum (128 frames = ~4s at 30fps, ~600MB for 4K)
+    m_minQueueSize = std::min(m_minQueueSize, static_cast<std::size_t>(128));
 
-    SPDLOG_INFO("Set packet queue size to: {} (based on B-frame reordering, not GOP size)",
-                m_minQueueSize);
+    SPDLOG_INFO("Set packet queue size to: {} (based on B-frame reordering, not GOP size) on iter {} ",
+                m_minQueueSize,static_cast<void *>(this));
   }
 
   FfmpegMultiStreamIterator::~FfmpegMultiStreamIterator()

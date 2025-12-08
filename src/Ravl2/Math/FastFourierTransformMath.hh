@@ -234,7 +234,7 @@ namespace Ravl2
   void fftgr(const float *x, std::complex<RealT> *ft, int n, int *kk, int inv)
   {
     std::complex<RealT> a, b, z, w, *d, *p, *f, *fb;
-    const auto tpi = RealT(6.283185307179586);
+    const auto tpi = static_cast<RealT>(6.283185307179586);
     RealT sc, q;
     int *mm, *m, kp, i, j, k, jk, jl, ms, mp;
     std::vector<int> mmVec(size_t(kk[0] + 1));

@@ -936,7 +936,7 @@ namespace Ravl2::DebugDisplay
           ImGui_ImplSDLRenderer2_RenderDrawData(ImGui::GetDrawData(), g_renderer);
         }
 #endif
-        // Use SDL_RenderPresent when bgfx is not initialized
+        // Use SDL_RenderPresent when bgfx is not initialised
         if(!g_bgfx.initialized()) {
           SDL_RenderPresent(g_renderer);
         }
@@ -954,7 +954,7 @@ namespace Ravl2::DebugDisplay
         }
 #endif
 
-        // Submit bgfx frame boundary (only if initialized)
+        // Submit bgfx frame boundary (only if initialised)
         if(g_bgfx.initialized()) {
           g_bgfx.frame();
         }
@@ -972,6 +972,7 @@ namespace Ravl2::DebugDisplay
 
       g_sdlApp.shutdown();
       SPDLOG_INFO("DebugDisplay: GUI thread exiting");
+      exit(0);
     }
   }// namespace
 
@@ -1002,7 +1003,7 @@ namespace Ravl2::DebugDisplay
         g_started.store(true, std::memory_order_release);
         return;
       }
-      // Start background GUI thread (SDL window + simple renderer)
+      // Start the background GUI thread (SDL window + simple renderer)
       g_guiThread = std::make_unique<std::jthread>(guiThreadMain);
       SPDLOG_INFO("DebugDisplay: starting — background GUI thread created");
       g_started.store(true, std::memory_order_release);

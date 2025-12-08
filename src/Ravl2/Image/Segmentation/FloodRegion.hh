@@ -209,8 +209,9 @@ namespace Ravl2
       // segment of scan line lsr - line.DY() for lsc <= c <= line.End() was previously filled,
       // now explore adjacent pixels in scan line lsr
       int c;
-      for(c = lsc; c >= imgCols.min() && (mrow[c] != id) && inclusionTest(irow[c]); c--)
+      for(c = lsc; c >= imgCols.min() && (mrow[c] != id) && inclusionTest(irow[c]); c--) {
         mrow[c] = id;
+      }
 
       if(c >= lsc)
         goto skip;
