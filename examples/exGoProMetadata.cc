@@ -136,7 +136,7 @@ int RAVL2_MAIN(int argc, char *argv[])
       SPDLOG_ERROR("NULL frame found.");
       break;
     }
-    messageTypeCounts[Ravl2::typeName(typeid(*frame))]++;
+    messageTypeCounts[Ravl2::typeName(*frame)]++;
 
     // Check if this is a GPS frame
     auto* gpsFrame = dynamic_cast<Ravl2::Video::FrameData<Ravl2::GoPro::GpsFix>*>(frame.get());
