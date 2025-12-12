@@ -301,7 +301,7 @@ namespace Ravl2::DebugDisplay
     std::atomic_bool g_invalidated {true};
     bool g_needSDLRenderer = true;
 
-    // bgfx context (initialized against SDL window)
+    // bgfx context (initialised against SDL window)
     BGFXContext g_bgfx;
 
     // Mouse interaction state
@@ -313,7 +313,7 @@ namespace Ravl2::DebugDisplay
     // Input controller for pan/zoom (Step 8)
     InputController2D g_input(g_invalidated, kZoomMin, kZoomMax);
 
-    // Per-channel texture cache (SDL fallback when bgfx not initialized)
+    // Per-channel texture cache (SDL fallback when bgfx not initialised)
     struct TextureEntry {
       SDL_Texture *tex = nullptr;
       int w = 0;
@@ -343,7 +343,7 @@ namespace Ravl2::DebugDisplay
     struct SdlApp {
       bool init()
       {
-        // Note: SDL should already be initialized on the main thread before this is called
+        // Note: SDL should already be initialised on the main thread before this is called
         if(SDL_WasInit(0) == 0) {
           SPDLOG_ERROR("DebugDisplay: SDL was not initialized before GUI thread started");
           return false;
@@ -385,7 +385,7 @@ namespace Ravl2::DebugDisplay
         // Decide if we need SDL renderer (fallback) when bgfx isn't usable for 2D blit
         g_needSDLRenderer = !g_bgfx.initialized();
 #if defined(RAVL2_WITH_BGFX) && !defined(RAVL2_WITH_IMGUI)
-        // If bgfx is initialized but non-ImGui renderer can't init (e.g., shaders missing), fall back to SDL
+        // If bgfx is initialised but non-ImGui renderer can't init (e.g., shaders missing), fall back to SDL
         if(g_bgfx.initialized()) {
           if(!g_nonImguiRenderer.init()) {
             SPDLOG_WARN("DebugDisplay: non-ImGui bgfx renderer not available; using SDL renderer fallback");
@@ -700,7 +700,7 @@ namespace Ravl2::DebugDisplay
 
     void renderAll()
     {
-      // SDL fallback rendering (used when bgfx is not initialized)
+      // SDL fallback rendering (used when bgfx is not initialised)
       if(!g_renderer) return;
       SDL_SetRenderDrawColor(g_renderer, 16, 16, 24, 255);
       SDL_RenderClear(g_renderer);
@@ -942,7 +942,7 @@ namespace Ravl2::DebugDisplay
         }
 
 #if defined(RAVL2_WITH_BGFX)
-        // Show bgfx debug text only when ImGui is not initialized to avoid confusing draw order during diagnosis.
+        // Show bgfx debug text only when ImGui is not initialised to avoid confusing draw order during diagnosis.
 #if defined(RAVL2_WITH_IMGUI)
         if(g_bgfx.initialized() && !g_imguiInitialized) {
 #else
@@ -987,7 +987,7 @@ namespace Ravl2::DebugDisplay
           SPDLOG_INFO("DebugDisplay: headless enabled via environment RAVL2_HEADLESS=1");
         }
       }
-      // Note: SDL should be initialized on the main thread before this is called (via initDisplay())
+      // Note: SDL should be initialised on the main thread before this is called (via initDisplay())
 #ifdef __APPLE__
       // On macOS, when using RAVL2_MAIN, the GUI thread is the main thread
       // Skip creating a background thread; GUI will run on main via runMainLoop
