@@ -17,23 +17,34 @@ namespace Ravl2::DebugDisplay
 {
 
   //! Exclusive view mode per channel.
+  //! 
+  //! Determines the rendering mode for the channel. Each channel can display either
+  //! 2D content (images with overlays) or 3D content (meshes, point clouds) but not both
+  //! simultaneously. The view mode affects which scene nodes are active and how input
+  //! is processed.
   enum class ViewMode
   {
-    View2D,
-    View3D
+    View2D,  //!< 2D image display with optional overlays (polylines, points)
+    View3D   //!< 3D scene rendering with camera controls and depth testing
   };
 
   //! Per-channel state.
-  //! Holds per-view settings and top-level scene node.
+  //! 
+  //! ChannelState maintains all the state and content for a single debug display channel.
+  //! Each channel represents a separate view that can be docked in the UI. The state includes
+  //! rendering settings, view transforms, normalization parameters, and the scene content.
+  //! 
+  //! @see DebugDisplay for the overall display system
+  //! @see ISceneNode for the scene graph interface
   struct ChannelState {
-    std::string name;
+    std::string name;  //!< Unique channel name/identifier
 
     // Exclusive view selection for this channel
     ViewMode viewMode = ViewMode::View2D;
 
     // Per-channel UI/runtime flags
     struct Flags {
-      bool wantsFocus3D = false;  //!< Request focus on 3D window next frame
+      bool wantsFocus3D = false;  //!< Request focus on 3D window next frame (for camera controls)
       bool showViewToggle = false;//!< Developer toggle to expose 2D/3D radios (hidden by default)
     } flags;
 
@@ -51,7 +62,19 @@ namespace Ravl2::DebugDisplay
   };
 
   //! Registry of channels with basic thread-safe access helpers.
+  //! 
+  //! ChannelRegistry provides thread-safe access to the collection of debug display channels.
+  //! It supports creating, accessing, and enumerating channels with proper synchronization.
+  //! All methods are thread-safe and can be called from any thread.
   struct ChannelRegistry {
+    //! Get or create a channel by name.
+    //! 
+    //! If the channel doesn't exist, it will be created with default settings.
+    //! If it exists, the existing channel state is returned.
+    //! 
+    //! @param name Channel name/identifier
+    //! @return Reference to the channel state (existing or newly created)
+    //! @threadsafe Yes
     ChannelState &getOrCreateChannel(const std::string &name)
     {
       std::scoped_lock lk(m_mutex);
@@ -66,6 +89,13 @@ namespace Ravl2::DebugDisplay
       return it->second;
     }
 
+    //! Clear a channel's state, resetting it to defaults.
+    //! 
+    //! This removes all scene content and resets view parameters while preserving
+    //! the channel entry. Useful for implementing ':Clear' control messages.
+    //! 
+    //! @param name Channel name to clear
+    //! @threadsafe Yes
     void clearChannel(const std::string &name)
     {
       std::scoped_lock lk(m_mutex);
@@ -78,7 +108,14 @@ namespace Ravl2::DebugDisplay
       }
     }
 
-    // Enumerate channels (invokes callback while holding registry lock).
+    //! Enumerate all channels by invoking a callback for each.
+    //! 
+    //! The callback is invoked while holding the registry lock, ensuring thread-safe
+    //! access to channel data. The callback should be fast to avoid blocking other threads.
+    //! 
+    //! @tparam Fn Callback type with signature void(ChannelState&)
+    //! @param fn Callback function to invoke for each channel
+    //! @threadsafe Yes
     template <typename Fn>
     void forEachChannel(Fn &&fn)
     {
