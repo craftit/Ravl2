@@ -548,7 +548,7 @@ namespace Ravl2::DebugDisplay
         }
       }
 
-      void processEvents(std::stop_token st)
+      bool processEvents(std::stop_token st)
       {
         (void)st;// unused for now; reserved for future stop-aware processing
         SDL_Event e;
@@ -558,11 +558,12 @@ namespace Ravl2::DebugDisplay
           ImGui_ImplSDL2_ProcessEvent(&e);
 #endif
           if(e.type == SDL_QUIT) {
-            // Request stop on quit
+            // Signal quit - return false to break main loop
+            SPDLOG_INFO("DebugDisplay: SDL_QUIT received, requesting shutdown");
             if(g_guiThread) {
               g_guiThread->request_stop();
             }
-            return;
+            return false;
           }
           if(e.type == SDL_WINDOWEVENT) {
             if(e.window.event == SDL_WINDOWEVENT_SIZE_CHANGED || e.window.event == SDL_WINDOWEVENT_RESIZED || e.window.event == SDL_WINDOWEVENT_SHOWN || e.window.event == SDL_WINDOWEVENT_EXPOSED) {
@@ -634,6 +635,7 @@ namespace Ravl2::DebugDisplay
 #endif
           }
         }
+        return true;  // Continue running
       }
     };
 
@@ -920,7 +922,10 @@ namespace Ravl2::DebugDisplay
 #endif
           break;// Check immediately after wait
         }
-        g_sdlApp.processEvents(st);
+        if(!g_sdlApp.processEvents(st)) {
+          SPDLOG_INFO("DebugDisplay: processEvents signaled quit");
+          break;
+        }
 
         // Drain commands and run one UI/render tick
         drainCommandsOnce(kMaxCommandsPerTick);
@@ -971,7 +976,6 @@ namespace Ravl2::DebugDisplay
 
       g_sdlApp.shutdown();
       SPDLOG_INFO("DebugDisplay: GUI thread exiting");
-      exit(0);
     }
   }// namespace
 

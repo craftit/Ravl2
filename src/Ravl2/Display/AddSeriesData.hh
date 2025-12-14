@@ -93,8 +93,8 @@ namespace Ravl2::DebugDisplay
       if(xData.empty() && !y.empty()) {
         xData.reserve(y.size());
         float startIdx = 0.0f;
-        if(mode == SeriesUpdateMode::Append && !series.x.empty()) {
-          // Continue from last X value
+        if((mode == SeriesUpdateMode::Append || mode == SeriesUpdateMode::RingBuffer) && !series.x.empty()) {
+          // Continue from last X value for append modes
           startIdx = series.x.back() + 1.0f;
         }
         for(size_t i = 0; i < y.size(); ++i) {

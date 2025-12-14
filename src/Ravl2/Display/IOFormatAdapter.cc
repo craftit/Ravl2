@@ -354,16 +354,35 @@ namespace Ravl2::DebugDisplay
 
       static std::optional<std::string> getControlValue(const std::string &controls, std::string_view key)
       {
-        auto pos = controls.find(key);
+        // Case-insensitive search for control key
+        auto toLower = [](const std::string &s) {
+          std::string result = s;
+          for(char &c : result) c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
+          return result;
+        };
+
+        std::string controlsLower = toLower(controls);
+        std::string keyLower = toLower(std::string(key));
+
+        auto pos = controlsLower.find(keyLower);
         if(pos == std::string::npos) return std::nullopt;
-        auto val = controls.substr(pos + key.size());
+        auto val = controls.substr(pos + key.size());  // Use original controls for value
         auto colon = val.find(':');
         if(colon != std::string::npos) val = val.substr(0, colon);
         return val;
       }
       static bool hasControl(const std::string &controls, std::string_view flag)
       {
-        return controls.find(flag) != std::string::npos;
+        // Case-insensitive search for control flag
+        auto toLower = [](const std::string &s) {
+          std::string result = s;
+          for(char &c : result) c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
+          return result;
+        };
+
+        std::string controlsLower = toLower(controls);
+        std::string flagLower = toLower(std::string(flag));
+        return controlsLower.find(flagLower) != std::string::npos;
       }
 
       std::optional<StreamOutputPlan> probe(const ProbeOutputContext &ctx) override
@@ -483,7 +502,9 @@ namespace Ravl2::DebugDisplay
               if(auto mp = getControlValue(parsed2->controls, ":MaxPoints=")) {
                 try {
 #pragma GCC diagnostic push
+#ifndef __clang__
 #pragma GCC diagnostic ignored "-Wuseless-cast"
+#endif
                   [[maybe_unused]] size_t maxPts = std::max(static_cast<size_t>(10), static_cast<size_t>(std::stoul(*mp)));
 #pragma GCC diagnostic pop
                   // Note: maxPoints is per-channel, not per-command. We'll need to handle this
