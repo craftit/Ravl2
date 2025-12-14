@@ -55,7 +55,7 @@ namespace Ravl2::DebugDisplay
       m_children.clear();
     }
 
-    //! Get number of children
+    //! Get the number of children
     [[nodiscard]] size_t childCount() const
     {
       return m_children.size();

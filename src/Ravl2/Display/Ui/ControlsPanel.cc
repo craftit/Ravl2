@@ -4,7 +4,6 @@
 #include <vector>
 #include <spdlog/spdlog.h>
 
-#if defined(RAVL2_WITH_IMGUI)
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wold-style-cast"
 #if defined(__clang__)
@@ -12,7 +11,6 @@
 #endif
 #include <imgui.h>
 #pragma GCC diagnostic pop
-#endif
 
 #include "Ravl2/Display/Normalization.hh"
 #include "Ravl2/Display/SetNormalization2D.hh"
