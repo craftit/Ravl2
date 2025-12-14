@@ -205,7 +205,7 @@ namespace
 }// namespace
 #endif
 
-#if defined(RAVL2_WITH_IMGUI) && defined(RAVL2_WITH_BGFX)
+#if defined(RAVL2_WITH_BGFX)
 // ImGui (bgfx path): UI API; bridge wraps bgfx backend. Keep SDL backends for fallback and include bgfx helper for button masks.
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wold-style-cast"
@@ -219,7 +219,7 @@ namespace
 #include "Ravl2/Display/ThirdParty/bgfx_imgui/ImGUI/imgui.hh"
 #include "Ravl2/Display/SetNormalization2D.hh"
 #pragma GCC diagnostic pop
-#elif defined(RAVL2_WITH_IMGUI)
+#else
 // ImGui (SDL2 + SDL_Renderer2 backend)
 #include <imgui.h>
 #include <implot.h>
@@ -329,11 +329,9 @@ namespace Ravl2::DebugDisplay
     std::string g_hoveredImageChannel;                         // top-most hovered image item (channel) this frame
 
     // ImGui state
-#if defined(RAVL2_WITH_IMGUI)
     bool g_imguiInitialized = false;
     bool g_implotInitialized = false;
-#endif
-#if defined(RAVL2_WITH_IMGUI) && defined(RAVL2_WITH_BGFX)
+#if defined(RAVL2_WITH_BGFX)
     ImguiBgfxBridge g_imguiBridge;
     uint8_t g_mouseButtons = 0;
     int32_t g_scroll = 0;
@@ -387,15 +385,6 @@ namespace Ravl2::DebugDisplay
 
         // Decide if we need SDL renderer (fallback) when bgfx isn't usable for 2D blit
         g_needSDLRenderer = !g_bgfx.initialized();
-#if defined(RAVL2_WITH_BGFX) && !defined(RAVL2_WITH_IMGUI)
-        // If bgfx is initialised but non-ImGui renderer can't init (e.g., shaders missing), fall back to SDL
-        if(g_bgfx.initialized()) {
-          if(!g_nonImguiRenderer.init()) {
-            SPDLOG_WARN("DebugDisplay: non-ImGui bgfx renderer not available; using SDL renderer fallback");
-            g_needSDLRenderer = true;
-          }
-        }
-#endif
 
         if(g_needSDLRenderer) {
 #ifdef __APPLE__
@@ -438,7 +427,7 @@ namespace Ravl2::DebugDisplay
         }
 
         // Initialize Dear ImGui
-#if defined(RAVL2_WITH_IMGUI) && defined(RAVL2_WITH_BGFX)
+#if  defined(RAVL2_WITH_BGFX)
         if(!g_imguiInitialized) {
           if(g_bgfx.initialized()) {
             if(auto res = g_imguiBridge.initEx(18.0f); res.has_value()) {
@@ -483,7 +472,7 @@ namespace Ravl2::DebugDisplay
             }
           }
         }
-#elif defined(RAVL2_WITH_IMGUI)
+#else
         if(!g_imguiInitialized) {
           IMGUI_CHECKVERSION();
           ImGui::CreateContext();
@@ -519,21 +508,19 @@ namespace Ravl2::DebugDisplay
       void shutdown()
       {
         // Shutdown ImGui if initialized
-#if defined(RAVL2_WITH_IMGUI)
         // Destroy ImPlot context first (before ImGui)
         if(g_implotInitialized) {
           ImPlot::DestroyContext();
           g_implotInitialized = false;
           SPDLOG_INFO("DebugDisplay: ImPlot context destroyed");
         }
-#endif
 
-#if defined(RAVL2_WITH_IMGUI) && defined(RAVL2_WITH_BGFX)
+#if  defined(RAVL2_WITH_BGFX)
         if(g_imguiInitialized) {
           g_imguiBridge.shutdown();
           g_imguiInitialized = false;
         }
-#elif defined(RAVL2_WITH_IMGUI)
+#else
         if(g_imguiInitialized) {
           ImGui_ImplSDLRenderer2_Shutdown();
           ImGui_ImplSDL2_Shutdown();
@@ -566,7 +553,7 @@ namespace Ravl2::DebugDisplay
         (void)st;// unused for now; reserved for future stop-aware processing
         SDL_Event e;
         while(SDL_PollEvent(&e)) {
-#if defined(RAVL2_WITH_IMGUI) && !defined(RAVL2_WITH_BGFX)
+#if !defined(RAVL2_WITH_BGFX)
           // Forward events to ImGui (SDL backend)
           ImGui_ImplSDL2_ProcessEvent(&e);
 #endif
@@ -607,7 +594,7 @@ namespace Ravl2::DebugDisplay
                 g_activeChannel = g_input.activeChannel();
               }
             }
-#if defined(RAVL2_WITH_IMGUI) && defined(RAVL2_WITH_BGFX)
+#if defined(RAVL2_WITH_BGFX)
             if(e.button.button == SDL_BUTTON_LEFT) g_mouseButtons |= IMGUI_MBUT_LEFT;
             if(e.button.button == SDL_BUTTON_RIGHT) g_mouseButtons |= IMGUI_MBUT_RIGHT;
             if(e.button.button == SDL_BUTTON_MIDDLE) g_mouseButtons |= IMGUI_MBUT_MIDDLE;
@@ -619,7 +606,7 @@ namespace Ravl2::DebugDisplay
             // Always notify our input controller on button release to stop any panning/dragging,
             // regardless of ImGui capture state.
             g_input.onMouseButtonUp(e.button.button);
-#if defined(RAVL2_WITH_IMGUI) && defined(RAVL2_WITH_BGFX)
+#if defined(RAVL2_WITH_BGFX)
             if(e.button.button == SDL_BUTTON_LEFT) g_mouseButtons &= static_cast<uint8_t>(~IMGUI_MBUT_LEFT);
             if(e.button.button == SDL_BUTTON_RIGHT) g_mouseButtons &= static_cast<uint8_t>(~IMGUI_MBUT_RIGHT);
             if(e.button.button == SDL_BUTTON_MIDDLE) g_mouseButtons &= static_cast<uint8_t>(~IMGUI_MBUT_MIDDLE);
@@ -641,7 +628,7 @@ namespace Ravl2::DebugDisplay
             if(!g_hoveredImageChannel.empty()) {
               g_input.onMouseWheel(e.wheel.y, mx, my, g_hoveredImageChannel, g_lastRects, g_contentRects, g_channels);
             }
-#if defined(RAVL2_WITH_IMGUI) && defined(RAVL2_WITH_BGFX)
+#if defined(RAVL2_WITH_BGFX)
             // Forward scroll to ImGui bgfx backend (accumulate this frame)
             g_scroll += e.wheel.y;
 #endif
@@ -653,14 +640,12 @@ namespace Ravl2::DebugDisplay
     // Mouse helpers: fetch screen-space mouse position and test against channel rects
     static inline void getMouseScreenPos(int &mx, int &my) noexcept
     {
-#if defined(RAVL2_WITH_IMGUI)
       if(g_imguiInitialized) {
         ImVec2 mp = ImGui::GetMousePos();
         mx = static_cast<int>(mp.x);
         my = static_cast<int>(mp.y);
         return;
       }
-#endif
       SDL_GetMouseState(&mx, &my);
     }
 
@@ -843,7 +828,7 @@ namespace Ravl2::DebugDisplay
 
     static void runImGuiFrame()
     {
-#if defined(RAVL2_WITH_IMGUI) && defined(RAVL2_WITH_BGFX)
+#if defined(RAVL2_WITH_BGFX)
       if(g_imguiInitialized && g_bgfx.initialized()) {
         int mx = 0, my = 0;
         SDL_GetMouseState(&mx, &my);
@@ -874,7 +859,7 @@ namespace Ravl2::DebugDisplay
         g_imguiBridge.endFrame();
         SPDLOG_DEBUG("ImGui frame submitted");
       }
-#elif defined(RAVL2_WITH_IMGUI)
+#else
       if(g_imguiInitialized) {
         ImGui_ImplSDL2_NewFrame();
         ImGui_ImplSDLRenderer2_NewFrame();
@@ -910,15 +895,6 @@ namespace Ravl2::DebugDisplay
 
     static inline void renderNonImguiBgfxIfEnabled()
     {
-#if defined(RAVL2_WITH_BGFX) && !defined(RAVL2_WITH_IMGUI)
-      if(g_bgfx.initialized()) {
-        int winW = 0, winH = 0;
-        SDL_GetWindowSize(g_window, &winW, &winH);
-        uint16_t fbw = static_cast<uint16_t>(winW);
-        uint16_t fbh = static_cast<uint16_t>(winH);
-        renderAllBgfxNonImGui(fbw, fbh);
-      }
-#endif
     }
 
     void guiThreadMain(std::stop_token st)
@@ -953,11 +929,11 @@ namespace Ravl2::DebugDisplay
         renderNonImguiBgfxIfEnabled();
 
         // Render UI and present
-#if defined(RAVL2_WITH_IMGUI) && defined(RAVL2_WITH_BGFX)
+#if defined(RAVL2_WITH_BGFX)
         if(g_imguiInitialized && g_bgfx.initialized()) {
           // ImGui bgfx backend submits during imguiEndFrame via bgfx calls; nothing to do here
         }
-#elif defined(RAVL2_WITH_IMGUI)
+#else
         if(g_imguiInitialized) {
           ImGui::Render();
           ImGui_ImplSDLRenderer2_RenderDrawData(ImGui::GetDrawData(), g_renderer);
@@ -970,11 +946,7 @@ namespace Ravl2::DebugDisplay
 
 #if defined(RAVL2_WITH_BGFX)
         // Show bgfx debug text only when ImGui is not initialised to avoid confusing draw order during diagnosis.
-#if defined(RAVL2_WITH_IMGUI)
         if(g_bgfx.initialized() && !g_imguiInitialized) {
-#else
-        if(g_bgfx.initialized()) {
-#endif
           bgfx::dbgTextClear();
           bgfx::dbgTextPrintf(0, 0, 0x0f, "Ravl2 DebugDisplay — backend=%s", BGFXContext::backendName(g_bgfx.backend()));
           bgfx::touch(0);
@@ -988,7 +960,7 @@ namespace Ravl2::DebugDisplay
       }
 
       // Destroy ImGui (bgfx backend) before shutting down bgfx to avoid use-after-shutdown
-#if defined(RAVL2_WITH_IMGUI) && defined(RAVL2_WITH_BGFX)
+#if defined(RAVL2_WITH_BGFX)
       if(g_imguiInitialized && g_bgfx.initialized()) {
         g_imguiBridge.shutdown();
         g_imguiInitialized = false;

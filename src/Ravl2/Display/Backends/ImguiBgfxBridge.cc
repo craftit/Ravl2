@@ -1,6 +1,6 @@
 #include "Ravl2/Display/Backends/ImguiBgfxBridge.hh"
 
-#if defined(RAVL2_WITH_IMGUI) && defined(RAVL2_WITH_BGFX)
+#if defined(RAVL2_WITH_BGFX)
 // Use the imgui helper provided with bgfx examples
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wold-style-cast"
@@ -17,7 +17,7 @@ namespace Ravl2::DebugDisplay
 
   std::expected<void, std::string> ImguiBgfxBridge::initEx(float fontSize) noexcept
   {
-#if defined(RAVL2_WITH_IMGUI) && defined(RAVL2_WITH_BGFX)
+#if defined(RAVL2_WITH_BGFX)
     if(mInitialized) return {};
     // imguiCreate does not provide error reporting; assume success if it returns.
     imguiCreate(fontSize, nullptr);
@@ -31,7 +31,7 @@ namespace Ravl2::DebugDisplay
 
   bool ImguiBgfxBridge::init(float fontSize) noexcept
   {
-#if defined(RAVL2_WITH_IMGUI) && defined(RAVL2_WITH_BGFX)
+#if defined(RAVL2_WITH_BGFX)
     auto res = initEx(fontSize);
     if(!res.has_value()) {
       SPDLOG_WARN("ImguiBgfxBridge: init failed: {}", res.error());
@@ -47,7 +47,7 @@ namespace Ravl2::DebugDisplay
 
   void ImguiBgfxBridge::shutdown() noexcept
   {
-#if defined(RAVL2_WITH_IMGUI) && defined(RAVL2_WITH_BGFX)
+#if defined(RAVL2_WITH_BGFX)
     if(!mInitialized) return;
     imguiDestroy();
     mInitialized = false;
@@ -62,7 +62,7 @@ namespace Ravl2::DebugDisplay
                                    uint16_t fbWidth,
                                    uint16_t fbHeight) noexcept
   {
-#if defined(RAVL2_WITH_IMGUI) && defined(RAVL2_WITH_BGFX)
+#if defined(RAVL2_WITH_BGFX)
     if(!mInitialized) return;
     imguiBeginFrame(mouseX, mouseY, mouseButtons, scroll, fbWidth, fbHeight);
 #else
@@ -77,7 +77,7 @@ namespace Ravl2::DebugDisplay
 
   void ImguiBgfxBridge::endFrame() noexcept
   {
-#if defined(RAVL2_WITH_IMGUI) && defined(RAVL2_WITH_BGFX)
+#if defined(RAVL2_WITH_BGFX)
     if(!mInitialized) return;
     imguiEndFrame();
 #endif

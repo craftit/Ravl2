@@ -10,7 +10,7 @@
 namespace Ravl2::DebugDisplay
 {
 
-  //! Normalization policies for displaying float images.
+  //! Normalisation policies for displaying float images.
   enum class NormalizationPolicy
   {
     Auto,     //!< scale per-image min/max to [0,1]

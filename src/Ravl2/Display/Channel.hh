@@ -41,7 +41,7 @@ namespace Ravl2::DebugDisplay
     bool showMarkers = false;  //!< Display point markers on line
   };
 
-  //! Plot state for time series and 1D data visualization.
+  //! Plot state for time series and 1D data visualisation.
   //!
   //! Manages multiple series within a single plot. Each series is identified by name
   //! and can be independently updated. The plot supports auto-fit axes, custom labels,

@@ -51,7 +51,7 @@ namespace Ravl2::DebugDisplay
       } else {
         // Clear all series
         plotState.series.clear();
-        SPDLOG_DEBUG("DebugDisplay: Cleared all {} series from channel '{}'", count, channel);
+        SPDLOG_DEBUG("DebugDisplay: Cleared all series from channel '{}'", channel);
       }
     }
   };

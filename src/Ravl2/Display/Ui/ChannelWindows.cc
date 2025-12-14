@@ -1,7 +1,7 @@
 #include "Ravl2/Display/Ui/ChannelWindows.hh"
 #include "Ravl2/Display/DebugDisplay.hh"
 
-#if defined(RAVL2_WITH_IMGUI) && defined(RAVL2_WITH_BGFX)
+#if defined(RAVL2_WITH_BGFX)
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wold-style-cast"
 #if defined(__clang__)
@@ -12,7 +12,6 @@
 #pragma GCC diagnostic pop
 #endif
 
-#if defined(RAVL2_WITH_IMGUI)
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wold-style-cast"
 #if defined(__clang__)
@@ -20,7 +19,6 @@
 #endif
 #include <implot.h>
 #pragma GCC diagnostic pop
-#endif
 
 #include <SDL2/SDL.h>
 
