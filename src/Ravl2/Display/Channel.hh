@@ -53,6 +53,7 @@ namespace Ravl2::DebugDisplay
     std::unordered_map<std::string, SeriesData> series;  //!< Series data by name
     std::string xAxisLabel = "X";                        //!< X-axis label text
     std::string yAxisLabel = "Y";                        //!< Y-axis label text
+    std::string xAxisSeries;                             //!< Optional: series name to use as x-axis (empty = use indices)
     bool autoFitAxes = true;                             //!< Auto-scale axes to fit data
     bool followMode = false;                             //!< Auto-scroll to show latest data
     size_t maxHistoryPoints = 10000;                     //!< Ring buffer size limit (0 = unlimited)

@@ -179,9 +179,30 @@ int RAVL2_MAIN(int argc, char **argv)
     ioSave("display://trig:series=cos:mode=replace", cosine_data);
     SPDLOG_INFO("Plotted sine and cosine to 'trig' channel");
 
+    // Parametric plot: use sin as x-axis, cos as y-axis (creates a circle!)
+    ioSave("display://circle:series=x:mode=replace:xaxis=x", sine_data);
+    ioSave("display://circle:series=y:mode=replace", cosine_data);
+    SPDLOG_INFO("Plotted parametric circle (sin vs cos) to 'circle' channel");
+
+    // Multi-series with vectors: create a Lissajous figure (x=sin(at), y=cos(bt))
+    std::vector<float> lissajous_x, lissajous_y, lissajous_z;
+    for(int i = 0; i < 200; ++i) {
+      float t = i * 0.05f;
+      lissajous_x.push_back(std::sin(3.0f * t));
+      lissajous_y.push_back(std::cos(4.0f * t));
+      lissajous_z.push_back(std::sin(2.0f * t) * 0.5f);
+    }
+    std::unordered_map<std::string, std::vector<float>> lissajous_data = {
+      {"x_axis", lissajous_x},
+      {"y_series", lissajous_y},
+      {"z_series", lissajous_z}
+    };
+    ioSave("display://lissajous:mode=replace:xaxis=x_axis", lissajous_data);
+    SPDLOG_INFO("Plotted Lissajous figure with map of vectors to 'lissajous' channel");
+
     // Multi-series plot using map (new feature!)
     SPDLOG_INFO("Streaming multi-series metrics...");
-    for(int i = 0; i < 10000; ++i) {
+    for(int i = 0; i < 50; ++i) {
       // Simulate multiple metrics at once
       std::unordered_map<std::string, float> metrics = {
         {"cpu_usage", 50.0f + 20.0f * std::sin(i * 0.1f) + (rand() % 100 - 50) / 10.0f},
@@ -189,7 +210,7 @@ int RAVL2_MAIN(int argc, char **argv)
         {"network_io", 30.0f + 25.0f * std::sin(i * 0.2f + 1.0f) + (rand() % 100 - 50) / 10.0f}
       };
       ioSave("display://metrics:mode=append", metrics);
-      std::this_thread::sleep_for(100ms);
+      std::this_thread::sleep_for(50ms);
     }
     SPDLOG_INFO("Finished streaming multi-series metrics");
 

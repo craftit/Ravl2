@@ -241,9 +241,18 @@ namespace Ravl2::DebugDisplay
       return cmd;
     }
 
+    // Converter: std::unordered_map<std::string, std::vector<float>> -> shared_ptr<IRenderCommand> (AddMultiSeriesVectors)
+    std::shared_ptr<IRenderCommand> makeCmdFromStringVectorFloatMap(const std::unordered_map<std::string, std::vector<float>> &map)
+    {
+      auto cmd = std::make_shared<AddMultiSeriesVectors>(std::string{});
+      cmd->seriesData = map;
+      // Channel and mode will be set by sink from URL
+      return cmd;
+    }
+
     // Register type conversions when this TU is loaded.
     [[maybe_unused]] bool g_registerConverters = []() {
-      SPDLOG_DEBUG("Registering TypeConverter: Array<u8,2>/Array<f32,2>/Array<RGB8,2>/Array<i16,2>/Array<i32,2>/PolyLine2f/PointSet3f/Array<f32,1>/vector<float>/map<string,float> -> shared_ptr<IRenderCommand>");
+      SPDLOG_DEBUG("Registering TypeConverter: Array<u8,2>/Array<f32,2>/Array<RGB8,2>/Array<i16,2>/Array<i32,2>/PolyLine2f/PointSet3f/Array<f32,1>/vector<float>/map<string,float>/map<string,vector<float>> -> shared_ptr<IRenderCommand>");
       [[maybe_unused]] bool ok1 = registerConversion(makeCmdFromU8Array, 1.0f);
       [[maybe_unused]] bool ok2 = registerConversion(makeCmdFromF32Array, 0.95f);
       [[maybe_unused]] bool ok3 = registerConversion(makeCmdFromRGB8Array, 1.0f);
@@ -254,7 +263,8 @@ namespace Ravl2::DebugDisplay
       [[maybe_unused]] bool ok8 = registerConversion(makeCmdFromF32Array1D, 1.0f);
       [[maybe_unused]] bool ok9 = registerConversion(makeCmdFromVectorFloat, 1.0f);
       [[maybe_unused]] bool ok10 = registerConversion(makeCmdFromStringFloatMap, 1.0f);
-      //[[maybe_unused]] bool ok11 = registerConversion(makeCmdFromRGB32FArray, 1.0f);
+      [[maybe_unused]] bool ok11 = registerConversion(makeCmdFromStringVectorFloatMap, 1.0f);
+      //[[maybe_unused]] bool ok12 = registerConversion(makeCmdFromRGB32FArray, 1.0f);
       return true;
     }();
 
@@ -528,6 +538,12 @@ namespace Ravl2::DebugDisplay
                 DebugDisplay::enqueue(clearCmd);
               }
 
+              // :XAxis=<series_name> - use specified series as x-axis
+              if(auto xaxis = getControlValue(parsed2->controls, ":XAxis=")) {
+                auto xaxisCmd = std::make_shared<SetPlotXAxis>(parsed2->channel, *xaxis);
+                DebugDisplay::enqueue(xaxisCmd);
+              }
+
               DebugDisplay::enqueue(cmd);
             } else if(auto *multiPlotCmd = dynamic_cast<AddMultiSeriesData *>(cmd.get())) {
               // Handle multi-series plot data with URL controls
@@ -551,6 +567,36 @@ namespace Ravl2::DebugDisplay
               if(hasControl(parsed2->controls, ":ClearPlot")) {
                 auto clearCmd = std::make_shared<ClearPlot>(parsed2->channel);
                 DebugDisplay::enqueue(clearCmd);
+              }
+
+              // :XAxis=<series_name> - use specified series as x-axis
+              if(auto xaxis = getControlValue(parsed2->controls, ":XAxis=")) {
+                auto xaxisCmd = std::make_shared<SetPlotXAxis>(parsed2->channel, *xaxis);
+                DebugDisplay::enqueue(xaxisCmd);
+              }
+
+              DebugDisplay::enqueue(cmd);
+            } else if(auto *multiVecCmd = dynamic_cast<AddMultiSeriesVectors *>(cmd.get())) {
+              // Handle multi-series vector data with URL controls
+              multiVecCmd->channel = parsed2->channel;
+
+              // :Mode=Replace|Append|RingBuffer (default: Append)
+              if(auto mv = getControlValue(parsed2->controls, ":Mode=")) {
+                if(*mv == "Replace") multiVecCmd->mode = SeriesUpdateMode::Replace;
+                else if(*mv == "RingBuffer") multiVecCmd->mode = SeriesUpdateMode::RingBuffer;
+                else multiVecCmd->mode = SeriesUpdateMode::Append;
+              }
+
+              // :ClearPlot - clear before adding
+              if(hasControl(parsed2->controls, ":ClearPlot")) {
+                auto clearCmd = std::make_shared<ClearPlot>(parsed2->channel);
+                DebugDisplay::enqueue(clearCmd);
+              }
+
+              // :XAxis=<series_name> - use specified series as x-axis
+              if(auto xaxis = getControlValue(parsed2->controls, ":XAxis=")) {
+                auto xaxisCmd = std::make_shared<SetPlotXAxis>(parsed2->channel, *xaxis);
+                DebugDisplay::enqueue(xaxisCmd);
               }
 
               DebugDisplay::enqueue(cmd);

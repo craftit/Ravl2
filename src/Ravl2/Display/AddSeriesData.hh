@@ -203,4 +203,52 @@ namespace Ravl2::DebugDisplay
     }
   };
 
+  //! Command to add or update multiple time series with vector data.
+  //!
+  //! This command allows updating multiple series where each series has
+  //! a complete vector of y-values. This is useful for batch updates of
+  //! multiple complete series (e.g., loading from file, sending complete traces).
+  //!
+  //! All series share the same update mode. X values are auto-generated as indices.
+  struct AddMultiSeriesVectors : public IRenderCommand {
+    std::string channel;                                       //!< Target channel name
+    std::unordered_map<std::string, std::vector<float>> seriesData;  //!< Map of series name -> y-values
+    SeriesUpdateMode mode = SeriesUpdateMode::Append;          //!< Update mode for all series
+
+    explicit AddMultiSeriesVectors(std::string ch)
+      : channel(std::move(ch))
+    {}
+
+    void apply(ChannelRegistry &channels) override
+    {
+      if(channel.empty()) {
+        static bool warnedOnce = false;
+        if(!warnedOnce) {
+          SPDLOG_WARN("DebugDisplay: AddMultiSeriesVectors called with empty channel name");
+          warnedOnce = true;
+        }
+      }
+
+      // For each series, create an AddSeriesData command and apply it
+      for(const auto &[seriesName, yValues] : seriesData) {
+        if(yValues.empty()) {
+          SPDLOG_DEBUG("DebugDisplay: Skipping empty vector for series '{}'", seriesName);
+          continue;
+        }
+
+        auto cmd = std::make_shared<AddSeriesData>(channel, seriesName);
+        cmd->mode = mode;
+        cmd->y.reserve(yValues.size());
+        for(float val : yValues) {
+          if(std::isfinite(val)) {
+            cmd->y.push_back(val);
+          }
+        }
+        if(!cmd->y.empty()) {
+          cmd->apply(channels);
+        }
+      }
+    }
+  };
+
 }// namespace Ravl2::DebugDisplay

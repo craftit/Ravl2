@@ -158,12 +158,37 @@ namespace Ravl2::DebugDisplay::Ui::ChannelWindows
             }
           }
 
+          // Check if we should use a specific series as the x-axis
+          const SeriesData *xAxisData = nullptr;
+          if(!plotState.xAxisSeries.empty()) {
+            auto it = plotState.series.find(plotState.xAxisSeries);
+            if(it != plotState.series.end() && !it->second.y.empty()) {
+              xAxisData = &it->second;
+            }
+          }
+
           for(const auto &[name, series] : plotState.series) {
-            if(series.x.empty() || series.y.empty()) continue;
+            // Skip the x-axis series from being plotted as a y-series
+            if(xAxisData && name == plotState.xAxisSeries) {
+              continue;
+            }
+
+            if(series.y.empty()) continue;
 
             const char *label = series.label.empty() ? name.c_str() : series.label.c_str();
-            int size = std::min(static_cast<int>(series.x.size()), static_cast<int>(series.y.size()));
-            ImPlot::PlotLine(label, series.x.data(), series.y.data(), size);
+
+            if(xAxisData) {
+              // Use the specified series as x-axis
+              int size = std::min(static_cast<int>(xAxisData->y.size()), static_cast<int>(series.y.size()));
+              if(size > 0) {
+                ImPlot::PlotLine(label, xAxisData->y.data(), series.y.data(), size);
+              }
+            } else {
+              // Use the series' own x values (or indices)
+              if(series.x.empty()) continue;
+              int size = std::min(static_cast<int>(series.x.size()), static_cast<int>(series.y.size()));
+              ImPlot::PlotLine(label, series.x.data(), series.y.data(), size);
+            }
           }
 
           ImPlot::EndPlot();

@@ -56,4 +56,41 @@ namespace Ravl2::DebugDisplay
     }
   };
 
+  //! Command to set which series should be used as the x-axis for a plot.
+  //!
+  //! When set, the specified series will be used as the x-axis values for all other series,
+  //! creating parametric or phase plots. If seriesName is empty, reverts to using auto-generated
+  //! indices or each series' own x values.
+  //!
+  //! @see PlotState for the data structure
+  //! @see AddSeriesData for adding series
+  struct SetPlotXAxis : public IRenderCommand {
+    std::string channel;      //!< Target channel name
+    std::string seriesName;   //!< Series to use as x-axis (empty = use indices)
+
+    explicit SetPlotXAxis(std::string ch, std::string series = "")
+      : channel(std::move(ch)), seriesName(std::move(series))
+    {}
+
+    void apply(ChannelRegistry &channels) override
+    {
+      auto &ch = channels.getOrCreateChannel(channel);
+
+      // Ensure plotState exists
+      if(!ch.plotState.has_value()) {
+        ch.plotState = PlotState{};
+        SPDLOG_DEBUG("DebugDisplay: Created plot state for channel '{}'", channel);
+      }
+
+      auto &plotState = ch.plotState.value();
+      plotState.xAxisSeries = seriesName;
+
+      if(seriesName.empty()) {
+        SPDLOG_DEBUG("DebugDisplay: Reset x-axis to indices for channel '{}'", channel);
+      } else {
+        SPDLOG_DEBUG("DebugDisplay: Set x-axis to series '{}' for channel '{}'", seriesName, channel);
+      }
+    }
+  };
+
 }// namespace Ravl2::DebugDisplay
