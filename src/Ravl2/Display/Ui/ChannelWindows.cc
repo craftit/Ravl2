@@ -31,6 +31,7 @@
 #include "Ravl2/Display/Viewport3DNode.hh"
 #include <algorithm>
 #include <cmath>
+#include <limits>
 #include "Ravl2/Types.hh"
 #include "Ravl2/Display/Grid3DOverlay.hh"
 
@@ -123,16 +124,18 @@ namespace Ravl2::DebugDisplay::Ui::ChannelWindows
         const PlotState &plotState = ch.plotState.value();
 
         // Use full available content area for the plot
-        if(ImPlot::BeginPlot("##channelplot", ImVec2(-1, -1))) {
+        // Note: Use unique ID per channel to maintain separate zoom/pan state
+        std::string plotId = "##plot_" + ch.name;
+        if(ImPlot::BeginPlot(plotId.c_str(), ImVec2(-1, -1))) {
           ImPlot::SetupAxes(plotState.xAxisLabel.c_str(), plotState.yAxisLabel.c_str());
 
-          if(plotState.autoFitAxes) {
-            ImPlot::SetupAxisLimits(ImAxis_X1, 0.0, 1.0, ImGuiCond_FirstUseEver);
-            ImPlot::SetupAxisLimits(ImAxis_Y1, -1.0, 1.0, ImGuiCond_FirstUseEver);
-          } else {
+          // Setup axis limits based on mode
+          if(!plotState.autoFitAxes) {
+            // Manual limits: always enforce these limits (disables user zoom/pan)
             ImPlot::SetupAxisLimits(ImAxis_X1, plotState.xMin, plotState.xMax, ImGuiCond_Always);
             ImPlot::SetupAxisLimits(ImAxis_Y1, plotState.yMin, plotState.yMax, ImGuiCond_Always);
           }
+          // If autoFitAxes is true, don't call SetupAxisLimits at all - let ImPlot auto-fit
 
           for(const auto &[name, series] : plotState.series) {
             if(series.x.empty() || series.y.empty()) continue;
