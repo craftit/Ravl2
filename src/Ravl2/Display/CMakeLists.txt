@@ -29,12 +29,15 @@ add_library(Ravl2Display
     OrbitCamera.cc OrbitCamera.hh
     Viewport3DNode.cc Viewport3DNode.hh
     Grid3DOverlay.cc Grid3DOverlay.hh
+    PlotNode.cc PlotNode.hh
 
     # Render commands
     SetBaseImage2D.hh
     SetNormalization2D.hh SetNormalization2D.cc
     AddPolylineOverlay2D.cc AddPolylineOverlay2D.hh
     SetPointCloud3D.cc SetPointCloud3D.hh
+    AddSeriesData.hh
+    ClearPlot.hh
 
     # I/O integration
     IOFormatAdapter.cc

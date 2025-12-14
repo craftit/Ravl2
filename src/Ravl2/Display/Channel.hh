@@ -17,7 +17,7 @@ namespace Ravl2::DebugDisplay
 {
 
   //! Exclusive view mode per channel.
-  //! 
+  //!
   //! Determines the rendering mode for the channel. Each channel can display either
   //! 2D content (images with overlays) or 3D content (meshes, point clouds) but not both
   //! simultaneously. The view mode affects which scene nodes are active and how input
@@ -26,6 +26,39 @@ namespace Ravl2::DebugDisplay
   {
     View2D,  //!< 2D image display with optional overlays (polylines, points)
     View3D   //!< 3D scene rendering with camera controls and depth testing
+  };
+
+  //! Single series data for plotting.
+  //!
+  //! Represents one line/scatter series within a plot. X and Y vectors must have
+  //! matching sizes. The series can be updated via Append, Replace, or RingBuffer modes.
+  struct SeriesData {
+    std::vector<float> x;      //!< X-axis data points
+    std::vector<float> y;      //!< Y-axis data points
+    std::string label;         //!< Series name for legend
+    uint32_t color = 0;        //!< RGBA color (0 = use ImPlot default palette)
+    float lineWidth = 1.0f;    //!< Line thickness (0 = use ImPlot default)
+    bool showMarkers = false;  //!< Display point markers on line
+  };
+
+  //! Plot state for time series and 1D data visualization.
+  //!
+  //! Manages multiple series within a single plot. Each series is identified by name
+  //! and can be independently updated. The plot supports auto-fit axes, custom labels,
+  //! and bounded history via ring buffer mode.
+  //!
+  //! @see AddSeriesData command for updating series data
+  //! @see PlotNode for rendering implementation
+  struct PlotState {
+    std::unordered_map<std::string, SeriesData> series;  //!< Series data by name
+    std::string xAxisLabel = "X";                        //!< X-axis label text
+    std::string yAxisLabel = "Y";                        //!< Y-axis label text
+    bool autoFitAxes = true;                             //!< Auto-scale axes to fit data
+    size_t maxHistoryPoints = 10000;                     //!< Ring buffer size limit (0 = unlimited)
+
+    // Optional explicit axis limits (when autoFitAxes = false)
+    double xMin = 0.0, xMax = 1.0;
+    double yMin = -1.0, yMax = 1.0;
   };
 
   //! Per-channel state.
@@ -54,6 +87,9 @@ namespace Ravl2::DebugDisplay
 
     // Display normalization settings for float images (per-view)
     NormalizationSettings norm = {};
+
+    // Plot state for time series data (optional, created when plot data is added)
+    std::optional<PlotState> plotState;
 
     // Single scene content node - either 2D or 3D based on viewMode
     // For 2D: typically a CompositeNode containing Image2DNode + Overlay2DNodes

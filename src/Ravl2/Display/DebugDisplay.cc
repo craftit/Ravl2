@@ -858,8 +858,8 @@ namespace Ravl2::DebugDisplay
 
         Ui::buildDockspace();
 
-        // Plots panel (Phase 4.9 Step 12: placeholder hooks for future ImPlot integration)
-        Ui::Plots::buildPlotsPanel();
+        // Plots panel (Phase 7: ImPlot integration with channel data)
+        Ui::Plots::buildPlotsPanel(g_channels);
 
         // Controls window (now dockable; only position on first use)
         ImGui::SetNextWindowPos(ImVec2(kControlsPosX, kControlsPosY), ImGuiCond_Once);
@@ -885,8 +885,8 @@ namespace Ravl2::DebugDisplay
 
         Ui::buildDockspace();
 
-        // Plots panel (Phase 4.9 Step 12: placeholder hooks for future ImPlot integration)
-        Ui::Plots::buildPlotsPanel();
+        // Plots panel (Phase 7: ImPlot integration with channel data)
+        Ui::Plots::buildPlotsPanel(g_channels);
 
         ImGui::SetNextWindowPos(ImVec2(kControlsPosX, kControlsPosY), ImGuiCond_Once);
         ImGui::SetNextWindowSize(ImVec2(kControlsInitialWidth, 0), ImGuiCond_FirstUseEver);

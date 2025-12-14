@@ -18,6 +18,8 @@
 #include "Ravl2/ImageIO/ImageIOInit.hh"
 
 #include <cxxopts.hpp>
+#include <cmath>
+#include <vector>
 
 using namespace std::chrono_literals;
 
@@ -158,6 +160,32 @@ int RAVL2_MAIN(int argc, char **argv)
       }
     }
 
+  }
+
+  // Test time series plotting (Phase 7)
+  SPDLOG_INFO("Generating test plots...");
+  {
+    // Static plot with sine and cosine
+    std::vector<float> sine_data, cosine_data;
+    for(int i = 0; i < 100; ++i) {
+      float x = i * 0.1f;
+      sine_data.push_back(std::sin(x));
+      cosine_data.push_back(std::cos(x));
+    }
+
+    ioSave("display://trig:series=sin:mode=replace", sine_data);
+    ioSave("display://trig:series=cos:mode=replace", cosine_data);
+    SPDLOG_INFO("Plotted sine and cosine to 'trig' channel");
+
+    // Streaming plot with append mode
+    SPDLOG_INFO("Streaming noisy signal...");
+    for(int i = 0; i < 50; ++i) {
+      float value = std::sin(i * 0.2f) + (rand() % 100 - 50) / 200.0f; // noisy sine
+      std::vector<float> sample = {value};
+      ioSave("display://noisy:channel=stream:series=signal:mode=append", sample);
+      std::this_thread::sleep_for(50ms);
+    }
+    SPDLOG_INFO("Finished streaming plot");
   }
 
   // Keep the process alive briefly so the SDL window (from the debug display thread) is visible.

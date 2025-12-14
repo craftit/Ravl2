@@ -165,27 +165,42 @@ Legend: [ ] = todo, [*] = in progress, [x] = done
 - [x] Verify docking, pan/zoom, and legend functionality
 - [x] Build and test — Phase 7a complete (basic ImPlot rendering working)
 
-### Phase 7b — Data Structures and Commands (pending)
-- [ ] Add PlotState structure to Channel.hh (series map, config)
-- [ ] Create AddSeriesData.hh command (Replace/Append/RingBuffer modes)
-- [ ] Create ClearPlot.hh command
-- [ ] Create SetPlotConfig.hh command
+### Phase 7b — Data Structures and Commands
+- [x] Add PlotState structure to Channel.hh (series map, config)
+- [x] Add SeriesData structure with X/Y vectors and styling
+- [x] Add plotState optional member to ChannelState
+- [x] Create AddSeriesData.hh command (Replace/Append/RingBuffer modes)
+- [x] Create ClearPlot.hh command (clear all or specific series)
+- [x] Implement ring buffer logic with maxHistoryPoints
+- [x] Support auto X-axis generation when X values not provided
+- [x] Build and test — Phase 7b complete
 
-### Phase 7c — PlotNode Scene Node (pending)
-- [ ] Create PlotNode.{hh,cc} implementing ISceneNode
-- [ ] Implement render() with ImPlot calls for each series
-- [ ] Integrate into Ui/Plots.cc buildPlotsPanel()
+### Phase 7c — PlotNode Scene Node
+- [x] Create PlotNode.{hh,cc} implementing ISceneNode
+- [x] Update Ui/Plots.cc to accept ChannelRegistry parameter
+- [x] Implement rendering from channel plotState data
+- [x] Support multiple channels with collapsible headers
+- [x] Render multiple series per plot with ImPlot::PlotLine
+- [x] Support auto-fit axes and explicit axis limits
+- [x] Update DebugDisplay.cc call sites to pass g_channels
+- [x] Add new files to CMakeLists.txt
+- [x] Build and test — Phase 7c complete
 
-### Phase 7d — Type Converters (pending)
-- [ ] Add Array<float,1> → AddSeriesData converter in IOFormatAdapter.cc
-- [ ] Add std::vector<float> → AddSeriesData converter
-- [ ] Parse URL controls (:Series, :Mode, :XAxis, :ClearPlot, :MaxPoints)
-- [ ] Implement auto X-axis generation (Index/Time modes)
+### Phase 7d — Type Converters
+- [x] Add Array<float,1> → AddSeriesData converter in IOFormatAdapter.cc
+- [x] Add std::vector<float> → AddSeriesData converter
+- [x] Register converters with TypeConverter system
+- [x] Add AddSeriesData/ClearPlot command handling in OutputFormat
+- [x] Parse URL controls (:Series, :Mode, :ClearPlot, :ClearSeries)
+- [x] Support Replace/Append/RingBuffer modes via :Mode control
+- [x] Auto X-axis generation in AddSeriesData (default behavior)
+- [x] Build and test — Phase 7d complete
 
-### Phase 7e — Incremental Updates (pending)
-- [ ] Implement ring buffer logic in AddSeriesData
-- [ ] Performance optimizations (reserve, std::deque)
-- [ ] Per-series/channel maxHistoryPoints configuration
+### Phase 7e — Incremental Updates
+- [x] Ring buffer logic already implemented in AddSeriesData (Phase 7b)
+- [x] Performance optimizations (reserve, efficient append)
+- [x] Per-channel maxHistoryPoints in PlotState
+- [x] Phase 7e complete (integrated into 7b)
 
 ### Phase 7f — Timeline Widget (optional, stretch)
 - [ ] Design TimelineState structure
