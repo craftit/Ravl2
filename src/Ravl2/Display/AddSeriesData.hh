@@ -4,6 +4,8 @@
 #include <string>
 #include <vector>
 #include <algorithm>
+#include <unordered_map>
+#include <optional>
 
 #include <spdlog/spdlog.h>
 
@@ -152,6 +154,52 @@ namespace Ravl2::DebugDisplay
         series.lineWidth = lineWidth;
       }
       series.showMarkers = showMarkers;
+    }
+  };
+
+  //! Command to add or update multiple time series at once.
+  //!
+  //! This command allows updating multiple series in a single call,
+  //! which is useful when you have a map/dict of series names to values
+  //! that you want to append simultaneously (e.g., logging multiple metrics).
+  //!
+  //! All series share the same x-value and update mode.
+  //! X values can be provided explicitly or auto-generated.
+  struct AddMultiSeriesData : public IRenderCommand {
+    std::string channel;                              //!< Target channel name
+    std::unordered_map<std::string, float> seriesValues;  //!< Map of series name -> y-value
+    std::optional<float> xValue;                      //!< Optional shared x-value (nullopt = auto-generate)
+    SeriesUpdateMode mode = SeriesUpdateMode::Append; //!< Update mode for all series
+
+    explicit AddMultiSeriesData(std::string ch)
+      : channel(std::move(ch))
+    {}
+
+    void apply(ChannelRegistry &channels) override
+    {
+      if(channel.empty()) {
+        static bool warnedOnce = false;
+        if(!warnedOnce) {
+          SPDLOG_WARN("DebugDisplay: AddMultiSeriesData called with empty channel name");
+          warnedOnce = true;
+        }
+      }
+
+      // For each series, create an AddSeriesData command and apply it
+      for(const auto &[seriesName, yValue] : seriesValues) {
+        if(!std::isfinite(yValue)) {
+          SPDLOG_DEBUG("DebugDisplay: Skipping non-finite value for series '{}'", seriesName);
+          continue;
+        }
+
+        auto cmd = std::make_shared<AddSeriesData>(channel, seriesName);
+        cmd->mode = mode;
+        cmd->y.push_back(yValue);
+        if(xValue.has_value()) {
+          cmd->x.push_back(xValue.value());
+        }
+        cmd->apply(channels);
+      }
     }
   };
 

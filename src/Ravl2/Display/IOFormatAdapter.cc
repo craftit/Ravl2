@@ -232,9 +232,18 @@ namespace Ravl2::DebugDisplay
       return cmd;
     }
 
+    // Converter: std::unordered_map<std::string, float> -> shared_ptr<IRenderCommand> (AddMultiSeriesData)
+    std::shared_ptr<IRenderCommand> makeCmdFromStringFloatMap(const std::unordered_map<std::string, float> &map)
+    {
+      auto cmd = std::make_shared<AddMultiSeriesData>(std::string{});
+      cmd->seriesValues = map;
+      // Channel and mode will be set by sink from URL
+      return cmd;
+    }
+
     // Register type conversions when this TU is loaded.
     [[maybe_unused]] bool g_registerConverters = []() {
-      SPDLOG_DEBUG("Registering TypeConverter: Array<u8,2>/Array<f32,2>/Array<RGB8,2>/Array<i16,2>/Array<i32,2>/PolyLine2f/PointSet3f/Array<f32,1>/vector<float> -> shared_ptr<IRenderCommand>");
+      SPDLOG_DEBUG("Registering TypeConverter: Array<u8,2>/Array<f32,2>/Array<RGB8,2>/Array<i16,2>/Array<i32,2>/PolyLine2f/PointSet3f/Array<f32,1>/vector<float>/map<string,float> -> shared_ptr<IRenderCommand>");
       [[maybe_unused]] bool ok1 = registerConversion(makeCmdFromU8Array, 1.0f);
       [[maybe_unused]] bool ok2 = registerConversion(makeCmdFromF32Array, 0.95f);
       [[maybe_unused]] bool ok3 = registerConversion(makeCmdFromRGB8Array, 1.0f);
@@ -244,7 +253,8 @@ namespace Ravl2::DebugDisplay
       [[maybe_unused]] bool ok7 = registerConversion(makeCmdFromPointSet3f, 1.0f);
       [[maybe_unused]] bool ok8 = registerConversion(makeCmdFromF32Array1D, 1.0f);
       [[maybe_unused]] bool ok9 = registerConversion(makeCmdFromVectorFloat, 1.0f);
-      //[[maybe_unused]] bool ok10 = registerConversion(makeCmdFromRGB32FArray, 1.0f);
+      [[maybe_unused]] bool ok10 = registerConversion(makeCmdFromStringFloatMap, 1.0f);
+      //[[maybe_unused]] bool ok11 = registerConversion(makeCmdFromRGB32FArray, 1.0f);
       return true;
     }();
 
@@ -501,12 +511,7 @@ namespace Ravl2::DebugDisplay
               // :MaxPoints=<n> - ring buffer size limit
               if(auto mp = getControlValue(parsed2->controls, ":MaxPoints=")) {
                 try {
-#pragma GCC diagnostic push
-#ifndef __clang__
-#pragma GCC diagnostic ignored "-Wuseless-cast"
-#endif
                   [[maybe_unused]] size_t maxPts = std::max(static_cast<size_t>(10), static_cast<size_t>(std::stoul(*mp)));
-#pragma GCC diagnostic pop
                   // Note: maxPoints is per-channel, not per-command. We'll need to handle this
                   // by setting it via a separate control or defaulting in the channel state.
                   // For now, just log it.
@@ -520,6 +525,31 @@ namespace Ravl2::DebugDisplay
                 DebugDisplay::enqueue(clearCmd);
               } else if(hasControl(parsed2->controls, ":ClearSeries")) {
                 auto clearCmd = std::make_shared<ClearPlot>(parsed2->channel, plotCmd->seriesName);
+                DebugDisplay::enqueue(clearCmd);
+              }
+
+              DebugDisplay::enqueue(cmd);
+            } else if(auto *multiPlotCmd = dynamic_cast<AddMultiSeriesData *>(cmd.get())) {
+              // Handle multi-series plot data with URL controls
+              multiPlotCmd->channel = parsed2->channel;
+
+              // :Mode=Replace|Append|RingBuffer (default: Append)
+              if(auto mv = getControlValue(parsed2->controls, ":Mode=")) {
+                if(*mv == "Replace") multiPlotCmd->mode = SeriesUpdateMode::Replace;
+                else if(*mv == "RingBuffer") multiPlotCmd->mode = SeriesUpdateMode::RingBuffer;
+                else multiPlotCmd->mode = SeriesUpdateMode::Append;
+              }
+
+              // :X=<value> - optional shared x-value
+              if(auto xv = getControlValue(parsed2->controls, ":X=")) {
+                try {
+                  multiPlotCmd->xValue = std::stof(*xv);
+                } catch(...) {}
+              }
+
+              // :ClearPlot - clear before adding
+              if(hasControl(parsed2->controls, ":ClearPlot")) {
+                auto clearCmd = std::make_shared<ClearPlot>(parsed2->channel);
                 DebugDisplay::enqueue(clearCmd);
               }
 

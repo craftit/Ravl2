@@ -20,6 +20,7 @@
 #include <cxxopts.hpp>
 #include <cmath>
 #include <vector>
+#include <unordered_map>
 
 using namespace std::chrono_literals;
 
@@ -178,12 +179,26 @@ int RAVL2_MAIN(int argc, char **argv)
     ioSave("display://trig:series=cos:mode=replace", cosine_data);
     SPDLOG_INFO("Plotted sine and cosine to 'trig' channel");
 
-    // Streaming plot with append mode
+    // Multi-series plot using map (new feature!)
+    SPDLOG_INFO("Streaming multi-series metrics...");
+    for(int i = 0; i < 50; ++i) {
+      // Simulate multiple metrics at once
+      std::unordered_map<std::string, float> metrics = {
+        {"cpu_usage", 50.0f + 20.0f * std::sin(i * 0.1f) + (rand() % 100 - 50) / 10.0f},
+        {"memory_usage", 70.0f + 15.0f * std::cos(i * 0.15f) + (rand() % 100 - 50) / 10.0f},
+        {"network_io", 30.0f + 25.0f * std::sin(i * 0.2f + 1.0f) + (rand() % 100 - 50) / 10.0f}
+      };
+      ioSave("display://metrics:mode=append", metrics);
+      std::this_thread::sleep_for(50ms);
+    }
+    SPDLOG_INFO("Finished streaming multi-series metrics");
+
+    // Streaming plot with single series (backward compatibility)
     SPDLOG_INFO("Streaming noisy signal...");
     for(int i = 0; i < 50; ++i) {
       float value = std::sin(i * 0.2f) + (rand() % 100 - 50) / 200.0f; // noisy sine
       std::vector<float> sample = {value};
-      ioSave("display://noisy:channel=stream:series=signal:mode=append", sample);
+      ioSave("display://noisy:series=signal:mode=append", sample);
       std::this_thread::sleep_for(50ms);
     }
     SPDLOG_INFO("Finished streaming plot");
