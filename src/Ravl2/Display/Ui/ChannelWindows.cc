@@ -118,10 +118,19 @@ namespace Ravl2::DebugDisplay::Ui::ChannelWindows
 
       // --- Phase 7: Plot rendering ---
       // If this channel has plot data, render it in the channel window
-      // Plots are independent of 2D/3D mode
-      if(ch.plotState.has_value() && !ch.plotState->series.empty()) {
+      // Check if channel has ONLY plot data (no 2D/3D content)
+      const bool hasOnlyPlotData = (ch.plotState.has_value() && !ch.plotState->series.empty() && !ch.sceneContent);
+
+      if(hasOnlyPlotData) {
 #if defined(RAVL2_WITH_IMGUI)
         const PlotState &plotState = ch.plotState.value();
+
+        // Toolbar for plot controls
+        if(ImGui::Button("Fit")) {
+          ImPlot::SetNextAxesToFit();
+        }
+        ImGui::SameLine();
+        ImGui::Text("Zoom: Mouse wheel | Pan: Right-click drag");
 
         // Use full available content area for the plot
         // Note: Use unique ID per channel to maintain separate zoom/pan state
@@ -129,13 +138,10 @@ namespace Ravl2::DebugDisplay::Ui::ChannelWindows
         if(ImPlot::BeginPlot(plotId.c_str(), ImVec2(-1, -1))) {
           ImPlot::SetupAxes(plotState.xAxisLabel.c_str(), plotState.yAxisLabel.c_str());
 
-          // Setup axis limits based on mode
-          if(!plotState.autoFitAxes) {
-            // Manual limits: always enforce these limits (disables user zoom/pan)
-            ImPlot::SetupAxisLimits(ImAxis_X1, plotState.xMin, plotState.xMax, ImGuiCond_Always);
-            ImPlot::SetupAxisLimits(ImAxis_Y1, plotState.yMin, plotState.yMax, ImGuiCond_Always);
-          }
-          // If autoFitAxes is true, don't call SetupAxisLimits at all - let ImPlot auto-fit
+          // Don't set any axis limits - let ImPlot handle auto-fitting on first display
+          // and then preserve user zoom/pan interactions.
+          // The SetupAxisLimits with ImGuiCond_Once would only apply on first frame,
+          // but ImPlot's default behavior already does a good initial fit.
 
           for(const auto &[name, series] : plotState.series) {
             if(series.x.empty() || series.y.empty()) continue;
@@ -148,9 +154,7 @@ namespace Ravl2::DebugDisplay::Ui::ChannelWindows
           ImPlot::EndPlot();
         }
 #endif
-      }
-
-      if(enable2D) {
+      } else if(enable2D) {
         // Small toolbar: Reset and Fit using the window's content region
         if(ImGui::Button("Reset")) {
           ch.view2D = ScaleTranslate<float, 2>::identity();
