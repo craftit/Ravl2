@@ -181,7 +181,7 @@ int RAVL2_MAIN(int argc, char **argv)
 
     // Multi-series plot using map (new feature!)
     SPDLOG_INFO("Streaming multi-series metrics...");
-    for(int i = 0; i < 50; ++i) {
+    for(int i = 0; i < 10000; ++i) {
       // Simulate multiple metrics at once
       std::unordered_map<std::string, float> metrics = {
         {"cpu_usage", 50.0f + 20.0f * std::sin(i * 0.1f) + (rand() % 100 - 50) / 10.0f},
@@ -189,7 +189,7 @@ int RAVL2_MAIN(int argc, char **argv)
         {"network_io", 30.0f + 25.0f * std::sin(i * 0.2f + 1.0f) + (rand() % 100 - 50) / 10.0f}
       };
       ioSave("display://metrics:mode=append", metrics);
-      std::this_thread::sleep_for(50ms);
+      std::this_thread::sleep_for(100ms);
     }
     SPDLOG_INFO("Finished streaming multi-series metrics");
 

@@ -54,6 +54,7 @@ namespace Ravl2::DebugDisplay
     std::string xAxisLabel = "X";                        //!< X-axis label text
     std::string yAxisLabel = "Y";                        //!< Y-axis label text
     bool autoFitAxes = true;                             //!< Auto-scale axes to fit data
+    bool followMode = false;                             //!< Auto-scroll to show latest data
     size_t maxHistoryPoints = 10000;                     //!< Ring buffer size limit (0 = unlimited)
 
     // Optional explicit axis limits (when autoFitAxes = false)

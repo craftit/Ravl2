@@ -119,12 +119,14 @@ namespace Ravl2::DebugDisplay::Ui::ChannelWindows
       const bool hasOnlyPlotData = (ch.plotState.has_value() && !ch.plotState->series.empty() && !ch.sceneContent);
 
       if(hasOnlyPlotData) {
-        const PlotState &plotState = ch.plotState.value();
+        PlotState &plotState = ch.plotState.value();
 
         // Toolbar for plot controls
         if(ImGui::Button("Fit")) {
           ImPlot::SetNextAxesToFit();
         }
+        ImGui::SameLine();
+        ImGui::Checkbox("Follow", &plotState.followMode);
         ImGui::SameLine();
         ImGui::Text("Zoom: Mouse wheel | Pan: Right-click drag");
 
@@ -134,10 +136,27 @@ namespace Ravl2::DebugDisplay::Ui::ChannelWindows
         if(ImPlot::BeginPlot(plotId.c_str(), ImVec2(-1, -1))) {
           ImPlot::SetupAxes(plotState.xAxisLabel.c_str(), plotState.yAxisLabel.c_str());
 
-          // Don't set any axis limits - let ImPlot handle auto-fitting on first display
-          // and then preserve user zoom/pan interactions.
-          // The SetupAxisLimits with ImGuiCond_Once would only apply on first frame,
-          // but ImPlot's default behavior already does a good initial fit.
+          // If follow mode is enabled, compute the latest x range and set axis limits
+          if(plotState.followMode) {
+            // Find the maximum x value across all series
+            double maxX = -std::numeric_limits<double>::infinity();
+            for(const auto &[name, series] : plotState.series) {
+              if(!series.x.empty()) {
+                double seriesMaxX = static_cast<double>(series.x.back());
+                if(seriesMaxX > maxX) {
+                  maxX = seriesMaxX;
+                }
+              }
+            }
+
+            if(std::isfinite(maxX)) {
+              // Show a fixed window width of the most recent data
+              // Adjust this window size as needed (e.g., last 100 x-units)
+              double windowWidth = 100.0;
+              double minX = maxX - windowWidth;
+              ImPlot::SetupAxisLimits(ImAxis_X1, minX, maxX, ImGuiCond_Always);
+            }
+          }
 
           for(const auto &[name, series] : plotState.series) {
             if(series.x.empty() || series.y.empty()) continue;
