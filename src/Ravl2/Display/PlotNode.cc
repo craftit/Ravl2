@@ -19,16 +19,9 @@ namespace Ravl2::DebugDisplay
 
   void PlotNode::render([[maybe_unused]] RenderContext &ctx)
   {
-#if defined(RAVL2_WITH_IMGUI)
     // Note: This is a placeholder implementation. The actual rendering
-    // is done in Ui/Plots.cc buildPlotsPanel() which accesses the
-    // channel's plotState directly. This render() method would be used
-    // if we wanted plots embedded within channel windows rather than
-    // in a separate plots panel.
-
-    // For Phase 7c, we'll update buildPlotsPanel() to iterate over
-    // channels with plotState and render them there.
-#endif
+    // is done in Ui/ChannelWindows.cc which accesses the channel's
+    // plotState directly and renders plots inline in channel windows.
   }
 
 }// namespace Ravl2::DebugDisplay

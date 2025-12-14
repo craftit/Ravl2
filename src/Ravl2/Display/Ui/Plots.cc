@@ -21,7 +21,6 @@ namespace Ravl2::DebugDisplay::Ui::Plots
 
   void buildPlotsPanel(ChannelRegistry &channels)
   {
-#if defined(RAVL2_WITH_IMGUI)
     // Ensure the panel is visible the first time by giving it a default position and size.
     ImGuiViewport *vp = ImGui::GetMainViewport();
     ImGui::SetNextWindowViewport(vp->ID);
@@ -129,7 +128,6 @@ namespace Ravl2::DebugDisplay::Ui::Plots
       }
     }
     ImGui::End();
-#endif
   }
 
 }// namespace Ravl2::DebugDisplay::Ui::Plots

@@ -26,11 +26,7 @@ namespace Ravl2::DebugDisplay::Render3D
   //! @param halfCells Number of cells from origin to each side (extent = halfCells * cellSize).
   void drawGridImGui(const OrbitCamera &cam,
                      const Viewport3DNode::Rect &rect,
-#if defined(RAVL2_WITH_IMGUI)
                      ImDrawList *drawList,
-#else
-                     void * /*drawList*/,
-#endif
                      float cellSize,
                      int halfCells) noexcept;
 

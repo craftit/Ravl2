@@ -41,15 +41,10 @@ namespace Ravl2::DebugDisplay::Render3D
 
   void drawGridImGui(const OrbitCamera &cam,
                      const Viewport3DNode::Rect &rect,
-#if defined(RAVL2_WITH_IMGUI)
                      ImDrawList *drawList,
-#else
-                     void * /*drawList*/,
-#endif
                      float cellSize,
                      int halfCells) noexcept
   {
-#if defined(RAVL2_WITH_IMGUI)
     if(!drawList || rect.w <= 1 || rect.h <= 1) return;
 
     const Eigen::Matrix4f view = cam.buildViewMatrix();
@@ -98,7 +93,6 @@ namespace Ravl2::DebugDisplay::Render3D
         drawList->AddLine(s0, s1, col, 1.0f);
       }
     }
-#endif
   }
 
 }// namespace Ravl2::DebugDisplay::Render3D

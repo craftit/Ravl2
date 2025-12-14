@@ -20,7 +20,6 @@ namespace Ravl2::DebugDisplay::Ui::StatusBar
     (void)lastRects;
     (void)imageOrigins;
     (void)channels;
-#if defined(RAVL2_WITH_IMGUI)
     ImGuiViewport *vp = ImGui::GetMainViewport();
     // Always place at the bottom of the main viewport when not docked.
     // If the window is docked, ImGui will ignore this position.
@@ -35,7 +34,6 @@ namespace Ravl2::DebugDisplay::Ui::StatusBar
       ImGui::TextUnformatted("Hover an image to inspect pixels… NOT IMPLEMENTED");
     }
     ImGui::End();
-#endif
   }
 
 }// namespace Ravl2::DebugDisplay::Ui::StatusBar

@@ -63,7 +63,6 @@ namespace Ravl2::DebugDisplay::Ui::ChannelWindows
     rc.framebufferWidth = fbw;
     rc.framebufferHeight = fbh;
     channels.forEachChannel([&](ChannelState &ch) {
-#if defined(RAVL2_WITH_IMGUI)
       // Disable scrollbars to avoid interaction with image pan/zoom.
       ImGuiWindowFlags wflags = ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse;
       if(!ImGui::Begin(ch.name.c_str(), nullptr, wflags)) {
@@ -122,7 +121,6 @@ namespace Ravl2::DebugDisplay::Ui::ChannelWindows
       const bool hasOnlyPlotData = (ch.plotState.has_value() && !ch.plotState->series.empty() && !ch.sceneContent);
 
       if(hasOnlyPlotData) {
-#if defined(RAVL2_WITH_IMGUI)
         const PlotState &plotState = ch.plotState.value();
 
         // Toolbar for plot controls
@@ -153,7 +151,6 @@ namespace Ravl2::DebugDisplay::Ui::ChannelWindows
 
           ImPlot::EndPlot();
         }
-#endif
       } else if(enable2D) {
         // Small toolbar: Reset and Fit using the window's content region
         if(ImGui::Button("Reset")) {
@@ -270,7 +267,6 @@ namespace Ravl2::DebugDisplay::Ui::ChannelWindows
           vp3d = static_cast<Viewport3DNode *>(ch.sceneContent.get());
         }
 
-#if defined(RAVL2_WITH_IMGUI)
         // Full-window 3D viewport child (fills content region)
         ImGui::BeginChild("##3d_view", ImVec2(0, 0), false, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
 
@@ -337,13 +333,9 @@ namespace Ravl2::DebugDisplay::Ui::ChannelWindows
                     static_cast<double>(vp3d->camera.distance), static_cast<double>(vp3d->camera.fovY * 180.0f / 3.14159265f), static_cast<double>(vp3d->camera.aspect));
 
         ImGui::EndChild();
-#endif
       }
 
       ImGui::End();
-#else
-      (void)ch;// UI disabled
-#endif
     });
   }
 

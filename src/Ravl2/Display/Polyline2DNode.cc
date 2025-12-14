@@ -28,7 +28,6 @@ namespace Ravl2::DebugDisplay
 
   void Polyline2DNode::render(RenderContext &ctx)
   {
-#if defined(RAVL2_WITH_IMGUI)
     ImDrawList *drawList = ctx.imguiDrawList;
     if(!drawList) return;
 
@@ -52,9 +51,6 @@ namespace Ravl2::DebugDisplay
       ImVec2 sb = toScreen(ctx.origin, ctx.view2D, b.x, b.y);
       drawList->AddLine(sa, sb, m_rgba, m_thickness);
     }
-#else
-    (void)ctx;
-#endif
   }
 
 }// namespace Ravl2::DebugDisplay

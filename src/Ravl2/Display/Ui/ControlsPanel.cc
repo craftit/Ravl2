@@ -28,7 +28,6 @@ namespace Ravl2::DebugDisplay::Ui
                           float zoomMin,
                           float zoomMax)
   {
-#if defined(RAVL2_WITH_IMGUI)
     (void)fbw;
     (void)fbh;
     // Collect channel names for selection
@@ -120,15 +119,6 @@ namespace Ravl2::DebugDisplay::Ui
         invalidated.store(true, std::memory_order_release);
       }
     }
-#else
-    (void)fbw;
-    (void)fbh;
-    (void)channels;
-    (void)enqueueCmd;
-    (void)invalidated;
-    (void)zoomMin;
-    (void)zoomMax;
-#endif
   }
 
 }// namespace Ravl2::DebugDisplay::Ui

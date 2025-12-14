@@ -15,9 +15,7 @@ namespace Ravl2::DebugDisplay::Ui
 
   void buildDockspace()
   {
-#if defined(RAVL2_WITH_IMGUI)
     ImGui::DockSpaceOverViewport(0, ImGui::GetMainViewport());
-#endif
   }
 
 }// namespace Ravl2::DebugDisplay::Ui
