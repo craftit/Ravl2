@@ -62,6 +62,7 @@ find_package(spdlog REQUIRED)
 find_package(SDL2 REQUIRED)
 
 include(SetupImGUI)
+include(SetupImPlot)
 
 target_link_libraries(Ravl2Display
   PRIVATE RAVL2_options RAVL2_warnings
@@ -85,6 +86,14 @@ if(TARGET imgui)
   message(STATUS "Ravl2Display: integrating Dear ImGui")
   target_link_libraries(Ravl2Display PRIVATE imgui)
   target_compile_definitions(Ravl2Display PRIVATE RAVL2_WITH_IMGUI=1)
+
+  # Link ImPlot if available
+  if(TARGET implot)
+    message(STATUS "Ravl2Display: integrating ImPlot")
+    target_link_libraries(Ravl2Display PRIVATE implot)
+  else()
+    message(STATUS "Ravl2Display: ImPlot not available")
+  endif()
 else()
   message(STATUS "Ravl2Display: no Dear ImGui available")
 endif()

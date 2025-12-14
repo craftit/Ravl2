@@ -155,9 +155,49 @@ Legend: [ ] = todo, [*] = in progress, [x] = done
   - [ ] Diagnostics: dbgText HUD shows 3D view ID, draw counts; clear, actionable logs on shader/resource failures.
 
 ## Phase 7 — ImPlot integration
-- [ ] Plots panel and 1D series channel
-- [ ] Basic timeline widget
-- [ ] Waterfall prototype as scrolling texture
+
+### Phase 7a — ImPlot Context + Test Plot MVP
+- [x] Add ImPlot include and initialization in DebugDisplay.cc
+- [x] Create SetupImPlot.cmake for CMake target configuration
+- [x] Add ImPlot::CreateContext() after ImGui initialization (all paths)
+- [x] Add ImPlot::DestroyContext() in shutdown
+- [x] Update Ui/Plots.cc with test sine/cosine plot rendering
+- [x] Verify docking, pan/zoom, and legend functionality
+- [x] Build and test — Phase 7a complete (basic ImPlot rendering working)
+
+### Phase 7b — Data Structures and Commands (pending)
+- [ ] Add PlotState structure to Channel.hh (series map, config)
+- [ ] Create AddSeriesData.hh command (Replace/Append/RingBuffer modes)
+- [ ] Create ClearPlot.hh command
+- [ ] Create SetPlotConfig.hh command
+
+### Phase 7c — PlotNode Scene Node (pending)
+- [ ] Create PlotNode.{hh,cc} implementing ISceneNode
+- [ ] Implement render() with ImPlot calls for each series
+- [ ] Integrate into Ui/Plots.cc buildPlotsPanel()
+
+### Phase 7d — Type Converters (pending)
+- [ ] Add Array<float,1> → AddSeriesData converter in IOFormatAdapter.cc
+- [ ] Add std::vector<float> → AddSeriesData converter
+- [ ] Parse URL controls (:Series, :Mode, :XAxis, :ClearPlot, :MaxPoints)
+- [ ] Implement auto X-axis generation (Index/Time modes)
+
+### Phase 7e — Incremental Updates (pending)
+- [ ] Implement ring buffer logic in AddSeriesData
+- [ ] Performance optimizations (reserve, std::deque)
+- [ ] Per-series/channel maxHistoryPoints configuration
+
+### Phase 7f — Timeline Widget (optional, stretch)
+- [ ] Design TimelineState structure
+- [ ] Create Ui/Timeline.{hh,cc} component
+- [ ] Link timeline to 2D/3D channel frame display
+- [ ] ImPlot vertical drag line synchronized with scrubber
+
+### Phase 7g — Waterfall Display (optional, stretch)
+- [ ] Create WaterfallNode scene node
+- [ ] 2D texture accumulation from 1D rows
+- [ ] Colormap support (Grayscale, Viridis, Jet, Hot)
+- [ ] AddWaterfallRow command and type converter
 
 ## Phase 8 — Persistence and config
 - [ ] Save/restore docking layout

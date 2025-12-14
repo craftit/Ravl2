@@ -213,6 +213,7 @@ namespace
 #pragma GCC diagnostic ignored "-Wgnu-zero-variadic-macro-arguments"
 #endif
 #include <imgui.h>
+#include <implot.h>
 #include <backends/imgui_impl_sdl2.h>
 #include <backends/imgui_impl_sdlrenderer2.h>
 #include "Ravl2/Display/ThirdParty/bgfx_imgui/ImGUI/imgui.hh"
@@ -221,6 +222,7 @@ namespace
 #elif defined(RAVL2_WITH_IMGUI)
 // ImGui (SDL2 + SDL_Renderer2 backend)
 #include <imgui.h>
+#include <implot.h>
 #include <backends/imgui_impl_sdl2.h>
 #include <backends/imgui_impl_sdlrenderer2.h>
 #include "Ravl2/Display/SetNormalization2D.hh"
@@ -329,6 +331,7 @@ namespace Ravl2::DebugDisplay
     // ImGui state
 #if defined(RAVL2_WITH_IMGUI)
     bool g_imguiInitialized = false;
+    bool g_implotInitialized = false;
 #endif
 #if defined(RAVL2_WITH_IMGUI) && defined(RAVL2_WITH_BGFX)
     ImguiBgfxBridge g_imguiBridge;
@@ -444,6 +447,13 @@ namespace Ravl2::DebugDisplay
               io.ConfigWindowsMoveFromTitleBarOnly = true;
               g_imguiInitialized = true;
               SPDLOG_INFO("DebugDisplay: Dear ImGui initialized (bgfx backend via ImguiBgfxBridge)");
+
+              // Initialize ImPlot context
+              if(!g_implotInitialized) {
+                ImPlot::CreateContext();
+                g_implotInitialized = true;
+                SPDLOG_INFO("DebugDisplay: ImPlot initialized");
+              }
             } else {
               SPDLOG_WARN("DebugDisplay: ImguiBgfxBridge init failed while bgfx is initialized: {}", res.error());
             }
@@ -463,6 +473,13 @@ namespace Ravl2::DebugDisplay
             } else {
               g_imguiInitialized = true;
               SPDLOG_INFO("DebugDisplay: Dear ImGui initialized (SDL_Renderer backend, bgfx init failed)");
+
+              // Initialize ImPlot context
+              if(!g_implotInitialized) {
+                ImPlot::CreateContext();
+                g_implotInitialized = true;
+                SPDLOG_INFO("DebugDisplay: ImPlot initialized");
+              }
             }
           }
         }
@@ -483,6 +500,13 @@ namespace Ravl2::DebugDisplay
           } else {
             g_imguiInitialized = true;
             SPDLOG_INFO("DebugDisplay: Dear ImGui initialized (SDL_Renderer backend)");
+
+            // Initialize ImPlot context
+            if(!g_implotInitialized) {
+              ImPlot::CreateContext();
+              g_implotInitialized = true;
+              SPDLOG_INFO("DebugDisplay: ImPlot initialized");
+            }
           }
         }
 #endif
@@ -495,6 +519,15 @@ namespace Ravl2::DebugDisplay
       void shutdown()
       {
         // Shutdown ImGui if initialized
+#if defined(RAVL2_WITH_IMGUI)
+        // Destroy ImPlot context first (before ImGui)
+        if(g_implotInitialized) {
+          ImPlot::DestroyContext();
+          g_implotInitialized = false;
+          SPDLOG_INFO("DebugDisplay: ImPlot context destroyed");
+        }
+#endif
+
 #if defined(RAVL2_WITH_IMGUI) && defined(RAVL2_WITH_BGFX)
         if(g_imguiInitialized) {
           g_imguiBridge.shutdown();
