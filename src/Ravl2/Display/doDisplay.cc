@@ -58,8 +58,9 @@ int RAVL2_MAIN(int argc, char **argv)
   }
 
   using namespace Ravl2;
+#if 0
   using Ravl2::PixelRGB8;
-
+  // Temporarily disable images to make plot testing easier.
   Array<PixelRGB8, 2> imgRgb;
   Array<uint8_t, 2> imgGray;
 
@@ -161,7 +162,7 @@ int RAVL2_MAIN(int argc, char **argv)
     }
 
   }
-
+#endif
   // Test time series plotting (Phase 7)
   SPDLOG_INFO("Generating test plots...");
   {

@@ -12,6 +12,16 @@
 #pragma GCC diagnostic pop
 #endif
 
+#if defined(RAVL2_WITH_IMGUI)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wold-style-cast"
+#if defined(__clang__)
+#pragma GCC diagnostic ignored "-Wgnu-zero-variadic-macro-arguments"
+#endif
+#include <implot.h>
+#pragma GCC diagnostic pop
+#endif
+
 #include <SDL2/SDL.h>
 
 #include "Ravl2/Display/ISceneNode.hh"
@@ -103,6 +113,38 @@ namespace Ravl2::DebugDisplay::Ui::ChannelWindows
       // If this window (and its children) are hovered, record it as the top-most hovered channel.
       if(ImGui::IsWindowHovered(ImGuiHoveredFlags_RootAndChildWindows)) {
         hoveredChannelOut = ch.name;
+      }
+
+      // --- Phase 7: Plot rendering ---
+      // If this channel has plot data, render it in the channel window
+      // Plots are independent of 2D/3D mode
+      if(ch.plotState.has_value() && !ch.plotState->series.empty()) {
+#if defined(RAVL2_WITH_IMGUI)
+        const PlotState &plotState = ch.plotState.value();
+
+        // Use full available content area for the plot
+        if(ImPlot::BeginPlot("##channelplot", ImVec2(-1, -1))) {
+          ImPlot::SetupAxes(plotState.xAxisLabel.c_str(), plotState.yAxisLabel.c_str());
+
+          if(plotState.autoFitAxes) {
+            ImPlot::SetupAxisLimits(ImAxis_X1, 0.0, 1.0, ImGuiCond_FirstUseEver);
+            ImPlot::SetupAxisLimits(ImAxis_Y1, -1.0, 1.0, ImGuiCond_FirstUseEver);
+          } else {
+            ImPlot::SetupAxisLimits(ImAxis_X1, plotState.xMin, plotState.xMax, ImGuiCond_Always);
+            ImPlot::SetupAxisLimits(ImAxis_Y1, plotState.yMin, plotState.yMax, ImGuiCond_Always);
+          }
+
+          for(const auto &[name, series] : plotState.series) {
+            if(series.x.empty() || series.y.empty()) continue;
+
+            const char *label = series.label.empty() ? name.c_str() : series.label.c_str();
+            int size = std::min(static_cast<int>(series.x.size()), static_cast<int>(series.y.size()));
+            ImPlot::PlotLine(label, series.x.data(), series.y.data(), size);
+          }
+
+          ImPlot::EndPlot();
+        }
+#endif
       }
 
       if(enable2D) {
