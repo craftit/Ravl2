@@ -92,7 +92,14 @@ function(RAVL2_setup_dependencies)
   endif()
 
   if(NOT TARGET CLI11::CLI11)
-    cpmaddpackage("gh:CLIUtils/CLI11@2.3.2")
+    cpmaddpackage(NAME
+            CLI11
+            GITHUB_REPOSITORY
+            "CLIUtils/CLI11"
+            GIT_TAG
+            "v2.6.1"
+            OPTIONS
+            "CMAKE_POLICY_VERSION_MINIMUM 3.5")
   else()
     message(STATUS "Found native CLI11::CLI11")
   endif()
