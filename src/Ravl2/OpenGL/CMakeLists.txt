@@ -11,10 +11,6 @@ find_package(glm CONFIG REQUIRED)
 
 set(BUILD_IMGUIGLFW OFF CACHE BOOL "Build imgui with glfw")
 
-if(BUILD_IMGUIGLFW)
-    include(SetupIMGUI.cmake)
-endif ()
-
 
 # Get imgui
 
