@@ -521,7 +521,10 @@ namespace Ravl2::DebugDisplay
               // :MaxPoints=<n> - ring buffer size limit
               if(auto mp = getControlValue(parsed2->controls, ":MaxPoints=")) {
                 try {
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wuseless-cast"
                   [[maybe_unused]] size_t maxPts = std::max(static_cast<size_t>(10), static_cast<size_t>(std::stoul(*mp)));
+#pragma GCC diagnostic pop
                   // Note: maxPoints is per-channel, not per-command. We'll need to handle this
                   // by setting it via a separate control or defaulting in the channel state.
                   // For now, just log it.

@@ -17,11 +17,11 @@ target_link_libraries (exRandomSearchOptimise PUBLIC Ravl2Optimise CLI11::CLI11)
 # Create the exMediaContainer example
 add_executable(exMediaContainer exMediaContainer.cc )
 target_compile_definitions(exMediaContainer PUBLIC -DRAVL_SOURCE_DIR="${PROJECT_SOURCE_DIR}")
-target_link_libraries(exMediaContainer PRIVATE Ravl2Video Ravl2Display)
+target_link_libraries(exMediaContainer PRIVATE Ravl2Video Ravl2Display CLI11::CLI11)
 
 # Create the exWebcamCapture example
 add_executable(exWebcamCapture exWebcamCapture.cc)
-target_link_libraries(exWebcamCapture PRIVATE Ravl2Video Ravl2Display)
+target_link_libraries(exWebcamCapture PRIVATE Ravl2Video Ravl2Display CLI11::CLI11 )
 
 # Create the exGoProMetadata example (conditional on GPMF support)
 if(WITH_GPMF AND HAVE_GPMF)
