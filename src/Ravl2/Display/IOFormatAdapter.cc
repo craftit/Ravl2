@@ -522,7 +522,9 @@ namespace Ravl2::DebugDisplay
               if(auto mp = getControlValue(parsed2->controls, ":MaxPoints=")) {
                 try {
 #pragma GCC diagnostic push
+#ifndef __clang__
 #pragma GCC diagnostic ignored "-Wuseless-cast"
+#endif
                   [[maybe_unused]] size_t maxPts = std::max(static_cast<size_t>(10), static_cast<size_t>(std::stoul(*mp)));
 #pragma GCC diagnostic pop
                   // Note: maxPoints is per-channel, not per-command. We'll need to handle this

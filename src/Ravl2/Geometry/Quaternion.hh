@@ -128,7 +128,7 @@ namespace Ravl2
     {
       assert(isNormalised());
       Vector<Real2T, 3> const xyz({Real2T(m_vec[1]), Real2T(m_vec[2]), Real2T(m_vec[3])});
-      Vector<Real2T, 3> const t = 2.0f * cross(xyz, v);
+      Vector<Real2T, 3> const t = static_cast<Real2T>(2) * cross(xyz, v);
       return v + m_vec[0] * t + cross(xyz, t);
     }
 
