@@ -4,6 +4,9 @@
 
 #include <shared_mutex>
 #include "Ravl2/IO/TypeConverter.hh"
+
+#include "Ravl2/Assert.hh"
+
 #include <map>
 
 namespace Ravl2
@@ -131,20 +134,20 @@ namespace Ravl2
     [[maybe_unused]] bool g_reg3 = registerConversion(func2, 1.0f);
 
     float func3(const double &x)
-    {  return float(x); }
+    {  return static_cast<float>(x); }
     [[maybe_unused]] bool g_reg4 = registerConversion(func3, 0.5f);
 
     double func4(const float &x)
-    { return double(x); }
+    { return static_cast<double>(x); }
     [[maybe_unused]] bool g_reg5 = registerConversion(func4, 1.0f);
 
     size_t func5(const int &x)
     {
       if(x < 0) {
         SPDLOG_WARN("Negative value {} converted to 0", x);
-        return 0;
+        throw std::out_of_range("Value outside valid range.");
       }
-      return size_t(x);
+      return static_cast<size_t>(x);
     }
     [[maybe_unused]] bool g_reg6 = registerConversion(func5, 0.5f);
 
@@ -152,9 +155,9 @@ namespace Ravl2
     {
       if(x < 0) {
         SPDLOG_WARN("Negative value {} converted to 0", x);
-        return 0;
+        throw std::out_of_range("Value outside valid range.");
       }
-      return unsigned(x);
+      return static_cast<unsigned>(x);
     }
     [[maybe_unused]] bool g_reg7 = registerConversion(func6, 0.5f);
 
@@ -162,9 +165,9 @@ namespace Ravl2
     {
       if(x < std::numeric_limits<int32_t>::min() || x > std::numeric_limits<int32_t>::max()) {
         SPDLOG_WARN("Value {} out of range for int32_t", x);
-        return 0;
+        throw std::out_of_range("Value outside valid range.");
       }
-      return int32_t(x);
+      return static_cast<int32_t>(x);
     }
     [[maybe_unused]] bool g_reg8 = registerConversion(func7, 0.5f);
 
@@ -172,18 +175,27 @@ namespace Ravl2
     {
       if(x < float(std::numeric_limits<int32_t>::min()) || x > float(std::numeric_limits<int32_t>::max())) {
         SPDLOG_WARN("Value {} out of range for int32_t", x);
-        return 0;
+        throw std::out_of_range("Value outside valid range.");
       }
-      return int32_t(x);
+      return static_cast<int32_t>(x);
     }
     [[maybe_unused]] bool g_reg9 = registerConversion(func8, 0.5f);
 
     float func9(const long &x)
     {
-      return float(x);
+      return static_cast<float>(x);
     }
     [[maybe_unused]] bool g_reg10 = registerConversion(func9, 0.8f);
 
+    int func10(const unsigned &x)
+    {
+      if(x > static_cast<unsigned>(std::numeric_limits<int>::max())) {
+        SPDLOG_ERROR("Value outside valid range.", x);
+        throw std::out_of_range("Value outside valid range.");
+      }
+      return static_cast<int>(x);
+    }
+    [[maybe_unused]] bool g_reg11 = registerConversion(func10, 0.5f);
 
   }// namespace
 

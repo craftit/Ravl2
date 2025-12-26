@@ -229,7 +229,14 @@ namespace Ravl2
     if(x == m_children.end()) {
       return {};
     }
-    assert(x->second->value().type() == type || type == typeid(void));
+    if(x->second->value().type() != type && type != typeid(void)) {
+      auto cx = typeConverterMap().convert(type, x->second->value());
+      if(!cx.has_value()) {
+        SPDLOG_ERROR("Unexpected type '{}', desired '{}' and no conversion found.",Ravl2::typeName(x->second->value().type()),Ravl2::typeName(type));
+        RavlAlwaysAssert(x->second->value().type() == type || type == typeid(void));
+      }
+      return *cx;
+    }
     return x->second->value();
   }
 
