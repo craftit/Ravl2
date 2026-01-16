@@ -66,6 +66,7 @@ find_package(SDL2 REQUIRED)
 
 include(SetupImGUI)
 include(SetupImPlot)
+include(SetupImGuizmo)
 
 target_link_libraries(Ravl2Display
   PRIVATE RAVL2_options RAVL2_warnings
@@ -91,12 +92,9 @@ if(TARGET imgui)
   target_compile_definitions(Ravl2Display PRIVATE RAVL2_WITH_IMGUI=1)
 
   # Link ImPlot if available
-  if(TARGET implot)
-    message(STATUS "Ravl2Display: integrating ImPlot")
-    target_link_libraries(Ravl2Display PRIVATE implot)
-  else()
-    message(STATUS "Ravl2Display: ImPlot not available")
-  endif()
+  target_link_libraries(Ravl2Display PRIVATE implot)
+  target_link_libraries(Ravl2Display PRIVATE imguizmo)
+
 else()
   message(STATUS "Ravl2Display: no Dear ImGui available")
 endif()
@@ -143,9 +141,6 @@ if(TARGET shaderc)
         HINTS
           ${PROJECT_BINARY_DIR}/_deps/bgfx.cmake-src/bgfx/src
           ${CMAKE_BINARY_DIR}/_deps/bgfx.cmake-src/bgfx/src
-          ${PROJECT_SOURCE_DIR}/cmake-build-debug/_deps/bgfx.cmake-src/bgfx/src
-          ${PROJECT_SOURCE_DIR}/cmake-build-release/_deps/bgfx.cmake-src/bgfx/src
-          ${PROJECT_SOURCE_DIR}/_deps/bgfx.cmake-src/bgfx/src
         NO_DEFAULT_PATH
       )
       if(BGFX_SHADER_SH)

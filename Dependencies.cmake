@@ -215,25 +215,11 @@ function(RAVL2_setup_dependencies)
     cpmaddpackage(
       NAME bgfx.cmake
       GITHUB_REPOSITORY bkaradzic/bgfx.cmake
-      GIT_TAG master
+      GIT_TAG  v1.136.9106-504
       OPTIONS
         "BGFX_BUILD_EXAMPLES OFF"
         "BGFX_BUILD_TOOLS ON"
         "BGFX_INSTALL OFF"
-    )
-
-    # Dear ImGui (docking) and ImPlot
-    cpmaddpackage(
-            NAME imgui
-            GITHUB_REPOSITORY ocornut/imgui
-            GIT_TAG docking
-            DOWNLOAD_ONLY
-    )
-
-    cpmaddpackage(
-            NAME implot
-            GITHUB_REPOSITORY epezent/implot
-            GIT_TAG v0.16
     )
 
     # Backend preference cache var (default Vulkan)

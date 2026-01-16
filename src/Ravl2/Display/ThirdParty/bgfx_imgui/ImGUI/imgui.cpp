@@ -10,11 +10,9 @@
 #include <bx/timer.h>
 #include <imgui.h>
 #include <imgui_internal.h>
-#include <ImGuizmo.h>
-
-#include "imgui.hh"
 #include "font.hh"
 #include "dock.hh"
+#include "imgui.hh"
 #include "ImGuizmo.h"
 #include "../bgfx_utils.hh"
 
@@ -71,15 +69,6 @@ struct OcornutImguiContext
 {
 	void render(ImDrawData* _drawData)
 	{
-		// Avoid rendering when minimized, scale coordinates for retina displays (screen coordinates != framebuffer coordinates)
-		int32_t dispWidth  = int32_t(_drawData->DisplaySize.x * _drawData->FramebufferScale.x);
-		int32_t dispHeight = int32_t(_drawData->DisplaySize.y * _drawData->FramebufferScale.y);
-		if (dispWidth  <= 0
-		||  dispHeight <= 0)
-		{
-			return;
-		}
-
 		if (NULL != _drawData->Textures)
 		{
 			for (ImTextureData* texData : *_drawData->Textures)
@@ -142,6 +131,15 @@ struct OcornutImguiContext
 					break;
 				}
 			}
+		}
+
+		// Avoid rendering when minimized, scale coordinates for retina displays (screen coordinates != framebuffer coordinates)
+		int32_t dispWidth  = int32_t(_drawData->DisplaySize.x * _drawData->FramebufferScale.x);
+		int32_t dispHeight = int32_t(_drawData->DisplaySize.y * _drawData->FramebufferScale.y);
+		if (dispWidth  <= 0
+		||  dispHeight <= 0)
+		{
+			return;
 		}
 
 		bgfx::setViewName(m_viewId, "ImGui");
