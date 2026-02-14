@@ -1,6 +1,9 @@
 
 if(NOT TARGET imgui)
 
+    # Make sure we support glfw3 it is available, but don't require it.
+    find_package(glfw3 QUIET)
+
     FetchContent_Declare(imgui_external
             GIT_REPOSITORY https://github.com/ocornut/imgui.git
             GIT_TAG docking
