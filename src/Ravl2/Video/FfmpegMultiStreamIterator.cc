@@ -351,6 +351,14 @@ namespace Ravl2::Video
 
   FfmpegMultiStreamIterator::~FfmpegMultiStreamIterator()
   {
+    // Clear the packet queue first to release all Frame shared_ptrs
+    // This ensures Frame objects (which may hold references to FFmpeg data)
+    // are destroyed before we free the underlying FFmpeg resources
+    {
+      std::priority_queue<PacketInfo, std::vector<PacketInfo>, PacketInfoComparator> emptyQueue;
+      m_packetQueue.swap(emptyQueue);
+    }
+
     // Free FFmpeg resources
     for (auto* frame : m_frames)
     {

@@ -266,7 +266,7 @@ namespace Ravl2::Video
 
 #ifdef WITH_GPMF
     //! GPMF parser instance for this iterator
-    //! Each iterator needs its own parser to maintain independent state (mNextId)
+    //! Each iterator needs its own parser to maintain an independent state (mNextId)
     std::unique_ptr<GoPro::GpmfParser> m_gpmfParser;
 #endif
   };
