@@ -789,8 +789,36 @@ namespace Ravl2
       return m_node->get<T>();
     }
 
-    //! @brief Compulsory component
+    //! Do we have a child node?
+    [[nodiscard]] bool hasChild(const std::string_view &name) const
+    {
+      assert(m_node);
+      return m_node->hasChild(name);
+    }
 
+    //! @brief Get a named types less child node.
+    //! The child node must exist but may be empty. The node created
+    //! is untyped, and if it is there, there is no check if all its contents are used.
+    //! @param name - Name of the child node
+    //! @param description - Description of the child node
+    //! @return config
+    [[nodiscard]] Configuration child(std::string_view name, std::string_view description) const
+    {
+      assert(m_node);
+      auto *childNode = m_node->child(name, description);
+      if(!childNode) {
+        SPDLOG_ERROR("No child node '{}' found at {} ", name, m_node->rootPathString());
+        throw std::runtime_error("Named child not found");
+      }
+      return Configuration {*childNode};
+    }
+
+    //! @brief Compulsory child component
+    //! The component must be present otherwise an exception is thrown.
+    //! @param name Name of the component, in a json config this corresponds to the map name.
+    //! @param description Description of the role of the field.
+    //! @param value Location to assign the value to.
+    //! @param defaultType Default type to use for the child object.
     template <typename DataT>
     void useComponent(const std::string_view &name, const std::string_view &description, DataT &value, const std::string_view &defaultType = "default")
     {
@@ -807,8 +835,13 @@ namespace Ravl2
       }
     }
 
-    //! @brief Optional component
-
+    //! @brief Optional child component
+    //! This will return false if the component is not
+    //! @param name Name of the component, in a json config this corresponds to the map name.
+    //! @param description Description of the role of the field.
+    //! @param value Location to assign the value to.
+    //! @param defaultType Default type to use for the child object.
+    //! @return true if component found, false otherwise.
     template <typename DataT>
     bool optComponent(const std::string_view &name, const std::string_view &description, DataT &value, const std::string_view &defaultType = "default")
     {
@@ -819,7 +852,6 @@ namespace Ravl2
     }
 
     //! @brief Get an array of objects.
-
     template <class T>
     bool useGroup(const std::string_view &name, const std::string_view &description, std::vector<T> &objects, const std::string_view &defaultType = "default")
     {
@@ -832,6 +864,30 @@ namespace Ravl2
       return true;
     }
 
+    //! @brief Get a map of objects.
+    //! @return True if the child group is non-empty.
+    template <class T>
+    bool useGroup(const std::string_view &name, const std::string_view &description, std::map<std::string,T> &objects, const std::string_view &defaultType = "default")
+    {
+      assert(m_node);
+      auto *childNode = m_node->child(name, description);
+      if(childNode == nullptr) {
+        SPDLOG_ERROR("No child node '{}' found at {} ", name, m_node->rootPathString());
+        throw std::runtime_error("Named child not found");
+      }
+      std::vector<std::shared_ptr<ConfigNode>> children = childNode->getChildNodes();
+      objects.clear();
+      Configuration subConfig {*childNode};
+      bool ret = false;
+      for(auto &child : children) {
+        T obj;
+        subConfig.useComponent(child->name(), description,obj,defaultType);
+        objects[child->name()] = obj;
+        ret = true;
+      }
+      return ret;
+    }
+
     //! @brief Return an array of objects.
     template <class T>
     std::vector<T> getVector(const std::string_view &name, const std::string_view &description, const std::string_view &defaultType = "default")
@@ -842,30 +898,6 @@ namespace Ravl2
         avalue = m_node->initObjectArray<T>(name, description, defaultType);
       }
       return std::any_cast<std::vector<T>>(avalue);
-    }
-
-    //! Do we have a child node?
-    [[nodiscard]] bool hasChild(const std::string_view &name) const
-    {
-      assert(m_node);
-      return m_node->hasChild(name);
-    }
-
-    //! @brief Get a named types less child node.
-    //! The child node must exist, but may be empty. The node created
-    //! is untyped and it's there is no check if all its contents are used.
-    //! @param name - Name of the child node
-    //! @param description - Description of the child node
-    //! @return config
-    [[nodiscard]] Configuration child(std::string_view name, std::string_view description) const
-    {
-      assert(m_node);
-      auto *childNode = m_node->child(name, description);
-      if(!childNode) {
-        SPDLOG_ERROR("No child node '{}' found at {} ", name, m_node->rootPathString());
-        throw std::runtime_error("Named child not found");
-      }
-      return Configuration {*childNode};
     }
 
     //! Check all subfields are used.
