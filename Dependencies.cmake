@@ -215,7 +215,8 @@ function(RAVL2_setup_dependencies)
     cpmaddpackage(
       NAME bgfx.cmake
       GITHUB_REPOSITORY bkaradzic/bgfx.cmake
-      GIT_TAG  v1.136.9106-504
+      GIT_TAG  v1.140.9174-515
+      GIT_SUBMODULES "bgfx;bx;bimg"
       OPTIONS
         "BGFX_BUILD_EXAMPLES OFF"
         "BGFX_BUILD_TOOLS ON"
