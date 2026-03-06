@@ -302,7 +302,7 @@ namespace Ravl2::Video
         continue;
 
       // Get actual B-frame reordering distance (NOT GOP size!)
-      // GOP size is keyframe interval and is irrelevant for frame ordering
+      // GOP size is the keyframe interval and is irrelevant for frame ordering
       int maxReorder = 0;
 
       // Check max_b_frames - this is the actual reordering distance

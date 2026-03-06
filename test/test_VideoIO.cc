@@ -42,12 +42,14 @@ namespace Ravl2::Video
       std::string fn = RAVL_SOURCE_DIR "/../data/sample-5s.mp4";
 #endif
     {
+      std::shared_ptr<FfmpegMediaContainer> container;
       //! Open the media container
-      auto containerResult = FfmpegMediaContainer::openFile(fn);
-      REQUIRE(containerResult.isSuccess());
-      auto container = std::dynamic_pointer_cast<FfmpegMediaContainer>(containerResult.value());
-      REQUIRE(container != nullptr);
-
+      {
+        auto containerResult = FfmpegMediaContainer::openFile(fn);
+        REQUIRE(containerResult.isSuccess());
+        container = std::dynamic_pointer_cast<FfmpegMediaContainer>(containerResult.value());
+        REQUIRE(container != nullptr);
+      }
       {
         //! Create a multi-stream iterator with default settings (all streams)
         FfmpegMultiStreamIterator iterator(container);
