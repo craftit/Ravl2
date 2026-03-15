@@ -3,6 +3,7 @@ if(NOT TARGET imgui)
 
     # Make sure we support glfw3 it is available, but don't require it.
     find_package(glfw3 QUIET)
+    find_package(SDL2 QUIET)
 
     FetchContent_Declare(imgui_external
             GIT_REPOSITORY https://github.com/ocornut/imgui.git
@@ -44,6 +45,9 @@ if(NOT TARGET imgui)
     list(APPEND _IMGUI_SRC ${IMGUI_DIR}/backends/imgui_impl_opengl2.cpp
     )
 
+    if(GLFW3_FOUND)
+        message(STATUS "Including glfw3 support in imgui")
+    endif()
     if(GLFW_FOUND)
         message(STATUS "Including glfw support in imgui")
         list(APPEND _IMGUI_SRC ${IMGUI_DIR}/backends/imgui_impl_glfw.cpp
