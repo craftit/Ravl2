@@ -45,9 +45,6 @@ if(NOT TARGET imgui)
     list(APPEND _IMGUI_SRC ${IMGUI_DIR}/backends/imgui_impl_opengl2.cpp
     )
 
-    if(GLFW3_FOUND)
-        message(STATUS "Including glfw3 support in imgui")
-    endif()
     if(GLFW_FOUND)
         message(STATUS "Including glfw support in imgui")
         list(APPEND _IMGUI_SRC ${IMGUI_DIR}/backends/imgui_impl_glfw.cpp
