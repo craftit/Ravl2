@@ -1,5 +1,7 @@
 # Phase 7 — Time Series Plots Implementation Plan
 
+> **Status: Complete (Phases 7a-7e).** Phases 7f (timeline widget) and 7g (waterfall display) remain as stretch goals. See `PLOTS_USER_GUIDE.md` for usage.
+
 ## Current Status
 
 ### ✅ Already Complete

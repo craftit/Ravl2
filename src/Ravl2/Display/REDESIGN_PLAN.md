@@ -1,5 +1,7 @@
 # Display Module Redesign Plan
 
+> **Status: Implemented.** The architecture described here is live in `Image2DNode.hh`, `Image2DNodeBase.hh`, and `CompositeNode.hh`. See `IMPLEMENTATION_CHECKLIST.md` for current status.
+
 ## Overview
 
 This document outlines the plan to redesign the Display module's image node architecture to support arbitrary pixel types with flexible display formatting. The current design is limited to single-channel U8 and F32 images. The new design will support multi-channel images, integer types, label maps, and custom pixel types while maintaining type safety and clean abstractions.

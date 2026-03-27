@@ -318,15 +318,18 @@ namespace Ravl2::DebugDisplay::Ui::ChannelWindows
         vp3d->setViewportRect(static_cast<int>(childPos.x), static_cast<int>(childPos.y),
                               static_cast<int>(childSize.x), static_cast<int>(childSize.y));
 
+        // 3D rendering is scaffolding only — camera and grid work, but no point/mesh rendering yet.
+        ImGui::TextColored(ImVec4(1.0f, 0.7f, 0.0f, 1.0f), "3D viewport: scaffolding only (no point/mesh rendering yet)");
+
         // Small toolbar row inside the 3D view (top-left)
-        ImGui::SetCursorScreenPos(ImVec2(childPos.x + 8.0f, childPos.y + 8.0f));
+        ImGui::SetCursorScreenPos(ImVec2(childPos.x + 8.0f, childPos.y + 28.0f));
         if(ImGui::Button("Reset")) {
           vp3d->camera.reset();
           invalidated.store(true, std::memory_order_release);
         }
         ImGui::SameLine();
         bool doFit3D = ImGui::Button("Fit");
-        (void)doFit3D;// TODO in 6e
+        (void)doFit3D; // Fit-to-bounds requires AABB computation from point cloud/mesh data (Phase 6e)
 
         // Input mapping: no Alt required inside the 3D child
         ImGuiIO &io = ImGui::GetIO();

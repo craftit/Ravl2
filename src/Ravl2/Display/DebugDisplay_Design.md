@@ -1,5 +1,7 @@
 # Ravl2 Debug Display — Design Document (SDL2 + bgfx + Dear ImGui)
 
+> **Current status:** 2D image display (U8/F32/RGB8/int16/int32), 2D polyline overlays, time-series plots (ImPlot), and the `display://` URL scheme are working. 3D viewport scaffolding exists (camera, grid) but has no point/mesh rendering yet. See `IMPLEMENTATION_CHECKLIST.md` for the full roadmap.
+
 ## Purpose
 Provide a lightweight, cross‑platform debug visualization module for 1D/2D/3D data with minimal intrusion into client code via `ioSave("@debug:Name", obj)`. The module auto‑initializes on first use, supports overlays, pixel queries with original values, dockable UI, and future features (plots, timelines, VR, audio).
 

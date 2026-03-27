@@ -12,7 +12,7 @@ namespace Ravl2::DebugDisplay
 {
 
   //! Command to set/replace a 3D point cloud for a channel.
-  //! Phase 6a/6d scaffolding: stores CPU-side count only; no GPU work yet.
+  //! @warning Experimental: stores CPU-side data only; no GPU rendering yet (Phase 6b-6f).
   struct SetPointCloud3D : public IRenderCommand {
     std::string channel;                            //!< Target channel name (filled by sink)
     std::vector<Eigen::Vector3f> positions;         //!< Points in world space

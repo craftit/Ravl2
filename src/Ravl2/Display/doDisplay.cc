@@ -59,9 +59,9 @@ int RAVL2_MAIN(int argc, char **argv)
   }
 
   using namespace Ravl2;
-#if 0
   using Ravl2::PixelRGB8;
-  // Temporarily disable images to make plot testing easier.
+
+  // --- 2D Image Display Demo ---
   Array<PixelRGB8, 2> imgRgb;
   Array<uint8_t, 2> imgGray;
 
@@ -104,10 +104,7 @@ int RAVL2_MAIN(int argc, char **argv)
     SPDLOG_INFO("Generated synthetic {}x{} grayscale image.", W, H);
   }
 
-  // Start the new debug display subsystem and attempt to display via @debug scheme
-  //Ravl2::DebugDisplay::ensureStarted({});
-
-  // Save to the debug display channel. This will enqueue a SetBaseImage2D command via the @debug adapter.
+  // Display grayscale and RGB images
   const std::string channel1 = "display://Image1:Clear";
   if(!ioSave(channel1, imgGray)) {
     SPDLOG_WARN("ioSave('{}', imgGray) did not find a writer.", channel1);
@@ -115,28 +112,22 @@ int RAVL2_MAIN(int argc, char **argv)
     SPDLOG_INFO("Queued image to {}", channel1);
   }
 
-  const std::string channel2 = "display://Image2:Clear";
-  if(!ioSave(channel2, imgRgb)) {
-    SPDLOG_WARN("ioSave('{}', imgGray) did not find a writer.", channel2);
-  } else {
-    SPDLOG_INFO("Queued image to {}", channel2);
+  if(loaded) {
+    const std::string channel2 = "display://Image2:Clear";
+    if(!ioSave(channel2, imgRgb)) {
+      SPDLOG_WARN("ioSave('{}', imgRgb) did not find a writer.", channel2);
+    } else {
+      SPDLOG_INFO("Queued image to {}", channel2);
+    }
   }
 
-  // Construct a tiny 3-point set (triangle in XY plane)
-  PointSet<float, 3> ps({Point<float, 3> {0.f, 0.f, 0.f},
-                         Point<float, 3> {1.f, 0.f, 0.f},
-                         Point<float, 3> {0.f, 1.f, 0.f}});
-
-  const std::string url = "display://Cloud1";// no mode hint; should infer 3D by payload type
-  bool ok = ioSave(url, ps);
-
-  // Add a simple test polyline overlay to Image1 so we can verify overlay rendering
+  // --- 2D Polyline Overlay Demo ---
   {
     using Poly2f = Ravl2::PolyLine<float, 2>;
     const int H = imgGray.range()[0].size();
     const int W = imgGray.range()[1].size();
     Poly2f poly({{10.f, 10.f}, {static_cast<float>(W - 10), 10.f}, {static_cast<float>(W - 10), static_cast<float>(H - 10)}});
-    const std::string overlay1 = "display://Image1:Mode=Append:Color=#00ff00ff:Width=2";// green 2px line
+    const std::string overlay1 = "display://Image1:Mode=Append:Color=#00ff00ff:Width=2";
     if(!ioSave(overlay1, poly)) {
       SPDLOG_WARN("ioSave('{}', polyline) did not find a writer.", overlay1);
     } else {
@@ -144,24 +135,28 @@ int RAVL2_MAIN(int argc, char **argv)
     }
   }
 
-
+  // --- 3D Point Cloud (scaffolding only — displays grid and camera, no visible points yet) ---
+#if 0
   {
-    std::string outPath = "display://Video1";
-    Ravl2::StreamOutputProxy<Ravl2::Array<PixelRGB8,2>> outputStream;
-    if ( !outPath.empty()) {
-      outputStream = Ravl2::openOutputStream<Ravl2::Array<PixelRGB8,2>>(outPath,Ravl2::defaultSaveFormatHint(true));
-      const int maxCount = 20;
-      for(int i = 0; i < maxCount; ++i) {
-        auto newImg = clone(imgRgb);
-        Ravl2::DrawText(newImg,
-                PixelRGB8(255,255,255),
-                Ravl2::Index<2>({10,10}),
-                fmt::format("{}/{}", i, maxCount));
-        outputStream.put(newImg);
-        std::this_thread::sleep_for(100ms);
-      }
-    }
+    PointSet<float, 3> ps({Point<float, 3> {0.f, 0.f, 0.f},
+                           Point<float, 3> {1.f, 0.f, 0.f},
+                           Point<float, 3> {0.f, 1.f, 0.f}});
+    ioSave("display://Cloud1", ps);
+  }
+#endif
 
+  // --- Video Sequence (requires loaded image) ---
+#if 0
+  if(loaded) {
+    std::string outPath = "display://Video1";
+    auto outputStream = Ravl2::openOutputStream<Ravl2::Array<PixelRGB8,2>>(outPath, Ravl2::defaultSaveFormatHint(true));
+    const int maxCount = 20;
+    for(int i = 0; i < maxCount; ++i) {
+      auto newImg = clone(imgRgb);
+      Ravl2::DrawText(newImg, PixelRGB8(255,255,255), Ravl2::Index<2>({10,10}), fmt::format("{}/{}", i, maxCount));
+      outputStream.put(newImg);
+      std::this_thread::sleep_for(100ms);
+    }
   }
 #endif
   // Test time series plotting (Phase 7)

@@ -9,7 +9,8 @@ namespace Ravl2::DebugDisplay
 {
 
   //! Viewport3D node that manages a 3D camera and view/rect per channel.
-  //! @details Owns no GPU resources yet in 6a scaffolding. Will manage bgfx view state in later steps.
+  //! @warning Experimental: 3D rendering is not yet implemented. Only viewport management,
+  //!   camera state (orbit/pan/dolly), and grid overlay are functional. See Phase 6 in IMPLEMENTATION_CHECKLIST.md.
   //! @threadsafe No. GUI thread only.
   struct Viewport3DNode final : public ISceneNode {
     // View rectangle in framebuffer coordinates
