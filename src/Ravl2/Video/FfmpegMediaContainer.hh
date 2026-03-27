@@ -5,6 +5,7 @@
 #pragma once
 
 #include "Ravl2/Video/MediaContainer.hh"
+#include <atomic>
 #include <map>
 #include <string>
 #include <memory>
@@ -136,6 +137,13 @@ namespace Ravl2::Video
 
     //! Flag indicating if FFmpeg has been initialised
     static bool s_ffmpegInitialized;
+
+    //! Count of active iterators sharing this container's format/codec contexts.
+    //! Multiple concurrent iterators are not thread-safe because they share the
+    //! demuxer (m_formatContext) and decoder (m_codecContexts) state.
+    //! This counter is used to warn/assert if misused. It may be relaxed in the
+    //! future if per-iterator codec contexts are implemented.
+    std::atomic<int> m_activeIteratorCount {0};
 
     //! Friend class declaration to allow the iterator to access private members
     friend class FfmpegStreamIterator;

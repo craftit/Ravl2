@@ -118,6 +118,17 @@ namespace Ravl2::Video
   {
     Ravl2::initPixel();
 
+    // Track active iterators - multiple concurrent iterators on the same container
+    // are not thread-safe because they share the demuxer and codec contexts.
+    int previousCount = m_ffmpegContainer->m_activeIteratorCount.fetch_add(1);
+    if (previousCount > 0)
+    {
+      SPDLOG_WARN("Creating iterator #{} on the same FfmpegMediaContainer. "
+                   "Multiple concurrent iterators share the FFmpeg format context and codec contexts, "
+                   "which is not thread-safe. For parallel processing, open a separate container per thread.",
+                   previousCount + 1);
+      RavlAssertMsg(previousCount == 0, "Multiple concurrent iterators on the same FfmpegMediaContainer are not thread-safe");
+    }
 
     // If no stream indices provided, include all available streams
     if (streamIndices.empty())
@@ -192,7 +203,7 @@ namespace Ravl2::Video
       if (!codecContext && !isDataStream)
       {
         SPDLOG_WARN("No codec context available for stream {} (type: {} '{}')", streamIndex, static_cast<int>(stream->codecpar->codec_type),fourCC2str(stream->codecpar->codec_tag));
-        // Clean upDop
+        // Clean up
         av_packet_free(&m_packet);
         throw std::runtime_error("No codec context available for stream");
       }
@@ -373,6 +384,9 @@ namespace Ravl2::Video
     }
 
     // We don't free m_streams or m_codecContexts as they're owned by the container
+
+    // Decrement active iterator count
+    m_ffmpegContainer->m_activeIteratorCount.fetch_sub(1);
   }
 
   bool FfmpegMultiStreamIterator::isAtEnd() const
@@ -566,17 +580,15 @@ namespace Ravl2::Video
   {
     auto& container = ffmpegContainer();
 
-    // Convert MediaTime to FFmpeg's time base
-    int64_t timestamp_tb = av_rescale_q(timestamp.count(),
-                                        AVRational{1, AV_TIME_BASE},
-                                        AVRational{1, AV_TIME_BASE}
-    );
+    // MediaTime is already in microseconds (AV_TIME_BASE units)
+    int64_t timestamp_tb = timestamp.count();
 
     // Seek in the container
+    // FFmpeg defaults to keyframe seeking, so we only need AVSEEK_FLAG_ANY for precise seeking
     int avFlags = 0;
-    if (flags == SeekFlags::Keyframe)
+    if (flags == SeekFlags::Precise)
     {
-      avFlags |= AVSEEK_FLAG_ANY; // Seek to any frame, not just keyframes
+      avFlags |= AVSEEK_FLAG_ANY; // Allow seeking to non-keyframe positions
     }
     if (flags == SeekFlags::Previous)
     {
@@ -818,9 +830,14 @@ namespace Ravl2::Video
       return VideoResult<std::shared_ptr<Frame>>(VideoErrorCode::InvalidArgument);
     }
 
-    // Create a non-const copy of this to perform seeking and reading
-    // This avoids changing the state of the original iterator
+    // Create a temporary iterator to perform seeking and reading.
+    // This avoids changing the state of the original iterator.
+    // Temporarily suppress the concurrent iterator warning: decrement before
+    // creating the copy (so the copy sees count=0), then re-increment.
+    // This is safe because getFrameById is a single-threaded internal operation.
+    m_ffmpegContainer->m_activeIteratorCount.fetch_sub(1);
     auto iteratorCopy = std::make_shared<FfmpegMultiStreamIterator>(m_ffmpegContainer, m_streamIndices);
+    m_ffmpegContainer->m_activeIteratorCount.fetch_add(1);
 
     // Create a MediaTime from the PTS
     MediaTime targetTime(pts);
@@ -896,6 +913,12 @@ namespace Ravl2::Video
     // Reset state
     m_isAtEnd = false;
     m_frameCounter = 0;
+
+    // Clear packet queue to discard stale frames from before reset
+    {
+      std::priority_queue<PacketInfo, std::vector<PacketInfo>, PacketInfoComparator> emptyQueue;
+      m_packetQueue.swap(emptyQueue);
+    }
 
     // Reset frame ID counters
     for (auto&id : m_nextFrameIds)
@@ -1910,13 +1933,6 @@ namespace Ravl2::Video
     m_keyframeIndex.clear();
     m_keyframeIndex.resize(m_streamIndices.size());
 
-    // Need to temporarily store current position
-    int64_t currentPos = 0;
-    if (container.m_formatContext->pb)
-    {
-      currentPos = avio_tell(container.m_formatContext->pb);
-    }
-
     // Seek to the beginning
     int result = av_seek_frame(container.m_formatContext, -1, 0, AVSEEK_FLAG_BACKWARD);
     if (result < 0)
@@ -2005,14 +2021,17 @@ namespace Ravl2::Video
       std::sort(streamKeyframes.begin(), streamKeyframes.end());
     }
 
-    // Restore original position
-    if (container.m_formatContext->pb && currentPos > 0)
-    {
-      avio_seek(container.m_formatContext->pb, currentPos, SEEK_SET);
-    }
-
-    // Flush all codec contexts to reset state
+    // buildKeyframeIndex() is only called from within seek() (via findNearestKeyframe),
+    // so we don't need to restore to the original position - seek() will immediately
+    // seek to the target position. Just flush codecs and clear the stale packet queue
+    // to leave the demuxer in a clean state for the upcoming seek.
     flushAllCodecs();
+
+    // Clear the packet queue - it contains stale frames from before index building
+    {
+      std::priority_queue<PacketInfo, std::vector<PacketInfo>, PacketInfoComparator> emptyQueue;
+      m_packetQueue.swap(emptyQueue);
+    }
 
     SPDLOG_DEBUG("Keyframe index built with {} keyframes across {} streams",
                  keyframesFound,

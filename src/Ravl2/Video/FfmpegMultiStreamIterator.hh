@@ -36,9 +36,10 @@ namespace Ravl2::Video
   //! calculated based on B-frame reordering requirements to minimize memory usage while ensuring
   //! correct temporal ordering (typically 32-128 frames depending on codec parameters).
   //!
-  //! @note Thread Safety: This class is NOT thread-safe. Each thread must create its own iterator instance.
-  //!       Multiple iterators may share the same FfmpegMediaContainer, but the container must provide
-  //!       thread-safe access if used concurrently.
+  //! @note Thread Safety: This class is NOT thread-safe. Iterators share the underlying FFmpeg format
+  //!       context and codec contexts with the container, so multiple iterators on the same
+  //!       FfmpegMediaContainer must NOT be used concurrently from different threads.
+  //!       For parallel processing, open a separate FfmpegMediaContainer per thread.
   //!
   //! @note Frame Cloning: For AVFoundation device captures on macOS, frames are automatically cloned
   //!       to prevent buffer pool exhaustion. This is detected automatically based on the input format.

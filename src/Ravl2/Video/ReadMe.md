@@ -13,16 +13,16 @@
 
 - Represents a video file/source containing multiple streams
 - Maintains metadata about all streams (codec, resolution, duration)
-- Thread-safe for concurrent access by multiple iterators
-- Supports both file and memory-based sources
+- Container metadata queries are thread-safe (shared_mutex protected)
+- Supports both file-based (FfmpegMediaContainer) and in-memory (MemoryMediaContainer) sources
 - Delegates actual decoding to FFmpeg or other backends
 
 ### StreamIterator
 
-- Provides sequential access to frames/chunks from a specific stream
-- Maintains position within a stream
-- Only iterates over frames/chunks within a single stream
-- Thread-independent from other iterators on the same container
+- Provides sequential access to frames/chunks in presentation timestamp order
+- Maintains position within the stream(s)
+- Can iterate over a single stream or multiple streams simultaneously (FfmpegMultiStreamIterator delivers frames from all selected streams in temporal order)
+- Each iterator maintains its own packet queue and frame state
 
 ## Important Design Considerations
 
@@ -31,9 +31,10 @@
     - Iterators handle navigation
 
 2. **Thread Safety Model**:
-    - Container is thread-safe for read operations
-    - Each iterator maintains its own state
-    - No shared mutable state between iterators
+    - Container metadata queries (stream count, properties, duration) are thread-safe
+    - Each iterator maintains its own packet queue and frame state
+    - **FfmpegMediaContainer limitation**: Iterators share the underlying FFmpeg format context and codec contexts with the container. Multiple iterators on the same FfmpegMediaContainer must NOT be used concurrently from different threads. For parallel processing, open a separate FfmpegMediaContainer per thread
+    - MemoryMediaContainer iterators are independent and safe for concurrent use
 
 3. **Memory Management**:
     - Clear ownership model for decoded frames
@@ -46,9 +47,10 @@
     - Graceful degradation when frames are missing
 
 5. **Performance Optimizations**:
-    - Prefetching of frames during sequential access
-    - Index-based seeking to reduce latency
-    - Shared decoding context for multiple iterators when possible
+    - Prefetching of frames via priority queue for B-frame reordering and temporal ordering
+    - Keyframe index built lazily on first seek for byte-position seeking
+    - Zero-copy video frame delivery using shared_ptr aliasing to FFmpeg frame buffers
+    - Audio frames are copied out of FFmpeg buffers (allowing immediate buffer reuse)
     - Each frame has a unique identifier (integer) for persistent referencing within a stream
       - Used for storing annotations in other parts of the software
 

@@ -178,9 +178,13 @@ namespace Ravl2::Video
     }
 
     explicit TypedStreamIterator(VideoResult<std::shared_ptr<StreamIterator>> result)
-      : m_iterator(std::move(result.value()))
+      : m_iterator(result.isSuccess() ? std::move(result.value()) : nullptr)
     {
-      buildConverter();
+      if (!m_iterator)
+      {
+        throw std::runtime_error("Failed to create stream iterator");
+      }
+      buildConverter(m_iterator->dataType());
     }
 
     //! Move to the next frame
