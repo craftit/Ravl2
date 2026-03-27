@@ -49,7 +49,7 @@ namespace Ravl2
     ProbeInputContext ctx(url, rawFilename, protocol, ext, formatHint, type);
 
     // Do we want to be verbose?
-    ctx.m_verbose = verbose;
+    ctx.mVerbose = verbose;
 
     // Should we try and read data from the file into memory?
     if(protocol == "file") {

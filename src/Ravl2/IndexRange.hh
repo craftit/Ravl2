@@ -256,6 +256,24 @@ namespace Ravl2
       return ret;
     }
 
+    //! Scale range by given values.
+    constexpr IndexRange<N> operator*(const Index<N> &scales) const noexcept
+    {
+      IndexRange<N> ret;
+      for(unsigned i = 0; i < N; i++)
+        ret.m_range[i] = m_range[i] * scales[i];
+      return ret;
+    }
+
+    //! Scale range by given values.
+    constexpr IndexRange<N> operator*(const int scale) const noexcept
+    {
+      IndexRange<N> ret;
+      for(unsigned i = 0; i < N; i++)
+        ret.m_range[i] = m_range[i] * scale;
+      return ret;
+    }
+
     //! Shift range by given values.
     constexpr IndexRange<N> operator-(const Index<N> &ind) const noexcept
     {

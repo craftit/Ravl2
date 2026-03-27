@@ -1,9 +1,7 @@
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/catch_approx.hpp>
 #include "Ravl2/Video/MemoryMediaContainer.hh"
-#include "Ravl2/Video/VideoFrame.hh"
 #include "Ravl2/Video/AudioChunk.hh"
-#include "Ravl2/Video/MetaDataFrame.hh"
 #include "Ravl2/Array.hh"
 #include "Ravl2/Pixel/Pixel.hh"
 
@@ -13,25 +11,25 @@ namespace Ravl2::Video
   using TestPixel = uint8_t;
   using AudioSampleT = float;
 
-  std::shared_ptr<VideoFrameBase> createVideoFrame(MediaTime timestamp, StreamItemId id) {
+  std::shared_ptr<FrameData<Array<TestPixel,2>>> createVideoFrame(MediaTime timestamp, StreamItemId id) {
     // Create a test frame with simple pixel data
     Array<TestPixel, 2> frameData({640, 480}, 128); // 640x480 frame filled with value 128
 
     // Create and return the video frame
-    auto frame = std::make_shared<VideoFrame<Array<TestPixel,2> > >(frameData, id, timestamp);
+    auto frame = std::make_shared<FrameData<Array<TestPixel,2> > >(frameData, id, timestamp,Video::StreamType::Video);
     return frame;
   }
 
   // Helper function to create an audio chunk
-  std::shared_ptr<AudioChunk<AudioSampleT> > createAudioChunk(MediaTime timestamp, StreamItemId id) {
+  std::shared_ptr<FrameData<AudioChunk<AudioSampleT>> > createAudioChunk(MediaTime timestamp, StreamItemId id) {
     Ravl2::Array<AudioSampleT, 2> audioData({4410, 2}, 0.0f); // 4410 samples (0.1s at 44.1kHz), 2 channels
 
-    auto chunk = std::make_shared<AudioChunk<AudioSampleT>>(audioData, id, timestamp);
+    auto chunk = std::make_shared<FrameData<AudioChunk<AudioSampleT>>>(AudioChunk<AudioSampleT>(audioData), id, timestamp,Video::StreamType::Audio);
     return chunk;
   }
 
   // Helper function to create a metadata frame
-  std::shared_ptr<MetaDataFrameBase> createMetaDataFrame(MediaTime timestamp, StreamItemId id) {
+  std::shared_ptr<FrameData<std::map<std::string, std::string>>> createMetaDataFrame(MediaTime timestamp, StreamItemId id) {
     // Create metadata with key-value pairs
     std::map<std::string, std::string> data = {
       {"key1", "value1"},
@@ -41,7 +39,7 @@ namespace Ravl2::Video
     };
 
     // Create and return the metadata frame
-    auto frame = std::make_shared<MetaDataFrame<std::map<std::string, std::string>>>(data, id, timestamp);
+    auto frame = std::make_shared<FrameData<std::map<std::string, std::string>>>(data, id, timestamp,Video::StreamType::Data);
     return frame;
   }
 

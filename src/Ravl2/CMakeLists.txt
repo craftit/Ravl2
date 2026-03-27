@@ -13,9 +13,15 @@ add_subdirectory(Optimise)
 add_subdirectory(Geometry)
 add_subdirectory(Math)
 add_subdirectory(Image)
+add_subdirectory(ImageIO)
 add_subdirectory(3D)
 add_subdirectory(OpenCV)
 add_subdirectory(Video)
+
+# Optional GoPro GPMF metadata support
+if(WITH_GPMF AND HAVE_GPMF)
+    add_subdirectory(GoPro)
+endif()
 
 # Optional Debug Display stack
 if(RAVL2_ENABLE_DISPLAY_STACK)
@@ -78,6 +84,7 @@ add_library(Ravl2Core
     SpatialHash.cc SpatialHash.hh
     Catch2checks.hh
     Logging.cc Logging.hh
+    EntryPnt.cc EntryPnt.hh
 )
 
 add_library(ravl2::Ravl2Core ALIAS Ravl2Core)

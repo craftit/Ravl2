@@ -202,10 +202,44 @@ namespace Ravl2
     }
     auto x = setChild(std::string(name), std::string(description), val);
     return x->value();
-    
-    
   }
-  
+
+  //! Initialise a vector field
+  std::any ConfigNodeJSON::initVector(const std::string_view &name, const std::string_view &description, int defaultValue, int min, int max,size_t size)
+  {
+    // Just use the default value?
+    if(m_json.find(name) == m_json.end()) {
+      m_json[name] = defaultValue;
+      return ConfigNode::initVector(name, description, defaultValue, min, max,size);
+    }
+
+    json const value = m_json[name];
+    if(!value.is_array()) {
+      SPDLOG_ERROR("Expected a array for field {}.{}  got '{}'  ", rootPathString(), name, value.dump());
+      throw std::runtime_error("Expected a array in field.");
+    }
+    std::vector<int> val;
+    val.reserve(size);
+    for(auto &v : value) {
+      if(!v.is_number()) {
+        SPDLOG_ERROR("Expected a number for field {}.{}  got '{}'  ", rootPathString(), name, v.dump());
+        throw std::runtime_error("Expected a number in field.");
+      }
+      auto num = v.template get<int>();
+      if(num < min || num > max) {
+        SPDLOG_ERROR("Number for field {}.{} out of range. {} <= ({}) <= {}  ", rootPathString(), name, min, num, max);
+        throw std::out_of_range("Out of range.");
+      }
+      val.push_back(num);
+    }
+    if(size != std::numeric_limits<size_t>::max() && val.size() != size) {
+      SPDLOG_ERROR("Expected a vector of size {} for field {}.{}  got '{}'  ", size, rootPathString(), name, value.dump());
+      throw std::runtime_error("Expected a vector of size.");
+    }
+    auto x = setChild(std::string(name), std::string(description), val);
+    return x->value();
+  }
+
   
   std::any ConfigNodeJSON::initString(const std::string_view &name,
                                       const std::string_view &description,

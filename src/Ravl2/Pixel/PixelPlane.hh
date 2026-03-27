@@ -8,8 +8,10 @@
 #include <tuple>
 #include <utility>
 #include <array>
+#include <type_traits>
 #include <spdlog/spdlog.h>
 #include "Ravl2/Pixel/Pixel.hh"
+#include "Ravl2/Pixel/Colour.hh"
 #include "Ravl2/Array.hh"
 #include "Ravl2/Types.hh"
 
@@ -24,30 +26,29 @@ namespace Ravl2
 
   //! Specialisation for empty scales (base case for recursion)
   template <unsigned Dims>
-  struct PlaneScale<Dims>
-  {
+  struct PlaneScale<Dims> {
     //! Array of scale factors
-    static constexpr std::array<int, 0> scales{};
+    static constexpr std::array<int, 0> scales {};
 
     //! Default scale factor for any dimension
     static constexpr int scale(unsigned) noexcept { return 1; }
 
     //! Map from master coordinates to plane coordinates
-    [[nodiscard]] static constexpr Index<Dims> masterToPlane(const Index<Dims>& masterCoord) noexcept
+    [[nodiscard]] static constexpr Index<Dims> masterToPlane(const Index<Dims> &masterCoord) noexcept
     {
       // If no scales are provided, return copy of master coordinates
       return masterCoord;
     }
 
     //! Map from plane coordinates to master coordinates
-    [[nodiscard]] static constexpr Index<Dims> planeToMaster(const Index<Dims>& planeCoord) noexcept
+    [[nodiscard]] static constexpr Index<Dims> planeToMaster(const Index<Dims> &planeCoord) noexcept
     {
       // If no scales are provided, return copy of plane coordinates
       return planeCoord;
     }
 
     //! Calculate plane dimensions based on master dimensions
-    [[nodiscard]] static constexpr IndexRange<Dims> calculateRange(const IndexRange<Dims>& masterRange) noexcept
+    [[nodiscard]] static constexpr IndexRange<Dims> calculateRange(const IndexRange<Dims> &masterRange) noexcept
     {
       // If no scales are provided, return copy of master range
       return masterRange;
@@ -56,46 +57,45 @@ namespace Ravl2
 
   //! Specialization for variadic scales
   template <unsigned Dims, int FirstScale, int... RestScales>
-  struct PlaneScale<Dims, FirstScale, RestScales...>
-  {
+  struct PlaneScale<Dims, FirstScale, RestScales...> {
     //! Array of scale factors
-    static constexpr std::array<int, 1 + sizeof...(RestScales)> scales{FirstScale, RestScales...};
+    static constexpr std::array<int, 1 + sizeof...(RestScales)> scales {FirstScale, RestScales...};
 
     //! Get scale factor for a specific dimension
     static constexpr int scale(unsigned dim) noexcept
     {
       // Use the provided scale for dimensions with explicit scales, default to 1 for others
-      if (dim < scales.size()) {
+      if(dim < scales.size()) {
         return scales[dim];
       }
-      return 1; // Default scale for dimensions beyond those specified
+      return 1;// Default scale for dimensions beyond those specified
     }
 
     //! Map from master coordinates to plane coordinates
-    [[nodiscard]] static constexpr Index<Dims> masterToPlane(const Index<Dims>& masterCoord) noexcept
+    [[nodiscard]] static constexpr Index<Dims> masterToPlane(const Index<Dims> &masterCoord) noexcept
     {
       Index<Dims> planeCoord;
-      for (unsigned i = 0; i < Dims; ++i) {
+      for(unsigned i = 0; i < Dims; ++i) {
         planeCoord[i] = masterCoord[i] / scale(i);
       }
       return planeCoord;
     }
 
     //! Map from plane coordinates to master coordinates (top-left corner)
-    [[nodiscard]] static constexpr Index<Dims> planeToMaster(const Index<Dims>& planeCoord) noexcept
+    [[nodiscard]] static constexpr Index<Dims> planeToMaster(const Index<Dims> &planeCoord) noexcept
     {
       Index<Dims> masterCoord;
-      for (unsigned i = 0; i < Dims; ++i) {
+      for(unsigned i = 0; i < Dims; ++i) {
         masterCoord[i] = planeCoord[i] * scale(i);
       }
       return masterCoord;
     }
 
     //! Calculate plane dimensions based on master dimensions
-    [[nodiscard]] static constexpr IndexRange<Dims> calculateRange(const IndexRange<Dims>& masterRange) noexcept
+    [[nodiscard]] static constexpr IndexRange<Dims> calculateRange(const IndexRange<Dims> &masterRange) noexcept
     {
       IndexRange<Dims> planeRange;
-      for (unsigned i = 0; i < Dims; ++i) {
+      for(unsigned i = 0; i < Dims; ++i) {
         const int s = scale(i);
         planeRange.min(i) = (masterRange.min(i) + s - 1) / s;
         planeRange.max(i) = (masterRange.max(i) + s - 1) / s;
@@ -116,74 +116,75 @@ namespace Ravl2
     using value_type = DataT;
     using array_type = Array<DataT, Dims>;
     using scale_type = PlaneScale<Dims, Scales...>;
+    static constexpr ImageChannel channel = Channel;
 
     //! Default constructor
     PixelPlane() = default;
 
     //! Construct with a specified range
-    explicit PixelPlane(const IndexRange<Dims>& range)
-      : m_data(range)
+    explicit PixelPlane(const IndexRange<Dims> &range)
+        : m_data(range)
     {}
 
     //! Construct with a specified master range (will be scaled)
-    PixelPlane(const IndexRange<Dims>& masterRange, bool scale)
-      : m_data(scale ? scale_type::calculateRange(masterRange) : masterRange)
+    PixelPlane(const IndexRange<Dims> &masterRange, bool scale)
+        : m_data(scale ? scale_type::calculateRange(masterRange) : masterRange)
     {}
 
     //! Construct with a specified range and initial value
-    PixelPlane(const IndexRange<Dims>& range, const DataT& initialValue)
-      : m_data(range, initialValue)
+    PixelPlane(const IndexRange<Dims> &range, const DataT &initialValue)
+        : m_data(range, initialValue)
     {}
 
     //! Construct with a master range that will be scaled and initial value
-    PixelPlane(const IndexRange<Dims>& masterRange, bool scale, const DataT& initialValue)
-      : m_data(scale ? scale_type::calculateRange(masterRange) : masterRange, initialValue)
+    PixelPlane(const IndexRange<Dims> &masterRange, bool scale, const DataT &initialValue)
+        : m_data(scale ? scale_type::calculateRange(masterRange) : masterRange, initialValue)
     {}
 
     //! Construct for an existing image.
     PixelPlane(const array_type &array)
-      : m_data(array)
+        : m_data(array)
     {}
 
     //! Get the range of this plane
-    [[nodiscard]] const IndexRange<Dims>& range() const noexcept
+    [[nodiscard]] const IndexRange<Dims> &range() const noexcept
     {
       return m_data.range();
     }
 
     //! Access the underlying array
-    [[nodiscard]] array_type& data() noexcept
+    [[nodiscard]] array_type &data() noexcept
     {
       return m_data;
     }
 
     //! Access the underlying array (const)
-    [[nodiscard]] const array_type& data() const noexcept
+    [[nodiscard]] const array_type &data() const noexcept
     {
       return m_data;
     }
 
     //! Access an element by index (direct plane coordinates)
-    [[nodiscard]] DataT& operator[](const Index<Dims>& index)
+    [[nodiscard]] DataT &operator[](const Index<Dims> &index)
     {
       return m_data[index];
     }
 
     //! Access an element by index (direct plane coordinates, const)
-    [[nodiscard]] const DataT& operator[](const Index<Dims>& index) const
+    [[nodiscard]] const DataT &operator[](const Index<Dims> &index) const
     {
       return m_data[index];
     }
 
     //! Access an element using master coordinates (will be scaled)
-    [[nodiscard]] DataT& atMaster(const Index<Dims>& masterIndex)
+    [[nodiscard]] DataT &atMaster(const Index<Dims> &masterIndex)
     {
       auto planeIndex = scale_type::masterToPlane(masterIndex);
       return m_data[planeIndex];
     }
 
     //! Access an element using master coordinates (will be scaled, const)
-    [[nodiscard]] const DataT& atMaster(const Index<Dims>& masterIndex) const
+    [[nodiscard]] const DataT &atMaster(const Index<Dims> &masterIndex) const
     {
       auto planeIndex = scale_type::masterToPlane(masterIndex);
       return m_data[planeIndex];
@@ -192,11 +193,11 @@ namespace Ravl2
     //! Get the master-space range this plane covers
     [[nodiscard]] IndexRange<Dims> masterRange() const
     {
-      const auto& planeRange = m_data.range();
+      const auto &planeRange = m_data.range();
 
       // Get min and max indices in plane space
       Index<Dims> planeMin, planeMax;
-      for (unsigned i = 0; i < Dims; ++i) {
+      for(unsigned i = 0; i < Dims; ++i) {
         planeMin[i] = planeRange.min(i);
         planeMax[i] = planeRange.max(i);
       }
@@ -207,7 +208,7 @@ namespace Ravl2
       // For the max index, we need to account for the fact that each plane coordinate
       // maps to a region in master space with size equal to the scale factor
       Index<Dims> masterMax;
-      for (unsigned i = 0; i < Dims; ++i) {
+      for(unsigned i = 0; i < Dims; ++i) {
         const int s = scale_type::scale(i);
         // The last master coordinate is (planeMax * s) + (s - 1)
         masterMax[i] = (planeMax[i] * s) + (s - 1);
@@ -230,16 +231,16 @@ namespace Ravl2
     }
 
     //! Check if the plane contains a master coordinate
-    [[nodiscard]] bool containsMaster(const Index<Dims>& masterIndex) const
+    [[nodiscard]] bool containsMaster(const Index<Dims> &masterIndex) const
     {
       auto planeIndex = scale_type::masterToPlane(masterIndex);
       return m_data.range().contains(planeIndex);
     }
 
     //! Fill the plane with a value
-    void fill(const DataT& value)
+    void fill(const DataT &value)
     {
-      for (auto& pixel : m_data) {
+      for(auto &pixel : m_data) {
         pixel = value;
       }
     }
@@ -267,13 +268,12 @@ namespace Ravl2
   class PlanarImage
   {
   public:
-
     //! Default constructor
     PlanarImage() = default;
 
     //! Construct with a master range that will be applied to all planes (with appropriate scaling)
-    explicit PlanarImage(const IndexRange<Dims>& masterRange)
-      : m_planes(std::make_tuple(PlaneTypes(masterRange, true)...))
+    explicit PlanarImage(const IndexRange<Dims> &masterRange)
+        : m_planes(std::make_tuple(PlaneTypes(masterRange, true)...))
     {}
 
     //! Get the number of planes
@@ -284,14 +284,14 @@ namespace Ravl2
 
     //! Get a specific plane by index
     template <std::size_t Index>
-    [[nodiscard]] auto& plane()
+    [[nodiscard]] auto &plane()
     {
       return std::get<Index>(m_planes);
     }
 
     //! Get a specific plane by index (const)
     template <std::size_t Index>
-    [[nodiscard]] const auto& plane() const
+    [[nodiscard]] const auto &plane() const
     {
       return std::get<Index>(m_planes);
     }
@@ -300,14 +300,14 @@ namespace Ravl2
     template <ImageChannel Channel>
     [[nodiscard]] decltype(auto) planeByChannel()
     {
-        return planeByChannelImpl<Channel>(std::make_index_sequence<sizeof...(PlaneTypes)>{});
+      return planeByChannelImpl<Channel>(std::make_index_sequence<sizeof...(PlaneTypes)> {});
     }
 
     //! Get a plane by channel type (compile-time, const version)
     template <ImageChannel Channel>
     [[nodiscard]] decltype(auto) planeByChannel() const
     {
-        return planeByChannelImpl<Channel>(std::make_index_sequence<sizeof...(PlaneTypes)>{});
+      return planeByChannelImpl<Channel>(std::make_index_sequence<sizeof...(PlaneTypes)> {});
     }
 
     //! Get the channel type of a specific plane
@@ -322,26 +322,44 @@ namespace Ravl2
     {
       IndexRange<Dims> result = IndexRange<Dims>::mostEmpty();
       using Indices = std::index_sequence_for<PlaneTypes...>;
-      applyToEachPlane([&result](const auto& plane) {
+      applyToEachPlane([&result](const auto &plane) {
         result.involve(plane.masterRange());
-      }, Indices{});
+      },
+                       Indices {});
       return result;
     }
 
     //! Apply a function to each plane
     template <typename FuncT>
-    void forEachPlane(FuncT&& func)
+    void forEachPlane(FuncT &&func)
     {
       using Indices = std::index_sequence_for<PlaneTypes...>;
-      applyToEachPlane(std::forward<FuncT>(func), Indices{});
+      applyToEachPlane(std::forward<FuncT>(func), Indices {});
     }
 
     //! Apply a function to each plane (const)
     template <typename FuncT>
-    void forEachPlane(FuncT&& func) const
+    void forEachPlane(FuncT &&func) const
     {
       using Indices = std::index_sequence_for<PlaneTypes...>;
-      applyToEachPlane(std::forward<FuncT>(func), Indices{});
+      applyToEachPlane(std::forward<FuncT>(func), Indices {});
+    }
+
+    //! Make a packed pixel with the same channels as the planar image for a given location.
+    //! @return A pixel sampled across the planes in the image for the given location.
+    auto at(const Index<Dims> &masterIndex) const
+    {
+      static_assert(sizeof...(PlaneTypes) > 0, "PlanarImage::at requires at least one plane");
+      return samplePackedPixel(masterIndex, std::make_index_sequence<sizeof...(PlaneTypes)> {});
+    }
+
+    //! Make a packed pixel with the same channels as the planar image for a given location of the given type.
+    //! @return A pixel sampled across the planes in the image for the given location.
+    template <typename ComponentT>
+    auto cast(const Index<Dims> &masterIndex) const
+    {
+      static_assert(sizeof...(PlaneTypes) > 0, "PlanarImage::at requires at least one plane");
+      return sampleTypedPackedPixel<ComponentT>(masterIndex, std::make_index_sequence<sizeof...(PlaneTypes)> {});
     }
 
     //! Create a packed pixel of type PixelT at the given master coordinate
@@ -350,42 +368,25 @@ namespace Ravl2
     //! @param masterIndex The master coordinate to sample from
     //! @return A packed pixel containing values from all planes at the given location
     template <template <typename, ImageChannel...> class PixelT, typename CompT, ImageChannel... Channels>
-    [[nodiscard]] PixelT<CompT, Channels...> createPackedPixel(const Index<Dims>& masterIndex) const
+    [[nodiscard]] PixelT<CompT, Channels...> createPackedPixel(const Index<Dims> &masterIndex) const
     {
       // Create the pixel with default values
       PixelT<CompT, Channels...> result;
-
-      // Helper lambda to set an individual channel value by scanning planes
-      auto setChannel = [&]<ImageChannel Channel>() {
-        bool channelFound = false;
-        // Iterate over planes using existing helper; stop when found
-        applyToEachPlane([&](const auto &plane) {
-          if(channelFound) return; // early exit guard
-          if(plane.getChannelType() == Channel) {
-            if(plane.containsMaster(masterIndex)) {
-              auto rawValue = plane.atMaster(masterIndex); // raw plane component
-              result.template set<Channel>(get<Channel, CompT>(rawValue));
-              channelFound = true;
-            }
-          }
-        }, std::make_index_sequence<sizeof...(PlaneTypes)>{});
-
-        // If channel doesn't present in the planar image populate default
-        if(!channelFound) {
-          result.template set<Channel>(PixelTypeTraits<CompT, Channel>::defaultValue);
-        }
-      };
-
-      // Expand over requested channels
-      (setChannel.template operator()<Channels>(), ...);
+      if constexpr(std::is_floating_point_v<CompT>) {
+        // Make sure we go via floating point for better interpolation.
+        assign(result, cast<CompT>(masterIndex));
+      } else {
+        assign(result, at(masterIndex));
+      }
       return result;
     }
 
     // Helper to get a plane's channel type by runtime index
-    [[nodiscard]] ImageChannel getPlaneChannelType(std::size_t index) const {
+    [[nodiscard]] constexpr ImageChannel getPlaneChannelType(std::size_t index) const
+    {
       ImageChannel result = ImageChannel::Unused;
       auto getChannelForIndex = [&]<std::size_t I>() {
-        if (I == index) {
+        if(I == index) {
           result = planeChannelType<I>();
           return true;
         }
@@ -393,65 +394,67 @@ namespace Ravl2
       };
 
       // Call the helper for each plane index
-      applyForIndex(getChannelForIndex, std::make_index_sequence<sizeof...(PlaneTypes)>{});
+      applyForIndex(getChannelForIndex, std::make_index_sequence<sizeof...(PlaneTypes)> {});
       return result;
     }
 
     // Helper to get a plane by runtime index
-    [[nodiscard]] const auto& getPlaneByIndex(std::size_t index) const {
+    [[nodiscard]] constexpr auto &getPlaneByIndex(std::size_t index) const
+    {
 
       auto getPlaneForIndex = [index]<std::size_t I>() {
-        if (I == index) {
+        if(I == index) {
           return true;
         }
         return false;
       };
 
       // Call the helper for each plane index
-      applyForIndex(getPlaneForIndex, std::make_index_sequence<sizeof...(PlaneTypes)>{});
+      applyForIndex(getPlaneForIndex, std::make_index_sequence<sizeof...(PlaneTypes)> {});
 
       // We need to return a reference to avoid copying, but we can't
       // determine the exact type at runtime. Instead, we'll use std::get
       // again with the index we know matches.
-      return accessPlaneImpl(index, std::make_index_sequence<sizeof...(PlaneTypes)>{});
+      return accessPlaneImpl(index, std::make_index_sequence<sizeof...(PlaneTypes)> {});
     }
 
     // Helper to access a plane by runtime index
     template <std::size_t... Is>
-    [[nodiscard]] const auto& accessPlaneImpl(std::size_t index, std::index_sequence<Is...>) const {
+    [[nodiscard]] constexpr const auto &accessPlaneImpl(std::size_t index, std::index_sequence<Is...>) const
+    {
       // We need to use a reference to avoid copying, so create a tuple of references
       // and select the one we need
-      using PlaneRefTuple = std::tuple<const std::tuple_element_t<Is, std::tuple<PlaneTypes...>>&...>;
+      using PlaneRefTuple = std::tuple<const std::tuple_element_t<Is, std::tuple<PlaneTypes...>> &...>;
       PlaneRefTuple refs(std::get<Is>(m_planes)...);
 
       // Use another helper to extract the right reference
-      const void* result = nullptr;
+      const void *result = nullptr;
       [[maybe_unused]] bool done = ((Is == index ? (result = &std::get<Is>(refs), true) : false) || ...);
 
-      // Cast back to the correct type - this is unsafe but necessary 
+      // Cast back to the correct type - this is unsafe but necessary
       // due to the limitation of not being able to return different types
       // based on runtime conditions
-      return *static_cast<const std::tuple_element_t<0, std::tuple<PlaneTypes...>>*>(result);
+      return *static_cast<const std::tuple_element_t<0, std::tuple<PlaneTypes...>> *>(result);
     }
 
     // Helper to apply a function for a specific index
     template <typename Func, std::size_t... Is>
-    void applyForIndex(Func&& func, std::index_sequence<Is...>) const {
+    constexpr void applyForIndex(Func &&func, std::index_sequence<Is...>) const
+    {
       (func.template operator()<Is>() || ...);
     }
 
   private:
-
     // Helper to apply a function to each plane using index sequence
     template <typename FuncT, std::size_t... Is>
-    void applyToEachPlane(FuncT&& func, std::index_sequence<Is...>) const
+    constexpr void applyToEachPlane(FuncT &&func, std::index_sequence<Is...>) const
     {
       (func(std::get<Is>(m_planes)), ...);
     }
 
     // Non-const version
     template <typename FuncT, std::size_t... Is>
-    void applyToEachPlane(FuncT&& func, std::index_sequence<Is...>)
+    constexpr void applyToEachPlane(FuncT &&func, std::index_sequence<Is...>)
     {
       (func(std::get<Is>(m_planes)), ...);
     }
@@ -460,10 +463,10 @@ namespace Ravl2
     template <ImageChannel Channel, std::size_t I = 0>
     [[nodiscard]] decltype(auto) planeByChannelRec()
     {
-      if constexpr (I >= sizeof...(PlaneTypes)) {
+      if constexpr(I >= sizeof...(PlaneTypes)) {
         throw std::runtime_error("Channel not found in planar image");
       } else {
-        if constexpr (planeChannelType<I>() == Channel) {
+        if constexpr(planeChannelType<I>() == Channel) {
           return plane<I>();
         } else {
           return planeByChannelRec<Channel, I + 1>();
@@ -474,10 +477,10 @@ namespace Ravl2
     template <ImageChannel Channel, std::size_t I = 0>
     [[nodiscard]] decltype(auto) planeByChannelRec() const
     {
-      if constexpr (I >= sizeof...(PlaneTypes)) {
+      if constexpr(I >= sizeof...(PlaneTypes)) {
         throw std::runtime_error("Channel not found in planar image");
       } else {
-        if constexpr (planeChannelType<I>() == Channel) {
+        if constexpr(planeChannelType<I>() == Channel) {
           return plane<I>();
         } else {
           return planeByChannelRec<Channel, I + 1>();
@@ -489,40 +492,81 @@ namespace Ravl2
     template <ImageChannel Channel, std::size_t... Is>
     [[nodiscard]] decltype(auto) planeByChannelImpl(std::index_sequence<Is...>)
     {
-      (void)sizeof...(Is); // unused
+      (void)sizeof...(Is);// unused
       return planeByChannelRec<Channel>();
     }
 
     template <ImageChannel Channel, std::size_t... Is>
     [[nodiscard]] decltype(auto) planeByChannelImpl(std::index_sequence<Is...>) const
     {
-      (void)sizeof...(Is); // unused
+      (void)sizeof...(Is);// unused
       return planeByChannelRec<Channel>();
     }
 
     //! Check if a specific plane contains a master coordinate
     template <std::size_t PlaneIndex>
-    [[nodiscard]] bool containsMaster(const Index<Dims>& masterIndex) const
+    [[nodiscard]] bool containsMaster(const Index<Dims> &masterIndex) const
     {
       return std::get<PlaneIndex>(m_planes).containsMaster(masterIndex);
     }
 
     //! Helper for getting a component value from the appropriate plane
     template <ImageChannel Channel, std::size_t PlaneIndex>
-    [[nodiscard]] auto getChannelFromPlane(const Index<Dims>& masterIndex) const
+    [[nodiscard]] auto getChannelFromPlane(const Index<Dims> &masterIndex) const
     {
       return std::get<PlaneIndex>(m_planes).atMaster(masterIndex);
     }
 
-    std::tuple<PlaneTypes...> m_planes;
+    template <std::size_t... Is>
+    [[nodiscard]] auto samplePackedPixel(const Index<Dims> &masterIndex, std::index_sequence<Is...>) const
+    {
+      using PlaneTuple = std::tuple<PlaneTypes...>;
+      using ComponentT = typename std::tuple_element_t<0, PlaneTuple>::value_type;
+      constexpr bool allComponentsMatch = ((std::is_same_v<ComponentT, typename std::tuple_element_t<Is, PlaneTuple>::value_type>) && ...);
+      static_assert(allComponentsMatch, "PlanarImage::at requires homogeneous component types across planes");
+      using PackedPixelT = Pixel<ComponentT, planeChannelType<Is>()...>;
+      PackedPixelT packed {};
+      auto assignChannel = [&]<std::size_t I>() {
+        constexpr ImageChannel channel = planeChannelType<I>();
+        const auto &plane = std::get<I>(m_planes);
+        if(plane.containsMaster(masterIndex)) {
+          const auto rawValue = plane.atMaster(masterIndex);
+          packed.template set<channel>(get<channel, ComponentT>(rawValue));
+        } else {
+          packed.template set<channel>(PixelTypeTraits<ComponentT, channel>::defaultValue);
+        }
+      };
+      (assignChannel.template operator()<Is>(), ...);
+      return packed;
+    }
 
-  };
+    template <typename ComponentT, std::size_t... Is>
+    [[nodiscard]] auto sampleTypedPackedPixel(const Index<Dims> &masterIndex, std::index_sequence<Is...>) const
+    {
+      using PackedPixelT = Pixel<ComponentT, planeChannelType<Is>()...>;
+      PackedPixelT packed {};
+      auto assignChannel = [&]<std::size_t I>() {
+        constexpr ImageChannel channel = planeChannelType<I>();
+        const auto &plane = std::get<I>(m_planes);
+        if(plane.containsMaster(masterIndex)) {
+          const auto rawValue = plane.atMaster(masterIndex);
+          packed.template set<channel>(get<channel, ComponentT>(rawValue));
+        } else {
+          packed.template set<channel>(PixelTypeTraits<ComponentT, channel>::defaultValue);
+        }
+      };
+      (assignChannel.template operator()<Is>(), ...);
+      return packed;
+    }
+
+    std::tuple<PlaneTypes...> m_planes;
+   };
 
   namespace detail
   {
     // Implementation helper for convertToPlanar that unpacks the channels from PixelT
     template <unsigned Dims, typename PixelT, std::size_t... Is>
-    static auto convertToPlanarImpl(const Array<PixelT, Dims>& packedArray, std::index_sequence<Is...>)
+    auto convertToPlanarImpl(const Array<PixelT, Dims> &packedArray, std::index_sequence<Is...>)
     {
       // Get the component type from the pixel
       using ComponentT = typename PixelT::value_type;
@@ -534,11 +578,11 @@ namespace Ravl2
       PlanarType result(packedArray.range());
 
       // Extract data for each pixel
-      for (auto it = packedArray.begin(); it != packedArray.end(); ++it) {
-        const auto& pixel = *it;
-        const auto& idx = it.index();
+      for(auto it = packedArray.begin(); it != packedArray.end(); ++it) {
+        const auto &pixel = *it;
+        const auto &idx = it.index();
 
-        // Simply extract values by index position and assign to corresponding plane
+        // Simply extract values by index position and assign to the corresponding plane
         // Since both pixel and planes have the same component type, this is safe
         ((result.template plane<Is>()[idx] = pixel[Is]), ...);
       }
@@ -548,12 +592,12 @@ namespace Ravl2
 
     // Implementation helper for convertToPacked that combines planar channels into a packed pixel array
     template <typename ComponentT, template <typename, ImageChannel...> class PixelT, unsigned Dims, typename PlanarT, ImageChannel... Channels>
-    static auto convertToPackedImpl(const PlanarT& planarImage, const IndexRange<Dims>& masterRange)
+    auto convertToPackedImpl(const PlanarT &planarImage, const IndexRange<Dims> &masterRange)
     {
       // Create the packed array with the same master range
       Array<PixelT<ComponentT, Channels...>, Dims> result(masterRange);
-      for (auto it = result.begin(); it != result.end(); ++it) {
-        const auto& idx = it.index();
+      for(auto it = result.begin(); it != result.end(); ++it) {
+        const auto &idx = it.index();
         *it = planarImage.template createPackedPixel<PixelT, ComponentT, Channels...>(idx);
       }
       return result;
@@ -561,28 +605,114 @@ namespace Ravl2
 
     // NEW: helper for fully instantiated pixel types (e.g. PixelRGB8)
     template <unsigned Dims, typename PackedPixelT, typename PlanarT, std::size_t... Is>
-    static auto convertToPackedInstantiatedImpl(const PlanarT &planarImage, std::index_sequence<Is...>)
+    auto convertToPackedInstantiatedImpl(const PlanarT &planarImage, std::index_sequence<Is...>)
     {
       using ComponentT = typename PackedPixelT::value_type;
       Array<PackedPixelT, Dims> result(planarImage.range());
-      for (auto it = result.begin(); it != result.end(); ++it) {
+      for(auto it = result.begin(); it != result.end(); ++it) {
         const auto &idx = it.index();
         *it = planarImage.template createPackedPixel<Pixel, ComponentT,
-          PackedPixelT::template getChannelAtIndex<Is>()...>(idx);
+                                                     PackedPixelT::template getChannelAtIndex<Is>()...>(idx);
       }
       return result;
     }
-  }
+
+    template <typename PlanarT>
+    struct PlanarImageTraits;
+
+    template <unsigned Dims, typename... PlaneTypes>
+    struct PlanarImageTraits<PlanarImage<Dims, PlaneTypes...>> {
+      static constexpr unsigned dimensions = Dims;
+      using plane_tuple = std::tuple<PlaneTypes...>;
+      using value_type = typename std::tuple_element_t<0, std::tuple<PlaneTypes...>>::value_type;
+    };
+
+    template <ImageChannel Channel, typename TupleT>
+    struct TupleHasChannel;
+
+    template <ImageChannel Channel, typename... PlaneTypes>
+    struct TupleHasChannel<Channel, std::tuple<PlaneTypes...>> : std::bool_constant<((PlaneTypes::getChannelType() == Channel) || ...)> {};
+
+    template <ImageChannel Channel, typename TupleT>
+    inline constexpr bool TupleHasChannelV = TupleHasChannel<Channel, TupleT>::value;
+
+    template <ImageChannel Channel, typename DestPlaneT, typename SrcPlaneT>
+    void copyPlaneDataMatchingChannel(DestPlaneT &destPlane, const SrcPlaneT &srcPlane)
+    {
+      using DestValueT = typename DestPlaneT::value_type;
+      bool missingCoverage = false;
+      for(auto it = destPlane.data().begin(); it != destPlane.data().end(); ++it) {
+        const auto &planeIndex = it.index();
+        auto masterIndex = DestPlaneT::scale_type::planeToMaster(planeIndex);
+        if(srcPlane.containsMaster(masterIndex)) {
+          const auto &srcValue = srcPlane.atMaster(masterIndex);
+          *it = get<Channel, DestValueT>(srcValue);
+        } else {
+          missingCoverage = true;
+          *it = PixelTypeTraits<DestValueT, Channel>::defaultValue;
+        }
+      }
+      if(missingCoverage) {
+        SPDLOG_WARN("Planar conversion for channel {} used default values outside source coverage", toString(Channel));
+      }
+    }
+
+    template <ImageChannel Channel, typename DestPlaneT, typename SrcPlanarT>
+    void copyPlaneDataFromPacked(DestPlaneT &destPlane, const SrcPlanarT &srcPlanar)
+    {
+      using DestValueT = typename DestPlaneT::value_type;
+      using SrcValueT = typename PlanarImageTraits<SrcPlanarT>::value_type;
+      bool missingCoverage = false;
+      for(auto it = destPlane.data().begin(); it != destPlane.data().end(); ++it) {
+        const auto &planeIndex = it.index();
+        auto masterIndex = DestPlaneT::scale_type::planeToMaster(planeIndex);
+        if(srcPlanar.range().contains(masterIndex)) {
+          auto packed = srcPlanar.template cast<SrcValueT>(masterIndex);
+          *it = get<Channel, DestValueT>(packed);
+        } else {
+          missingCoverage = true;
+          *it = PixelTypeTraits<DestValueT, Channel>::defaultValue;
+        }
+      }
+      if(missingCoverage) {
+        SPDLOG_WARN("Planar conversion for channel {} via packed path used default values outside source coverage", toString(Channel));
+      }
+    }
+
+    template <std::size_t DestIndex, typename DestPlanarT, typename SrcPlanarT>
+    void convertSinglePlane(DestPlanarT &dest, const SrcPlanarT &src)
+    {
+      using DestPlaneRef = decltype(dest.template plane<DestIndex>());
+      using DestPlaneT = std::remove_reference_t<DestPlaneRef>;
+      constexpr ImageChannel channel = DestPlaneT::getChannelType();
+      auto &destPlane = dest.template plane<DestIndex>();
+
+      using SrcPlaneTuple = typename PlanarImageTraits<SrcPlanarT>::plane_tuple;
+      if constexpr(TupleHasChannelV<channel, SrcPlaneTuple>) {
+        const auto &srcPlane = src.template planeByChannel<channel>();
+        copyPlaneDataMatchingChannel<channel>(destPlane, srcPlane);
+      } else {
+        SPDLOG_DEBUG("Planar conversion falling back to colour conversion for channel {}", toString(channel));
+        copyPlaneDataFromPacked<channel>(destPlane, src);
+      }
+    }
+
+    template <typename DestPlanarT, typename SrcPlanarT, std::size_t... DestIs>
+    void convertMatchingPlanes(DestPlanarT &dest, const SrcPlanarT &src, std::index_sequence<DestIs...>)
+    {
+      (convertSinglePlane<DestIs>(dest, src), ...);
+    }
+   }// namespace detail
 
   //! Convert a packed pixel array to a planar image
   //! This generic implementation extracts channels from the pixel type and creates a corresponding planar image
   //! @tparam Dims The number of dimensions
   //! @tparam PixelT The packed pixel type (e.g., PixelRGB8)
   template <unsigned Dims, typename PixelT>
-  auto convertToPlanar(const Array<PixelT, Dims>& packedArray)
+  auto convertToPlanar(const Array<PixelT, Dims> &packedArray)
   {
     // Use the channel_count from the Pixel class
-    return detail::convertToPlanarImpl<Dims>(packedArray, std::make_index_sequence<PixelT::channel_count>{});
+    return detail::convertToPlanarImpl<Dims>(packedArray, std::make_index_sequence<PixelT::channel_count> {});
   }
 
   //! Convert a planar image to a packed pixel array
@@ -595,10 +725,10 @@ namespace Ravl2
   //! @param masterRange Optional master range to use for the result (defaults to planarImage.masterRange())
   //! @return A packed pixel array containing values from the planar image
   template <typename ComponentT, template <typename, ImageChannel...> class PixelT, ImageChannel... Channels, unsigned Dims, typename... PlaneTypes>
-  auto convertToPacked(const PlanarImage<Dims, PlaneTypes...>& planarImage)
+  auto convertToPacked(const PlanarImage<Dims, PlaneTypes...> &planarImage)
   {
     return detail::convertToPackedImpl<ComponentT, PixelT, Dims, PlanarImage<Dims, PlaneTypes...>, Channels...>(
-        planarImage, planarImage.range());
+      planarImage, planarImage.range());
   }
 
   // NEW: overload for already-instantiated pixel types (PixelRGB8 etc.)
@@ -606,7 +736,7 @@ namespace Ravl2
   auto convertToPacked(const PlanarImage<Dims, PlaneTypes...> &planarImage)
   {
     return detail::convertToPackedInstantiatedImpl<Dims, PackedPixelT, PlanarImage<Dims, PlaneTypes...>>(
-      planarImage, std::make_index_sequence<PackedPixelT::channel_count>{});
+      planarImage, std::make_index_sequence<PackedPixelT::channel_count> {});
   }
 
   //! Helper alias for 2D planar images (most common case)
@@ -616,51 +746,95 @@ namespace Ravl2
   //! Helper type for creating YUV 4:4:4 planar images (no subsampling)
   template <typename ComponentT>
   using YUV444Image = PlanarImage2D<
-    PixelPlane<ComponentT, 2, ImageChannel::Luminance, 1, 1>, // Y plane (full resolution)
-    PixelPlane<ComponentT, 2, ImageChannel::ChrominanceU, 1, 1>, // U plane (full resolution)
-    PixelPlane<ComponentT, 2, ImageChannel::ChrominanceV, 1, 1>  // V plane (full resolution)
-  >;
+    PixelPlane<ComponentT, 2, ImageChannel::Luminance, 1, 1>,   // Y plane (full resolution)
+    PixelPlane<ComponentT, 2, ImageChannel::ChrominanceU, 1, 1>,// U plane (full resolution)
+    PixelPlane<ComponentT, 2, ImageChannel::ChrominanceV, 1, 1> // V plane (full resolution)
+    >;
 
   //! Helper type for creating YUV 4:2:2 planar images (horizontal subsampling)
   template <typename ComponentT>
   using YUV422Image = PlanarImage2D<
-    PixelPlane<ComponentT, 2, ImageChannel::Luminance, 1, 1>, // Y plane (full resolution)
-    PixelPlane<ComponentT, 2, ImageChannel::ChrominanceU, 2, 1>, // U plane (half horizontal resolution)
-    PixelPlane<ComponentT, 2, ImageChannel::ChrominanceV, 2, 1>  // V plane (half horizontal resolution)
-  >;
+    PixelPlane<ComponentT, 2, ImageChannel::Luminance, 1, 1>,   // Y plane (full resolution)
+    PixelPlane<ComponentT, 2, ImageChannel::ChrominanceU, 2, 1>,// U plane (half horizontal resolution)
+    PixelPlane<ComponentT, 2, ImageChannel::ChrominanceV, 2, 1> // V plane (half horizontal resolution)
+    >;
 
   //! Helper type for creating YUV 4:2:0 planar images (horizontal and vertical subsampling)
   template <typename ComponentT>
   using YUV420Image = PlanarImage2D<
-    PixelPlane<ComponentT, 2, ImageChannel::Luminance, 1, 1>, // Y plane (full resolution)
-    PixelPlane<ComponentT, 2, ImageChannel::ChrominanceU, 2, 2>, // U plane (half resolution in both dimensions)
-    PixelPlane<ComponentT, 2, ImageChannel::ChrominanceV, 2, 2>  // V plane (half resolution in both dimensions)
-  >;
+    PixelPlane<ComponentT, 2, ImageChannel::Luminance, 1, 1>,   // Y plane (full resolution)
+    PixelPlane<ComponentT, 2, ImageChannel::ChrominanceU, 2, 2>,// U plane (half resolution in both dimensions)
+    PixelPlane<ComponentT, 2, ImageChannel::ChrominanceV, 2, 2> // V plane (half resolution in both dimensions)
+    >;
 
   //! Helper type for creating RGB planar images
   template <typename ComponentT>
   using RGBPlanarImage = PlanarImage2D<
-    PixelPlane<ComponentT, 2, ImageChannel::Red>, // R plane
-    PixelPlane<ComponentT, 2, ImageChannel::Green>, // G plane
+    PixelPlane<ComponentT, 2, ImageChannel::Red>,  // R plane
+    PixelPlane<ComponentT, 2, ImageChannel::Green>,// G plane
     PixelPlane<ComponentT, 2, ImageChannel::Blue>  // B plane
-  >;
+    >;
 
   //! Helper type for creating RGBA planar images
   template <typename ComponentT>
   using RGBAPlanarImage = PlanarImage2D<
-    PixelPlane<ComponentT, 2, ImageChannel::Red>, // R plane
-    PixelPlane<ComponentT, 2, ImageChannel::Green>, // G plane
+    PixelPlane<ComponentT, 2, ImageChannel::Red>,  // R plane
+    PixelPlane<ComponentT, 2, ImageChannel::Green>,// G plane
     PixelPlane<ComponentT, 2, ImageChannel::Blue>, // B plane
-    PixelPlane<ComponentT, 2, ImageChannel::Alpha>  // A plane
-  >;
+    PixelPlane<ComponentT, 2, ImageChannel::Alpha> // A plane
+    >;
 
   //! Example for a 3D volume with planar color channels
   template <typename ComponentT>
   using RGBVolumeImage = PlanarImage<3,
-    PixelPlane<ComponentT, 3, ImageChannel::Red>, // R volume
-    PixelPlane<ComponentT, 3, ImageChannel::Green>, // G volume
-    PixelPlane<ComponentT, 3, ImageChannel::Blue>  // B volume
-  >;
+                                     PixelPlane<ComponentT, 3, ImageChannel::Red>,  // R volume
+                                     PixelPlane<ComponentT, 3, ImageChannel::Green>,// G volume
+                                     PixelPlane<ComponentT, 3, ImageChannel::Blue>  // B volume
+                                     >;
 
-}// namespace Ravl2
+  //! Clone a PlanarImage by deep-copying all planes
+  //! This is useful for releasing references to capture device buffers
+  //! @tparam Dims The number of dimensions
+  //! @tparam PlaneTypes The types of planes in the image
+  //! @param img The planar image to clone
+  //! @return A new PlanarImage with all planes deep-copied
+  template <unsigned Dims, typename... PlaneTypes>
+  [[nodiscard]] auto clone(const PlanarImage<Dims, PlaneTypes...> &img)
+  {
+    PlanarImage<Dims, PlaneTypes...> result;
 
+    // Clone each plane individually using a fold expression
+    [&]<std::size_t... Is>(std::index_sequence<Is...>) {
+      ((result.template plane<Is>().data() = clone(img.template plane<Is>().data())), ...);
+    }(std::make_index_sequence<sizeof...(PlaneTypes)>{});
+
+    return result;
+  }
+
+  //! Convert a planar image to a packed one.
+  template <typename DestPixelT, unsigned Dims, typename... PlaneTypes>
+  void convert(Array<DestPixelT,Dims> &dest,const PlanarImage<Dims, PlaneTypes...> &src)
+  {
+    dest = convertToPacked<DestPixelT, Dims, PlaneTypes...>(src);
+  }
+
+  //! Convert a packed image to a planar one.
+  //! This doesn't deal with colour and type conversions yet.
+  template <typename SrcPixelT, unsigned Dims, typename... PlaneTypes>
+  void convert(PlanarImage<Dims, PlaneTypes...> &dest, const Array<SrcPixelT,Dims> &src)
+  {
+    dest = convertToPlanar(src);
+  }
+
+  //! Convert between planar images with potentially different component types.
+  //! Channels missing in the source are filled with channel defaults.
+  template <unsigned Dims, typename... DestPlaneTypes, typename... SrcPlaneTypes>
+  void convert(PlanarImage<Dims, DestPlaneTypes...> &dest, const PlanarImage<Dims, SrcPlaneTypes...> &src)
+  {
+    dest = PlanarImage<Dims, DestPlaneTypes...>(src.range());
+    [&]<std::size_t... Is>(std::index_sequence<Is...>) {
+      (detail::convertSinglePlane<Is>(dest, src), ...);
+    }(std::make_index_sequence<sizeof...(DestPlaneTypes)>{});
+  }
+
+ }// namespace Ravl2

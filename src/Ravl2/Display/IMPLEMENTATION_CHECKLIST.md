@@ -1,93 +1,74 @@
-# Ravl2 Debug Display — Implementation Checklist
+# Ravl2 Debug Display -- Status and Roadmap
 
-This checklist tracks progress across the phased implementation plan. Update as tasks are completed.
+## Build Notes
 
-Legend: [ ] = todo, [*] = in progress, [x] = done
+Use the preconfigured Ninja build directory at the project root: `cmake-build-debug`.
+- Build: `cmake --build cmake-build-debug`
+- Clean: `ninja -C cmake-build-debug clean`
+- This preset has all display stack options enabled (SDL2 + bgfx + ImGui).
 
-## Phase 1 — Foundations
-- [x] Design document added (`DebugDisplay_Design.md`)
-- [x] Rename Message.hh → DisplayMessage.hh in design document
-- [x] Public API header scaffold (`DebugDisplay.hh`)
-- [x] Channel state placeholder (`Channel.hh`)
-- [x] Minimal implementation stub (`DebugDisplay.cc`) with `ensureStarted` and `enqueue`
-- [x] CMake target scaffold for `ravl2_debug_display` (conditional on `RAVL2_ENABLE_DISPLAY_STACK`)
-- [x] Remove `DisplayMessage` struct (command-only queue) — keep header as deprecation stub
+## Completed
 
-## Phase 2 — ImGui docking + event loop
-- [x] Add SDL2 window creation (GUI thread via `std::jthread`)
-- [*] Initialize bgfx with backend policy (Vulkan default, per-platform fallbacks) — Step A started
-- [*] Integrate Dear ImGui (docking) and set up dockspace — Step A: vendor backends and wire minimal frame
-- [x] Idle-friendly loop using `SDL_WaitEventTimeout` and render-on-invalidation
+### Core Architecture (Phases 1-3)
+- Command/Node pipeline: `IRenderCommand`, `ISceneNode`, `ChannelRegistry`, `ChannelState`
+- Thread-safe bounded queue with backpressure / drop-oldest policy
+- `display://` URL scheme with `TypeConverter` integration (`IOFormatAdapter.cc`)
+- Headless mode for testing (`setHeadless()` / `setHeadlessForTests()`)
+- SDL2 window + bgfx backend (`BGFXContext`) + ImGui docking (`ImguiBgfxBridge`)
 
-### Phase 2 — Staged migration plan
-- [x] Step A scope approved: Initialize bgfx + ImGui while keeping SDL renderer for first pixels
-- [x] Step A deliverable: bgfx initialized against SDL window; ImGui dockspace visible; SDL still blits image
-  - [x] Implement `BGFXContext` with real `init/resize/frame/shutdown` using `SDL_SysWMinfo`
-  - [x] ImGui backends wired from `imgui` package (using SDL2 + SDL_Renderer backend for UI in Step A)
-  - [x] CMake: link `imgui` and add backend sources; set `RAVL2_WITH_IMGUI`
-  - [x] GUI thread: create ImGui context (docking enabled), init SDL2 + SDL_Renderer backends
-  - [x] Per-frame: ImGui NewFrame → DockSpace → simple "Channels" window → Render via ImGui SDL_Renderer backend
-  - [x] Window events: forward SDL input to ImGui backend; on resize call `BGFXContext::resize`
-  - [x] First-frame: ensure non-zero backbuffer size before initial bgfx init (already handled for SDL)
-- [*] Step B deliverable: move 2D image display to bgfx textures; remove SDL_Renderer path entirely
-  - [x] Add bgfx `TextureHandle` to `Image2DNode` and lifetime management
-  - [x] U8 path: upload to R8 texture (recreate on size change)
-  - [x] F32 path: CPU normalize to U8 (policy: Auto/Fixed/Percentile) and upload to R8
-  - [x] Draw in channel window via ImGui `Image` (bgfx texture ID)
-  - [x] Apply pan/zoom using `ChannelState::view2D` (transform positions/UVs or use draw list)
-  - [x] Remove SDL texture cache and `SDL_RenderCopy` usage; keep SDL only for window/events when bgfx is available
-  - [x] Verify pixel query (uses CPU copy); display in ImGui status/tooltip (window title MVP)
+### 2D Image Display (Phase 4)
+- Pixel types: `uint8_t`, `float`, `PixelRGB8`, `int16_t`, `int32_t`
+- Normalization policies: Auto (min/max), Fixed (user range), Percentile
+- Pan/zoom via `InputController2D`
+- Pixel query tooltips with type-specific formatting
+- bgfx texture upload displayed via `ImGui::Image`
 
-## Phase 3 — Message bus and channels (Command/Node architecture)
-- [x] Define `IRenderCommand` base (applied on GUI thread)
-- [x] Define `ISceneNode` base (persistent per-channel, owns GPU resources)
-- [x] Add `enqueue(std::shared_ptr<IRenderCommand>)` API (channel/controls embedded in commands)
-- [x] Define bounded, thread-safe queue for render commands
-- [x] Implement `enqueue()` push with backpressure / drop-oldest policy
-- [x] Channel registry (create/find/reset) and parse `:Clear` control
-- [x] Back-compat shim (optional): convert old payload-based enqueue to commands (temporary)
-- [x] ioSave → `std::shared_ptr<IRenderCommand>` via `TypeConverter` and generic `@debug` OutputFormat (command sink)
+### 2D Overlays (Phase 5 -- partial)
+- `Polyline2DNode` with Append/Replace modes, color, width, closed
+- `TypeConverter`: `PolyLine<float,2>` -> `AddPolylineOverlay2D`
+- `CompositeNode` composition for image + overlays
 
-## Phase 4 — 2D image path (MVP)
-- [x] Command sink via TypeConverter for `Array<uint8_t,2]` → `SetBaseImage2D`
-- [x] Command sink via TypeConverter for `Array<float,2]` → `SetBaseImage2D` with normalization (auto/fixed/percentile)
-  - [x] Auto normalization (min/max) for display of f32
-  - [x] Fixed range and percentile policies (via URL controls and per-channel state)
-- [ ] Textured quad shader (bgfx) — pending bgfx integration
-- [x] Zoom/pan controls (SDL MVP; to be moved to ImGui later)
-- [x] Pixel query tooltip (original + displayed values) — window title MVP
+### Time Series Plots (Phase 7a-7e)
+- ImPlot integration with per-channel `PlotState`
+- `AddSeriesData`: Replace / Append / RingBuffer modes
+- Multi-series: `map<string,float>`, `map<string,vector<float>>`
+- `ClearPlot`, `SetPlotXAxis`, followMode, auto-fit axes
+- TypeConverters: `Array<float,1>`, `vector<float>`, maps
 
-## Phase 5 — Overlays (2D)
-- [ ] Adapter for `std::vector<Point<float,2>>`
-- [ ] Adapter for 2D lines
-- [ ] Render via ImGui draw lists or bgfx line pass (choose and document)
+### UI Framework (Phase 4.9)
+- ImGui docking: `Dockspace`, `ChannelWindows`, `ControlsPanel`, `StatusBar`, `Plots`
+- `InputController2D` per-channel state for pan/zoom
 
-## Phase 6 — 3D basic rendering
-- [ ] Camera orbit controls
-- [ ] PointCloud3f and Mesh3f adapters
-- [ ] Depth-tested draw calls; axes/grid overlay
+### 3D Scaffolding (Phase 6a -- experimental, no rendering)
+- `Viewport3DNode`: viewport rect and camera state management
+- `OrbitCamera`: orbit/pan/dolly with view/projection matrix math
+- `Grid3DOverlay`: CPU-projected XZ grid (always visible)
+- `SetPointCloud3D`: command pipeline (stores data, does not render to screen)
 
-## Phase 7 — ImPlot integration
-- [ ] Plots panel and 1D series channel
-- [ ] Basic timeline widget
-- [ ] Waterfall prototype as scrolling texture
+## Remaining Work
 
-## Phase 8 — Persistence and config
-- [ ] Save/restore docking layout
-- [ ] JSON config (backend preference, FPS cap, normalization defaults)
+### Phase 5 -- Additional 2D Overlay Adapters
+- [ ] TypeConverter: `std::vector<Point<float,2>>` -> polyline overlay
+- [ ] TypeConverter: 2D line segments
 
-## Phase 9 — Audio (optional)
-- [ ] SDL2 audio device hookup; simple PCM playback viewer
+### Phase 4 -- Direct bgfx Renderer (optional; ImGui path works)
+- [ ] Aspect-fit textured quad via bgfx draw (shaders ready: `vs_image.sc`, `fs_image.sc`)
+- [ ] Resize handling for direct quad path
+- [ ] Fallback: automatic switch if bgfx shader load fails
 
-## Phase 10 — VR (stretch)
-- [ ] OpenXR integration; stereo rendering and mirror view
+### Phase 6 -- 3D Rendering
+- [ ] 6b: Depth test, axes triad, per-vertex color, point size
+- [ ] 6c: Mesh renderer (PN) with MeshShapes smoke tests
+- [ ] 6d: TypeConverter adapters for Ravl2/Eigen geometry types
+- [ ] 6e: PinholeCamera interop, fit-to-bounds (AABB)
+- [ ] 6f: 3D shaders (`vs_point3d`, `fs_point3d`, `vs_mesh3d`, `fs_mesh3d`)
+- [ ] 6g: Unit tests for camera math, AABB, adapter validation
 
-## Phase 11 — QA and tests
-- [ ] Unit tests: normalization functions and edge cases
-- [ ] Unit tests: adapter registry selection
-- [ ] Stress tests: enqueue/dequeue backpressure and overflow
+## Deferred / Stretch
 
-## Notes / Decisions
-- Vulkan default with MoltenVK on macOS; fallbacks documented in Dependencies.cmake status messages.
-- Display stack remains optional: enable with `-DRAVL2_ENABLE_DISPLAY_STACK=ON`.
-- First-pixels MVP uses SDL_Renderer for 2D blit; to be replaced by bgfx + ImGui in later phases.
+- [ ] Phase 7f: Timeline widget (scrubber linked to 2D/3D frame display)
+- [ ] Phase 7g: Waterfall display (2D texture accumulation with colormaps)
+- [ ] Phase 8: Persistence (docking layout save/restore, JSON config)
+- [ ] Phase 9: Audio (SDL2 PCM playback viewer)
+- [ ] Phase 10: VR (OpenXR stereo rendering)
+- [ ] Phase 11: QA stress tests (backpressure, overflow, adapter registry)

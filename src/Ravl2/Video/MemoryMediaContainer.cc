@@ -173,6 +173,21 @@ namespace Ravl2::Video
     return VideoResult<std::shared_ptr<StreamIterator>>(std::static_pointer_cast<StreamIterator>(iterator));
   }
 
+  VideoResult<std::shared_ptr<StreamIterator>> MemoryMediaContainer::createIterator(std::vector<std::size_t> streams)
+  {
+    if(streams.size() == 1) {
+      auto iterator = std::make_shared<MemoryStreamIterator>(
+        std::dynamic_pointer_cast<MemoryMediaContainer>(shared_from_this()),
+        streams[0]
+      );
+      return VideoResult<std::shared_ptr<StreamIterator>>(std::static_pointer_cast<StreamIterator>(iterator));
+    }
+    (void) streams;
+    // FIXME: Implement
+    SPDLOG_WARN("MemoryMediaContainer::createIterator, Multi stream not implemented.", streams[0]);
+    return VideoResult<std::shared_ptr<StreamIterator>>(VideoErrorCode::ResourceUnavailable);
+  }
+
   //! Get global container metadata
   std::map<std::string, std::string> MemoryMediaContainer::metadata() const
   {

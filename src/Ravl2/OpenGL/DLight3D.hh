@@ -48,7 +48,7 @@ namespace Ravl2 {
     PixelRGB32F colour;  //!< Colour of light.
     Vector<float,3> pos; //!< Position of light.
     //bool spot = false;   //!< Spot light ?
-    Vector<float,3> dir; //!< Direction of spot light.
+    [[maybe_unused]] Vector<float,3> dir; //!< Direction of spot light.
     //float  ang = 0;      //!< angle of light.
   };
 

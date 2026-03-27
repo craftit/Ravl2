@@ -5,6 +5,7 @@
 #pragma once
 
 #include "Ravl2/Video/MediaContainer.hh"
+#include <atomic>
 #include <map>
 #include <string>
 #include <memory>
@@ -24,6 +25,7 @@ extern "C" {
 #include <libavutil/samplefmt.h>
 #include <libswscale/swscale.h>
 #include <libswresample/swresample.h>
+#include <libavdevice/avdevice.h>
 }
 #pragma GCC diagnostic pop
 
@@ -45,6 +47,24 @@ namespace Ravl2::Video
 
     //! Factory method to create an FFmpeg-based media container from a file
     [[nodiscard]] static VideoResult<std::shared_ptr<MediaContainer>> openFile(const std::string&filePath);
+
+    //! Factory method to create an FFmpeg-based media container from a capture device
+    //!
+    //! Platform-specific requirements:
+    //! - Linux: Requires FFmpeg compiled with V4L2 support (--enable-v4l2 or --enable-indev=v4l2)
+    //! - macOS: Requires FFmpeg compiled with AVFoundation support (--enable-avfoundation or --enable-indev=avfoundation)
+    //! - Windows: Requires FFmpeg compiled with DirectShow support (--enable-dshow or --enable-indev=dshow)
+    //!
+    //! @param params Device parameters including path, resolution, frame rate, etc.
+    //! @return VideoResult containing the MediaContainer or an error code
+    [[nodiscard]] static VideoResult<std::shared_ptr<MediaContainer>> openDevice(const DeviceParameters&params);
+
+    //! Enumerate available capture devices
+    //!
+    //! Platform-specific requirements: Same as openDevice()
+    //!
+    //! @return VideoResult containing a vector of DeviceInfo or an error code
+    [[nodiscard]] static VideoResult<std::vector<DeviceInfo>> enumerateDevices();
 
     //! Check if the container is open
     [[nodiscard]] bool isOpen() const override;
@@ -70,8 +90,13 @@ namespace Ravl2::Video
     //! Get the total duration of the container (the longest stream)
     [[nodiscard]] MediaTime duration() const override;
 
+    using MediaContainer::createIterator;
+
     //! Create an iterator for a specific stream
     [[nodiscard]] VideoResult<std::shared_ptr<StreamIterator>> createIterator(std::size_t streamIndex) override;
+
+    //! Create an iterator for a set of streams.
+    [[nodiscard]] VideoResult<std::shared_ptr<StreamIterator>> createIterator(std::vector<std::size_t> streams) override;
 
     //! Get global container metadata
     [[nodiscard]] std::map<std::string, std::string> metadata() const override;
@@ -110,8 +135,15 @@ namespace Ravl2::Video
     //! Metadata dictionary
     std::map<std::string, std::string> m_metadata;
 
-    //! Flag indicating if FFmpeg has been initialized
+    //! Flag indicating if FFmpeg has been initialised
     static bool s_ffmpegInitialized;
+
+    //! Count of active iterators sharing this container's format/codec contexts.
+    //! Multiple concurrent iterators are not thread-safe because they share the
+    //! demuxer (m_formatContext) and decoder (m_codecContexts) state.
+    //! This counter is used to warn/assert if misused. It may be relaxed in the
+    //! future if per-iterator codec contexts are implemented.
+    std::atomic<int> m_activeIteratorCount {0};
 
     //! Friend class declaration to allow the iterator to access private members
     friend class FfmpegStreamIterator;

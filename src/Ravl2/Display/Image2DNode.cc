@@ -2,113 +2,445 @@
 #include <cassert>
 #include <cstdint>
 #include <vector>
+#include <format>
 
 #if defined(RAVL2_WITH_BGFX)
 #include <bgfx/bgfx.h>
 #endif
 
-namespace Ravl2::DebugDisplay {
+namespace Ravl2::DebugDisplay
+{
 
-void Image2DNode::setFromU8(const uint8_t* src, int w, int h) {
-  width = w; height = h; format = Image2DFormat::U8;
-  dataU8.assign(src, src + static_cast<size_t>(w)*static_cast<size_t>(h));
-  dataF32.clear();
+  // ============================================================================
+  // Image2DNode<uint8_t> specialization
+  // ============================================================================
+
+  void Image2DNode<uint8_t>::setData(std::vector<uint8_t> data, int w, int h)
+  {
+    pixelData = std::move(data);
+    width = w;
+    height = h;
 #if defined(RAVL2_WITH_BGFX)
-  gpuDirty = true;
+    gpuDirty = true;
 #endif
-}
+  }
 
-void Image2DNode::setFromF32(const float* src, int w, int h) {
-  width = w; height = h; format = Image2DFormat::F32;
-  dataF32.assign(src, src + static_cast<size_t>(w)*static_cast<size_t>(h));
-  dataU8.clear();
-  // Update cached min/max for auto normalization
-  auto [mn, mx] = finiteMinMax(dataF32.data(), width, height, width * int(sizeof(float)));
-  cachedMin = mn; cachedMax = mx;
+  void Image2DNode<uint8_t>::setData(const uint8_t *data, int w, int h)
+  {
+    const size_t sz = static_cast<size_t>(w) * static_cast<size_t>(h);
+    pixelData.assign(data, data + sz);
+    width = w;
+    height = h;
 #if defined(RAVL2_WITH_BGFX)
-  gpuDirty = true;
+    gpuDirty = true;
 #endif
-}
+  }
 
-std::pair<float, float> Image2DNode::sample(int x, int y) const noexcept {
-  const int idx = y*width + x;
-  if (format == Image2DFormat::U8) {
-    float v = static_cast<float>(dataU8[static_cast<size_t>(idx)]) / 255.0f;
-    return {v, v};
-  } else {
-    float v = dataF32[static_cast<size_t>(idx)];
-    float mn = cachedMin, mx = cachedMax;
-    if (norm.policy == NormalizationPolicy::Fixed) {
-      mn = norm.minVal; mx = norm.maxVal;
+  PixelQueryResult Image2DNode<uint8_t>::queryPixelInfo(int x, int y) const
+  {
+    if(x < 0 || x >= width || y < 0 || y >= height) {
+      return {.valid = false, .coordinateText = "", .valueText = "", .extraInfo = std::nullopt};
     }
-    if (mx <= mn) mx = mn + 1.0f;
+
+    const uint8_t value = pixelData[static_cast<size_t>(y * width + x)];
+
+    return {
+      .valid = true,
+      .coordinateText = std::format("x: {}, y: {}", x, y),
+      .valueText = std::format("Value: {}", value),
+      .extraInfo = std::nullopt};
+  }
+
+  void Image2DNode<uint8_t>::uploadToGPU()
+  {
+#if defined(RAVL2_WITH_BGFX)
+    if(pixelData.empty()) return;
+
+    bgfx::TextureHandle thdl {textureHandleIdx};
+    if(!bgfx::isValid(thdl)) return;
+
+    const size_t sz = static_cast<size_t>(width) * static_cast<size_t>(height);
+    // Convert grayscale to RGBA8 by replicating to RGB and setting alpha to 255
+    std::vector<uint8_t> rgba(sz * 4);
+    for(size_t i = 0; i < sz; ++i) {
+      uint8_t v = pixelData[i];
+      rgba[i * 4 + 0] = v;  // R
+      rgba[i * 4 + 1] = v;  // G
+      rgba[i * 4 + 2] = v;  // B
+      rgba[i * 4 + 3] = 255;// A
+    }
+    const bgfx::Memory *mem = bgfx::copy(rgba.data(), static_cast<uint32_t>(rgba.size()));
+    bgfx::updateTexture2D(thdl, 0, 0, 0, 0, texWidth, texHeight, mem);
+#endif
+  }
+
+  std::pair<float, float> Image2DNode<uint8_t>::sample(int x, int y) const noexcept
+  {
+    const int idx = y * width + x;
+    float v = static_cast<float>(pixelData[static_cast<size_t>(idx)]) / 255.0f;
+    return {v, v};
+  }
+
+  // ============================================================================
+  // Image2DNode<float> specialization
+  // ============================================================================
+
+  void Image2DNode<float>::setData(std::vector<float> data, int w, int h)
+  {
+    pixelData = std::move(data);
+    width = w;
+    height = h;
+
+    // Update cached min/max for auto normalization
+    auto [mn, mx] = finiteMinMax(pixelData.data(), width, height, width * int(sizeof(float)));
+    cachedMin = mn;
+    cachedMax = mx;
+
+#if defined(RAVL2_WITH_BGFX)
+    gpuDirty = true;
+#endif
+  }
+
+  void Image2DNode<float>::setData(const float *data, int w, int h)
+  {
+    const size_t sz = static_cast<size_t>(w) * static_cast<size_t>(h);
+    pixelData.assign(data, data + sz);
+    width = w;
+    height = h;
+
+    // Update cached min/max for auto normalization
+    auto [mn, mx] = finiteMinMax(pixelData.data(), width, height, width * int(sizeof(float)));
+    cachedMin = mn;
+    cachedMax = mx;
+
+#if defined(RAVL2_WITH_BGFX)
+    gpuDirty = true;
+#endif
+  }
+
+  std::string Image2DNode<float>::formatValue(const float &value) const
+  {
+    float mn = cachedMin, mx = cachedMax;
+    if(norm.policy == NormalizationPolicy::Fixed) {
+      mn = norm.minVal;
+      mx = norm.maxVal;
+    }
+    if(mx <= mn) mx = mn + 1.0f;
+    float displayValue = (value - mn) / (mx - mn);
+    if(displayValue < 0.0f) displayValue = 0.0f;
+    if(displayValue > 1.0f) displayValue = 1.0f;
+
+    return std::format("Raw: {:.3f}, Display: {:.3f}", value, displayValue);
+  }
+
+  std::string Image2DNode<float>::formatExtra(const float &value) const
+  {
+    (void)value;// Not used for extra info, just for range
+    return std::format("Range: [{:.3f}, {:.3f}]", cachedMin, cachedMax);
+  }
+
+  PixelQueryResult Image2DNode<float>::queryPixelInfo(int x, int y) const
+  {
+    if(x < 0 || x >= width || y < 0 || y >= height) {
+      return {.valid = false, .coordinateText = "", .valueText = "", .extraInfo = std::nullopt};
+    }
+
+    const float value = pixelData[static_cast<size_t>(y * width + x)];
+
+    return {
+      .valid = true,
+      .coordinateText = std::format("x: {}, y: {}", x, y),
+      .valueText = formatValue(value),
+      .extraInfo = formatExtra(value)};
+  }
+
+  void Image2DNode<float>::uploadToGPU()
+  {
+#if defined(RAVL2_WITH_BGFX)
+    if(pixelData.empty()) return;
+
+    bgfx::TextureHandle thdl {textureHandleIdx};
+    if(!bgfx::isValid(thdl)) return;
+
+    float mn = cachedMin, mx = cachedMax;
+    if(norm.policy == NormalizationPolicy::Fixed) {
+      mn = norm.minVal;
+      mx = norm.maxVal;
+    }
+    if(mx <= mn) mx = mn + 1.0f;
+
+    const size_t sz = static_cast<size_t>(width) * static_cast<size_t>(height);
+    std::vector<uint8_t> rgba(sz * 4);
+    const float scale = 255.0f / (mx - mn);
+
+    for(size_t i = 0; i < sz; ++i) {
+      float v = (pixelData[i] - mn) * scale;
+      if(!std::isfinite(v)) v = 0.0f;
+      if(v < 0.0f) v = 0.0f;
+      if(v > 255.0f) v = 255.0f;
+      uint8_t u8v = static_cast<uint8_t>(v + 0.5f);
+      rgba[i * 4 + 0] = u8v;// R
+      rgba[i * 4 + 1] = u8v;// G
+      rgba[i * 4 + 2] = u8v;// B
+      rgba[i * 4 + 3] = 255;// A
+    }
+
+    const bgfx::Memory *mem = bgfx::copy(rgba.data(), static_cast<uint32_t>(rgba.size()));
+    bgfx::updateTexture2D(thdl, 0, 0, 0, 0, texWidth, texHeight, mem);
+#endif
+  }
+
+  std::pair<float, float> Image2DNode<float>::sample(int x, int y) const noexcept
+  {
+    const int idx = y * width + x;
+    float v = pixelData[static_cast<size_t>(idx)];
+    float mn = cachedMin, mx = cachedMax;
+    if(norm.policy == NormalizationPolicy::Fixed) {
+      mn = norm.minVal;
+      mx = norm.maxVal;
+    }
+    if(mx <= mn) mx = mn + 1.0f;
     float n = (v - mn) / (mx - mn);
+    if(n < 0.0f) n = 0.0f;
+    if(n > 1.0f) n = 1.0f;
     return {v, n};
   }
-}
 
-void Image2DNode::prepare(RenderContext &ctx) {
-  (void)ctx;
+  // ============================================================================
+  // Image2DNode<PixelRGB8> specialization
+  // ============================================================================
+
+  void Image2DNode<PixelRGB8>::setData(std::vector<PixelRGB8> data, int w, int h)
+  {
+    pixelData = std::move(data);
+    width = w;
+    height = h;
 #if defined(RAVL2_WITH_BGFX)
-  // Create or update R8 texture from CPU data
-  if (width <= 0 || height <= 0) return;
-  const uint16_t tw = static_cast<uint16_t>(width);
-  const uint16_t th = static_cast<uint16_t>(height);
-
-  // Recreate texture on size change
-  const bool sizeChanged = (texWidth != tw) || (texHeight != th);
-  if (sizeChanged && textureHandleIdx != UINT16_MAX) {
-    bgfx::TextureHandle thdl{textureHandleIdx};
-    if (bgfx::isValid(thdl)) bgfx::destroy(thdl);
-    textureHandleIdx = UINT16_MAX;
-  }
-
-  if (textureHandleIdx == UINT16_MAX) {
-    const uint64_t flags = BGFX_SAMPLER_U_CLAMP | BGFX_SAMPLER_V_CLAMP | BGFX_SAMPLER_MIP_POINT | BGFX_SAMPLER_MAG_POINT | BGFX_SAMPLER_MIN_POINT;
-    bgfx::TextureHandle thdl = bgfx::createTexture2D(tw, th, false, 1, bgfx::TextureFormat::R8, flags);
-    if (!bgfx::isValid(thdl)) {
-      return;
-    }
-    textureHandleIdx = thdl.idx;
-    texWidth = tw; texHeight = th;
     gpuDirty = true;
-  }
-
-  if (!gpuDirty) return;
-
-  // Upload data according to format, normalizing f32 to u8 if needed
-  bgfx::TextureHandle thdl{textureHandleIdx};
-  if (!bgfx::isValid(thdl)) return;
-
-  if (format == Image2DFormat::U8 && !dataU8.empty()) {
-    const size_t sz = static_cast<size_t>(width) * static_cast<size_t>(height);
-    const bgfx::Memory* mem = bgfx::copy(dataU8.data(), static_cast<uint32_t>(sz));
-    bgfx::updateTexture2D(thdl, 0, 0, 0, 0, tw, th, mem);
-  } else if (format == Image2DFormat::F32 && !dataF32.empty()) {
-    float mn = cachedMin, mx = cachedMax;
-    if (norm.policy == NormalizationPolicy::Fixed) {
-      mn = norm.minVal; mx = norm.maxVal;
-    }
-    if (mx <= mn) mx = mn + 1.0f;
-    std::vector<uint8_t> tmp(static_cast<size_t>(width) * static_cast<size_t>(height));
-    const float scale = 255.0f / (mx - mn);
-    for (int i = 0, n = width*height; i < n; ++i) {
-      float v = (dataF32[static_cast<size_t>(i)] - mn) * scale;
-      if (!std::isfinite(v)) v = 0.0f;
-      if (v < 0.0f) v = 0.0f;
-      if (v > 255.0f) v = 255.0f;
-      tmp[static_cast<size_t>(i)] = static_cast<uint8_t>(v + 0.5f);
-    }
-    const bgfx::Memory* mem = bgfx::copy(tmp.data(), static_cast<uint32_t>(tmp.size()));
-    bgfx::updateTexture2D(thdl, 0, 0, 0, 0, tw, th, mem);
-  }
-  gpuDirty = false;
 #endif
-}
+  }
 
-void Image2DNode::render(RenderContext &ctx) {
-  (void)ctx;
-  // Drawing is performed by the higher-level UI (ImGui using bgfx backend) or a renderer pass.
-}
+  void Image2DNode<PixelRGB8>::setData(const PixelRGB8 *data, int w, int h)
+  {
+    const size_t sz = static_cast<size_t>(w) * static_cast<size_t>(h);
+    pixelData.assign(data, data + sz);
+    width = w;
+    height = h;
+#if defined(RAVL2_WITH_BGFX)
+    gpuDirty = true;
+#endif
+  }
 
-} // namespace Ravl2::DebugDisplay
+  std::string Image2DNode<PixelRGB8>::formatValue(const PixelRGB8 &value) const
+  {
+    return std::format("R:{} G:{} B:{}",
+                       static_cast<int>(value.template get<ImageChannel::Red>()),
+                       static_cast<int>(value.template get<ImageChannel::Green>()),
+                       static_cast<int>(value.template get<ImageChannel::Blue>()));
+  }
+
+  PixelQueryResult Image2DNode<PixelRGB8>::queryPixelInfo(int x, int y) const
+  {
+    if(x < 0 || x >= width || y < 0 || y >= height) {
+      return {.valid = false, .coordinateText = "", .valueText = "", .extraInfo = std::nullopt};
+    }
+
+    const PixelRGB8 &value = pixelData[static_cast<size_t>(y * width + x)];
+
+    return {
+      .valid = true,
+      .coordinateText = std::format("x: {}, y: {}", x, y),
+      .valueText = formatValue(value),
+      .extraInfo = std::nullopt};
+  }
+
+  void Image2DNode<PixelRGB8>::uploadToGPU()
+  {
+#if defined(RAVL2_WITH_BGFX)
+    if(pixelData.empty()) return;
+
+    bgfx::TextureHandle thdl {textureHandleIdx};
+    if(!bgfx::isValid(thdl)) return;
+
+    const size_t sz = static_cast<size_t>(width) * static_cast<size_t>(height);
+    // Convert RGB to RGBA8 by adding alpha channel (255 = opaque)
+    std::vector<uint8_t> rgba(sz * 4);
+    for(size_t i = 0; i < sz; ++i) {
+      const PixelRGB8 &pixel = pixelData[i];
+      rgba[i * 4 + 0] = pixel.template get<ImageChannel::Red>();
+      rgba[i * 4 + 1] = pixel.template get<ImageChannel::Green>();
+      rgba[i * 4 + 2] = pixel.template get<ImageChannel::Blue>();
+      rgba[i * 4 + 3] = 255;// A
+    }
+    const bgfx::Memory *mem = bgfx::copy(rgba.data(), static_cast<uint32_t>(rgba.size()));
+    bgfx::updateTexture2D(thdl, 0, 0, 0, 0, texWidth, texHeight, mem);
+#endif
+  }
+
+  // ============================================================================
+  // Image2DNode<int16_t> specialization
+  // ============================================================================
+
+  void Image2DNode<int16_t>::setData(std::vector<int16_t> data, int w, int h)
+  {
+    pixelData = std::move(data);
+    width = w;
+    height = h;
+#if defined(RAVL2_WITH_BGFX)
+    gpuDirty = true;
+#endif
+  }
+
+  void Image2DNode<int16_t>::setData(const int16_t *data, int w, int h)
+  {
+    const size_t sz = static_cast<size_t>(w) * static_cast<size_t>(h);
+    pixelData.assign(data, data + sz);
+    width = w;
+    height = h;
+#if defined(RAVL2_WITH_BGFX)
+    gpuDirty = true;
+#endif
+  }
+
+  std::string Image2DNode<int16_t>::formatValue(const int16_t &value) const
+  {
+    return std::format("Label: {}", value);
+  }
+
+  PixelQueryResult Image2DNode<int16_t>::queryPixelInfo(int x, int y) const
+  {
+    if(x < 0 || x >= width || y < 0 || y >= height) {
+      return {.valid = false, .coordinateText = "", .valueText = "", .extraInfo = std::nullopt};
+    }
+
+    const int16_t value = pixelData[static_cast<size_t>(y * width + x)];
+
+    return {
+      .valid = true,
+      .coordinateText = std::format("x: {}, y: {}", x, y),
+      .valueText = formatValue(value),
+      .extraInfo = std::nullopt};
+  }
+
+  // Simple colormap: hash the label ID to generate a deterministic color
+  static inline uint32_t labelToColor(int32_t label)
+  {
+    // Hash function for deterministic colors
+    uint32_t h = static_cast<uint32_t>(label);
+    h ^= h >> 16;
+    h *= 0x85ebca6b;
+    h ^= h >> 13;
+    h *= 0xc2b2ae35;
+    h ^= h >> 16;
+
+    // Extract RGB from hash, ensure decent brightness
+    uint8_t r = static_cast<uint8_t>((h >> 16) & 0xFF);
+    uint8_t g = static_cast<uint8_t>((h >> 8) & 0xFF);
+    uint8_t b = static_cast<uint8_t>(h & 0xFF);
+
+    // Ensure minimum brightness for visibility
+    if(r < 64 && g < 64 && b < 64) {
+      r = static_cast<uint8_t>(r + 64);
+      g = static_cast<uint8_t>(g + 64);
+      b = static_cast<uint8_t>(b + 64);
+    }
+
+    return (static_cast<uint32_t>(r) << 0) | (static_cast<uint32_t>(g) << 8) | (static_cast<uint32_t>(b) << 16) | 0xFF000000u;// Alpha = 255
+  }
+
+  void Image2DNode<int16_t>::uploadToGPU()
+  {
+#if defined(RAVL2_WITH_BGFX)
+    if(pixelData.empty()) return;
+
+    bgfx::TextureHandle thdl {textureHandleIdx};
+    if(!bgfx::isValid(thdl)) return;
+
+    const size_t sz = static_cast<size_t>(width) * static_cast<size_t>(height);
+    std::vector<uint8_t> rgba(sz * 4);
+
+    for(size_t i = 0; i < sz; ++i) {
+      int16_t label = pixelData[i];
+      uint32_t color = labelToColor(static_cast<int32_t>(label));
+      rgba[i * 4 + 0] = static_cast<uint8_t>(color & 0xFF);
+      rgba[i * 4 + 1] = static_cast<uint8_t>((color >> 8) & 0xFF);
+      rgba[i * 4 + 2] = static_cast<uint8_t>((color >> 16) & 0xFF);
+      rgba[i * 4 + 3] = static_cast<uint8_t>((color >> 24) & 0xFF);
+    }
+
+    const bgfx::Memory *mem = bgfx::copy(rgba.data(), static_cast<uint32_t>(rgba.size()));
+    bgfx::updateTexture2D(thdl, 0, 0, 0, 0, texWidth, texHeight, mem);
+#endif
+  }
+
+  // ============================================================================
+  // Image2DNode<int32_t> specialization
+  // ============================================================================
+
+  void Image2DNode<int32_t>::setData(std::vector<int32_t> data, int w, int h)
+  {
+    pixelData = std::move(data);
+    width = w;
+    height = h;
+#if defined(RAVL2_WITH_BGFX)
+    gpuDirty = true;
+#endif
+  }
+
+  void Image2DNode<int32_t>::setData(const int32_t *data, int w, int h)
+  {
+    const size_t sz = static_cast<size_t>(w) * static_cast<size_t>(h);
+    pixelData.assign(data, data + sz);
+    width = w;
+    height = h;
+#if defined(RAVL2_WITH_BGFX)
+    gpuDirty = true;
+#endif
+  }
+
+  std::string Image2DNode<int32_t>::formatValue(const int32_t &value) const
+  {
+    return std::format("Label: {}", value);
+  }
+
+  PixelQueryResult Image2DNode<int32_t>::queryPixelInfo(int x, int y) const
+  {
+    if(x < 0 || x >= width || y < 0 || y >= height) {
+      return {.valid = false, .coordinateText = "", .valueText = "", .extraInfo = std::nullopt};
+    }
+
+    const int32_t value = pixelData[static_cast<size_t>(y * width + x)];
+
+    return {
+      .valid = true,
+      .coordinateText = std::format("x: {}, y: {}", x, y),
+      .valueText = formatValue(value),
+      .extraInfo = std::nullopt};
+  }
+
+  void Image2DNode<int32_t>::uploadToGPU()
+  {
+#if defined(RAVL2_WITH_BGFX)
+    if(pixelData.empty()) return;
+
+    bgfx::TextureHandle thdl {textureHandleIdx};
+    if(!bgfx::isValid(thdl)) return;
+
+    const size_t sz = static_cast<size_t>(width) * static_cast<size_t>(height);
+    std::vector<uint8_t> rgba(sz * 4);
+
+    for(size_t i = 0; i < sz; ++i) {
+      int32_t label = pixelData[i];
+      uint32_t color = labelToColor(label);
+      rgba[i * 4 + 0] = static_cast<uint8_t>(color & 0xFF);
+      rgba[i * 4 + 1] = static_cast<uint8_t>((color >> 8) & 0xFF);
+      rgba[i * 4 + 2] = static_cast<uint8_t>((color >> 16) & 0xFF);
+      rgba[i * 4 + 3] = static_cast<uint8_t>((color >> 24) & 0xFF);
+    }
+
+    const bgfx::Memory *mem = bgfx::copy(rgba.data(), static_cast<uint32_t>(rgba.size()));
+    bgfx::updateTexture2D(thdl, 0, 0, 0, 0, texWidth, texHeight, mem);
+#endif
+  }
+
+}// namespace Ravl2::DebugDisplay

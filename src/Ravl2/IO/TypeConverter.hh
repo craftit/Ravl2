@@ -390,4 +390,20 @@ namespace Ravl2
     return std::any_cast<ToT>(x.value());
   }
 
+  //! Convert from a std::any to another using the default type converter map.
+  //! @return Fail with an optional.
+  template <typename ToT>
+  std::optional<ToT> typeConvertOpt(const std::any &from)
+  {
+    // Do we need to do anything clever?
+    if(from.type() == typeid(ToT)) {
+      return std::any_cast<ToT>(from);
+    }
+    auto x = typeConverterMap().convert(typeid(ToT), from);
+    if(!x.has_value()) {
+      return std::nullopt;
+    }
+    return std::any_cast<ToT>(x.value());
+  }
+
 }// namespace Ravl2

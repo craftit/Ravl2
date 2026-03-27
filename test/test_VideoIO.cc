@@ -14,6 +14,11 @@
 
 namespace Ravl2::Video
 {
+  [[maybe_unused]] void init()
+  {
+    initIO(); // make sure video io is linked.
+  }
+
   TEST_CASE("VideoStreamIO", "[IO]")
   {
     initIO(); // make sure video io is linked.
@@ -28,34 +33,44 @@ namespace Ravl2::Video
     CHECK(!image.empty());
   }
 
-  TEST_CASE("FfmpegMultiStreamIterator - Basic Operation", "[Video]")
+  TEST_CASE("FfmpegMultiStreamIterator_Basic", "[Video]")
   {
-    initIO(); // make sure video io is linked.
-    std::string fn = "sample-5s.mp4";
-    addResourcePath("data", RAVL_SOURCE_DIR "/data");
-    fn = Ravl2::findFileResource("data", fn, true);
+#if 0
+      addResourcePath("data", RAVL_SOURCE_DIR "/data");
+      auto fn = Ravl2::findFileResource("data", "sample-5s.mp4", true);
+#else
+      std::string fn = RAVL_SOURCE_DIR "/../data/sample-5s.mp4";
+#endif
+    {
+      std::shared_ptr<FfmpegMediaContainer> container;
+      //! Open the media container
+      {
+        auto containerResult = FfmpegMediaContainer::openFile(fn);
+        REQUIRE(containerResult.isSuccess());
+        container = std::dynamic_pointer_cast<FfmpegMediaContainer>(containerResult.value());
+        REQUIRE(container != nullptr);
+      }
+      {
+        //! Create a multi-stream iterator with default settings (all streams)
+        FfmpegMultiStreamIterator iterator(container);
 
-    //! Open the media container
-    auto containerResult = FfmpegMediaContainer::openFile(fn);
-    REQUIRE(containerResult.isSuccess());
-    auto container = std::dynamic_pointer_cast<FfmpegMediaContainer>(containerResult.value());
-    REQUIRE(container != nullptr);
+        //! Check iterator is valid
+        CHECK(!iterator.isAtEnd());
 
-    //! Create a multi-stream iterator with default settings (all streams)
-    FfmpegMultiStreamIterator iterator(container);
+        //! Get the first frame
+        auto frame = iterator.currentFrame();
+        REQUIRE(frame != nullptr);
 
-    //! Check iterator is valid
-    CHECK(!iterator.isAtEnd());
-
-    //! Get the first frame
-    auto frame = iterator.currentFrame();
-    REQUIRE(frame != nullptr);
-
-    //! Check frame has valid timestamp
-    CHECK(frame->timestamp().count() >= 0);
+        //! Check frame has valid timestamp
+        CHECK(frame->timestamp().count() >= 0);
+      }
+      REQUIRE(container != nullptr);
+      container.reset();
+    }
+    SPDLOG_INFO("Test complete");
   }
 
-  TEST_CASE("FfmpegMultiStreamIterator - Frame Presentation Order", "[Video]")
+  TEST_CASE("FfmpegMultiStreamIterator_Frame_Presentation_Order", "[Video]")
   {
     initIO();
     std::string fn = "sample-5s.mp4";
@@ -114,7 +129,7 @@ namespace Ravl2::Video
     CHECK(frameCount > 0);
   }
 
-  TEST_CASE("FfmpegMultiStreamIterator - Seeking", "[Video]")
+  TEST_CASE("FfmpegMultiStreamIterator_Seeking", "[Video]")
   {
     initIO();
     // Initialize logging to ensure debug messages are visible in debug builds
@@ -171,7 +186,7 @@ namespace Ravl2::Video
     CHECK(frame->timestamp().count() < 1000000); // Less than 1 second
   }
 
-  TEST_CASE("FfmpegMultiStreamIterator - Multiple Streams", "[Video]")
+  TEST_CASE("FfmpegMultiStreamIterator_Multiple_Streams", "[Video]")
   {
     initIO();
     std::string fn = "sample-5s.mp4";
@@ -213,7 +228,7 @@ namespace Ravl2::Video
     INFO("Saw frames from " << seenStreamIndices.size() << " different streams");
   }
 
-  TEST_CASE("FfmpegMultiStreamIterator - Successive Frame Timecodes", "[Video]")
+  TEST_CASE("FfmpegMultiStreamIterator_Successive_Frame_Timecodes", "[Video]")
   {
     initIO();
     std::string fn = "sample-5s.mp4";

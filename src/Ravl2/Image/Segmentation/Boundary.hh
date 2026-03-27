@@ -181,7 +181,8 @@ namespace Ravl2
       return {};
     }
     std::vector<CrackC> mEdges;
-    mEdges.reserve(size_t((emask.range(0).size() + emask.range(1).size()) * 2));
+    auto const reserveSize = static_cast<std::size_t>((emask.range(0).size() + emask.range(1).size()) * 3);
+    mEdges.reserve(reserveSize);
     for(Array2dSqr2IterC<DataT> it(emask); it.valid(); ++it) {
       if(it.DataBR() == inLabel) {
         // TL       TR(0)

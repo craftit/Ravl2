@@ -318,7 +318,7 @@ namespace Ravl2
 
   //! Stream output
   template <class CompT, ImageChannel... Channels>
-  inline std::ostream &operator<<(std::ostream &strm, const Pixel<CompT, Channels...> &val)
+  std::ostream &operator<<(std::ostream &strm, const Pixel<CompT, Channels...> &val)
   {
     for(std::size_t i = 0; i < sizeof...(Channels); ++i) {
       if(i != 0) {
@@ -326,9 +326,9 @@ namespace Ravl2
       }
       // If we're working with int8_t or uint8_t make sure they are treated as numeric.
       if constexpr(std::is_same_v<CompT, int8_t> || std::is_same_v<CompT, uint8_t>) {
-        strm << int(val[i]);
+        strm << static_cast<int>(val[static_cast<int>(i)]);
       } else {
-        strm << val[i];
+        strm << val[static_cast<int>(i)];
       }
     }
     return strm;
@@ -336,7 +336,7 @@ namespace Ravl2
 
   //! Stream input
   template <class CompT, ImageChannel... Channels>
-  inline std::istream &operator>>(std::istream &strm, Pixel<CompT, Channels...> &val)
+  std::istream &operator>>(std::istream &strm, Pixel<CompT, Channels...> &val)
   {
     for(std::size_t i = 0; i < sizeof...(Channels); ++i) {
       CompT tmp;
@@ -345,6 +345,16 @@ namespace Ravl2
     }
     return strm;
   }
+
+  //! Test if a pixel has a given channel
+  template<typename T, ImageChannel Channel, typename = void>
+  struct pixelHasChannel : std::false_type {};
+
+  //! Test if a pixel has a given channel
+  template<typename T, ImageChannel Channel>
+  struct pixelHasChannel<T, Channel, std::void_t<decltype(T::template hasChannel<Channel>())>>
+    : std::bool_constant<T::template hasChannel<Channel>()> {};
+
 
   //! Define some common formats to save typing
   using PixelY8 = Pixel<uint8_t, ImageChannel::Luminance>;
@@ -362,10 +372,14 @@ namespace Ravl2
   using PixelRGBA32F = Pixel<float, ImageChannel::Red, ImageChannel::Green, ImageChannel::Blue, ImageChannel::Alpha>;
   using PixelRGBA64F = Pixel<double, ImageChannel::Red, ImageChannel::Green, ImageChannel::Blue, ImageChannel::Alpha>;
   using PixelBGR8 = Pixel<uint8_t, ImageChannel::Blue, ImageChannel::Green, ImageChannel::Red>;
+  using PixelBGR32F = Pixel<float, ImageChannel::Blue, ImageChannel::Green, ImageChannel::Red>;
   using PixelBGRA8 = Pixel<uint8_t, ImageChannel::Blue, ImageChannel::Green, ImageChannel::Red, ImageChannel::Alpha>;
   using PixelYUV8 = Pixel<uint8_t, ImageChannel::Luminance, ImageChannel::ChrominanceU, ImageChannel::ChrominanceV>;
+  using PixelYUV16 = Pixel<uint16_t, ImageChannel::Luminance, ImageChannel::ChrominanceU, ImageChannel::ChrominanceV>;
   using PixelYUVA8 = Pixel<uint8_t, ImageChannel::Luminance, ImageChannel::ChrominanceU, ImageChannel::ChrominanceV, ImageChannel::Alpha>;
   using PixelYUV32F = Pixel<float, ImageChannel::Luminance, ImageChannel::ChrominanceU, ImageChannel::ChrominanceV>;
+  using PixelYUYV8 = Pixel<uint8_t, ImageChannel::Luminance, ImageChannel::ChrominanceU, ImageChannel::Luminance2, ImageChannel::ChrominanceV>;
+  using PixelUYVY8 = Pixel<uint8_t, ImageChannel::ChrominanceU, ImageChannel::Luminance, ImageChannel::ChrominanceV, ImageChannel::Luminance2>;
 
   // Let the compiler know there's instantiations of the template
   extern template class Pixel<uint8_t, ImageChannel::Red, ImageChannel::Green, ImageChannel::Blue>;
@@ -392,6 +406,7 @@ namespace Ravl2
   extern template class Array<PixelBGR8,2>;
   extern template class Array<PixelBGRA8,2>;
   extern template class Array<PixelYUV8,2>;
+  extern template class Array<PixelYUYV8,2>;
   extern template class Array<PixelYUV32F,2>;
 
 

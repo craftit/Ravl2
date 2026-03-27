@@ -65,10 +65,47 @@ namespace Ravl2
     constexpr auto UVGLookup()
     {
       std::array<int, 256 * 256> values {};
-      for(int u = 0; u < 256; u++)
-        for(int v = 0; v < 256; v++)
+      for(int u = 0; u < 256; u++) {
+        for(int v = 0; v < 256; v++) {
           values[unsigned(u + 256 * v)] = intRound(float(u - 128) * -0.3947313749117f + float(v - 128) * -0.5808092090311f);
+        }
+      }
       return values;
+    }
+
+
+    //! This is a special case as 1 pixel in the source image unpacks to 2 in the destination.
+    template<typename PixelT,typename SrcPixelT = PixelYUYV8>
+    Array<PixelT, 2> convertFromYUYV( const Array<SrcPixelT, 2> &src)
+    {
+      // Check if we can reallocate 'dest', that if it is an Array, and the size is different
+      Array<PixelT, 2> dest(Ravl2::IndexRange<2>({src.range(0),src.range(1) * 2}));
+      SPDLOG_DEBUG("Converting frame {} to {} ",src.range(),dest.range());
+      using CompT = uint8_t;
+      for(auto atRow : src.range(0)) {
+        auto destRow = dest[atRow];
+        auto srcRow = src[atRow];
+        PixelT *destPix = destRow.origin_address();
+        for(const auto &srcPix : srcRow) {
+          {
+            PixelYUV8 p1(srcPix.template get<ImageChannel::Luminance,CompT>(),
+                        srcPix.template get<ImageChannel::ChrominanceU,CompT>(),
+                        srcPix.template get<ImageChannel::ChrominanceV,CompT>()
+            );
+            assign(*destPix,p1);
+            ++destPix;
+          }
+          {
+            PixelYUV8 p2(srcPix.template get<ImageChannel::Luminance2,CompT>(),
+                        srcPix.template get<ImageChannel::ChrominanceU,CompT>(),
+                        srcPix.template get<ImageChannel::ChrominanceV,CompT>()
+            );
+            assign(*destPix,p2);
+            ++destPix;
+          }
+        }
+      }
+      return dest;
     }
 
     [[maybe_unused]] bool g_reg1 = registerConversion(convert<Array<PixelY8, 2>, Array<PixelYUV8, 2>>, 0.33f);
@@ -84,6 +121,27 @@ namespace Ravl2
     [[maybe_unused]] bool g_reg11 = registerConversion(convert<Array<PixelBGRA8, 2>, Array<PixelBGRA8, 2>>, 1.0f);
     [[maybe_unused]] bool g_reg12 = registerConversion(convert<Array<PixelZ32F, 2>, Array<PixelZ16, 2>>, 1.0f);
     [[maybe_unused]] bool g_reg13 = registerConversion(convert<Array<uint8_t, 2>, Array<PixelY8, 2>>, 0.33f);
+
+    [[maybe_unused]] bool g_reg14 = registerConversion(convert<Array<PixelRGB32F, 2>, Array<PixelRGB8, 2>>, 1.0f);
+    [[maybe_unused]] bool g_reg15 = registerConversion(convert<Array<PixelRGB8, 2>, Array<PixelRGB32F, 2>>, 0.25f);
+    [[maybe_unused]] bool g_reg16 = registerConversion(convert<Array<PixelY8, 2>, Array<PixelY32F, 2>>, 0.25f);
+    [[maybe_unused]] bool g_reg17 = registerConversion(convert<Array<PixelY32F, 2>, Array<PixelY8, 2>>, 0.25f);
+    [[maybe_unused]] bool g_reg18 = registerConversion(convert<Array<PixelY32F, 2>, Array<PixelRGB32F, 2>>, 0.33f);
+    [[maybe_unused]] bool g_reg19 = registerConversion(convert<Array<PixelRGB8, 2>, Array<PixelY8, 2>>, 1.00f);
+    [[maybe_unused]] bool g_reg20 = registerConversion(convert<Array<PixelBGR8, 2>, Array<PixelY8, 2>>, 1.00f);
+    [[maybe_unused]] bool g_reg21 = registerConversion(convertFromYUYV<PixelYUV8,PixelYUYV8>, 1.00f);
+    [[maybe_unused]] bool g_reg22 = registerConversion(convertFromYUYV<PixelRGB8,PixelYUYV8>, 0.75f);
+    [[maybe_unused]] bool g_reg23 = registerConversion(convertFromYUYV<PixelBGR8,PixelYUYV8>, 0.75f);
+    [[maybe_unused]] bool g_reg24 = registerConversion(convertFromYUYV<PixelY8,PixelYUYV8>, 0.5f);
+
+    [[maybe_unused]] bool g_reg25 = registerConversion(convertFromYUYV<PixelYUV8,PixelUYVY8>, 1.00f);
+    [[maybe_unused]] bool g_reg26 = registerConversion(convertFromYUYV<PixelRGB8,PixelUYVY8>, 0.75f);
+    [[maybe_unused]] bool g_reg27 = registerConversion(convertFromYUYV<PixelBGR8,PixelUYVY8>, 0.75f);
+    [[maybe_unused]] bool g_reg28 = registerConversion(convertFromYUYV<PixelY8,PixelUYVY8>, 0.5f);
+
+    [[maybe_unused]] bool g_reg29 = registerConversion(convert<Array<PixelI8, 2>, Array<PixelY8, 2>>, 1.0f);
+    [[maybe_unused]] bool g_reg30 = registerConversion(convert<Array<PixelY8, 2>, Array<PixelI8, 2>>, 1.0f);
+    [[maybe_unused]] bool g_reg31 = registerConversion(convert<Array<PixelYUV8, 2>, Array<PixelYUV16, 2>>, 0.5f);
 
   }// namespace
 

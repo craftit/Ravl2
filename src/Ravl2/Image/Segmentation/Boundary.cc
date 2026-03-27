@@ -229,8 +229,8 @@ namespace Ravl2
 
     ONDEBUG(SPDLOG_INFO("leavers.size()={}", leavers.size()));
 
-    // Make table of preferred paths.
-    CrackC invalid(BoundaryVertex(0, 0), CrackCodeT::CR_NODIR);
+    // Make a table of preferred paths.
+    CrackC const invalid(BoundaryVertex(0, 0), CrackCodeT::CR_NODIR);
 
     std::unordered_map<CrackC, CrackC> edges;
     edges.reserve(mEdges.size() + (mEdges.size() >> 2));

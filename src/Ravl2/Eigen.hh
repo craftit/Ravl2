@@ -16,8 +16,8 @@ namespace Ravl2
     requires (M != 1)
   [[nodiscard]] constexpr auto asArrayView(Matrix<DataT, N, M> &mat, IndexRange<2> range)
   {
-    assert(range.size(0) == size_t(mat.cols()));
-    assert(range.size(1) == size_t(mat.rows()));
+    assert(range.size(0) == static_cast<size_t>(mat.cols()));
+    assert(range.size(1) == static_cast<size_t>(mat.rows()));
     std::array<int, 2> strides = { int(mat.rows()), 1};
     return ArrayView<DataT, 2>(mat.data() + ArrayView<DataT, 2>::compute_origin_offset(range,strides), range, strides);
   }
@@ -28,8 +28,8 @@ namespace Ravl2
     requires (M != 1)
   [[nodiscard]] constexpr auto asArrayView(Matrix<DataT, N, M> &mat)
   {
-    std::array<int, 2> strides = { int(mat.rows()), 1};
-    return ArrayView<DataT, 2>(mat.data(), IndexRange<2>({size_t(mat.cols()), size_t(mat.rows())}), strides);
+    std::array<int, 2> strides = { static_cast<int>(mat.rows()), 1};
+    return ArrayView<DataT, 2>(mat.data(), IndexRange<2>({static_cast<size_t>(mat.cols()), static_cast<size_t>(mat.rows())}), strides);
   }
 
   //! Create a view of a matrix as a Ravl array.
@@ -48,7 +48,7 @@ namespace Ravl2
   {
     assert(range.size(0) == size_t(mat.cols()));
     assert(range.size(1) == size_t(mat.rows()));
-    std::array<int, 2> strides = { int(mat.rows()), 1};
+    std::array<int, 2> strides = { static_cast<int>(mat.rows()), 1};
     return ArrayView<const DataT, 2>(&mat.data() + ArrayView<DataT, 2>::compute_origin_offset(range,strides), range, strides);
   }
 
@@ -58,8 +58,8 @@ namespace Ravl2
     requires (M != 1)
   [[nodiscard]] constexpr auto asArrayView(const Matrix<DataT, N, M> &mat)
   {
-    IndexRange<2> range({size_t(mat.cols()), size_t(mat.rows())});
-    std::array<int, 2> strides = { int(mat.rows()), 1};
+    IndexRange<2> range({static_cast<size_t>(mat.cols()), static_cast<size_t>(mat.rows())});
+    std::array<int, 2> strides = { static_cast<int>(mat.rows()), 1};
     return ArrayView<const DataT, 2>(mat.data() + ArrayView<DataT, 2>::compute_origin_offset(range,strides), range, strides);
   }
 

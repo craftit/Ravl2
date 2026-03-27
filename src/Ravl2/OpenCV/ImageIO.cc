@@ -13,6 +13,7 @@
 #include "Ravl2/IO/InputStreamContainer.hh"
 #include "Ravl2/IO/Save.hh"
 #include "Ravl2/Pixel/Pixel.hh"
+#include "Ravl2/Pixel/PixelPlane.hh"
 #include "Ravl2/Pixel/Colour.hh"
 #include "Ravl2/OpenCV/Display.hh"
 
@@ -49,6 +50,7 @@ namespace Ravl2
     }
 
     //! Loading images.
+    //! Given a probe 'ctx' load the image in the format with the lowest conversion loss.
 
     template <typename ViaPixelT, unsigned N = 2>
     std::optional<ConversionChain> conversionPlan(const ProbeInputContext &ctx)
@@ -80,13 +82,13 @@ namespace Ravl2
     [[maybe_unused]] bool g_regFmt = inputFormatMap().add(std::make_shared<InputFormatCall>("OpenCV", "png,jpg,jpeg,bmp,tiff", "file", -1, [](const ProbeInputContext &ctx) -> std::optional<StreamInputPlan> {
       //! If we are looking for a cv::Mat, we can just read the file directly.
       if(ctx.m_targetType == typeid(cv::Mat)) {
-        auto strm = std::make_shared<StreamInputCall<cv::Mat>>([filename = ctx.m_filename](std::streampos &pos) -> std::optional<cv::Mat> {
+        auto strm = std::make_shared<StreamInputCall<cv::Mat>>([filename = ctx.mFilename](std::streampos &pos) -> std::optional<cv::Mat> {
           if(pos != 0)
             return std::nullopt;
           return cv::imread(filename, cv::IMREAD_UNCHANGED);
         });
-        if(ctx.m_verbose) {
-          SPDLOG_INFO("Plan made for opened OpenCV image file: {}", ctx.m_filename);
+        if(ctx.mVerbose) {
+          SPDLOG_INFO("Plan made for opened OpenCV image file: {}", ctx.mFilename);
         }
         return StreamInputPlan {strm, {}, 1.0f};
       }
@@ -94,23 +96,29 @@ namespace Ravl2
       // Ideally this would be delt with in the type converter, but opencv gives
       // us no information about the colour space of the image.
       int readMode = cv::IMREAD_UNCHANGED;
-      if(ctx.m_targetType == typeid(Array<uint8_t, 2>) ) {
+      if(ctx.m_targetType == typeid(Array<uint8_t, 2>) || ctx.m_targetType == typeid(Array<PixelY8, 2>)) {
         readMode = cv::IMREAD_GRAYSCALE;
-      } else if(ctx.m_targetType == typeid(Array<uint16_t, 2>) || ctx.m_targetType == typeid(Array<int16_t, 2>) || ctx.m_targetType == typeid(Array<PixelZ16, 2>)
+      } else if(ctx.m_targetType == typeid(Array<uint16_t, 2>)
+        || ctx.m_targetType == typeid(Array<int16_t, 2>)
+        || ctx.m_targetType == typeid(Array<PixelZ16, 2>)
+        || ctx.m_targetType == typeid(Array<PixelY16, 2>)
          || ctx.m_targetType == typeid(Array<int8_t, 2>)
          || ctx.m_targetType == typeid(Array<int32_t, 2>)
          || ctx.m_targetType == typeid(Array<float, 2>) || ctx.m_targetType == typeid(Array<double, 2>)) {
         readMode = cv::IMREAD_GRAYSCALE + cv::IMREAD_ANYDEPTH;
       } else if(ctx.m_targetType == typeid(Array<PixelBGR8, 2>) || ctx.m_targetType == typeid(Array<PixelRGB8, 2>)
-                || ctx.m_targetType == typeid(Array<PixelRGBA8, 2>) || ctx.m_targetType == typeid(Array<PixelBGRA8, 2>)) {
+                || ctx.m_targetType == typeid(Array<PixelRGBA8, 2>) || ctx.m_targetType == typeid(Array<PixelBGRA8, 2>)
+                || ctx.m_targetType == typeid(RGBPlanarImage<float>) || ctx.m_targetType == typeid(RGBAPlanarImage<float>)
+                || ctx.m_targetType == typeid(RGBPlanarImage<uint8_t>) || ctx.m_targetType == typeid(RGBPlanarImage<uint16_t>)
+                ) {
         readMode = cv::IMREAD_COLOR;
       }
 
       // The best we can do is loaded it directly and look for a conversion.
-      cv::Mat img = cv::imread(ctx.m_filename, readMode);
+      cv::Mat img = cv::imread(ctx.mFilename, readMode);
       if(img.empty()) {
-        if(ctx.m_verbose) {
-          SPDLOG_INFO("Failed to load image: {}", ctx.m_filename);
+        if(ctx.mVerbose) {
+          SPDLOG_INFO("Failed to load image: {}", ctx.mFilename);
         }
         return std::nullopt;
       }
@@ -119,8 +127,8 @@ namespace Ravl2
       int baseType = CV_MAT_TYPE(img.type());
 
 
-      if(ctx.m_verbose) {
-        SPDLOG_INFO("Got opencv image type: {} for {} ", cvMatType2str(img.type()), ctx.m_filename);
+      if(ctx.mVerbose) {
+        SPDLOG_INFO("Got opencv image type: {} for {} ", cvMatType2str(img.type()), ctx.mFilename);
       }
 
       switch(img.type()) {
@@ -218,9 +226,6 @@ namespace Ravl2
         case CV_64FC1: {
           thePlan = conversionPlan<double>(ctx);
         } break;
-        case CV_8UC3: {
-          thePlan = conversionPlan<PixelBGR8>(ctx);
-        } break;
         default: break;
       }
 
@@ -252,9 +257,9 @@ namespace Ravl2
     //! Load a video file
     [[maybe_unused]] bool g_regFmt2 = inputFormatMap().add(std::make_shared<InputFormatCall>("OpenCV", "avi,mp4,mov", "file", -1, [](const ProbeInputContext &ctx) -> std::optional<StreamInputPlan> {
       cv::VideoCapture videoCapture;
-      if(!videoCapture.open(ctx.m_filename)) {
-        if(ctx.m_verbose) {
-          SPDLOG_INFO("Failed to open video stream '{}'", ctx.m_filename);
+      if(!videoCapture.open(ctx.mFilename)) {
+        if(ctx.mVerbose) {
+          SPDLOG_INFO("Failed to open video stream '{}'", ctx.mFilename);
         }
         return std::nullopt;
       }
@@ -265,11 +270,15 @@ namespace Ravl2
     [[maybe_unused]] bool g_regFmt3 = inputFormatMap().add(std::make_shared<InputFormatCall>("OpenCV", "", "camera", -1, [](const ProbeInputContext &ctx) -> std::optional<StreamInputPlan> {
       cv::VideoCapture videoCapture;
       // Convert the filename to an integer.
-      int cameraId = std::stoi(ctx.m_filename);
-      if(!videoCapture.open(cameraId)) {
-        if(ctx.m_verbose) {
-          SPDLOG_INFO("Failed to open video stream '{}'", ctx.m_filename);
+      try {
+        int cameraId = std::stoi(ctx.mFilename);
+        if(!videoCapture.open(cameraId)) {
+          if(ctx.mVerbose) {
+            SPDLOG_INFO("Failed to open video stream '{}'", ctx.mFilename);
+          }
+          return std::nullopt;
         }
+      } catch(std::exception& e) {
         return std::nullopt;
       }
       return makeVideoCapturePlan(videoCapture, ctx);
@@ -286,6 +295,7 @@ namespace Ravl2
     [[maybe_unused]] bool g_reg5 = registerConversion([](Array<float, 2> img) -> cv::Mat { return toCvMat(img); }, 0.95f);
     [[maybe_unused]] bool g_reg6 = registerConversion([](Array<double, 2> img) -> cv::Mat { return toCvMat(img); }, 0.95f);
     [[maybe_unused]] bool g_reg7 = registerConversion([](Array<PixelBGR8, 2> img) -> cv::Mat { return toCvMat(img); }, 0.95f);
+    //[[maybe_unused]] bool g_reg8 = registerConversion([](Array<PixelBGR32F, 2> img) -> cv::Mat { return toCvMat(img); }, 0.95f);
 
   }// namespace
 }// namespace Ravl2

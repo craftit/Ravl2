@@ -16,6 +16,8 @@ if(PROJECT_IS_TOP_LEVEL OR TEST_INSTALLED_VERSION)
 endif()
 
 # ---- Dependencies ----
+# The following prevents the tests from being deleted if test discovery fails
+#set(CMAKE_CATCH_DISCOVER_TESTS_DISCOVERY_MODE PRE_TEST)
 
 find_package(Catch2 3 REQUIRED)
 
@@ -70,6 +72,7 @@ add_executable(tests
         test_eigen.cc
         test_planes.cc
         test_pixelplane.cc
+        test_PlanarImage.cc
         test_spatialhash.cc
         test_BayesianOptimise.cc
         test_RandomSearchOptimise.cc
@@ -77,8 +80,15 @@ add_executable(tests
         test_MemoryMediaContainer.cc
         test_VideoFrame.cc
         test_VideoIO.cc
+        test_imageio_jpeg.cc
+        test_imageio_jpeg_save.cc
+        test_imageio_jpeg_planar.cc
+        test_imageio_png.cc
         test_types_duration.cc
         test_types.cc
+        Display_Normalization_tests.cc
+        Display_3D_E2E_tests.cc
+        test_gps.cc
 )
 target_compile_definitions(tests PRIVATE -DRAVL_SOURCE_DIR="${PROJECT_SOURCE_DIR}")
 target_link_libraries(
@@ -92,10 +102,12 @@ target_link_libraries(
           ravl2::Ravl2ImageSegmentation
           ravl2::Ravl2x3D
           ravl2::Ravl2OpenCV
+          ravl2::Ravl2ImageIO
           ravl2::Ravl2Video
           ravl2::Ravl2Optimise
           Catch2::Catch2WithMain
-          Eigen3::Eigen)
+          Eigen3::Eigen
+          ravl2::Ravl2Display)
 
 if(WIN32 AND BUILD_SHARED_LIBS)
   add_custom_command(

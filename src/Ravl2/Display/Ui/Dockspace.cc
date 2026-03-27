@@ -1,0 +1,19 @@
+#include "Ravl2/Display/Ui/Dockspace.hh"
+
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wold-style-cast"
+#if defined(__clang__)
+#pragma GCC diagnostic ignored "-Wgnu-zero-variadic-macro-arguments"
+#endif
+#include <imgui.h>
+#pragma GCC diagnostic pop
+
+namespace Ravl2::DebugDisplay::Ui
+{
+
+  void buildDockspace()
+  {
+    ImGui::DockSpaceOverViewport(0, ImGui::GetMainViewport());
+  }
+
+}// namespace Ravl2::DebugDisplay::Ui

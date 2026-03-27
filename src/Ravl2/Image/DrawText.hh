@@ -60,7 +60,7 @@ namespace Ravl2
                       const std::string &text)
   {
     RavlAssert(font.IsValid());
-    DrawText(font, value, centre - font.Center(text), text, image);
+    DrawText(image, font, value, centre - font.Center(text), text );
   }
 
   //! Draw text on image.
@@ -76,7 +76,7 @@ namespace Ravl2
                 const Index<2> &offset,
                 const std::string &text)
   {
-    DrawText(DefaultFont(), value, offset, text, image);
+    DrawText(image, DefaultFont(), value, offset, text);
   }
 
   //! Draw text on image, centred.

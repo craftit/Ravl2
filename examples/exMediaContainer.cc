@@ -10,17 +10,20 @@
 #include "Ravl2/IO/OutputSequence.hh"
 #include "Ravl2/IO/InputSequence.hh"
 #include "Ravl2/Resource.hh"
-#include "Ravl2/Video/VideoFrame.hh"
 #include "Ravl2/Video/StreamIterator.hh"
-#include "Ravl2/OpenCV/ImageIO.hh"
-#include "Ravl2/OpenCV/Display.hh"
+#include "Ravl2/Pixel/PixelPlane.hh"
+#include "Ravl2/Display/DebugDisplay.hh"
+#include "Ravl2/ImageIO/ImageIOInit.hh"
 #include "Ravl2/Pixel/Colour.hh"
+#include "Ravl2/EntryPnt.hh"
 
 
 // A simple example program that reads an MP4 file and prints information about its streams
-int main(int argc, char *argv[])
+int RAVL2_MAIN(int argc, char *argv[])
 {
-  Ravl2::initOpenCVImageIO();
+  using namespace std::chrono_literals;
+  Ravl2::initImageIO();
+  Ravl2::DebugDisplay::initDisplay();
   Ravl2::initColourConversion();
   Ravl2::initPlaneConversion();
   Ravl2::addResourcePath("data", RAVL_SOURCE_DIR "/data");
@@ -45,6 +48,7 @@ int main(int argc, char *argv[])
   CLI11_PARSE(app, argc, argv);
 
   if (show_version) {
+    fmt::print("{}\n", Ravl2::cmake::project_version);
     fmt::print("{}\n", Ravl2::cmake::project_version);
     return EXIT_SUCCESS;
   }
@@ -186,7 +190,7 @@ int main(int argc, char *argv[])
       return EXIT_FAILURE;
     }
     using ImageT = Ravl2::Array<PixelT,2>;
-    Ravl2::Video::VideoStreamIterator<ImageT> iterator(iterResult.value());
+    Ravl2::Video::TypedStreamIterator<ImageT> iterator(iterResult.value());
 
     // Set up an output stream if needed
     Ravl2::StreamOutputProxy<Ravl2::Array<PixelT,2>> outputStream;
@@ -209,7 +213,7 @@ int main(int argc, char *argv[])
       auto startTime = std::chrono::steady_clock::now();
 
       // Get the next frame
-      auto frameResult = iterator.videoFrame();
+      auto frameResult = iterator.data();
 
       if (outputStream.valid()) {
         fmt::print("Writing frame {} to output stream\n", frameCount);
@@ -256,6 +260,7 @@ int main(int argc, char *argv[])
     fmt::print("\nMedia container closed.\n");
   }
 
+  std::this_thread::sleep_for(10s);
 
   return EXIT_SUCCESS;
 }

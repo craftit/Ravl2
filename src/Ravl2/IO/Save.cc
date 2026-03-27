@@ -33,6 +33,9 @@ namespace Ravl2
       protocol = url.substr(0, protocolEnd);
       rawFilename = url.substr(protocolEnd + 3);
 
+#if 0
+      // Handle display protocol defaul ting.
+      // We use our own by default now.
 #if defined(__unix__)
       if(protocol == "display") {
         protocol = "dlib";
@@ -41,6 +44,7 @@ namespace Ravl2
       if(protocol == "display") {
         protocol = "opencv";
       }
+#endif
 #endif
 
 

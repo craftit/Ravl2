@@ -1,8 +1,10 @@
 //
 // Created by charles on 25/08/24.
 //
+#pragma once
 
 #include "Ravl2/IO/Save.hh"
+#include "Ravl2/Types.hh"
 
 namespace Ravl2
 {
@@ -147,7 +149,7 @@ namespace Ravl2
   {
     auto outStreamPlan = openOutput(url, typeid(ObjectT), formatHint);
     if(!outStreamPlan.has_value()) {
-      SPDLOG_ERROR("Failed to open output stream for '{}'", url);
+      SPDLOG_ERROR("Failed to open output stream for '{}' for object of type {} ", url,Ravl2::typeName(typeid(ObjectT)));
       return {};
     }
     if(outStreamPlan.value().mConversion) {

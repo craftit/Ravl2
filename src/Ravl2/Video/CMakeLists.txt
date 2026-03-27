@@ -13,6 +13,7 @@ if(WITH_FFMPEG)
             libavutil
             libswscale
             libswresample
+            libavdevice
         )
     endif()
 
@@ -30,9 +31,7 @@ endif()
 set(VIDEO_SOURCES
     VideoTypes.cc VideoTypes.hh
     Frame.cc Frame.hh
-    VideoFrame.cc VideoFrame.hh
     AudioChunk.cc AudioChunk.hh
-    MetaDataFrame.cc MetaDataFrame.hh
     MediaContainer.cc MediaContainer.hh
     MemoryMediaContainer.cc MemoryMediaContainer.hh
     StreamIterator.cc StreamIterator.hh
@@ -68,6 +67,13 @@ target_link_libraries(Ravl2Video
         RAVL2_options
         RAVL2_warnings
 )
+
+# Optional GoPro GPMF support
+if(WITH_GPMF AND HAVE_GPMF)
+    target_link_libraries(Ravl2Video PRIVATE ravl2::Ravl2GoPro)
+    target_compile_definitions(Ravl2Video PRIVATE WITH_GPMF=1)
+    message(STATUS "Ravl2Video: linking with GoPro GPMF support")
+endif()
 
 # Add FFmpeg libraries if available
 if(WITH_FFMPEG)
