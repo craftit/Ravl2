@@ -104,14 +104,26 @@ namespace Ravl2
   }
 
   //! @brief Convert degrees to radians
+  //! @note Only accepts floating-point types. Use 180.0f not 180 to avoid
+  //! silent truncation to zero with integer arguments.
   template <typename RealT>
+  requires std::floating_point<RealT>
   constexpr RealT deg2rad(RealT x)
   {
     return x * static_cast<RealT>(std::numbers::pi / 180.0);
   }
 
+  template <typename IntT>
+  requires std::is_integral_v<IntT>
+  [[nodiscard]] double deg2rad(IntT x)
+  {
+    return static_cast<double>(x) * M_PI / 180.0;
+  }
+
   //! @brief Convert radians to degrees
+  //! @note Only accepts floating-point types.
   template <typename RealT>
+  requires std::floating_point<RealT>
   constexpr RealT rad2deg(RealT x)
   {
     return x * static_cast<RealT>(180.0 / std::numbers::pi);
