@@ -178,7 +178,7 @@ namespace Ravl2
       if constexpr(CoordSys == CameraCoordinateSystemT::OpenCV || CoordSys == CameraCoordinateSystemT::Native) {
         Eigen::Matrix<RealT, 3, 3> const mOpenCVRot {{0, 1, 0},{ 1, 0, 0}, {0, 0, 1}} ;
         auto rot = mOpenCVRot * R;
-        return PinholeCamera0(cy, cx, fy, fx, rot, t, frame);
+        return PinholeCamera0(cy, cx, fy, fx, rot, t, frame, true);
       } else {
         static_assert(false, "Unsupported coordinate system");
       }
@@ -299,6 +299,29 @@ namespace Ravl2
     {
       return m_t;
     };
+
+    //! Pure extrinsic rotation (world → camera) without coordinate-convention swap.
+    //! Use this instead of R() when you need the actual camera orientation,
+    //! e.g. for OpenCV's solvePnP extrinsic handling.
+    [[nodiscard]] Matrix<RealT, 3, 3> extrinsicRotation() const
+    {
+      if(m_hasCoordSwap) {
+        // m_R = S * R_extrinsic, so R_extrinsic = S * m_R (S is its own inverse)
+        Eigen::Matrix<RealT, 3, 3> const S {{0, 1, 0}, {1, 0, 0}, {0, 0, 1}};
+        return Matrix<RealT, 3, 3>(S * m_R);
+      }
+      return m_R;
+    }
+
+    //! Pure extrinsic translation (world → camera) without coordinate-convention swap.
+    [[nodiscard]] Vector<RealT, 3> extrinsicTranslation() const
+    {
+      if(m_hasCoordSwap) {
+        Eigen::Matrix<RealT, 3, 3> const S {{0, 1, 0}, {1, 0, 0}, {0, 0, 1}};
+        return Vector<RealT, 3>(S * m_t);
+      }
+      return m_t;
+    }
 
     //! Image frame for the camera
     [[nodiscard]] const IndexRange<2> &range() const
@@ -500,7 +523,6 @@ namespace Ravl2
     template <class Archive>
     constexpr void serialize(Archive &archive, std::uint32_t const version)
     {
-      (void) version;
       archive(cereal::make_nvp("cx", m_cx));
       archive(cereal::make_nvp("cy", m_cy));
       archive(cereal::make_nvp("fx", m_fx));
@@ -509,6 +531,9 @@ namespace Ravl2
       archive(cereal::make_nvp("t", m_t));
       archive(cereal::make_nvp("frame", m_frame));
       archive(cereal::make_nvp("nearPlane", mNearPlane));
+      if(version >= 1) {
+        archive(cereal::make_nvp("hasCoordSwap", m_hasCoordSwap));
+      }
     }
 
     //! Access the camera frame
@@ -523,6 +548,17 @@ namespace Ravl2
       return mNearPlane;
     }
 
+  private:
+    //! Internal constructor with explicit coordinate-swap flag.
+    PinholeCamera0(const RealT &cx, const RealT &cy,
+                   const RealT &fx, const RealT &fy,
+                   const Matrix<RealT, 3, 3> &R,
+                   const Vector<RealT, 3> &t,
+                   const IndexRange<2> &frame,
+                   bool hasCoordSwap)
+        : m_cx(cx), m_cy(cy), m_fx(fx), m_fy(fy), m_R(R), m_t(t), m_frame(frame), m_hasCoordSwap(hasCoordSwap)
+    {}
+
   protected:
     RealT m_cx = 0;
     RealT m_cy = 0;
@@ -532,6 +568,7 @@ namespace Ravl2
     Vector<RealT, 3> m_t = Vector<RealT,3>::Zero();
     IndexRange<2> m_frame;
     RealT mNearPlane = 1e-2f;
+    bool m_hasCoordSwap = false;  //!< True when m_R includes the (row,col)↔(x,y) swap from fromParameters().
   };
 
   //! Unproject a 2D image point to a 3D point in space
@@ -599,6 +636,8 @@ namespace Ravl2
   extern template class PinholeCameraImpl<PinholeCamera0<float>>;
 
 };// namespace Ravl2
+
+CEREAL_CLASS_VERSION(Ravl2::PinholeCamera0<float>, 1);
 
 
 template <typename RealT>
