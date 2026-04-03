@@ -149,16 +149,20 @@ namespace Ravl2
     Mirror//!< Mirror the point in the source image (experimental)
   };
 
-  //! @brief Warp an image using a point transform
-  //! This class is used to warp an image using a point-to-point mapping.
+  //! @brief Warp an image using a point transform.
+  //! Iterates over every pixel in @p target. For each target pixel position p,
+  //! computes source_p = transform(p), samples @p source at source_p, and writes
+  //! the result to target[p]. The transform maps **target → source** coordinates.
+  //!
   //! This function assumes the transform is projective, so straight lines
-  //! are preserved to avoid pixel by pixel checks.
-  //! @param target The target image to warp to iterate over on a grid.
-  //! @param source The source image to warp points from
-  //! @param transform The point-to-point mapping to use
-  //! @param operation The operation to use to combine the pixels
-  //! @param sampler The method to use to sample the source image given a point
-  //! @return True all of the target image was filled, false otherwise
+  //! are preserved to avoid pixel-by-pixel bounds checks.
+  //! @param target The output image to fill (iterated on a grid).
+  //! @param source The input image to sample from.
+  //! @param transform Maps target pixel coordinates to source pixel coordinates.
+  //! @param fillValue Value to use for out-of-bounds source pixels (WarpWrapMode::Fill).
+  //! @param operation The operation to apply (default: assign source pixel to target).
+  //! @param sampler Interpolation method for sub-pixel source positions (default: bilinear).
+  //! @return True if all target pixels were filled from within the source bounds.
   template <
     WarpWrapMode wrapMode = WarpWrapMode::Fill,
     typename CoordTypeT = float,

@@ -83,7 +83,7 @@ namespace Ravl2
       return mSR * pnt + mT;
     }
 
-    //! Compose this transform with 'In'
+    //! Compose this transform with 'in': result(x) = this(in(x)).
     [[nodiscard]] inline constexpr auto operator()(const Affine &in) const
     {
       return Affine(mSR * in.SRMatrix(), mSR * in.translation() + mT);
@@ -155,10 +155,11 @@ namespace Ravl2
     return ret;
   }
 
+  //! @brief Compose two affine transforms: (lhs * rhs)(x) = lhs(rhs(x)).
+  //! Apply rhs first, then lhs. This is standard mathematical function composition.
   template <typename DataT, unsigned N>
   constexpr Affine<DataT, N> operator*(const Affine<DataT, N> &lhs, const Affine<DataT, N> &rhs)
   {
-    //return Affine(mSR * lhs.SRMatrix(), mSR * lhs.Translation() + mT);
     return lhs(rhs);
   }
 
@@ -196,14 +197,14 @@ namespace Ravl2
     return Affine<DataT, N>(Eigen::DiagonalWrapper(st.scaleVector()), st.translation());
   }
 
-  //! @brief Compose transforms
+  //! @brief Compose transforms: (lhs * rhs)(x) = lhs(rhs(x)).
   template <typename DataT, unsigned N>
   Affine<DataT, N> operator*(const Affine<DataT, N> &lhs, const ScaleTranslate<DataT, N> &rhs)
   {
     return lhs(toAffine(rhs));
   }
 
-  //! @brief Compose transforms
+  //! @brief Compose transforms: (lhs * rhs)(x) = lhs(rhs(x)).
   template <typename DataT, unsigned N>
   Affine<DataT, N> operator*(const ScaleTranslate<DataT, N> &lhs, const Affine<DataT, N> &rhs)
   {

@@ -30,15 +30,15 @@ namespace Ravl2
           mImage(img)
     {}
 
-    //! Access the scale and translation of the image.
-    //! @return Transform to map a point from the original image to the level image.
+    //! Transform mapping original (full-resolution) image coords → this pyramid level's coords.
+    //! E.g. for a 2× downsampled level, this approximately halves the coordinates.
     [[nodiscard]] const auto &transformTo() const
     {
       return mTransformTo;
     }
 
-    //! Access the scale and translation of the image.
-    //! @return Transform to map a point from the level image to the original image.
+    //! Transform mapping this pyramid level's coords → original (full-resolution) image coords.
+    //! Inverse of transformTo(). E.g. for a 2× downsampled level, this approximately doubles the coordinates.
     [[nodiscard]] const auto &transformFrom() const
     {
       return mTransformFrom;
