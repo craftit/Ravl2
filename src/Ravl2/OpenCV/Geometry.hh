@@ -107,6 +107,7 @@ namespace Ravl2
   }
 
   //! Convert dynamic cv::Mat to Ravl2 fixed-size Matrix. Throws if dimensions don't match.
+  //! Handles type conversion automatically — e.g. a CV_64F mat can be read into a float Matrix.
   template <typename RealT, IndexSizeT N, IndexSizeT M>
   Matrix<RealT, N, M> toMatrix(const cv::Mat &mat)
   {
@@ -116,9 +117,21 @@ namespace Ravl2
     if(mat.rows != rows || mat.cols != cols) {
       throw std::runtime_error("toMatrix: cv::Mat has wrong size");
     }
-    for(int i = 0; i < rows; ++i) {
-      for(int j = 0; j < cols; ++j) {
-        result(i, j) = mat.at<RealT>(i, j);
+    // Convert to the requested type if the cv::Mat has a different element type.
+    // Without this, mat.at<float>() on a CV_64F mat reads garbage.
+    if(mat.type() == cv::DataType<RealT>::type) {
+      for(int i = 0; i < rows; ++i) {
+        for(int j = 0; j < cols; ++j) {
+          result(i, j) = mat.at<RealT>(i, j);
+        }
+      }
+    } else {
+      cv::Mat converted;
+      mat.convertTo(converted, cv::DataType<RealT>::type);
+      for(int i = 0; i < rows; ++i) {
+        for(int j = 0; j < cols; ++j) {
+          result(i, j) = converted.at<RealT>(i, j);
+        }
       }
     }
     return result;
@@ -215,8 +228,11 @@ namespace Ravl2
   //! by composing with the inverse of the camera extrinsic (world-to-camera) transform.
   //! @param rvec Rodrigues rotation vector from solvePnP
   //! @param tvec Translation vector from solvePnP
-  //! @param cameraR Camera extrinsic rotation matrix (world → camera)
-  //! @param cameraT Camera extrinsic translation (world → camera, in camera coords)
+  //! @param cameraR **Pure** extrinsic rotation matrix (world → camera), without any
+  //!   coordinate-convention swap. **Do NOT pass PinholeCamera0::R() directly** — that
+  //!   includes the (row,col)↔(x,y) swap from fromParameters(). To recover the pure
+  //!   extrinsic, use `S * camera.R()` where S = [[0,1,0],[1,0,0],[0,0,1]].
+  //! @param cameraT Extrinsic translation (world → camera, in camera coords)
   //! @return Isometry3 taking points from object frame to world frame
   template <typename RealT>
   Isometry3<RealT> isometryFromPnP(const cv::Mat &rvec,
@@ -233,6 +249,7 @@ namespace Ravl2
     assert(rvec.type() == CV_64F && "isometryFromPnP expects double rvec (as produced by cv::solvePnP)");
 
     // solvePnP gives object-to-camera transform: p_cam = R_pnp * p_obj + t_pnp
+    // Rodrigues/solvePnP output is CV_64F; toMatrix handles the type conversion.
     Matrix<RealT, 3, 3> objToCamR = toMatrix<RealT, 3, 3>(rotMat);
     Vector<RealT, 3> objToCamT;
     for(int i = 0; i < 3; i++) {
@@ -247,7 +264,11 @@ namespace Ravl2
     Matrix<RealT, 3, 3> finalR = camRinv * objToCamR;
     Vector<RealT, 3> finalT = camRinv * (objToCamT - cameraT);
 
-    return Isometry3<RealT>(Quaternion<RealT>::fromMatrix(finalR), finalT);
+    // Normalise: the composed rotation matrix may not be perfectly orthogonal,
+    // so fromMatrix() can return a slightly non-unit quaternion.
+    auto q = Quaternion<RealT>::fromMatrix(finalR);
+    q.normalise();
+    return Isometry3<RealT>(q, finalT);
   }
 
   // Provide some common instantiations

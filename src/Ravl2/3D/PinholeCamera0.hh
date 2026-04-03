@@ -49,6 +49,24 @@ namespace Ravl2
   //!  Projects 2D image points z from 3D points x according to:<br>
   //!    z[0] = cx + fx*( (R*x + t)[0] / (R*x + t)[2] )<br>
   //!    z[1] = cy + fy*( (R*x + t)[1] / (R*x + t)[2] )<br>
+  //!
+  //! @section internal_coords Internal storage vs external conventions
+  //!
+  //! **Warning:** The stored m_R, m_t, m_fx, m_fy, m_cx, m_cy are in the
+  //! **internal (Native)** coordinate system. When a camera is constructed via
+  //! fromParameters<Native>() or fromParameters<OpenCV>(), a coordinate-swap
+  //! matrix `S = [[0,1,0],[1,0,0],[0,0,1]]` is composed into m_R, and
+  //! fx↔fy / cx↔cy are swapped so that the projection formula above works
+  //! directly in (row, col) order.
+  //!
+  //! This means **R() is NOT the pure world-to-camera extrinsic rotation**.
+  //! It is `S * R_extrinsic`. If you need the pure extrinsic (e.g. for
+  //! OpenCV's solvePnP), recover it as `R_extrinsic = S * R()` (since S
+  //! is its own inverse). Similarly for t().
+  //!
+  //! intrinsicMatrix<OpenCV>() undoes the internal swap, returning a standard
+  //! OpenCV-convention K matrix that pairs correctly with image points
+  //! converted via toCvImagePoint().
 
   template <typename RealT>
   class PinholeCamera0
@@ -134,7 +152,16 @@ namespace Ravl2
   protected:
   public:
 
-    //! Construct from another coordinate system
+    //! Construct from external-convention parameters.
+    //! @param cx, cy  Principal point in the input coordinate system
+    //! @param fx, fy  Focal lengths in the input coordinate system
+    //! @param R  Extrinsic rotation (world → camera) in the input coordinate system
+    //! @param t  Extrinsic translation (world → camera) in the input coordinate system
+    //! @param frame  Image frame
+    //!
+    //! For Native and OpenCV coordinate systems, the stored m_R will be
+    //! `S * R` (where S is the row/col swap matrix) and fx↔fy, cx↔cy are swapped.
+    //! This means R() will NOT return the R passed here. See class-level docs.
     template <CameraCoordinateSystemT CoordSys>
     static PinholeCamera0 fromParameters(RealT cx, RealT cy,
                                          RealT fx, RealT fy,
@@ -245,25 +272,29 @@ namespace Ravl2
       return m_fy;
     };
 
-    //! rotation world -> camera
+    //! Internal rotation matrix used in the projection formula.
+    //! **Note:** This is S * R_extrinsic where S is the (row,col)↔(x,y) swap.
+    //! See class-level documentation for details.
     [[nodiscard]] Matrix<RealT, 3, 3> &R()
     {
       return m_R;
     };
 
-    //! rotation world -> camera
+    //! Internal rotation matrix used in the projection formula.
+    //! **Note:** This is S * R_extrinsic where S is the (row,col)↔(x,y) swap.
+    //! See class-level documentation for details.
     [[nodiscard]] const Matrix<RealT, 3, 3> &R() const
     {
       return m_R;
     };
 
-    //! translation world -> camera (in camera co-ordinates)
+    //! Internal translation vector used in the projection formula (in internal coords).
     [[nodiscard]] Vector<RealT, 3> &t()
     {
       return m_t;
     };
 
-    //! translation world -> camera (in camera co-ordinates)
+    //! Internal translation vector used in the projection formula (in internal coords).
     [[nodiscard]] const Vector<RealT, 3> &t() const
     {
       return m_t;
