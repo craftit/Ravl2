@@ -2,8 +2,7 @@
 include(GenerateExportHeader)
 include(ExternalProject)
 
-find_package(PkgConfig REQUIRED)
-pkg_check_modules(GLFW REQUIRED glfw3)
+find_package(glfw3 CONFIG REQUIRED)
 find_package(OpenGL REQUIRED)
 find_package(GLUT REQUIRED)
 find_package(glm CONFIG REQUIRED)
@@ -36,13 +35,12 @@ add_library (Ravl2OpenGL
 add_library(ravl2::Ravl2OpenGL ALIAS Ravl2OpenGL)
 
 target_link_libraries(Ravl2OpenGL PRIVATE RAVL2_options RAVL2_warnings)
-target_link_libraries(Ravl2OpenGL PUBLIC Ravl2x3D OpenGL::GLU OpenGL::GL GLUT::GLUT ${OPENGL_LIBRARIES} ${GLUT_LIBRARIES} ${GLU_LIBRARIES} ${GLFW_LIBRARIES} glm::glm)
+target_link_libraries(Ravl2OpenGL PUBLIC Ravl2x3D OpenGL::GLU OpenGL::GL GLUT::GLUT ${OPENGL_LIBRARIES} ${GLUT_LIBRARIES} ${GLU_LIBRARIES} glfw glm::glm)
 
 target_include_directories(Ravl2OpenGL ${WARNING_GUARD} PUBLIC
         $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src>
         $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/include>
         ${OpenCV_INCLUDE_DIRS}
-        ${GLFW_INCLUDE_DIRS}
         ${OPENGL_INCLUDE_DIRS}
         ${GLUT_INCLUDE_DIRS}
         ${GLU_INCLUDE_DIRS}

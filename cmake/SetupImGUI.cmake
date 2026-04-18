@@ -2,7 +2,7 @@
 if(NOT TARGET imgui)
 
     # Make sure we support glfw3 it is available, but don't require it.
-    find_package(glfw3 QUIET)
+    find_package(glfw3 CONFIG QUIET)
     find_package(SDL2 QUIET)
 
     FetchContent_Declare(imgui_external
@@ -45,7 +45,7 @@ if(NOT TARGET imgui)
     list(APPEND _IMGUI_SRC ${IMGUI_DIR}/backends/imgui_impl_opengl2.cpp
     )
 
-    if(GLFW_FOUND)
+    if(TARGET glfw)
         message(STATUS "Including glfw support in imgui")
         list(APPEND _IMGUI_SRC ${IMGUI_DIR}/backends/imgui_impl_glfw.cpp
         )
@@ -78,8 +78,8 @@ if(NOT TARGET imgui)
             ${imguizmo_external_SOURCE_DIR}
     )
 
-    if(GLFW_FOUND)
-        target_link_libraries(imgui PUBLIC ${GLFW_LIBRARIES} )
+    if(TARGET glfw)
+        target_link_libraries(imgui PUBLIC glfw)
     endif()
 
 endif()
