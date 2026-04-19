@@ -98,10 +98,10 @@ namespace Ravl2
     bool useNSEW = c1useNS || c1useEW || c2useNS || c2useEW;
     
     if(!useNSEW) {
-      if(!textDMSToAngle(coord1,degLat,AF_None)) {
+      if(!textDMSToAngle(coord1,degLat,AngleFormT::AF_None)) {
         return false;
       }
-      if(!textDMSToAngle(coord2,degLong,AF_None)) {
+      if(!textDMSToAngle(coord2,degLong,AngleFormT::AF_None)) {
         return false;
       }      
     } else {
@@ -115,14 +115,14 @@ namespace Ravl2
       }
       
       if(c1useNS) {
-        if(!textDMSToAngle(coord1,degLat,AF_NS))
+        if(!textDMSToAngle(coord1,degLat,AngleFormT::AF_NorthSouth))
           return false;
-        if(!textDMSToAngle(coord2,degLong,AF_EW))
+        if(!textDMSToAngle(coord2,degLong,AngleFormT::AF_EastWest))
           return false;
       } else {
-        if(!textDMSToAngle(coord1,degLong,AF_EW))
+        if(!textDMSToAngle(coord1,degLong,AngleFormT::AF_EastWest))
           return false;
-        if(!textDMSToAngle(coord2,degLat,AF_NS))
+        if(!textDMSToAngle(coord2,degLat,AngleFormT::AF_NorthSouth))
           return false;
       }
     }
@@ -289,14 +289,14 @@ namespace Ravl2
     bool haveWest = rest.contains('W') || rest.contains('w');
     
     switch(af) {
-    case AF_None:
+    case AngleFormT::AF_None:
       if(haveNorth || haveSouth || haveEast || haveWest) {
         SPDLOG_ERROR("Unexpected designator in [{}] ",value);
         return false;
       }
       break;
       
-    case AF_NS:
+    case AngleFormT::AF_NorthSouth:
       if(haveEast || haveWest || (haveNorth && haveSouth)) {
         SPDLOG_ERROR("Inconsistent designator in [{}] ",value);
         return false;
@@ -310,7 +310,7 @@ namespace Ravl2
         angle *= -1;
       break;
       
-    case AF_EW:
+    case AngleFormT::AF_EastWest:
       if(haveNorth || haveSouth || (haveEast && haveWest)) {
         SPDLOG_ERROR("Inconsistent designator in [{}] ",value);
         return false;

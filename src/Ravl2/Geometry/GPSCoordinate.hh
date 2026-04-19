@@ -151,10 +151,10 @@ namespace Ravl2
     double mHorizontalError = 0.1; //!< Standard deviation in position values.
     double mVerticalError = 0.15;   //!< Standard deviation in height values.
     
-    enum AngleFormT {
+    enum class AngleFormT {
       AF_None,
-      AF_NS,
-      AF_EW
+      AF_NorthSouth,
+      AF_EastWest
     };
     
     //! Convert an angle in degree's to text Degree's minutes seconds.
