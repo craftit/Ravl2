@@ -1048,8 +1048,10 @@ namespace Ravl2::Video
                 return typeid(RGBAPlanarImage<uint8_t>);
               case AV_PIX_FMT_YUV420P:
               case AV_PIX_FMT_YUVJ420P:
+              case AV_PIX_FMT_NV12:    // 8-bit semi-planar from NVDEC; de-interleaved on decode
                 return typeid(YUV420Image<uint8_t>);
               case AV_PIX_FMT_YUV420P10LE:
+              case AV_PIX_FMT_P010LE:  // 10-bit semi-planar from NVDEC; de-interleaved on decode
                 return typeid(YUV420Image<uint16_t>);
               case AV_PIX_FMT_YUV422P:
               case AV_PIX_FMT_YUVJ422P:
@@ -1318,8 +1320,50 @@ namespace Ravl2::Video
             case AV_PIX_FMT_YUV420P:
             case AV_PIX_FMT_YUVJ420P:  // JPEG-range YUV420 (deprecated, treat as YUV420P)
               return createVideoFrame<YUV420Image<uint8_t>>(frame, localIndex, id);
+            case AV_PIX_FMT_NV12: {
+              // Semi-planar YUV420 from NVDEC: de-interleave UV into separate planes
+              AVFrame* yuv = av_frame_alloc();
+              yuv->format = AV_PIX_FMT_YUV420P;
+              yuv->width  = frame->width;
+              yuv->height = frame->height;
+              yuv->pts    = frame->pts;
+              av_frame_get_buffer(yuv, 32);
+              for (int r = 0; r < frame->height; ++r)
+                std::memcpy(yuv->data[0] + r * yuv->linesize[0],
+                            frame->data[0] + r * frame->linesize[0], frame->width);
+              for (int r = 0; r < frame->height / 2; ++r) {
+                const uint8_t* src = frame->data[1] + r * frame->linesize[1];
+                uint8_t* dU = yuv->data[1] + r * yuv->linesize[1];
+                uint8_t* dV = yuv->data[2] + r * yuv->linesize[2];
+                for (int c = 0; c < frame->width / 2; ++c) { dU[c] = src[c*2]; dV[c] = src[c*2+1]; }
+              }
+              auto result = createVideoFrame<YUV420Image<uint8_t>>(yuv, localIndex, id);
+              av_frame_free(&yuv);
+              return result;
+            }
             case AV_PIX_FMT_YUV420P10LE:
               return createVideoFrame<YUV420Image<uint16_t>>(frame, localIndex, id);
+            case AV_PIX_FMT_P010LE: {
+              // 10-bit semi-planar from NVDEC: de-interleave UV into separate planes
+              AVFrame* yuv = av_frame_alloc();
+              yuv->format = AV_PIX_FMT_YUV420P10LE;
+              yuv->width  = frame->width;
+              yuv->height = frame->height;
+              yuv->pts    = frame->pts;
+              av_frame_get_buffer(yuv, 32);
+              for (int r = 0; r < frame->height; ++r)
+                std::memcpy(yuv->data[0] + r * yuv->linesize[0],
+                            frame->data[0] + r * frame->linesize[0], static_cast<std::size_t>(frame->width) * 2);
+              for (int r = 0; r < frame->height / 2; ++r) {
+                const uint16_t* src = reinterpret_cast<const uint16_t*>(frame->data[1] + r * frame->linesize[1]);
+                uint16_t* dU = reinterpret_cast<uint16_t*>(yuv->data[1] + r * yuv->linesize[1]);
+                uint16_t* dV = reinterpret_cast<uint16_t*>(yuv->data[2] + r * yuv->linesize[2]);
+                for (int c = 0; c < frame->width / 2; ++c) { dU[c] = src[c*2]; dV[c] = src[c*2+1]; }
+              }
+              auto result = createVideoFrame<YUV420Image<uint16_t>>(yuv, localIndex, id);
+              av_frame_free(&yuv);
+              return result;
+            }
             case AV_PIX_FMT_YUV422P:
             case AV_PIX_FMT_YUVJ422P:  // JPEG-range YUV422 (deprecated, treat as YUV422P)
               return createVideoFrame<YUV422Image<uint8_t>>(frame, localIndex, id);

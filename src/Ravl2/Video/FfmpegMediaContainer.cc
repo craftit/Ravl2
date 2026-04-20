@@ -91,8 +91,17 @@ namespace Ravl2::Video
       // Always map the stream type first (even if there's no codec)
       container->m_streamTypes[i] = mapFfmpegStreamType(stream->codecpar->codec_type);
 
-      // Find the decoder for this stream
-      const AVCodec* codec = avcodec_find_decoder(stream->codecpar->codec_id);
+      // Find the decoder; try NVDEC hardware path first for HEVC/H.264 video streams
+      const AVCodec* codec = nullptr;
+      if (container->m_streamTypes[i] == StreamType::Video) {
+        if (stream->codecpar->codec_id == AV_CODEC_ID_HEVC)
+          codec = avcodec_find_decoder_by_name("hevc_cuvid");
+        else if (stream->codecpar->codec_id == AV_CODEC_ID_H264)
+          codec = avcodec_find_decoder_by_name("h264_cuvid");
+        if (codec) SPDLOG_DEBUG("FfmpegMediaContainer: using hw decoder {} for stream {}", codec->name, i);
+      }
+      if (!codec)
+        codec = avcodec_find_decoder(stream->codecpar->codec_id);
       if (!codec)
       {
         // No codec available - this is normal for DATA streams
@@ -113,11 +122,21 @@ namespace Ravl2::Video
         continue;
       }
 
-      // Open the codec
+      // Open the codec; fall back to software decoder if hw fails
       if (avcodec_open2(codecContext, codec, nullptr) < 0)
       {
         avcodec_free_context(&codecContext);
-        continue;
+        const AVCodec* swCodec = avcodec_find_decoder(stream->codecpar->codec_id);
+        if (swCodec && swCodec != codec) {
+          SPDLOG_WARN("FfmpegMediaContainer: hw decoder failed, falling back to {}", swCodec->name);
+          codecContext = avcodec_alloc_context3(swCodec);
+          if (codecContext) {
+            avcodec_parameters_to_context(codecContext, stream->codecpar);
+            if (avcodec_open2(codecContext, swCodec, nullptr) < 0)
+              avcodec_free_context(&codecContext);
+          }
+        }
+        if (!codecContext) continue;
       }
 
       // Store the codec context
