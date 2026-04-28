@@ -78,6 +78,10 @@ namespace Ravl2::Video
     //! Get the type of stream at the specified index
     [[nodiscard]] StreamType streamType(std::size_t streamIndex) const override;
 
+    //! Return the FFmpeg codec_tag FourCC for the given stream (0 if out of range).
+    //! Useful for distinguishing data sub-types such as 'gpmd' (GPMF) from 'tmcd' (timecode).
+    [[nodiscard]] uint32_t streamCodecTag(std::size_t streamIndex) const;
+
     //! Get properties for a video stream
     [[nodiscard]] VideoResult<VideoProperties> videoProperties(std::size_t streamIndex) const override;
 

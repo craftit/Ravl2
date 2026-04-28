@@ -522,6 +522,13 @@ namespace Ravl2::Video
     return m_streamTypes[streamIndex];
   }
 
+  uint32_t FfmpegMediaContainer::streamCodecTag(std::size_t streamIndex) const
+  {
+    if (!m_formatContext || streamIndex >= m_formatContext->nb_streams)
+      return 0;
+    return m_formatContext->streams[streamIndex]->codecpar->codec_tag;
+  }
+
   VideoResult<VideoProperties> FfmpegMediaContainer::videoProperties(std::size_t streamIndex) const
   {
     std::shared_lock lock(m_mutex);
