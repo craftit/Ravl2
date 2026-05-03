@@ -1,9 +1,12 @@
 
 if(NOT TARGET imguizmo)
 
+    # Pin to the last commit before upstream moved sources into src/ and
+    # added a root CMakeLists.txt that defines a competing `imguizmo` target
+    # without linking to our local imgui. See ff287e7 "Delete ImGuizmo.cpp".
     FetchContent_Declare(imguizmo_external
             GIT_REPOSITORY https://github.com/CedricGuillemet/ImGuizmo
-            GIT_TAG master
+            GIT_TAG ff3c0732fbec33bc798ecb761bddadfae2763514
             EXCLUDE_FROM_ALL
     )
     FetchContent_MakeAvailable(imguizmo_external)
