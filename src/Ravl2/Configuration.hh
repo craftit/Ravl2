@@ -340,10 +340,11 @@ namespace Ravl2
     [[nodiscard]] virtual std::any initBool(const std::string_view &name, const std::string_view &description, bool defaultValue);
 
     //! Is the value of a field defined in the configuration file?
+    //! Returns true iff a child node (value or sub-block) with this name
+    //! has been registered. Same membership check as hasChild() but const.
     [[nodiscard]] virtual bool isDefined(const std::string_view &name) const
     {
-      (void)name;
-      return false;
+      return m_children.find(name) != m_children.end();
     }
 
     //! Get member name in string form
