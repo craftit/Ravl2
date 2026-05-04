@@ -554,6 +554,15 @@ namespace Ravl2
       return m_node->name();
     }
 
+    //! @brief Check whether a given key is defined in this config block.
+    //! @param name The key name to check.
+    //! @return true if a value (or sub-node) with this name is present.
+    [[nodiscard]] bool isDefined(const std::string_view &name) const
+    {
+      assert(m_node);
+      return m_node->isDefined(name);
+    }
+
     //! Filename this node was loaded from
     //! @return Filename
     [[nodiscard]] const std::string &filename() const
