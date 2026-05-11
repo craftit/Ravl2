@@ -188,7 +188,17 @@ namespace Ravl2
     auto realSourceRange = interpolationBounds<CoordTypeT>(source.range(), sampler);
     {
       auto realSampleRange = projectedBounds(transform, target.range());
-      if(realSourceRange.contains(realSampleRange)) {
+      // Drift slack for the fast-path gate: projectedBounds evaluates target
+      // corners directly, but WarpAffineIter / WarpProjectiveIter reach the
+      // same corners by accumulating column-vector additions and drift by
+      // O(eps * sampleRangeSize) per dim.  Without slack the assert below
+      // can fire (and a release build would silently read out-of-bounds).
+      CoordTypeT driftMargin = 0;
+      for(unsigned j = 0; j < N; ++j) {
+        driftMargin = std::max(driftMargin, realSampleRange.size(j));
+      }
+      driftMargin *= std::numeric_limits<CoordTypeT>::epsilon() * CoordTypeT(4);
+      if(realSourceRange.shrink(driftMargin).contains(realSampleRange)) {
         // Iterate over the target image, no need for bounds check.
         for(auto it = beginWarp(target,transform); it.valid();) {
           do {
