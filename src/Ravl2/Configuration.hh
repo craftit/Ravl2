@@ -336,6 +336,17 @@ namespace Ravl2
     //! Initialise a string field
     [[nodiscard]] virtual std::any initString(const std::string_view &name, const std::string_view &description, const std::string_view &defaultValue);
 
+    //! Initialise a vector-of-strings field from a JSON-style primitive array.
+    //!
+    //! Distinct from `initObjectArray<std::string>` because string entries in
+    //! a JSON array are primitives, not objects with `_type` fields — the
+    //! generic `initObjectArray` path would call `iter::key()` on the array
+    //! iterator and try to construct a factory object from each string.
+    //! Implementations should iterate the JSON array directly and convert
+    //! each element to `std::string`. When the field is absent, return an
+    //! empty `std::vector<std::string>` packed in `std::any`.
+    [[nodiscard]] virtual std::any initStringVector(const std::string_view &name, const std::string_view &description);
+
     //! Initialise a string field
     [[nodiscard]] virtual std::any initBool(const std::string_view &name, const std::string_view &description, bool defaultValue);
 
@@ -905,7 +916,15 @@ namespace Ravl2
       assert(m_node);
       std::any avalue = m_node->getValue(name, typeid(std::vector<T>));
       if(!avalue.has_value()) {
-        avalue = m_node->initObjectArray<T>(name, description, defaultType);
+        // String arrays are JSON primitive arrays, not factory-created objects;
+        // route through a primitive-aware path so we don't trip
+        // initObjectArray -> getChildNodes -> iter::key() on array iterators.
+        if constexpr (std::is_same_v<T, std::string>) {
+          (void)defaultType;
+          avalue = m_node->initStringVector(name, description);
+        } else {
+          avalue = m_node->initObjectArray<T>(name, description, defaultType);
+        }
       }
       return std::any_cast<std::vector<T>>(avalue);
     }

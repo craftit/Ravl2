@@ -260,6 +260,31 @@ namespace Ravl2
     return x->value();
   }
 
+  std::any ConfigNodeJSON::initStringVector(const std::string_view &name,
+                                            const std::string_view &description)
+  {
+    // Absent → empty vector (matches the ConfigNode base default).
+    if(m_json.find(name) == m_json.end()) {
+      return ConfigNode::initStringVector(name, description);
+    }
+    json const value = m_json[name];
+    if(!value.is_array()) {
+      SPDLOG_ERROR("Expected a string array for field {}.{}  got '{}'  ", rootPathString(), name, value.dump());
+      throw std::runtime_error("Expected a string array in field.");
+    }
+    std::vector<std::string> val;
+    val.reserve(value.size());
+    for(auto const &v : value) {
+      if(!v.is_string()) {
+        SPDLOG_ERROR("Expected a string for element of field {}.{}  got '{}'  ", rootPathString(), name, v.dump());
+        throw std::runtime_error("Expected a string in array element.");
+      }
+      val.push_back(v.template get<std::string>());
+    }
+    auto x = setChild(std::string(name), std::string(description), val);
+    return x->value();
+  }
+
   std::any ConfigNodeJSON::initBool(const std::string_view &name,
                                     const std::string_view &description,
                                     bool defaultValue)
@@ -378,9 +403,36 @@ namespace Ravl2
   }
 
   //! Get list of child nodes.
+  //!
+  //! Only defined for JSON objects: each child carries the field name as its
+  //! `name()`. Arrays and primitives have no meaningful name-keyed children,
+  //! so calling `it.key()` on them would throw nlohmann's invalid_iterator.207
+  //! deep inside the iterator — instead we refuse loudly here with the path
+  //! and the actual type, so the caller learns what they did wrong.
+  //!
+  //! Primitive arrays (e.g. `"foo": ["a", "b"]`) should go through the
+  //! type-specific primitive paths — `Configuration::getVector<std::string>`
+  //! routes via `initStringVector`, and the numeric variants go through
+  //! `initVector(float/int, ...)`. Arrays of factory-constructed objects
+  //! aren't supported through this entry point today.
   std::vector<std::shared_ptr<ConfigNode>> ConfigNodeJSON::getChildNodes()
   {
+    if(m_json.is_array()) {
+      SPDLOG_ERROR("ConfigNodeJSON::getChildNodes: '{}' is a JSON array; arrays have no "
+                   "name-keyed children. For string arrays use "
+                   "Configuration::getVector<std::string>; for numeric arrays use "
+                   "Configuration::getNumericVector / getPoint / getMatrix.",
+                   rootPathString());
+      throw std::runtime_error("ConfigNodeJSON::getChildNodes called on a JSON array");
+    }
+    if(!m_json.is_object()) {
+      SPDLOG_ERROR("ConfigNodeJSON::getChildNodes: '{}' is a JSON {} (not an object); "
+                   "cannot enumerate children.",
+                   rootPathString(), m_json.type_name());
+      throw std::runtime_error("ConfigNodeJSON::getChildNodes called on a non-object JSON node");
+    }
     std::vector<std::shared_ptr<ConfigNode>> ret;
+    ret.reserve(m_json.size());
     for(auto it = m_json.begin(); it != m_json.end(); ++it) {
       ret.emplace_back(std::make_shared<ConfigNodeJSON>(*this,
                                                         std::string(it.key()),

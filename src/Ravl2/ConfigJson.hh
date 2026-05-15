@@ -61,6 +61,9 @@ namespace Ravl2
     //! Initialise a string field
     std::any initString(const std::string_view &name, const std::string_view &description, const std::string_view &defaultValue) override;
 
+    //! Initialise a vector-of-strings field from a JSON string array.
+    std::any initStringVector(const std::string_view &name, const std::string_view &description) override;
+
     //! Initialise a string field
     std::any initBool(const std::string_view &name, const std::string_view &description, bool defaultValue) override;
 

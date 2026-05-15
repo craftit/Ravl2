@@ -53,6 +53,49 @@ TEST_CASE("Configuration")
     ASSERT_EQ(pnt[2], 3);
   }
   
+  SECTION("StringVector")
+  {
+    // Regression: Configuration::getVector<std::string> used to route through
+    // initObjectArray -> getChildNodes -> iter::key(), which throws
+    // invalid_iterator.207 on array iterators. The primitive-aware path goes
+    // through initStringVector, which iterates the JSON array directly.
+    Ravl2::SetSPDLogLevel beQuiet(spdlog::level::off);
+    Ravl2::Configuration config = Ravl2::Configuration::fromJSONString(R"( {
+      "topics": ["action", "actuator"],
+      "empty": []
+    } )");
+
+    auto topics = config.getVector<std::string>("topics", "topic names", {});
+    ASSERT_EQ(topics.size(), 2);
+    ASSERT_EQ(topics[0], "action");
+    ASSERT_EQ(topics[1], "actuator");
+
+    auto empty = config.getVector<std::string>("empty", "empty list", {});
+    ASSERT_EQ(empty.size(), 0);
+
+    // Absent field also returns an empty vector via the base default.
+    auto absent = config.getVector<std::string>("not_there", "absent", {});
+    ASSERT_EQ(absent.size(), 0);
+  }
+
+  SECTION("getChildNodes refuses arrays loudly")
+  {
+    // getChildNodes() must not be called on arrays — nlohmann's iter::key()
+    // throws invalid_iterator.207. We catch that case at our boundary and
+    // throw a runtime_error with the offending path + JSON type so callers
+    // get a useful diagnostic instead of a cryptic library trap.
+    Ravl2::SetSPDLogLevel beQuiet(spdlog::level::off);
+    Ravl2::Configuration config = Ravl2::Configuration::fromJSONString(R"( {
+      "items": [1, 2, 3]
+    } )");
+    // getVector<int> still goes through initObjectArray -> getChildNodes
+    // (no primitive-aware shortcut for ints yet); the new branch in
+    // getChildNodes turns the underlying iter::key() failure into a clear
+    // std::runtime_error with the offending path.
+    REQUIRE_THROWS_AS(config.getVector<int>("items", "int array", "default"),
+                      std::runtime_error);
+  }
+
   SECTION("Matrix")
   {
     Ravl2::SetSPDLogLevel beQuiet(spdlog::level::off);

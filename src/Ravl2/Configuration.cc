@@ -216,6 +216,15 @@ namespace Ravl2
     return x->value();
   }
 
+  //! Initialise a vector-of-strings field — default impl returns empty.
+  //! Concrete config sources (e.g. ConfigNodeJSON) override to read the array.
+  [[nodiscard]] std::any ConfigNode::initStringVector(const std::string_view &name, const std::string_view &description)
+  {
+    std::vector<std::string> empty;
+    auto x = setChild(std::string(name), std::string(description), empty);
+    return x->value();
+  }
+
   std::any ConfigNode::initBool(const std::string_view &name, const std::string_view &description, bool defaultValue)
   {
     auto x = setChild(std::string(name), std::string(description), defaultValue);
