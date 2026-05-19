@@ -456,8 +456,13 @@ namespace Ravl2
     bool ret = true;
     for(json::const_iterator it = m_json.begin(); it != m_json.end(); ++it) {
       std::string key = it.key();
-      // Skip keys starting with -
-      if(!key.empty() && key[0] == '-')
+      // Skip keys reserved for human comments. Leading '-' is the
+      // existing convention; '_comment' (exact match) is the project
+      // convention used in consumer JSON (e.g. share/Reason/*.json's
+      // `_comment` blocks). Restricted to the exact `_comment` key —
+      // a wildcard `_`-prefix skip would silently hide typos in
+      // `_type` and any other reserved-leading-underscore field.
+      if(!key.empty() && (key[0] == '-' || key == "_comment"))
         continue;
       if(!isUsed(key)) {
         SPDLOG_ERROR("Field '{}' is not used in {} ", key, rootPathString());
