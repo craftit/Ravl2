@@ -14,8 +14,11 @@ add_library (Ravl2Image
         DrawMask.hh DrawMask.cc
         DrawPolygon.hh DrawPolygon.cc
         Array2dPolygon2dIter.hh
+        Convolve.cc Convolve.hh
         Corner.cc Corner.hh
         CornerDetectorSusan.cc CornerDetectorSusan.hh
+        CornerDetectorHarris.cc CornerDetectorHarris.hh
+        StructureTensor.cc StructureTensor.hh
         PeakDetector.cc PeakDetector.hh
         MatchPatch.hh
         Matching.cc Matching.hh

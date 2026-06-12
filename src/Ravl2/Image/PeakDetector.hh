@@ -32,6 +32,31 @@ namespace Ravl2
     return (rt[-1] < cent && rt[0] < cent && rt[1] < cent);
   }
 
+  //! @brief Test if position 'pos' is the largest value in a 3 by 3 area, tolerating plateaus.
+  //! Unlike PeakDetect3 this accepts ties with neighbours later in raster-scan order while
+  //! still requiring a strict win over earlier neighbours, so a flat plateau of equal maxima
+  //! emits exactly one peak (its first pixel in scan order) instead of none.
+  //! It is the users responsibility to ensure that all pixels around 'pos' are in the image.
+  template <class DataT>
+  inline bool PeakDetect3Plateau(const Array<DataT, 2> &img, const Index<2> &pos)
+  {
+    assert(img.range().shrink(1).contains(pos));
+    const DataT *rt = &(img[pos]);
+    const DataT &cent = rt[0];
+    // Earlier in scan order: strict.
+    if(rt[-1] >= cent)
+      return false;
+    rt = &(img[pos[0] - 1][pos[1]]);
+    if(rt[-1] >= cent || rt[0] >= cent || rt[1] >= cent)
+      return false;
+    // Later in scan order: ties allowed.
+    rt = &(img[pos]);
+    if(rt[1] > cent)
+      return false;
+    rt = &(img[pos[0] + 1][pos[1]]);
+    return (rt[-1] <= cent && rt[0] <= cent && rt[1] <= cent);
+  }
+
   //! @brief Test if position 'pos' is the largest value in a 5 by 5 area.
   //! It is the users responsibility to ensure that all pixels around 'pos'
   //! are in the image.  The corners of the area are not mask to bring
