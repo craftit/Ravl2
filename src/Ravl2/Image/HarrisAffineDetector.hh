@@ -8,6 +8,7 @@
 #include "Ravl2/Array.hh"
 #include "Ravl2/Geometry/Affine.hh"
 #include "Ravl2/Geometry/Ellipse.hh"
+#include "Ravl2/Image/NormalisedPatch.hh"
 #include "Ravl2/Image/StructureTensor.hh"
 #include "Ravl2/Image/Warp.hh"
 
@@ -96,12 +97,7 @@ namespace Ravl2
                                                      const AffineFeature &feature,
                                                      float regionScale = 3.0f)
     {
-      assert(!target.range().empty());
-      const float targetRadius = float(std::min(target.range().size(0), target.range().size(1))) / 2.0f;
-      const Point<float, 2> targetCentre = toPoint<float>(target.range().center());
-      const Matrix<float, 2, 2> srMatrix = feature.shape * (regionScale * feature.scale / targetRadius);
-      const Affine<float, 2> target2source(srMatrix, feature.position - srMatrix * targetCentre);
-      return warp<WarpWrapMode::Stop>(target, source, target2source);
+      return warpNormalisedPatch(target, source, feature.norm2img(regionScale));
     }
 
   private:

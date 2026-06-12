@@ -6,6 +6,7 @@
 #include "Ravl2/Image/Convolve.hh"
 #include "Ravl2/Image/CornerDetectorHarris.hh"
 #include "Ravl2/Image/HarrisAffineDetector.hh"
+#include "Ravl2/Image/NormalisedPatch.hh"
 #include "Ravl2/Image/DrawPolygon.hh"
 #include "Ravl2/Geometry/Polygon.hh"
 
@@ -398,6 +399,42 @@ namespace Ravl2
       nearEdge.position = Point<float, 2>({2, 2});
       CHECK_FALSE(HarrisAffineDetector::extractNormalisedPatch(patch, img, nearEdge, 2.0f));
     }
+  }
+
+  TEST_CASE("WarpNormalisedPatch", "[normalisedPatch]")
+  {
+    // A patch warped via the generic helper must equal the AffineFeature path.
+    Array<float, 2> img(IndexRange<2>({{0, 63}, {0, 63}}), 0.0f);
+    for(int r : img.range(0)) {
+      for(int c : img.range(1)) {
+        img[r][c] = 0.01f * float(r) + 0.002f * float(c);// Smooth, asymmetric.
+      }
+    }
+    AffineFeature feature;
+    feature.position = Point<float, 2>({30, 34});
+    feature.scale = 3.0f;
+  // Non-trivial SPD shape so the comparison genuinely exercises shape forwarding.
+  const float shapeAngle = 0.3f;
+  Matrix<float, 2, 2> shapeRotation;
+  shapeRotation << std::cos(shapeAngle), -std::sin(shapeAngle), std::sin(shapeAngle), std::cos(shapeAngle);
+  feature.shape = shapeRotation * Eigen::DiagonalMatrix<float, 2>(1.4f, 1.0f / 1.4f) * shapeRotation.transpose();
+    Array<float, 2> patchA(IndexRange<2>({{-8, 8}, {-8, 8}}));
+    Array<float, 2> patchB(IndexRange<2>({{-8, 8}, {-8, 8}}));
+    REQUIRE(HarrisAffineDetector::extractNormalisedPatch(patchA, img, feature, 2.0f));
+    REQUIRE(warpNormalisedPatch(patchB, img, feature.norm2img(2.0f)));
+    for(int r : patchA.range(0)) {
+      for(int c : patchA.range(1)) {
+        CHECK(std::abs(patchA[r][c] - patchB[r][c]) < 1e-6f);
+      }
+    }
+    // Region poking outside the source is rejected.
+    Array<float, 2> patchC(IndexRange<2>({{-8, 8}, {-8, 8}}));
+    AffineFeature nearEdge = feature;
+    nearEdge.position = Point<float, 2>({1, 1});
+    CHECK_FALSE(warpNormalisedPatch(patchC, img, nearEdge.norm2img(2.0f)));
+  // Non-square target: radius comes from the smaller dimension.
+  Array<float, 2> portrait(IndexRange<2>({{-4, 4}, {-8, 8}}));
+  REQUIRE(warpNormalisedPatch(portrait, img, feature.norm2img(2.0f)));
   }
 
 }// namespace Ravl2

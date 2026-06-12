@@ -31,6 +31,7 @@ add_library (Ravl2Image
         BitmapFont.cc BitmapFont.hh
         DrawText.cc DrawText.hh
         Warp.cc Warp.hh
+        NormalisedPatch.hh
         SquareIter.cc SquareIter.hh
         SummedAreaTable.cc SummedAreaTable.hh
         SummedAreaTable2.hh
