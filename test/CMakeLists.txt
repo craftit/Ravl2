@@ -52,6 +52,7 @@ add_executable(tests
         test_geometry.cc
         test_polygon.cc
         test_image.cc
+        test_harrisAffine.cc
         test_draw.cc
         test_boundary.cc
         test_segmentation.cc

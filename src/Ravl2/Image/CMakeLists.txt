@@ -18,6 +18,7 @@ add_library (Ravl2Image
         Corner.cc Corner.hh
         CornerDetectorSusan.cc CornerDetectorSusan.hh
         CornerDetectorHarris.cc CornerDetectorHarris.hh
+        HarrisAffineDetector.cc HarrisAffineDetector.hh
         StructureTensor.cc StructureTensor.hh
         PeakDetector.cc PeakDetector.hh
         MatchPatch.hh
