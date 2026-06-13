@@ -425,7 +425,11 @@ namespace Ravl2
                    rootPathString());
       throw std::runtime_error("ConfigNodeJSON::getChildNodes called on a JSON array");
     }
-    if(!m_json.is_object()) {
+    // A JSON null is an absent/optional group: an absent `useGroup` key
+    // (e.g. a markup image entry with no `annotations`) resolves to a null
+    // child node, and the historical contract is "absent group → empty".
+    // Only genuine primitives (number/string/bool) are a caller error here.
+    if(!m_json.is_object() && !m_json.is_null()) {
       SPDLOG_ERROR("ConfigNodeJSON::getChildNodes: '{}' is a JSON {} (not an object); "
                    "cannot enumerate children.",
                    rootPathString(), m_json.type_name());
