@@ -5,6 +5,7 @@
 // see http://www.gnu.org/copyleft/lesser.html
 // file-header-ends-here
 
+#include <algorithm>
 #include "Ravl2/Geometry/Geometry.hh"
 #include "Ravl2/Geometry/Polygon.hh"
 #include "Ravl2/Geometry/PolyApprox.hh"
@@ -364,9 +365,68 @@ namespace Ravl2
     return Moments2<RealT>(m00, m10, m01, m20, m11, m02);
   }
 
+  namespace
+  {
+    //! Cross product (O->A) x (O->B); >0 = left turn in the (axis0, axis1) basis.
+    template <typename RealT>
+    RealT hullCross(const Point<RealT, 2> &o, const Point<RealT, 2> &a, const Point<RealT, 2> &b)
+    {
+      return (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0]);
+    }
+  }// namespace
+
+  //! Andrew's monotone-chain convex hull, O(n log n). The result is normalised to
+  //! INSIDE_LEFT (positive signed area) so it composes with clipByConvex/overlap and
+  //! matches the orientation PolyAnnotation gives ground-truth polygons on load.
+  //! Fewer than three points are returned unchanged (no hull is defined).
+  template <typename RealT>
+  Polygon<RealT> ConvexHull(std::vector<Point<RealT, 2>> &&points)
+  {
+    const long n = static_cast<long>(points.size());
+    if(n < 3) {
+      return Polygon<RealT>(std::move(points));
+    }
+    std::sort(points.begin(), points.end(), [](const Point<RealT, 2> &a, const Point<RealT, 2> &b) {
+      return a[0] < b[0] || (a[0] == b[0] && a[1] < b[1]);
+    });
+    std::vector<Point<RealT, 2>> hull(static_cast<size_t>(2 * n));
+    long k = 0;
+    for(long i = 0; i < n; ++i) {// lower hull
+      while(k >= 2 && hullCross<RealT>(hull[size_t(k - 2)], hull[size_t(k - 1)], points[size_t(i)]) <= 0) {
+        --k;
+      }
+      hull[size_t(k++)] = points[size_t(i)];
+    }
+    const long lower = k + 1;
+    for(long i = n - 2; i >= 0; --i) {// upper hull
+      while(k >= lower && hullCross<RealT>(hull[size_t(k - 2)], hull[size_t(k - 1)], points[size_t(i)]) <= 0) {
+        --k;
+      }
+      hull[size_t(k++)] = points[size_t(i)];
+    }
+    hull.resize(size_t(k - 1));// last point repeats the first
+    Polygon<RealT> result(std::move(hull));
+    if(result.area() < 0) {
+      result = result.reverse();
+    }
+    return result;
+  }
+
+  template <typename RealT>
+  Polygon<RealT> ConvexHull(const std::vector<Point<RealT, 2>> &points)
+  {
+    std::vector<Point<RealT, 2>> copy(points);
+    return ConvexHull<RealT>(std::move(copy));
+  }
+
   // Instantiate the template for the types we will use.
   template Moments2<float> moments(const Polygon<float> &poly);
   template Moments2<double> moments(const Polygon<double> &poly);
+
+  template Polygon<float> ConvexHull(std::vector<Point<float, 2>> &&points);
+  template Polygon<double> ConvexHull(std::vector<Point<double, 2>> &&points);
+  template Polygon<float> ConvexHull(const std::vector<Point<float, 2>> &points);
+  template Polygon<double> ConvexHull(const std::vector<Point<double, 2>> &points);
 
   //! Let the compiler know that we will use these classes with the following types
   template class Polygon<float>;

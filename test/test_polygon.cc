@@ -444,6 +444,39 @@ namespace Ravl2
     }
 #endif
   }
+
+  TEST_CASE("ConvexHull")
+  {
+    SECTION("Square with interior points")
+    {
+      // Four corners of a unit square plus interior points that must be discarded.
+      std::vector<Point<float, 2>> pnts = {
+        toPoint<float>(0, 0), toPoint<float>(1, 0), toPoint<float>(1, 1),
+        toPoint<float>(0, 1), toPoint<float>(0.5f, 0.5f), toPoint<float>(0.25f, 0.75f)};
+      auto hull = ConvexHull(pnts);
+      CHECK(hull.size() == 4);                          // interior points dropped
+      CHECK(std::abs(hull.area() - 1.0f) < 1e-5f);      // unit square area
+      CHECK(hull.area() > 0);                           // normalised to positive (INSIDE_LEFT)
+      // Every input point lies inside or on the hull.
+      for(const auto &p : pnts) {
+        CHECK(hull.contains(p));
+      }
+    }
+    SECTION("Collinear plus one")
+    {
+      std::vector<Point<float, 2>> pnts = {
+        toPoint<float>(0, 0), toPoint<float>(2, 0), toPoint<float>(4, 0),
+        toPoint<float>(2, 3)};
+      auto hull = ConvexHull(pnts);
+      CHECK(hull.size() == 3);  // the redundant midpoint of the collinear edge is dropped
+    }
+    SECTION("Degenerate (fewer than three points) returned unchanged")
+    {
+      std::vector<Point<float, 2>> pnts = {toPoint<float>(0, 0), toPoint<float>(1, 1)};
+      auto hull = ConvexHull(pnts);
+      CHECK(hull.size() == 2);
+    }
+  }
 }
 
 
