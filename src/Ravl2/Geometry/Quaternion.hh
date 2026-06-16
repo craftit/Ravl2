@@ -107,7 +107,12 @@ namespace Ravl2
 	  q[3] = 0.25f * s;
 	}
       }
-      return Quaternion(q);
+      // A rotation matrix maps to a UNIT quaternion, but float error (or a slightly
+      // non-orthonormal input from e.g. an Umeyama fit) leaves it a hair off — enough to
+      // trip rotate()'s isNormalised() assert downstream. Normalise so the contract holds.
+      Quaternion result(q);
+      result.normalise();
+      return result;
     }
 
     [[nodiscard]] constexpr Vector<RealT,4> &asVector()
