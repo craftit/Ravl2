@@ -79,6 +79,22 @@ namespace Ravl2::GoPro
     //! @param timestamp Base timestamp for this packet
     void parseAccel(GPMF_stream* stream, std::vector<std::shared_ptr<Video::Frame>>& frames, Video::StreamItemId streamId, Video::MediaTime timestamp);
 
+    //! Parse camera-orientation (CORI) quaternions and append a frame.
+    //! CORI is 4x int16 big-endian [w,x,y,z] per sample; stored normalised.
+    //! @param stream GPMF stream positioned at CORI data
+    //! @param frames Vector to append the CameraOrientationSamples frame to
+    //! @param streamId Stream identifier for creating frames
+    //! @param timestamp Base timestamp for this packet
+    void parseCameraOrientation(GPMF_stream* stream, std::vector<std::shared_ptr<Video::Frame>>& frames, Video::StreamItemId streamId, Video::MediaTime timestamp);
+
+    //! Parse gravity-vector (GRAV) samples and append a frame.
+    //! GRAV is 3x int16 big-endian [x,y,z] per sample; stored normalised.
+    //! @param stream GPMF stream positioned at GRAV data
+    //! @param frames Vector to append the GravitySamples frame to
+    //! @param streamId Stream identifier for creating frames
+    //! @param timestamp Base timestamp for this packet
+    void parseGravity(GPMF_stream* stream, std::vector<std::shared_ptr<Video::Frame>>& frames, Video::StreamItemId streamId, Video::MediaTime timestamp);
+
     //! Set verbose mode
     void setVerbose(bool verbose)
     { mVerbose = verbose; }

@@ -403,10 +403,12 @@ namespace Ravl2::GoPro
     for(uint32_t i = 0; i < sampleCount; i++) {
       size_t offset = i * 3;
       // IMPORTANT: GPMF data is big-endian, must byte-swap all int16_t values!
+      // BYTESWAP16 yields an unsigned 16-bit pattern promoted to int, so a signed
+      // reinterpret is required or negative angular rates read as large positives.
       samples.emplace_back(
-        static_cast<float>(BYTESWAP16(rawData[offset + 0])) * scale,
-        static_cast<float>(BYTESWAP16(rawData[offset + 1])) * scale,
-        static_cast<float>(BYTESWAP16(rawData[offset + 2])) * scale);
+        static_cast<float>(static_cast<int16_t>(BYTESWAP16(rawData[offset + 0]))) * scale,
+        static_cast<float>(static_cast<int16_t>(BYTESWAP16(rawData[offset + 1]))) * scale,
+        static_cast<float>(static_cast<int16_t>(BYTESWAP16(rawData[offset + 2]))) * scale);
     }
 
     // Validate sample rate
@@ -463,10 +465,12 @@ namespace Ravl2::GoPro
     for(uint32_t i = 0; i < sampleCount; i++) {
       size_t offset = i * 3;
       // IMPORTANT: GPMF data is big-endian, must byte-swap all int16_t values!
+      // Signed reinterpret of the byte-swapped value (see parseGyro): negative
+      // accelerations else read as large positives.
       samples.emplace_back(
-        static_cast<float>(BYTESWAP16(rawData[offset + 0])) * scale,
-        static_cast<float>(BYTESWAP16(rawData[offset + 1])) * scale,
-        static_cast<float>(BYTESWAP16(rawData[offset + 2])) * scale);
+        static_cast<float>(static_cast<int16_t>(BYTESWAP16(rawData[offset + 0]))) * scale,
+        static_cast<float>(static_cast<int16_t>(BYTESWAP16(rawData[offset + 1]))) * scale,
+        static_cast<float>(static_cast<int16_t>(BYTESWAP16(rawData[offset + 2]))) * scale);
     }
 
     // Validate sample rate
@@ -483,6 +487,94 @@ namespace Ravl2::GoPro
     // Create and append frame
     frames.push_back(std::make_shared<Video::FrameData<AccelSamples>>(
       AccelSamples(samples, sampleRate),
+      streamId + mNextId++,
+      timestamp,
+      Video::StreamType::Data));
+  }
+
+  void GpmfParser::parseCameraOrientation(GPMF_stream *stream, std::vector<std::shared_ptr<Video::Frame>> &frames, Video::StreamItemId streamId, Video::MediaTime timestamp)
+  {
+    if(stream == nullptr) {
+      SPDLOG_WARN("parseCameraOrientation: null stream pointer");
+      return;
+    }
+    uint32_t sampleCount = GPMF_Repeat(stream);
+    if(sampleCount == 0) {
+      SPDLOG_DEBUG("parseCameraOrientation: CORI stream has 0 samples");
+      return;
+    }
+    float sampleRate = getSampleRate(stream);
+
+    // 4x int16 big-endian per sample: quaternion [w, x, y, z], SCAL 32767.
+    // We normalise each quaternion, so the exact scale cancels.
+    auto *rawData = static_cast<int16_t *>(GPMF_RawData(stream));
+    if(rawData == nullptr) {
+      SPDLOG_ERROR("parseCameraOrientation: failed to get raw data (sampleCount={})", sampleCount);
+      return;
+    }
+    std::vector<Quaternion<float>> samples;
+    samples.reserve(sampleCount);
+    for(uint32_t i = 0; i < sampleCount; i++) {
+      size_t offset = i * 4;
+      // BYTESWAP16 yields an unsigned 16-bit pattern promoted to int, so a signed
+      // reinterpret is required or negative quaternion components read as large
+      // positives. Build the [w,x,y,z] vector via the Vector4f constructor.
+      Vector4f v(
+        static_cast<float>(static_cast<int16_t>(BYTESWAP16(rawData[offset + 0]))),
+        static_cast<float>(static_cast<int16_t>(BYTESWAP16(rawData[offset + 1]))),
+        static_cast<float>(static_cast<int16_t>(BYTESWAP16(rawData[offset + 2]))),
+        static_cast<float>(static_cast<int16_t>(BYTESWAP16(rawData[offset + 3]))));
+      Quaternion<float> q(v);
+      q.normalise();
+      samples.push_back(q);
+    }
+
+    frames.push_back(std::make_shared<Video::FrameData<CameraOrientationSamples>>(
+      CameraOrientationSamples(samples, sampleRate),
+      streamId + mNextId++,
+      timestamp,
+      Video::StreamType::Data));
+  }
+
+  void GpmfParser::parseGravity(GPMF_stream *stream, std::vector<std::shared_ptr<Video::Frame>> &frames, Video::StreamItemId streamId, Video::MediaTime timestamp)
+  {
+    if(stream == nullptr) {
+      SPDLOG_WARN("parseGravity: null stream pointer");
+      return;
+    }
+    uint32_t sampleCount = GPMF_Repeat(stream);
+    if(sampleCount == 0) {
+      SPDLOG_DEBUG("parseGravity: GRAV stream has 0 samples");
+      return;
+    }
+    float sampleRate = getSampleRate(stream);
+
+    // 3x int16 big-endian per sample: gravity direction [x, y, z], SCAL 32767.
+    // Normalised to a unit vector, so the exact scale cancels.
+    auto *rawData = static_cast<int16_t *>(GPMF_RawData(stream));
+    if(rawData == nullptr) {
+      SPDLOG_ERROR("parseGravity: failed to get raw data (sampleCount={})", sampleCount);
+      return;
+    }
+    std::vector<Vector3f> samples;
+    samples.reserve(sampleCount);
+    for(uint32_t i = 0; i < sampleCount; i++) {
+      size_t offset = i * 3;
+      // Signed reinterpret (see parseCameraOrientation): negative components else read
+      // as large positives.
+      Vector3f g(
+        static_cast<float>(static_cast<int16_t>(BYTESWAP16(rawData[offset + 0]))),
+        static_cast<float>(static_cast<int16_t>(BYTESWAP16(rawData[offset + 1]))),
+        static_cast<float>(static_cast<int16_t>(BYTESWAP16(rawData[offset + 2]))));
+      const float n = g.norm();
+      if(n > 1e-6f) {
+        g /= n;
+      }
+      samples.push_back(g);
+    }
+
+    frames.push_back(std::make_shared<Video::FrameData<GravitySamples>>(
+      GravitySamples(samples, sampleRate),
       streamId + mNextId++,
       timestamp,
       Video::StreamType::Data));
@@ -535,6 +627,16 @@ namespace Ravl2::GoPro
 
         case MAKEID('A', 'C', 'C', 'L'):
           parseAccel(levelStream, frames, streamId, timestamp);
+          processed = true;
+          break;
+
+        case MAKEID('C', 'O', 'R', 'I'):
+          parseCameraOrientation(levelStream, frames, streamId, timestamp);
+          processed = true;
+          break;
+
+        case MAKEID('G', 'R', 'A', 'V'):
+          parseGravity(levelStream, frames, streamId, timestamp);
           processed = true;
           break;
         case MAKEID('L', 'O', 'G', 'S'):

@@ -6,6 +6,7 @@
 
 #include "Ravl2/Types.hh"
 #include "Ravl2/Geometry/GPSCoordinate.hh"
+#include "Ravl2/Geometry/Quaternion.hh"
 #include <cereal/cereal.hpp>
 #include <vector>
 
@@ -117,6 +118,65 @@ namespace Ravl2::GoPro
     [[nodiscard]] const std::vector<Vector3f>& data() const { return samples; }
 
     //! Serialization support
+    template<class Archive>
+    void serialize(Archive& archive)
+    {
+      archive(samples, sampleRate);
+    }
+  };
+
+  //! Collection of camera-orientation (CORI) samples with sample-rate metadata.
+  //! CORI is GoPro's onboard sensor-fusion camera orientation as a unit quaternion
+  //! [w, x, y, z], one per video frame (~30 samples per GPMF packet). Drift-corrected
+  //! (unlike raw gyro integration), so this is the preferred per-frame rotation. Stored
+  //! normalised; the raw int16 SCAL (32767) cancels under normalisation.
+  struct CameraOrientationSamples
+  {
+    std::vector<Quaternion<float>> samples;//!< Unit camera-orientation quaternions [w,x,y,z]
+    float sampleRate = 0.0F;               //!< Samples per second (0 = invalid/unset)
+
+    CameraOrientationSamples() = default;
+    CameraOrientationSamples(const std::vector<Quaternion<float>>& s, float rate)
+      : samples(s), sampleRate(rate)
+    {
+      if(rate <= 0.0F) {
+        sampleRate = 0.0F;
+      }
+    }
+
+    [[nodiscard]] size_t size() const { return samples.size(); }
+    [[nodiscard]] bool empty() const { return samples.empty(); }
+    [[nodiscard]] const std::vector<Quaternion<float>>& data() const { return samples; }
+
+    template<class Archive>
+    void serialize(Archive& archive)
+    {
+      archive(samples, sampleRate);
+    }
+  };
+
+  //! Collection of gravity-vector (GRAV) samples with sample-rate metadata.
+  //! GRAV is the unit gravity ("down") direction in the camera frame from GoPro's
+  //! fusion, one per video frame. Useful for levelling and as the gravity orientation
+  //! prior. Stored normalised (the raw int16 SCAL 32767 cancels).
+  struct GravitySamples
+  {
+    std::vector<Vector3f> samples;//!< Unit gravity directions in the camera frame [x,y,z]
+    float sampleRate = 0.0F;      //!< Samples per second (0 = invalid/unset)
+
+    GravitySamples() = default;
+    GravitySamples(const std::vector<Vector3f>& s, float rate)
+      : samples(s), sampleRate(rate)
+    {
+      if(rate <= 0.0F) {
+        sampleRate = 0.0F;
+      }
+    }
+
+    [[nodiscard]] size_t size() const { return samples.size(); }
+    [[nodiscard]] bool empty() const { return samples.empty(); }
+    [[nodiscard]] const std::vector<Vector3f>& data() const { return samples; }
+
     template<class Archive>
     void serialize(Archive& archive)
     {
