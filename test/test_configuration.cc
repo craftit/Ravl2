@@ -30,6 +30,25 @@ TEST_CASE("Configuration")
     ASSERT_EQ(config.getNumber("b", "test 2", 0, 0, 100), 2);
   }
   
+  SECTION("Bool")
+  {
+    // Regression: get<bool> routed through the generic init<bool>, which read the
+    // JSON value as a string ("true"/"false") and parsed it with `istringstream >>
+    // bool` WITHOUT std::boolalpha — so a JSON `true`/`false` silently yielded the
+    // default. (getBool worked; get<bool> did not.) Fixed by a fromString<bool>
+    // specialisation. Both accessors must now read JSON booleans, overriding the
+    // default in both directions.
+    Ravl2::SetSPDLogLevel beQuiet(spdlog::level::off);
+    Ravl2::Configuration config = Ravl2::Configuration::fromJSONString(R"( { "t":true, "f":false } )");
+    ASSERT_EQ(config.get<bool>("t", "true field, default false", false), true);
+    ASSERT_EQ(config.get<bool>("f", "false field, default true", true), false);
+    ASSERT_EQ(config.getBool("t", "true field, default false", false), true);
+    ASSERT_EQ(config.getBool("f", "false field, default true", true), false);
+    // Absent key falls back to the supplied default (both signs).
+    ASSERT_EQ(config.get<bool>("missing", "absent, default true", true), true);
+    ASSERT_EQ(config.get<bool>("missing2", "absent, default false", false), false);
+  }
+
   SECTION("Vector")
   {
     Ravl2::SetSPDLogLevel beQuiet(spdlog::level::off);

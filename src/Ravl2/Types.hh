@@ -181,6 +181,25 @@ namespace Ravl2
     return val;
   }
 
+  //! Parse a bool from a string.
+  //! The primary template's `istringstream >> bool` parses numerically (1/0) and
+  //! FAILS on the words "true"/"false" (no std::boolalpha), silently yielding false.
+  //! JSON booleans stringify as "true"/"false" (nlohmann::to_string), so the generic
+  //! path made Configuration::get<bool> always return its default for a JSON bool —
+  //! a landmine that only stays hidden where the default already matches. Accept both
+  //! the word and numeric forms (case-insensitively) so get<bool> reads config files.
+  template <>
+  inline bool fromString<bool>(const std::string &text)
+  {
+    if(text == "true" || text == "1") { return true; }
+    if(text == "false" || text == "0") { return false; }
+    // Fall back to a boolalpha stream parse for anything unexpected.
+    bool val = false;
+    std::istringstream is(text);
+    is >> std::boolalpha >> val;
+    return val;
+  }
+
   //! Register an alternative name for a type.
   bool registerTypeName(const std::type_info &type, const std::string &name);
 
