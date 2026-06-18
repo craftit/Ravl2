@@ -58,6 +58,7 @@ add_executable(tests
         test_segmentation.cc
         test_pixel.cc
         test_lines.cc
+        test_edgeDetector.cc
         test_CallbackArray.cc
         test_base64.cc
         test_configuration.cc

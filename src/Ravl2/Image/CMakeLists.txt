@@ -3,6 +3,8 @@ include(GenerateExportHeader)
 
 add_library (Ravl2Image
         EdgeSobel.hh EdgeSobel.cc
+        Edgel.hh
+        EdgeDetector.hh EdgeDetector.cc
         BilinearInterpolation.cc BilinearInterpolation.hh
         Array2Sqr2Iter.hh
         Array2Sqr2Iter2.hh
