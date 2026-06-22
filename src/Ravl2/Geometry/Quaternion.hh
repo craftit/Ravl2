@@ -153,6 +153,11 @@ namespace Ravl2
     //! Compute the rotation matrix
     [[nodiscard]] constexpr Matrix<RealT, 3, 3> toMatrix() const
     {
+      // A quaternion used as a rotation must be unit: toMatrix() does NOT
+      // renormalise, so a non-unit quaternion silently yields a SCALED matrix
+      // (by |q|^2) that explodes any projected geometry. This is the same
+      // contract rotate() enforces. (Compiled out under NDEBUG.)
+      assert(isNormalised());
       Matrix<RealT, 3, 3> m({{m_vec[0] * m_vec[0] + m_vec[1] * m_vec[1] - m_vec[2] * m_vec[2] - m_vec[3] * m_vec[3],
                               2.0f * (m_vec[1] * m_vec[2] - m_vec[0] * m_vec[3]),
                               2.0f * (m_vec[1] * m_vec[3] + m_vec[0] * m_vec[2])},
