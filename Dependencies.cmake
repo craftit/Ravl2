@@ -35,8 +35,11 @@ function(RAVL2_setup_dependencies)
 
   # Try and use native packages if they're available
 
-  find_package(fmt QUIET)
-  find_package(spdlog QUIET)
+  # Deliberately do NOT probe for a system fmt or spdlog — use the pinned CPM
+  # pair below. LibTorch bundles fmt 12.1.0 headers that leak onto the include
+  # path, so a system fmt 9.1.0 lib gives `undefined reference to fmt::v12::...`,
+  # and a system spdlog 1.12 cannot compile against fmt 12 (both surface when a
+  # ROS2 toolchain is sourced). A parent-provided fmt::fmt/spdlog::spdlog wins.
   find_package(Eigen3 5.0 QUIET)
   find_package(Catch2 3 QUIET)
   find_package(CLI11 QUIET)
