@@ -292,34 +292,5 @@ namespace Ravl2
       }
 
     }
-
-    SECTION("isProper")
-    {
-      // Identity is proper.
-      CHECK(Isometry3<RealT>::identity().isProper());
-
-      // A normal rotation + translation is proper.
-      Isometry3<RealT> const normal(
-        Quaternion<RealT>::fromEulerAnglesXYZ(RealT(std::numbers::pi / 4.0), RealT(std::numbers::pi / 5.0),
-                                              RealT(std::numbers::pi / 6.0)),
-        Vector3f{1, 2, 3});
-      CHECK(normal.isProper());
-      CHECK(normal.isReal());
-
-      // A non-finite translation is not proper (nor real).
-      Isometry3<RealT> const badTranslation(
-        Quaternion<RealT>::identity(),
-        Vector3f{std::numeric_limits<RealT>::infinity(), 0, 0});
-      CHECK_FALSE(badTranslation.isProper());
-      CHECK_FALSE(badTranslation.isReal());
-
-      // A finite-but-non-unit quaternion is real but NOT proper: this is the
-      // case isReal() misses and isProper() must catch.
-      Isometry3<RealT> const nonUnitRotation(
-        Quaternion<RealT>(RealT(2), RealT(0), RealT(0), RealT(0)),
-        Vector3f{1, 2, 3});
-      CHECK(nonUnitRotation.isReal());
-      CHECK_FALSE(nonUnitRotation.isProper());
-    }
   }
 }

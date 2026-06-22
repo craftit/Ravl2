@@ -102,14 +102,6 @@ namespace Ravl2
       return m_rotation.isReal() && m_translation.array().isFinite().all();
     }
 
-    //! Is this a proper rigid transform: all finite AND a unit (normalised)
-    //! rotation? isReal() alone misses a finite-but-non-unit quaternion, which
-    //! scales toMatrix() and explodes projected geometry.
-    [[nodiscard]] constexpr bool isProper() const
-    {
-      return isReal() && m_rotation.isNormalised();
-    }
-
   private:
     Quaternion<RealT> m_rotation = Quaternion<RealT>::identity();
     Vector<RealT, 3> m_translation = {0, 0, 0};
