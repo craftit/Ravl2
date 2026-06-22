@@ -21,6 +21,10 @@ target_link_libraries(Ravl2GoPro
     PUBLIC
         ravl2::Ravl2Core
         ravl2::Ravl2Video
+        # GpmfParser uses Ravl2::Quaternion<float>, whose out-of-line explicit
+        # instantiation (extern template) lives in Ravl2Geometry; link it so
+        # consumers (e.g. doEvalClusterCoherence) resolve those symbols.
+        ravl2::Ravl2Geometry
     PRIVATE
         RAVL2_options
         RAVL2_warnings
