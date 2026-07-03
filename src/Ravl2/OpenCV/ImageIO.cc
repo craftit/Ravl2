@@ -295,6 +295,15 @@ namespace Ravl2
     [[maybe_unused]] bool g_reg5 = registerConversion([](Array<float, 2> img) -> cv::Mat { return toCvMat(img); }, 0.95f);
     [[maybe_unused]] bool g_reg6 = registerConversion([](Array<double, 2> img) -> cv::Mat { return toCvMat(img); }, 0.95f);
     [[maybe_unused]] bool g_reg7 = registerConversion([](Array<PixelBGR8, 2> img) -> cv::Mat { return toCvMat(img); }, 0.95f);
+    // Direct RGB8 -> cv::Mat (BGR swap): without this the converter finds a CHAIN through
+    // greyscale (PixelRGB8 -> uint8 -> cv::Mat) and every saved colour image silently loses
+    // its chroma (found via all-grey surface textures whose in-memory data was colour).
+    [[maybe_unused]] bool g_reg8 = registerConversion([](Array<PixelRGB8, 2> img) -> cv::Mat {
+      const cv::Mat rgb(cv::Size(img.range(1).size(), img.range(0).size()), CV_8UC3, addressOfMin(img));
+      cv::Mat bgr;
+      cv::cvtColor(rgb, bgr, cv::COLOR_RGB2BGR);// deep copy: safe past img's lifetime
+      return bgr;
+    }, 0.98f);
     //[[maybe_unused]] bool g_reg8 = registerConversion([](Array<PixelBGR32F, 2> img) -> cv::Mat { return toCvMat(img); }, 0.95f);
 
   }// namespace
