@@ -111,6 +111,13 @@ target_link_libraries(
           Eigen3::Eigen
           ravl2::Ravl2Display)
 
+# The GoPro module is optional -- GoPro/CMakeLists.txt returns early without a GPMF parser, so the
+# target may not exist. Add its tests only when it does.
+if(TARGET Ravl2GoPro)
+  target_sources(tests PRIVATE test_videoGpsSampler.cc)
+  target_link_libraries(tests PRIVATE ravl2::Ravl2GoPro)
+endif()
+
 if(WIN32 AND BUILD_SHARED_LIBS)
   add_custom_command(
     TARGET tests

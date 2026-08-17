@@ -12,6 +12,7 @@ set(GOPRO_SOURCES
     GpmfTypes.cc GpmfTypes.hh
     GpmfParser.cc GpmfParser.hh
     GpmfUtilities.cc GpmfUtilities.hh
+    VideoGpsSampler.cc VideoGpsSampler.hh
 )
 
 add_library(Ravl2GoPro ${GOPRO_SOURCES})
