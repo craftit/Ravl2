@@ -103,13 +103,16 @@ target_link_libraries(
           ravl2::Ravl2Image
           ravl2::Ravl2ImageSegmentation
           ravl2::Ravl2x3D
-          ravl2::Ravl2OpenCV
           ravl2::Ravl2ImageIO
           ravl2::Ravl2Video
           ravl2::Ravl2Optimise
           Catch2::Catch2WithMain
           Eigen3::Eigen
           ravl2::Ravl2Display)
+# Only test_segmentation's DODEBUG path uses the OpenCV bridge.
+if(TARGET ravl2::Ravl2OpenCV)
+  target_link_libraries(tests PRIVATE ravl2::Ravl2OpenCV)
+endif()
 
 # The GoPro module is optional -- GoPro/CMakeLists.txt returns early without a GPMF parser, so the
 # target may not exist. Add its tests only when it does.

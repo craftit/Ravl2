@@ -237,9 +237,11 @@ target_link_libraries(doDisplay
   PRIVATE
     Ravl2Display
     Ravl2Core
-    Ravl2OpenCV
-
 )
+# Ravl2OpenCV registers extra image-file formats; doDisplay works without it.
+if(TARGET Ravl2OpenCV)
+  target_link_libraries(doDisplay PRIVATE Ravl2OpenCV)
+endif()
 
 target_compile_definitions(doDisplay PRIVATE -DRAVL_SOURCE_DIR="${PROJECT_SOURCE_DIR}" -DRAVL_BINARY_DIR="${PROJECT_BINARY_DIR}" -DRAVL_INSTALL_PREFIX="${CMAKE_INSTALL_PREFIX}")
 

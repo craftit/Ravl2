@@ -5,14 +5,16 @@ target_link_libraries (benchmarkAccess PUBLIC Ravl2Core )
 add_executable(exAssert exAssert.cc)
 target_link_libraries (exAssert PUBLIC Ravl2Core )
 
-add_executable(exCorner exCorner.cc)
-target_link_libraries (exCorner PUBLIC Ravl2Image Ravl2OpenCV CLI11::CLI11)
+if(TARGET Ravl2OpenCV)
+    add_executable(exCorner exCorner.cc)
+    target_link_libraries (exCorner PUBLIC Ravl2Image Ravl2OpenCV CLI11::CLI11)
 
-add_executable(exHarrisAffine exHarrisAffine.cc)
-target_link_libraries (exHarrisAffine PUBLIC Ravl2Image Ravl2OpenCV CLI11::CLI11)
+    add_executable(exHarrisAffine exHarrisAffine.cc)
+    target_link_libraries (exHarrisAffine PUBLIC Ravl2Image Ravl2OpenCV CLI11::CLI11)
 
-add_executable(extrema extrema.cc)
-target_link_libraries (extrema PUBLIC Ravl2Image Ravl2ImageSegmentation Ravl2OpenCV CLI11::CLI11)
+    add_executable(extrema extrema.cc)
+    target_link_libraries (extrema PUBLIC Ravl2Image Ravl2ImageSegmentation Ravl2OpenCV CLI11::CLI11)
+endif()
 
 add_executable(exRandomSearchOptimise exRandomSearchOptimise.cc)
 target_link_libraries (exRandomSearchOptimise PUBLIC Ravl2Optimise CLI11::CLI11)

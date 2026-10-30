@@ -10,28 +10,7 @@ option(RAVL2_ENABLE_DISPLAY_STACK "Enable SDL2+bgfx+ImGui display stack (optiona
 # targets
 function(RAVL2_setup_dependencies)
 
-  # Sort out some blas/lapack stuff
-  #set(BLAS_LIBS /usr/lib/x86_64-linux-gnu/blas)
-  #set(BLA_VENDOR "Generic")
-  #set(BLA_PKGCONFIG_BLAS "blas")
-
-  #if on apple and BLA_VENDOR is not set, set it to Apple
-  if (APPLE AND NOT DEFINED BLA_VENDOR)
-    if(APPLE)
-      set(BLA_VENDOR "Apple")
-    else()
-      set(BLA_VENDOR "All")
-    endif ()
-  else ()
-    #set(BLA_VENDOR "All")
-  endif()
-
-  find_package(BLAS REQUIRED)
-  message(STATUS "BLAS_LIBS: ${BLAS_LIBRARIES}")
-  message(STATUS "BLA_VENDOR: ${BLA_VENDOR}")
-
-  find_package(LAPACK REQUIRED)
-  message(STATUS "LAPACK_LIBRARIES: ${LAPACK_LIBRARIES}")
+  # No BLAS/LAPACK: nothing in Ravl2 calls them (Eigen is not built with EIGEN_USE_BLAS).
 
   # Try and use native packages if they're available
 
