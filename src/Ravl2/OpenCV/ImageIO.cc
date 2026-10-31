@@ -2,7 +2,7 @@
 // Created by charles galambos on 25/08/2024.
 //
 
-#include <opencv4/opencv2/opencv.hpp>
+#include <opencv2/opencv.hpp>
 #include <opencv2/videoio.hpp>
 
 #include "Ravl2/OpenCV/Image.hh"

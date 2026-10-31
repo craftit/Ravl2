@@ -5,7 +5,7 @@
 #include <cstdlib>
 #include <spdlog/spdlog.h>
 #include <optional>
-#include <opencv4/opencv2/opencv.hpp>
+#include <opencv2/opencv.hpp>
 #include "Ravl2/OpenCV/Display.hh"
 #include "Ravl2/IO/OutputFormat.hh"
 #include "Ravl2/IO/TypeConverter.hh"

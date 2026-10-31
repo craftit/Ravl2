@@ -32,7 +32,6 @@
 #include <dlib/gui_widgets.h>
 #endif
 #include <dlib/image_processing.h>
-#include <dlib/opencv.h>
 #pragma GCC diagnostic pop
 
 #include "Ravl2/ThreadedQueue.hh"
