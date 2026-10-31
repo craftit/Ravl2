@@ -264,7 +264,7 @@ namespace Ravl2::Video
 #ifdef WITH_GPMF
     // Initialize GPMF parser BEFORE filling packet queue or reading frames
     // because fillPacketQueue() and next() may call decodePacket() which needs the parser
-    m_gpmfParser = std::make_unique<GoPro::GpmfParser>();
+    m_gpmfParser.reset(new GoPro::GpmfParser());
     SPDLOG_DEBUG("GPMF parser initialized");
 #endif
 
@@ -358,6 +358,13 @@ namespace Ravl2::Video
 
     SPDLOG_INFO("Set packet queue size to: {} (based on B-frame reordering, not GOP size) on iter {} ",
                 m_minQueueSize,static_cast<void *>(this));
+  }
+
+  void FfmpegMultiStreamIterator::GpmfParserDeleter::operator()([[maybe_unused]] GoPro::GpmfParser *parser) const
+  {
+#ifdef WITH_GPMF
+    delete parser;
+#endif
   }
 
   FfmpegMultiStreamIterator::~FfmpegMultiStreamIterator()
@@ -1330,7 +1337,7 @@ namespace Ravl2::Video
               av_frame_get_buffer(yuv, 32);
               for (int r = 0; r < frame->height; ++r)
                 std::memcpy(yuv->data[0] + r * yuv->linesize[0],
-                            frame->data[0] + r * frame->linesize[0], frame->width);
+                            frame->data[0] + r * frame->linesize[0], static_cast<std::size_t>(frame->width));
               for (int r = 0; r < frame->height / 2; ++r) {
                 const uint8_t* src = frame->data[1] + r * frame->linesize[1];
                 uint8_t* dU = yuv->data[1] + r * yuv->linesize[1];

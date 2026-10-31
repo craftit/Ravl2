@@ -20,12 +20,12 @@ struct AVPacket;
 struct AVFrame;
 struct AVStream;
 
-#ifdef WITH_GPMF
+// Always declared (even without WITH_GPMF) so the class layout does not depend on
+// a macro that is private to Ravl2Video.
 namespace Ravl2::GoPro
 {
   class GpmfParser;
 }
-#endif
 
 namespace Ravl2::Video
 {
@@ -245,10 +245,9 @@ namespace Ravl2::Video
     //! Maximum number of keyframes we will index on open.
     static constexpr std::size_t MAX_KEYFRAME_INDEX= 10000;
 
-#ifndef NDEBUG
-    //! Last delivered PTS for timestamp validation (debug builds only)
+    //! Last delivered PTS for timestamp validation (only checked in debug builds).
+    //! Always present so the class layout doesn't depend on NDEBUG.
     int64_t m_lastDeliveredPts = -1;
-#endif
 
     //! Max frame search when looking for a time code.
     static constexpr int MAX_FRAME_SEARCH = 30;
@@ -265,10 +264,16 @@ namespace Ravl2::Video
     //! Verbose logging.
     bool mVerbose = false;
 
-#ifdef WITH_GPMF
-    //! GPMF parser instance for this iterator
+    //! Deleter defined in the .cc so GpmfParser can stay incomplete here.
+    struct GpmfParserDeleter
+    {
+      void operator()(GoPro::GpmfParser *parser) const;
+    };
+
+    //! GPMF parser instance for this iterator (null unless built WITH_GPMF).
     //! Each iterator needs its own parser to maintain an independent state (mNextId)
-    std::unique_ptr<GoPro::GpmfParser> m_gpmfParser;
-#endif
+    //! Always declared: WITH_GPMF is a PRIVATE define of Ravl2Video, so making this
+    //! member conditional gives clients a smaller object than the library expects.
+    std::unique_ptr<GoPro::GpmfParser, GpmfParserDeleter> m_gpmfParser;
   };
 } // namespace Ravl2::Video

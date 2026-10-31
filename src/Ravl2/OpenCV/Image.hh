@@ -37,7 +37,7 @@ namespace Ravl2
     IndexRange<N> indexRange;
     std::array<int, N> strides;
     for(unsigned i = 0; i < N; ++i) {
-      indexRange[i] = IndexRange<1>(0, m.size[int(i)] - 1);
+      indexRange[i] = IndexRange<1>(0, m.size.p[i] - 1);
       strides[i] = int(m.step[int(i)] / sizeof(PixelT));
     }
     auto dataPtr = reinterpret_cast<PixelT *>(m.data);
@@ -73,7 +73,7 @@ namespace Ravl2
     IndexRange<N> indexRange;
     std::array<int, N> strides;
     for(unsigned i = 0; i < N; ++i) {
-      indexRange[i] = IndexRange<1>(0, m.size[int(i)] - 1);
+      indexRange[i] = IndexRange<1>(0, m.size.p[i] - 1);
       strides[i] = int(m.step[int(i)] / sizeof(DataT));
     }
     return ArrayView<DataT, N>(reinterpret_cast<DataT *>(m.data), indexRange, strides);

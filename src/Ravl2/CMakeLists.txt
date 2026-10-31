@@ -95,7 +95,10 @@ target_link_libraries(Ravl2Core PRIVATE RAVL2_options RAVL2_warnings)
 # We need to define CEREAL_THREAD_SAFE 1 for cereal to be thread safe
 target_compile_definitions(Ravl2Core PUBLIC CEREAL_THREAD_SAFE=1)
 
-target_link_libraries(Ravl2Core PUBLIC Eigen3::Eigen cereal::cereal fmt::fmt spdlog::spdlog)
+# fmt/spdlog must come first: header-only packages from a system prefix (e.g. Homebrew
+# cereal/Eigen) export that prefix's include dir (/opt/homebrew/include), which would
+# otherwise shadow the pinned CPM fmt headers with a system fmt of a different version.
+target_link_libraries(Ravl2Core PUBLIC fmt::fmt spdlog::spdlog Eigen3::Eigen cereal::cereal)
 
 target_include_directories(Ravl2Core ${WARNING_GUARD} PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src>
         $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/include>

@@ -26,7 +26,8 @@ find_package(JPEG QUIET)
 if(JPEG_FOUND)
   target_link_libraries(Ravl2ImageIO PRIVATE JPEG::JPEG)
   target_compile_definitions(Ravl2ImageIO PRIVATE RAVL2_HAVE_JPEG=1)
-  target_include_directories(Ravl2ImageIO PRIVATE ${JPEG_INCLUDE_DIR})
+  # No explicit target_include_directories(${JPEG_INCLUDE_DIR}): JPEG::JPEG already supplies it,
+  # and a plain -I/opt/homebrew/include would shadow the pinned fmt headers with Homebrew's.
 else()
   message(STATUS "libjpeg not found; JPEGTurbo loader will remain a stub (no decode)")
 endif()
