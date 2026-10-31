@@ -16,14 +16,14 @@ namespace Ravl2::DebugDisplay
     int width = 0;
     int height = 0;
 
-#if defined(RAVL2_WITH_BGFX)
-    // GPU texture resources (bgfx)
+    // GPU texture resources (bgfx). Always declared, even without RAVL2_WITH_BGFX,
+    // because that define is PRIVATE to Ravl2Display: a conditional layout would make
+    // clients see a different object size than the library. Unused without bgfx.
     uint16_t texWidth = 0;
     uint16_t texHeight = 0;
     bool gpuDirty = true;//!< Marked when CPU data changes
     // Store as uint16_t handle index to avoid including bgfx headers
     uint16_t textureHandleIdx = UINT16_MAX;//!< bgfx::kInvalidHandle as UINT16_MAX
-#endif
     virtual ~Image2DNodeBase();
 
     //! Prepare node for rendering (handles GPU texture creation/upload)
@@ -45,9 +45,7 @@ namespace Ravl2::DebugDisplay
     int getWidth() const { return width; }
     int getHeight() const { return height; }
 
-#if defined(RAVL2_WITH_BGFX)
     uint16_t getTextureHandle() const { return textureHandleIdx; }
-#endif
   };
 
 }// namespace Ravl2::DebugDisplay

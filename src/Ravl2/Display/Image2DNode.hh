@@ -49,9 +49,7 @@ namespace Ravl2::DebugDisplay
       pixelData = std::move(data);
       width = w;
       height = h;
-#if defined(RAVL2_WITH_BGFX)
       gpuDirty = true;
-#endif
     }
 
     //! Set image data from raw pointer
@@ -61,9 +59,7 @@ namespace Ravl2::DebugDisplay
       pixelData.assign(data, data + sz);
       width = w;
       height = h;
-#if defined(RAVL2_WITH_BGFX)
       gpuDirty = true;
-#endif
     }
 
     //! Query pixel information at (x, y)
@@ -154,9 +150,7 @@ namespace Ravl2::DebugDisplay
     void setNormalization(const NormalizationSettings &settings)
     {
       norm = settings;
-#if defined(RAVL2_WITH_BGFX)
       gpuDirty = true;
-#endif
     }
 
     const NormalizationSettings &getNormalization() const { return norm; }
