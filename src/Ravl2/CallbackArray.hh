@@ -192,22 +192,34 @@ namespace Ravl2
     }
 
     //! Remove a callback by id
+    //! The callback is destroyed after the lock is released: destroying it can release the last
+    //! reference to an object whose destructor removes its own callbacks from this array.
     void remove(size_t id, size_t version) override
     {
-      std::lock_guard lock(m_mutexAccess);
-      assert(id < m_callbacks.size());
-      auto &cb = m_callbacks[id];
-      if(cb.m_version == version) {
-        cb.m_callback = FuncT();
+      FuncT removed;
+      {
+        std::lock_guard lock(m_mutexAccess);
+        assert(id < m_callbacks.size());
+        auto &cb = m_callbacks[id];
+        if(cb.m_version == version) {
+          removed = std::move(cb.m_callback);
+          cb.m_callback = FuncT();
+        }
       }
     }
 
-    //! Remove all callbacks
+    //! Remove all callbacks. As remove(), they are destroyed outside the lock (a deadlock when a
+    //! callback held the last reference to an object that removes its callbacks on destruction).
     void clear()
     {
-      std::lock_guard lock(m_mutexAccess);
-      for(auto &cb : m_callbacks) {
-        cb.m_callback = FuncT();
+      std::vector<FuncT> removed;
+      {
+        std::lock_guard lock(m_mutexAccess);
+        removed.reserve(m_callbacks.size());
+        for(auto &cb : m_callbacks) {
+          removed.push_back(std::move(cb.m_callback));
+          cb.m_callback = FuncT();
+        }
       }
     }
 
