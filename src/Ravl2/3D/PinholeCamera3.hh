@@ -77,7 +77,7 @@ namespace Ravl2
       return this->m_k2;
     };
 
-    //! project 3D point in space to 2D image point
+    //! project 3D point in space to a 2D (row, col) image point
     //!  Can result in a divide-by-zero for degenerate points.
     //!  See projectCheck if this is to be avoided.
     void project(Vector<RealT, 2> &z, const Vector<RealT, 3> &x) const
@@ -86,30 +86,6 @@ namespace Ravl2
       Vector<RealT, 2> zd = distort0(toVector<RealT>(Rx[0] / Rx[2], Rx[1] / Rx[2]));
       z[0] = this->m_cx + this->m_fx * zd[0];
       z[1] = this->m_cy + this->m_fy * zd[1];
-    }
-
-    //! @brief Project a 3D point to a (row, col) image point.
-    //! @details Ravl2 image convention (row increases downward, col rightward),
-    //! matching array indexing and the rest of the library — unlike project(),
-    //! whose 2D point is (x, y) = (col, row). Prefer this (and unprojectZRowCol)
-    //! at any call site that works with image arrays / fleck centres / polygons,
-    //! so the (row,col) <-> (x,y) swap lives only inside the camera.
-    void projectRowCol(Vector<RealT, 2> &rowCol, const Vector<RealT, 3> &x) const
-    {
-      Vector<RealT, 2> xy;
-      project(xy, x);
-      rowCol[0] = xy[1];// row  <- y
-      rowCol[1] = xy[0];// col  <- x
-    }
-
-    //! @brief Inverse projection of a (row, col) image point at camera-frame depth z.
-    //! @details The (row, col) counterpart of unprojectZ() (which takes (x,y)=(col,row)).
-    [[nodiscard]] Point<RealT, 3> unprojectZRowCol(const Vector<RealT, 2> &rowCol, RealT z) const
-    {
-      Vector<RealT, 2> xy;
-      xy[0] = rowCol[1];// x <- col
-      xy[1] = rowCol[0];// y <- row
-      return unprojectZ(xy, z);
     }
 
     //! project a set of 3D point to a 2D image point
@@ -238,7 +214,7 @@ namespace Ravl2
     {
       Vector<RealT, 2> ret = z;
       // NOTE: do not undistort a point greater than one image width/height outside the image as this may not converge
-      if((this->m_k1 != 0 || this->m_k2 != 0) && z[0] > (RealT(this->m_frame.min(1) - this->m_frame.range(1).size()) - this->m_cx) / this->m_fx && z[0] < (RealT(this->m_frame.max(1) + this->m_frame.range(1).size()) - this->m_cx) / this->m_fx && z[1] > (RealT(this->m_frame.min(0) - this->m_frame.range(0).size()) - this->m_cy) / this->m_fy && z[1] < (RealT(this->m_frame.max(0) + this->m_frame.range(0).size()) - this->m_cy) / this->m_fy) {
+      if((this->m_k1 != 0 || this->m_k2 != 0) && z[0] > (RealT(this->m_frame.min(0) - this->m_frame.range(0).size()) - this->m_cx) / this->m_fx && z[0] < (RealT(this->m_frame.max(0) + this->m_frame.range(0).size()) - this->m_cx) / this->m_fx && z[1] > (RealT(this->m_frame.min(1) - this->m_frame.range(1).size()) - this->m_cy) / this->m_fy && z[1] < (RealT(this->m_frame.max(1) + this->m_frame.range(1).size()) - this->m_cy) / this->m_fy) {
         const RealT &xd = z[0];
         const RealT &yd = z[1];
         RealT dl = std::sqrt(xd * xd + yd * yd);

@@ -1,5 +1,6 @@
 
 #include "Ravl2/Catch2checks.hh"
+#include <catch2/matchers/catch_matchers_floating_point.hpp>
 
 #include "Ravl2/IO/Cereal.hh"
 #include "Ravl2/3D/PinholeCamera0.hh"
@@ -312,6 +313,131 @@ namespace Ravl2
     {
       TriMesh<float> mesh = createTriMeshSphere(3,8,1.0);
       CHECK(testTexCoords(mesh));
+    }
+  }
+
+
+  //! The camera convention every constructor must share: image points are (row, col) and the
+  //! 3D camera frame is OpenCV's (x right, y down, z forward). The images are non-square with an
+  //! off-centre principal point, and the translation is non-zero, so a swapped axis, a crossed
+  //! principal point or an unswapped translation each show up.
+  TEST_CASE("PinholeCamera conventions")
+  {
+    const IndexRange<2> frame = {{0, 479}, {0, 639}};
+    // OpenCV intrinsics: x = col, y = row.
+    const float cxCol = 200.0f, cyRow = 100.0f, fxCol = 500.0f, fyRow = 400.0f;
+    const Vector<float, 3> t = {0.1f, -0.2f, 0.3f};
+    const Point<float, 3> world = {0.2f, 0.1f, 2.0f};
+    const Vector<float, 3> camPt = world + t;// R = I
+    const float expectRow = cyRow + fyRow * camPt[1] / camPt[2];
+    const float expectCol = cxCol + fxCol * camPt[0] / camPt[2];
+
+    SECTION("fromParameters OpenCV projects to (row, col) with an OpenCV-handed frame")
+    {
+      auto cam = PinholeCamera3<float>::fromParameters<CameraCoordinateSystemT::OpenCV>(
+        cxCol, cyRow, fxCol, fyRow, Matrix<float, 3, 3>::Identity(), t, frame, 0.0f, 0.0f);
+      CHECK(cam.hasCoordSwap());
+      Vector<float, 2> pix;
+      REQUIRE(cam.projectCheck(pix, world));
+      CHECK_THAT(pix[0], Catch::Matchers::WithinAbs(expectRow, 1e-3));
+      CHECK_THAT(pix[1], Catch::Matchers::WithinAbs(expectCol, 1e-3));
+      CHECK(cam.isInView(world));
+
+      const Point<float, 3> back = cam.unprojectZ(toPoint<float>(expectRow, expectCol), camPt[2]);
+      CHECK(euclidDistance(back, world) < 1e-4f);
+
+      // The translation is part of the extrinsic: origin and extrinsics are the external ones.
+      CHECK(euclidDistance(cam.origin(), Point<float, 3>(-t)) < 1e-5f);
+      CHECK(cam.extrinsicTranslation().isApprox(t));
+      CHECK(cam.extrinsicRotation().isApprox(Matrix<float, 3, 3>::Identity()));
+
+      // The OpenCV projection matrix gives (x, y) = (col, row); the Native one (row, col).
+      const Vector<float, 3> xyw = cam.projectionMatrix<CameraCoordinateSystemT::OpenCV>() * toHomogeneous(world);
+      CHECK_THAT(xyw[0] / xyw[2], Catch::Matchers::WithinAbs(expectCol, 1e-3));
+      CHECK_THAT(xyw[1] / xyw[2], Catch::Matchers::WithinAbs(expectRow, 1e-3));
+      const Vector<float, 3> rcw = cam.projectionMatrix<CameraCoordinateSystemT::Native>() * toHomogeneous(world);
+      CHECK_THAT(rcw[0] / rcw[2], Catch::Matchers::WithinAbs(expectRow, 1e-3));
+      CHECK_THAT(rcw[1] / rcw[2], Catch::Matchers::WithinAbs(expectCol, 1e-3));
+    }
+
+    SECTION("fromParameters Native takes (row, col)-ordered parameters")
+    {
+      auto cam = PinholeCamera0<float>::fromParameters<CameraCoordinateSystemT::Native>(
+        cyRow, cxCol, fyRow, fxCol, Matrix<float, 3, 3>::Identity(), t, frame);
+      Vector<float, 2> pix;
+      REQUIRE(cam.projectCheck(pix, world));
+      CHECK_THAT(pix[0], Catch::Matchers::WithinAbs(expectRow, 1e-3));
+      CHECK_THAT(pix[1], Catch::Matchers::WithinAbs(expectCol, 1e-3));
+    }
+
+    SECTION("Configuration (default OpenCV) matches fromParameters")
+    {
+      Configuration config = Configuration::fromJSONString(
+        R"({"cx": 200, "cy": 100, "fx": 500, "fy": 400, "t": [0.1, -0.2, 0.3], "frame": "0 479 0 639"})");
+      PinholeCamera0<float> cam(config);
+      Vector<float, 2> pix;
+      REQUIRE(cam.projectCheck(pix, world));
+      CHECK_THAT(pix[0], Catch::Matchers::WithinAbs(expectRow, 1e-3));
+      CHECK_THAT(pix[1], Catch::Matchers::WithinAbs(expectCol, 1e-3));
+    }
+
+    SECTION("The frame constructor and fromFrame are OpenCV-handed and centred")
+    {
+      const IndexRange<2> wide = {{0, 99}, {0, 199}};// 100 rows x 200 cols
+      const PinholeCamera0<float> camA(wide, 100.0f);
+      const auto camB = PinholeCamera0<float>::fromFrame(wide, 1.0f, 1.0f);
+      for(const PinholeCamera0<float> *cam : {&camA, &camB}) {
+        Vector<float, 2> centre, right, down;
+        REQUIRE(cam->projectCheck(centre, toPoint<float>(0.0f, 0.0f, 1.0f)));
+        REQUIRE(cam->projectCheck(right, toPoint<float>(0.1f, 0.0f, 1.0f)));
+        REQUIRE(cam->projectCheck(down, toPoint<float>(0.0f, 0.1f, 1.0f)));
+        CHECK_THAT(centre[0], Catch::Matchers::WithinAbs(49.5, 0.6));
+        CHECK_THAT(centre[1], Catch::Matchers::WithinAbs(99.5, 0.6));
+        CHECK(right[1] > centre[1]);// +x is right: column increases
+        CHECK_THAT(right[0], Catch::Matchers::WithinAbs(centre[0], 1e-4));
+        CHECK(down[0] > centre[0]);// +y is down: row increases
+        CHECK_THAT(down[1], Catch::Matchers::WithinAbs(centre[1], 1e-4));
+      }
+    }
+
+    SECTION("Undistortion works across a non-square image")
+    {
+      // 100 rows x 1000 cols: a point near the right edge is far outside the ROW extent.
+      const IndexRange<2> strip = {{0, 99}, {0, 999}};
+      auto cam = PinholeCamera3<float>::fromParameters<CameraCoordinateSystemT::OpenCV>(
+        500.0f, 50.0f, 500.0f, 500.0f, Matrix<float, 3, 3>::Identity(), Vector<float, 3>::Zero(), strip, 0.1f, 0.05f);
+      const Point<float, 3> edge = {0.7f, 0.05f, 1.0f};// col ~871, far outside the 100-row extent
+      Vector<float, 2> pix;
+      REQUIRE(cam.projectCheck(pix, edge));
+      REQUIRE(strip.contains(toIndex(pix)));
+      CHECK(euclidDistance(cam.unprojectZ(pix, 1.0f), edge) < 1e-3f);
+    }
+
+    SECTION("A version-1 archive has its translation swapped on load")
+    {
+      const auto cam = PinholeCamera0<float>::fromParameters<CameraCoordinateSystemT::OpenCV>(
+        cxCol, cyRow, fxCol, fyRow, Matrix<float, 3, 3>::Identity(), t, frame);
+      // Version 1 stored the external translation unswapped.
+      PinholeCamera0<float> v1 = cam;
+      v1.t() = t;
+      std::stringstream out;
+      {
+        cereal::JSONOutputArchive oarchive(out);
+        oarchive(v1);
+      }
+      std::string text = out.str();
+      const std::string v2Tag = "\"cereal_class_version\": 2";
+      const auto at = text.find(v2Tag);
+      REQUIRE(at != std::string::npos);
+      text.replace(at, v2Tag.size(), "\"cereal_class_version\": 1");
+      std::stringstream in(text);
+      PinholeCamera0<float> loaded;
+      {
+        cereal::JSONInputArchive iarchive(in);
+        iarchive(loaded);
+      }
+      CHECK(loaded.t().isApprox(cam.t()));
+      CHECK(loaded.extrinsicTranslation().isApprox(t));
     }
   }
 }

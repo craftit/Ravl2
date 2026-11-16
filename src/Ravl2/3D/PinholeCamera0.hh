@@ -50,23 +50,35 @@ namespace Ravl2
   //!    z[0] = cx + fx*( (R*x + t)[0] / (R*x + t)[2] )<br>
   //!    z[1] = cy + fy*( (R*x + t)[1] / (R*x + t)[2] )<br>
   //!
-  //! @section internal_coords Internal storage vs external conventions
+  //! @section camera_conventions Conventions
   //!
-  //! **Warning:** The stored m_R, m_t, m_fx, m_fy, m_cx, m_cy are in the
-  //! **internal (Native)** coordinate system. When a camera is constructed via
-  //! fromParameters<Native>() or fromParameters<OpenCV>(), a coordinate-swap
-  //! matrix `S = [[0,1,0],[1,0,0],[0,0,1]]` is composed into m_R, and
-  //! fx↔fy / cx↔cy are swapped so that the projection formula above works
-  //! directly in (row, col) order.
+  //! **Image points are always Ravl2 (row, col)** — row down, col right, the
+  //! same as array indexing. project(), projectCheck(), unprojectZ(),
+  //! projectInverseDirection(), ray() and isInView() all take or return
+  //! (row, col), whichever way the camera was constructed. Convert to OpenCV's
+  //! (x, y) only at the OpenCV boundary (toCvImagePoint(), intrinsicMatrix<OpenCV>()).
   //!
-  //! This means **R() is NOT the pure world-to-camera extrinsic rotation**.
-  //! It is `S * R_extrinsic`. If you need the pure extrinsic (e.g. for
-  //! OpenCV's solvePnP), recover it as `R_extrinsic = S * R()` (since S
-  //! is its own inverse). Similarly for t().
+  //! **The 3D camera frame is OpenCV's** (x right, y down, z forward) for every
+  //! camera built by fromParameters(), the frame constructor, fromFrame(),
+  //! fromFrameOrigin() or a Configuration with the default coordinateSystem.
+  //! So 3D points agree with depth sensors, BOP poses and cv::solvePnP.
   //!
-  //! intrinsicMatrix<OpenCV>() undoes the internal swap, returning a standard
-  //! OpenCV-convention K matrix that pairs correctly with image points
-  //! converted via toCvImagePoint().
+  //! @section internal_coords Internal storage
+  //!
+  //! The stored m_R, m_t, m_fx, m_fy, m_cx, m_cy are **internal**: m_cx is the
+  //! principal point's ROW, m_fx the focal length along rows, and m_R / m_t
+  //! map world points to the internal (row, col, depth) frame. A camera built
+  //! from external (OpenCV) parameters stores `m_R = S * R`, `m_t = S * t`
+  //! (S = [[0,1,0],[1,0,0],[0,0,1]], its own inverse) with fx↔fy, cx↔cy
+  //! swapped, and records it in hasCoordSwap(). So **R() and t() are not the
+  //! world-to-camera extrinsic**; use extrinsicRotation() / extrinsicTranslation()
+  //! (or extrinsicMatrix<OpenCV>()) for that.
+  //!
+  //! The raw data constructors take these internal values directly. With
+  //! R = I they give a camera whose 3D frame is (row, col, depth) — a mirror
+  //! image of OpenCV's. They exist for internal use and for code that genuinely
+  //! wants that frame; to build a camera from OpenCV / ROS / RealSense
+  //! intrinsics use fromParameters<OpenCV>().
 
   template <typename RealT>
   class PinholeCamera0
@@ -78,7 +90,14 @@ namespace Ravl2
     //! Default constructor
     PinholeCamera0() = default;
 
-    //! Data constructor
+    //! @brief Data constructor from INTERNAL parameters.
+    //! @param cx Principal point ROW (not OpenCV's cx).
+    //! @param cy Principal point COLUMN.
+    //! @param fx Focal length along rows, pixels.
+    //! @param fy Focal length along columns, pixels.
+    //! @param R, t World to internal (row, col, depth) frame.
+    //! @details To build from OpenCV-convention intrinsics use fromParameters<OpenCV>();
+    //! see the class documentation.
     PinholeCamera0(const RealT &cx, const RealT &cy,
                    const RealT &fx, const RealT &fy,
                    const Matrix<RealT, 3, 3> &R,
@@ -88,7 +107,9 @@ namespace Ravl2
     {
     }
     
-    //! Data constructor
+    //! @brief Data constructor from INTERNAL parameters.
+    //! @param centre Principal point, (row, col).
+    //! @param pose World to internal (row, col, depth) frame.
     PinholeCamera0(RealT f,
                    const Point<RealT,2> &centre,
                    const IndexRange<2> &frame,
@@ -137,31 +158,46 @@ namespace Ravl2
     //! Construct a default camera with a given frame, with the axis at the centre of the frame
     //! @param frame - the image frame for the camera
     //! @param f - the focal length of the camera
+    //! @param pose - world to camera, in the OpenCV camera frame (x right, y down, z forward)
     //! The camera is placed at the centre of the frame with the given focal length.
     explicit PinholeCamera0(const IndexRange<2> &frame, float f, const Isometry3<RealT> &pose = Isometry3<RealT>())
       : m_cx(RealT(frame.range(0).min())+RealT(frame.range(0).size()-1)/RealT(2.0)),
         m_cy(RealT(frame.range(1).min())+RealT(frame.range(1).size()-1)/RealT(2.0)),
         m_fx(f),
         m_fy(f),
-        m_R(pose.rotation().toMatrix()),
-        m_t(pose.translation()),
-        m_frame(frame)
+        m_R(swapMatrix() * pose.rotation().toMatrix()),
+        m_t(swapMatrix() * pose.translation()),
+        m_frame(frame),
+        m_hasCoordSwap(true)
     {}
+
+    //! The (row, col) <-> (x, y) swap matrix S; S is its own inverse.
+    [[nodiscard]] static Matrix<RealT, 3, 3> swapMatrix()
+    {
+      return Matrix<RealT, 3, 3>{{0, 1, 0}, {1, 0, 0}, {0, 0, 1}};
+    }
+
+    //! True when the camera was built from external-convention parameters, so
+    //! R() / t() include the swap S (see the class documentation).
+    [[nodiscard]] bool hasCoordSwap() const
+    {
+      return m_hasCoordSwap;
+    }
 
 
   protected:
   public:
 
     //! Construct from external-convention parameters.
-    //! @param cx, cy  Principal point in the input coordinate system
-    //! @param fx, fy  Focal lengths in the input coordinate system
-    //! @param R  Extrinsic rotation (world → camera) in the input coordinate system
-    //! @param t  Extrinsic translation (world → camera) in the input coordinate system
+    //! @param cx, cy  Principal point. OpenCV: (x = col, y = row). Native: (row, col).
+    //! @param fx, fy  Focal lengths, in the same order as cx, cy.
+    //! @param R  Extrinsic rotation (world → camera), OpenCV camera frame (x right, y down, z forward)
+    //! @param t  Extrinsic translation (world → camera), the same frame
     //! @param frame  Image frame
     //!
-    //! For Native and OpenCV coordinate systems, the stored m_R will be
-    //! `S * R` (where S is the row/col swap matrix) and fx↔fy, cx↔cy are swapped.
-    //! This means R() will NOT return the R passed here. See class-level docs.
+    //! Native differs from OpenCV only in the order of the 2D parameters; the 3D
+    //! frame is OpenCV's for both. The stored m_R, m_t are `S * R`, `S * t`, so R()
+    //! and t() will NOT return the R and t passed here; see the class documentation.
     template <CameraCoordinateSystemT CoordSys>
     static PinholeCamera0 fromParameters(RealT cx, RealT cy,
                                          RealT fx, RealT fy,
@@ -175,10 +211,11 @@ namespace Ravl2
         return PinholeCamera0(cx, RealT(frame.range(1).size()) - cy, fx, fy, rot, t, frame);
       } else
 #endif
-      if constexpr(CoordSys == CameraCoordinateSystemT::OpenCV || CoordSys == CameraCoordinateSystemT::Native) {
-        Eigen::Matrix<RealT, 3, 3> const mOpenCVRot {{0, 1, 0},{ 1, 0, 0}, {0, 0, 1}} ;
-        auto rot = mOpenCVRot * R;
-        return PinholeCamera0(cy, cx, fy, fx, rot, t, frame, true);
+      const Matrix<RealT, 3, 3> S = swapMatrix();
+      if constexpr(CoordSys == CameraCoordinateSystemT::OpenCV) {
+        return PinholeCamera0(cy, cx, fy, fx, S * R, S * t, frame, true);
+      } else if constexpr(CoordSys == CameraCoordinateSystemT::Native) {
+        return PinholeCamera0(cx, cy, fx, fy, S * R, S * t, frame, true);
       } else {
         static_assert(false, "Unsupported coordinate system");
       }
@@ -307,8 +344,7 @@ namespace Ravl2
     {
       if(m_hasCoordSwap) {
         // m_R = S * R_extrinsic, so R_extrinsic = S * m_R (S is its own inverse)
-        Eigen::Matrix<RealT, 3, 3> const S {{0, 1, 0}, {1, 0, 0}, {0, 0, 1}};
-        return Matrix<RealT, 3, 3>(S * m_R);
+        return Matrix<RealT, 3, 3>(swapMatrix() * m_R);
       }
       return m_R;
     }
@@ -317,8 +353,7 @@ namespace Ravl2
     [[nodiscard]] Vector<RealT, 3> extrinsicTranslation() const
     {
       if(m_hasCoordSwap) {
-        Eigen::Matrix<RealT, 3, 3> const S {{0, 1, 0}, {1, 0, 0}, {0, 0, 1}};
-        return Vector<RealT, 3>(S * m_t);
+        return Vector<RealT, 3>(swapMatrix() * m_t);
       }
       return m_t;
     }
@@ -336,11 +371,17 @@ namespace Ravl2
     }
 
     //! Set the camera pose, this is the transformation that takes a point
-    //! from world to camera co-ordinates
+    //! from world to camera co-ordinates. For a camera with hasCoordSwap() the
+    //! pose is in the OpenCV camera frame (as for fromParameters()); otherwise it
+    //! is in the internal frame.
     void setPose(const Isometry3<RealT> &pose)
     {
       m_R = pose.rotation().toMatrix();
       m_t = pose.translation();
+      if(m_hasCoordSwap) {
+        m_R = swapMatrix() * m_R;
+        m_t = swapMatrix() * m_t;
+      }
     }
 
     //! project 3D point in space to 2D image point
@@ -405,9 +446,16 @@ namespace Ravl2
         Rt.block<3, 3>(0, 0) = m_R;
         Rt.block<3, 1>(0, 3) = m_t;
         return Rt;
-      } else if constexpr (CoordSys == CameraCoordinateSystemT::OpenCV || CoordSys == CameraCoordinateSystemT::Native) {
+      } else if constexpr (CoordSys == CameraCoordinateSystemT::OpenCV) {
+        // The world-to-camera extrinsic in the OpenCV frame; pairs with intrinsicMatrix<OpenCV>().
+        // Only meaningful for a camera in the OpenCV frame (hasCoordSwap()).
         Eigen::Matrix<float, 3, 4> Rt;
-        //Eigen::Matrix<RealT, 3, 3> swapXY({{0, 1, 0},{ 1, 0, 0}, {0, 0, 1}});
+        Rt.block<3, 3>(0, 0) = extrinsicRotation();
+        Rt.block<3, 1>(0, 3) = extrinsicTranslation();
+        return Rt;
+      } else if constexpr (CoordSys == CameraCoordinateSystemT::Native) {
+        // The internal matrix; pairs with intrinsicMatrix<Native>() for (row, col) points.
+        Eigen::Matrix<float, 3, 4> Rt;
         Rt.block<3, 3>(0, 0) = m_R;
         Rt.block<3, 1>(0, 3) = m_t;
         return Rt;
@@ -534,6 +582,13 @@ namespace Ravl2
       if(version >= 1) {
         archive(cereal::make_nvp("hasCoordSwap", m_hasCoordSwap));
       }
+      // Before version 2, fromParameters() stored the external translation unswapped
+      // (m_t = t instead of S * t). Correct it on load; m_R was already S * R.
+      if constexpr(Archive::is_loading::value) {
+        if(version < 2 && m_hasCoordSwap) {
+          m_t = swapMatrix() * m_t;
+        }
+      }
     }
 
     //! Access the camera frame
@@ -637,7 +692,7 @@ namespace Ravl2
 
 };// namespace Ravl2
 
-CEREAL_CLASS_VERSION(Ravl2::PinholeCamera0<float>, 1);
+CEREAL_CLASS_VERSION(Ravl2::PinholeCamera0<float>, 2);
 
 
 template <typename RealT>
