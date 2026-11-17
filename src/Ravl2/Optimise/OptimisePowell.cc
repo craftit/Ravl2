@@ -7,6 +7,7 @@
 
 #include "Ravl2/Optimise/OptimisePowell.hh"
 #include "Ravl2/Optimise/BracketMinimum.hh"
+#include <stdexcept>
 
 namespace Ravl2 {
 
@@ -47,7 +48,9 @@ namespace Ravl2 {
       SPDLOG_ERROR("Parameter vector and domain must be the same size ({} and {})",P.size(),domain.min().size());
       throw std::runtime_error("Parameter vector and domain must be the same size");
     }
-    RealT min = -std::numeric_limits<RealT>::min();
+    // numeric_limits::min() is the smallest POSITIVE value: starting from it made every line
+    // search one-sided (x >= ~0).
+    RealT min = std::numeric_limits<RealT>::lowest();
     RealT max = std::numeric_limits<RealT>::max();
     for(IndexT i = 0;i < P.size();i++) {
       if(dir[i] == 0)
@@ -79,9 +82,16 @@ namespace Ravl2 {
   ) const
 
   {
-    VectorT<RealT> P = start;
+    const auto numDim = domain.min().size();
+    if(start.size() != 0 && start.size() != numDim) {
+      throw std::invalid_argument("OptimisePowell: start and domain differ in size");
+    }
+    // An empty start means the middle of the domain (the Optimise contract).
+    VectorT<RealT> P = start.size() == 0 ? domain.mid() : start;
+    // Every point evaluated and returned stays inside the domain.
+    auto clampToDomain = [&domain](VectorT<RealT> &x) { x = x.cwiseMax(domain.min()).cwiseMin(domain.max()); };
+    clampToDomain(P);
     RealT minimumCost = func(P);
-    auto numDim = P.size();
     std::vector<VectorT<RealT>> Di((std::size_t(numDim)));
     if(mVerbose) {
       SPDLOG_INFO("MinimalX bracketMin={} Iterations={} Tolerance={} ", _useBracketMinimum, _iterations,_tolerance);
@@ -91,6 +101,40 @@ namespace Ravl2 {
       Di[std::size_t(i)] = VectorT<RealT>::Zero(numDim);
       Di[std::size_t(i)][i] = 1.0;
     }
+
+    // Minimise along P + dir * x, within the domain; moves P and updates minimumCost.
+    // Returns the reduction in cost.
+    auto lineSearch = [&](const VectorT<RealT> &dir) -> RealT {
+      auto [minP, maxP] = SetupLimits(dir, P, domain);
+      if(!(maxP > minP)) {
+        return 0;// no room to move along dir
+      }
+      const VectorT<RealT> base = P;
+      auto linearFunc = [&func, &base, &dir, &domain](RealT x) {
+        VectorT<RealT> at = base + dir * x;
+        at = at.cwiseMax(domain.min()).cwiseMin(domain.max());// rounding at the limits
+        return func(at);
+      };
+      RealT startAt = 0;
+      RealT startCost = minimumCost;
+      if(_useBracketMinimum) {
+        const Bracket<RealT> br = bracketMinimum(minP, maxP, linearFunc, RealT(0), minimumCost);
+        minP = br.a;
+        maxP = br.b;
+        startAt = br.x;
+        startCost = br.fx;
+      }
+      auto [bestVal, bestCost] = _brent.minimise(minP, maxP, startAt, startCost, linearFunc);
+      if(!(bestCost < minimumCost)) {
+        return 0;// no improvement: stay put
+      }
+      P = base + dir * bestVal;
+      clampToDomain(P);
+      const RealT reduction = minimumCost - bestCost;
+      minimumCost = bestCost;
+      return reduction;
+    };
+
     VectorT<RealT> Plast;
     VectorT<RealT> Psameagain;
     VectorT<RealT> Pdiff;
@@ -101,32 +145,14 @@ namespace Ravl2 {
       size_t indexOfBiggest = 0; // Index of biggest reduction in cost
       RealT valueOfBiggest = 0.0;// Value of cost function after biggest reduction
       for (size_t id = 0;id < Di.size();++id) { // Go through direction vectors.
-	auto &it = Di[id];
-	auto [minP,maxP ] = SetupLimits(it,P,domain);
-
-	// Minimise along line.
-	auto linearFunc = [&func,&P,&it](RealT x) {
-	  return func(P + it * x);
-	};
-	RealT startAt = 0.0;
-	RealT fPlast = minimumCost;
-	if(_useBracketMinimum) {
-	  auto [minB,maxB,midB] = bracketMinimum (RealT(0),maxP,linearFunc);
-	  minP = minB;
-	  maxP = maxB;
-	  startAt = midB;
-	}
-	auto [bestVal,bestCost] = _brent.minimise(minP,maxP,startAt,minimumCost,linearFunc);
-	P += it * bestVal;
-	RealT diff = fPlast - bestCost; // Compute the size of the reduction in cost.
-	minimumCost = bestCost;
-	if (diff > valueOfBiggest) {
-	  valueOfBiggest = diff;
-	  indexOfBiggest = id;
-	}
-	if(mVerbose) {
-	  SPDLOG_INFO("Iter {} D={} Cost={} ", iter, id, minimumCost);
-	}
+        const RealT diff = lineSearch(Di[id]);
+        if (diff > valueOfBiggest) {
+          valueOfBiggest = diff;
+          indexOfBiggest = id;
+        }
+        if(mVerbose) {
+          SPDLOG_INFO("Iter {} D={} Cost={} ", iter, id, minimumCost);
+        }
       }
 
       // Compute the reduction in the cost function.
@@ -134,41 +160,29 @@ namespace Ravl2 {
 
       // Check if we're stopped converging.
       if (_tolerance > 0 && (2*std::abs(fPdiff) <= _tolerance*(std::abs(fP)+std::abs(minimumCost)))) {
-	break;
+        break;
       }
       // check if we should continue in the same direction
       Pdiff = P - Plast;      // How far did we move ?
       Psameagain = P + Pdiff; // Try the same again movement again.
-      RealT fPsameagain = func(Psameagain); // Evaluate the new move.
-      // Include any cost benefit we get from brent along the new direction vector in the benefit
       fP = minimumCost;
-      // if it has still improved in the same direction
-      if (fPsameagain <= fP) {
-        RealT t =
-          2 * ((fP+fPsameagain)-2*minimumCost)*sqr(fPdiff-valueOfBiggest)
-          - valueOfBiggest*sqr(fP-fPsameagain);
-
-        if (t < 0) {
-	  auto [minP,maxP ] = SetupLimits(Pdiff,P,domain);
-	  auto linearFunc = [&func,&P,&Pdiff](RealT x) {
-	    return func(P + Pdiff * x);
-	  };
-	  RealT startAt = 0;
-	  if(_useBracketMinimum) {
-	    auto [minB,maxB,midB] = bracketMinimum (minP,maxP,linearFunc);
-	    minP = minB;
-	    maxP = maxB;
-	    startAt = midB;
-	  }
-	  auto [bestVal,bestCost] = _brent.minimise(minP,maxP,startAt,minimumCost,linearFunc);
-	  P += Pdiff * bestVal;
-	  //minimumCost = bestCost;
-	  Di[indexOfBiggest] = Di[size_t(numDim-1)]; // Replace vector yielding largest cost
-	  Di[size_t(numDim-1)] = Pdiff;              // Put in new direction vector.
+      // The extrapolated point is only a probe; outside the domain it is not tried.
+      if(Pdiff.squaredNorm() > 0 && domain.isInDomain(Psameagain)) {
+        const RealT fPsameagain = func(Psameagain); // Evaluate the new move.
+        // if it has still improved in the same direction
+        if (fPsameagain <= fP) {
+          RealT t =
+            2 * ((fP+fPsameagain)-2*minimumCost)*sqr(fPdiff-valueOfBiggest)
+            - valueOfBiggest*sqr(fP-fPsameagain);
+          if (t < 0) {
+            (void) lineSearch(Pdiff);
+            Di[indexOfBiggest] = Di[size_t(numDim-1)]; // Replace vector yielding largest cost
+            Di[size_t(numDim-1)] = Pdiff;              // Put in new direction vector.
+          }
         }
       }
       if(mVerbose) {
-				SPDLOG_INFO("Iter {} Cost={}  ", iter, minimumCost);
+        SPDLOG_INFO("Iter {} Cost={}  ", iter, minimumCost);
       }
     }
     return std::make_tuple(P,minimumCost);

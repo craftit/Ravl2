@@ -10,6 +10,6 @@
 namespace Ravl2
 {
 
-  template std::tuple<double,double,double> bracketMinimum<double>(double min,double max, const std::function<double(double)> &func,int steps);
-  template std::tuple<float,float,float> bracketMinimum<float>(float min,float max, const std::function<float(float)> &func,int steps);
+  template Bracket<double> bracketMinimum<double>(double lo, double hi, const std::function<double(double)> &func, double start, double fStart, int steps);
+  template Bracket<float> bracketMinimum<float>(float lo, float hi, const std::function<float(float)> &func, float start, float fStart, int steps);
 }

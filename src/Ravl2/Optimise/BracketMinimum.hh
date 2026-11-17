@@ -18,94 +18,71 @@
 namespace Ravl2
 {
 
-  //! Updates the cost function parameter range to bracket a minimum.
-  //! @param min - the minimum value of the domain
-  //! @param max - the maximum value of the domain
-  //! @param func - The function to be minimised
-  //! @return A tuple with min, max and the center value
-  template<typename RealT,typename FuncT>
-  std::tuple<RealT,RealT,RealT> bracketMinimum (RealT min,RealT max, const FuncT &func,int steps = 3)
+  //! @brief The result of bracketMinimum: lo <= a <= x <= b <= hi with f(x) <= f(a), f(b), or x on
+  //! a limit when the cost still falls there.
+  template <typename RealT>
+  struct Bracket {
+    RealT a;  //!< one end of the bracket
+    RealT b;  //!< the other end
+    RealT x;  //!< the lowest point found, inside [a, b]
+    RealT fx; //!< the cost at x
+  };
+
+  //! @brief Bracket a minimum of a 1-D function, without leaving [lo, hi].
+  //! @details Starts at @p start (cost @p fStart), steps downhill in whichever direction the cost
+  //! falls, and expands by the golden ratio until the cost rises again or a limit is reached. Every
+  //! evaluated point lies in [lo, hi]: the bracket is for line searches inside a bounded domain.
+  //! @param lo Lower limit (lo <= start).
+  //! @param hi Upper limit (start <= hi).
+  //! @param func The function to bracket.
+  //! @param start Where to start; its cost is @p fStart.
+  //! @param fStart func(start), already known.
+  //! @param steps The first step is (hi - lo) / (2 * steps), at most 0.5.
+  template <typename RealT, typename FuncT>
+  Bracket<RealT> bracketMinimum(RealT lo, RealT hi, const FuncT &func, RealT start, RealT fStart, int steps = 3)
   {
     const RealT gold = RealT(1.618034);
-    const RealT smallVal = std::numeric_limits<RealT>::epsilon() * 100;
-    const RealT glimit = RealT(100);
-
-    RealT x0 = min;
-
-    if(steps < 2)
-      steps = 2;
-
-    RealT x1 = x0 + RealT(0.5);
-    if(x1 > (max/ RealT(steps))) {
-      x1 = (max / RealT(steps));
+    if(lo > hi) {
+      std::swap(lo, hi);
     }
-
-    SPDLOG_TRACE("BracketMinimum. Start: Min={} Max={} ",x0,x1);
-
-    RealT fxn;
-    RealT fx0 = func(x0);
-    RealT fx1 = func(x1);
-    if (fx1 > fx0) {
-      std::swap(x0,x1);
-      std::swap(fx0,fx1);
+    start = std::clamp(start, lo, hi);
+    if(hi - lo <= RealT(0)) {
+      return {start, start, start, fStart};
     }
-
-    RealT x2 = x1 + gold * (x1 - x0);
-    SPDLOG_TRACE("X2={}",x2);
-
-    RealT fx2 = func(x2); // Find cost at center
-
-    while (fx1 > fx2) {
-      RealT dx12 = x1 - x2;
-      RealT dx10 = x1 - x0;
-
-      RealT r = dx10 * (fx1 - fx2);
-      RealT q = dx12 * (fx1 - fx0);
-      RealT xn = x1 - (dx12 * q - dx10 * r) / (2 * sign(std::max(std::abs(q-r),smallVal),q-r));
-      RealT xlim = x1 + glimit * (x2 - x1);
-      if ((x1 - xn) * (xn - x2) > 0) {
-	fxn = func(xn);
-	if (fxn < fx2) {
-	  x0 = x1;
-	  x1 = xn;
-	  SPDLOG_TRACE("BracketMinimum. Done: Min={} Max={} ",x0,x2);
-	  return std::make_tuple(x0,x2,x1);
-	}
-	else
-	if (fxn > fx1) {
-	  x2 = xn;
-	  SPDLOG_TRACE("BracketMinimum. Done: Min={} Max={} ",x0,x2);
-	  return std::make_tuple(x0,x2,x1);
-	}
-	xn = x2 + gold * (x2 - x1);
-	fxn = func(xn);
+    steps = std::max(steps, 1);
+    const RealT step = std::min(RealT(0.5), (hi - lo) / RealT(2 * steps));
+    // Which way is downhill?
+    RealT x0 = start, f0 = fStart;
+    RealT x1 = std::min(start + step, hi);
+    RealT f1 = (x1 != x0) ? func(x1) : f0;
+    if(!(f1 < f0)) {
+      const RealT xb = std::max(start - step, lo);
+      const RealT fb = (xb != x0) ? func(xb) : f0;
+      if(!(fb < f0)) {
+        return {xb, x1, x0, f0};// the start is lowest: bracketed by its neighbours
       }
-      else
-      if ((x2 - xn) * (xn - xlim) > 0) {
-	fxn = func(xn);
-	if (fxn < fx2) {
-	  x1 = x2; x2 = xn; xn = xn+gold*(xn-x2);
-	  fx1 = fx2; fx2 = fxn; fxn = func(xn);
-	}
-      }
-      else
-      if ((xn - xlim) * (xlim - x2) >= 0) {
-	xn = xlim;
-	fxn = func(xn);
-      }
-      else {
-	xn = x2 + gold * (x2 - x1);
-	fxn = func(xn);
-      }
-      x0 = x1; x1 = x2; x2 = xn;
-      fx0 = fx1; fx1 = fx2; fx2 = fxn;
+      x1 = xb;
+      f1 = fb;
     }
-
-    return std::make_tuple(x0,x2,x1);
+    const RealT limit = (x1 > x0) ? hi : lo;
+    // Expand downhill until the cost rises or the limit is reached.
+    while(x1 != limit) {
+      RealT x2 = x1 + gold * (x1 - x0);
+      x2 = (limit == hi) ? std::min(x2, hi) : std::max(x2, lo);
+      const RealT f2 = func(x2);
+      if(f2 >= f1) {
+        return {std::min(x0, x2), std::max(x0, x2), x1, f1};
+      }
+      x0 = x1;
+      f0 = f1;
+      x1 = x2;
+      f1 = f2;
+    }
+    return {std::min(x0, x1), std::max(x0, x1), x1, f1};// still falling at the limit
   }
 
-  extern template std::tuple<double,double,double> bracketMinimum<double>(double min,double max, const std::function<double(double)> &func,int steps);
-  extern template std::tuple<float,float,float> bracketMinimum<float>(float min,float max, const std::function<float(float)> &func,int steps);
+  extern template Bracket<double> bracketMinimum<double>(double lo, double hi, const std::function<double(double)> &func, double start, double fStart, int steps);
+  extern template Bracket<float> bracketMinimum<float>(float lo, float hi, const std::function<float(float)> &func, float start, float fStart, int steps);
 
 }
 
