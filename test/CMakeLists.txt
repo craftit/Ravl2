@@ -79,6 +79,7 @@ add_executable(tests
         test_BayesianOptimise.cc
         test_RandomSearchOptimise.cc
         test_ParticleSwarmOptimise.cc
+        test_OptimiseBobyqa.cc
         test_MemoryMediaContainer.cc
         test_VideoFrame.cc
         test_VideoIO.cc

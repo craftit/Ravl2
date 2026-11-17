@@ -5,6 +5,7 @@ add_library (Ravl2Optimise
   OptimiseBrent.hh OptimiseBrent.cc
   BracketMinimum.cc BracketMinimum.hh
   OptimisePowell.cc OptimisePowell.hh
+  OptimiseBobyqa.cc OptimiseBobyqa.hh
   GaussianProcess.cc  GaussianProcess.hh
   BayesianOptimise.cc BayesianOptimise.hh
   RandomSearchOptimise.cc RandomSearchOptimise.hh
