@@ -32,24 +32,30 @@ namespace Ravl2
   //! @param object - The object to save.
   //! @param url - The filename to save to.
   //! @param formatHint - A hint to the format of the file.
-  //! @return True if the object was saved successfully.
+  //! @return True if the object was saved successfully. On failure the reason (the file could not be
+  //! opened, the write failed part way) is logged as an error and false is returned; nothing is thrown.
   //!
   //! Format hints include
   //!  - "verbose" - If true, print verbose output.
   template <typename ObjectT>
   bool ioSave(const std::string &url, const ObjectT &object, const nlohmann::json &formatHint = defaultSaveFormatHint())
   {
-    auto thePlan = openOutput(url, typeid(ObjectT), formatHint);
-    if(!thePlan.has_value())
-      return false;
-    if(!thePlan.value().mConversion) {
-      auto *output = dynamic_cast<StreamOutput<ObjectT> *>(thePlan->mStream.get());
-      // Can we write directly to the stream?
-      if(output != nullptr) {
-        return output->write(object, output->beginOffset());
+    try {
+      auto thePlan = openOutput(url, typeid(ObjectT), formatHint);
+      if(!thePlan.has_value())
+        return false;
+      if(!thePlan.value().mConversion) {
+        auto *output = dynamic_cast<StreamOutput<ObjectT> *>(thePlan->mStream.get());
+        // Can we write directly to the stream?
+        if(output != nullptr) {
+          return output->write(object, output->beginOffset());
+        }
       }
+      return thePlan.value().mStream->anyWrite(thePlan.value().mConversion(std::any(object)), thePlan->mStream->beginOffset()) >= 0;
+    } catch(const std::exception &e) {
+      SPDLOG_ERROR("Saving '{}' failed: {}", url, e.what());
+      return false;
     }
-    return thePlan.value().mStream->anyWrite(thePlan.value().mConversion(std::any(object)), thePlan->mStream->beginOffset()) >= 0;
   }
 
 }// namespace Ravl2

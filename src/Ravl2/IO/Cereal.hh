@@ -17,6 +17,10 @@
 #include <cereal/archives/json.hpp>
 #include <cereal/types/string.hpp>
 #include <cereal/types/vector.hpp>
+#include <cerrno>
+#include <cstring>
+#include <fstream>
+#include <stdexcept>
 #include <utility>
 #include "Ravl2/IO/OutputFormat.hh"
 #include "Ravl2/IO/InputFormat.hh"
@@ -314,10 +318,14 @@ namespace Ravl2
     bool registerObjectType()
     {
       std::lock_guard lock(m_mutex);
-      m_streamOutputFactory[typeid(ObjectT)] = [](const ProbeOutputContext &ctx)
-      {
-	auto stream = std::make_shared<std::ofstream>(ctx.m_filename, std::ios::binary);
-	return std::make_shared<StreamOutputCerealArchive<ObjectT, ArchiveT>>(stream);
+      m_streamOutputFactory[typeid(ObjectT)] = [](const ProbeOutputContext &ctx) {
+        errno = 0;
+        auto stream = std::make_shared<std::ofstream>(ctx.m_filename, std::ios::binary);
+        if(!stream->is_open()) {
+          // Without this the failure shows up later, in cereal, as "Failed to write N bytes".
+          throw std::runtime_error(fmt::format("Cannot open '{}' for writing: {}", ctx.m_filename, errno ? std::strerror(errno) : "unknown reason"));
+        }
+        return std::make_shared<StreamOutputCerealArchive<ObjectT, ArchiveT>>(stream);
       };
       return true;
     }
@@ -396,8 +404,13 @@ namespace Ravl2
     {
       std::lock_guard lock(m_mutex);
       m_streamInputFactory[typeName(typeid(ObjectT))] = [](const ProbeInputContext &ctx) {
-	auto stream = std::make_shared<std::ifstream>(ctx.mFilename, std::ios::binary);
-	return std::make_unique<StreamInputCerealArchive<ObjectT, ArchiveT>>(std::move(stream));
+        errno = 0;
+        auto stream = std::make_shared<std::ifstream>(ctx.mFilename, std::ios::binary);
+        if(!stream->is_open()) {
+          // Without this the failure shows up later, in cereal, as "Failed to read N bytes".
+          throw std::runtime_error(fmt::format("Cannot open '{}' for reading: {}", ctx.mFilename, errno ? std::strerror(errno) : "unknown reason"));
+        }
+        return std::make_unique<StreamInputCerealArchive<ObjectT, ArchiveT>>(std::move(stream));
       };
       return true;
     }

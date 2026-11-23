@@ -84,6 +84,17 @@ namespace Ravl2
       CHECK(std::remove(filename.c_str()) == 0);
     }
 
+    SECTION("Binary Cereal into a directory that does not exist fails, without throwing")
+    {
+      // It used to throw cereal's "Failed to write 4 bytes" from inside ioSave.
+      IndexRangeSet<2> rng({10, 10});
+      nlohmann::json hints;
+      hints["verbose"] = false;
+      bool saved = true;
+      CHECK_NOTHROW(saved = ioSave("no_such_directory_for_ravl2_test/test_cereal.xbs", rng, hints));
+      CHECK_FALSE(saved);
+    }
+
     SECTION("JSON Cereal")
     {
 #if 0
