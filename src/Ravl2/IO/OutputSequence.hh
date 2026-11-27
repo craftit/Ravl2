@@ -136,6 +136,12 @@ namespace Ravl2
       return mStream != nullptr;
     }
 
+    //! Close the stream and report whether it finalized successfully.
+    [[nodiscard]] bool close()
+    {
+      return mStream != nullptr && mStream->close();
+    }
+
   private:
     std::shared_ptr<StreamOutput<ObjectT>> mStream;
   };
@@ -157,7 +163,8 @@ namespace Ravl2
         (void)pos;
         return plan.mStream->anyWrite(plan.mConversion(std::any(object)), pos);
       },
-                                                                 outStreamPlan->mStream->beginOffset(), outStreamPlan->mStream->endOffset());
+                                                                 outStreamPlan->mStream->beginOffset(), outStreamPlan->mStream->endOffset(),
+                                                                 [stream = outStreamPlan->mStream]() { return stream->close(); });
 
       return StreamOutputProxy<ObjectT>(dynamic_pointer_cast<StreamOutput<ObjectT>>(outStrm));
     }

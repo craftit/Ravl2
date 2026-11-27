@@ -11,6 +11,7 @@
 #include <functional>
 #include <memory>
 #include <optional>
+#include <utility>
 
 namespace Ravl2
 {
@@ -31,6 +32,13 @@ namespace Ravl2
 
     //! Make default constructor.
     virtual ~StreamOutputBase() = default;
+
+    //! Close the stream and finalize any pending output.
+    //! @return True if the stream closed successfully.
+    virtual bool close()
+    {
+      return true;
+    }
 
     //! Get type name of the object.
     [[nodiscard]] std::string typeName() const;
@@ -138,13 +146,21 @@ namespace Ravl2
   class StreamOutputCall : public StreamOutput<ObjectT>
   {
   public:
+    ~StreamOutputCall() override
+    {
+      close();
+    }
     //! @brief Construct a stream with a lambda.
     //! @param write - The lambda to write the object.
     //! @param start - The start position in the stream.
     //! @param end - The end position in the stream.
-    explicit StreamOutputCall(std::function<std::streampos(const ObjectT &, std::streampos)> writeCall, std::streampos start = 0, std::streampos end = std::numeric_limits<std::streampos>::max())
+    explicit StreamOutputCall(std::function<std::streampos(const ObjectT &, std::streampos)> writeCall,
+                              std::streampos start = 0,
+                              std::streampos end = std::numeric_limits<std::streampos>::max(),
+                              std::function<bool()> closeCall = {})
         : StreamOutput<ObjectT>(start, end),
-          mWrite(writeCall)
+          mWrite(std::move(writeCall)),
+          mClose(std::move(closeCall))
     {}
 
     //! Write an object to the stream.
@@ -156,8 +172,19 @@ namespace Ravl2
       return mWrite(obj, pos);
     }
 
+    //! Close the stream through its optional close callback.
+    bool close() override
+    {
+      if(mClosed)
+        return true;
+      mClosed = true;
+      return !mClose || mClose();
+    }
+
   private:
     std::function<std::streampos(const ObjectT &, std::streampos)> mWrite;
+    std::function<bool()> mClose;
+    bool mClosed = false;
   };
 
 }// namespace Ravl2

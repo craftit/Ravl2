@@ -1216,44 +1216,58 @@ namespace Ravl2::Video
       return VideoResult<std::vector<std::shared_ptr<Frame>>>(VideoErrorCode::InvalidOperation);
     }
 
-    // Send the packet to the decoder
-    int result = avcodec_send_packet(codecContext, packet);
+    std::vector<std::shared_ptr<Frame>> decodedFrames;
+    auto receiveAvailableFrames = [&]()
+    {
+      for (;;)
+      {
+        const int receiveResult = avcodec_receive_frame(codecContext, frame);
+        if (receiveResult == AVERROR(EAGAIN) || receiveResult == AVERROR_EOF)
+          return true;
+        if (receiveResult < 0)
+        {
+          SPDLOG_WARN("Error receiving frame from decoder: {}",
+                      toString(FfmpegMediaContainer::convertFfmpegError(receiveResult)));
+          return false;
+        }
 
+        const StreamItemId id = generateUniqueFrameId(frame, localIndex);
+        auto decodedFrame = convertFrameToFrame(frame, localIndex, id);
+        av_frame_unref(frame);
+        if (!decodedFrame)
+        {
+          SPDLOG_WARN("Failed to convert frame to Frame");
+          return false;
+        }
+        decodedFrames.push_back(std::move(decodedFrame));
+      }
+    };
+
+    // A decoder can produce multiple frames from a packet. Drain them all before
+    // submitting another packet, retrying the send if the decoder first reports EAGAIN.
+    int result = avcodec_send_packet(codecContext, packet);
+    if (result == AVERROR(EAGAIN))
+    {
+      if (!receiveAvailableFrames())
+        return VideoResult<std::vector<std::shared_ptr<Frame>>>(VideoErrorCode::DecodingError);
+      result = avcodec_send_packet(codecContext, packet);
+    }
     if (result < 0)
     {
+      if (!decodedFrames.empty())
+        return VideoResult<std::vector<std::shared_ptr<Frame>>>(std::move(decodedFrames));
       SPDLOG_WARN("Error sending packet to decoder: {}", toString(FfmpegMediaContainer::convertFfmpegError(result)));
       return VideoResult<std::vector<std::shared_ptr<Frame>>>(FfmpegMediaContainer::convertFfmpegError(result));
     }
-
-    // Receive a frame from the decoder
-    result = avcodec_receive_frame(codecContext, frame);
-
-    if (result < 0)
+    if (!receiveAvailableFrames())
     {
-      // If the decoder needs more data, that's not an error
-      if (result == AVERROR(EAGAIN))
-      {
-        return VideoResult<std::vector<std::shared_ptr<Frame>>>(VideoErrorCode::NeedMoreData);
-      }
-      SPDLOG_WARN("Error receiving frame from decoder: {}", toString(FfmpegMediaContainer::convertFfmpegError(result)));
-      return VideoResult<std::vector<std::shared_ptr<Frame>>>(FfmpegMediaContainer::convertFfmpegError(result));
-    }
-
-    // Generate a unique frame ID based on PTS and stream index
-    // Note: generateUniqueFrameId() handles counter increment internally for frames without PTS
-    StreamItemId id = generateUniqueFrameId(frame, localIndex);
-
-    // Convert the FFmpeg frame to our Frame type
-    auto decodedFrame = convertFrameToFrame(frame, localIndex, id);
-
-    if (!decodedFrame)
-    {
-      SPDLOG_WARN("Failed to convert frame to Frame");
+      if (!decodedFrames.empty())
+        return VideoResult<std::vector<std::shared_ptr<Frame>>>(std::move(decodedFrames));
       return VideoResult<std::vector<std::shared_ptr<Frame>>>(VideoErrorCode::DecodingError);
     }
-
-    // For video/audio frames, return a single-element vector
-    return VideoResult<std::vector<std::shared_ptr<Frame>>>({decodedFrame});
+    if (decodedFrames.empty())
+      return VideoResult<std::vector<std::shared_ptr<Frame>>>(VideoErrorCode::NeedMoreData);
+    return VideoResult<std::vector<std::shared_ptr<Frame>>>(std::move(decodedFrames));
   }
 
 
@@ -1766,9 +1780,63 @@ namespace Ravl2::Video
         // Check if we've reached the end of the stream
         if (result == AVERROR_EOF)
         {
+          // Drain delayed decoder output (e.g. H.264 B-frames) before declaring end-of-stream.
+          for (std::size_t localIndex = 0; localIndex < m_codecContexts.size(); ++localIndex)
+          {
+            auto *codecContext = m_codecContexts[localIndex];
+            if (!codecContext || localIndex >= m_frames.size())
+              continue;
+
+            auto drainFrames = [&]()
+            {
+              for (;;)
+              {
+                const int receiveResult = avcodec_receive_frame(codecContext, m_frames[localIndex]);
+                if (receiveResult == AVERROR(EAGAIN) || receiveResult == AVERROR_EOF)
+                  return;
+                if (receiveResult < 0)
+                {
+                  SPDLOG_WARN("Error draining decoder at end-of-stream: {}",
+                              toString(FfmpegMediaContainer::convertFfmpegError(receiveResult)));
+                  return;
+                }
+
+                const StreamItemId id = generateUniqueFrameId(m_frames[localIndex], localIndex);
+                auto decodedFrame = convertFrameToFrame(m_frames[localIndex], localIndex, id);
+                if (decodedFrame)
+                {
+                  m_packetQueue.push(PacketInfo {
+                    decodedFrame,
+                    localIndex,
+                    decodedFrame->timestamp().count()
+                  });
+                }
+                else
+                {
+                  SPDLOG_WARN("Failed to convert a delayed decoder frame at end-of-stream");
+                }
+                av_frame_unref(m_frames[localIndex]);
+              }
+            };
+
+            int sendResult = avcodec_send_packet(codecContext, nullptr);
+            if (sendResult == AVERROR(EAGAIN))
+            {
+              drainFrames();
+              sendResult = avcodec_send_packet(codecContext, nullptr);
+            }
+            if (sendResult < 0 && sendResult != AVERROR_EOF)
+            {
+              SPDLOG_WARN("Error flushing decoder at end-of-stream: {}",
+                          toString(FfmpegMediaContainer::convertFfmpegError(sendResult)));
+              continue;
+            }
+            drainFrames();
+          }
+
           m_isAtEnd = true;
 
-          // Return success if we still have frames in the queue, otherwise EndOfStream
+          // Return success if normal or delayed frames remain in the queue.
           return m_packetQueue.empty() ? VideoResult<void>(VideoErrorCode::EndOfStream) : VideoResult<void>();
         }
         else

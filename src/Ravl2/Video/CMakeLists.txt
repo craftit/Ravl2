@@ -43,6 +43,7 @@ if(WITH_FFMPEG)
     list(APPEND VIDEO_SOURCES
         FfmpegMediaContainer.cc FfmpegMediaContainer.hh
         FfmpegMultiStreamIterator.cc FfmpegMultiStreamIterator.hh
+        FfmpegMediaWriter.cc FfmpegMediaWriter.hh
     )
 endif()
 
@@ -50,6 +51,7 @@ endif()
 add_library(Ravl2Video ${VIDEO_SOURCES})
 
 if(WITH_FFMPEG AND FFMPEG_FOUND)
+    target_compile_definitions(Ravl2Video PUBLIC HAVE_FFMPEG=1)
     # Add include directories for FFmpeg
     target_include_directories(Ravl2Video PUBLIC ${FFMPEG_INCLUDE_DIRS})
     # Add link directories for FFmpeg if needed

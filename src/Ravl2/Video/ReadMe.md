@@ -82,6 +82,42 @@
     - Use FFmpeg for file-based implementations
     - The first stage is to prototype the interface and get feedback
 
+## Writing compressed media
+
+When FFmpeg support is enabled, RavlIO can write video files through
+`openOutputStream<T>()`. The default video encoder is H.264 (preferring
+`libx264`), with CRF 23 and a medium preset; MPEG-4 is used when H.264 is not
+available or the selected container defaults to another codec. The first
+image determines the output dimensions. Supported direct inputs are
+`Array<PixelRGB8, 2>`, `Array<PixelBGR8, 2>`, and `YUV420Image<uint8_t>`; other
+image types are accepted when the type-conversion registry can convert them to
+RGB8.
+
+```cpp
+auto output = Ravl2::openOutputStream<Ravl2::Array<Ravl2::PixelRGB8, 2>>(
+  "output.mp4", {{"fps", 30}, {"crf", 23}, {"preset", "medium"}});
+output.put(image);
+if(!output.close()) {
+  // The encoder or container could not be finalized.
+}
+```
+
+Timestamped video and audio can be written as `std::shared_ptr<Frame>` objects.
+Use `FrameData<ImageT>` with `StreamType::Video` for video, and
+`FrameData<AudioChunk<float>>` or `FrameData<AudioChunk<int16_t>>` with
+`StreamType::Audio` for audio. Audio arrays are organized as samples by
+channels. The first timestamp encountered establishes a shared media time
+origin; video and audio timestamps are preserved relative to it. Plain image
+streams use the configured fixed frame rate.
+
+The JSON format hint accepts `fps`, `codec`, `crf`, `bitrate`, `preset`, `gop`,
+`pixelFormat`, and `hwAccel` (`"none"` by default, or `"auto"` to try FFmpeg's
+VideoToolbox, NVENC, QSV, or AMF encoders before falling back to software). Set
+`audio` to `true` or to an object containing `codec`, `sampleRate`, `channels`,
+and `bitrate` to declare an audio stream. AAC is the default audio codec.
+Calling `close()` flushes delayed packets and writes the container trailer;
+destruction also closes the stream as a fallback.
+
 
 
 ---

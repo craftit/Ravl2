@@ -3,8 +3,11 @@
 //
 
 #include <spdlog/spdlog.h>
+#include <limits>
+#include <stdexcept>
 #include "Ravl2/IO/TypeConverter.hh"
 #include "Ravl2/IO/InputFormat.hh"
+#include "Ravl2/IO/OutputFormat.hh"
 #include "Ravl2/IO/StreamInput.hh"            // For StreamInputCall
 #include "Ravl2/Video/FfmpegMediaContainer.hh" // FFmpeg media container implementation
 #include "Ravl2/Video/StreamIterator.hh"       // Generic stream iterator API
@@ -12,6 +15,9 @@
 #include "Ravl2/Video/VideoIO.hh"              // initIO()
 #include "Ravl2/Pixel/PixelPlane.hh"           // Planar image types (YUV/RGB)
 #include "Ravl2/Pixel/Colour.hh"               // Colour conversions & registration
+#if defined(HAVE_FFMPEG)
+#include "Ravl2/Video/FfmpegMediaWriter.hh"
+#endif
 
 namespace Ravl2::Video
 {
@@ -240,6 +246,69 @@ namespace Ravl2::Video
         return plan;
       }
     ));
+
+#if defined(HAVE_FFMPEG)
+    template <typename ObjectT, typename WriteFn>
+    std::shared_ptr<StreamOutput<ObjectT>> makeFfmpegOutput(const ProbeOutputContext &ctx, WriteFn write)
+    {
+      auto writerResult = FfmpegMediaWriter::open(ctx.m_filename, ctx.m_formatHint);
+      if(!writerResult.isSuccess())
+        return {};
+      auto writer = writerResult.value();
+      return std::make_shared<StreamOutputCall<ObjectT>>(
+        [writer, write = std::move(write)](const ObjectT &object, std::streampos pos) -> std::streampos {
+          if(!write(*writer, object))
+            throw std::runtime_error("FFmpeg media writer failed while encoding an object");
+          return pos;
+        },
+        0, std::numeric_limits<std::streampos>::max(), [writer]() { return writer->close(); });
+    }
+
+    [[maybe_unused]] bool g_regFfmpegOutput = outputFormatMap().add(std::make_shared<OutputFormatCall>(
+      "FFmpeg", "mp4,mov,m4v,mkv,avi,webm", "file", -2,
+      [](const ProbeOutputContext &ctx) -> std::optional<StreamOutputPlan> {
+        if(ctx.m_sourceType == typeid(std::shared_ptr<Frame>)) {
+          auto stream = makeFfmpegOutput<std::shared_ptr<Frame>>(ctx,
+            [](FfmpegMediaWriter &writer, const std::shared_ptr<Frame> &frame) {
+              return frame && writer.writeFrame(*frame);
+            });
+          if(stream)
+            return StreamOutputPlan {stream, {}, 1.0f};
+          return std::nullopt;
+        }
+        if(ctx.m_sourceType == typeid(YUV420Image<uint8_t>)) {
+          auto stream = makeFfmpegOutput<YUV420Image<uint8_t>>(ctx,
+            [](FfmpegMediaWriter &writer, const YUV420Image<uint8_t> &image) { return writer.writeVideo(image); });
+          if(stream)
+            return StreamOutputPlan {stream, {}, 1.0f};
+          return std::nullopt;
+        }
+        if(ctx.m_sourceType == typeid(Array<PixelRGB8, 2>)) {
+          auto stream = makeFfmpegOutput<Array<PixelRGB8, 2>>(ctx,
+            [](FfmpegMediaWriter &writer, const Array<PixelRGB8, 2> &image) { return writer.writeVideo(image); });
+          if(stream)
+            return StreamOutputPlan {stream, {}, 1.0f};
+          return std::nullopt;
+        }
+        if(ctx.m_sourceType == typeid(Array<PixelBGR8, 2>)) {
+          auto stream = makeFfmpegOutput<Array<PixelBGR8, 2>>(ctx,
+            [](FfmpegMediaWriter &writer, const Array<PixelBGR8, 2> &image) { return writer.writeVideo(image); });
+          if(stream)
+            return StreamOutputPlan {stream, {}, 1.0f};
+          return std::nullopt;
+        }
+
+        auto conversion = typeConverterMap().find(typeid(Array<PixelRGB8, 2>), ctx.m_sourceType);
+        if(!conversion)
+          return std::nullopt;
+        auto stream = makeFfmpegOutput<Array<PixelRGB8, 2>>(ctx,
+          [](FfmpegMediaWriter &writer, const Array<PixelRGB8, 2> &image) { return writer.writeVideo(image); });
+        if(!stream)
+          return std::nullopt;
+        return StreamOutputPlan {stream, *conversion, conversion->conversionLoss()};
+      }
+    ));
+#endif
 
   } // namespace
 }
