@@ -339,8 +339,8 @@ namespace Ravl2
       CHECK(cam.hasCoordSwap());
       Vector<float, 2> pix;
       REQUIRE(cam.projectCheck(pix, world));
-      CHECK_THAT(pix[0], Catch::Matchers::WithinAbs(expectRow, 1e-3));
-      CHECK_THAT(pix[1], Catch::Matchers::WithinAbs(expectCol, 1e-3));
+      CHECK_THAT(pix[0], Catch::Matchers::WithinAbs(static_cast<double>(expectRow), 1e-3));
+      CHECK_THAT(pix[1], Catch::Matchers::WithinAbs(static_cast<double>(expectCol), 1e-3));
       CHECK(cam.isInView(world));
 
       const Point<float, 3> back = cam.unprojectZ(toPoint<float>(expectRow, expectCol), camPt[2]);
@@ -353,11 +353,11 @@ namespace Ravl2
 
       // The OpenCV projection matrix gives (x, y) = (col, row); the Native one (row, col).
       const Vector<float, 3> xyw = cam.projectionMatrix<CameraCoordinateSystemT::OpenCV>() * toHomogeneous(world);
-      CHECK_THAT(xyw[0] / xyw[2], Catch::Matchers::WithinAbs(expectCol, 1e-3));
-      CHECK_THAT(xyw[1] / xyw[2], Catch::Matchers::WithinAbs(expectRow, 1e-3));
+      CHECK_THAT(xyw[0] / xyw[2], Catch::Matchers::WithinAbs(static_cast<double>(expectCol), 1e-3));
+      CHECK_THAT(xyw[1] / xyw[2], Catch::Matchers::WithinAbs(static_cast<double>(expectRow), 1e-3));
       const Vector<float, 3> rcw = cam.projectionMatrix<CameraCoordinateSystemT::Native>() * toHomogeneous(world);
-      CHECK_THAT(rcw[0] / rcw[2], Catch::Matchers::WithinAbs(expectRow, 1e-3));
-      CHECK_THAT(rcw[1] / rcw[2], Catch::Matchers::WithinAbs(expectCol, 1e-3));
+      CHECK_THAT(rcw[0] / rcw[2], Catch::Matchers::WithinAbs(static_cast<double>(expectRow), 1e-3));
+      CHECK_THAT(rcw[1] / rcw[2], Catch::Matchers::WithinAbs(static_cast<double>(expectCol), 1e-3));
     }
 
     SECTION("fromParameters Native takes (row, col)-ordered parameters")
@@ -366,8 +366,8 @@ namespace Ravl2
         cyRow, cxCol, fyRow, fxCol, Matrix<float, 3, 3>::Identity(), t, frame);
       Vector<float, 2> pix;
       REQUIRE(cam.projectCheck(pix, world));
-      CHECK_THAT(pix[0], Catch::Matchers::WithinAbs(expectRow, 1e-3));
-      CHECK_THAT(pix[1], Catch::Matchers::WithinAbs(expectCol, 1e-3));
+      CHECK_THAT(pix[0], Catch::Matchers::WithinAbs(static_cast<double>(expectRow), 1e-3));
+      CHECK_THAT(pix[1], Catch::Matchers::WithinAbs(static_cast<double>(expectCol), 1e-3));
     }
 
     SECTION("Configuration (default OpenCV) matches fromParameters")
@@ -377,8 +377,8 @@ namespace Ravl2
       PinholeCamera0<float> cam(config);
       Vector<float, 2> pix;
       REQUIRE(cam.projectCheck(pix, world));
-      CHECK_THAT(pix[0], Catch::Matchers::WithinAbs(expectRow, 1e-3));
-      CHECK_THAT(pix[1], Catch::Matchers::WithinAbs(expectCol, 1e-3));
+      CHECK_THAT(pix[0], Catch::Matchers::WithinAbs(static_cast<double>(expectRow), 1e-3));
+      CHECK_THAT(pix[1], Catch::Matchers::WithinAbs(static_cast<double>(expectCol), 1e-3));
     }
 
     SECTION("The frame constructor and fromFrame are OpenCV-handed and centred")
@@ -394,9 +394,9 @@ namespace Ravl2
         CHECK_THAT(centre[0], Catch::Matchers::WithinAbs(49.5, 0.6));
         CHECK_THAT(centre[1], Catch::Matchers::WithinAbs(99.5, 0.6));
         CHECK(right[1] > centre[1]);// +x is right: column increases
-        CHECK_THAT(right[0], Catch::Matchers::WithinAbs(centre[0], 1e-4));
+        CHECK_THAT(right[0], Catch::Matchers::WithinAbs(static_cast<double>(centre[0]), 1e-4));
         CHECK(down[0] > centre[0]);// +y is down: row increases
-        CHECK_THAT(down[1], Catch::Matchers::WithinAbs(centre[1], 1e-4));
+        CHECK_THAT(down[1], Catch::Matchers::WithinAbs(static_cast<double>(centre[1]), 1e-4));
       }
     }
 

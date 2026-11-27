@@ -132,7 +132,7 @@ namespace Ravl2
     private:
       std::span<double> mData;
       IntT mRows = 0;
-      IntT mCols = 0;
+      [[maybe_unused]] IntT mCols = 0;
     };
 
     FortranMatrix FortranVector::matrix(IntT first, IntT rows, IntT cols) const

@@ -247,7 +247,7 @@ namespace Ravl2::Video
 
     //! Last delivered PTS for timestamp validation (only checked in debug builds).
     //! Always present so the class layout doesn't depend on NDEBUG.
-    int64_t m_lastDeliveredPts = -1;
+    [[maybe_unused]] int64_t m_lastDeliveredPts = -1;
 
     //! Max frame search when looking for a time code.
     static constexpr int MAX_FRAME_SEARCH = 30;
