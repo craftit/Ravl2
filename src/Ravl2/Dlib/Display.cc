@@ -54,14 +54,14 @@ namespace Ravl2
     template<typename PixelT>
     std::optional<StreamOutputPlan> registerDisplay(const ProbeOutputContext &ctx)
     {
-      auto convChain = typeConverterMap().find(typeid(Ravl2::Array<PixelT,2>), ctx.m_sourceType);
-      if(ctx.m_protocol != "dlib") {
+      auto convChain = typeConverterMap().find(typeid(Ravl2::Array<PixelT,2>), ctx.mSourceType);
+      if(ctx.mProtocol != "dlib") {
         return std::nullopt;
       }
-      if(!convChain.has_value() && ctx.m_sourceType != typeid(Ravl2::Array<PixelT,2>)) {
+      if(!convChain.has_value() && ctx.mSourceType != typeid(Ravl2::Array<PixelT,2>)) {
         return std::nullopt;
       }
-      auto strm = std::make_shared<StreamOutputCall<Ravl2::Array<PixelT,2>>>([filename = ctx.m_filename](const Ravl2::Array<PixelT,2> &img, std::streampos pos) -> std::streampos {
+      auto strm = std::make_shared<StreamOutputCall<Ravl2::Array<PixelT,2>>>([filename = ctx.mFilename](const Ravl2::Array<PixelT,2> &img, std::streampos pos) -> std::streampos {
         (void)pos;
         getDLibDisplayWindow(filename)->queue([img](DLibIO::DisplayWindow &win) {
           win.display(toDlib(img));
@@ -69,7 +69,7 @@ namespace Ravl2
         registerDLibAtExitWait();
         return 0;
       });
-      if(ctx.m_sourceType == typeid(Ravl2::Array<PixelT,2>)) {
+      if(ctx.mSourceType == typeid(Ravl2::Array<PixelT,2>)) {
         return StreamOutputPlan {.mStream=strm, .mConversion={}, .mCost=1.0f};
       }
       return StreamOutputPlan {.mStream=strm, .mConversion=convChain.value(), .mCost=convChain.value().conversionLoss()};
@@ -77,10 +77,10 @@ namespace Ravl2
 
     [[maybe_unused]] bool g_dispFmt1 = outputFormatMap().add(std::make_shared<OutputFormatCall>("Dlib", "", "dlib", -1, [](const ProbeOutputContext &ctx) -> std::optional<StreamOutputPlan> {
 
-      if(ctx.m_sourceType == typeid(Ravl2::Array<uint16_t,2>)) {
+      if(ctx.mSourceType == typeid(Ravl2::Array<uint16_t,2>)) {
         return registerDisplay<uint16_t>(ctx);
       }
-      if(ctx.m_sourceType == typeid(Ravl2::Array<PixelRGB8,2>)) {
+      if(ctx.mSourceType == typeid(Ravl2::Array<PixelRGB8,2>)) {
         return registerDisplay<PixelRGB8>(ctx);
       }
       return registerDisplay<uint8_t>(ctx);

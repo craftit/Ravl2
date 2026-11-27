@@ -6,13 +6,13 @@ This document explains how Image IO works in Ravl2 and provides a practical chec
 Key concepts
 - Input probing and planning
   - InputFormat: a handler that can recognise a source and return a StreamInputPlan describing how to read it.
-  - ProbeInputContext: immutable context with url, filename, protocol, extension, target C++ type, look‑ahead bytes (ctx.m_data), and JSON hints.
+  - ProbeInputContext: immutable context with url, filename, protocol, extension, target C++ type, look‑ahead bytes (ctx.mData), and JSON hints.
   - StreamInputPlan: contains a StreamInput<T> (or container) that yields the decoded type ViaT once (for still images) and a ConversionChain from ViaT to the requested target type; also carries an overall preserved‑bits score (loss).
 
 - Output probing and planning
   - OutputFormat: a handler that can write a given source type to a destination URL.
   - ProbeOutputContext: immutable context with url, filename, protocol, extension, source C++ type and JSON hints.
-  - StreamOutputPlan: contains a StreamOutput<ViaT> that consumes ViaT and writes it, plus a ConversionChain from the user’s source type to ViaT; carries a preserved‑bits score.
+  - StreamOutputPlan: contains a StreamOutput<ViaT> that consumes ViaT and writes it, plus a ConversionChain from the user’s source type to ViaT; carries a score in `mCost`.
 
 - Type conversion and loss accounting
   - TypeConverter: registry of conversion functions between C++ types.
@@ -25,14 +25,14 @@ Design principles for Image IO handlers
   - If the file format doesn’t support alpha, don’t invent it; rely on converters to add an opaque alpha if required by the target.
 
 - Probe cheaply, decode/encode lazily
-  - Probe should be fast and avoid heavy work. Use header parsing and look‑ahead bytes (ctx.m_data) to recognise formats.
+  - Probe should be fast and avoid heavy work. Use header parsing and look‑ahead bytes (ctx.mData) to recognise formats.
   - Delay real IO until the returned StreamInput/StreamOutput is invoked.
 
 - Keep the ProbeInput/OutputContext immutable
   - Do not mutate ctx. If you must carry state (open file handle, decompressor state), capture it in the Stream plan via a small RAII context owned by a shared_ptr and consumed exactly once.
 
 - Logging and errors
-  - Follow repository guidelines: INFO for state transitions when ctx.m_verbose is true, WARN for recoverable anomalies, ERROR only where action is taken (e.g., failing to read/write). Avoid double‑logging the same error from multiple layers.
+  - Follow repository guidelines: INFO for state transitions when ctx.mVerbose is true, WARN for recoverable anomalies, ERROR only where action is taken (e.g., failing to read/write). Avoid double‑logging the same error from multiple layers.
 
 - Threading
   - Plans should be safe to use on a single thread by default. If you use background threads, document thread‑safety, ownership, and cancellation.
@@ -47,14 +47,14 @@ Minimal loader structure (pattern)
 
 2) Probe lambda
    - Validate protocol/extension quickly.
-   - Optionally check magic bytes in ctx.m_data to reject early.
+   - Optionally check magic bytes in ctx.mData to reject early.
    - Open the file and parse minimal header information to identify color model, component depth, subsampling, etc.
    - Construct one or more candidate native ViaT types you can decode to.
-   - For each candidate, ask typeConverterMap().find(ctx.m_targetType, typeid(ViaT)). The best plan maximises convChain.conversionLoss() × intrinsicLoss, where intrinsicLoss models any loss inside your handler (e.g., RGB expansion from subsampled YUV).
+   - For each candidate, ask typeConverterMap().find(ctx.mTargetType, typeid(ViaT)). The best plan maximises convChain.conversionLoss() × intrinsicLoss, where intrinsicLoss models any loss inside your handler (e.g., RGB expansion from subsampled YUV).
    - Build and return StreamInputPlan:
      - mStream: a StreamInputCall<ViaT> that returns the decoded image at pos==0 and std::nullopt thereafter.
      - mConversion: the found ConversionChain (possibly empty when ViaT matches the target type).
-     - mLoss: the aggregate score.
+     - mCost: the aggregate score.
 
 3) Decode lambda
    - Perform the actual format decode into ViaT’s backing memory.
@@ -67,23 +67,23 @@ Minimal saver structure (pattern)
 
 2) Probe lambda
    - Prepare candidate ViaT types you can encode (e.g., Array<PixelRGB8,2> and Array<uint8_t,2> for JPEG).
-   - For each ViaT, ask typeConverterMap().find(typeid(ViaT), ctx.m_sourceType). Choose the chain with the highest conversionLoss().
+   - For each ViaT, ask typeConverterMap().find(typeid(ViaT), ctx.mSourceType). Choose the chain with the highest conversionLoss().
    - Build and return StreamOutputPlan with:
      - mStream: a StreamOutputCall<ViaT> that writes the image (pos==0 for stills; return new position).
      - mConversion: the chain from the user type to ViaT.
      - mLoss: the aggregate score.
 
 3) Encode lambda
-   - Configure encoder from ctx.m_formatHint (e.g., quality for JPEG/PNG compression level). Validate and clamp user‑provided values.
+   - Configure encoder from ctx.mFormatHint (e.g., quality for JPEG/PNG compression level). Validate and clamp user‑provided values.
    - Write scanlines or planes directly from ViaT without per‑pixel loops when possible.
 
 Choosing priorities
-- Handlers for the same (protocol, extension) are probed in decreasing priority (implementation detail: current maps iterate insertion order per extension; give a higher priority number to preferred native handlers). Use a priority above generic fallback handlers (like the OpenCV loader) to ensure your native path is selected when available.
+- Handlers for the same (protocol, extension) are probed in decreasing priority; equal-priority handlers retain registration order. Use a higher priority number for preferred native handlers (such as PNG/JPEG handlers ahead of generic OpenCV handlers).
 
 Example: JPEG (libjpeg‑turbo) loader/saver anatomy
 - Files: see JpegTurboImageIO.cc and JpegLoaderPlan.md in this directory.
 - Probe
-  - Check magic (FFD8) from ctx.m_data if present.
+  - Check magic (FFD8) from ctx.mData if present.
   - Open file, read header once, and create a JpegDecodeContext with FILE* and jpeg_decompress_struct.
   - Identify grayscale vs color, and (optionally) subsampling.
   - Score ViaT candidates (Array<uint8_t,2> for gray; Array<PixelRGB8,2> or YUV planar types for color) using the TypeConverter map.
@@ -114,7 +114,7 @@ CMake integration tips
 
 Coding conventions
 - Follow the project’s general guidelines (see repository guidelines):
-  - Use spdlog for logging and guard INFO output by ctx.m_verbose.
+  - Use spdlog for logging and guard INFO output by ctx.mVerbose.
   - Prefer std::expected in new APIs that return error info (where applicable); within IO callbacks it’s common to return std::optional and log at the boundary.
   - Use Eigen for math as needed, std::chrono for time, and nlohmann::json for hints.
   - Keep implementation details inside .cc files; headers are for small inline helpers or templates only.
@@ -123,7 +123,7 @@ Authoring checklist
 1) Decide on target ViaTs you’ll support natively (packed and/or planar).
 2) Add a new handler registration in inputFormatMap()/outputFormatMap() with appropriate priority.
 3) Implement probing:
-   - Quick signature validation using ctx.m_data when possible.
+   - Quick signature validation using ctx.mData when possible.
    - Parse minimal headers to determine color space, bit depth, subsampling.
    - Score and choose the best ViaT using the TypeConverter map.
 4) Implement lazy decode/encode stream callbacks that operate directly on the destination container.

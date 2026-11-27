@@ -320,10 +320,10 @@ namespace Ravl2
       std::lock_guard lock(m_mutex);
       m_streamOutputFactory[typeid(ObjectT)] = [](const ProbeOutputContext &ctx) {
         errno = 0;
-        auto stream = std::make_shared<std::ofstream>(ctx.m_filename, std::ios::binary);
+        auto stream = std::make_shared<std::ofstream>(ctx.mFilename, std::ios::binary);
         if(!stream->is_open()) {
           // Without this the failure shows up later, in cereal, as "Failed to write N bytes".
-          throw std::runtime_error(fmt::format("Cannot open '{}' for writing: {}", ctx.m_filename, errno ? std::strerror(errno) : "unknown reason"));
+          throw std::runtime_error(fmt::format("Cannot open '{}' for writing: {}", ctx.mFilename, errno ? std::strerror(errno) : "unknown reason"));
         }
         return std::make_shared<StreamOutputCerealArchive<ObjectT, ArchiveT>>(stream);
       };
@@ -362,7 +362,7 @@ namespace Ravl2
     {
       // We need a lock, as we are accessing the factory.
       std::shared_lock lock(m_mutex);
-      auto it = m_streamOutputFactory.find(ctx.m_sourceType);
+      auto it = m_streamOutputFactory.find(ctx.mSourceType);
       if(it != m_streamOutputFactory.end()) {
 	return StreamOutputPlan {it->second(ctx), {}, 1.0f};
       }
@@ -372,7 +372,7 @@ namespace Ravl2
 	toTypes.insert(pair.first);
       }
       // See if we can convert to one of the types we know about.
-      std::optional<ConversionChain> conv = typeConverterMap().find(ctx.m_sourceType, toTypes);
+      std::optional<ConversionChain> conv = typeConverterMap().find(ctx.mSourceType, toTypes);
       if(!conv.has_value()) {
 	return std::nullopt;
       }
@@ -445,10 +445,10 @@ namespace Ravl2
     //! See if we know how to read the stream.
     [[nodiscard]] std::optional<StreamInputPlan> probe(const ProbeInputContext &ctx) final
     {
-      if(ctx.m_data.size() < 4) {
+      if(ctx.mData.size() < 4) {
         return std::nullopt;
       }
-      std::string initialData = std::string(ctx.m_data.begin(), ctx.m_data.end());
+      std::string initialData = std::string(ctx.mData.begin(), ctx.mData.end());
       // Try and read the header.
       std::istringstream ss(initialData);
       ArchiveT archive(ss);
@@ -478,12 +478,12 @@ namespace Ravl2
 	return std::nullopt;
       }
       auto newStream = it->second(ctx);
-      if(ctx.m_targetType ==newStream->type()) {
+      if(ctx.mTargetType == newStream->type()) {
         return StreamInputPlan {newStream, {}, 1.0f};
       }
-      std::optional<ConversionChain> conv = typeConverterMap().find(ctx.m_targetType, newStream->type());
+      std::optional<ConversionChain> conv = typeConverterMap().find(ctx.mTargetType, newStream->type());
       if(!conv.has_value()) {
-	SPDLOG_WARN("Don't know how to convert from {} to {}", newStream->type().name(), ctx.m_targetType.name());
+	SPDLOG_WARN("Don't know how to convert from {} to {}", newStream->type().name(), ctx.mTargetType.name());
 	return std::nullopt;
       }
       return StreamInputPlan {newStream, conv.value(), 1.0f};

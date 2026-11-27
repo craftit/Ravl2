@@ -107,7 +107,7 @@ namespace Ravl2
     //! Write an object to the stream.
     //! @param obj - The object to write.
     //! @param pos - The position in the stream where the object was written.
-    //! @return True if the object was written.
+    //! @return The position after writing the object.
     virtual std::streampos write(const ObjectT &obj, std::streampos pos) = 0;
 
     //! @brief Write an object to the stream.
@@ -129,12 +129,12 @@ namespace Ravl2
       write(obj, pos);
     }
 
-    [[nodiscard]] auto begin() const
+    [[nodiscard]] auto begin()
     {
       return OutputStreamIterator<ObjectT>(*this, mStart);
     }
 
-    [[nodiscard]] auto end() const
+    [[nodiscard]] auto end()
     {
       return OutputStreamIterator<ObjectT>(*this, mEnd);
     }
@@ -166,7 +166,7 @@ namespace Ravl2
     //! Write an object to the stream.
     //! @param obj - The object to write.
     //! @param pos - The position in the stream where the object was written.
-    //! @return True if the object was written.
+    //! @return The position after writing the object.
     std::streampos write(const ObjectT &obj, std::streampos pos) override
     {
       return mWrite(obj, pos);

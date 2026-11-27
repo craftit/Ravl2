@@ -44,13 +44,13 @@ namespace Ravl2::Video
 
       // Find conversion chain only if the caller requested a different target type.
       std::optional<ConversionChain> convChain;
-      if (ctx.m_targetType != typeid(ImageT))
+      if (ctx.mTargetType != typeid(ImageT))
       {
-        convChain = typeConverterMap().find(ctx.m_targetType, typeid(ImageT));
+        convChain = typeConverterMap().find(ctx.mTargetType, typeid(ImageT));
         if (!convChain)
         {
           if (ctx.mVerbose) {
-            SPDLOG_INFO("FFmpeg: No conversion from {} to requested {}", typeName(typeid(ImageT)), typeName(ctx.m_targetType));
+            SPDLOG_INFO("FFmpeg: No conversion from {} to requested {}", typeName(typeid(ImageT)), typeName(ctx.mTargetType));
           }
           return std::nullopt; // Can't satisfy requested type with this base.
         }
@@ -84,7 +84,7 @@ namespace Ravl2::Video
       if (ctx.mVerbose)
       {
         SPDLOG_INFO("FFmpeg: Plan created underlying {} -> target {} (loss {})",
-                    typeName(typeid(ImageT)), typeName(ctx.m_targetType),
+                    typeName(typeid(ImageT)), typeName(ctx.mTargetType),
                     convChain ? convChain->conversionLoss() : 1.0f);
       }
 
@@ -127,7 +127,7 @@ namespace Ravl2::Video
       [](const ProbeInputContext &ctx) -> std::optional<StreamInputPlan>
       {
         if (ctx.mVerbose) {
-          SPDLOG_INFO("FFmpeg: probing '{}' target {}", ctx.mFilename, typeName(ctx.m_targetType));
+          SPDLOG_INFO("FFmpeg: probing '{}' target {}", ctx.mFilename, typeName(ctx.mTargetType));
         }
 
         // Attempt open.
@@ -190,7 +190,7 @@ namespace Ravl2::Video
       [](const ProbeInputContext &ctx) -> std::optional<StreamInputPlan>
       {
         if (ctx.mVerbose) {
-          SPDLOG_INFO("FFmpeg: probing '{}' target {}", ctx.mFilename, typeName(ctx.m_targetType));
+          SPDLOG_INFO("FFmpeg: probing '{}' target {}", ctx.mFilename, typeName(ctx.mTargetType));
         }
 
         Ravl2::Video::DeviceParameters params;
@@ -251,7 +251,7 @@ namespace Ravl2::Video
     template <typename ObjectT, typename WriteFn>
     std::shared_ptr<StreamOutput<ObjectT>> makeFfmpegOutput(const ProbeOutputContext &ctx, WriteFn write)
     {
-      auto writerResult = FfmpegMediaWriter::open(ctx.m_filename, ctx.m_formatHint);
+      auto writerResult = FfmpegMediaWriter::open(ctx.mFilename, ctx.mFormatHint);
       if(!writerResult.isSuccess())
         return {};
       auto writer = writerResult.value();
@@ -267,7 +267,7 @@ namespace Ravl2::Video
     [[maybe_unused]] bool g_regFfmpegOutput = outputFormatMap().add(std::make_shared<OutputFormatCall>(
       "FFmpeg", "mp4,mov,m4v,mkv,avi,webm", "file", -2,
       [](const ProbeOutputContext &ctx) -> std::optional<StreamOutputPlan> {
-        if(ctx.m_sourceType == typeid(std::shared_ptr<Frame>)) {
+        if(ctx.mSourceType == typeid(std::shared_ptr<Frame>)) {
           auto stream = makeFfmpegOutput<std::shared_ptr<Frame>>(ctx,
             [](FfmpegMediaWriter &writer, const std::shared_ptr<Frame> &frame) {
               return frame && writer.writeFrame(*frame);
@@ -276,21 +276,21 @@ namespace Ravl2::Video
             return StreamOutputPlan {stream, {}, 1.0f};
           return std::nullopt;
         }
-        if(ctx.m_sourceType == typeid(YUV420Image<uint8_t>)) {
+        if(ctx.mSourceType == typeid(YUV420Image<uint8_t>)) {
           auto stream = makeFfmpegOutput<YUV420Image<uint8_t>>(ctx,
             [](FfmpegMediaWriter &writer, const YUV420Image<uint8_t> &image) { return writer.writeVideo(image); });
           if(stream)
             return StreamOutputPlan {stream, {}, 1.0f};
           return std::nullopt;
         }
-        if(ctx.m_sourceType == typeid(Array<PixelRGB8, 2>)) {
+        if(ctx.mSourceType == typeid(Array<PixelRGB8, 2>)) {
           auto stream = makeFfmpegOutput<Array<PixelRGB8, 2>>(ctx,
             [](FfmpegMediaWriter &writer, const Array<PixelRGB8, 2> &image) { return writer.writeVideo(image); });
           if(stream)
             return StreamOutputPlan {stream, {}, 1.0f};
           return std::nullopt;
         }
-        if(ctx.m_sourceType == typeid(Array<PixelBGR8, 2>)) {
+        if(ctx.mSourceType == typeid(Array<PixelBGR8, 2>)) {
           auto stream = makeFfmpegOutput<Array<PixelBGR8, 2>>(ctx,
             [](FfmpegMediaWriter &writer, const Array<PixelBGR8, 2> &image) { return writer.writeVideo(image); });
           if(stream)
@@ -298,7 +298,7 @@ namespace Ravl2::Video
           return std::nullopt;
         }
 
-        auto conversion = typeConverterMap().find(typeid(Array<PixelRGB8, 2>), ctx.m_sourceType);
+        auto conversion = typeConverterMap().find(typeid(Array<PixelRGB8, 2>), ctx.mSourceType);
         if(!conversion)
           return std::nullopt;
         auto stream = makeFfmpegOutput<Array<PixelRGB8, 2>>(ctx,

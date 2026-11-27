@@ -74,6 +74,7 @@ add_library(Ravl2Core
     IO/TypeConverter.cc IO/TypeConverter.hh
     IO/Load.cc IO/Load.hh
     IO/Save.cc IO/Save.hh
+    IO/Url.cc IO/Url.hh
     IO/InputFormat.cc IO/InputFormat.hh
     IO/Cereal.cc IO/Cereal.hh
     IO/StreamInput.hh IO/StreamInput.cc

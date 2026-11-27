@@ -41,7 +41,7 @@ Native ViaT candidates (decode/encode)
 - Palette (non‑priority): libpng will expand losslessly to RGB8 or RGBA8 (when tRNS present). We won’t optimize for palette; we will treat it as a path to RGB(A).
 
 Input probing strategy
-1) Signature check using ProbeInputContext::m_data (PNG magic: 89 50 4E 47 0D 0A 1A 0A). Decline quickly if no match.
+1) Signature check using ProbeInputContext::mData (PNG magic: 89 50 4E 47 0D 0A 1A 0A). Decline quickly if no match.
 2) Build RAII PngDecodeContext (single‑use): holds FILE*/istream access, png_structp, png_infop, IHDR (width, height, bitDepth, colorType, interlace), flags for PLTE/tRNS/alpha. Read signature/IHDR once and keep context for the plan.
 3) Choose ViaT candidates based on IHDR:
    - GRAY: Gray8 or Gray16 depending on bitDepth.
@@ -50,7 +50,7 @@ Input probing strategy
    - RGBA: RGBA8/RGBA16.
    - PALETTE: RGB8 (or RGBA8 if tRNS) via lossless expansion.
    - For bit‑packed gray (1/2/4), expand to 8‑bit (we won’t offer sub‑8‑bit ViaTs).
-4) Score candidates against ctx.m_targetType via TypeConverter; pick best by maximizing convLoss × intrinsicLoss.
+4) Score candidates against ctx.mTargetType via TypeConverter; pick best by maximizing convLoss × intrinsicLoss.
    - intrinsicLoss = 1.0 for exact mappings and for palette/tRNS expansions (lossless).
    - intrinsicLoss = bitDepth/8.0 for gray 1/2/4 expanded to 8‑bit (e.g., 0.5 for 4‑bit).
 5) Build a StreamInputPlan that captures the shared_ptr<PngDecodeContext>, decodes once at pos==0, and returns std::nullopt thereafter.
@@ -71,8 +71,8 @@ Decode paths (libpng)
 - Interlaced images (Adam7): enable via png_set_interlace_handling and let png_read_image deinterlace into the destination.
 
 Output probing and encode paths
-- Consider ViaTs we can write: Gray8/16, RGB8/16, RGBA8/16, LA8/16. Pick the best conversion from ctx.m_sourceType via TypeConverter with highest conversionLoss (intrinsicLoss=1.0 as PNG is lossless at chosen depth).
-- Hints (ctx.m_formatHint), defaults in parentheses:
+- Consider ViaTs we can write: Gray8/16, RGB8/16, RGBA8/16, LA8/16. Pick the best conversion from ctx.mSourceType via TypeConverter with highest conversionLoss (intrinsicLoss=1.0 as PNG is lossless at chosen depth).
+- Hints (ctx.mFormatHint), defaults in parentheses:
   - pngCompressionLevel: int [0..9] (6)
   - pngFilter: one of {auto, none, sub, up, avg, paeth} (auto)
   - pngInterlace: bool (false)

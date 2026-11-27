@@ -85,7 +85,7 @@ namespace Ravl2
     template <typename ViaT>
     std::optional<StreamInputPlan> buildPlanForInput(const ProbeInputContext &ctx, std::shared_ptr<PngDecodeContext> dctx)
     {
-      auto chainOpt = typeConverterMap().find(ctx.m_targetType, typeid(ViaT));
+      auto chainOpt = typeConverterMap().find(ctx.mTargetType, typeid(ViaT));
       if(!chainOpt) return std::nullopt;
 
       auto strm = std::make_shared<StreamInputCall<ViaT>>([dctx, verbose = ctx.mVerbose](std::streampos &pos) -> std::optional<ViaT> {
@@ -212,9 +212,9 @@ namespace Ravl2
       [](const ProbeInputContext &ctx) -> std::optional<StreamInputPlan> {
 #ifdef RAVL2_HAVE_PNG
         // Quick signature check via look-ahead if present
-        if(!ctx.m_data.empty()) {
+        if(!ctx.mData.empty()) {
           static const unsigned char kPngSig[8] = {0x89, 'P', 'N', 'G', 0x0D, 0x0A, 0x1A, 0x0A};
-          if(ctx.m_data.size() < 8 || !std::equal(ctx.m_data.begin(), ctx.m_data.begin() + 8, kPngSig)) {
+          if(ctx.mData.size() < 8 || !std::equal(ctx.mData.begin(), ctx.mData.begin() + 8, kPngSig)) {
             if(ctx.mVerbose) {
               SPDLOG_INFO("PNGNative: signature mismatch for {}", ctx.mFilename);
             }
@@ -249,7 +249,7 @@ namespace Ravl2
         std::optional<Candidate> best;
 
         auto scoreVia = [&](const std::type_info &via, Candidate::Kind k) {
-          auto ch = typeConverterMap().find(ctx.m_targetType, via);
+          auto ch = typeConverterMap().find(ctx.mTargetType, via);
           if(!ch) return;
           float s = ch->conversionLoss();
           if(!best || s > best->score) best = Candidate {k, s};
@@ -310,7 +310,7 @@ namespace Ravl2
         std::optional<ConversionChain> bestChain;
 
         auto consider = [&](const std::type_info &via, Choice c) {
-          if(auto ch = typeConverterMap().find(via, ctx.m_sourceType)) {
+          if(auto ch = typeConverterMap().find(via, ctx.mSourceType)) {
             if(!bestChain || ch->conversionLoss() > bestChain->conversionLoss()) {
               bestChain = ch;
               choice = c;
@@ -327,8 +327,8 @@ namespace Ravl2
 
         if(!bestChain) return std::nullopt;
 
-        if(ctx.m_verbose) {
-          SPDLOG_INFO("PNGNative: selected output via kind {} for {}", int(choice), ctx.m_filename);
+        if(ctx.mVerbose) {
+          SPDLOG_INFO("PNGNative: selected output via kind {} for {}", int(choice), ctx.mFilename);
         }
 
         // Parse hints
@@ -336,10 +336,10 @@ namespace Ravl2
         bool interlace = false;
         int filter = PNG_ALL_FILTERS;// libpng will choose
         try {
-          if(ctx.m_formatHint.contains("pngCompressionLevel")) compression = std::clamp(ctx.m_formatHint["pngCompressionLevel"].get<int>(), 0, 9);
-          if(ctx.m_formatHint.contains("pngInterlace")) interlace = ctx.m_formatHint["pngInterlace"].get<bool>();
-          if(ctx.m_formatHint.contains("pngFilter")) {
-            const auto f = ctx.m_formatHint["pngFilter"].get<std::string>();
+          if(ctx.mFormatHint.contains("pngCompressionLevel")) compression = std::clamp(ctx.mFormatHint["pngCompressionLevel"].get<int>(), 0, 9);
+          if(ctx.mFormatHint.contains("pngInterlace")) interlace = ctx.mFormatHint["pngInterlace"].get<bool>();
+          if(ctx.mFormatHint.contains("pngFilter")) {
+            const auto f = ctx.mFormatHint["pngFilter"].get<std::string>();
             if(f == "none") filter = PNG_FILTER_NONE;
             else if(f == "sub")
               filter = PNG_FILTER_SUB;
@@ -358,7 +358,7 @@ namespace Ravl2
         // RGB8
         if(choice == Choice::RGB8) {
           using ViaT = Array<PixelRGB8, 2>;
-          auto strm = std::make_unique<StreamOutputCall<ViaT>>([filename = ctx.m_filename, compression, interlace, filter](const ViaT &img, std::streampos pos) -> std::streampos {
+          auto strm = std::make_unique<StreamOutputCall<ViaT>>([filename = ctx.mFilename, compression, interlace, filter](const ViaT &img, std::streampos pos) -> std::streampos {
             if(pos != 0) throw std::runtime_error("PNG output does not support seeking.");
             FILE *f = std::fopen(filename.c_str(), "wb");
             if(!f) throw std::runtime_error("Failed to open PNG for write");
@@ -400,7 +400,7 @@ namespace Ravl2
         // RGBA8
         if(choice == Choice::RGBA8) {
           using ViaT = Array<PixelRGBA8, 2>;
-          auto strm = std::make_unique<StreamOutputCall<ViaT>>([filename = ctx.m_filename, compression, interlace, filter](const ViaT &img, std::streampos pos) -> std::streampos {
+          auto strm = std::make_unique<StreamOutputCall<ViaT>>([filename = ctx.mFilename, compression, interlace, filter](const ViaT &img, std::streampos pos) -> std::streampos {
             if(pos != 0) throw std::runtime_error("PNG output does not support seeking.");
             FILE *f = std::fopen(filename.c_str(), "wb");
             if(!f) throw std::runtime_error("Failed to open PNG for write");
@@ -442,7 +442,7 @@ namespace Ravl2
         // Gray8
         if(choice == Choice::Gray8) {
           using ViaT = Array<uint8_t, 2>;
-          auto strm = std::make_unique<StreamOutputCall<ViaT>>([filename = ctx.m_filename, compression, interlace, filter](const ViaT &img, std::streampos pos) -> std::streampos {
+          auto strm = std::make_unique<StreamOutputCall<ViaT>>([filename = ctx.mFilename, compression, interlace, filter](const ViaT &img, std::streampos pos) -> std::streampos {
             if(pos != 0) throw std::runtime_error("PNG output does not support seeking.");
             FILE *f = std::fopen(filename.c_str(), "wb");
             if(!f) throw std::runtime_error("Failed to open PNG for write");
@@ -489,7 +489,7 @@ namespace Ravl2
         // Gray16
         if(choice == Choice::Gray16) {
           using ViaT = Array<uint16_t, 2>;
-          auto strm = std::make_unique<StreamOutputCall<ViaT>>([filename = ctx.m_filename, compression, interlace, filter](const ViaT &img, std::streampos pos) -> std::streampos {
+          auto strm = std::make_unique<StreamOutputCall<ViaT>>([filename = ctx.mFilename, compression, interlace, filter](const ViaT &img, std::streampos pos) -> std::streampos {
             if(pos != 0) throw std::runtime_error("PNG output does not support seeking.");
             FILE *f = std::fopen(filename.c_str(), "wb");
             if(!f) throw std::runtime_error("Failed to open PNG for write");
@@ -534,7 +534,7 @@ namespace Ravl2
         // RGB16
         if(choice == Choice::RGB16) {
           using ViaT = Array<RGB16Pixel, 2>;
-          auto strm = std::make_unique<StreamOutputCall<ViaT>>([filename = ctx.m_filename, compression, interlace, filter](const ViaT &img, std::streampos pos) -> std::streampos {
+          auto strm = std::make_unique<StreamOutputCall<ViaT>>([filename = ctx.mFilename, compression, interlace, filter](const ViaT &img, std::streampos pos) -> std::streampos {
             if(pos != 0) throw std::runtime_error("PNG output does not support seeking.");
             FILE *f = std::fopen(filename.c_str(), "wb");
             if(!f) throw std::runtime_error("Failed to open PNG for write");
@@ -579,7 +579,7 @@ namespace Ravl2
         // RGBA16
         if(choice == Choice::RGBA16) {
           using ViaT = Array<RGBA16Pixel, 2>;
-          auto strm = std::make_unique<StreamOutputCall<ViaT>>([filename = ctx.m_filename, compression, interlace, filter](const ViaT &img, std::streampos pos) -> std::streampos {
+          auto strm = std::make_unique<StreamOutputCall<ViaT>>([filename = ctx.mFilename, compression, interlace, filter](const ViaT &img, std::streampos pos) -> std::streampos {
             if(pos != 0) throw std::runtime_error("PNG output does not support seeking.");
             FILE *f = std::fopen(filename.c_str(), "wb");
             if(!f) throw std::runtime_error("Failed to open PNG for write");
@@ -623,8 +623,8 @@ namespace Ravl2
 
         return std::nullopt;
 #else
-        if(ctx.m_verbose) {
-          SPDLOG_INFO("PNGNative output probe active for {} (no libpng found)", ctx.m_filename);
+        if(ctx.mVerbose) {
+          SPDLOG_INFO("PNGNative output probe active for {} (no libpng found)", ctx.mFilename);
         }
         return std::nullopt;
 #endif

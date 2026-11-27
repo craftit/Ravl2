@@ -24,7 +24,7 @@ namespace Ravl2
         : mContainer(&container),
           mPos(pos)
     {
-      if(mContainer != nullptr && mPos != std::numeric_limits<std::streampos>::max())
+      if(mContainer != nullptr && mPos != mContainer->endOffset())
         mObject = mContainer->next(mPos);
     }
 
@@ -44,7 +44,8 @@ namespace Ravl2
     //! @return The iterator.
     InputStreamIterator<ObjectT> &operator++()
     {
-      mObject = mContainer->next(mPos);
+      if(mContainer != nullptr && mObject.has_value())
+        mObject = mContainer->next(mPos);
       return *this;
     }
 
@@ -70,13 +71,16 @@ namespace Ravl2
     [[nodiscard]] bool operator==(const InputStreamIterator<ObjectT> &other) const
     {
       assert(mContainer == other.mContainer);
+      if(!mObject.has_value() && !other.mObject.has_value())
+        return true;
+      if(mObject.has_value() != other.mObject.has_value())
+        return false;
       return mPos == other.mPos;
     }
 
-
   private:
     StreamInput<ObjectT> *mContainer = nullptr;
-    std::streampos mPos;
+    std::streampos mPos = 0;
     std::optional<ObjectT> mObject;
   };
 
@@ -160,10 +164,16 @@ namespace Ravl2
       return {};
     }
     if(inStreamPlan.value().mConversion) {
-      auto strmPtr = std::make_shared<StreamInputCall<ObjectT>>([plan = inStreamPlan.value()](std::streampos pos) -> ObjectT {
-        return std::any_cast<ObjectT>(plan.mConversion(plan.mStream->anyNext(pos)));
+      auto strmPtr = std::make_shared<StreamInputCall<ObjectT>>([plan = inStreamPlan.value()](std::streampos &pos) -> std::optional<ObjectT> {
+        auto source = plan.mStream->anyNext(pos);
+        if(!source.has_value())
+          return std::nullopt;
+        auto converted = plan.mConversion(std::move(source));
+        if(!converted.has_value() || converted.type() != typeid(ObjectT))
+          return std::nullopt;
+        return std::any_cast<ObjectT>(std::move(converted));
       },
-        inStreamPlan->mStream->beginOffset(), inStreamPlan->mStream->endOffset());
+                                                                inStreamPlan->mStream->beginOffset(), inStreamPlan->mStream->endOffset());
 
       return StreamInputProxy<ObjectT>(std::dynamic_pointer_cast<StreamInput<ObjectT>>(strmPtr));
     }

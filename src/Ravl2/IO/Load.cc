@@ -1,6 +1,7 @@
 
 #include "Ravl2/IO/Load.hh"
 #include "Ravl2/IO/InputFormat.hh"
+#include "Ravl2/IO/Url.hh"
 
 namespace Ravl2
 {
@@ -21,26 +22,10 @@ namespace Ravl2
     if(formatHint.is_object()) {
       verbose = formatHint.value("verbose", verbose);
     }
-    // Is there a protocol in the URL?
-    auto protocolEnd = url.find("://");
-    std::string protocol;
-    std::string rawFilename;
-    if(protocolEnd != std::string::npos) {
-      protocol = url.substr(0, protocolEnd);
-      rawFilename = url.substr(protocolEnd + 3);
-    } else {
-      protocol = "file";
-      rawFilename = url;
-    }
-
-    // Get the extension
-    auto extStart = url.find_last_of('.');
-    std::string ext;
-    if(extStart != std::string::npos) {
-      ext = url.substr(extStart + 1);
-    } else {
-      ext = "";
-    }
+    auto parsedUrl = parseUrl(url);
+    const auto &protocol = parsedUrl.mProtocol;
+    const auto &rawFilename = parsedUrl.mFilename;
+    const auto &ext = parsedUrl.mExtension;
 
     if(verbose) {
       SPDLOG_INFO("Opening input stream for file: {} Extension:'{}' Protocol:'{}' ", url, ext, protocol);
@@ -60,14 +45,14 @@ namespace Ravl2
         }
         return std::nullopt;
       }
-      ctx.m_data = std::vector<uint8_t>(256);
-      tmpStrm->read(reinterpret_cast<char *>(ctx.m_data.data()), std::streamsize(ctx.m_data.size()));
+      ctx.mData = std::vector<uint8_t>(256);
+      tmpStrm->read(reinterpret_cast<char *>(ctx.mData.data()), std::streamsize(ctx.mData.size()));
       auto numRead = tmpStrm->gcount();
-      if(size_t(numRead) < ctx.m_data.size() && numRead >= 0) {
-        ctx.m_data.resize(size_t(numRead));
+      if(size_t(numRead) < ctx.mData.size() && numRead >= 0) {
+        ctx.mData.resize(size_t(numRead));
       }
       if(verbose) {
-        SPDLOG_INFO("Read {} bytes of from file", ctx.m_data.size());
+        SPDLOG_INFO("Read {} bytes of from file", ctx.mData.size());
       }
       tmpStrm->seekg(0);
       ctx.mStream = std::move(tmpStrm);
@@ -76,7 +61,7 @@ namespace Ravl2
     return inputFormatMap().probe(ctx);
   }
 
-  bool ioLoad(std::any &object, const std::string &url, const std::type_info &expectedType,const nlohmann::json &formatHint)
+  bool ioLoad(std::any &object, const std::string &url, const std::type_info &expectedType, const nlohmann::json &formatHint)
   {
     auto container = openInput(url, expectedType, formatHint);
     if(!container.has_value())
@@ -103,9 +88,6 @@ namespace Ravl2
     }
     object = std::move(resultAny);
     return true;
-
   }
-
-
 
 }// namespace Ravl2

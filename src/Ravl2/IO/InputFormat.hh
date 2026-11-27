@@ -17,6 +17,7 @@
 #include <utility>
 #include "Ravl2/IO/StreamInput.hh"
 #include "Ravl2/IO/TypeConverter.hh"
+#include "Ravl2/StringUtils.hh"
 
 namespace Ravl2
 {
@@ -28,11 +29,11 @@ namespace Ravl2
   //!
   //! The key design goal is to allow format handlers to make an informed choice
   //! based on:
-  //!  - The requested target C++ type (m_targetType)
+  //!  - The requested target C++ type (mTargetType)
   //!  - The URL broken into protocol, filename, and extension
-  //!  - Optional JSON hints (m_formatHint) such as verbosity or desired
+  //!  - Optional JSON hints (mFormatHint) such as verbosity or desired
   //!    sub-features, without baking policy into handlers
-  //!  - Optionally an already-open stream and a small look‑ahead buffer (m_data)
+  //!  - Optionally an already-open stream and a small look‑ahead buffer (mData)
   //!
   //! Thread-safety: The context is immutable after construction, except for
   //! mStream which may be populated by the caller to share an already-open
@@ -44,9 +45,9 @@ namespace Ravl2
   //! Lifetime and ownership:
   //!  - mStream is a shared_ptr managed by the caller; handlers must not reset
   //!    or close it.
-  //!  - m_data is a copy of any look‑ahead bytes provided by the caller and can
+  //!  - mData is a copy of any look‑ahead bytes provided by the caller and can
   //!    be safely inspected by handlers for signature matching.
-  //!  - m_targetType is a reference valid for the duration of the probe call.
+  //!  - mTargetType is a reference valid for the duration of the probe call.
   //!
   //! @example
   //! @code
@@ -70,12 +71,12 @@ namespace Ravl2
     //!   probing code will prefer plans that decode natively close to this
     //!   type and then use the TypeConverter system to finish the conversion.
     ProbeInputContext(std::string url, std::string filename, std::string protocol, std::string ext, nlohmann::json formatHint, const std::type_info &targetType)
-        : m_url(std::move(url)),
+        : mUrl(std::move(url)),
           mFilename(std::move(filename)),
-          m_protocol(std::move(protocol)),
-          m_extension(std::move(ext)),
-          m_formatHint(std::move(formatHint)),
-          m_targetType(targetType)
+          mProtocol(std::move(protocol)),
+          mExtension(std::move(ext)),
+          mFormatHint(std::move(formatHint)),
+          mTargetType(targetType)
     {}
 
     //! Optional pre-opened input stream for handlers that can consume std::istream.
@@ -83,21 +84,21 @@ namespace Ravl2
     //! and not assume seekability unless documented by the caller.
     std::shared_ptr<std::istream> mStream;
     //! Original URL provided by the user (scheme + path or opaque id)
-    std::string m_url;
+    std::string mUrl;
     //! Filename or resource id portion of the URL (often a filesystem path)
     std::string mFilename;
     //! Access protocol (e.g., "file", "camera", "http"). Used to filter handlers.
-    std::string m_protocol;
+    std::string mProtocol;
     //! Lowercase file extension (without the leading dot). Used to select candidate handlers.
-    std::string m_extension;
+    std::string mExtension;
     //! Free-form JSON hints affecting probing/decoding policy.
-    nlohmann::json m_formatHint;
+    nlohmann::json mFormatHint;
     //! Target C++ type to be produced by the final conversion chain.
-    const std::type_info &m_targetType;
+    const std::type_info &mTargetType;
     //! Optional look-ahead bytes from the beginning of the resource. Handlers
     //! may use this to match magic values without touching mStream.
-    std::vector<uint8_t> m_data;
-    //! Convenience flag mirrored from m_formatHint["verbose"]. If true, handlers
+    std::vector<uint8_t> mData;
+    //! Convenience flag populated from mFormatHint["verbose"] by openInput(). If true, handlers
     //! should emit SPDLOG_INFO messages for state transitions.
     bool mVerbose = false;
   };
@@ -114,10 +115,10 @@ namespace Ravl2
     InputFormat() = default;
 
     InputFormat(std::string name, std::string extension, std::string protocol, int priority = 0)
-        : m_name(std::move(name)),
-          m_extension(std::move(extension)),
-          m_protocol(std::move(protocol)),
-          m_priority(priority)
+        : mName(std::move(name)),
+          mExtension(std::move(extension)),
+          mProtocol(std::move(protocol)),
+          mPriority(priority)
     {}
 
     //! Make destructor virtual
@@ -126,31 +127,36 @@ namespace Ravl2
     //! Get the name of the format.
     [[nodiscard]] const std::string &name() const noexcept
     {
-      return m_name;
+      return mName;
     }
 
     //! Get the extension of the format.
     [[nodiscard]] const std::string &extension() const noexcept
     {
-      return m_extension;
+      return mExtension;
     }
 
     //! Get the protocol of the format.
     [[nodiscard]] const std::string &protocol() const noexcept
     {
-      return m_protocol;
+      return mProtocol;
     }
 
     //! Test if we support a protocol.
     [[nodiscard]] bool supportsProtocol(const std::string &protocol) const noexcept
     {
-      return m_protocol == protocol;
+      return mProtocol == protocol;
     }
 
     //! Test if we support an extension.
-    [[nodiscard]] bool supportsExtension(const std::string &extension) const noexcept
+    [[nodiscard]] bool supportsExtension(const std::string &extension) const
     {
-      return m_extension == extension;
+      const auto requested = toLowerCase(extension);
+      for(const auto &candidate : splitStrings(mExtension, ',')) {
+        if(toLowerCase(candidate) == requested)
+          return true;
+      }
+      return false;
     }
 
     //! @brief Ask the handler to build a plan for reading this source.
@@ -165,14 +171,14 @@ namespace Ravl2
     //! Get the priority of the format.
     [[nodiscard]] int priority() const noexcept
     {
-      return m_priority;
+      return mPriority;
     }
 
   private:
-    std::string m_name;
-    std::string m_extension;
-    std::string m_protocol;
-    int m_priority = 0;
+    std::string mName;
+    std::string mExtension;
+    std::string mProtocol;
+    int mPriority = 0;
   };
 
   //! Wrapper for a function or lambda that can probe a file format.
@@ -187,7 +193,7 @@ namespace Ravl2
     //! @param priority - Priority of the format. Higher is better, default is 0.
     InputFormatCall(std::string name, std::string extension, std::string protocol, int priority, std::function<std::optional<StreamInputPlan>(const ProbeInputContext &)> probe)
         : InputFormat(std::move(name), std::move(extension), std::move(protocol), priority),
-          m_probe(std::move(probe))
+          mProbe(std::move(probe))
     {}
 
     //! @brief Test if we can load this type.
@@ -195,28 +201,28 @@ namespace Ravl2
     //! @return optional, if format is unknown, return nullopt, otherwise return data the format can use to load the file.
     [[nodiscard]] std::optional<StreamInputPlan> probe(const ProbeInputContext &ctx) final
     {
-      return m_probe(ctx);
+      return mProbe(ctx);
     }
 
   private:
-    std::function<std::optional<StreamInputPlan>(const ProbeInputContext &)> m_probe;
+    std::function<std::optional<StreamInputPlan>(const ProbeInputContext &)> mProbe;
   };
 
   //! @brief Registry mapping extensions to one or more InputFormat handlers.
   //! Handlers register themselves into this map. Probing looks up the list of
-  //! handlers associated with ctx.m_extension (or the default "" bucket) and
+  //! handlers associated with ctx.mExtension (or the default "" bucket) and
   //! calls them in decreasing priority order until one returns a plan.
 
   class InputFormatMap
   {
   public:
     InputFormatMap() = default;
-    
+
     InputFormatMap(const InputFormatMap &) = delete;
     InputFormatMap &operator=(const InputFormatMap &) = delete;
     InputFormatMap(InputFormatMap &&) = delete;
     InputFormatMap &operator=(InputFormatMap &&) = delete;
-    
+
     //! Add a format to the map.
     //! @param format The format to add.
     //! @return True if the format was added.
@@ -228,8 +234,8 @@ namespace Ravl2
     [[nodiscard]] std::optional<StreamInputPlan> probe(const ProbeInputContext &ctx);
 
   private:
-    std::shared_mutex m_mutex;
-    std::unordered_map<std::string, std::vector<std::shared_ptr<InputFormat>>> m_formatByExtension;
+    std::shared_mutex mMutex;
+    std::unordered_map<std::string, std::vector<std::shared_ptr<InputFormat>>> mFormatByExtension;
   };
 
   //! Access the global input format registry (singleton).

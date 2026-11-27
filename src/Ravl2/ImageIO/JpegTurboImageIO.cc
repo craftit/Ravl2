@@ -103,10 +103,10 @@ namespace Ravl2
     std::optional<StreamInputPlan> buildPlanFor(const ProbeInputContext &ctx, std::shared_ptr<JpegDecodeContext> sharedCtx)
     {
       // Find conversion chain from ViaT -> target
-      auto chainOpt = typeConverterMap().find(ctx.m_targetType, typeid(ViaT));
+      auto chainOpt = typeConverterMap().find(ctx.mTargetType, typeid(ViaT));
       if(!chainOpt.has_value()) {
         if(ctx.mVerbose) {
-          SPDLOG_INFO("JPEGTurbo: no conversion path from {} to {}", typeName(typeid(ViaT)), typeName(ctx.m_targetType));
+          SPDLOG_INFO("JPEGTurbo: no conversion path from {} to {}", typeName(typeid(ViaT)), typeName(ctx.mTargetType));
         }
         return std::nullopt;
       }
@@ -261,7 +261,7 @@ namespace Ravl2
     template <typename ViaT>
     std::optional<float> scoreCandidate(const ProbeInputContext &ctx, float intrinsicLoss = 1.0f)
     {
-      auto chainOpt = typeConverterMap().find(ctx.m_targetType, typeid(ViaT));
+      auto chainOpt = typeConverterMap().find(ctx.mTargetType, typeid(ViaT));
       if(!chainOpt.has_value()) return std::nullopt;
       return chainOpt->conversionLoss() * intrinsicLoss;
     }
@@ -274,8 +274,8 @@ namespace Ravl2
       [](const ProbeInputContext &ctx) -> std::optional<StreamInputPlan> {
 #ifdef RAVL2_HAVE_JPEG
         // Quick signature check using look-ahead data if available
-        if(!ctx.m_data.empty()) {
-          if(ctx.m_data.size() < 2 || ctx.m_data[0] != 0xFF || ctx.m_data[1] != 0xD8) {
+        if(!ctx.mData.empty()) {
+          if(ctx.mData.size() < 2 || ctx.mData[0] != 0xFF || ctx.mData[1] != 0xD8) {
             // Not a JPEG SOI; decline quietly unless verbose
             if(ctx.mVerbose) {
               SPDLOG_INFO("JPEGTurbo: look-ahead does not match JPEG magic for {}", ctx.mFilename);
@@ -420,7 +420,7 @@ namespace Ravl2
 #ifdef RAVL2_HAVE_JPEG
         // Helper to compute score for converting from source -> ViaT
         auto scoreFor = [&](const std::type_info &via) -> std::optional<ConversionChain> {
-          auto chainOpt = typeConverterMap().find(via, ctx.m_sourceType);
+          auto chainOpt = typeConverterMap().find(via, ctx.mSourceType);
           if(!chainOpt.has_value()) return std::nullopt;
           return chainOpt;// loss carried inside chain
         };
@@ -447,8 +447,8 @@ namespace Ravl2
         }
 
         if(!bestChain) {
-          if(ctx.m_verbose) {
-            SPDLOG_INFO("JPEGTurbo: no conversion chain from {} to JPEG via RGB8 or Y8", typeName(ctx.m_sourceType));
+          if(ctx.mVerbose) {
+            SPDLOG_INFO("JPEGTurbo: no conversion chain from {} to JPEG via RGB8 or Y8", typeName(ctx.mSourceType));
           }
           return std::nullopt;
         }
@@ -456,25 +456,25 @@ namespace Ravl2
         // Quality hint (0-100), default 90
         int quality = 90;
         try {
-          if(ctx.m_formatHint.contains("jpegQuality")) {
-            quality = std::clamp(ctx.m_formatHint["jpegQuality"].get<int>(), 1, 100);
-          } else if(ctx.m_formatHint.contains("quality")) {
-            quality = std::clamp(ctx.m_formatHint["quality"].get<int>(), 1, 100);
+          if(ctx.mFormatHint.contains("jpegQuality")) {
+            quality = std::clamp(ctx.mFormatHint["jpegQuality"].get<int>(), 1, 100);
+          } else if(ctx.mFormatHint.contains("quality")) {
+            quality = std::clamp(ctx.mFormatHint["quality"].get<int>(), 1, 100);
           }
         } catch(...) {
           // Ignore malformed hint
         }
 
-        if(ctx.m_verbose) {
+        if(ctx.mVerbose) {
           SPDLOG_INFO("JPEGTurbo: selected {} output path (quality={}) for {}",
-                      (choice == Choice::RGB ? "RGB8" : "Y8"), quality, ctx.m_filename);
+                      (choice == Choice::RGB ? "RGB8" : "Y8"), quality, ctx.mFilename);
         }
 
         // Build the output stream for chosen ViaT
         if(choice == Choice::RGB) {
           using ViaT = Array<PixelRGB8, 2>;
           static_assert(sizeof(PixelRGB8) == 3, "PixelRGB8 must be 3 bytes");
-          auto strm = std::make_unique<StreamOutputCall<ViaT>>([filename = ctx.m_filename, quality](const ViaT &img, std::streampos pos) -> std::streampos {
+          auto strm = std::make_unique<StreamOutputCall<ViaT>>([filename = ctx.mFilename, quality](const ViaT &img, std::streampos pos) -> std::streampos {
             if(pos != 0) {
               throw std::runtime_error("JPEGTurbo output format does not support seeking.");
             }
@@ -521,7 +521,7 @@ namespace Ravl2
           return StreamOutputPlan {std::move(strm), *bestChain, loss};
         } else if(choice == Choice::Gray) {
           using ViaT = Array<uint8_t, 2>;
-          auto strm = std::make_unique<StreamOutputCall<ViaT>>([filename = ctx.m_filename, quality](const ViaT &img, std::streampos pos) -> std::streampos {
+          auto strm = std::make_unique<StreamOutputCall<ViaT>>([filename = ctx.mFilename, quality](const ViaT &img, std::streampos pos) -> std::streampos {
             if(pos != 0) {
               throw std::runtime_error("JPEGTurbo output format does not support seeking.");
             }

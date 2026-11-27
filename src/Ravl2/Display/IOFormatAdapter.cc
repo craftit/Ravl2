@@ -407,21 +407,21 @@ namespace Ravl2::DebugDisplay
 
       std::optional<StreamOutputPlan> probe(const ProbeOutputContext &ctx) override
       {
-        auto parsed = parseDisplayUrl(ctx.m_url);
+        auto parsed = parseDisplayUrl(ctx.mUrl);
         if(!parsed) return std::nullopt;
 
         // Target sink type: shared_ptr<IRenderCommand>
         using CmdPtr = std::shared_ptr<IRenderCommand>;
 
         std::optional<ConversionChain> conv;
-        if(ctx.m_sourceType != typeid(CmdPtr)) {
-          conv = typeConverterMap().find(typeid(CmdPtr), ctx.m_sourceType);
+        if(ctx.mSourceType != typeid(CmdPtr)) {
+          conv = typeConverterMap().find(typeid(CmdPtr), ctx.mSourceType);
           if(!conv.has_value()) {
             return std::nullopt;// we only accept types convertible to CmdPtr
           }
         }
 
-        auto stream = std::make_shared<StreamOutputCall<CmdPtr>>([url = ctx.m_url](const CmdPtr &cmd, std::streampos pos) -> std::streampos {
+        auto stream = std::make_shared<StreamOutputCall<CmdPtr>>([url = ctx.mUrl](const CmdPtr &cmd, std::streampos pos) -> std::streampos {
           (void)pos;
           auto parsed2 = parseDisplayUrl(url);
           if(!parsed2) return std::streampos(0);
@@ -613,7 +613,7 @@ namespace Ravl2::DebugDisplay
           return std::streampos(0);
         });
 
-        if(ctx.m_sourceType == typeid(CmdPtr)) {
+        if(ctx.mSourceType == typeid(CmdPtr)) {
           return StreamOutputPlan {.mStream = stream, .mConversion = {}, .mCost = 1.0f};
         }
         return StreamOutputPlan {.mStream = stream, .mConversion = conv.value(), .mCost = conv->conversionLoss()};

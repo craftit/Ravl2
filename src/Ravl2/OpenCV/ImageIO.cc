@@ -56,9 +56,9 @@ namespace Ravl2
     std::optional<ConversionChain> conversionPlan(const ProbeInputContext &ctx)
     {
       using ViaT = Ravl2::Array<ViaPixelT, N>;
-      std::optional<ConversionChain> convChain = typeConverterMap().find(ctx.m_targetType, typeid(ViaT));
+      std::optional<ConversionChain> convChain = typeConverterMap().find(ctx.mTargetType, typeid(ViaT));
       if(!convChain.has_value()) {
-        SPDLOG_WARN("No conversion chain found for {} <- {}", typeName(ctx.m_targetType), typeName(typeid(ViaT)));
+        SPDLOG_WARN("No conversion chain found for {} <- {}", typeName(ctx.mTargetType), typeName(typeid(ViaT)));
         return std::nullopt;
       }
       static auto convType = makeTypeConversion<ViaT, cv::Mat>([](cv::Mat img) -> ViaT { return toArray<ViaPixelT, 2>(img); }, 1.0f);
@@ -71,7 +71,7 @@ namespace Ravl2
     std::optional<StreamInputPlan> makePlan(cv::Mat img, const ProbeInputContext &ctx)
     {
       using ViaT = Ravl2::Array<ViaPixelT, N>;
-      std::optional<ConversionChain> convChain = typeConverterMap().find(ctx.m_targetType, typeid(ViaT));
+      std::optional<ConversionChain> convChain = typeConverterMap().find(ctx.mTargetType, typeid(ViaT));
       if(!convChain.has_value())
         return std::nullopt;
       return StreamInputPlan {std::make_shared<InputStreamContainer<ViaT>>(toArray<ViaPixelT, N>(img)), convChain.value(), convChain.value().conversionLoss()};
@@ -81,7 +81,7 @@ namespace Ravl2
 
     [[maybe_unused]] bool g_regFmt = inputFormatMap().add(std::make_shared<InputFormatCall>("OpenCV", "png,jpg,jpeg,bmp,tiff", "file", -1, [](const ProbeInputContext &ctx) -> std::optional<StreamInputPlan> {
       //! If we are looking for a cv::Mat, we can just read the file directly.
-      if(ctx.m_targetType == typeid(cv::Mat)) {
+      if(ctx.mTargetType == typeid(cv::Mat)) {
         auto strm = std::make_shared<StreamInputCall<cv::Mat>>([filename = ctx.mFilename](std::streampos &pos) -> std::optional<cv::Mat> {
           if(pos != 0)
             return std::nullopt;
@@ -96,20 +96,20 @@ namespace Ravl2
       // Ideally this would be delt with in the type converter, but opencv gives
       // us no information about the colour space of the image.
       int readMode = cv::IMREAD_UNCHANGED;
-      if(ctx.m_targetType == typeid(Array<uint8_t, 2>) || ctx.m_targetType == typeid(Array<PixelY8, 2>)) {
+      if(ctx.mTargetType == typeid(Array<uint8_t, 2>) || ctx.mTargetType == typeid(Array<PixelY8, 2>)) {
         readMode = cv::IMREAD_GRAYSCALE;
-      } else if(ctx.m_targetType == typeid(Array<uint16_t, 2>)
-        || ctx.m_targetType == typeid(Array<int16_t, 2>)
-        || ctx.m_targetType == typeid(Array<PixelZ16, 2>)
-        || ctx.m_targetType == typeid(Array<PixelY16, 2>)
-         || ctx.m_targetType == typeid(Array<int8_t, 2>)
-         || ctx.m_targetType == typeid(Array<int32_t, 2>)
-         || ctx.m_targetType == typeid(Array<float, 2>) || ctx.m_targetType == typeid(Array<double, 2>)) {
+      } else if(ctx.mTargetType == typeid(Array<uint16_t, 2>)
+        || ctx.mTargetType == typeid(Array<int16_t, 2>)
+        || ctx.mTargetType == typeid(Array<PixelZ16, 2>)
+        || ctx.mTargetType == typeid(Array<PixelY16, 2>)
+         || ctx.mTargetType == typeid(Array<int8_t, 2>)
+         || ctx.mTargetType == typeid(Array<int32_t, 2>)
+         || ctx.mTargetType == typeid(Array<float, 2>) || ctx.mTargetType == typeid(Array<double, 2>)) {
         readMode = cv::IMREAD_GRAYSCALE + cv::IMREAD_ANYDEPTH;
-      } else if(ctx.m_targetType == typeid(Array<PixelBGR8, 2>) || ctx.m_targetType == typeid(Array<PixelRGB8, 2>)
-                || ctx.m_targetType == typeid(Array<PixelRGBA8, 2>) || ctx.m_targetType == typeid(Array<PixelBGRA8, 2>)
-                || ctx.m_targetType == typeid(RGBPlanarImage<float>) || ctx.m_targetType == typeid(RGBAPlanarImage<float>)
-                || ctx.m_targetType == typeid(RGBPlanarImage<uint8_t>) || ctx.m_targetType == typeid(RGBPlanarImage<uint16_t>)
+      } else if(ctx.mTargetType == typeid(Array<PixelBGR8, 2>) || ctx.mTargetType == typeid(Array<PixelRGB8, 2>)
+                || ctx.mTargetType == typeid(Array<PixelRGBA8, 2>) || ctx.mTargetType == typeid(Array<PixelBGRA8, 2>)
+                || ctx.mTargetType == typeid(RGBPlanarImage<float>) || ctx.mTargetType == typeid(RGBAPlanarImage<float>)
+                || ctx.mTargetType == typeid(RGBPlanarImage<uint8_t>) || ctx.mTargetType == typeid(RGBPlanarImage<uint16_t>)
                 ) {
         readMode = cv::IMREAD_COLOR;
       }
@@ -170,8 +170,8 @@ namespace Ravl2
 
     [[maybe_unused]] bool g_regFmt1 = outputFormatMap().add(std::make_shared<OutputFormatCall>("OpenCV", "png,jpg,jpeg,bmp,tiff", "file", -1, [](const ProbeOutputContext &ctx) -> std::optional<StreamOutputPlan> {
       //! If we are looking for a cv::Mat, we can just write the file directly.
-      if(ctx.m_sourceType == typeid(cv::Mat)) {
-        auto strm = std::make_unique<StreamOutputCall<cv::Mat>>([filename = ctx.m_filename](const cv::Mat &img, std::streampos pos) -> std::streampos {
+      if(ctx.mSourceType == typeid(cv::Mat)) {
+        auto strm = std::make_unique<StreamOutputCall<cv::Mat>>([filename = ctx.mFilename](const cv::Mat &img, std::streampos pos) -> std::streampos {
           if(pos != 0) {
             throw std::runtime_error("OpenCV output format does not support seeking.");
           }
@@ -180,9 +180,9 @@ namespace Ravl2
         });
         return StreamOutputPlan {std::move(strm), {}, 1.0f};
       }
-      std::optional<ConversionChain> convChain = typeConverterMap().find(typeid(cv::Mat), ctx.m_sourceType);
+      std::optional<ConversionChain> convChain = typeConverterMap().find(typeid(cv::Mat), ctx.mSourceType);
       if(convChain.has_value()) {
-        auto strm = std::make_unique<StreamOutputCall<cv::Mat>>([filename = ctx.m_filename](const cv::Mat &img, std::streampos pos) -> std::streampos {
+        auto strm = std::make_unique<StreamOutputCall<cv::Mat>>([filename = ctx.mFilename](const cv::Mat &img, std::streampos pos) -> std::streampos {
           if(pos != 0) {
             throw std::runtime_error("OpenCV output format does not support seeking.");
           }
@@ -191,7 +191,7 @@ namespace Ravl2
         });
         return StreamOutputPlan {std::move(strm), convChain.value(), convChain.value().conversionLoss()};
       } else {
-        SPDLOG_TRACE("No conversion chain found for {} <- {}", typeName(typeid(cv::Mat)), typeName(ctx.m_sourceType));
+        SPDLOG_TRACE("No conversion chain found for {} <- {}", typeName(typeid(cv::Mat)), typeName(ctx.mSourceType));
       }
 
       return std::nullopt;

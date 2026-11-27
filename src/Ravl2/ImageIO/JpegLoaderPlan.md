@@ -6,7 +6,7 @@ This document outlines a concrete plan to implement a high‑quality JPEG loader
 Relevant infrastructure in Ravl2
 - Input probing and planning
   - InputFormatCall and inputFormatMap(): Register a handler with: (name, extensions, source, priority, probe lambda)
-  - ProbeInputContext: carries m_filename, m_targetType, m_verbose
+  - ProbeInputContext: carries mFilename, mTargetType, mVerbose
   - StreamInputPlan: holds a StreamInputCall<T> or InputStreamContainer<T>, a ConversionChain, and a loss score
   - StreamInputCall<T>: lazy pull interface: callable returning optional<T> per position/read
   - InputStreamContainer<T>: simple container when data is already available
@@ -27,7 +27,7 @@ Goals for JPEG loader
 6) Clean error handling and minimal logging at the appropriate boundary.
 
 Probing strategy
-Given ProbeInputContext ctx with ctx.m_targetType:
+Given ProbeInputContext ctx with ctx.mTargetType:
 1) Header read only (no full decode): Use jpeg_read_header() to learn:
    - colorspace (JCS_GRAYSCALE, JCS_YCbCr, JCS_RGB, etc.)
    - components (1 or 3)
@@ -41,8 +41,8 @@ Given ProbeInputContext ctx with ctx.m_targetType:
      - YUV420Image<uint8_t> if 4:2:0 or 4:1:1 (map appropriately)
      - As a fallback, packed Array<PixelRGB8,2>
    - If encoder colorspace is RGB (rare in JPEG files): Array<PixelRGB8,2>
-3) For each candidate native type ViaT, query typeConverterMap().find(ctx.m_targetType, typeid(ViaT)). If a chain exists, compute total loss. Choose the candidate with best (highest) preserved‑bits score. If multiple tie, favor planar YUV matching the file’s native subsampling over packed.
-4) Build a StreamInputPlan where the stream callable performs the actual libjpeg decode into the chosen ViaT and returns it at pos==0, and std::nullopt afterwards (still image). Prepend a final conversion to ctx.m_targetType using ConversionChain::prepend if needed.
+3) For each candidate native type ViaT, query typeConverterMap().find(ctx.mTargetType, typeid(ViaT)); the argument order is (to, from). If a chain exists, compute total loss. Choose the candidate with best (highest) preserved‑bits score. If multiple tie, favor planar YUV matching the file’s native subsampling over packed.
+4) Build a StreamInputPlan where the stream callable performs the actual libjpeg decode into the chosen ViaT and returns it at pos==0, and std::nullopt afterwards (still image). Prepend a final conversion to ctx.mTargetType using ConversionChain::prepend if needed.
 
 Decode paths (libjpeg‑turbo)
 - Grayscale
@@ -77,12 +77,12 @@ Conversion loss model
 
 API/Registration design
 - Namespace: Ravl2::ImageIO::JPEGTurbo (or simply inside Ravl2 anonymous ns collocated with registration, mirroring OpenCV loader style).
-- Register in inputFormatMap with name "JPEGTurbo", extensions "jpg,jpeg", source "file", priority slightly above OpenCV generic (e.g., 10) so it wins for JPEGs.
+- Register in inputFormatMap with name "JPEGTurbo", extensions "jpg,jpeg", protocol "file", priority slightly above OpenCV generic (e.g., 10) so it wins for JPEGs.
 - Probe lambda outline:
   - Open file, init jpeg_decompress_struct and jpeg_error_mgr
   - jpeg_read_header()
-  - Determine native candidate types and pick best ViaT by consulting typeConverterMap against ctx.m_targetType
-  - If ctx.m_verbose, log chosen plan and estimated loss
+  - Determine native candidate types and pick best ViaT by consulting typeConverterMap against ctx.mTargetType
+  - If ctx.mVerbose, log chosen plan and estimated loss
   - Build StreamInputPlan with
     - stream: StreamInputCall<ViaT> that decodes at pos==0 and returns std::nullopt afterwards
     - chain: convChain (if target != ViaT) possibly with prepend(makeTypeConversion<ViaT, ViaT>(identity)) when needed by API
@@ -126,7 +126,7 @@ Implementation steps
 3) Implement probing logic selecting ViaT and computing intrinsic loss
 4) Implement grayscale and RGB packed decode paths
 5) Implement raw planar YUV decode path using jpeg_read_raw_data for 4:2:0 and 4:2:2, and 4:4:4 straightforward
-6) Add logging at INFO/WARN per guidelines, guarded by ctx.m_verbose when applicable
+6) Add logging at INFO/WARN per guidelines, guarded by ctx.mVerbose when applicable
 7) Add Catch2 tests under test/imageio_jpeg_tests.cc
 
 Notes on differences vs OpenCV loader

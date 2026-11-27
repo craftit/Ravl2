@@ -42,21 +42,21 @@ namespace Ravl2
   {
 
     [[maybe_unused]] bool g_dispFmt1 = outputFormatMap().add(std::make_shared<OutputFormatCall>("OpenCV", "", "opencv", -1, [](const ProbeOutputContext &ctx) -> std::optional<StreamOutputPlan> {
-      auto convChain = typeConverterMap().find(typeid(cv::Mat), ctx.m_sourceType);
-      if(ctx.m_protocol != "opencv") {
+      auto convChain = typeConverterMap().find(typeid(cv::Mat), ctx.mSourceType);
+      if(ctx.mProtocol != "opencv") {
         return std::nullopt;
       }
-      if(!convChain.has_value() && ctx.m_sourceType != typeid(cv::Mat)) {
+      if(!convChain.has_value() && ctx.mSourceType != typeid(cv::Mat)) {
         return std::nullopt;
       }
-      auto strm = std::make_shared<StreamOutputCall<cv::Mat>>([filename = ctx.m_filename](const cv::Mat &img, std::streampos pos) -> std::streampos {
+      auto strm = std::make_shared<StreamOutputCall<cv::Mat>>([filename = ctx.mFilename](const cv::Mat &img, std::streampos pos) -> std::streampos {
         (void)pos;
         registerAtExitWait();
         cv::imshow(filename, img);
         cv::pollKey();
         return 0;
       });
-      if(ctx.m_sourceType == typeid(cv::Mat)) {
+      if(ctx.mSourceType == typeid(cv::Mat)) {
         return StreamOutputPlan {.mStream=strm, .mConversion={}, .mCost=1.0f};
       }
       return StreamOutputPlan {.mStream=strm, .mConversion=convChain.value(), .mCost=convChain.value().conversionLoss()};

@@ -35,7 +35,7 @@ namespace Ravl2
     //! @brief Write an object to the container.
     auto &operator=(const ObjectT &object)
     {
-      mContainer->write(object, mPos);
+      mPos = mContainer->write(object, mPos);
       return *this;
     }
 
@@ -43,7 +43,6 @@ namespace Ravl2
     //! @return The iterator.
     OutputStreamIterator<ObjectT> &operator++()
     {
-      mContainer->next(mPos);
       return *this;
     }
 
@@ -155,14 +154,13 @@ namespace Ravl2
   {
     auto outStreamPlan = openOutput(url, typeid(ObjectT), formatHint);
     if(!outStreamPlan.has_value()) {
-      SPDLOG_ERROR("Failed to open output stream for '{}' for object of type {} ", url,Ravl2::typeName(typeid(ObjectT)));
+      SPDLOG_ERROR("Failed to open output stream for '{}' for object of type {} ", url, Ravl2::typeName(typeid(ObjectT)));
       return {};
     }
     if(outStreamPlan.value().mConversion) {
       auto outStrm = std::make_shared<StreamOutputCall<ObjectT>>([plan = outStreamPlan.value()](const ObjectT &object, std::streampos pos) -> std::streampos {
         (void)pos;
-        return plan.mStream->anyWrite(plan.mConversion(std::any(object)), pos);
-      },
+        return plan.mStream->anyWrite(plan.mConversion(std::any(object)), pos); },
                                                                  outStreamPlan->mStream->beginOffset(), outStreamPlan->mStream->endOffset(),
                                                                  [stream = outStreamPlan->mStream]() { return stream->close(); });
 
