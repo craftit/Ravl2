@@ -558,7 +558,7 @@ namespace Ravl2
           m_range(range)
 
     {
-      for(int i = 0; i < N; i++) {
+      for(unsigned i = 0; i < N; i++) {
         m_strides[i] = array.stride(i);
         if(!array.range(i).contains(range[i]))
           throw std::out_of_range("requested range is outside that of the original array");

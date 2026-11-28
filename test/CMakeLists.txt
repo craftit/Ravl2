@@ -111,11 +111,16 @@ target_link_libraries(
           Eigen3::Eigen)
 # The Display stack is optional (RAVL2_ENABLE_DISPLAY_STACK).
 if(TARGET ravl2::Ravl2Display)
-  target_sources(tests PRIVATE Display_Normalization_tests.cc Display_3D_E2E_tests.cc)
+  target_sources(tests PRIVATE Display_Normalization_tests.cc Display_3D_E2E_tests.cc Display_Commands_tests.cc)
   target_link_libraries(tests PRIVATE ravl2::Ravl2Display)
 endif()
 # Only test_segmentation's DODEBUG path uses the OpenCV bridge.
+if(TARGET ravl2::Ravl2Qt)
+  target_sources(tests PRIVATE test_qt.cc)
+  target_link_libraries(tests PRIVATE ravl2::Ravl2Qt)
+endif()
 if(TARGET ravl2::Ravl2OpenCV)
+  target_sources(tests PRIVATE test_opencv.cc)
   target_link_libraries(tests PRIVATE ravl2::Ravl2OpenCV)
 endif()
 

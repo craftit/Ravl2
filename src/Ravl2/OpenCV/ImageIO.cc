@@ -286,25 +286,27 @@ namespace Ravl2
 
     // Add some type conversion functions.
     // They don't have a loss of  1 as we lose range information.
+    // Each returns a deep copy: 'img' is destroyed when the converter returns, and in a conversion chain
+    // it may be the only reference to an intermediate image, so a view of it would dangle.
 
-    [[maybe_unused]] bool g_reg = registerConversion([](Array<uint8_t, 2> img) -> cv::Mat { return toCvMat(img); }, 0.95f);
-    [[maybe_unused]] bool g_reg1 = registerConversion([](Array<int8_t, 2> img) -> cv::Mat { return toCvMat(img); }, 0.95f);
-    [[maybe_unused]] bool g_reg2 = registerConversion([](Array<uint16_t, 2> img) -> cv::Mat { return toCvMat(img); }, 0.95f);
-    [[maybe_unused]] bool g_reg3 = registerConversion([](Array<int16_t, 2> img) -> cv::Mat { return toCvMat(img); }, 0.95f);
-    [[maybe_unused]] bool g_reg4 = registerConversion([](Array<int32_t, 2> img) -> cv::Mat { return toCvMat(img); }, 0.95f);
-    [[maybe_unused]] bool g_reg5 = registerConversion([](Array<float, 2> img) -> cv::Mat { return toCvMat(img); }, 0.95f);
-    [[maybe_unused]] bool g_reg6 = registerConversion([](Array<double, 2> img) -> cv::Mat { return toCvMat(img); }, 0.95f);
-    [[maybe_unused]] bool g_reg7 = registerConversion([](Array<PixelBGR8, 2> img) -> cv::Mat { return toCvMat(img); }, 0.95f);
+    [[maybe_unused]] bool g_reg = registerConversion([](Array<uint8_t, 2> img) -> cv::Mat { return toCvMat(img).clone(); }, 0.95f);
+    [[maybe_unused]] bool g_reg1 = registerConversion([](Array<int8_t, 2> img) -> cv::Mat { return toCvMat(img).clone(); }, 0.95f);
+    [[maybe_unused]] bool g_reg2 = registerConversion([](Array<uint16_t, 2> img) -> cv::Mat { return toCvMat(img).clone(); }, 0.95f);
+    [[maybe_unused]] bool g_reg3 = registerConversion([](Array<int16_t, 2> img) -> cv::Mat { return toCvMat(img).clone(); }, 0.95f);
+    [[maybe_unused]] bool g_reg4 = registerConversion([](Array<int32_t, 2> img) -> cv::Mat { return toCvMat(img).clone(); }, 0.95f);
+    [[maybe_unused]] bool g_reg5 = registerConversion([](Array<float, 2> img) -> cv::Mat { return toCvMat(img).clone(); }, 0.95f);
+    [[maybe_unused]] bool g_reg6 = registerConversion([](Array<double, 2> img) -> cv::Mat { return toCvMat(img).clone(); }, 0.95f);
+    [[maybe_unused]] bool g_reg7 = registerConversion([](Array<PixelBGR8, 2> img) -> cv::Mat { return toCvMat(img).clone(); }, 0.95f);
     // Direct RGB8 -> cv::Mat (BGR swap): without this the converter finds a CHAIN through
     // greyscale (PixelRGB8 -> uint8 -> cv::Mat) and every saved colour image silently loses
     // its chroma (found via all-grey surface textures whose in-memory data was colour).
     [[maybe_unused]] bool g_reg8 = registerConversion([](Array<PixelRGB8, 2> img) -> cv::Mat {
-      const cv::Mat rgb(cv::Size(img.range(1).size(), img.range(0).size()), CV_8UC3, addressOfMin(img));
+      const cv::Mat rgb(img.range(0).size(), img.range(1).size(), CV_8UC3, addressOfMin(img), detail::cvSteps(img)[0]);
       cv::Mat bgr;
       cv::cvtColor(rgb, bgr, cv::COLOR_RGB2BGR);// deep copy: safe past img's lifetime
       return bgr;
     }, 0.98f);
-    //[[maybe_unused]] bool g_reg8 = registerConversion([](Array<PixelBGR32F, 2> img) -> cv::Mat { return toCvMat(img); }, 0.95f);
+    //[[maybe_unused]] bool g_reg8 = registerConversion([](Array<PixelBGR32F, 2> img) -> cv::Mat { return toCvMat(img).clone(); }, 0.95f);
 
   }// namespace
 }// namespace Ravl2

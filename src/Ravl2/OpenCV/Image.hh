@@ -3,6 +3,8 @@
 
 #include <spdlog/spdlog.h>
 #include <opencv2/core.hpp>
+#include <array>
+#include <stdexcept>
 #include "Ravl2/IndexRange.hh"
 #include "Ravl2/Array.hh"
 #include "Ravl2/Pixel/Pixel.hh"
@@ -10,15 +12,34 @@
 namespace Ravl2
 {
 
+  namespace detail
+  {
+    //! Byte steps of an array for cv::Mat, which can't represent negative strides.
+    template <typename ArrayT, typename DataT = typename ArrayT::value_type, unsigned N = ArrayT::dimensions>
+    std::array<size_t, N> cvSteps(const ArrayT &m)
+    {
+      std::array<size_t, N> steps {};
+      for(unsigned i = 0; i < N; ++i) {
+        const auto stride = m.strides()[i];
+        if(stride < 0)
+          throw std::invalid_argument("toCvMat: cv::Mat cannot represent an array with negative strides");
+        steps[i] = size_t(stride) * sizeof(DataT);
+      }
+      return steps;
+    }
+  }// namespace detail
+
   //! Create a cv::Mat from a Ravl2::Array
   //! The array data is referenced by the cv::Mat, so the array
-  //! must exist for the lifetime of the cv::Mat
+  //! must exist for the lifetime of the cv::Mat. Sub-arrays (clipped views) keep their row pitch.
+  //! @throws std::invalid_argument if the array has a negative stride.
   template <typename ArrayT, typename DataT = typename ArrayT::value_type, unsigned N = ArrayT::dimensions>
     requires WindowedArray<ArrayT, DataT, N>
   cv::Mat toCvMat(const ArrayT &m)
   {
     Index<N> sizes = m.range().size();
-    return cv::Mat(N, sizes.data(), cv::DataType<DataT>::type, addressOfMin(m));
+    const auto steps = detail::cvSteps(m);
+    return cv::Mat(int(N), sizes.data(), cv::DataType<DataT>::type, addressOfMin(m), steps.data());
   }
 
   //! Create a Ravl2::Array from a cv::Mat

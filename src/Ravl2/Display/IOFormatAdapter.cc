@@ -9,6 +9,7 @@
 #include "Ravl2/Array.hh"
 #include "Ravl2/IO/OutputFormat.hh"
 #include "Ravl2/IO/TypeConverter.hh"
+#include "Ravl2/Display/UrlControls.hh"
 #include "Ravl2/Display/DebugDisplay.hh"
 #include "Ravl2/Display/IRenderCommand.hh"
 #include "Ravl2/Display/Channel.hh"
@@ -318,91 +319,19 @@ namespace Ravl2::DebugDisplay
 
       static std::optional<NormalizationSettings> parseNormControls(const std::string &controls)
       {
-        if(controls.empty()) return std::nullopt;
-        // Accept :Norm=Auto | :Normalize=Auto
-        auto pos = controls.find(":Norm=");
-        size_t keyLen = 6;// len(":Norm=")
-        if(pos == std::string::npos) {
-          pos = controls.find(":Normalize=");
-          keyLen = 11;// len(":Normalize=")
-        }
-        if(pos == std::string::npos) return std::nullopt;
-        auto val = controls.substr(pos + keyLen);
-        // Clip at next ':'
-        auto colon = val.find(':');
-        if(colon != std::string::npos) val = val.substr(0, colon);
-
-        NormalizationSettings ns {};
-        if(val == "Auto") {
-          ns.policy = NormalizationPolicy::Auto;
-          return ns;
-        }
-        // Fixed:min,max
-        if(val.rfind("Fixed", 0) == 0) {
-          ns.policy = NormalizationPolicy::Fixed;
-          auto p = val.find('=');
-          if(p != std::string::npos) {
-            auto args = val.substr(p + 1);
-            auto comma = args.find(',');
-            if(comma != std::string::npos) {
-              try {
-                ns.minVal = std::stof(args.substr(0, comma));
-                ns.maxVal = std::stof(args.substr(comma + 1));
-              } catch(...) {}
-            }
-          }
-          return ns;
-        }
-        // Pct:low,high or Percentile:low,high
-        if(val.rfind("Pct", 0) == 0 || val.rfind("Percentile", 0) == 0) {
-          ns.policy = NormalizationPolicy::Percentile;
-          auto p = val.find(':');
-          if(p != std::string::npos) {
-            auto args = val.substr(p + 1);
-            auto comma = args.find(',');
-            if(comma != std::string::npos) {
-              try {
-                ns.lowPct = std::stof(args.substr(0, comma));
-                ns.highPct = std::stof(args.substr(comma + 1));
-              } catch(...) {}
-            }
-          }
-          return ns;
-        }
-        return std::nullopt;
+        return UrlControls::parseNormalization(controls);
       }
 
+      //! Value of a "Key=value" control, matched as a whole key (case-insensitive).
       static std::optional<std::string> getControlValue(const std::string &controls, std::string_view key)
       {
-        // Case-insensitive search for control key
-        auto toLower = [](const std::string &s) {
-          std::string result = s;
-          for(char &c : result) c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
-          return result;
-        };
-
-        std::string controlsLower = toLower(controls);
-        std::string keyLower = toLower(std::string(key));
-
-        auto pos = controlsLower.find(keyLower);
-        if(pos == std::string::npos) return std::nullopt;
-        auto val = controls.substr(pos + key.size());  // Use original controls for value
-        auto colon = val.find(':');
-        if(colon != std::string::npos) val = val.substr(0, colon);
-        return val;
+        return UrlControls::value(controls, key);
       }
+
+      //! True if a control flag is present as a whole token (case-insensitive): ":Clear" doesn't match ":ClearPlot".
       static bool hasControl(const std::string &controls, std::string_view flag)
       {
-        // Case-insensitive search for control flag
-        auto toLower = [](const std::string &s) {
-          std::string result = s;
-          for(char &c : result) c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
-          return result;
-        };
-
-        std::string controlsLower = toLower(controls);
-        std::string flagLower = toLower(std::string(flag));
-        return controlsLower.find(flagLower) != std::string::npos;
+        return UrlControls::hasFlag(controls, flag);
       }
 
       std::optional<StreamOutputPlan> probe(const ProbeOutputContext &ctx) override
@@ -429,7 +358,7 @@ namespace Ravl2::DebugDisplay
           DebugDisplay::ensureStarted({});
 
           // Handle :Clear first if present
-          if(!parsed2->controls.empty() && parsed2->controls.find(":Clear") != std::string::npos) {
+          if(!parsed2->controls.empty() && hasControl(parsed2->controls, ":Clear")) {
             auto clearCmd = std::make_shared<ClearChannelCommand>(parsed2->channel);
             DebugDisplay::enqueue(clearCmd);
           }
@@ -475,13 +404,13 @@ namespace Ravl2::DebugDisplay
               poly->channel = parsed2->channel;
               // Mode
               if(auto mv = getControlValue(parsed2->controls, ":Mode=")) {
-                if(*mv == "Replace") poly->mode = AddPolylineOverlay2D::Mode::Replace;
+                if(UrlControls::iequals(*mv, "Replace")) poly->mode = AddPolylineOverlay2D::Mode::Replace;
                 else
                   poly->mode = AddPolylineOverlay2D::Mode::Append;
               }
               // Closed
               if(auto cv = getControlValue(parsed2->controls, ":Closed=")) {
-                poly->closed = (*cv == "true" || *cv == "1" || *cv == "True" || *cv == "TRUE");
+                poly->closed = (UrlControls::iequals(*cv, "true") || *cv == "1");
               }
               // Width
               if(auto wv = getControlValue(parsed2->controls, ":Width=")) {
@@ -513,8 +442,8 @@ namespace Ravl2::DebugDisplay
 
               // :Mode=Replace|Append|RingBuffer (default: Append)
               if(auto mv = getControlValue(parsed2->controls, ":Mode=")) {
-                if(*mv == "Replace") plotCmd->mode = SeriesUpdateMode::Replace;
-                else if(*mv == "RingBuffer") plotCmd->mode = SeriesUpdateMode::RingBuffer;
+                if(UrlControls::iequals(*mv, "Replace")) plotCmd->mode = SeriesUpdateMode::Replace;
+                else if(UrlControls::iequals(*mv, "RingBuffer")) plotCmd->mode = SeriesUpdateMode::RingBuffer;
                 else plotCmd->mode = SeriesUpdateMode::Append;
               }
 
@@ -556,8 +485,8 @@ namespace Ravl2::DebugDisplay
 
               // :Mode=Replace|Append|RingBuffer (default: Append)
               if(auto mv = getControlValue(parsed2->controls, ":Mode=")) {
-                if(*mv == "Replace") multiPlotCmd->mode = SeriesUpdateMode::Replace;
-                else if(*mv == "RingBuffer") multiPlotCmd->mode = SeriesUpdateMode::RingBuffer;
+                if(UrlControls::iequals(*mv, "Replace")) multiPlotCmd->mode = SeriesUpdateMode::Replace;
+                else if(UrlControls::iequals(*mv, "RingBuffer")) multiPlotCmd->mode = SeriesUpdateMode::RingBuffer;
                 else multiPlotCmd->mode = SeriesUpdateMode::Append;
               }
 
@@ -587,8 +516,8 @@ namespace Ravl2::DebugDisplay
 
               // :Mode=Replace|Append|RingBuffer (default: Append)
               if(auto mv = getControlValue(parsed2->controls, ":Mode=")) {
-                if(*mv == "Replace") multiVecCmd->mode = SeriesUpdateMode::Replace;
-                else if(*mv == "RingBuffer") multiVecCmd->mode = SeriesUpdateMode::RingBuffer;
+                if(UrlControls::iequals(*mv, "Replace")) multiVecCmd->mode = SeriesUpdateMode::Replace;
+                else if(UrlControls::iequals(*mv, "RingBuffer")) multiVecCmd->mode = SeriesUpdateMode::RingBuffer;
                 else multiVecCmd->mode = SeriesUpdateMode::Append;
               }
 

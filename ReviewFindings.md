@@ -42,23 +42,28 @@ ranges start at the end. 1-D `copy()` still copies a prefix to `dest`'s min rath
 
 ## Batch 3 — interop and Display crashes
 
-- [ ] **CV-1** `OpenCV/Image.hh:21`, `Image.cc` BGR spec., `ImageIO.cc:301` — `toCvMat` passes no step; clipped views read with wrong pitch. *(verified)*
-- [ ] **CV-2** `OpenCV/Image.cc:61` — `toArray<PixelBGRA8>` divides step by `sizeof(PixelBGR8)`. *(verified)*
-- [ ] **CV-3** `OpenCV/ImageIO.cc:290-297` — Array→cv::Mat conversions return non-owning Mats of by-value temporaries; multi-step save chains read freed memory.
-- [ ] **DSP-1** `Display/Image2DNodeBase.cc:17`, `DebugDisplay.cc:295,975` — static `g_channels` destroys bgfx textures after `bgfx::shutdown()`; crash at exit.
-- [ ] **DSP-2** `Display/DebugDisplay.cc:853,877` — GUI thread uses blocking `g_queue.push` on the queue only it drains; deadlock under streaming.
-- [ ] **DSP-3** `Display/DebugDisplay.cc:843-844` — per-frame scroll delta passed where bgfx imgui expects cumulative; ImGui/ImPlot/3D scroll cancels out.
-- [ ] **DSP-4** `Display/IOFormatAdapter.cc:432` — `:Clear` substring match also matches `:ClearOverlays` etc.
-- [ ] **DSP-5** `Display/IOFormatAdapter.cc:478,516,559,590` — mode values compared case-sensitively (`replace`, `ringbuffer` ignored).
-- [ ] **DSP-6** `Display/IOFormatAdapter.cc:330-333,359` — `Norm=Pct:1,99` arguments truncated at `:`; percentile unsupported in bgfx upload (`Image2DNode.cc:166`).
-- [ ] **DSP-7** `Display/SetNormalization2D.cc:16`, `SetBaseImage2D.hh:33` — only top-level node inspected; overlays (CompositeNode) break normalisation and get wiped on image update.
+- [x] **CV-1** `OpenCV/Image.hh:21`, `Image.cc` BGR spec., `ImageIO.cc:301` — `toCvMat` passes no step; clipped views read with wrong pitch. *(verified)*
+- [x] **CV-2** `OpenCV/Image.cc:61` — `toArray<PixelBGRA8>` divides step by `sizeof(PixelBGR8)`. *(verified)*
+- [x] **CV-3** `OpenCV/ImageIO.cc:290-297` — Array→cv::Mat conversions return non-owning Mats of by-value temporaries; multi-step save chains read freed memory.
+- [x] **DSP-1** `Display/Image2DNodeBase.cc:17`, `DebugDisplay.cc:295,975` — static `g_channels` destroys bgfx textures after `bgfx::shutdown()`; crash at exit.
+- [x] **DSP-2** `Display/DebugDisplay.cc:853,877` — GUI thread uses blocking `g_queue.push` on the queue only it drains; deadlock under streaming.
+- [x] **DSP-3** `Display/DebugDisplay.cc:843-844` — per-frame scroll delta passed where bgfx imgui expects cumulative; ImGui/ImPlot/3D scroll cancels out.
+- [x] **DSP-4** `Display/IOFormatAdapter.cc:432` — `:Clear` substring match also matches `:ClearOverlays` etc.
+- [x] **DSP-5** `Display/IOFormatAdapter.cc:478,516,559,590` — mode values compared case-sensitively (`replace`, `ringbuffer` ignored).
+- [x] **DSP-6** `Display/IOFormatAdapter.cc:330-333,359` — `Norm=Pct:1,99` arguments truncated at `:`; percentile unsupported in bgfx upload (`Image2DNode.cc:166`).
+- [x] **DSP-7** `Display/SetNormalization2D.cc:16`, `SetBaseImage2D.hh:33` — only top-level node inspected; overlays (CompositeNode) break normalisation and get wiped on image update.
 - [ ] **DSP-8** `Display/AddPolylineOverlay2D.cc:19`, `Polyline2DNode.cc` — polylines treated as (x,y), RAVL2 points are (row,col). *(convention decision)*
-- [ ] **DSP-9** `Display/DebugDisplay.cc:1075` — macOS `runMainLoop` spins forever if the app never displays.
-- [ ] **DSP-10** `Display/DebugDisplay.cc:670` — SDL fallback uses `RGBA8888` for byte-order RGBA (should be `ABGR8888`/`RGBA32`).
-- [ ] **QT-1** `Qt/Image.hh:69,99,121,157` — width/height swapped both directions. *(verified)*
-- [ ] **QT-2** `Qt/Image.hh:60,64,73,80,149` — `if constexpr(cond, "msg")` always true; `toArrayView` doesn't compile; Grayscale8 asserted for all types; copy loop drops last row. *(verified)*
-- [ ] **DLIB-1** `Dlib/Image.hh:75` — `set_image_size` makes (rows-1)x(cols-1); dlib overruns.
-- [ ] **DLIB-2** `Dlib/Image.cc:19`, `Dlib/Image.hh:179` — RGB conversion and `operator[]` ignore array origin.
+- [x] **DSP-9** `Display/DebugDisplay.cc:1075` — macOS `runMainLoop` spins forever if the app never displays.
+- [x] **DSP-10** `Display/DebugDisplay.cc:670` — SDL fallback uses `RGBA8888` for byte-order RGBA (should be `ABGR8888`/`RGBA32`).
+- [x] **QT-1** `Qt/Image.hh:69,99,121,157` — width/height swapped both directions. *(verified)*
+- [x] **QT-2** `Qt/Image.hh:60,64,73,80,149` — `if constexpr(cond, "msg")` always true; `toArrayView` doesn't compile; Grayscale8 asserted for all types; copy loop drops last row. *(verified)*
+- [x] **DLIB-1** `Dlib/Image.hh:75` — `set_image_size` makes (rows-1)x(cols-1); dlib overruns.
+- [x] **DLIB-2** `Dlib/Image.cc:19`, `Dlib/Image.hh:179` — RGB conversion and `operator[]` ignore array origin.
+
+Batch 3 notes: DSP-1, DSP-2, DSP-9 and DSP-10 change GUI-thread code that needs a display to run; they were
+checked by reading and build, not at runtime. The Dlib fixes were compiled and run against a dlib checkout
+(dlib isn't a dependency of the test build). DSP-8 is waiting on a decision about the polyline convention.
+Also fixed: the default overlay colour was yellow, not the magenta documented.
 
 ## Batch 4 — maths and geometry correctness
 

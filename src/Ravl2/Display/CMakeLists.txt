@@ -13,7 +13,7 @@ add_library(Ravl2Display
     # Core API and infrastructure
     DebugDisplay.cc DebugDisplay.hh
     IRenderCommand.hh ISceneNode.hh Channel.hh
-    RenderContext.hh Normalization.hh
+    RenderContext.hh Normalization.hh UrlControls.hh
     CompositeNode.hh
 
     # Backends (platform abstraction)

@@ -119,4 +119,15 @@ namespace Ravl2::DebugDisplay
     std::vector<std::unique_ptr<ISceneNode>> m_children;
   };
 
+  //! The slot holding a channel's base image. Overlays wrap the base image in a CompositeNode whose first child
+  //! is the base; otherwise the content itself is the base.
+  [[nodiscard]] inline std::unique_ptr<ISceneNode> &baseContentSlot(std::unique_ptr<ISceneNode> &content)
+  {
+    if(auto *composite = dynamic_cast<CompositeNode *>(content.get())) {
+      if(composite->childCount() > 0)
+        return composite->children()[0];
+    }
+    return content;
+  }
+
 }// namespace Ravl2::DebugDisplay

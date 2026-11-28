@@ -22,7 +22,7 @@ namespace Ravl2::DebugDisplay
     std::string channel;
     Ravl2::PolyLine<float, 2> poly;//!< Image-space vertices
     bool closed = false;           //!< Draw closing segment if true
-    uint32_t rgba = 0xff00ffffu;   //!< Default magenta (RGBA packed as ImU32)
+    uint32_t rgba = 0xffff00ffu;   //!< Default magenta (packed as ImU32, i.e. A,B,G,R from the top byte)
     float widthPx = 1.5f;          //!< Line width in screen pixels
     Mode mode = Mode::Append;
 

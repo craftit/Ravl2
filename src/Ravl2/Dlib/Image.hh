@@ -26,6 +26,7 @@
 #include <dlib/matrix.h>
 #pragma GCC diagnostic pop
 
+#include <array>
 #include "Ravl2/Array.hh"
 #include "Ravl2/Index.hh"
 #include "Ravl2/Assert.hh"
@@ -72,7 +73,8 @@ namespace Ravl2
                         long rows,
                         long cols)
     {
-      IndexRange<N> newRange = IndexRange<2>::fromSize(rows - 1, cols - 1);
+      // fromSize() takes sizes, not maximum indices.
+      IndexRange<N> newRange = IndexRange<2>::fromSize(int(rows), int(cols));
       if(img.range().contains(newRange)) {
         img.clipBy(newRange);
         return;
@@ -176,7 +178,8 @@ namespace Ravl2
 
       void set_size(int rows, int cols) { set_image_size(*this, rows, cols); }
 
-      const DataT *operator[](int r) const { return &(*this)(r, 0); }
+      //! dlib rows start at 0; map them onto this array's range.
+      const DataT *operator[](int r) const { return &(*this)(this->range(0).min() + r, this->range(1).min()); }
     };
 
   }// namespace DLibIO
@@ -188,12 +191,14 @@ namespace Ravl2
     requires DLibIO::DlibArray2d<ArrayT>
   ArrayView<DataT, 2> toArrayView(ArrayT &anArray)
   {
-    IndexRange<2> indexRange({{0, num_rows(anArray) - 1}, {0, num_columns(anArray) - 1}});
-    auto step = width_step(anArray);
-    if((step % sizeof(DataT)) != 0) {
+    IndexRange<2> indexRange({{0, int(num_rows(anArray)) - 1}, {0, int(num_columns(anArray)) - 1}});
+    const auto step = static_cast<long>(width_step(anArray));
+    const long pixelSize = long(sizeof(DataT));
+    if((step % pixelSize) != 0) {
       throw std::runtime_error("toArray: width_step is not a multiple of sizeof(DataT)");
     }
-    return ArrayView<DataT, 2>(reinterpret_cast<DataT *>(image_data(anArray)), indexRange, {step / sizeof(DataT), 1});
+    return ArrayView<DataT, 2>(reinterpret_cast<DataT *>(image_data(anArray)), indexRange,
+                               std::array<std::ptrdiff_t, 2> {std::ptrdiff_t(step / pixelSize), 1});
   }
 
   //! Create a dlib RGB image from a Ravl2::Array

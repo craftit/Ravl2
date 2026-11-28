@@ -132,6 +132,12 @@ namespace Ravl2::DebugDisplay
     NormalizationSettings norm {};
     float cachedMin = 0.0f;
     float cachedMax = 1.0f;
+    //! Range mapped to [0,1] for display under the current policy (Auto/Fixed/Percentile).
+    float displayMin = 0.0f;
+    float displayMax = 1.0f;
+
+    //! Recompute displayMin/displayMax; percentiles are costly, so only on data or settings changes.
+    void updateDisplayRange();
 
   protected:
     std::string formatValue(const float &value) const;
@@ -150,6 +156,7 @@ namespace Ravl2::DebugDisplay
     void setNormalization(const NormalizationSettings &settings)
     {
       norm = settings;
+      updateDisplayRange();
       gpuDirty = true;
     }
 

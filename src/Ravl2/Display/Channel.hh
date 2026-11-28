@@ -146,6 +146,16 @@ namespace Ravl2::DebugDisplay
       }
     }
 
+    //! Remove every channel and its scene content.
+    //!
+    //! Scene nodes own GPU resources, so the GUI thread calls this before shutting the renderer down.
+    //! @threadsafe Yes
+    void clearAll()
+    {
+      std::scoped_lock lk(m_mutex);
+      m_channels.clear();
+    }
+
     //! Enumerate all channels by invoking a callback for each.
     //! 
     //! The callback is invoked while holding the registry lock, ensuring thread-safe

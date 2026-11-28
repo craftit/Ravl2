@@ -1,4 +1,5 @@
 #include "Ravl2/Display/Image2DNode.hh"
+#include <tuple>
 #include <cassert>
 #include <cstdint>
 #include <vector>
@@ -95,6 +96,7 @@ namespace Ravl2::DebugDisplay
     auto [mn, mx] = finiteMinMax(pixelData.data(), width, height, width * int(sizeof(float)));
     cachedMin = mn;
     cachedMax = mx;
+    updateDisplayRange();
 
 #if defined(RAVL2_WITH_BGFX)
     gpuDirty = true;
@@ -112,20 +114,36 @@ namespace Ravl2::DebugDisplay
     auto [mn, mx] = finiteMinMax(pixelData.data(), width, height, width * int(sizeof(float)));
     cachedMin = mn;
     cachedMax = mx;
+    updateDisplayRange();
 
 #if defined(RAVL2_WITH_BGFX)
     gpuDirty = true;
 #endif
   }
 
-  std::string Image2DNode<float>::formatValue(const float &value) const
+  void Image2DNode<float>::updateDisplayRange()
   {
     float mn = cachedMin, mx = cachedMax;
-    if(norm.policy == NormalizationPolicy::Fixed) {
-      mn = norm.minVal;
-      mx = norm.maxVal;
+    switch(norm.policy) {
+      case NormalizationPolicy::Auto: break;
+      case NormalizationPolicy::Fixed:
+        mn = norm.minVal;
+        mx = norm.maxVal;
+        break;
+      case NormalizationPolicy::Percentile:
+        if(!pixelData.empty())
+          std::tie(mn, mx) = percentiles(pixelData.data(), width, height, width * int(sizeof(float)), norm.lowPct, norm.highPct);
+        break;
     }
     if(mx <= mn) mx = mn + 1.0f;
+    displayMin = mn;
+    displayMax = mx;
+  }
+
+  std::string Image2DNode<float>::formatValue(const float &value) const
+  {
+    const float mn = displayMin;
+    const float mx = displayMax;
     float displayValue = (value - mn) / (mx - mn);
     if(displayValue < 0.0f) displayValue = 0.0f;
     if(displayValue > 1.0f) displayValue = 1.0f;
@@ -162,12 +180,8 @@ namespace Ravl2::DebugDisplay
     bgfx::TextureHandle thdl {textureHandleIdx};
     if(!bgfx::isValid(thdl)) return;
 
-    float mn = cachedMin, mx = cachedMax;
-    if(norm.policy == NormalizationPolicy::Fixed) {
-      mn = norm.minVal;
-      mx = norm.maxVal;
-    }
-    if(mx <= mn) mx = mn + 1.0f;
+    const float mn = displayMin;
+    const float mx = displayMax;
 
     const size_t sz = static_cast<size_t>(width) * static_cast<size_t>(height);
     std::vector<uint8_t> rgba(sz * 4);
@@ -194,12 +208,8 @@ namespace Ravl2::DebugDisplay
   {
     const int idx = y * width + x;
     float v = pixelData[static_cast<size_t>(idx)];
-    float mn = cachedMin, mx = cachedMax;
-    if(norm.policy == NormalizationPolicy::Fixed) {
-      mn = norm.minVal;
-      mx = norm.maxVal;
-    }
-    if(mx <= mn) mx = mn + 1.0f;
+    const float mn = displayMin;
+    const float mx = displayMax;
     float n = (v - mn) / (mx - mn);
     if(n < 0.0f) n = 0.0f;
     if(n > 1.0f) n = 1.0f;

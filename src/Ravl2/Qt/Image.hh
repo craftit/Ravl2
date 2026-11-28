@@ -11,6 +11,11 @@
 #include "Ravl2/Pixel/Colour.hh"
 #include "Ravl2/ArrayIterZip.hh"
 
+#include <array>
+#include <cstring>
+#include <memory>
+#include <stdexcept>
+
 namespace Ravl2
 {
 
@@ -48,115 +53,125 @@ namespace Ravl2
     throw std::runtime_error("Unknown qt pixel type");
   }
 
-  //! Convert a QImage to an ArrayView
-
-  template <class DataT>
-  ArrayView<DataT, 2> toArrayView(const QImage &image)
+  namespace detail
   {
-    assert(image.depth() == sizeof(DataT) * 8);
-    assert(image.width() > 0);
-    assert(image.height() > 0);
-    // Const expr check if DataT is uin8_t
-    if constexpr(std::is_same_v<DataT, uint8_t>, "DataT must be uint8_t") {
-      if(image.format() != QImage::Format_Grayscale8)
-        throw std::runtime_error("Invalid image format, must be Format_Grayscale8");
-    }
-    if constexpr(std::is_same_v<DataT, uint16_t>, "DataT must be uint8_t") {
-      if(image.format() != QImage::Format_Grayscale16)
-        throw std::runtime_error("Invalid image format, must be Format_Grayscale16");
+    //! Rows are dimension 0 (height), columns dimension 1 (width).
+    template <class DataT>
+    IndexRange<2> qImageRange(const QImage &image)
+    {
+      return IndexRange<2>::fromSize(image.height(), image.width());
     }
 
-    IndexRange<2> rng = IndexRange<2>::fromSize(image.width(), image.height());
-    auto bytesPerLine = image.bytesPerLine();
-    if((bytesPerLine % sizeof(DataT)) != 0)
-      throw std::runtime_error("Invalid bytes per line, not a multiple of sizeof(T)");
-    return ArrayView<DataT, 2>(reinterpret_cast<DataT *>(image.bits()), rng, {bytesPerLine / sizeof(DataT), 1});
+    template <class DataT>
+    std::ptrdiff_t qImageRowStride(const QImage &image)
+    {
+      const auto bytesPerLine = static_cast<std::ptrdiff_t>(image.bytesPerLine());
+      if((bytesPerLine % static_cast<std::ptrdiff_t>(sizeof(DataT))) != 0)
+        throw std::runtime_error("Invalid bytes per line, not a multiple of sizeof(T)");
+      return bytesPerLine / static_cast<std::ptrdiff_t>(sizeof(DataT));
+    }
+
+    //! Copy any 2-D array into a new QImage that owns its data.
+    template <typename ArrayT, typename DataT = typename ArrayT::value_type>
+    QImage copyToQImage(const ArrayT &array)
+    {
+      const IndexRange<2> rng = array.range();
+      QImage newImage(rng.size(1), rng.size(0), toQImageFormat<DataT, CopyModeT::Never>());
+      for(int row = rng.min(0); row <= rng.max(0); ++row) {
+        const auto *srcPtr = &array[{row, rng.min(1)}];
+        auto *dstPtr = newImage.scanLine(row - rng.min(0));
+        std::memcpy(dstPtr, srcPtr, static_cast<size_t>(rng.size(1)) * sizeof(DataT));
+      }
+      return newImage;
+    }
+  }// namespace detail
+
+  //! View the pixels of a QImage without copying.
+  //! The QImage must outlive the view, and must already be in the format matching DataT.
+  template <class DataT>
+  ArrayView<const DataT, 2> toArrayView(const QImage &image)
+  {
+    if(image.format() != toQImageFormat<DataT, CopyModeT::Never>())
+      throw std::runtime_error("QImage format does not match the requested pixel type");
+    return ArrayView<const DataT, 2>(reinterpret_cast<const DataT *>(image.constBits()), detail::qImageRange<DataT>(image),
+                                     std::array<std::ptrdiff_t, 2> {detail::qImageRowStride<DataT>(image), 1});
   }
 
-  //! Convert a QImage to an ArrayView
+  //! Convert a QImage to an Array.
+  //! With CopyModeT::Auto the Array shares the QImage's pixels when the format matches (keeping a reference to
+  //! the QImage), and converts otherwise. CopyModeT::Always always copies; CopyModeT::Never throws if the format
+  //! doesn't match.
   template <class DataT, CopyModeT copyMode = CopyModeT::Auto>
   Array<DataT, 2> toArray(const QImage &image)
   {
-    assert(image.format() == QImage::Format_Grayscale8);
-    assert(image.depth() == 8);
-    assert(image.width() > 0);
-    assert(image.height() > 0);
-
-    if(image.format() != toQImageFormat<DataT>()) {
+    if(image.format() != toQImageFormat<DataT, CopyModeT::Never>()) {
       if constexpr(copyMode == CopyModeT::Never) {
         throw std::runtime_error("Incompatible image format");
+      } else {
+        // Converting already makes a new image, which the result can share.
+        QImage converted = image.convertToFormat(toQImageFormat<DataT, CopyModeT::Never>());
+        return toArray<DataT, CopyModeT::Auto>(converted);
       }
-      // We need to convert the image to the correct format
-      QImage converted = image.convertToFormat(toQImageFormat<DataT>());
-      return toArray<DataT, CopyModeT::Never>(converted);
     }
-    // If we're always copying and we have the right type, just clone the data.
     if constexpr(copyMode == CopyModeT::Always) {
-      return clone(toArrayView<DataT>(image));
+      auto view = toArrayView<DataT>(image);
+      Array<DataT, 2> ret(view.range());
+      copy(ret, view);
+      return ret;
+    } else {
+      // Share the pixels without copying, keeping a (shallow, implicitly shared) QImage alive for as long as the
+      // Array's buffer. The Array aliases those pixels: writing through it changes every QImage sharing them,
+      // bypassing Qt's copy-on-write. Use CopyModeT::Always for an independent copy.
+      QImage owner = image;
+      auto *dataPtr = const_cast<DataT *>(reinterpret_cast<const DataT *>(owner.constBits()));
+      const auto stride = detail::qImageRowStride<DataT>(owner);
+      const auto rng = detail::qImageRange<DataT>(owner);
+      return Array<DataT, 2>(dataPtr, rng, std::array<std::ptrdiff_t, 2> {stride, 1},
+                             std::shared_ptr<DataT[]>(dataPtr, [img = std::move(owner)]([[maybe_unused]] DataT *delPtr) {}));
     }
-
-    // Make a shared pointer to the image data so it doesn't get deleted when the QImage goes out of scope
-    IndexRange<2> rng = IndexRange<2>::fromSize(image.width(), image.height());
-    auto bytesPerLine = image.bytesPerLine();
-    if((size_t(bytesPerLine) % sizeof(DataT)) != 0)
-      throw std::runtime_error("Invalid bytes per line, not a multiple of sizeof(T)");
-    // We need to const cast the data pointer as QImage::bits() returns a const uchar *
-    // Maybe we should restrict this to only allow use with 'const DataT' ?
-    auto dataPtr = const_cast<DataT *>(reinterpret_cast<const DataT *>(image.bits()));
-    return Array<DataT, 2>(dataPtr, rng, {int(ssize_t(bytesPerLine) / ssize_t(sizeof(DataT))), 1}, std::shared_ptr<DataT[]>(dataPtr, [img = image]([[maybe_unused]] DataT *delPtr) {}));
   }
 
-  //! Convert an ArrayView to a QImage, this does not try and create a reference to the data
+  //! Copy any 2-D array view into a new QImage.
   template <typename ArrayT, CopyModeT copyMode = CopyModeT::Auto, typename DataT = typename ArrayT::value_type, unsigned N = ArrayT::dimensions>
-    requires WindowedArray<ArrayT, DataT, N>
+    requires WindowedArray<ArrayT, DataT, N> && (N == 2)
   QImage toQImage(const ArrayT &array)
   {
-    assert(array.size() > 0);
-    assert(array.size() <= std::numeric_limits<int>::max());
-    assert(array.size() == array.shape().size());
-    assert(array.shape().size() == 2);
-    //QImage::QImage(uchar *data, int width, int height, qsizetype bytesPerLine, QImage::Format format, QImageCleanupFunction cleanupFunction = nullptr, void *cleanupInfo = nullptr)
-    qsizetype bytesPerLine = array.range(0).size() * sizeof(DataT);
-    return QImage(addressOfMin(array),
-                  array.range(0).size(), array.range(1).size(),
-                  bytesPerLine,
-                  toQImageFormat<DataT, copyMode>());
+    static_assert(copyMode != CopyModeT::Never, "Only an Array can be shared with a QImage without copying");
+    return detail::copyToQImage(array);
   }
 
-  //! Convert an Array to a QImage
+  //! Convert an Array to a QImage.
+  //! Unless copyMode is Always, the QImage shares the Array's pixels and keeps the Array's buffer alive.
+  //! Rows whose byte length isn't a multiple of 4 are copied, as QImage requires.
   template <class DataT, CopyModeT copyMode = CopyModeT::Auto>
   QImage toQImage(const Array<DataT, 2> &array)
   {
-    assert(array.stride(0) > 0);
     // Handle QImage needing bytesperline as different type depending on Qt version
 #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
     using QtBytesPerLineT = qsizetype;
 #else
     using QtBytesPerLineT = int;
 #endif
-
-    QtBytesPerLineT bytesPerLine = QtBytesPerLineT(static_cast<ssize_t>(array.stride(0)) * static_cast<ssize_t>(sizeof(DataT)));
-    if((bytesPerLine % 4) != 0) {
-      // QImage requires the bytes per line to be a multiple of 4
-      if(copyMode == CopyModeT::Never) {
-        throw std::runtime_error("Bytes per line must be a multiple of 4");
+    const auto stride = array.stride(0);
+    const auto bytesPerLine = QtBytesPerLineT(stride * static_cast<std::ptrdiff_t>(sizeof(DataT)));
+    if constexpr(copyMode == CopyModeT::Always) {
+      return detail::copyToQImage(array);
+    } else {
+      if(stride <= 0 || (bytesPerLine % 4) != 0) {
+        if constexpr(copyMode == CopyModeT::Never) {
+          throw std::runtime_error("QImage needs positive strides and rows that are a multiple of 4 bytes");
+        } else {
+          return detail::copyToQImage(array);
+        }
       }
-      IndexRange<2> rng = array.range();
-      auto targetBytePerLine = (bytesPerLine + 3) & ~3;
-      QImage newImage(rng.size(1), rng.size(0), toQImageFormat<DataT, CopyModeT::Never>());
-      // Copy data into the image.
-      auto newImagePtr = newImage.bits();
-      for(auto row = rng.min(0); row < rng.max(0); ++row) {
-        auto srcPtr = addressOfMin(array[row]);
-        auto dstPtr = newImagePtr + row * targetBytePerLine;
-        memcpy(dstPtr, srcPtr, static_cast<size_t>(rng.size(1)) * sizeof(DataT));
-      }
-      return newImage;
+      // Hand QImage a copy of the Array handle, released by its cleanup function.
+      auto holder = std::make_unique<Array<DataT, 2>>(array);
+      QImage image(reinterpret_cast<uchar *>(addressOfMin(array)), array.range(1).size(), array.range(0).size(), bytesPerLine,
+                   toQImageFormat<DataT, copyMode>(),
+                   [](void *info) { delete static_cast<Array<DataT, 2> *>(info); }, holder.get());
+      holder.release();
+      return image;
     }
-    return QImage(reinterpret_cast<uint8_t *>(addressOfMin(array)),
-                  array.range(0).size(), array.range(1).size(),
-                  bytesPerLine,
-                  toQImageFormat<DataT, copyMode>());
   }
 
   //! Declare some common instantiations

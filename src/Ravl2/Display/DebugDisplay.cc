@@ -293,6 +293,9 @@ namespace Ravl2::DebugDisplay
 
     // Channel registry lives on the GUI thread
     ChannelRegistry g_channels;
+    //! Commands raised by the UI on the GUI thread. They can't go through g_queue: only the GUI thread drains it,
+    //! so a blocking push from the GUI thread deadlocks when the queue is full.
+    std::vector<std::shared_ptr<IRenderCommand>> g_guiPending;
 
     // Background thread (GUI thread)
     std::unique_ptr<std::jthread> g_guiThread;
@@ -662,12 +665,9 @@ namespace Ravl2::DebugDisplay
         entry.w = entry.h = 0;
       }
       if(!entry.tex) {
-        // Use a widely supported 32-bit texture; prefer BGRA on macOS/Metal to avoid swizzle issues.
-#ifdef __APPLE__
-        Uint32 pf = SDL_PIXELFORMAT_ABGR8888;// corresponds to BGRA byte-order on little-endian
-#else
-        Uint32 pf = SDL_PIXELFORMAT_RGBA8888;
-#endif
+        // The upload writes bytes in R,G,B,A order. SDL_PIXELFORMAT_RGBA32 names that byte order on any
+        // endianness; RGBA8888 is a packed-integer layout, which is A,B,G,R in memory on little-endian.
+        Uint32 pf = SDL_PIXELFORMAT_RGBA32;
         entry.tex = SDL_CreateTexture(g_renderer, pf, SDL_TEXTUREACCESS_STREAMING, w, h);
         if(!entry.tex) {
           SPDLOG_ERROR("DebugDisplay: SDL_CreateTexture failed: {}", SDL_GetError());
@@ -817,6 +817,15 @@ namespace Ravl2::DebugDisplay
     // --- Loop helpers extracted in Phase 4.9 Step 4 ---
     static inline void drainCommandsOnce(int maxPerTick)
     {
+      // UI commands from the previous frame first; they were raised on this thread.
+      for(auto &pending : g_guiPending) {
+        if(pending) {
+          pending->apply(g_channels);
+          g_invalidated.store(true, std::memory_order_release);
+        }
+      }
+      g_guiPending.clear();
+
       int drained = 0;
       std::shared_ptr<IRenderCommand> cmd;
       while(drained < maxPerTick && g_queue.tryPop(cmd)) {
@@ -840,8 +849,8 @@ namespace Ravl2::DebugDisplay
         fbw = static_cast<uint16_t>(winW);
         fbh = static_cast<uint16_t>(winH);
         SPDLOG_DEBUG("ImGui frame begin: fb={}x{}, mouse=({},{}), buttons=0x{:x}, scroll={}", fbw, fbh, mx, my, static_cast<unsigned>(g_mouseButtons), static_cast<int>(g_scroll));
+        // The bgfx ImGui helper takes the cumulative wheel position and computes the per-frame delta itself.
         g_imguiBridge.beginFrame(mx, my, g_mouseButtons, g_scroll, fbw, fbh);
-        g_scroll = 0;// consume scroll
 
         Ui::buildDockspace();
 
@@ -850,7 +859,7 @@ namespace Ravl2::DebugDisplay
         ImGui::SetNextWindowSize(ImVec2(kControlsInitialWidth, 0), ImGuiCond_FirstUseEver);
         ImGui::Begin("Controls", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
         SPDLOG_DEBUG("ImGui Controls window built");
-        Ui::buildControlsPanel(static_cast<float>(fbw), static_cast<float>(fbh), g_channels, [&](std::shared_ptr<IRenderCommand> cmd) { g_queue.push(std::move(cmd)); }, g_invalidated, kZoomMin, kZoomMax);
+        Ui::buildControlsPanel(static_cast<float>(fbw), static_cast<float>(fbh), g_channels, [&](std::shared_ptr<IRenderCommand> cmd) { g_guiPending.push_back(std::move(cmd)); }, g_invalidated, kZoomMin, kZoomMax);
         ImGui::End();
 
         Ui::ChannelWindows::build(fbw, fbh, g_channels, g_lastRects, g_imageOrigins, g_contentRects, g_invalidated, g_hoveredChannel, g_hoveredImageChannel);
@@ -874,7 +883,7 @@ namespace Ravl2::DebugDisplay
         if(ImGui::Begin("Controls", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
           int winW = 0, winH = 0;
           SDL_GetWindowSize(g_window, &winW, &winH);
-          Ui::buildControlsPanel(static_cast<float>(winW), static_cast<float>(winH), g_channels, [&](std::shared_ptr<IRenderCommand> cmd) { g_queue.push(std::move(cmd)); }, g_invalidated, kZoomMin, kZoomMax);
+          Ui::buildControlsPanel(static_cast<float>(winW), static_cast<float>(winH), g_channels, [&](std::shared_ptr<IRenderCommand> cmd) { g_guiPending.push_back(std::move(cmd)); }, g_invalidated, kZoomMin, kZoomMax);
         }
         ImGui::End();
 
@@ -963,6 +972,11 @@ namespace Ravl2::DebugDisplay
           g_bgfx.frame();
         }
       }
+
+      // Scene nodes own bgfx textures. g_channels is a static, so left alone it would be destroyed during static
+      // destruction, after bgfx::shutdown() and off this thread. Release them here while the renderer is alive.
+      g_guiPending.clear();
+      g_channels.clearAll();
 
       // Destroy ImGui (bgfx backend) before shutting down bgfx to avoid use-after-shutdown
 #if defined(RAVL2_WITH_BGFX)
@@ -1063,21 +1077,25 @@ namespace Ravl2::DebugDisplay
       std::stop_source stopSource;
       std::stop_token stopToken = stopSource.get_token();
 
+      std::atomic<bool> appDone {false};
       std::thread appThread([&]() {
         exitCode = appMain(argc, argv);
+        appDone.store(true, std::memory_order_release);
         // Signal the GUI thread to stop when app completes
         SPDLOG_INFO("DebugDisplay: app thread finished, requesting GUI stop");
         stopSource.request_stop();
         SPDLOG_INFO("DebugDisplay: stop requested, stop_requested={}", stopToken.stop_requested());
       });
 
-      // Wait for ensureStarted to be called by the app thread
-      while(!g_started.load(std::memory_order_acquire)) {
+      // Wait for ensureStarted to be called by the app thread; an app that never displays anything just finishes.
+      while(!g_started.load(std::memory_order_acquire) && !appDone.load(std::memory_order_acquire)) {
         std::this_thread::sleep_for(std::chrono::milliseconds(10));
       }
 
       // Run the GUI loop on the main thread until app signals stop
-      guiThreadMain(stopToken);
+      if(g_started.load(std::memory_order_acquire)) {
+        guiThreadMain(stopToken);
+      }
 
       // Wait for app thread to complete
       if(appThread.joinable()) {

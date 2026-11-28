@@ -9,6 +9,8 @@
 #include "Ravl2/Display/IRenderCommand.hh"
 #include "Ravl2/Pixel/Pixel.hh"
 #include "Ravl2/Display/Image2DNode.hh"
+#include "Ravl2/Display/CompositeNode.hh"
+#include "Ravl2/Display/Channel.hh"
 
 namespace Ravl2::DebugDisplay
 {
@@ -28,15 +30,20 @@ namespace Ravl2::DebugDisplay
     {
       auto &ch = channels.getOrCreateChannel(channel);
 
-      // Get or create Image2DNode<PixelT>
+      // Get or create Image2DNode<PixelT>. Overlays wrap the image in a CompositeNode; replace only the base image
+      // so they survive image updates.
+      auto &slot = baseContentSlot(ch.sceneContent);
       Image2DNode<PixelT> *node = nullptr;
-      if(auto *img = dynamic_cast<Image2DNode<PixelT> *>(ch.sceneContent.get())) {
+      if(auto *img = dynamic_cast<Image2DNode<PixelT> *>(slot.get())) {
         node = img;
       } else {
-        // Create new Image2DNode<PixelT> as the scene content
         auto newNode = std::make_unique<Image2DNode<PixelT>>();
         node = newNode.get();
-        ch.sceneContent = std::move(newNode);
+        if constexpr(std::is_same_v<PixelT, float>) {
+          // A new node starts with the channel's normalization, not the default.
+          newNode->setNormalization(ch.norm);
+        }
+        slot = std::move(newNode);
       }
 
       if(!data.empty()) {
