@@ -78,7 +78,7 @@ namespace Ravl2
           std::complex<RealT> t1 = std::complex<RealT>(
             q->real() * u.real() - q->imag() * u.imag(),
             q->imag() * u.real() + q->real() * u.imag());
-          *q = p - t1;
+          *q = *p - t1;// (was 'p - t1', a pointer: fft2 never compiled)
           *p += t1;
           u = std::complex<RealT>(u.real() * w.real() - u.imag() * w.imag(),
                                   u.imag() * w.real() + u.real() * w.imag());
@@ -231,7 +231,7 @@ namespace Ravl2
   //                inv!='d' -> inverse transform
 
   template <typename RealT>
-  void fftgr(const float *x, std::complex<RealT> *ft, int n, int *kk, int inv)
+  void fftgr(const RealT *x, std::complex<RealT> *ft, int n, int *kk, int inv)
   {
     std::complex<RealT> a, b, z, w, *d, *p, *f, *fb;
     const auto tpi = static_cast<RealT>(6.283185307179586);

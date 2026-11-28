@@ -331,10 +331,11 @@ namespace Ravl2
   template <unsigned N, typename FuncT, typename... ArrayT>
   constexpr void forEachIndexFirst(FuncT func, ArrayT &...arrays)
   {
-    auto iter = begin<N>(arrays...);
+    auto iter = zip(arrays...);
     while(iter.valid()) {
       do {
-        expandCall(iter, func, std::make_index_sequence<sizeof...(ArrayT)>());
+        // (Called expandCall, so the function never got the index and this didn't compile.)
+        expandCallIndexFirst(iter, func, std::make_index_sequence<sizeof...(ArrayT)>());
       } while(iter.next());
     }
   }

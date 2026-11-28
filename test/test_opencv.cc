@@ -8,9 +8,24 @@
 
 #include "Ravl2/Array.hh"
 #include "Ravl2/OpenCV/Image.hh"
+#include "Ravl2/OpenCV/Geometry.hh"
 
 namespace Ravl2
 {
+  TEST_CASE("Affine converts to and from cv::Affine3")
+  {
+    // toAffine read nonexistent members and toCvAffine called nonexistent rotation(): neither compiled.
+    Matrix<double, 3, 3> rot;
+    rot << 0, -1, 0, 1, 0, 0, 0, 0, 1;
+    const Affine<double, 3> aff(rot, Vector<double, 3>(1, 2, 3));
+    const cv::Affine3<double> cvAff = toCvAffine(aff);
+    CHECK(cvAff.matrix(0, 1) == -1.0);
+    CHECK(cvAff.matrix(2, 3) == 3.0);
+    const Affine<double, 3> back = toAffine(cvAff);
+    CHECK((back.SRMatrix() - rot).norm() < 1e-12);
+    CHECK((back.translation() - Vector<double, 3>(1, 2, 3)).norm() < 1e-12);
+  }
+
   TEST_CASE("toCvMat keeps the row pitch of a sub-array")
   {
     Array<uint8_t, 2> img({10, 10});

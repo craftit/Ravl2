@@ -157,10 +157,16 @@ namespace Ravl2
   template <typename RealT, unsigned int N>
   std::istream &operator>>(std::istream &inS, LinePV<RealT, N> &line)
   {
-    Point<RealT, N> p1;
-    Point<RealT, N> p2;
-    inS >> p1 >> p2;
-    line = LinePV<RealT, N>::fromPoints(p1, p2);
+    // Read what operator<< writes: a point and a direction (this read two points).
+    Point<RealT, N> point;
+    Vector<RealT, N> direction;
+    expectText(inS, "{ P:");
+    readEigen(inS, point);
+    expectText(inS, "V:");
+    readEigen(inS, direction);
+    expectText(inS, "}");
+    if(inS)
+      line = LinePV<RealT, N>(point, direction);
     return inS;
   }
 

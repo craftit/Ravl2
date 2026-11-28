@@ -92,11 +92,13 @@ namespace Ravl2
   }
 
   //! Convert Ravl2 fixed-size Matrix to OpenCV fixed-size cv::Matx.
-  template <typename RealT, IndexSizeT N, IndexSizeT M>
-  auto toCvMatx(const Matrix<RealT, N, M> &mat)
+  //! (Declared with IndexSizeT dimensions, which can't be deduced from Eigen's int ones, so it never matched.)
+  template <typename RealT, int N, int M>
+    requires(N > 0 && M > 0)
+  auto toCvMatx(const Eigen::Matrix<RealT, N, M> &mat)
   {
-    constexpr int rows = static_cast<int>(N);
-    constexpr int cols = static_cast<int>(M);
+    constexpr int rows = N;
+    constexpr int cols = M;
     cv::Matx<RealT, rows, cols> result;
     for(int i = 0; i < rows; ++i) {
       for(int j = 0; j < cols; ++j) {
@@ -168,14 +170,16 @@ namespace Ravl2
   template <typename RealT>
   Affine<RealT, 3> toAffine(const cv::Affine3<RealT> &affine)
   {
-    return Affine<RealT, 3>(toMatrix<RealT, 3, 3>(affine.rvec), toVector<RealT, 3>(affine.tvec));
+    // (Read the nonexistent members rvec/tvec; rotation() is the 3x3 matrix, rvec() would be Rodrigues.)
+    return Affine<RealT, 3>(toMatrix<RealT, 3, 3>(affine.rotation()), toVector<RealT, 3>(affine.translation()));
   }
 
   //! Convert to cv::Affine3
   template <typename RealT>
   cv::Affine3<RealT> toCvAffine(const Affine<RealT, 3> &affine)
   {
-    return cv::Affine3<RealT>(toCvMatx(affine.rotation()), toCvVec(affine.translation()));
+    const auto &t = affine.translation();
+    return cv::Affine3<RealT>(toCvMatx(affine.SRMatrix()), cv::Vec<RealT, 3>(t[0], t[1], t[2]));
   }
 
   //! Convert a cv::Rect to a Range. Swaps x/y → row/col via toPoint().

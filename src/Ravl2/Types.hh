@@ -3,6 +3,10 @@
 //
 
 #pragma once
+
+#include <cctype>
+#include <istream>
+#include <string_view>
 #include <optional>
 
 #ifndef CEREAL_THREAD_SAFE
@@ -84,7 +88,7 @@ namespace Ravl2
   }
 
   template< typename RealT>
-  std::span<RealT> span(const VectorT<RealT> &data)
+  std::span<const RealT> span(const VectorT<RealT> &data)
   {
     return std::span<const RealT>(data.data(), static_cast<std::size_t>(data.size()));
   }
@@ -205,6 +209,47 @@ namespace Ravl2
 
   //! Default formatting for converting Eigen matrices to strings
   [[nodiscard]] const Eigen::IOFormat &defaultEigenFormat();
+
+  //! Skip whitespace, then consume 'text' exactly (its own spaces match any whitespace); sets failbit otherwise.
+  //! For reading back the labels written by operator<< implementations, e.g. expectText(is, "Affine(SR=").
+  inline std::istream &expectText(std::istream &is, std::string_view text)
+  {
+    for(char want : text) {
+      if(std::isspace(static_cast<unsigned char>(want))) {
+        is >> std::ws;
+        continue;
+      }
+      is >> std::ws;
+      if(is.peek() != std::char_traits<char>::to_int_type(want)) {
+        is.setstate(std::ios::failbit);
+        return is;
+      }
+      is.get();
+    }
+    return is;
+  }
+
+  //! Read a fixed-size Eigen matrix or vector written with defaultEigenFormat() ("([1 2][3 4])"; a column vector
+  //! is "([1][2])"), or as plain whitespace-separated values in row-major order (Eigen's default output).
+  template <typename Derived>
+  std::istream &readEigen(std::istream &is, Eigen::MatrixBase<Derived> &mat)
+  {
+    is >> std::ws;
+    const bool formatted = is.peek() == '(';
+    if(formatted)
+      is.get();
+    for(Eigen::Index r = 0; r < mat.rows() && is; ++r) {
+      if(formatted)
+        expectText(is, "[");
+      for(Eigen::Index c = 0; c < mat.cols() && is; ++c)
+        is >> mat(r, c);
+      if(formatted)
+        expectText(is, "]");
+    }
+    if(formatted)
+      expectText(is, ")");
+    return is;
+  }
 
   template<typename T>
   struct is_eigen_type {

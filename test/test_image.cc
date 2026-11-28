@@ -539,6 +539,50 @@ namespace Ravl2
     CHECK(std::abs(rat[1] - 12.0f) < 0.5f);
   }
 
+  TEST_CASE("Small images: mirror borders and summed area tables")
+  {
+    // Mirroring used to need an image wider than the border, and read unwritten border otherwise.
+    Array<int, 2> img({2, 3});
+    for(int r = 0; r < 2; ++r)
+      for(int c = 0; c < 3; ++c)
+        img[r][c] = r * 10 + c;
+    Array<int, 2> mirrored;
+    extendImageMirror(mirrored, img, 4);
+    REQUIRE(mirrored.range() == img.range().expand(4));
+    // Columns reflect about the edge without repeating it: ... 0 1 2 1 | 0 1 2 | 1 0 1 2 ...
+    CHECK(mirrored[0][-1] == 1);
+    CHECK(mirrored[0][-2] == 2);
+    CHECK(mirrored[0][-3] == 1);
+    CHECK(mirrored[0][-4] == 0);
+    CHECK(mirrored[0][3] == 1);
+    CHECK(mirrored[0][4] == 0);
+    CHECK(mirrored[0][6] == 2);
+    // Rows likewise (two rows: 0 1 | 0 1 | 0 1 ...), corners included.
+    CHECK(mirrored[-1][0] == 10);
+    CHECK(mirrored[-2][0] == 0);
+    CHECK(mirrored[3][3] == 11);
+    // A 1-pixel image is replicated.
+    Array<int, 2> one({1, 1}, 7);
+    extendImageMirror(mirrored, one, 3);
+    CHECK(mirrored[-3][3] == 7);
+
+    // Summed area tables of images under 2x2 used to come back empty.
+    for(auto size : {Index<2>(1, 1), Index<2>(1, 5), Index<2>(4, 1), Index<2>(3, 3)}) {
+      Array<int, 2> small(IndexRange<2>({size[0], size[1]}));
+      int total = 0;
+      for(int r = 0; r < size[0]; ++r)
+        for(int c = 0; c < size[1]; ++c) {
+          small[r][c] = r * 7 + c + 1;
+          total += small[r][c];
+        }
+      auto table = SummedAreaTable<int>::buildTable(small);
+      CHECK(table.sum(small.range()) == total);
+      CHECK(table.sum(IndexRange<2>({{0, 0}, {0, 0}})) == small[0][0]);
+      // The row and column after the image repeat the totals.
+      CHECK(table[size[0]][size[1]] == total);
+    }
+  }
+
   TEST_CASE("imageExtend")
   {
     Array<int,2> img({3,3});

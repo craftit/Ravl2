@@ -30,6 +30,17 @@ may have relied on or worked around: check code that uses them.
   `RGBPlanarImage`/`RGBAPlanarImage`, which `dataType()` reported but was never what the frames held). 10/12-bit
   YUV is delivered as `YUV420Image<uint16_t>` scaled to the full 16-bit range (P010 frames were 64x too bright).
 - The FFmpeg writer tags YUV output as limited range BT.601 (`tv`, `smpte170m`), matching what it writes.
+- `FloodRegionC::GrowRegion(..., maxSize)` fails for regions larger than `maxSize` (false, or 0 and an empty
+  mask), stopping the flood there. It was ignored for boundaries, and masks were left partly unwritten.
+- `SummedAreaTable`: the extra row and column after the image hold the totals (they held running sums of the last
+  image column and row), which changes `sampleGrid()` at the far edges.
+- `extendImageMirror()`/`mirrorEdges()` work for any border width and image size, reflecting repeatedly
+  (`... 1 | 0 1 2 | 1 0 ...`); a 1-pixel image is replicated. They threw, or read unwritten border.
+- `ImagePyramid::findLevel()` picks the level with the closest per-axis scale (summed |log ratio|).
+- Geometry `operator>>` read back what `operator<<` writes: `Affine` (new), `LinePP`, `LinePV` (it read two points;
+  `<<` writes a point and a direction), `Plane3PVV`, `VectorOffset`, `Conic2`, `Ellipse`, `Projection`, `Moments2`.
+- **Breaking:** `Boundary::ConvexHull()` (declared, never defined) is replaced by `convexHull<RealT>(boundary)`,
+  returning a `Polygon`. The `Pixel` value constructor needs one value per channel.
 - `warpScale(result, image)` places enlarged samples corner to corner, step (in-1)/(out-1): the first and last
   output pixels sample the first and last image pixels. It threw `std::out_of_range` on every enlargement.
 - **Breaking:** array strides, `stride()`, `strides()` and origin offsets are `std::ptrdiff_t` (were `int`), and
@@ -108,6 +119,13 @@ may have relied on or worked around: check code that uses them.
   "Pinned dependencies" in `README_dependencies.md` for how to review and update them.
 
 ### Fixed
+- Templates that didn't compile when used: `forEachIndexFirst`, `fft2`, the double FFT (also not instantiated),
+  `span(const VectorT&)`, `Sums1d2C` streaming, `ArrayView<T,1>` from a vector, `PixelY8(uint8_t)` and other
+  one-channel pixels, `PinholeCameraArray::Triangulate` (its singularity test also rejected perpendicular rays
+  rather than parallel ones), `ImagePyramid::findLevel`, OpenCV `toAffine`/`toCvAffine`/`toCvMatx`, the geometry
+  `operator>>`s above, and `SegmentExtrema::apply(img, roi)`/`applyMask(img, roi)` (the callback overload captured
+  them; non-byte pixel types also failed to compile).
+- `SummedAreaTable::buildTable()` returned an empty table for images under 2x2.
 - `PlanarImage::range()` and subsampled plane ranges: an even-sized 4:2:0 image reported a range one row and column
   too big (the planes' coverage was unioned and rounded up), and conversions read past the chroma data.
 - Pixel channel conversions between integer types overflowed `int` for 16-bit values (undefined behaviour; wrong

@@ -9,6 +9,9 @@
 
 #pragma once
 
+#include <concepts>
+#include <type_traits>
+
 #include <memory>
 #include <cstdint>
 #include <spdlog/spdlog.h>
@@ -310,7 +313,7 @@ namespace Ravl2
     //! boundaries you can use its 'order()' method to sort them.
     std::vector<Boundary> apply(const Array<PixelT, 2> &img)
     {
-      if(typeid(PixelT) == typeid(uint8_t)) {// Should decided at compile time.
+      if constexpr(std::is_same_v<PixelT, uint8_t>) {
         sortPixelsByte(img);
       } else {
         sortPixels(img);
@@ -330,9 +333,11 @@ namespace Ravl2
     //!   size_t - Expected area of the region.
 
     template <typename CallbackT>
+      requires std::invocable<CallbackT &, const Index<2> &, int, uint32_t>
     void apply(const Array<PixelT, 2> &img, CallbackT &&callback)
     {
-      if constexpr(typeid(PixelT) == typeid(uint8_t)) {
+      // (Unconstrained, this overload also captured apply(img, roi), which then didn't compile.)
+      if constexpr(std::is_same_v<PixelT, uint8_t>) {
         sortPixelsByte(img);
       } else {
         sortPixels(img);
@@ -355,7 +360,7 @@ namespace Ravl2
     //! Generates labeled images.
     std::vector<Array<int, 2>> applyMask(const Array<PixelT, 2> &img)
     {
-      if(typeid(PixelT) == typeid(uint8_t))// Should decided at compile time.
+      if constexpr(std::is_same_v<PixelT, uint8_t>)
         sortPixelsByte(img);
       else
         sortPixels(img);
@@ -491,62 +496,47 @@ namespace Ravl2
   template <class PixelT>
   bool SegmentExtrema<PixelT>::sortPixels(const Array<PixelT, 2> &img, const IndexRangeSet<2> &roi)
   {
-
+    // (This overload, used by the ROI apply() and applyMask(), didn't compile: it used RAVL1 member names.)
     SetupImage(img.range());
 
-    // Find range of values in image.
-    bool first = true;
-    PixelT lmin = 0;
-    PixelT lmax = 0;
+    // Find the range of values inside the ROI.
+    mValueRange = IndexRange<1>::mostEmpty();
     for(auto rit : roi) {
       IndexRange<2> rng = rit;
-      rng.clipBy(img.range());
-      if(rng.area() < 1)
+      if(!rng.clipBy(img.range()) || rng.empty())
         continue;
-      auto it = clipUnsafe(img, rng).begin();
-      if(first) {
-        lmin = *it;
-        lmax = *it;
-        first = false;
-      }
-      for(; it.valid; ++it) {
-        if(*it < lmin)
-          lmin = *it;
-        if(*it > lmax)
-          lmax = *it;
-      }
+      auto window = clipUnsafe(img, rng);
+      for(auto it = window.begin(); it.valid(); ++it)
+        mValueRange.involve(int(*it));
     }
-    mValueRange.min() = int(lmin);
-    mValueRange.max() = int(lmax);
+    if(mValueRange.empty())
+      mValueRange = IndexRange<1>(0, 0);
     if(mValueRange.max() > mLimitMaxValue)
       mValueRange.max() = mLimitMaxValue;
-    //cerr << "SegmentExtrema<PixelT>::sortPixels, Value Range=" << mValueRange << "\n";
-    // Check level list allocation.
+    if(mValueRange.min() > mValueRange.max())
+      mValueRange.min() = mValueRange.max();
 
     if(!mLevels.range().contains(mValueRange))
       mLevels = Array<ExtremaChainPixel *, 1>(mValueRange.expand(2));
     fill(mLevels, nullptr);
 
-    // Clear chain image.
-
-    for(auto &it : clipUnsafe(mPixs, img.range())) {
-      it.Data().region = 0;
-      it.Data().next = 0;
+    // Pixels outside the ROI join no list, so they never start or join a region.
+    for(auto &pix : clipUnsafe(mPixs, img.range())) {
+      pix.mRegion = nullptr;
+      pix.mNext = nullptr;
     }
 
-    // Sort pixels into appropriate lists.
-
+    // Sort the ROI's pixels into lists by value.
     for(auto rit : roi) {
       IndexRange<2> rng = rit;
-      rng.clipBy(img.range());
-      if(rng.area() < 1)
+      if(!rng.clipBy(img.range()) || rng.empty())
         continue;
-      for(auto it = begin(clipUnsafe(img, rng), clipUnsafe(mPixs, rng)); it; it++) {
-        PixelT val = it.template data<0>();
+      for(auto it = zip(clipUnsafe(img, rng), clipUnsafe(mPixs, rng)); it.valid(); ++it) {
+        const int val = int(it.template data<0>());
         if(val > mLimitMaxValue)
           continue;
-        ExtremaChainPixel *&tmp = mLevels[val];
-        it.template data<1>().next = tmp;
+        auto &tmp = mLevels[val];
+        it.template data<1>().mNext = tmp;
         tmp = &it.template data<1>();
       }
     }
@@ -619,7 +609,7 @@ namespace Ravl2
   {
     std::vector<Array<int, 2>> ret;
     //cerr << " thresholds=" << region.nThresh << "\n";
-    for(int i = 0; i < region.mThresh.size(); i++) {
+    for(size_t i = 0; i < region.mThresh.size(); i++) {
       Array<int, 2> mask;
       if(mFlood.GrowRegion(region.mMinat, FloodRegionLessThanThresholdC<PixelT>(PixelT(region.mThresh[i].mThresh)), mask, 1))
         ret.push_back(mask);

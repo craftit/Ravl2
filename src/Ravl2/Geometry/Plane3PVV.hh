@@ -223,7 +223,9 @@ namespace Ravl2
     Point<RealT, 3> &p = plane.origin();
     Vector<RealT, 3> &v1 = plane.vector1();
     Vector<RealT, 3> &v2 = plane.vector2();
-    inS >> p >> v1 >> v2;
+    readEigen(inS, p);
+    readEigen(inS, v1);
+    readEigen(inS, v2);
     return (inS);
   }
   

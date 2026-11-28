@@ -217,10 +217,15 @@ namespace Ravl2
     Pixel() = default;
 
     //! Unpack from parameter pack.
+    //! (Braced-initialising the base didn't compile for one channel, e.g. PixelY8(uint8_t), since Eigen's 1x1
+    //! value constructor is explicit.)
     template <typename... Args>
+      requires(sizeof...(Args) == sizeof...(Channels))
     explicit Pixel(Args... args)
-        : Vector<CompT, IndexSizeT (sizeof...(Channels))>({CompT(args)...})
-    {}
+    {
+      Eigen::Index i = 0;
+      ((this->coeffRef(i++) = CompT(args)), ...);
+    }
 
     //! Construct from an initializer list
     Pixel(std::initializer_list<CompT> list)

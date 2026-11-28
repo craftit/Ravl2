@@ -104,15 +104,6 @@ namespace Ravl2
     //! reverse the order of the edges.
     Boundary &BReverse();
 
-    //! Compute the convex hull.
-    // The convex hull is created from the original Jordan boundary using
-    // Melkman's method.
-    // Ref.: A V Melkman. On-line construction of the convex hull of a
-    //                    simple polyline. Information Processing Letters,
-    //                    25(1):11-12, 1987.
-    // Ref.: M Sonka, V Hlavac: Image Processing.
-    [[nodiscard]] std::vector<std::vector<CrackC>> ConvexHull() const;
-
     //! Get the bounding box around all pixels on the inside edge of the boundary.
     [[nodiscard]] IndexRange<2> boundingBox() const;
 
@@ -230,6 +221,17 @@ namespace Ravl2
       polygon.push_back(toPoint<RealT>(et->vertexBegin()) + halfPixelOffset);
     }
     return polygon;
+  }
+
+  //! @brief Convex hull of a boundary, as a polygon through its pixel corners (like toPolygon()).
+  //! 'bnd' must be a single ordered boundary. (Replaces Boundary::ConvexHull(), which was declared but never
+  //! implemented, so calls failed to link.)
+  template <typename RealT = float>
+  [[nodiscard]] Polygon<RealT> convexHull(const Boundary &bnd)
+  {
+    const Polygon<RealT> outline = toPolygon<RealT>(bnd);
+    std::vector<Point<RealT, 2>> points(outline.begin(), outline.end());
+    return ConvexHull<RealT>(std::move(points));
   }
 
 }// namespace Ravl2

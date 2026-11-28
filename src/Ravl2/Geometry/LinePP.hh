@@ -221,17 +221,22 @@ namespace Ravl2
     return LinePP<RealT, N>(trans(line.P1()),trans(line.P2()));
   }
 
-  template <typename RealT, unsigned int N>
+  template <typename RealT, IndexSizeT N>
   inline std::ostream &operator<<(std::ostream &s, const LinePP<RealT, N> &dat)
   {
     s << "{ P1:" << Eigen::WithFormat(dat.FirstPoint(),defaultEigenFormat()) << " P2:" << Eigen::WithFormat(dat.SecondPoint(),defaultEigenFormat()) << " }";
     return s;
   }
 
-  template <typename RealT, unsigned int N>
+  //! Read what operator<< writes. (Declared with 'unsigned int N', so neither operator matched LinePP.)
+  template <typename RealT, IndexSizeT N>
   inline std::istream &operator>>(std::istream &s, LinePP<RealT, N> &dat)
   {
-    s >> dat.P1() >> dat.P2();
+    expectText(s, "{ P1:");
+    readEigen(s, dat.P1());
+    expectText(s, "P2:");
+    readEigen(s, dat.P2());
+    expectText(s, "}");
     return s;
   }
 

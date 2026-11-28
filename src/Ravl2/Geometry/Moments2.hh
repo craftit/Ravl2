@@ -342,8 +342,11 @@ namespace Ravl2
   template <class SumT>
   std::istream &operator>>(std::istream &is, Moments2<SumT> &mom)
   {
-    is >> mom.m00 >> mom.m10 >> mom.m01
-      >> mom.m20 >> mom.m11 >> mom.m02;
+    // (Read the private members directly, so it didn't compile.)
+    SumT m00 {}, m10 {}, m01 {}, m20 {}, m11 {}, m02 {};
+    is >> m00 >> m10 >> m01 >> m20 >> m11 >> m02;
+    if(is)
+      mom = Moments2<SumT>(m00, m10, m01, m20, m11, m02);
     return is;
   }
 

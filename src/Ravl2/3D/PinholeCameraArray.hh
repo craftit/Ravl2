@@ -69,64 +69,62 @@ namespace Ravl2
       return m_distortion;
     }
 
+    //! Triangulate a 3-D point from its image in two or more cameras.
+    //! @param pt3D Set to the point.
+    //! @param points (camera index, image point) pairs.
+    //! @return false for fewer than 2 points, a bad camera index, or (nearly) parallel first two rays.
+    //! The first two rays give a midpoint estimate, refined over all points by Gauss-Newton on image error.
+    //! (This was RAVL1 code that didn't compile, and its singularity test rejected perpendicular rays.)
     bool Triangulate(Vector<RealT, 3> &pt3D, const std::vector<std::tuple<unsigned, Vector<RealT, 2>>> &points) const
     {
-      int iNum = points.size();
-      if(iNum < 2) {
+      const auto numPoints = points.size();
+      if(numPoints < 2)
         return false;
-      }
+      for(const auto &point : points)
+        if(std::get<0>(point) >= m_cameras.size())
+          return false;
 
-      // Triangulate the first 2 points
-      std::tuple<unsigned, Vector<RealT, 2>> imgPt1 = points[0];
-      std::tuple<unsigned, Vector<RealT, 2>> imgPt2 = points[1];
-      auto orig1 = m_cameras[imgPt1.template data<0>()].origin();
-      auto orig2 = m_cameras[imgPt2.template data<0>()].origin();
+      // Midpoint of the closest approach of the first two rays.
+      const auto &cam1 = m_cameras[std::get<0>(points[0])];
+      const auto &cam2 = m_cameras[std::get<0>(points[1])];
+      const Vector<RealT, 3> orig1 = cam1.origin();
+      const Vector<RealT, 3> orig2 = cam2.origin();
       Vector<RealT, 3> dir1, dir2;
-      m_cameras[imgPt1.template data<0>()].inverseProjectDirection(dir1, imgPt1.template data<1>());
-      m_cameras[imgPt2.template data<0>()].inverseProjectDirection(dir2, imgPt2.template data<1>());
-      dir1.MakeUnit();
-      dir2.MakeUnit();
-      double dN1N2 = dir1.Dot(dir2);
-      // Check not singular
-      if(std::abs(dN1N2) < 1e-12) {
+      cam1.projectInverseDirection(dir1, std::get<1>(points[0]));
+      cam2.projectInverseDirection(dir2, std::get<1>(points[1]));
+      dir1.normalize();
+      dir2.normalize();
+      const RealT cosAngle = dir1.dot(dir2);
+      const RealT denom = RealT(1) - cosAngle * cosAngle;
+      if(denom < RealT(1e-12))
         return false;
-      }
-      Vector<RealT, 3> t = orig2 - orig1;
-      double d1 = t.Dot(dir1 - dir2 * dN1N2) / (1 - dN1N2 * dN1N2);
-      double d2 = t.Dot(dir1 * dN1N2 - dir2) / (1 - dN1N2 * dN1N2);
-      pt3D = (orig1 + dir1 * d1 + orig2 + dir2 * d2) * 0.5;
-      if(iNum == 2) {
+      const Vector<RealT, 3> t = orig2 - orig1;
+      const RealT d1 = t.dot(dir1 - dir2 * cosAngle) / denom;
+      const RealT d2 = t.dot(dir1 * cosAngle - dir2) / denom;
+      pt3D = ((orig1 + dir1 * d1) + (orig2 + dir2 * d2)) * RealT(0.5);
+      if(numPoints == 2)
         return true;
-      }
 
-      // Now minimise the image plane error to all points
-      MatrixT<RealT> J(2 * iNum, 3);
-      VectorT<RealT> Z(2 * iNum);
-      int it, iCam;
-      for(it = 0; it < 10; it++) {
-        // Construct residual vector and jacobian matrix
-        for(iCam = 0; iCam < iNum; iCam++) {
-          std::tuple<unsigned, Vector<RealT, 2>> imgPt1a = points[iCam];
-          // Get the jacobian
+      // Minimise the image error over all points.
+      Eigen::Matrix<RealT, Eigen::Dynamic, 3> J(2 * numPoints, 3);
+      Eigen::Matrix<RealT, Eigen::Dynamic, 1> residual(2 * numPoints);
+      for(int iter = 0; iter < 10; ++iter) {
+        for(size_t i = 0; i < numPoints; ++i) {
+          const auto &camera = m_cameras[std::get<0>(points[i])];
           Matrix<RealT, 2, 3> Jz;
-          m_cameras[imgPt1a.template data<0>()].projectJacobian(Jz, pt3D);
-          int i, j;
-          for(i = 0; i < 2; i++)
-            for(j = 0; j < 3; j++) J[2 * iCam + i][j] = Jz[i][j];
-          // Get the residual
-          Vector<RealT, 2> imgPt;
-          m_cameras[imgPt1a.template data<0>()].project(imgPt, pt3D);
-          Z[2 * iCam] = imgPt[0] - imgPt1a.template data<1>()[0];
-          Z[2 * iCam + 1] = imgPt[1] - imgPt1a.template data<1>()[1];
+          camera.projectJacobian(Jz, pt3D);
+          J.template block<2, 3>(Eigen::Index(2 * i), 0) = Jz;
+          Vector<RealT, 2> projected;
+          camera.project(projected, pt3D);
+          residual.template segment<2>(Eigen::Index(2 * i)) = projected - std::get<1>(points[i]);
         }
-        // Find the update to solve the least squares problem J*d=Z
-        MatrixT<RealT> JTJ = J.T() * J;
-        VectorT<RealT> JTZ = J.T() * Z;
-        JTJ.InverseIP();
-        VectorT<RealT> d = JTJ * JTZ;
-        pt3D -= Vector<RealT, 3>(d[0], d[1], d[2]);
+        const Vector<RealT, 3> step = (J.transpose() * J).ldlt().solve(J.transpose() * residual);
+        if(!step.allFinite())
+          break;
+        pt3D -= step;
+        if(step.norm() < RealT(1e-9) * (RealT(1) + pt3D.norm()))
+          break;
       }
-
       return true;
     }
 

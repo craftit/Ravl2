@@ -227,6 +227,22 @@ namespace Ravl2
     return os;
   }
 
+  //! @brief Read what operator<< writes.
+  template <typename DataT, unsigned N>
+  std::istream &operator>>(std::istream &is, Affine<DataT, N> &aff)
+  {
+    Matrix<DataT, N, N> sr;
+    Vector<DataT, N> t;
+    expectText(is, "Affine(SR=");
+    readEigen(is, sr);
+    expectText(is, ",T=");
+    readEigen(is, t);
+    expectText(is, ")");
+    if(is)
+      aff = Affine<DataT, N>(sr, t);
+    return is;
+  }
+
   extern template class Affine<float, 2>;
   extern template class Affine<float, 3>;
 

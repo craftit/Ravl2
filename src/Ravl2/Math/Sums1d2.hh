@@ -188,7 +188,7 @@ namespace Ravl2
   template <typename RealT>
   std::ostream &operator<<(std::ostream &s, const Sums1d2C<RealT> &mv)
   {
-    s << mv.size() << " " << mv.Sum() << " " << mv.Sum2();
+    s << mv.count() << " " << mv.sum() << " " << mv.sum2();
     return s;
   }
 

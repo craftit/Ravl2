@@ -48,48 +48,25 @@ namespace Ravl2
       SummedAreaTable<DataT> ret(Array<DataT, 2>(rng),in.range());
       DataT zero {};
       DrawFrame(ret, zero, rng);// We only really need the top row and left column cleared.
-      auto work = clipUnsafe(ret,in.range());
-      if(work.range().empty())
+      if(in.range().empty())
         return ret;
-      if(work.range().range(0).size() < 2 || work.range().range(1).size() < 2) {
-        SPDLOG_WARN("SummedAreaTable: Image too small to build table: {}", in.range());
-        ret = SummedAreaTable<DataT>();
-        return ret;
+      // table(r, c) = sum of in over [min0, r] x [min1, c]; the row and column before the image are 0, and the
+      // row and column after it repeat the last ones (no more area), for interpolation at the edge.
+      // (Images under 2x2 used to give an empty table, and the extra column and row held running sums of the
+      // last image column and row, not totals.)
+      const IndexRange<2> &img = in.range();
+      for(int r = img.min(0); r <= img.max(0); ++r) {
+        auto out = ret[r];
+        auto above = ret[r - 1];
+        auto src = in[r];
+        DataT rowSum {};
+        for(int c = img.min(1); c <= img.max(1); ++c) {
+          rowSum += DataT(src[c]);
+          out[c] = above[c] + rowSum;
+        }
+        out[img.max(1) + 1] = out[img.max(1)];
       }
-      Array2dSqr2Iter2C<DataT, InT> it(work, in);
-      // First pixel.
-      it.DataTL1() = DataT(it.DataTL2());
-      DataT rowSum = DataT(it.DataBL2());
-      it.DataBL1() = it.DataTL1() + rowSum;
-      // Do first row.
-      do {
-        it.DataTR1() = it.DataTL1() + DataT(it.DataTR2());
-        rowSum += DataT(it.DataBR2());
-        it.DataBR1() = it.DataTR1() + rowSum;
-      } while(it.next());
-      // Do rest of image.
-      for(; it.valid();) {
-        // Do beginning of row thing.
-        rowSum = DataT(it.DataBL2());
-        it.DataBL1() = it.DataTL1() + rowSum;
-        // Do rest of row.
-        do {
-          rowSum += DataT(it.DataBR2());
-          it.DataBR1() = it.DataTR1() + rowSum;
-        } while(it.next());
-      }
-      // Copy the last column with a copy of the last element of each row.
-      rowSum = ret[ret.range().min(0)][ret.range().max(1)];
-      for(int i = ret.range().min(0)+1; i < ret.range().max(0); i++) {
-        rowSum += DataT(in[i][in.range().max(1)]);
-        ret[i][ret.range().max(1)] = ret[i-1][ret.range().max(1)] + rowSum;
-      }
-      // Fill in final row.
-      rowSum = ret[ret.range().max(0)][ret.range().min(1)];
-      for(int i = ret.range().min(1)+1; i < ret.range().max(1); i++) {
-        rowSum += DataT(in[in.range().max(0)][i]);
-        ret[ret.range().max(0)][i] = ret[ret.range().max(0)][i-1] + rowSum;
-      }
+      copy(ret[img.max(0) + 1], ret[img.max(0)]);
       return ret;
     }
 

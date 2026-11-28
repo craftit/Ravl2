@@ -430,9 +430,18 @@ namespace Ravl2
         throw std::out_of_range("requested range is outside that of the original array");
     }
 
-    explicit constexpr ArrayView(const std::vector<DataT> &vec)
+    //! View a vector's elements. (This took 'const std::vector<DataT> &', which compiled for neither a const
+    //! view (vector<const T> is invalid) nor a mutable one (the vector's data is const).)
+    explicit constexpr ArrayView(std::vector<std::remove_const_t<DataT>> &vec)
         : m_data(vec.data()),
-          m_range(vec.size())
+          m_range(0, int(vec.size()) - 1)
+    {}
+
+    //! View a const vector's elements; only for views of const elements.
+    explicit constexpr ArrayView(const std::vector<std::remove_const_t<DataT>> &vec)
+      requires std::is_const_v<DataT>
+        : m_data(vec.data()),
+          m_range(0, int(vec.size()) - 1)
     {}
 
     explicit constexpr ArrayView(DataT *data, const IndexRange<1> &range)

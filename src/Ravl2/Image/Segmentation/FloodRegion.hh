@@ -5,6 +5,8 @@
 // see http://www.gnu.org/copyleft/lesser.html
 // file-header-ends-here
 #pragma once
+
+#include <limits>
 //! author="Charles Galambos, based on code by Jiri Matas."
 
 #include <queue>
@@ -122,7 +124,7 @@ namespace Ravl2
     //! @param seed The seed pixel to start the region growing from.
     //! @param inclusionTest The test to determine if a pixel is included in the region.
     //! @param boundary The boundary of the region.
-    //! @param maxSize The maximum size of the region to grow. (0 = no limit)
+    //! @param maxSize The maximum size of the region to grow; larger regions fail. (0 = no limit)
     //! @return true if the boundary has a non zero area.
     template <typename InclusionTestT>
     bool GrowRegion(const Index<2> &seed, InclusionTestT &&inclusionTest, Boundary &boundary, size_t maxSize = 0);
@@ -132,7 +134,7 @@ namespace Ravl2
     //! @param inclusionTest The test to determine if a pixel is included in the region.
     //! @param mask The mask image of the region that will be generated.
     //! @param padding The padding to add to the mask.
-    //! @param maxSize The maximum size of the region to grow. (0 = no limit)
+    //! @param maxSize The maximum size of the region to grow; larger regions give an empty mask and 0. (0 = no limit)
     //! @return The size of the region.
     template <typename MaskT, typename InclusionTestT>
     size_t GrowRegion(const Index<2> &seed, InclusionTestT &&inclusionTest, Array<MaskT, 2> &mask, unsigned padding = 0, size_t maxSize = 0);
@@ -152,7 +154,8 @@ namespace Ravl2
   private:
     //! Base grow region routine.
     template <typename InclusionTestT>
-    bool BaseGrowRegion(const Index<2> &seed, InclusionTestT &&inclusionTest, IndexRange<2> &rng);
+    //! @param maxSize Stop and return false once the region has more than this many pixels (0 = no limit).
+    bool BaseGrowRegion(const Index<2> &seed, InclusionTestT &&inclusionTest, IndexRange<2> &rng, size_t maxSize = 0);
 
     Array<PixelT, 2> img;
     Array<int, 2> marki;
@@ -165,7 +168,7 @@ namespace Ravl2
 
   template <class PixelT>
   template <typename InclusionTestT>
-  bool FloodRegionC<PixelT>::BaseGrowRegion(const Index<2> &seed, InclusionTestT &&inclusionTest, IndexRange<2> &rng)
+  bool FloodRegionC<PixelT>::BaseGrowRegion(const Index<2> &seed, InclusionTestT &&inclusionTest, IndexRange<2> &rng, size_t maxSize)
   {
     RavlAssert(img.range().contains(seed));
     if(!inclusionTest(img[seed]))
@@ -192,6 +195,8 @@ namespace Ravl2
     }
 
     int l = 0;
+    size_t marked = 0;
+    const size_t limit = maxSize > 0 ? maxSize : std::numeric_limits<size_t>::max();
     while(!pixQueue.empty()) {
       // Pop next line to examine off the stack.
       FloodRegionLineC line = pixQueue.front();
@@ -211,6 +216,8 @@ namespace Ravl2
       int c;
       for(c = lsc; c >= imgCols.min() && (mrow[c] != id) && inclusionTest(irow[c]); c--) {
         mrow[c] = id;
+        if(++marked > limit)
+          return false;
       }
 
       if(c >= lsc)
@@ -227,8 +234,11 @@ namespace Ravl2
       c = lsc + 1;
 
       do {
-        for(; c <= imgCols.max() && (mrow[c] != id) && inclusionTest(irow[c]); c++)
+        for(; c <= imgCols.max() && (mrow[c] != id) && inclusionTest(irow[c]); c++) {
           mrow[c] = id;
+          if(++marked > limit)
+            return false;
+        }
         rng.range(1).involve(c);
 
         {
@@ -253,10 +263,11 @@ namespace Ravl2
 
   template <class PixelT>
   template <class InclusionTestT>
-  bool FloodRegionC<PixelT>::GrowRegion(const Index<2> &seed, InclusionTestT &&inclusionTest, Boundary &boundary, [[maybe_unused]] size_t maxSize)
+  bool FloodRegionC<PixelT>::GrowRegion(const Index<2> &seed, InclusionTestT &&inclusionTest, Boundary &boundary, size_t maxSize)
   {
+    // maxSize stops the flood (it was ignored here, and the mask version checked only after flooding everything).
     IndexRange<2> rng;
-    if(!BaseGrowRegion(seed, inclusionTest, rng) || rng.area() <= 0) {
+    if(!BaseGrowRegion(seed, inclusionTest, rng, maxSize) || rng.area() <= 0) {
       boundary = Boundary();
       return false;
     }
@@ -272,7 +283,7 @@ namespace Ravl2
   {
     IndexRange<2> rng;
 
-    if(!BaseGrowRegion(seed, inclusionTest, rng)) {
+    if(!BaseGrowRegion(seed, inclusionTest, rng, maxSize)) {
       mask = Array<MaskT, 2>();
       return 0;
     }
@@ -287,8 +298,6 @@ namespace Ravl2
       if(it.template data<1>() == id) {
         size++;
         it.template data<0>() = 1;
-        if(size > maxSize && maxSize > 0)
-          break;
       } else
         it.template data<0>() = 0;
     }

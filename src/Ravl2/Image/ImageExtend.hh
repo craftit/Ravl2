@@ -120,32 +120,36 @@ namespace Ravl2
     if(n == 0) {
       return;
     }
-    assert(result.range().size(0) >= int(n) && result.range().size(1) >= int(n));
     const IndexRange<2> rect = result.range();
     const IndexRange<2> imageRange = rect.shrink(int(n));
-    // Take care of border
-    // Extend rows first.
+    if(imageRange.empty())
+      throw std::runtime_error("mirrorEdges: no image inside the border.");
+    // Mirror about the edge pixels without repeating them (... 2 1 | 0 1 2 ... ), reflecting again as often as
+    // needed, so borders wider than the image work; a 1-pixel image is replicated. (This used to read past the
+    // image, into unwritten border, unless the image was wider than the border.)
+    auto reflect = [](int i, const IndexRange<1> &range) {
+      const int size = range.size();
+      if(size == 1)
+        return range.min();
+      const int period = 2 * (size - 1);
+      int m = (i - range.min()) % period;
+      if(m < 0)
+        m += period;
+      return range.min() + (m < size ? m : period - m);
+    };
+    // Left and right borders of the image rows.
     for(int r = imageRange.min(0); r <= imageRange.max(0); r++) {
-      DataT *org1 = &(result[r][imageRange.min(1)]);
-      DataT *org2 = &(result[r][imageRange.max(1)]);
-      DataT *at1 = org1 - 1;
-      DataT *at2 = org2 + 1;
-      org1++;
-      org2--;
-      DataT *end2 = &(at2[n]);
-      for(; at2 < end2; at1--, at2++, org1++, org2--) {
-        *at1 = *org1;
-        *at2 = *org2;
-      }
+      auto row = result[r];
+      for(int c = rect.min(1); c < imageRange.min(1); c++)
+        row[c] = row[reflect(c, imageRange.range(1))];
+      for(int c = imageRange.max(1) + 1; c <= rect.max(1); c++)
+        row[c] = row[reflect(c, imageRange.range(1))];
     }
-    // Take care of top and bottom of image.
-    int ra1 = imageRange.min(0);
-    int ra2 = ra1 - 1;
-    int rb1 = imageRange.max(0);
-    int rb2 = rb1 + 1;
-    for(ra1++, rb1--; rb2 <= rect.max(0); ra1++, ra2--, rb1--, rb2++) {
-      copy(result[ra2], result[ra1]);
-      copy(result[rb2], result[rb1]);
+    // Top and bottom borders: whole rows, corners included.
+    for(int r = rect.min(0); r <= rect.max(0); r++) {
+      if(imageRange.range(0).contains(r))
+        continue;
+      copy(result[r], result[reflect(r, imageRange.range(0))]);
     }
   }
 
@@ -157,9 +161,9 @@ namespace Ravl2
   template <class DataT>
   void extendImageMirror(Array<DataT, 2> &result, const Array<DataT, 2> &image, unsigned n)
   {
-    if(image.range(0).size() < int(n) || image.range(1).size() < int(n)) {
-      SPDLOG_WARN("Image too small to mirror.");
-      throw std::runtime_error("Image too small to mirror.");
+    if(image.range().empty()) {
+      SPDLOG_WARN("Can't mirror an empty image.");
+      throw std::runtime_error("Can't mirror an empty image.");
     }
     const IndexRange<2> rect = image.range().expand(int(n));
     resizeArray(result, rect);

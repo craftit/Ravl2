@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include <cmath>
 #include "Ravl2/Geometry/ScaleTranslate.hh"
 #include "Ravl2/Image/WarpScale.hh"
 #include "Ravl2/Image/SummedAreaTable.hh"
@@ -119,17 +120,22 @@ namespace Ravl2
     //! Find the pyramid level that best matches the scale and translation.
     //! @param target Target scale.
     //! @return The pyramid level that best matches the scale and translation.
-    [[nodiscard]] constexpr const PyramidLevel<ImageT, TransformT> &findLevel(const TransformT &target) const
+    [[nodiscard]] const PyramidLevel<ImageT, TransformT> &findLevel(const TransformT &target) const
     {
       if(mLevels.empty()) {
         throw std::runtime_error("ImagePyramid::findLevel: No levels in the pyramid.");
       }
+      // Closest scale, measured as the summed |log| of the per-axis scale ratios (so 2x too big and 2x too small
+      // are equally far). (This called a nonexistent transform() and didn't compile; it also compared
+      // |1 - norm(ratio)|, which is sqrt(2) - 1 for an exact 2-D match.)
       float best = std::numeric_limits<float>::max();
-      const PyramidLevel<ImageT> *bestLevel = nullptr;
+      const PyramidLevel<ImageT, TransformT> *bestLevel = nullptr;
       for(const auto &level : mLevels) {
-        const auto &levelScale = level.transform().scaleVector();
-        auto reScale = (levelScale.scale() / target.scale());
-        float diff = std::abs(1 - reScale.norm());
+        const auto levelScale = level.transformTo().scaleVector();
+        const auto targetScale = target.scaleVector();
+        float diff = 0;
+        for(Eigen::Index i = 0; i < levelScale.size(); ++i)
+          diff += std::abs(std::log(float(levelScale[i]) / float(targetScale[i])));
         if(diff < best) {
           best = diff;
           bestLevel = &level;

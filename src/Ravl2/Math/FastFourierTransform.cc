@@ -32,4 +32,10 @@ namespace Ravl2
   template void fastFourierTransform(std::span<std::complex<float>> result, std::span<const std::complex<float>> data);
   template void inverseFastFourierTransform(std::span<std::complex<float>> result, std::span<const std::complex<float>> data);
 
+  //! And double (the declarations allowed it, but there was no definition to link to).
+  template void fastFourierTransform(std::span<std::complex<double>> result, std::span<const double> data);
+  template void inverseFastFourierTransform(std::span<std::complex<double>> result, std::span<const double> data);
+  template void fastFourierTransform(std::span<std::complex<double>> result, std::span<const std::complex<double>> data);
+  template void inverseFastFourierTransform(std::span<std::complex<double>> result, std::span<const std::complex<double>> data);
+
 }// namespace Ravl2

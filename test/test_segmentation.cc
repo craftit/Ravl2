@@ -221,6 +221,46 @@ namespace Ravl2
     CHECK(colMap[3][0] != colMap[2][0]);
   }
 
+  TEST_CASE("FloodRegion maxSize and small images")
+  {
+    Array<int, 2> img({10, 10}, 99);
+    fill(clip(img, img.range().shrink(2)), 10);// 6x6 = 36 pixels below threshold
+    FloodRegionC<int> flood(img);
+    // maxSize stops the flood: it used to be ignored for boundaries and left masks partly unwritten.
+    Boundary boundary;
+    CHECK(flood.GrowRegion(toIndex(5, 5), FloodRegionLessThanThresholdC(15), boundary, 36));
+    CHECK_FALSE(flood.GrowRegion(toIndex(5, 5), FloodRegionLessThanThresholdC(15), boundary, 35));
+    Array<int, 2> mask;
+    CHECK(flood.GrowRegion(toIndex(5, 5), FloodRegionLessThanThresholdC(15), mask, 0, 36) == 36);
+    CHECK(flood.GrowRegion(toIndex(5, 5), FloodRegionLessThanThresholdC(15), mask, 0, 35) == 0);
+    CHECK(mask.range().empty());
+
+    // 1x1 images.
+    Array<int, 2> one({1, 1}, 5);
+    FloodRegionC<int> floodOne(one);
+    CHECK(floodOne.GrowRegion(toIndex(0, 0), FloodRegionLessThanThresholdC(15), mask) == 1);
+    Array<unsigned, 2> oneLabel({1, 1}, 3u);
+    ConnectedComponents<unsigned> cc;
+    auto [map, count] = cc.apply(oneLabel);
+    CHECK(count == 2);
+  }
+
+  TEST_CASE("Convex hull of a boundary")
+  {
+    // An L shape: its hull cuts across the inner corner. (Boundary::ConvexHull() was declared but never defined.)
+    Array<int, 2> img({8, 8}, 99);
+    fill(clip(img, IndexRange<2>({{1, 5}, {1, 2}})), 10);
+    fill(clip(img, IndexRange<2>({{4, 5}, {1, 5}})), 10);
+    FloodRegionC<int> flood(img);
+    Boundary boundary;
+    REQUIRE(flood.GrowRegion(toIndex(2, 1), FloodRegionLessThanThresholdC(15), boundary));
+    const auto outline = toPolygon<float>(boundary.orderEdges().front());
+    const auto hull = convexHull<float>(boundary.orderEdges().front());
+    CHECK(hull.size() < outline.size());
+    CHECK(std::abs(hull.area()) > std::abs(outline.area()));
+    CHECK((hull.isConvex(BoundaryOrientationT::INSIDE_LEFT) || hull.isConvex(BoundaryOrientationT::INSIDE_RIGHT)));
+  }
+
   TEST_CASE("Segmentation adjacency and boundary lengths count every edge")
   {
     // Column of label 1 next to label 2: the first window of each row used to be skipped.

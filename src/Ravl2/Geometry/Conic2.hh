@@ -187,7 +187,7 @@ namespace Ravl2
   std::istream &operator>>(std::istream &s, Conic2<RealT> &obj)
   {
     Vector<RealT, 6> p;
-    s >> p;
+    readEigen(s, p);
     obj = Conic2(p);
     return s;
   }

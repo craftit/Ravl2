@@ -170,7 +170,7 @@ GL notes: GL-1/GL-2 were checked by build and reading only (no display here).
 ## Gaps
 
 - [ ] **GAP-1** Region growing stack (`RegionGrow*.hh`, `RegionSet.hh`, `SegmentRegion.hh`, `PixelClassify*`, `PixelSelectStack`, `BlueScreen`, `ChromaThreshold`) is unported RAVL1 code, not built.
-- [ ] **GAP-2** Templates that don't compile when instantiated: `forEachIndexFirst`, `fft2`/`fftgr` for double, `Types.hh:87` `span(const Vector&)`, `Sums1d2 operator<<`, `ArrayView<T,1>(const vector&)`, `PixelY8(uint8_t)`, `PinholeCameraArray::Triangulate`, `ImagePyramid::findLevel`, OpenCV `toAffine`/`toCvAffine`, several geometry `operator<<`/`>>`, SegmentExtrema ROI overloads.
+- [x] **GAP-2** Templates that don't compile when instantiated: `forEachIndexFirst`, `fft2`/`fftgr` for double, `Types.hh:87` `span(const Vector&)`, `Sums1d2 operator<<`, `ArrayView<T,1>(const vector&)`, `PixelY8(uint8_t)`, `PinholeCameraArray::Triangulate`, `ImagePyramid::findLevel`, OpenCV `toAffine`/`toCvAffine`, several geometry `operator<<`/`>>`, SegmentExtrema ROI overloads. *(Done; `test/test_instantiation.cc` uses each. `Geometry/LinePP3d.hh` is unported RAVL1 code, included by nothing; left as is.)*
 - [ ] **GAP-3** *(install/export of the core done — see README_building.md; shared libs and static registration remain)* Build: install/export of library targets is a stub; `BUILD_SHARED_LIBS` not viable (no export macros, shared `Ravl2Core_export.hpp`); static link drops PSO/Bayes/RandomSearch registration.
 - [ ] **GAP-4** Video: ~~no sws_scale fallback for unsupported pixel formats (ProRes, gbrp, gray16, …); no `YUV420Image<uint16_t>` plan; grey video unreadable~~ (done: swscale fallback, full-range YUV, plans for every delivered type; also fixed limited/full range handling both ways, P010 brightness, PlanarImage ranges, 16-bit pixel conversion overflow). Remaining: `previous()` unimplemented; RavlIO video ignores `pos`; no audio/Frame via RavlIO; writer assumes sample rate; YUV is delivered in the file's matrix (BT.709 for HD), while RAVL2's YUV conversions assume BT.601.
 - [ ] **GAP-5** OpenCV IO: video/camera input only single-channel and reuses one buffer; RGBA loads drop alpha; 16-bit colour unsupported.
@@ -179,7 +179,7 @@ GL notes: GL-1/GL-2 were checked by build and reading only (no display here).
 - [ ] **GAP-8** Config: `checkAllFieldsUsed()` is an empty stub.
 - [ ] **GAP-9** JSON cereal unregistered/untested; probe reads only 256 bytes.
 - [ ] **GAP-10** Display: 3D view scaffolding only; no keyboard input on bgfx path; SDL fallback effectively dead; several plot options stored but unused; status bar stub. OpenGL module uses fixed-function GL in a core-profile context.
-- [ ] **GAP-11** Image: small images (1-wide, smaller than kernel) not handled in SummedAreaTable, ConnectedComponents, extendImageMirror; `Boundary::ConvexHull` undeclared; `FloodRegion` maxSize handling.
+- [x] **GAP-11** Image: small images (1-wide, smaller than kernel) not handled in SummedAreaTable, ConnectedComponents, extendImageMirror; `Boundary::ConvexHull` undeclared; `FloodRegion` maxSize handling. *(Done; ConnectedComponents thin images were already fixed. `Boundary::ConvexHull` replaced by `convexHull()`.)*
 - [ ] **GAP-12** Tests: no coverage for the cases above; tests that encode bugs (MeanVariance `i % 1`, PeakDetector, ConnectedComponents, Bayesian domain); `test_geometry.cc:610,687` nondeterministic seeds; Display URL parsing untested.
 
 ## Improvements

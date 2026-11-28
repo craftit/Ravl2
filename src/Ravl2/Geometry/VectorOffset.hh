@@ -123,7 +123,8 @@ namespace Ravl2
   {
     Vector<RealT,N> norm;
     RealT d;
-    inS >> norm >> d;
+    readEigen(inS, norm);
+    inS >> d;
     plane = VectorOffset<RealT,N>(norm, d);
     return (inS);
   }

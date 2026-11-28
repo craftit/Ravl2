@@ -70,5 +70,9 @@ namespace Ravl2
   extern template void inverseFastFourierTransform(std::span<std::complex<float>> result, std::span<const float> data);
   extern template void fastFourierTransform(std::span<std::complex<float>> result, std::span<const std::complex<float>> data);
   extern template void inverseFastFourierTransform(std::span<std::complex<float>> result, std::span<const std::complex<float>> data);
+  extern template void fastFourierTransform(std::span<std::complex<double>> result, std::span<const double> data);
+  extern template void inverseFastFourierTransform(std::span<std::complex<double>> result, std::span<const double> data);
+  extern template void fastFourierTransform(std::span<std::complex<double>> result, std::span<const std::complex<double>> data);
+  extern template void inverseFastFourierTransform(std::span<std::complex<double>> result, std::span<const std::complex<double>> data);
 
 }// namespace Ravl2

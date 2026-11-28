@@ -339,7 +339,14 @@ namespace Ravl2
   template <typename RealT, unsigned N>
   std::istream &operator>>(std::istream &s, Projection<RealT, N> &proj)
   {
-    s >> proj.Matrix() >> proj.IZ() >> proj.OZ();
+    // Read what operator<< writes. (Called a nonexistent Matrix().)
+    expectText(s, "Projection(");
+    readEigen(s, proj.matrix());
+    expectText(s, "iz=");
+    s >> proj.IZ();
+    expectText(s, "oz=");
+    s >> proj.OZ();
+    expectText(s, ")");
     return s;
   }
 
