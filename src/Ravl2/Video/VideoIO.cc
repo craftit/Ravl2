@@ -17,6 +17,9 @@
 #include "Ravl2/Pixel/Colour.hh"               // Colour conversions & registration
 #if defined(HAVE_FFMPEG)
 #include "Ravl2/Video/FfmpegMediaWriter.hh"
+#include "Ravl2/Video/CaptureDevice.hh"
+#include "Ravl2/Video/LatestFrameReader.hh"
+#include <fmt/format.h>
 #endif
 
 namespace Ravl2::Video
@@ -35,7 +38,8 @@ namespace Ravl2::Video
     template <typename ImageT>
     std::optional<StreamInputPlan> makePlanForType(const ProbeInputContext &ctx,
                                                    const std::shared_ptr<MediaContainer> &/*container*/, // reserved for future use
-                                                   const std::shared_ptr<StreamIterator> &iterator)
+                                                   const std::shared_ptr<StreamIterator> &iterator,
+                                                   bool latestOnly)
     {
       if (iterator->dataType() != typeid(ImageT)) {
         return std::nullopt; // Not this underlying type.
@@ -54,6 +58,25 @@ namespace Ravl2::Video
           }
           return std::nullopt; // Can't satisfy requested type with this base.
         }
+      }
+
+      if (latestOnly)
+      {
+        // Live capture: a background thread keeps only the newest frame, so a slow reader gets the latest
+        // image rather than a backlog. The reader (and its thread) lives as long as the stream.
+        auto reader = std::make_shared<LatestFrameReader>(iterator);
+        auto stream = std::make_shared<StreamInputCall<ImageT>>(
+          [reader](std::streampos &pos) -> std::optional<ImageT>
+          {
+            (void)pos;
+            auto vf = std::dynamic_pointer_cast<FrameData<ImageT>>(reader->next());
+            if (!vf)
+              return std::nullopt;
+            return vf->data();
+          });
+        if (convChain)
+          return StreamInputPlan{stream, *convChain, convChain->conversionLoss()};
+        return StreamInputPlan{stream, {}, 1.0f};
       }
 
       // StreamInputCall simply yields successive frames as ImageT objects.
@@ -100,21 +123,22 @@ namespace Ravl2::Video
     // Try a list of known planar / packed image representations.
     std::optional<StreamInputPlan> buildFfmpegVideoPlan(const ProbeInputContext &ctx,
                                                         const std::shared_ptr<MediaContainer> &container,
-                                                        const std::shared_ptr<StreamIterator> &iterator)
+                                                        const std::shared_ptr<StreamIterator> &iterator,
+                                                        bool latestOnly = false)
     {
       if(ctx.mVerbose) {
         SPDLOG_INFO("FFmpeg: Building video plan for iterator type {} ",Ravl2::typeName(iterator->dataType()));
       }
       // Every type the FFmpeg iterator can deliver (see planVideo() in FfmpegMultiStreamIterator.cc).
-      if (auto p = makePlanForType<YUV420Image<uint8_t>>(ctx, container, iterator)) return p;
-      if (auto p = makePlanForType<YUV420Image<uint16_t>>(ctx, container, iterator)) return p;
-      if (auto p = makePlanForType<YUV422Image<uint8_t>>(ctx, container, iterator)) return p;
-      if (auto p = makePlanForType<YUV444Image<uint8_t>>(ctx, container, iterator)) return p;
-      if (auto p = makePlanForType<Array<PixelRGB8,2>>(ctx, container, iterator)) return p;
-      if (auto p = makePlanForType<Array<PixelRGBA8,2>>(ctx, container, iterator)) return p;
-      if (auto p = makePlanForType<Array<PixelYUYV8,2>>(ctx, container, iterator)) return p;
-      if (auto p = makePlanForType<Array<PixelUYVY8,2>>(ctx, container, iterator)) return p;
-      if (auto p = makePlanForType<Array<PixelI8,2>>(ctx, container, iterator)) return p;
+      if (auto p = makePlanForType<YUV420Image<uint8_t>>(ctx, container, iterator, latestOnly)) return p;
+      if (auto p = makePlanForType<YUV420Image<uint16_t>>(ctx, container, iterator, latestOnly)) return p;
+      if (auto p = makePlanForType<YUV422Image<uint8_t>>(ctx, container, iterator, latestOnly)) return p;
+      if (auto p = makePlanForType<YUV444Image<uint8_t>>(ctx, container, iterator, latestOnly)) return p;
+      if (auto p = makePlanForType<Array<PixelRGB8,2>>(ctx, container, iterator, latestOnly)) return p;
+      if (auto p = makePlanForType<Array<PixelRGBA8,2>>(ctx, container, iterator, latestOnly)) return p;
+      if (auto p = makePlanForType<Array<PixelYUYV8,2>>(ctx, container, iterator, latestOnly)) return p;
+      if (auto p = makePlanForType<Array<PixelUYVY8,2>>(ctx, container, iterator, latestOnly)) return p;
+      if (auto p = makePlanForType<Array<PixelI8,2>>(ctx, container, iterator, latestOnly)) return p;
 
       // Fallback: not a type we currently adapt explicitly.
       if(ctx.mVerbose) {
@@ -186,30 +210,44 @@ namespace Ravl2::Video
     ));
 
 
-        // Register FFmpeg-based video input loader (similar style to OpenCV/ImageIO.cc video handlers).
-    // Priority kept modest (-2) so that specialised handlers can override if needed.
+        // Live capture: camera://<device>[?size=WxH&fps=N&format=NAME&latest=1]; see CaptureDevices.md.
+    // Priority 0, above OpenCV's camera handler (-1), so device paths, indices and options all come here first;
+    // OpenCV remains the fallback for a bare index when FFmpeg can't open the device.
     [[maybe_unused]] bool g_regFfmpegCapture = inputFormatMap().add(std::make_shared<InputFormatCall>(
       "FFmpegCapture",
       "",
       "camera",
-      -2,
+      0,
       [](const ProbeInputContext &ctx) -> std::optional<StreamInputPlan>
       {
         if (ctx.mVerbose) {
           SPDLOG_INFO("FFmpeg: probing '{}' target {}", ctx.mFilename, typeName(ctx.mTargetType));
         }
 
-        Ravl2::Video::DeviceParameters params;
-        params.devicePath = ctx.mFilename;
+        // Malformed options throw std::invalid_argument naming the option.
+        const CaptureRequest request = parseCaptureUrl(ctx.mFilename);
+        const DeviceParameters &params = request.device;
+        const bool requested = params.width > 0 || params.frameRate > 0 || !params.pixelFormat.empty();
 
-        SPDLOG_INFO("Opening : {}   Verbose={} ", ctx.mFilename,ctx.mVerbose);
-        // Attempt open.
+        // Check the request against what the device offers before opening, so a refusal names the option.
+        const auto modes = listCaptureModes(params.devicePath);
+        if (requested) {
+          if (auto refusal = checkCaptureRequest(modes, params))
+            throw std::invalid_argument(*refusal);
+        }
+
         auto openRes = FfmpegMediaContainer::openDevice(params);
         if (!openRes.isSuccess())
         {
+          if (requested) {
+            // The device exists but didn't give what was asked for; don't let another handler silently ignore it.
+            throw std::invalid_argument(fmt::format("Capture device '{}' couldn't be opened as requested ({}).{}", params.devicePath,
+                                                    toString(openRes.error()),
+                                                    modes.empty() ? std::string() : "\nIt offers:\n" + describeCaptureModes(modes)));
+          }
           if (ctx.mVerbose)
-            SPDLOG_DEBUG("FFmpeg: openFile failed code {}", static_cast<int>(openRes.error()));
-          return std::nullopt; // Allow other formats to try.
+            SPDLOG_INFO("FFmpeg: could not open capture device '{}': {}", params.devicePath, toString(openRes.error()));
+          return std::nullopt; // Allow other handlers (OpenCV for an index) to try.
         }
         auto container = std::static_pointer_cast<MediaContainer>(openRes.value());
 
@@ -239,7 +277,7 @@ namespace Ravl2::Video
         auto iterator = iterRes.value();
 
         // Build plan around iterator & initial frame.
-        auto plan = buildFfmpegVideoPlan(ctx, container, iterator);
+        auto plan = buildFfmpegVideoPlan(ctx, container, iterator, request.latestOnly);
         if (!plan)
         {
           if (ctx.mVerbose) {

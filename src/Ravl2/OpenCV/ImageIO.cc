@@ -17,6 +17,9 @@
 #include "Ravl2/Pixel/Colour.hh"
 #include "Ravl2/OpenCV/Display.hh"
 
+#include <algorithm>
+#include <cctype>
+
 namespace Ravl2
 {
   void initOpenCVImageIO()
@@ -226,6 +229,13 @@ namespace Ravl2
         case CV_64FC1: {
           thePlan = conversionPlan<double>(ctx);
         } break;
+        // Colour capture (OpenCV delivers BGR); these weren't handled, so colour cameras couldn't be read.
+        case CV_8UC3: {
+          thePlan = conversionPlan<PixelBGR8>(ctx);
+        } break;
+        case CV_8UC4: {
+          thePlan = conversionPlan<PixelBGRA8>(ctx);
+        } break;
         default: break;
       }
 
@@ -244,12 +254,14 @@ namespace Ravl2
           isFirst = false;
           return firstFrame;
         }
-        videoCapture >> firstFrame;
-        if(firstFrame.empty()) {
+        // A new Mat each time: reading into the one already returned overwrote images the caller still held.
+        cv::Mat frame;
+        videoCapture >> frame;
+        if(frame.empty()) {
           SPDLOG_TRACE("Failed to read frame from video stream.");
           return std::nullopt;
         }
-        return firstFrame;
+        return frame;
       });
       return StreamInputPlan {strm, thePlan.value(), thePlan.value().conversionLoss()};
     }
@@ -267,9 +279,13 @@ namespace Ravl2
     }));
 
     //! Open a webcam
+    //! Only a bare index ("camera://1"): device paths and URL options belong to the FFmpeg capture handler
+    //! (priority 0, tried first); this is the fallback when FFmpeg can't open the device. (stoi used to accept
+    //! "8?size=1280x720" as 8 and drop the options.)
     [[maybe_unused]] bool g_regFmt3 = inputFormatMap().add(std::make_shared<InputFormatCall>("OpenCV", "", "camera", -1, [](const ProbeInputContext &ctx) -> std::optional<StreamInputPlan> {
       cv::VideoCapture videoCapture;
-      // Convert the filename to an integer.
+      if(ctx.mFilename.empty() || !std::all_of(ctx.mFilename.begin(), ctx.mFilename.end(), [](unsigned char c) { return std::isdigit(c) != 0; }))
+        return std::nullopt;
       try {
         int cameraId = std::stoi(ctx.mFilename);
         if(!videoCapture.open(cameraId)) {

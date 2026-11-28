@@ -30,6 +30,10 @@ may have relied on or worked around: check code that uses them.
   `RGBPlanarImage`/`RGBAPlanarImage`, which `dataType()` reported but was never what the frames held). 10/12-bit
   YUV is delivered as `YUV420Image<uint16_t>` scaled to the full 16-bit range (P010 frames were 64x too bright).
 - The FFmpeg writer tags YUV output as limited range BT.601 (`tv`, `smpte170m`), matching what it writes.
+- **Breaking:** `camera://` URLs go to the FFmpeg capture handler first (priority 0, was -2); OpenCV's camera handler
+  (-1) only takes a bare index, as a fallback. A device path or index with unsupported options now throws
+  `std::invalid_argument` naming the option and listing the device's modes, instead of opening in another mode.
+  See `src/Ravl2/Video/CaptureDevices.md`.
 - `FloodRegionC::GrowRegion(..., maxSize)` fails for regions larger than `maxSize` (false, or 0 and an empty
   mask), stopping the flood there. It was ignored for boundaries, and masks were left partly unwritten.
 - `SummedAreaTable`: the extra row and column after the image hold the totals (they held running sums of the last
@@ -119,6 +123,11 @@ may have relied on or worked around: check code that uses them.
   "Pinned dependencies" in `README_dependencies.md` for how to review and update them.
 
 ### Fixed
+- Capture: `format=mjpeg` (or any compressed format) was ignored on Linux (it was passed as FFmpeg's raw
+  `pixel_format`, not `input_format`); a device that substituted another size was used silently; OpenCV camera
+  capture couldn't deliver colour frames ("Don't know how to convert OpenCV image type: 16") and reused one
+  buffer, overwriting images already returned; `camera://8?size=...` went to OpenCV, which dropped the options.
+- ctest reports Catch2 tests that skip themselves (exit code 4) as skipped, not failed.
 - Templates that didn't compile when used: `forEachIndexFirst`, `fft2`, the double FFT (also not instantiated),
   `span(const VectorT&)`, `Sums1d2C` streaming, `ArrayView<T,1>` from a vector, `PixelY8(uint8_t)` and other
   one-channel pixels, `PinholeCameraArray::Triangulate` (its singularity test also rejected perpendicular rays
@@ -189,6 +198,11 @@ may have relied on or worked around: check code that uses them.
   `submodule.recurse=true`; ImGui header warnings broke `-Werror` builds.
 
 ### Added
+- Capture options on the URL: `camera:///dev/video8?size=1280x720&fps=60&format=mjpeg&latest=1` (also
+  `camera://8`). `latest=1` delivers only the newest frame via `Video::LatestFrameReader`, which can also be used
+  directly. `Video/CaptureDevice.hh` parses capture URLs, lists a V4L2 device's formats, sizes and frame rates
+  (`listCaptureModes()`), and checks a request against them. URL forms, timing and buffering are documented in
+  `src/Ravl2/Video/CaptureDevices.md`, with design notes for a native V4L2 backend and audio capture.
 - FFmpeg reader: any pixel format FFmpeg decodes is readable (ProRes, 10/12/16-bit, `gbrp`, `gray16`, alpha, palette
   …): formats without a direct RAVL2 type are converted with swscale (alpha to RGBA, grey to `PixelI8`, other RGB
   to RGB, high bit depth YUV to `YUV420Image<uint16_t>`, other YUV to `YUV420Image<uint8_t>`). They used to throw

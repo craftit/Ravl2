@@ -4,7 +4,13 @@
 
 #include "Ravl2/Video/FfmpegMediaContainer.hh"
 #include "Ravl2/Video/FfmpegMultiStreamIterator.hh"
+#include <algorithm>
+#include <cmath>
 #include <iostream>
+#include <fmt/format.h>
+extern "C" {
+#include <libavutil/pixdesc.h>
+}
 
 #ifdef __linux__
 #include <sys/ioctl.h>
@@ -256,7 +262,13 @@ namespace Ravl2::Video
     // Note: On macOS, AVFoundation will automatically select a compatible format if not specified
     if (!params.pixelFormat.empty())
     {
+#ifdef __linux__
+      // V4L2 takes compressed formats (mjpeg, h264) and raw ones (yuyv422) through input_format; its
+      // pixel_format option is for raw formats only, so "mjpeg" there was ignored.
+      av_dict_set(&options, "input_format", params.pixelFormat.c_str(), 0);
+#else
       av_dict_set(&options, "pixel_format", params.pixelFormat.c_str(), 0);
+#endif
     }
 
 #ifdef __APPLE__
@@ -291,6 +303,38 @@ namespace Ravl2::Video
     {
       container->close();
       return VideoResult<std::shared_ptr<MediaContainer>>(convertFfmpegError(result));
+    }
+
+    // Devices may adjust a request they can't meet (FFmpeg's V4L2 input only logs that the driver changed the
+    // size), so check the stream is what was asked for rather than silently delivering something else.
+    for (unsigned int i = 0; i < formatContext->nb_streams; ++i)
+    {
+      const AVStream *stream = formatContext->streams[i];
+      if (stream->codecpar->codec_type != AVMEDIA_TYPE_VIDEO)
+        continue;
+      std::string mismatch;
+      if (params.width > 0 && (stream->codecpar->width != params.width || stream->codecpar->height != params.height))
+        mismatch = fmt::format("size {}x{} (asked for {}x{})", stream->codecpar->width, stream->codecpar->height, params.width, params.height);
+      const AVRational rate = stream->avg_frame_rate.num > 0 ? stream->avg_frame_rate : stream->r_frame_rate;
+      if (mismatch.empty() && params.frameRate > 0 && rate.num > 0 && rate.den > 0
+          && std::abs(av_q2d(rate) - double(params.frameRate)) > 0.05 * std::max(1.0, double(params.frameRate) / 30.0))
+        mismatch = fmt::format("{:g} fps (asked for {:g})", av_q2d(rate), params.frameRate);
+      if (mismatch.empty() && !params.pixelFormat.empty())
+      {
+        const AVCodecDescriptor *codec = avcodec_descriptor_get(stream->codecpar->codec_id);
+        const char *pixFmt = av_get_pix_fmt_name(static_cast<AVPixelFormat>(stream->codecpar->format));
+        const bool raw = stream->codecpar->codec_id == AV_CODEC_ID_RAWVIDEO;
+        const std::string actual = raw ? (pixFmt ? pixFmt : "?") : (codec ? codec->name : "?");
+        if (actual != params.pixelFormat)
+          mismatch = fmt::format("format {} (asked for {})", actual, params.pixelFormat);
+      }
+      if (!mismatch.empty())
+      {
+        SPDLOG_ERROR("Capture device '{}' opened with {}", devicePath, mismatch);
+        container->close();
+        return VideoResult<std::shared_ptr<MediaContainer>>(VideoErrorCode::UnsupportedFormat);
+      }
+      break;
     }
 
     // Initialise codec contexts for each stream

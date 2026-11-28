@@ -93,6 +93,7 @@ add_executable(tests
         test_array_ranges.cc
         test_gps.cc
         test_instantiation.cc
+        test_capture.cc
 )
 target_compile_definitions(tests PRIVATE -DRAVL_SOURCE_DIR="${PROJECT_SOURCE_DIR}")
 target_link_libraries(
@@ -153,7 +154,12 @@ catch_discover_tests(
   OUTPUT_PREFIX
   "ravl2_unittests."
   OUTPUT_SUFFIX
-  .xml)
+  .xml
+  # Catch2 exits with 4 when everything it ran was skipped (e.g. no camera for the capture test): report that
+  # as skipped, not failed.
+  PROPERTIES
+  SKIP_RETURN_CODE
+  4)
 
 # Add a file containing a set of constexpr tests
 add_executable(constexpr_tests constexpr_tests.cpp)
