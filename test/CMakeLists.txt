@@ -90,6 +90,7 @@ add_executable(tests
         test_imageio_png.cc
         test_types_duration.cc
         test_types.cc
+        test_array_ranges.cc
         test_gps.cc
 )
 target_compile_definitions(tests PRIVATE -DRAVL_SOURCE_DIR="${PROJECT_SOURCE_DIR}")

@@ -26,16 +26,19 @@ Work order: Batch 1 → 4, then the remaining bugs by area, then gaps/improvemen
 
 ## Batch 2 — core array iteration and ranges
 
-- [ ] **CORE-1** `Array1.hh:545-566` — 1-D `begin()/end()` start at `m_data` (index 0) not `range.min()`; non-zero-origin 1-D arrays iterate wrong memory. *(verified)*
-- [ ] **CORE-2** Empty ranges: `Array.hh:250,303-310` 0-column 2-D array loops forever; `IndexRange1.hh:461-470` `end()` is `max+1` compared with `!=` so `{6,3}` runs to overflow; `IndexRange.hh:609-612` `valid()` checks only dim 0; `Array.hh:244` `begin()` on default array asserts. *(verified)*
-- [ ] **CORE-3** `Array.hh:877-886` — `copy(dest, src)` with dest larger than src overruns src; same in `Pixel/Colour.hh:207-219` `convert()`; `zip()` checks no sizes. *(verified)*
-- [ ] **CORE-4** `Array.hh:377-380`, `ArrayIterZip.hh:94-97` — `window()` stores a pointer to a temporary range; `ScanWindow.hh:104,112` keeps a pointer to its own member (breaks on copy). *(verified for first two)*
-- [ ] **CORE-5** Iterator distance: `Array.hh:431`, `IndexRange.hh:631-633` use `range(0).size()` not the row width; `Array1.hh:195-198` `operator-(it,n)` adds n. *(verified)*
-- [ ] **CORE-6** `IndexRange.hh:121-148` — `elements()`/`area()` multiply signed sizes (two negative dims → 1); int overflow above 2^31 elements; strides/offsets are int. *(verified sign issue)*
-- [ ] **CORE-7** `Array.hh:127,134` — `ArrayAccess::operator()(i,j)` returns by value; writes lost. *(verified)*
-- [ ] **CORE-8** `ScanWindow.hh:82` — `ScanWindow<T,1>::index()` inverted.
-- [ ] **CORE-9** `ThreadedQueue.hh:112-114,130-139` — `wait()`/`popWait()` have no predicate loop; spurious wakeup / competing consumer pops empty queue (UB).
-- [ ] **CORE-10** `Array.hh:79-83,116-121,604-608,616-620` — debug bounds checks skip the last dimension.
+- [x] **CORE-1** `Array1.hh:545-566` — 1-D `begin()/end()` start at `m_data` (index 0) not `range.min()`; non-zero-origin 1-D arrays iterate wrong memory. *(verified)*
+- [x] **CORE-2** Empty ranges: `Array.hh:250,303-310` 0-column 2-D array loops forever; `IndexRange1.hh:461-470` `end()` is `max+1` compared with `!=` so `{6,3}` runs to overflow; `IndexRange.hh:609-612` `valid()` checks only dim 0; `Array.hh:244` `begin()` on default array asserts. *(verified)*
+- [x] **CORE-3** `Array.hh:877-886` — `copy(dest, src)` with dest larger than src overruns src; same in `Pixel/Colour.hh:207-219` `convert()`; `zip()` checks no sizes. *(verified)* — fixed copy/convert; `zip()` size checks still to do (IMP-1).
+- [x] **CORE-4** `Array.hh:377-380`, `ArrayIterZip.hh:94-97` — `window()` stores a pointer to a temporary range; `ScanWindow.hh:104,112` keeps a pointer to its own member (breaks on copy). *(verified for first two)*
+- [x] **CORE-5** Iterator distance: `Array.hh:431`, `IndexRange.hh:631-633` use `range(0).size()` not the row width; `Array1.hh:195-198` `operator-(it,n)` adds n. *(verified)*
+- [x] **CORE-6** `IndexRange.hh:121-148` — `elements()`/`area()` multiply signed sizes (two negative dims → 1); int overflow above 2^31 elements; strides/offsets are int. *(verified sign issue)* — sign issue and `elements()` overflow fixed; int strides/`area()` remain (IMP-4).
+- [x] **CORE-7** `Array.hh:127,134` — `ArrayAccess::operator()(i,j)` returns by value; writes lost. *(verified)*
+- [x] **CORE-8** `ScanWindow.hh:82` — `ScanWindow<T,1>::index()` inverted.
+- [x] **CORE-9** `ThreadedQueue.hh:112-114,130-139` — `wait()`/`popWait()` have no predicate loop; spurious wakeup / competing consumer pops empty queue (UB).
+- [x] **CORE-10** `Array.hh:79-83,116-121,604-608,616-620` — debug bounds checks skip the last dimension.
+
+Batch 2 note: `IndexRange<1>::size()` now returns 0 for empty ranges (was negative), and iterators over empty
+ranges start at the end. 1-D `copy()` still copies a prefix to `dest`'s min rather than matching indices.
 
 ## Batch 3 — interop and Display crashes
 

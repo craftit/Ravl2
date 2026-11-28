@@ -91,9 +91,10 @@ namespace Ravl2
 
 
     //! Access window with the current element at the origin.
-    [[nodiscard]] constexpr ArrayAccess<ElementT, N> window() const noexcept
+    //! Returns a view that owns its range; ArrayAccess would point at a temporary range.
+    [[nodiscard]] constexpr ArrayView<ElementT, N> window() const noexcept
     {
-      return ArrayAccess<ElementT, N>(mAccess.range() - index(), mPtr, mAccess.strides());
+      return ArrayView<ElementT, N>(mPtr, mAccess.range() - index(), mAccess.strides());
     }
 
     //! Access a point relative to the current element

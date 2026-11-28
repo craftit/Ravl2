@@ -139,12 +139,11 @@ namespace Ravl2
     //! for an array.  This will always be positive or zero.
     [[nodiscard]] constexpr size_t elements() const
     {
-      int n = 1;
+      // size() is never negative; multiply in size_t so large volumes don't overflow int.
+      size_t n = 1;
       for(unsigned i = 0; i < N; i++)
-        n *= m_range[i].size();
-      if(n < 0)
-        n = 0;
-      return size_t(n);
+        n *= size_t(m_range[i].size());
+      return n;
     }
 
     //! Is range empty ?
@@ -628,9 +627,13 @@ namespace Ravl2
     {
       assert(m_range == other.m_range);
       assert(m_range != nullptr);
+      // Row-major: a step in dimension i skips the product of the sizes of the later dimensions.
       difference_type diff = (m_at[N - 1] - other.m_at[N - 1]);
-      for(unsigned i = 0; i < N - 1; i++)
-        diff += (m_at[i] - other.m_at[i]) * m_range->size(i);
+      difference_type step = 1;
+      for(unsigned i = N - 1; i > 0; --i) {
+        step *= m_range->size(i);
+        diff += (m_at[i - 1] - other.m_at[i - 1]) * step;
+      }
       return diff;
     }
 
@@ -643,6 +646,12 @@ namespace Ravl2
   template <unsigned N>
   inline constexpr IndexRangeIterator<N> IndexRange<N>::begin() const
   {
+    if(empty()) {
+      // Start past the last row, so the iterator is not valid() and equals end().
+      Index<N> at = min();
+      at[0] = max(0) + 1;
+      return IndexRangeIterator<N>(*this, at, true);
+    }
     return IndexRangeIterator<N>(*this, min());
   }
 

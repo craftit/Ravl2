@@ -80,6 +80,7 @@ namespace Ravl2
         assert(m_ranges[i].contains(ind[i]));
         mPtr += m_strides[i] * ind[i];
       }
+      assert(m_ranges[N - 1].contains(ind[N - 1]));
       mPtr += ind[N - 1];
       return *mPtr;
     }
@@ -118,20 +119,21 @@ namespace Ravl2
         assert(m_ranges[i].contains(ind[i]));
         mPtr += m_strides[i] * ind[i];
       }
+      assert(m_ranges[N - 1].contains(ind[N - 1]));
       mPtr += ind[N - 1];
       return *mPtr;
     }
 
-    //! Element by element call operator access
+    //! Element by element call operator access; a reference for a full index, a sub-access otherwise.
     template <typename... IndexDataT, unsigned IndexN = sizeof...(IndexDataT)>
-    constexpr inline auto operator()(IndexDataT... data)
+    constexpr inline decltype(auto) operator()(IndexDataT... data)
     {
       return operator[](Index<IndexN>({int(data)...}));
     }
 
-    //! Element by element call operator access
+    //! Element by element call operator access; a reference for a full index, a sub-access otherwise.
     template <typename... IndexDataT, unsigned IndexN = sizeof...(IndexDataT)>
-    constexpr inline auto operator()(IndexDataT... data) const
+    constexpr inline decltype(auto) operator()(IndexDataT... data) const
     {
       return operator[](Index<IndexN>({int(data)...}));
     }
@@ -241,13 +243,20 @@ namespace Ravl2
     constexpr ArrayIter(DataT *data, const IndexRange<1> *rng, const int *strides) noexcept
         : m_access(data, rng, strides)
     {
-      assert(data != nullptr);
+      bool isEmpty = false;
+      for(unsigned i = 0; i < N; i++)
+        isEmpty = isEmpty || rng[i].empty();
+      assert(data != nullptr || isEmpty);
       mPtr = data;
       for(unsigned i = 0; i < N; i++) {
         mPtr += rng[i].min() * strides[i];
         mIndex[i] = rng[i].min();
       }
       mEnd = mPtr + rng[N - 1].size() * strides[N - 1];
+      if(isEmpty) {
+        // Nothing to visit: start past the last row so valid() is false and the iterator equals end().
+        mIndex[0] = rng[0].max() + 1;
+      }
     }
 
     constexpr ArrayIter(DataT *data, const IndexRange<N> &rng, const int *strides) noexcept
@@ -374,9 +383,10 @@ namespace Ravl2
     }
 
     //! Access window with the current element at the origin.
-    [[nodiscard]] constexpr ArrayAccess<DataT, N> window() const noexcept
+    //! Returns a view that owns its range; ArrayAccess would point at a temporary range.
+    [[nodiscard]] constexpr ArrayView<DataT, N> window() const noexcept
     {
-      return ArrayAccess<DataT, N>(mPtr, m_access.range() - index(), m_access.strides());
+      return ArrayView<DataT, N>(mPtr, m_access.range() - index(), m_access.strides());
     }
 
     //! Access a point relative to the current element
@@ -426,9 +436,15 @@ namespace Ravl2
     //! This is the number of elements between the two iterators in the first iterators range.
     [[nodiscard]] constexpr difference_type operator-(const ArrayIter<DataT, N> &other) const noexcept
     {
+      // Row-major: a step in dimension i skips the product of the sizes of the later dimensions.
       auto at1 = index();
       auto at2 = other.index();
-      difference_type diff = (at1[1] - at2[1]) + (at1[0] - at2[0]) * m_access.range(0).size();
+      difference_type diff = (at1[N - 1] - at2[N - 1]);
+      difference_type step = 1;
+      for(unsigned i = N - 1; i > 0; --i) {
+        step *= m_access.range(i).size();
+        diff += difference_type(at1[i - 1] - at2[i - 1]) * step;
+      }
       return diff;
     }
 
@@ -605,6 +621,7 @@ namespace Ravl2
         assert(m_range[i].contains(ind.index(i)));
         dind += m_strides[i] * ind.index(i);
       }
+      assert(m_range[N - 1].contains(ind.index(N - 1)));
       dind += ind.index(N - 1);
       return m_data[dind];
     }
@@ -617,6 +634,7 @@ namespace Ravl2
         assert(m_range[i].contains(ind.index(i)));
         dind += m_strides[i] * ind.index(i);
       }
+      assert(m_range[N - 1].contains(ind.index(N - 1)));
       dind += ind.index(N - 1);
       return m_data[dind];
     }
@@ -874,14 +892,18 @@ namespace Ravl2
   //! Copy data from a source array to destination array
   template <typename Array1T, typename Array2T, unsigned N = Array1T::dimensions>
     requires(WindowedArray<Array1T, typename Array1T::value_type, N> && WindowedArray<Array2T, typename Array2T::value_type, N>) && (N >= 2) && std::is_convertible_v<typename Array2T::value_type, typename Array1T::value_type>
+  //! Elements are copied to the same indices in dest, which must contain src's range.
   constexpr void copy(const Array1T &dest, const Array2T &src)
   {
     assert(dest.range().contains(src.range()));
-    auto iterDest = dest.begin();
-    auto iterSrc = src.begin();
     const auto srcRowSize = src.range(N - 1).size();
-    for(; iterDest.valid(); iterDest.nextRow(), iterSrc.nextRow()) {
-      std::copy(iterSrc.data(), iterSrc.data() + srcRowSize, iterDest.data());
+    for(auto iterSrc = src.begin(); iterSrc.valid(); iterSrc.nextRow()) {
+      const auto at = iterSrc.index();
+      auto *destRow = dest.origin_address();
+      for(unsigned i = 0; i < N - 1; i++)
+        destRow += dest.strides()[i] * at[i];
+      destRow += at[N - 1];
+      std::copy(iterSrc.data(), iterSrc.data() + srcRowSize, destRow);
     }
   }
 

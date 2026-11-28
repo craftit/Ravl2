@@ -79,10 +79,11 @@ namespace Ravl2
       return m_min > m_max;
     }
 
-    //! Get the size of the range in each dimension.
+    //! Get the size of the range; 0 for an empty range.
     [[nodiscard]] constexpr int size() const noexcept
     {
-      return (m_max - m_min) + 1;
+      // Compare first: for ranges like mostEmpty(), max - min overflows.
+      return m_min > m_max ? 0 : (m_max - m_min) + 1;
     }
     
     //! Get the center of the range.
@@ -463,10 +464,10 @@ namespace Ravl2
     return IndexRangeIterator<1> {m_min};
   }
 
-  //! One passed the end of the range.
+  //! One passed the end of the range; equal to begin() for an empty range.
   inline constexpr IndexRangeIterator<1> IndexRange<1>::end() const
   {
-    return IndexRangeIterator<1> {m_max + 1};
+    return IndexRangeIterator<1> {empty() ? m_min : m_max + 1};
   }
 
   //! Serialization support

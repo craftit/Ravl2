@@ -111,7 +111,8 @@ namespace Ravl2
       std::unique_lock<std::mutex> lock(m_mutex);
       if(m_queue.empty()) {
         if(timeout < 0.0f) {
-          m_conditionPop.wait(lock);
+          // Predicate guards against spurious wake-ups and other consumers taking the element first.
+          m_conditionPop.wait(lock, [this]() { return !m_queue.empty(); });
         } else {
           if(!m_conditionPop.wait_for(lock, std::chrono::milliseconds(static_cast<int>(timeout * 1000.0f)), [this]() { return !m_queue.empty(); })) {
             return false;
@@ -129,7 +130,8 @@ namespace Ravl2
       std::unique_lock<std::mutex> lock(m_mutex);
       if(m_queue.empty()) {
         if(timeout < 0.0f) {
-          m_conditionPop.wait(lock);
+          // Predicate guards against spurious wake-ups and other consumers taking the element first.
+          m_conditionPop.wait(lock, [this]() { return !m_queue.empty(); });
         } else {
           if(!m_conditionPop.wait_for(lock, std::chrono::milliseconds(static_cast<int>(timeout * 1000.0f)), [this]() { return !m_queue.empty(); })) {
             return false;

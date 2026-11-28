@@ -194,7 +194,7 @@ namespace Ravl2
     requires std::is_integral_v<IntegerT>
   [[nodiscard]] constexpr ArrayIter<DataT, 1> operator-(const ArrayIter<DataT, 1> &it, IntegerT offset)
   {
-    return ArrayIter<DataT, 1>(it.data() + offset);
+    return ArrayIter<DataT, 1>(it.data() - offset);
   }
 
   //! Add to the iterator
@@ -205,13 +205,6 @@ namespace Ravl2
     return ArrayIter<DataT, 1>(offset + it.data());
   }
 
-  //! Subtract from the iterator
-  template <typename DataT, typename IntegerT>
-    requires std::is_integral_v<IntegerT>
-  [[nodiscard]] constexpr ArrayIter<DataT, 1> operator-(IntegerT offset, const ArrayIter<DataT, 1> &it)
-  {
-    return ArrayIter<DataT, 1>(offset + it.data());
-  }
 
   //! Add an offset to the iterator
   template <typename DataT>
@@ -544,25 +537,25 @@ namespace Ravl2
     //! vertexBegin iterator
     [[nodiscard]] constexpr ArrayIter<DataT, 1> begin()
     {
-      return ArrayIter<DataT, 1>(m_data);
+      return ArrayIter<DataT, 1>(m_data + m_range.min());
     }
 
     //! vertexEnd iterator
     [[nodiscard]] constexpr ArrayIter<DataT, 1> end()
     {
-      return ArrayIter<DataT, 1>(m_data + m_range.size());
+      return ArrayIter<DataT, 1>(m_data + m_range.min() + m_range.size());
     }
 
     //! vertexBegin iterator
     [[nodiscard]] constexpr ArrayIter<DataT, 1> begin() const
     {
-      return ArrayIter<DataT, 1>(m_data);
+      return ArrayIter<DataT, 1>(m_data + m_range.min());
     }
 
     //! vertexEnd iterator
     [[nodiscard]] constexpr ArrayIter<DataT, 1> end() const
     {
-      return ArrayIter<DataT, 1>(m_data + m_range.size());
+      return ArrayIter<DataT, 1>(m_data + m_range.min() + m_range.size());
     }
 
     //! Get the index of the given pointer within the array.

@@ -212,7 +212,10 @@ namespace Ravl2
         dest = Array1T(src.range());
       }
     }
-    auto iter = zip(dest, src);
+    // Convert over src's range only; dest may be larger.
+    assert(dest.range().contains(src.range()));
+    ArrayView<Data1T, N> destView(dest.origin_address(), src.range(), dest.strides());
+    auto iter = zip(destView, src);
     while(iter.valid()) {
       do {
         assign(iter.template data<0>(), iter.template data<1>());

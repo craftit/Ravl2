@@ -79,7 +79,8 @@ namespace Ravl2
     //! Get current index of the window position 0,0 in the image
     [[nodiscard]] inline constexpr Index<1> index() const
     {
-      return Index<1>(int((mEnd - mAt) - mArea.max()));
+      // mEnd is one past mArea.max().
+      return Index<1>(int((mAt - mEnd) + mArea.max() + 1));
     }
 
   protected:
@@ -105,6 +106,10 @@ namespace Ravl2
     {
       assert(!mArea.empty());
     }
+
+    //! The iterator refers to this object's own mArea, so a copy or move would point into the original.
+    ScanWindow(const ScanWindow &) = delete;
+    ScanWindow &operator=(const ScanWindow &) = delete;
 
     constexpr ScanWindow(const Ravl2::ArrayView<DataT, N> &img, const IndexRange<N> &window)
         : mWindowRange(window),
