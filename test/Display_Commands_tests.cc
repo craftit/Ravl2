@@ -8,6 +8,7 @@
 #include "Ravl2/Display/Channel.hh"
 #include "Ravl2/Display/CompositeNode.hh"
 #include "Ravl2/Display/Image2DNode.hh"
+#include "Ravl2/Display/Polyline2DNode.hh"
 #include "Ravl2/Display/SetBaseImage2D.hh"
 #include "Ravl2/Display/SetNormalization2D.hh"
 #include "Ravl2/Display/UrlControls.hh"
@@ -92,5 +93,18 @@ namespace Ravl2::DebugDisplay
     CHECK(image->getNormalization().policy == NormalizationPolicy::Fixed);
     CHECK(image->getData()[0] == 2.0f);
     CHECK(image->sample(0, 0).second == 0.2f);// 2 on a fixed [0,10] scale
+  }
+
+  TEST_CASE("Polyline overlay points are (row, col)")
+  {
+    ChannelRegistry channels;
+    AddPolylineOverlay2D overlay(PolyLine<float, 2>({toPoint<float>(2, 7), toPoint<float>(3, 9)}));
+    overlay.channel = "pts";
+    overlay.apply(channels);
+    auto *node = dynamic_cast<Polyline2DNode *>(channels.getOrCreateChannel("pts").sceneContent.get());
+    REQUIRE(node != nullptr);
+    REQUIRE(node->vertices().size() == 2);
+    CHECK(node->vertices()[0].x == 7.0f);// column
+    CHECK(node->vertices()[0].y == 2.0f);// row
   }
 }// namespace Ravl2::DebugDisplay

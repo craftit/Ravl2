@@ -52,7 +52,7 @@ ranges start at the end. 1-D `copy()` still copies a prefix to `dest`'s min rath
 - [x] **DSP-5** `Display/IOFormatAdapter.cc:478,516,559,590` — mode values compared case-sensitively (`replace`, `ringbuffer` ignored).
 - [x] **DSP-6** `Display/IOFormatAdapter.cc:330-333,359` — `Norm=Pct:1,99` arguments truncated at `:`; percentile unsupported in bgfx upload (`Image2DNode.cc:166`).
 - [x] **DSP-7** `Display/SetNormalization2D.cc:16`, `SetBaseImage2D.hh:33` — only top-level node inspected; overlays (CompositeNode) break normalisation and get wiped on image update.
-- [ ] **DSP-8** `Display/AddPolylineOverlay2D.cc:19`, `Polyline2DNode.cc` — polylines treated as (x,y), RAVL2 points are (row,col). *(convention decision)*
+- [x] **DSP-8** `Display/AddPolylineOverlay2D.cc:19`, `Polyline2DNode.cc` — polylines treated as (x,y), RAVL2 points are (row,col). *(convention decision)*
 - [x] **DSP-9** `Display/DebugDisplay.cc:1075` — macOS `runMainLoop` spins forever if the app never displays.
 - [x] **DSP-10** `Display/DebugDisplay.cc:670` — SDL fallback uses `RGBA8888` for byte-order RGBA (should be `ABGR8888`/`RGBA32`).
 - [x] **QT-1** `Qt/Image.hh:69,99,121,157` — width/height swapped both directions. *(verified)*
@@ -62,7 +62,7 @@ ranges start at the end. 1-D `copy()` still copies a prefix to `dest`'s min rath
 
 Batch 3 notes: DSP-1, DSP-2, DSP-9 and DSP-10 change GUI-thread code that needs a display to run; they were
 checked by reading and build, not at runtime. The Dlib fixes were compiled and run against a dlib checkout
-(dlib isn't a dependency of the test build). DSP-8 is waiting on a decision about the polyline convention.
+(dlib isn't a dependency of the test build). DSP-8: overlay points are now (row, col), matching the rest of RAVL2.
 Also fixed: the default overlay colour was yellow, not the magenta documented.
 
 ## Batch 4 — maths and geometry correctness

@@ -223,6 +223,8 @@ src/Ravl2/Display/
 4. 2D image path (MVP)
    - Adapter for `Array<uint8_t,2>` and `Array<float,2>`: CPU copy + normalized GPU texture; textured quad shader; zoom/pan; pixel query tooltip with original + displayed values; normalization policy UI.
 5. Overlays (2D)
+   - Overlay points use the RAVL2 convention: (row, col) image coordinates, the same as boundaries, polygons and
+     detector output, so they can be passed straight through. They're mapped to screen (x, y) when drawn.
    - Adapters for `std::vector<Point<float,2>>` and lines; render via ImGui draw lists or a bgfx line pass; color/size controls.
 6. 3D basic rendering
    - Camera orbit controls; adapters for `PointCloud3f` and `Mesh3f`. Submit via bgfx with depth test; axes/grid overlay.

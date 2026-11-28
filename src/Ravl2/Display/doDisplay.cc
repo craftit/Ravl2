@@ -126,7 +126,8 @@ int RAVL2_MAIN(int argc, char **argv)
     using Poly2f = Ravl2::PolyLine<float, 2>;
     const int H = imgGray.range()[0].size();
     const int W = imgGray.range()[1].size();
-    Poly2f poly({{10.f, 10.f}, {static_cast<float>(W - 10), 10.f}, {static_cast<float>(W - 10), static_cast<float>(H - 10)}});
+    // Points are (row, col): top-left, top-right, bottom-right.
+    Poly2f poly({{10.f, 10.f}, {10.f, static_cast<float>(W - 10)}, {static_cast<float>(H - 10), static_cast<float>(W - 10)}});
     const std::string overlay1 = "display://Image1:Mode=Append:Color=#00ff00ff:Width=2";
     if(!ioSave(overlay1, poly)) {
       SPDLOG_WARN("ioSave('{}', polyline) did not find a writer.", overlay1);

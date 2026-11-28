@@ -11,12 +11,13 @@
 namespace Ravl2::DebugDisplay
 {
 
+  //! RAVL2 points are (row, col); the drawing node works in (x, y) = (col, row).
   static inline std::vector<SDL_FPoint> toFPoints(const Ravl2::PolyLine<float, 2> &poly)
   {
     std::vector<SDL_FPoint> out;
     out.reserve(poly.size());
     for(const auto &p : poly) {
-      out.push_back(SDL_FPoint {p[0], p[1]});
+      out.push_back(SDL_FPoint {p[1], p[0]});
     }
     return out;
   }
