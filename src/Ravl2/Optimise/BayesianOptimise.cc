@@ -90,8 +90,9 @@ namespace Ravl2
     const std::function<RealT(const VectorT<RealT> &)> &func,
     const VectorT<RealT> &start) const
   {
+    // An empty vector means "no start point"; an all-zero start is a real start point.
     std::vector<VectorT<RealT>> startPoints;
-    if(!start.isZero(0)) {
+    if(start.size() > 0) {
       startPoints.push_back(start);
     }
     auto results = minimiseBatch(domain, func, startPoints);
@@ -133,12 +134,17 @@ namespace Ravl2
     auto acquisitionGen = mAcquisitionGenerator ? mAcquisitionGenerator : std::make_shared<AcquisitionSampleGenerator>(mExplorationWeight, mLocalSearchRadius, 0, 100, mFixedSeed, mSeed);
 
     State state(mGPLengthScale, mGPNoise, initialGen, acquisitionGen, verbose());
+    // The GP works on inputs scaled to [0, 1] over the domain, so gpLengthScale is a fraction of the domain.
+    state.mGP.setInputBounds(domain.min(), domain.max());
     std::vector<std::tuple<VectorT<RealT>, RealT>> results;
     std::vector<VectorT<RealT>> initPoints = startPoints;
 
-    // Generate initial points if none provided
-    if(initPoints.empty()) {
-      initPoints = state.generateInitialPoints(domain, mBatchSize);
+    // Start with enough space-filling samples for the surrogate to say something (one point used to be the
+    // whole initial design with the default batch size), after any given start points.
+    const size_t initialCount = std::max(mBatchSize, size_t(2 * domain.dim() + 1));
+    if(initPoints.size() < initialCount) {
+      auto generated = state.generateInitialPoints(domain, initialCount - initPoints.size());
+      initPoints.insert(initPoints.end(), generated.begin(), generated.end());
     }
 
     // Evaluate initial points using batch evaluator with fill
@@ -456,11 +462,8 @@ namespace Ravl2
     if(mX.empty()) return;
 
     // Calculate typical domain size for normalization
-    RealT domainSize = 0.0;
-    for(Eigen::Index d = 0; d < domain.dim(); ++d) {
-      domainSize += (domain.max(d) - domain.min(d)) * (domain.max(d) - domain.min(d));
-    }
-    domainSize = std::sqrt(domainSize);
+    // The GP sees inputs scaled to the unit cube, so the domain's diagonal there is sqrt(dim).
+    const RealT domainSize = std::sqrt(static_cast<RealT>(domain.dim()));
 
     // Calculate progress through optimization (0.0 to 1.0)
     RealT progress = static_cast<RealT>(iteration) / static_cast<RealT>(maxIters - 1);
@@ -471,8 +474,9 @@ namespace Ravl2
     // 3. Function variation (high variation = longer length scale)
 
     // Base length scale decreases with progress: start at 2x initial, end at 0.5x initial
-    RealT baseLengthScale = mGP.getLengthScale();// Get current length scale
-    RealT initialScale = baseLengthScale;        // Assume this is close to the original
+    RealT baseLengthScale = mGP.getLengthScale();// Current length scale, for logging
+    // Scale the configured value, not the last adapted one (which made the factors compound each iteration).
+    RealT initialScale = mInitialLengthScale;
     RealT progressFactor = 2.0f * (1.0f - progress) + 0.5f * progress;
 
     // Data density factor: more points = shorter length scale

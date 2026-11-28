@@ -462,4 +462,14 @@ namespace Ravl2
     }
   }
 
+
+  TEST_CASE("Grid sampling uses the configured grid with batch size 1", "[RandomSearchOptimise]")
+  {
+    // The grid used to be sized from the batch, so batch size 1 visited only the 4 corners.
+    CostDomain<float> domain({-5.0f, -5.0f}, {5.0f, 5.0f});
+    auto f = [](const VectorT<float> &x) { return (x[0] - 1.3f) * (x[0] - 1.3f) + (x[1] + 0.7f) * (x[1] + 0.7f); };
+    RandomSearchOptimise optimizer(100, RandomSearchOptimise::PatternType::Grid, 1, 0, false, true, 42, 10);
+    auto [x, cost] = optimizer.minimise(domain, f);
+    CHECK(cost < 0.3f);// best point of a 10x10 grid with spacing 10/9
+  }
 } // namespace Ravl2

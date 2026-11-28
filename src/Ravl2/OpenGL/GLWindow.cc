@@ -249,6 +249,13 @@ namespace Ravl2
       }
     }
 
+    // glfwTerminate() destroys every window, so release ours first; the destructor would otherwise use a freed
+    // handle.
+    if(mWindow != nullptr) {
+      glfwSetWindowUserPointer(mWindow, nullptr);
+      glfwDestroyWindow(mWindow);
+      mWindow = nullptr;
+    }
     glfwTerminate();
   }
 

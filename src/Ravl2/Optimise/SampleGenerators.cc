@@ -98,9 +98,9 @@ namespace Ravl2
 
     Eigen::Index dims = mDomain.dim();
 
-    // Calculate points per dimension to get approximately numPoints total
-    Eigen::Index pointsPerDim = static_cast<Eigen::Index>(std::round(std::pow(numPoints, 1.0 / static_cast<double>(dims))));
-    pointsPerDim = std::max(pointsPerDim, static_cast<Eigen::Index>(2));// At least 2 points per dimension
+    // The grid is fixed by mPointsPerDim, so successive calls walk the same grid. (It used to be sized from each
+    // call's numPoints, so a batch size of 1 visited only the corners and mPosition indexed a changing grid.)
+    const auto pointsPerDim = static_cast<Eigen::Index>(std::max<size_t>(mPointsPerDim, 1));
 
     std::vector<VectorT<RealT>> points;
     points.reserve(numPoints);

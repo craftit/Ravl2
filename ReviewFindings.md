@@ -136,23 +136,32 @@ these also showed that a new iterator on a container started wherever the shared
 (`buildKeyframeIndex`, `findNearestKeyframe`) is now unused.
 
 ### Display / OpenGL
-- [ ] **GL-1** `OpenGL/GLWindow.cc:132,252`, `GLWindow.hh:37-50` — use after `glfwTerminate`; move ops leave stale user pointer and leak.
-- [ ] **GL-2** `OpenGL/View3D.cc:564-572` — rotation pivot sign, null scene, missing lock; `DTriMesh.cc:125` `GL_LINE` not a primitive.
+- [x] **GL-1** `OpenGL/GLWindow.cc:132,252`, `GLWindow.hh:37-50` — use after `glfwTerminate`; move ops leave stale user pointer and leak.
+- [x] **GL-2** `OpenGL/View3D.cc:564-572` — rotation pivot sign, null scene, missing lock; `DTriMesh.cc:125` `GL_LINE` not a primitive.
 
 ### Optimise
-- [ ] **OPT-1** `Optimise/GaussianProcess.hh:55`, `BayesianOptimise.cc:166` — `adaptiveLengthScale` crashes (K_inv cleared before predict). *(verified)*
-- [ ] **OPT-2** `GaussianProcess.cc:67`, `BayesianOptimise.cc:202` — BO with defaults stalls at first point (no normalisation, 1 initial point, early stop). *(verified)*
-- [ ] **OPT-3** `SampleGenerators.cc:102` — Grid ignores `mPointsPerDim`. *(verified)*
-- [ ] **OPT-4** `BayesianOptimise.cc:475,493` — length-scale factors compound.
-- [ ] **OPT-5** `OptimisePowell.cc:168` — `fP` overwritten before direction-replacement test.
-- [ ] **OPT-6** `BayesianOptimise.cc:94` — explicit all-zero start ignored. *(verified)*
+- [x] **OPT-1** `Optimise/GaussianProcess.hh:55`, `BayesianOptimise.cc:166` — `adaptiveLengthScale` crashes (K_inv cleared before predict). *(verified)*
+- [x] **OPT-2** `GaussianProcess.cc:67`, `BayesianOptimise.cc:202` — BO with defaults stalls at first point (no normalisation, 1 initial point, early stop). *(verified)*
+- [x] **OPT-3** `SampleGenerators.cc:102` — Grid ignores `mPointsPerDim`. *(verified)*
+- [x] **OPT-4** `BayesianOptimise.cc:475,493` — length-scale factors compound.
+- [x] **OPT-5** *(not a bug — see note)* `OptimisePowell.cc:168` — `fP` overwritten before direction-replacement test.
+- [x] **OPT-6** `BayesianOptimise.cc:94` — explicit all-zero start ignored. *(verified)*
+
+Optimise notes: OPT-5 was not substantiated. Because `fP` is already the current minimum, the old test's `t` is
+always <= 0, so it replaces a direction whenever the extrapolated point beats the current minimum: more aggressive
+than Numerical Recipes, not suppressed. On a rotated 5-D quadratic it converged better than the NR form, so the
+code is unchanged (a rotated-valley convergence test was added). OPT-2: the GP now standardises targets and works
+on inputs scaled to the domain, and the initial design has max(batch, 2*dim+1) points; the remaining imprecision
+comes from the candidate pool being reset each iteration (IMP-9).
 
 ### Core / Config
-- [ ] **CFG-1** `Configuration.hh:66,85,104`, `Configuration.cc:56-68` — noexcept register functions can terminate on duplicate; empty "default" factory → bad_function_call.
-- [ ] **CFG-2** `Configuration.cc:349` — `setValue` locks type before assigning.
+- [x] **CFG-1** `Configuration.hh:66,85,104`, `Configuration.cc:56-68` — noexcept register functions can terminate on duplicate; empty "default" factory → bad_function_call.
+- [x] **CFG-2** `Configuration.cc:349` — `setValue` locks type before assigning.
+
+GL notes: GL-1/GL-2 were checked by build and reading only (no display here).
 
 ### Build
-- [ ] **BLD-1** `CMakeLists.txt`, `src/Ravl2/CMakeLists.txt:7-8,28,38-43` — `RAVL2_MIN_DEPS` doesn't disable Qt/dlib; Display added without bgfx.
+- [x] **BLD-1** `CMakeLists.txt`, `src/Ravl2/CMakeLists.txt:7-8,28,38-43` — `RAVL2_MIN_DEPS` doesn't disable Qt/dlib; Display added without bgfx.
 
 ---
 
@@ -183,5 +192,5 @@ these also showed that a new iterator on a container started wherever the shared
 - [ ] **IMP-8** Numerics: Welford/compensated variance, relative tolerances for singularity and parallel tests, centred TLS line fit, Umeyama scale.
 - [ ] **IMP-9** Optimise: normalise GP inputs/outputs, LLT solves, avoid n×n `K_ss`, use `explorationWeight`, diverse batches, per-call RNG in RandomSearch, drop ambiguous bool constructors, guard `hardware_concurrency()==0`.
 - [ ] **IMP-10** Interop: owning conversions to cv::Mat/QImage/dlib, or a documented lifetime contract.
-- [ ] **IMP-11** ImageIO: collapse the six PNG writer lambdas; libjpeg/libpng errors via exceptions or status, no objects across `longjmp`.
+- [x] **IMP-11** ImageIO: collapse the six PNG writer lambdas; libjpeg/libpng errors via exceptions or status, no objects across `longjmp`.
 - [ ] **IMP-12** Minor: `fromString<bool>` case-insensitivity, `Base64` 0xFF, unlocked global type map with `std::cerr`, `ThreadedQueue::push(const T&&)`, Convolve rounding for integer output, single Sobel implementation, `Sums1d2.hh` missing `#pragma once`.

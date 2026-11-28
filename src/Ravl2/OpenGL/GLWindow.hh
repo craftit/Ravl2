@@ -33,22 +33,10 @@ namespace Ravl2
     GLWindow(const GLWindow&) = delete;
     GLWindow& operator=(const GLWindow&) = delete;
 
-    //! Move constructor
-    GLWindow(GLWindow&& oth) noexcept
-     : mWindow(oth.mWindow)
-    {
-      oth.mWindow = nullptr;
-    }
-
-    //! Move assignment
-    GLWindow& operator=(GLWindow&& oth) noexcept
-    {
-      if (this != &oth) {
-        mWindow = oth.mWindow;
-        oth.mWindow = nullptr;
-      }
-      return *this;
-    }
+    //! Not movable: GLFW callbacks hold a pointer to this object (the old moves left it pointing at the
+    //! moved-from window, and move assignment leaked the destination's window). Use std::shared_ptr<GLWindow>.
+    GLWindow(GLWindow&& oth) = delete;
+    GLWindow& operator=(GLWindow&& oth) = delete;
 
     //! Switch to GL context.
     //! The same as 'makeCurrent'.

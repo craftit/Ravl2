@@ -28,10 +28,10 @@ function(RAVL2_setup_dependencies)
 
   # Optional dependencies, we won't build them if they're not found
 
-  find_package(dlib QUIET)
   find_package(glfw3 QUIET)
 
   if(NOT RAVL2_MIN_DEPS)
+    find_package(dlib QUIET)
     find_package(QT NAMES Qt6 Qt5 QUIET COMPONENTS Widgets)
     if(QT_FOUND)
       find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Core Gui Widgets)

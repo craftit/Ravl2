@@ -25,7 +25,7 @@ namespace Ravl2
     auto it = m_map.find(type);
     if(it != m_map.end()) {
       auto it2 = it->second.m_constructors.find(name);
-      if(it2 != it->second.m_constructors.end()) {
+      if(it2 != it->second.m_constructors.end() && it2->second) {
         obj = it2->second(config);
       }
       // SPDLOG_ERROR("Type '{}' unknown when constructing '{}' ", Ravl2::typeName(type), name);
@@ -53,20 +53,17 @@ namespace Ravl2
 
   bool ConfigFactory::add(const std::type_info &type, std::string_view name, const std::function<std::any(Configuration &)> &func)
   {
-    auto &entry = m_map[std::type_index(type)].m_constructors[std::string(name)];
-    if(entry) {
-      SPDLOG_ERROR("Constructor '{}' already exists for type '{}'", name, type.name());
+    // Look up without inserting: operator[] used to leave an empty "default" entry for every named type, which
+    // create() then called (std::bad_function_call).
+    auto &constructors = m_map[std::type_index(type)].m_constructors;
+    const std::string key(name);
+    if(auto it = constructors.find(key); it != constructors.end() && it->second) {
+      SPDLOG_ERROR("Constructor '{}' already exists for type '{}'", name, typeName(type));
       throw std::runtime_error("type already exists");
     }
-    if(name != "default") {
-      auto &entry2 = m_map[std::type_index(type)].m_constructors["default"];
-      if(entry2) {
-        SPDLOG_ERROR("Constructor 'default' already exists for type '{}'", type.name());
-        throw std::runtime_error("type already exists");
-      }
-      m_name2factory[std::string(name)] = func;
-    }
-    entry = func;
+    constructors[key] = func;
+    if(name != "default")
+      m_name2factory[key] = func;
     return true;
   }
 
@@ -346,8 +343,10 @@ namespace Ravl2
   bool ConfigNode::setValue(std::any &&v)
   {
     if(m_fieldType == nullptr || *m_fieldType == typeid(void)) {
-      m_fieldType = &m_value.type();
+      // Assign first: the type recorded must be the new value's (it was the old, empty value's, typeid(void),
+      // so a node created empty never fixed its type).
       m_value = std::move(v);
+      m_fieldType = &m_value.type();
     } else {
       //SPDLOG_INFO("Setting value of {}, has update:{}  type:{}  from:{} ", name(), hasUpdate(), typeName(*m_fieldType), typeName(v.type()));
       if(*m_fieldType != v.type()) {

@@ -122,7 +122,7 @@ namespace Ravl2
 	break;
       case C3D_WIRE: {
 	for(auto const &it : model->Faces()) {
-	  glBegin(GL_LINE);
+	  glBegin(GL_LINE_LOOP);// GL_LINE is a polygon mode, not a primitive
 	  glArrayElement(GLint(model->index(it, 0)));
 	  glArrayElement(GLint(model->index(it, 1)));
 	  glArrayElement(GLint(model->index(it, 2)));

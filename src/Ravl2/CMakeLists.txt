@@ -4,8 +4,11 @@ find_package(fmt REQUIRED)
 find_package(spdlog REQUIRED)
 find_package(cereal REQUIRED)
 
-find_package(dlib QUIET)
-find_package(Qt5 QUIET)
+# RAVL2_MIN_DEPS disables the optional stacks (Qt, dlib, Display) even when they are installed.
+if(NOT RAVL2_MIN_DEPS)
+  find_package(dlib QUIET)
+  find_package(Qt5 QUIET)
+endif()
 find_package(OpenGL QUIET)
 
 add_subdirectory(Optimise)
@@ -24,8 +27,8 @@ if(WITH_GPMF AND HAVE_GPMF)
     add_subdirectory(GoPro)
 endif()
 
-# Optional Debug Display stack
-if(RAVL2_ENABLE_DISPLAY_STACK)
+# Optional Debug Display stack (its bgfx dependency isn't fetched with RAVL2_MIN_DEPS)
+if(RAVL2_ENABLE_DISPLAY_STACK AND NOT RAVL2_MIN_DEPS)
     add_subdirectory(Display)
 endif()
 
@@ -35,11 +38,11 @@ if(TARGET OpenGL::GL)
 endif()
 
 # If dlib is found, add the dlib subdirectory
-if(TARGET dlib::dlib)
+if(TARGET dlib::dlib AND NOT RAVL2_MIN_DEPS)
     add_subdirectory(Dlib)
 endif()
 
-if(TARGET Qt${QT_VERSION_MAJOR}::Core)
+if(TARGET Qt${QT_VERSION_MAJOR}::Core AND NOT RAVL2_MIN_DEPS)
     add_subdirectory(Qt)
 endif()
 

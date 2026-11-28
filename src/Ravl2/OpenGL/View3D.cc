@@ -561,15 +561,22 @@ namespace Ravl2 {
 
     auto view = mMatModelView;
 
-    view = glm::translate(view, -toGLM(m_sceneCenter));
+    // Rotate about the scene centre: view * T(c) * R * T(-c) (the translations were the wrong way round, which
+    // rotated about -c).
+    view = glm::translate(view, toGLM(m_sceneCenter));
     view = glm::rotate(view, deg2rad(m_vRotation[0]), glm::vec3(1.0f, 0.0f, 0.0f));
     view = glm::rotate(view, deg2rad(m_vRotation[1]), glm::vec3(0.0f, 1.0f, 0.0f));
-    view = glm::translate(view, toGLM(m_sceneCenter));
+    view = glm::translate(view, -toGLM(m_sceneCenter));
 
     // Compose things.
     mMatProjectionView = mMatProjection * view;
 
-    scene->GUIRender(*this);
+    {
+      // add() changes the scene under this lock, possibly from another thread.
+      std::shared_lock lockHold(viewLock);
+      if(scene)
+        scene->GUIRender(*this);
+    }
 #else
     // Render scene
     {

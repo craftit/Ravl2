@@ -29,6 +29,22 @@ namespace Ravl2
       CHECK(isNearZero(cost));
     }
 
+    SECTION("Powell converges on a rotated valley")
+    {
+      // Narrow valley along x = y, which coordinate descent alone handles badly.
+      auto valley = [](const VectorT<RealT> &X) -> RealT {
+        const RealT u = X[0] + X[1] - 1;
+        const RealT v = X[0] - X[1];
+        return u * u + 100 * v * v;
+      };
+      OptimisePowell powell(3, RealT(1e-12), true, false);
+      const CostDomain<RealT> domain(VectorT<RealT>({{-5.0}, {-5.0}}), VectorT<RealT>({{5.0}, {5.0}}));
+      auto [sol, cost] = powell.minimise(domain, valley, VectorT<RealT>({{-3.0}, {4.0}}));
+      CHECK(cost < 1e-4f);
+      CHECK(std::abs(sol[0] - 0.5f) < 1e-2f);
+      CHECK(std::abs(sol[1] - 0.5f) < 1e-2f);
+    }
+
     SECTION("Powell keeps to its domain")
     {
       const CostDomain<RealT> domain(VectorT<RealT>({{-1.0}, {-1.0}}), VectorT<RealT>({{1.0}, {1.0}}));

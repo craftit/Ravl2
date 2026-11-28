@@ -47,21 +47,36 @@ namespace Ravl2
 
     //! Set the length scale parameter
     //! @param length_scale New length scale value
-    //! @note This invalidates the current model and requires refitting
+    //! @note A fitted model is refitted with the new value, so predict() stays usable.
     void setLengthScale(RealT length_scale) {
       mLengthScale = length_scale;
-      // Clear fitted data to force refitting with new parameters
-      mK.resize(0, 0);
-      mK_inv.resize(0, 0);
+      if(mX.rows() > 0)
+        refit();
     }
 
+    //! Scale inputs to [0, 1] using these bounds before applying the kernel, so the length scale is a fraction of
+    //! the domain rather than in raw units. Call before fit().
+    void setInputBounds(const Vector &min, const Vector &max);
+
   private:
-    Matrix mX;        //!< Training input points
-    Vector mY;        //!< Training target values
-    Matrix mK;        //!< Kernel matrix for training points
-    Matrix mK_inv;    //!< Inverse of kernel matrix
+    Matrix mX;        //!< Training input points (scaled, if bounds are set)
+    Vector mY;        //!< Training target values (raw)
+    Vector mAlpha;    //!< K^-1 * standardised targets
+    Eigen::LLT<Matrix> mLLT; //!< Cholesky factor of the kernel matrix
+    Matrix mK_inv;    //!< Pseudo-inverse, used only when the Cholesky factorisation fails
+    bool mUseLLT = true;
+    RealT mYMean = 0; //!< Targets are standardised, so the prior mean is the data mean...
+    RealT mYScale = 1;//!< ...and the unit signal variance matches the data spread.
+    Vector mInputMin; //!< Input bounds; empty means inputs are used as given
+    Vector mInputScale;
     RealT mLengthScale; //!< Length scale parameter for kernel
     RealT mNoise;     //!< Noise parameter for numerical stability
+
+    //! Scale raw inputs by the input bounds, if set.
+    Matrix scaleInputs(const Matrix &X) const;
+
+    //! Rebuild the factorisation from mX and mY.
+    void refit();
 
     //! Squared exponential kernel function
     //! @param x1 First input vector

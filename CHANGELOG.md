@@ -75,6 +75,14 @@ may have relied on or worked around: check code that uses them.
 - FFmpeg audio streams report `AudioChunk<SampleT>` as their data type (was `Array<SampleT, 2>`), matching the
   frames, so typed audio iterators work.
 - The FFmpeg writer rejects audio chunks whose channel count doesn't match the encoder.
+- `BayesianOptimise`: the GP works on inputs scaled to the domain, so `gpLengthScale` is a fraction of the domain
+  (it was in raw units), and on standardised targets; the initial design has at least 2*dim+1 points; an explicit
+  all-zero start point is used (it was ignored).
+- `RandomSearchOptimise` grid sampling uses `gridPointsPerDim` (it was sized from the batch).
+- `ConfigFactory` registration functions return false for duplicates (they terminated the program), and creating
+  a type with no default constructor registered is a clear `std::runtime_error`.
+- **Breaking:** `GLWindow` is not movable (the old moves left GLFW callbacks pointing at the moved-from window).
+- `RAVL2_MIN_DEPS` disables the Qt, dlib and Display modules even when those libraries are installed.
 - GoPro GPS fields use their own SCAL divisors (altitude and speeds were 10^4-10^5 too small), and gyro/accel
   SCAL is read with its 16-bit type (values were about 65536x too small).
 - CMake: the Display tests and display examples are only built when the Display stack is enabled; ImGui, ImPlot,
@@ -126,6 +134,11 @@ may have relied on or worked around: check code that uses them.
 - FFmpeg writer: a failed packet flush freed packets twice, a failed first frame leaked its encoder and a retry
   added a second audio stream, and `sws_scale` read past unpadded pixel buffers. FFmpeg iterators: a constructor
   that threw left the container's iterator count raised; on macOS every captured frame leaked a buffer reference.
+- `BayesianOptimise` with `adaptiveLengthScale` crashed on its second iteration, and adapted length scales
+  compounded every iteration.
+- `ConfigNode::setValue()` on an empty node recorded the old (void) type.
+- OpenGL: `GLWindow` used its window after `glfwTerminate()`; `View3D` rotated about the wrong point, rendered
+  without a null check or lock, and wireframe `DTriMesh` drawing used `GL_LINE` (not a primitive).
 - Builds against FFmpeg older than 7.1 (`avcodec_get_supported_config()` is used when available).
 - Configuring with `RAVL2_ENABLE_DISPLAY_STACK=OFF` failed; fetching bgfx failed with a user-level
   `submodule.recurse=true`; ImGui header warnings broke `-Werror` builds.

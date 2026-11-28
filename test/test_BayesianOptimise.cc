@@ -122,3 +122,40 @@ namespace Ravl2
     REQUIRE(batchBest < 0.2f);
   }
 }
+
+namespace Ravl2
+{
+  TEST_CASE("BayesianOptimise works on wide domains, offsets and with adaptive length scale", "[BayesianOptimise]")
+  {
+    // [-5,5]^2 with the minimum at (1.3,-0.7): with defaults this used to stop at its first sample (cost 2.6),
+    // and the result changed when a constant was added to the cost.
+    CostDomain<float> domain({-5.0f, -5.0f}, {5.0f, 5.0f});
+    VectorT<float> results[2];
+    int i = 0;
+    for(float offset : {0.0f, 1000.0f}) {
+      auto f = [offset](const VectorT<float> &x) { return (x[0] - 1.3f) * (x[0] - 1.3f) + (x[1] + 0.7f) * (x[1] + 0.7f) + offset; };
+      BayesianOptimise bo(size_t(30));
+      auto [x, v] = bo.minimise(domain, f);
+      CHECK(v - offset < 0.5f);
+      results[i++] = x;
+    }
+    CHECK((results[0] - results[1]).norm() < 0.2f);
+
+    // Adaptive length scale used to crash on the second iteration.
+    auto f = [](const VectorT<float> &x) { return (x[0] - 1.3f) * (x[0] - 1.3f) + (x[1] + 0.7f) * (x[1] + 0.7f); };
+    BayesianOptimise adaptive(20, 1, 0, false, 1.0f, 1e-6f, true, 42, 1e-6f, 5, 0.1f, 0.1f, true);
+    auto [ax, av] = adaptive.minimise(domain, f);
+    CHECK(av < 0.5f);
+
+    // An explicit start of all zeros is evaluated (it used to be ignored).
+    int zeroEvaluations = 0;
+    auto counting = [&](const VectorT<float> &x) {
+      if(x.isZero(0))
+        ++zeroEvaluations;
+      return f(x);
+    };
+    VectorT<float> zero = VectorT<float>::Zero(2);
+    (void)BayesianOptimise(size_t(8)).minimise(domain, counting, zero);
+    CHECK(zeroEvaluations >= 1);
+  }
+}

@@ -67,6 +67,10 @@ namespace Ravl2
       } catch(std::error_code &e) {
         SPDLOG_ERROR("Error registering type '{}' : {}", name, e.message());
         return false;
+      } catch(const std::exception &e) {
+        // These functions are noexcept; add() throws std::runtime_error for duplicates, which used to terminate.
+        SPDLOG_ERROR("Error registering type '{}' : {}", name, e.what());
+        return false;
       }
       return true;
     }
@@ -88,6 +92,10 @@ namespace Ravl2
       } catch(std::error_code &e) {
         SPDLOG_ERROR("Error registering type '{}' : {}", name, e.message());
         return false;
+      } catch(const std::exception &e) {
+        // These functions are noexcept; add() throws std::runtime_error for duplicates, which used to terminate.
+        SPDLOG_ERROR("Error registering type '{}' : {}", name, e.what());
+        return false;
       }
       return true;
     }
@@ -107,6 +115,10 @@ namespace Ravl2
             });
       } catch(std::error_code &e) {
         SPDLOG_ERROR("Error registering type '{}' : {}", name, e.message());
+        return false;
+      } catch(const std::exception &e) {
+        // These functions are noexcept; add() throws std::runtime_error for duplicates, which used to terminate.
+        SPDLOG_ERROR("Error registering type '{}' : {}", name, e.what());
         return false;
       }
       return true;

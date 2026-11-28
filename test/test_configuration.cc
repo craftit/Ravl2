@@ -274,3 +274,35 @@ TEST_CASE("Configuration")
     CHECK_THROWS(config.getDuration<int64_t>("outOfRange", "Out of range", std::chrono::seconds(0), std::chrono::seconds(0), std::chrono::seconds(500)));
   }
 }
+
+namespace
+{
+  struct CfgTestBase {
+    virtual ~CfgTestBase() = default;
+  };
+  struct CfgTestA : CfgTestBase {
+    explicit CfgTestA(Ravl2::Configuration &) {}
+  };
+}// namespace
+
+TEST_CASE("ConfigFactory registration and default lookup")
+{
+  Ravl2::SetSPDLogLevel beQuiet(spdlog::level::off);
+  auto factory = std::make_shared<Ravl2::ConfigFactory>();
+  CHECK(factory->registerNamedType<CfgTestBase, CfgTestA>("A"));
+  // A duplicate used to throw out of a noexcept function (std::terminate); it now reports failure.
+  CHECK_FALSE(factory->registerNamedType<CfgTestBase, CfgTestA>("A"));
+
+  // No default was registered: asking for one is a clear error, not std::bad_function_call from an empty entry.
+  Ravl2::Configuration config = Ravl2::Configuration::fromJSONString(R"( {} )");
+  CHECK_THROWS_AS(factory->create(typeid(std::shared_ptr<CfgTestBase>), "default", config), std::runtime_error);
+}
+
+TEST_CASE("ConfigNode setValue fixes the type of an empty node")
+{
+  Ravl2::ConfigNode node;
+  REQUIRE(node.setValue(std::any(42)));
+  // The recorded type used to be the old empty value's (void).
+  CHECK(node.fieldType() == typeid(int));
+}
+

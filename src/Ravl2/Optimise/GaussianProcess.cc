@@ -1,5 +1,6 @@
 #include "GaussianProcess.hh"
 #include <cmath>
+#include <limits>
 #include <stdexcept>
 #include <spdlog/spdlog.h>
 #include <cassert>
@@ -16,9 +17,28 @@ namespace Ravl2
       mNoise(noise)
   {}
 
+  template<typename RealT>
+  void GaussianProcess<RealT>::setInputBounds(const Vector &min, const Vector &max)
+  {
+    if(min.size() != max.size())
+      throw std::invalid_argument("GaussianProcess::setInputBounds: min and max sizes differ");
+    mInputMin = min;
+    mInputScale = (max - min).cwiseMax(std::numeric_limits<RealT>::epsilon()).cwiseInverse();
+  }
+
+  template<typename RealT>
+  typename GaussianProcess<RealT>::Matrix GaussianProcess<RealT>::scaleInputs(const Matrix &X) const
+  {
+    if(mInputMin.size() == 0)
+      return X;
+    if(X.cols() != mInputMin.size())
+      throw std::invalid_argument("GaussianProcess: input dimension doesn't match the input bounds");
+    return (X.rowwise() - mInputMin.transpose()).array().rowwise() * mInputScale.transpose().array();
+  }
+
   //! Fit the Gaussian Process to training data
   //!
-  //! Computes the kernel matrix and its inverse for future predictions.
+  //! Factorises the kernel matrix for future predictions.
   //!
   //! @param X Training input points (n_samples x n_features)
   //! @param y Training target values (n_samples)
@@ -33,27 +53,37 @@ namespace Ravl2
       SPDLOG_ERROR("GaussianProcess::fit() called with mismatched dimensions: X.rows()={}, y.size()={}", X.rows(), y.size());
       throw std::invalid_argument("Number of input points must match number of target values");
     }
-
-    mX = X;
+    mX = scaleInputs(X);
     mY = y;
-    mK = compute_kernel_matrix(X, X);
-    mK.diagonal().array() += mNoise;  // More efficient than adding identity matrix
+    refit();
+  }
 
-    // Use Cholesky decomposition for better numerical stability
-    Eigen::LLT<Matrix> llt(mK);
-    if(llt.info() != Eigen::Success) {
-      // Fallback to pseudo-inverse if Cholesky fails
-      mK_inv = mK.completeOrthogonalDecomposition().pseudoInverse();
+  template<typename RealT>
+  void GaussianProcess<RealT>::refit()
+  {
+    // Standardise the targets: with a zero prior mean and unit signal variance, raw targets far from 0 made
+    // unexplored regions look like improvements and the search never left its first points.
+    mYMean = mY.mean();
+    const RealT spread = std::sqrt((mY.array() - mYMean).square().mean());
+    mYScale = spread > std::numeric_limits<RealT>::epsilon() ? spread : RealT(1);
+    const Vector yStd = (mY.array() - mYMean) / mYScale;
+
+    Matrix K = compute_kernel_matrix(mX, mX);
+    K.diagonal().array() += mNoise;
+    mLLT.compute(K);
+    mUseLLT = mLLT.info() == Eigen::Success;
+    if(mUseLLT) {
+      mAlpha = mLLT.solve(yStd);
+      mK_inv.resize(0, 0);
     } else {
-      mK_inv = llt.solve(Matrix::Identity(mK.rows(), mK.cols()));
+      mK_inv = K.completeOrthogonalDecomposition().pseudoInverse();
+      mAlpha = mK_inv * yStd;
     }
   }
 
   //! Predict mean and variance for new test points
   //!
-  //! Uses the standard GP prediction equations:
-  //! mean = K_s^T * K^-1 * y
-  //! var = K_ss - K_s^T * K^-1 * K_s
+  //! mean = K_s^T * K^-1 * y, var = k(x, x) - K_s^T * K^-1 * K_s (only the diagonal is computed; k(x, x) = 1).
   //!
   //! @param Xtest Test input points (n_test x n_features)
   //! @param mean Output vector to store predicted means (n_test)
@@ -61,12 +91,18 @@ namespace Ravl2
   template<typename RealT>
   void GaussianProcess<RealT>::predict(const Matrix &Xtest, Vector &mean, Vector &variance) const
   {
-    assert(mX.rows() > 0 && "GaussianProcess::predict() called on unfitted model - must call fit() first");
-    Matrix K_s = compute_kernel_matrix(mX, Xtest);    // n_train x n_test
-    Matrix K_ss = compute_kernel_matrix(Xtest, Xtest);// n_test x n_test
-    mean = K_s.transpose() * mK_inv * mY;
-    Matrix v = mK_inv * K_s;
-    variance = K_ss.diagonal() - (K_s.transpose() * v).diagonal();
+    if(mX.rows() == 0)
+      throw std::logic_error("GaussianProcess::predict() called on an unfitted model");
+    const Matrix K_s = compute_kernel_matrix(mX, scaleInputs(Xtest));// n_train x n_test
+    mean = (K_s.transpose() * mAlpha).array() * mYScale + mYMean;
+    Vector reduction;
+    if(mUseLLT) {
+      const Matrix v = mLLT.matrixL().solve(K_s);
+      reduction = v.colwise().squaredNorm().transpose();
+    } else {
+      reduction = (K_s.array() * (mK_inv * K_s).array()).colwise().sum().transpose();
+    }
+    variance = ((RealT(1) - reduction.array()).max(RealT(0))) * (mYScale * mYScale);
   }
 
   //! Add a new observation for online updates
@@ -83,13 +119,13 @@ namespace Ravl2
     const auto old_size = mY.size();
 
     mX.conservativeResize(old_rows + 1, Eigen::NoChange);
-    mX.row(old_rows) = x_new.transpose();
+    mX.row(old_rows) = scaleInputs(Matrix(x_new.transpose())).row(0);
 
     mY.conservativeResize(old_size + 1);
     mY(old_size) = y_new;
 
-    // Refit with new data
-    fit(mX, mY);
+    // Refit with new data (mX is already scaled)
+    refit();
   }
 
   //! Squared exponential kernel function

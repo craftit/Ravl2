@@ -341,6 +341,7 @@ namespace Ravl2
       std::vector<VectorT<RealT>> mX;                  //!< Points evaluated so far
       std::vector<RealT> mY;                           //!< Function values for evaluated points
       GaussianProcess<RealT> mGP;                      //!< Gaussian Process surrogate model
+      RealT mInitialLengthScale;                       //!< Configured length scale; adaptation scales this, not the last value
       std::shared_ptr<SampleGenerator> mInitialGen;    //!< Generator for initial points
       std::shared_ptr<SampleGenerator> mAcquisitionGen;//!< Generator for acquisition-based points
       FunctionCache<RealT> mFunctionCache;             //!< Function evaluation cache
@@ -357,6 +358,7 @@ namespace Ravl2
             std::shared_ptr<SampleGenerator> acquisitionGen,
             bool verbose)
           : mGP(gpLengthScale, gpNoise),
+            mInitialLengthScale(gpLengthScale),
             mInitialGen(initialGen->clone()),
             mAcquisitionGen(acquisitionGen->clone()),
             mFunctionCache(static_cast<RealT>(1e-10)),
