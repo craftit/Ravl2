@@ -446,76 +446,53 @@ namespace Ravl2
 
      SECTION("convertToPacked - YUV422 subsampling")
      {
-       // Master range (inclusive). Width = 9 (0..8), height = 5 (0..4)
-       IndexRange<2> masterRange({{0,8},{0,4}});
+       // Master range (inclusive), (row, col): height = 5 (0..4), width = 9 (0..8)
+       IndexRange<2> masterRange({{0,4},{0,8}});
        YUV422Image<uint8_t> yuv422(masterRange);
 
-       // Check raw plane ranges match expected subsampling BEFORE filling
        // Y plane: full resolution
-       CHECK(yuv422.plane<0>().range().min(0) == masterRange.min(0));
-       CHECK(yuv422.plane<0>().range().min(1) == masterRange.min(1));
-       CHECK(yuv422.plane<0>().range().max(0) == masterRange.max(0));
-       CHECK(yuv422.plane<0>().range().max(1) == masterRange.max(1));
-       // U & V planes: half horizontal, full vertical (4:2:2)
-       // Expected max x = (masterMaxX + 2 - 1)/2 = (8+1)/2 = 4, y unchanged (4)
-       CHECK(yuv422.plane<1>().range().min(0) == 0);
-       CHECK(yuv422.plane<1>().range().min(1) == 0);
-       CHECK(yuv422.plane<1>().range().max(0) == 4);
-       CHECK(yuv422.plane<1>().range().max(1) == 4);
-       CHECK(yuv422.plane<2>().range().min(0) == 0);
-       CHECK(yuv422.plane<2>().range().min(1) == 0);
-       CHECK(yuv422.plane<2>().range().max(0) == 4);
-       CHECK(yuv422.plane<2>().range().max(1) == 4);
+       CHECK(yuv422.plane<0>().range() == masterRange);
+       // U & V planes: full vertical, half horizontal (4:2:2). Columns 0..8 -> 0..4.
+       IndexRange<2> expectedChroma({{0,4},{0,4}});
+       CHECK(yuv422.plane<1>().range() == expectedChroma);
+       CHECK(yuv422.plane<2>().range() == expectedChroma);
 
-       // Fill Y (full resolution) with a simple pattern Y = 10*y + x
+       // Fill Y (full resolution) with Y = 10*row + col
        for(auto it = yuv422.plane<0>().data().begin(); it != yuv422.plane<0>().data().end(); ++it) {
          const auto &idx = it.index();
-         *it = static_cast<uint8_t>(10 * idx[1] + idx[0]);
+         *it = static_cast<uint8_t>(10 * idx[0] + idx[1]);
        }
-       // Fill U (subsampled horizontally by 2): U = 50 + xu
+       // U = 50 + subsampled column
        for(auto it = yuv422.plane<1>().data().begin(); it != yuv422.plane<1>().data().end(); ++it) {
-         const auto &idx = it.index(); // idx[0] is subsampled x (xu)
-         *it = static_cast<uint8_t>(50 + idx[0]);
+         *it = static_cast<uint8_t>(50 + it.index()[1]);
        }
-       // Fill V (subsampled horizontally by 2): V = 100 + y
+       // V = 100 + row
        for(auto it = yuv422.plane<2>().data().begin(); it != yuv422.plane<2>().data().end(); ++it) {
-         const auto &idx = it.index();
-         *it = static_cast<uint8_t>(100 + idx[1]);
+         *it = static_cast<uint8_t>(100 + it.index()[0]);
        }
 
-       // Sanity: masterRange of chroma planes should extend one extra luma column due to block coverage (0..9)
-       IndexRange<2> expectedChromaMaster({{0,9},{0,4}});
+       // Chroma planes cover one extra luma column due to block coverage (0..9)
+       IndexRange<2> expectedChromaMaster({{0,4},{0,9}});
        CHECK(yuv422.plane<1>().masterRange() == expectedChromaMaster);
        CHECK(yuv422.plane<2>().masterRange() == expectedChromaMaster);
 
-       // Convert to packed YUV pixels
        auto packed = convertToPacked<PixelYUV8>(yuv422);
-
-       // Range should match master range
        CHECK(packed.range() == yuv422.range());
 
-       // Check a selection / all coordinates
-       for(int y = 0; y <= 4; ++y) {
-         for(int x = 0; x <= 8; ++x) {
-           auto px = packed[{x,y}];
-           uint8_t expY = static_cast<uint8_t>(10 * y + x);
-           uint8_t expU = static_cast<uint8_t>(50 + (x / 2));
-           uint8_t expV = static_cast<uint8_t>(100 + y);
-           CHECK(px.get<ImageChannel::Luminance>() == expY);
-           CHECK(px.get<ImageChannel::ChrominanceU>() == expU);
-           CHECK(px.get<ImageChannel::ChrominanceV>() == expV);
+       for(int row = 0; row <= 4; ++row) {
+         for(int col = 0; col <= 8; ++col) {
+           auto px = packed[{row, col}];
+           CHECK(px.get<ImageChannel::Luminance>() == static_cast<uint8_t>(10 * row + col));
+           CHECK(px.get<ImageChannel::ChrominanceU>() == static_cast<uint8_t>(50 + (col / 2)));
+           CHECK(px.get<ImageChannel::ChrominanceV>() == static_cast<uint8_t>(100 + row));
          }
        }
 
-       // Verify horizontal pairing shares chroma (each pair of luma samples uses same U,V)
-       for(int y = 0; y <= 4; ++y) {
-         for(int x = 0; x <= 8; x += 2) {
-           auto u1 = packed[{x,y}].get<ImageChannel::ChrominanceU>();
-           auto u2 = packed[{x+1,y}].get<ImageChannel::ChrominanceU>();
-           CHECK(u1 == u2);
-           auto v1 = packed[{x,y}].get<ImageChannel::ChrominanceV>();
-           auto v2 = packed[{x+1,y}].get<ImageChannel::ChrominanceV>();
-           CHECK(v1 == v2);
+       // Each horizontal pair of luma samples shares chroma
+       for(int row = 0; row <= 4; ++row) {
+         for(int col = 0; col < 8; col += 2) {
+           CHECK(packed[{row, col}].get<ImageChannel::ChrominanceU>() == packed[{row, col + 1}].get<ImageChannel::ChrominanceU>());
+           CHECK(packed[{row, col}].get<ImageChannel::ChrominanceV>() == packed[{row, col + 1}].get<ImageChannel::ChrominanceV>());
          }
        }
     }

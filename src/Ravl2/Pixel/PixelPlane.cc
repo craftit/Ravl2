@@ -117,10 +117,10 @@ namespace Ravl2
 
   // Chrominance planes
   template class PixelPlane<uint8_t, 2, ImageChannel::ChrominanceU, 1, 1>;
-  template class PixelPlane<uint8_t, 2, ImageChannel::ChrominanceU, 2, 1>;
+  template class PixelPlane<uint8_t, 2, ImageChannel::ChrominanceU, 1, 2>;
   template class PixelPlane<uint8_t, 2, ImageChannel::ChrominanceU, 2, 2>;
   template class PixelPlane<uint8_t, 2, ImageChannel::ChrominanceV, 1, 1>;
-  template class PixelPlane<uint8_t, 2, ImageChannel::ChrominanceV, 2, 1>;
+  template class PixelPlane<uint8_t, 2, ImageChannel::ChrominanceV, 1, 2>;
   template class PixelPlane<uint8_t, 2, ImageChannel::ChrominanceV, 2, 2>;
 
   // RGB planes

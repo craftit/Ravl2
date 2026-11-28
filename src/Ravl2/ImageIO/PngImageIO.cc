@@ -17,6 +17,7 @@
 #include <vector>
 #include <cstdio>
 #include <cstring>
+#include <stdexcept>
 
 #ifdef RAVL2_HAVE_PNG
 #include <png.h>
@@ -37,6 +38,49 @@ namespace Ravl2
     };
     using FilePtr = std::unique_ptr<FILE, FileCloser>;
 
+    using RGB16Pixel = Pixel<uint16_t, ImageChannel::Red, ImageChannel::Green, ImageChannel::Blue>;
+    using RGBA16Pixel = Pixel<uint16_t, ImageChannel::Red, ImageChannel::Green, ImageChannel::Blue, ImageChannel::Alpha>;
+
+    //! libpng's errors longjmp by default, which would skip C++ destructors. Throw instead; callers catch.
+    //! (libpng is built with unwind tables on the GCC/Clang targets we support.)
+    [[noreturn]] void pngError(png_structp, png_const_charp msg)
+    {
+      throw std::runtime_error(std::string("libpng: ") + msg);
+    }
+
+    void pngWarning(png_structp, png_const_charp msg)
+    {
+      SPDLOG_WARN("libpng: {}", msg);
+    }
+
+    //! PNG layout of each pixel type we read and write directly.
+    template <typename PixelT>
+    struct PngPixelTraits;
+    template <>
+    struct PngPixelTraits<uint8_t> {
+      static constexpr int bitDepth = 8, channels = 1, colorType = PNG_COLOR_TYPE_GRAY;
+    };
+    template <>
+    struct PngPixelTraits<PixelRGB8> {
+      static constexpr int bitDepth = 8, channels = 3, colorType = PNG_COLOR_TYPE_RGB;
+    };
+    template <>
+    struct PngPixelTraits<PixelRGBA8> {
+      static constexpr int bitDepth = 8, channels = 4, colorType = PNG_COLOR_TYPE_RGB_ALPHA;
+    };
+    template <>
+    struct PngPixelTraits<uint16_t> {
+      static constexpr int bitDepth = 16, channels = 1, colorType = PNG_COLOR_TYPE_GRAY;
+    };
+    template <>
+    struct PngPixelTraits<RGB16Pixel> {
+      static constexpr int bitDepth = 16, channels = 3, colorType = PNG_COLOR_TYPE_RGB;
+    };
+    template <>
+    struct PngPixelTraits<RGBA16Pixel> {
+      static constexpr int bitDepth = 16, channels = 4, colorType = PNG_COLOR_TYPE_RGB_ALPHA;
+    };
+
     struct PngDecodeContext {
       FilePtr file;
       png_structp pngPtr {nullptr};
@@ -55,32 +99,95 @@ namespace Ravl2
       {
         file.reset(std::fopen(filename.c_str(), "rb"));
         if(!file) return;
-        pngPtr = png_create_read_struct(PNG_LIBPNG_VER_STRING, nullptr, nullptr, nullptr);
+        pngPtr = png_create_read_struct(PNG_LIBPNG_VER_STRING, nullptr, pngError, pngWarning);
         if(!pngPtr) return;
         infoPtr = png_create_info_struct(pngPtr);
         if(!infoPtr) return;
-        if(setjmp(png_jmpbuf(pngPtr))) {
-          return;// error
+        try {
+          png_init_io(pngPtr, file.get());
+          png_read_info(pngPtr, infoPtr);
+          png_get_IHDR(pngPtr, infoPtr, &width, &height, &bitDepth, &colorType, &interlace, nullptr, nullptr);
+        } catch(const std::exception &e) {
+          SPDLOG_WARN("PNGNative: cannot read header of '{}': {}", filename, e.what());
+          return;
         }
-        png_init_io(pngPtr, file.get());
-        png_read_info(pngPtr, infoPtr);
-        png_get_IHDR(pngPtr, infoPtr, &width, &height, &bitDepth, &colorType, &interlace, nullptr, nullptr);
         created = true;
         headerOk = true;
       }
 
       ~PngDecodeContext()
       {
-        if(pngPtr || infoPtr) {
-          if(pngPtr) {
-            // libpng requires destroy with both pointers
-            png_destroy_read_struct(&pngPtr, &infoPtr, nullptr);
-          }
+        if(pngPtr) {
+          // libpng requires destroy with both pointers
+          png_destroy_read_struct(&pngPtr, &infoPtr, nullptr);
         }
       }
       PngDecodeContext(const PngDecodeContext &) = delete;
       PngDecodeContext &operator=(const PngDecodeContext &) = delete;
     };
+
+    //! Set up libpng transforms so any source PNG decodes to PixelT, then decode.
+    template <typename PixelT>
+    std::optional<Array<PixelT, 2>> decodePng(PngDecodeContext &dctx)
+    {
+      using Traits = PngPixelTraits<PixelT>;
+      auto pngPtr = dctx.pngPtr;
+      auto infoPtr = dctx.infoPtr;
+      const int colorType = dctx.colorType;
+      const int bitDepth = dctx.bitDepth;
+      // Palette images have the colour bit set.
+      const bool srcColour = (colorType & PNG_COLOR_MASK_COLOR) != 0;
+      const bool hasTrns = png_get_valid(pngPtr, infoPtr, PNG_INFO_tRNS) != 0;
+      const bool srcAlpha = (colorType & PNG_COLOR_MASK_ALPHA) != 0 || hasTrns;
+      constexpr bool wantColour = Traits::channels >= 3;
+      constexpr bool wantAlpha = Traits::channels == 4;
+
+      // Expand to at least 8 bits per channel, palette to RGB, tRNS to alpha.
+      if(colorType == PNG_COLOR_TYPE_PALETTE) png_set_palette_to_rgb(pngPtr);
+      if(hasTrns) png_set_tRNS_to_alpha(pngPtr);
+      if(colorType == PNG_COLOR_TYPE_GRAY && bitDepth < 8) png_set_expand_gray_1_2_4_to_8(pngPtr);
+
+      // Bit depth.
+      if constexpr(Traits::bitDepth == 8) {
+        if(bitDepth == 16) png_set_strip_16(pngPtr);
+      } else {
+#ifdef PNG_READ_EXPAND_16_SUPPORTED
+        if(bitDepth < 16) png_set_expand_16(pngPtr);
+#endif
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+        png_set_swap(pngPtr);// PNG stores 16-bit samples big-endian
+#endif
+      }
+
+      // Colour and alpha.
+      if(wantColour && !srcColour) png_set_gray_to_rgb(pngPtr);
+      if(!wantColour && srcColour) png_set_rgb_to_gray_fixed(pngPtr, 1, -1, -1);
+      if(wantAlpha && !srcAlpha) png_set_add_alpha(pngPtr, Traits::bitDepth == 16 ? 0xFFFF : 0xFF, PNG_FILLER_AFTER);
+      if(!wantAlpha && srcAlpha) png_set_strip_alpha(pngPtr);
+
+      // libpng handles all interlace passes inside a single png_read_image().
+      png_set_interlace_handling(pngPtr);
+      png_read_update_info(pngPtr, infoPtr);
+
+      const int outW = static_cast<int>(png_get_image_width(pngPtr, infoPtr));
+      const int outH = static_cast<int>(png_get_image_height(pngPtr, infoPtr));
+      const auto rowBytes = png_get_rowbytes(pngPtr, infoPtr);
+      if(png_get_channels(pngPtr, infoPtr) != Traits::channels || png_get_bit_depth(pngPtr, infoPtr) != Traits::bitDepth
+         || rowBytes != static_cast<std::size_t>(outW) * sizeof(PixelT)) {
+        SPDLOG_WARN("PNGNative: cannot decode {}-bit colour type {} as {} ({} bytes per row, expected {})", bitDepth, colorType,
+                    typeName(typeid(PixelT)), rowBytes, static_cast<std::size_t>(outW) * sizeof(PixelT));
+        return std::nullopt;
+      }
+
+      Array<PixelT, 2> out({outH, outW});
+      std::vector<png_bytep> rows(static_cast<size_t>(outH));
+      for(int y = 0; y < outH; ++y) {
+        rows[static_cast<size_t>(y)] = reinterpret_cast<png_bytep>(&out[{y, 0}]);
+      }
+      png_read_image(pngPtr, rows.data());
+      png_read_end(pngPtr, nullptr);
+      return out;
+    }
 
     template <typename ViaT>
     std::optional<StreamInputPlan> buildPlanForInput(const ProbeInputContext &ctx, std::shared_ptr<PngDecodeContext> dctx)
@@ -88,121 +195,83 @@ namespace Ravl2
       auto chainOpt = typeConverterMap().find(ctx.mTargetType, typeid(ViaT));
       if(!chainOpt) return std::nullopt;
 
-      auto strm = std::make_shared<StreamInputCall<ViaT>>([dctx, verbose = ctx.mVerbose](std::streampos &pos) -> std::optional<ViaT> {
+      auto strm = std::make_shared<StreamInputCall<ViaT>>([dctx](std::streampos &pos) -> std::optional<ViaT> {
         if(pos != 0) return std::nullopt;
         if(!dctx || !dctx->created || !dctx->headerOk || dctx->consumed) return std::nullopt;
-
-        auto pngPtr = dctx->pngPtr;
-        auto infoPtr = dctx->infoPtr;
-        if(setjmp(png_jmpbuf(pngPtr))) {
-          if(verbose) SPDLOG_WARN("PNGNative: decode error");
+        // Single use: libpng's read state can't be rewound.
+        dctx->consumed = true;
+        try {
+          auto out = decodePng<typename ViaT::value_type>(*dctx);
+          if(out) pos = 1;
+          return out;
+        } catch(const std::exception &e) {
+          SPDLOG_WARN("PNGNative: decode failed: {}", e.what());
           return std::nullopt;
         }
-
-        // Configure transforms to match ViaT
-        int colorType = dctx->colorType;
-        int bitDepth = dctx->bitDepth;
-
-        // Expand palette and tRNS to RGBA when needed; gray 1/2/4 to 8
-        if(colorType == PNG_COLOR_TYPE_PALETTE) png_set_palette_to_rgb(pngPtr);
-        if(png_get_valid(pngPtr, infoPtr, PNG_INFO_tRNS)) png_set_tRNS_to_alpha(pngPtr);
-        if(colorType == PNG_COLOR_TYPE_GRAY && bitDepth < 8) png_set_expand_gray_1_2_4_to_8(pngPtr);
-
-        // Decide target channel/bit depth based on ViaT
-        constexpr bool isGray8 = std::is_same_v<ViaT, Array<uint8_t, 2>>;
-        constexpr bool isGray16 = std::is_same_v<ViaT, Array<uint16_t, 2>>;
-        constexpr bool isRGB8 = std::is_same_v<ViaT, Array<PixelRGB8, 2>>;
-        using RGB16Pixel = Pixel<uint16_t, ImageChannel::Red, ImageChannel::Green, ImageChannel::Blue>;
-        using RGBA16Pixel = Pixel<uint16_t, ImageChannel::Red, ImageChannel::Green, ImageChannel::Blue, ImageChannel::Alpha>;
-        constexpr bool isRGB16 = std::is_same_v<ViaT, Array<RGB16Pixel, 2>>;
-        constexpr bool isRGBA8 = std::is_same_v<ViaT, Array<PixelRGBA8, 2>>;
-        constexpr bool isRGBA16 = std::is_same_v<ViaT, Array<RGBA16Pixel, 2>>;
-
-        if constexpr(isGray8) {
-          // Strip 16 to 8 if needed
-          if(bitDepth == 16) png_set_strip_16(pngPtr);
-          // If input is RGB/RGBA, drop to gray via libpng
-          if(colorType == PNG_COLOR_TYPE_RGB || colorType == PNG_COLOR_TYPE_RGB_ALPHA || colorType == PNG_COLOR_TYPE_PALETTE)
-            png_set_rgb_to_gray_fixed(pngPtr, 1, -1, -1);
-        } else if constexpr(isGray16) {
-          if(bitDepth < 16) {
-            // Promote 8-bit gray to 16 by left-shift (libpng lacks direct); we'll just expand by scale
-            // Simpler approach: read as 8 then up-convert via TypeConverter; here we keep 16-bit only when source is 16
-            // So if not 16-bit, strip to 8 and we will fail below to keep logic simple
-          }
-        } else if constexpr(isRGB8) {
-          if(bitDepth == 16) png_set_strip_16(pngPtr);
-          // Expand GA to RGBA then strip alpha if present
-          if(colorType == PNG_COLOR_TYPE_GRAY || colorType == PNG_COLOR_TYPE_GRAY_ALPHA) {
-            png_set_gray_to_rgb(pngPtr);
-          }
-          if(png_get_color_type(pngPtr, infoPtr) == PNG_COLOR_TYPE_RGB_ALPHA) {
-            png_set_strip_alpha(pngPtr);
-          }
-        } else if constexpr(isRGB16) {
-          if(bitDepth < 16) {
-            // No up-bit here; keep as-is and rely on converters outside; but libpng will deliver 8-bit. We'll bail out to keep semantics strict.
-          }
-#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
-          png_set_swap(pngPtr);
-#endif
-          if(colorType == PNG_COLOR_TYPE_GRAY || colorType == PNG_COLOR_TYPE_GRAY_ALPHA) {
-            png_set_gray_to_rgb(pngPtr);
-          }
-          if(png_get_color_type(pngPtr, infoPtr) == PNG_COLOR_TYPE_RGB_ALPHA) {
-            png_set_strip_alpha(pngPtr);
-          }
-        } else if constexpr(isRGBA8) {
-          if(bitDepth == 16) png_set_strip_16(pngPtr);
-          if(colorType == PNG_COLOR_TYPE_GRAY) {
-            png_set_gray_to_rgb(pngPtr);
-          }
-          // Ensure alpha: if none, add fully opaque
-          if(!(png_get_color_type(pngPtr, infoPtr) & PNG_COLOR_MASK_ALPHA)) {
-            png_set_add_alpha(pngPtr, 0xFF, PNG_FILLER_AFTER);
-          }
-        } else if constexpr(isRGBA16) {
-#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
-          png_set_swap(pngPtr);
-#endif
-          if(colorType == PNG_COLOR_TYPE_GRAY) {
-            png_set_gray_to_rgb(pngPtr);
-          }
-          if(!(png_get_color_type(pngPtr, infoPtr) & PNG_COLOR_MASK_ALPHA)) {
-            png_set_add_alpha(pngPtr, 0xFFFF, PNG_FILLER_AFTER);
-          }
-        }
-
-        // Interlace handling
-        int passes = 1;
-        if(dctx->interlace == PNG_INTERLACE_ADAM7) {
-          passes = png_set_interlace_handling(pngPtr);
-        }
-        png_read_update_info(pngPtr, infoPtr);
-
-        const int outW = static_cast<int>(png_get_image_width(pngPtr, infoPtr));
-        const int outH = static_cast<int>(png_get_image_height(pngPtr, infoPtr));
-
-        // Allocate destination and row pointers
-        ViaT out({outH, outW});
-        std::vector<png_bytep> rows(static_cast<size_t>(outH));
-        for(int y = 0; y < outH; ++y) {
-          rows[static_cast<size_t>(y)] = reinterpret_cast<png_bytep>(&out[{y, 0}]);
-        }
-
-        for(int p = 0; p < passes; ++p) {
-          png_read_image(pngPtr, rows.data());
-        }
-        png_read_end(pngPtr, nullptr);
-
-        dctx->consumed = true;
-        pos = 1;
-        return out;
       });
 
       auto chain = chainOpt.value();
       const float loss = chain.conversionLoss();
       return StreamInputPlan {strm, chain, loss};
+    }
+
+    //! Destroys a write struct however the encoder exits.
+    struct PngWriteGuard {
+      png_structp pngPtr = nullptr;
+      png_infop infoPtr = nullptr;
+      ~PngWriteGuard()
+      {
+        if(pngPtr) png_destroy_write_struct(&pngPtr, &infoPtr);
+      }
+    };
+
+    //! Write an image as PNG. Throws std::runtime_error on failure.
+    template <typename PixelT>
+    void writePng(const std::string &filename, const Array<PixelT, 2> &img, int compression, bool interlace, int filter)
+    {
+      using Traits = PngPixelTraits<PixelT>;
+      FilePtr file(std::fopen(filename.c_str(), "wb"));
+      if(!file) throw std::runtime_error("Failed to open PNG for write");
+      PngWriteGuard guard;
+      guard.pngPtr = png_create_write_struct(PNG_LIBPNG_VER_STRING, nullptr, pngError, pngWarning);
+      if(!guard.pngPtr) throw std::runtime_error("png_create_write_struct failed");
+      guard.infoPtr = png_create_info_struct(guard.pngPtr);
+      if(!guard.infoPtr) throw std::runtime_error("png_create_info_struct failed");
+      auto pngPtr = guard.pngPtr;
+      auto infoPtr = guard.infoPtr;
+
+      png_init_io(pngPtr, file.get());
+      const auto &rng = img.range();
+      png_set_IHDR(pngPtr, infoPtr, static_cast<png_uint_32>(rng.size(1)), static_cast<png_uint_32>(rng.size(0)), Traits::bitDepth, Traits::colorType,
+                   interlace ? PNG_INTERLACE_ADAM7 : PNG_INTERLACE_NONE, PNG_COMPRESSION_TYPE_DEFAULT, PNG_FILTER_TYPE_DEFAULT);
+      png_set_compression_level(pngPtr, compression);
+      if(filter != PNG_ALL_FILTERS) png_set_filter(pngPtr, 0, filter);
+      png_write_info(pngPtr, infoPtr);
+      if constexpr(Traits::bitDepth == 16) {
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+        // PNG stores 16-bit samples big-endian. png_set_swap() only takes effect once the struct's bit depth
+        // is known, which for writing is set by png_write_info(), so it must come after it.
+        png_set_swap(pngPtr);
+#endif
+      }
+      std::vector<png_bytep> rows(static_cast<size_t>(rng.size(0)));
+      for(int y = 0; y < rng.size(0); ++y) {
+        rows[static_cast<size_t>(y)] = reinterpret_cast<png_bytep>(const_cast<PixelT *>(&img[{rng.min(0) + y, rng.min(1)}]));
+      }
+      png_write_image(pngPtr, rows.data());
+      png_write_end(pngPtr, nullptr);
+    }
+
+    template <typename PixelT>
+    StreamOutputPlan makePngOutputPlan(const std::string &filename, const ConversionChain &chain, int compression, bool interlace, int filter)
+    {
+      using ViaT = Array<PixelT, 2>;
+      auto strm = std::make_unique<StreamOutputCall<ViaT>>([filename, compression, interlace, filter](const ViaT &img, std::streampos pos) -> std::streampos {
+        if(pos != 0) throw std::runtime_error("PNG output does not support seeking.");
+        writePng(filename, img, compression, interlace, filter);
+        return 0;
+      });
+      return StreamOutputPlan {std::move(strm), chain, chain.conversionLoss()};
     }
 #endif// RAVL2_HAVE_PNG
 
@@ -231,8 +300,6 @@ namespace Ravl2
         }
 
         // Score candidates based on IHDR
-        using RGB16Pixel = Pixel<uint16_t, ImageChannel::Red, ImageChannel::Green, ImageChannel::Blue>;
-        using RGBA16Pixel = Pixel<uint16_t, ImageChannel::Red, ImageChannel::Green, ImageChannel::Blue, ImageChannel::Alpha>;
 
         struct Candidate {
           enum class Kind
@@ -294,8 +361,6 @@ namespace Ravl2
       "PNGNative", "png", "file", 10,
       [](const ProbeOutputContext &ctx) -> std::optional<StreamOutputPlan> {
 #ifdef RAVL2_HAVE_PNG
-        using RGB16Pixel = Pixel<uint16_t, ImageChannel::Red, ImageChannel::Green, ImageChannel::Blue>;
-        using RGBA16Pixel = Pixel<uint16_t, ImageChannel::Red, ImageChannel::Green, ImageChannel::Blue, ImageChannel::Alpha>;
 
         enum class Choice
         {
@@ -355,272 +420,15 @@ namespace Ravl2
         } catch(...) { /* ignore malformed hints */
         }
 
-        // RGB8
-        if(choice == Choice::RGB8) {
-          using ViaT = Array<PixelRGB8, 2>;
-          auto strm = std::make_unique<StreamOutputCall<ViaT>>([filename = ctx.mFilename, compression, interlace, filter](const ViaT &img, std::streampos pos) -> std::streampos {
-            if(pos != 0) throw std::runtime_error("PNG output does not support seeking.");
-            FILE *f = std::fopen(filename.c_str(), "wb");
-            if(!f) throw std::runtime_error("Failed to open PNG for write");
-            png_structp pngPtr = png_create_write_struct(PNG_LIBPNG_VER_STRING, nullptr, nullptr, nullptr);
-            if(!pngPtr) {
-              std::fclose(f);
-              throw std::runtime_error("png_create_write_struct failed");
-            }
-            png_infop infoPtr = png_create_info_struct(pngPtr);
-            if(!infoPtr) {
-              png_destroy_write_struct(&pngPtr, nullptr);
-              std::fclose(f);
-              throw std::runtime_error("png_create_info_struct failed");
-            }
-            if(setjmp(png_jmpbuf(pngPtr))) {
-              png_destroy_write_struct(&pngPtr, &infoPtr);
-              std::fclose(f);
-              throw std::runtime_error("libpng write error");
-            }
-            png_init_io(pngPtr, f);
-            const auto &rng = img.range();
-            png_set_IHDR(pngPtr, infoPtr, static_cast<png_uint_32>(rng.size(1)), static_cast<png_uint_32>(rng.size(0)), 8, PNG_COLOR_TYPE_RGB,
-                         interlace ? PNG_INTERLACE_ADAM7 : PNG_INTERLACE_NONE, PNG_COMPRESSION_TYPE_DEFAULT, PNG_FILTER_TYPE_DEFAULT);
-            png_set_compression_level(pngPtr, compression);
-            if(filter != PNG_ALL_FILTERS) png_set_filter(pngPtr, 0, filter);
-            png_write_info(pngPtr, infoPtr);
-            std::vector<png_bytep> rows(static_cast<size_t>(rng.size(0)));
-            for(int y = 0; y < rng.size(0); ++y) rows[static_cast<size_t>(y)] = reinterpret_cast<png_bytep>(const_cast<PixelRGB8 *>(&img[{y, 0}]));
-            png_write_image(pngPtr, rows.data());
-            png_write_end(pngPtr, nullptr);
-            png_destroy_write_struct(&pngPtr, &infoPtr);
-            std::fclose(f);
-            return 0;
-          });
-          const float loss = bestChain->conversionLoss();
-          return StreamOutputPlan {std::move(strm), *bestChain, loss};
+        switch(choice) {
+          case Choice::RGB8: return makePngOutputPlan<PixelRGB8>(ctx.mFilename, *bestChain, compression, interlace, filter);
+          case Choice::RGBA8: return makePngOutputPlan<PixelRGBA8>(ctx.mFilename, *bestChain, compression, interlace, filter);
+          case Choice::Gray8: return makePngOutputPlan<uint8_t>(ctx.mFilename, *bestChain, compression, interlace, filter);
+          case Choice::Gray16: return makePngOutputPlan<uint16_t>(ctx.mFilename, *bestChain, compression, interlace, filter);
+          case Choice::RGB16: return makePngOutputPlan<RGB16Pixel>(ctx.mFilename, *bestChain, compression, interlace, filter);
+          case Choice::RGBA16: return makePngOutputPlan<RGBA16Pixel>(ctx.mFilename, *bestChain, compression, interlace, filter);
+          case Choice::None: break;
         }
-
-        // RGBA8
-        if(choice == Choice::RGBA8) {
-          using ViaT = Array<PixelRGBA8, 2>;
-          auto strm = std::make_unique<StreamOutputCall<ViaT>>([filename = ctx.mFilename, compression, interlace, filter](const ViaT &img, std::streampos pos) -> std::streampos {
-            if(pos != 0) throw std::runtime_error("PNG output does not support seeking.");
-            FILE *f = std::fopen(filename.c_str(), "wb");
-            if(!f) throw std::runtime_error("Failed to open PNG for write");
-            png_structp pngPtr = png_create_write_struct(PNG_LIBPNG_VER_STRING, nullptr, nullptr, nullptr);
-            if(!pngPtr) {
-              std::fclose(f);
-              throw std::runtime_error("png_create_write_struct failed");
-            }
-            png_infop infoPtr = png_create_info_struct(pngPtr);
-            if(!infoPtr) {
-              png_destroy_write_struct(&pngPtr, nullptr);
-              std::fclose(f);
-              throw std::runtime_error("png_create_info_struct failed");
-            }
-            if(setjmp(png_jmpbuf(pngPtr))) {
-              png_destroy_write_struct(&pngPtr, &infoPtr);
-              std::fclose(f);
-              throw std::runtime_error("libpng write error");
-            }
-            png_init_io(pngPtr, f);
-            const auto &rng = img.range();
-            png_set_IHDR(pngPtr, infoPtr, static_cast<png_uint_32>(rng.size(1)), static_cast<png_uint_32>(rng.size(0)), 8, PNG_COLOR_TYPE_RGB_ALPHA,
-                         interlace ? PNG_INTERLACE_ADAM7 : PNG_INTERLACE_NONE, PNG_COMPRESSION_TYPE_DEFAULT, PNG_FILTER_TYPE_DEFAULT);
-            png_set_compression_level(pngPtr, compression);
-            if(filter != PNG_ALL_FILTERS) png_set_filter(pngPtr, 0, filter);
-            png_write_info(pngPtr, infoPtr);
-            std::vector<png_bytep> rows(static_cast<size_t>(rng.size(0)));
-            for(int y = 0; y < rng.size(0); ++y) rows[static_cast<size_t>(y)] = reinterpret_cast<png_bytep>(const_cast<PixelRGBA8 *>(&img[{y, 0}]));
-            png_write_image(pngPtr, rows.data());
-            png_write_end(pngPtr, nullptr);
-            png_destroy_write_struct(&pngPtr, &infoPtr);
-            std::fclose(f);
-            return 0;
-          });
-          const float loss = bestChain->conversionLoss();
-          return StreamOutputPlan {std::move(strm), *bestChain, loss};
-        }
-
-        // Gray8
-        if(choice == Choice::Gray8) {
-          using ViaT = Array<uint8_t, 2>;
-          auto strm = std::make_unique<StreamOutputCall<ViaT>>([filename = ctx.mFilename, compression, interlace, filter](const ViaT &img, std::streampos pos) -> std::streampos {
-            if(pos != 0) throw std::runtime_error("PNG output does not support seeking.");
-            FILE *f = std::fopen(filename.c_str(), "wb");
-            if(!f) throw std::runtime_error("Failed to open PNG for write");
-            png_structp pngPtr = png_create_write_struct(PNG_LIBPNG_VER_STRING, nullptr, nullptr, nullptr);
-            if(!pngPtr) {
-              std::fclose(f);
-              throw std::runtime_error("png_create_write_struct failed");
-            }
-            png_infop infoPtr = png_create_info_struct(pngPtr);
-            if(!infoPtr) {
-              png_destroy_write_struct(&pngPtr, nullptr);
-              std::fclose(f);
-              throw std::runtime_error("png_create_info_struct failed");
-            }
-            if(setjmp(png_jmpbuf(pngPtr))) {
-              png_destroy_write_struct(&pngPtr, &infoPtr);
-              std::fclose(f);
-              throw std::runtime_error("libpng write error");
-            }
-            png_init_io(pngPtr, f);
-            const auto &rng = img.range();
-            png_set_IHDR(pngPtr, infoPtr, static_cast<png_uint_32>(rng.size(1)), static_cast<png_uint_32>(rng.size(0)), 8, PNG_COLOR_TYPE_GRAY,
-                         interlace ? PNG_INTERLACE_ADAM7 : PNG_INTERLACE_NONE, PNG_COMPRESSION_TYPE_DEFAULT, PNG_FILTER_TYPE_DEFAULT);
-            png_set_compression_level(pngPtr, compression);
-            if(filter != PNG_ALL_FILTERS) png_set_filter(pngPtr, 0, filter);
-            png_write_info(pngPtr, infoPtr);
-            std::vector<png_bytep> rows(static_cast<size_t>(rng.size(0)));
-#pragma GCC diagnostic push
-#ifndef __clang__
-#pragma GCC diagnostic ignored "-Wuseless-cast"
-#endif
-            for(int y = 0; y < rng.size(0); ++y) rows[static_cast<size_t>(y)] = reinterpret_cast<png_bytep>(const_cast<uint8_t *>(&img[{y, 0}]));
-#pragma GCC diagnostic pop
-            png_write_image(pngPtr, rows.data());
-            png_write_end(pngPtr, nullptr);
-            png_destroy_write_struct(&pngPtr, &infoPtr);
-            std::fclose(f);
-            return 0;
-          });
-          const float loss = bestChain->conversionLoss();
-          return StreamOutputPlan {std::move(strm), *bestChain, loss};
-        }
-
-        // Gray16
-        if(choice == Choice::Gray16) {
-          using ViaT = Array<uint16_t, 2>;
-          auto strm = std::make_unique<StreamOutputCall<ViaT>>([filename = ctx.mFilename, compression, interlace, filter](const ViaT &img, std::streampos pos) -> std::streampos {
-            if(pos != 0) throw std::runtime_error("PNG output does not support seeking.");
-            FILE *f = std::fopen(filename.c_str(), "wb");
-            if(!f) throw std::runtime_error("Failed to open PNG for write");
-            png_structp pngPtr = png_create_write_struct(PNG_LIBPNG_VER_STRING, nullptr, nullptr, nullptr);
-            if(!pngPtr) {
-              std::fclose(f);
-              throw std::runtime_error("png_create_write_struct failed");
-            }
-            png_infop infoPtr = png_create_info_struct(pngPtr);
-            if(!infoPtr) {
-              png_destroy_write_struct(&pngPtr, nullptr);
-              std::fclose(f);
-              throw std::runtime_error("png_create_info_struct failed");
-            }
-            if(setjmp(png_jmpbuf(pngPtr))) {
-              png_destroy_write_struct(&pngPtr, &infoPtr);
-              std::fclose(f);
-              throw std::runtime_error("libpng write error");
-            }
-            png_init_io(pngPtr, f);
-            const auto &rng = img.range();
-            png_set_IHDR(pngPtr, infoPtr, static_cast<png_uint_32>(rng.size(1)), static_cast<png_uint_32>(rng.size(0)), 16, PNG_COLOR_TYPE_GRAY,
-                         interlace ? PNG_INTERLACE_ADAM7 : PNG_INTERLACE_NONE, PNG_COMPRESSION_TYPE_DEFAULT, PNG_FILTER_TYPE_DEFAULT);
-#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
-            png_set_swap(pngPtr);
-#endif
-            png_set_compression_level(pngPtr, compression);
-            if(filter != PNG_ALL_FILTERS) png_set_filter(pngPtr, 0, filter);
-            png_write_info(pngPtr, infoPtr);
-            std::vector<png_bytep> rows(static_cast<size_t>(rng.size(0)));
-            for(int y = 0; y < rng.size(0); ++y) rows[static_cast<size_t>(y)] = reinterpret_cast<png_bytep>(const_cast<uint16_t *>(&img[{y, 0}]));
-            png_write_image(pngPtr, rows.data());
-            png_write_end(pngPtr, nullptr);
-            png_destroy_write_struct(&pngPtr, &infoPtr);
-            std::fclose(f);
-            return 0;
-          });
-          const float loss = bestChain->conversionLoss();
-          return StreamOutputPlan {std::move(strm), *bestChain, loss};
-        }
-
-        // RGB16
-        if(choice == Choice::RGB16) {
-          using ViaT = Array<RGB16Pixel, 2>;
-          auto strm = std::make_unique<StreamOutputCall<ViaT>>([filename = ctx.mFilename, compression, interlace, filter](const ViaT &img, std::streampos pos) -> std::streampos {
-            if(pos != 0) throw std::runtime_error("PNG output does not support seeking.");
-            FILE *f = std::fopen(filename.c_str(), "wb");
-            if(!f) throw std::runtime_error("Failed to open PNG for write");
-            png_structp pngPtr = png_create_write_struct(PNG_LIBPNG_VER_STRING, nullptr, nullptr, nullptr);
-            if(!pngPtr) {
-              std::fclose(f);
-              throw std::runtime_error("png_create_write_struct failed");
-            }
-            png_infop infoPtr = png_create_info_struct(pngPtr);
-            if(!infoPtr) {
-              png_destroy_write_struct(&pngPtr, nullptr);
-              std::fclose(f);
-              throw std::runtime_error("png_create_info_struct failed");
-            }
-            if(setjmp(png_jmpbuf(pngPtr))) {
-              png_destroy_write_struct(&pngPtr, &infoPtr);
-              std::fclose(f);
-              throw std::runtime_error("libpng write error");
-            }
-            png_init_io(pngPtr, f);
-            const auto &rng = img.range();
-            png_set_IHDR(pngPtr, infoPtr, static_cast<png_uint_32>(rng.size(1)), static_cast<png_uint_32>(rng.size(0)), 16, PNG_COLOR_TYPE_RGB,
-                         interlace ? PNG_INTERLACE_ADAM7 : PNG_INTERLACE_NONE, PNG_COMPRESSION_TYPE_DEFAULT, PNG_FILTER_TYPE_DEFAULT);
-#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
-            png_set_swap(pngPtr);
-#endif
-            png_set_compression_level(pngPtr, compression);
-            if(filter != PNG_ALL_FILTERS) png_set_filter(pngPtr, 0, filter);
-            png_write_info(pngPtr, infoPtr);
-            std::vector<png_bytep> rows(static_cast<size_t>(rng.size(0)));
-            for(int y = 0; y < rng.size(0); ++y) rows[static_cast<size_t>(y)] = reinterpret_cast<png_bytep>(const_cast<RGB16Pixel *>(&img[{y, 0}]));
-            png_write_image(pngPtr, rows.data());
-            png_write_end(pngPtr, nullptr);
-            png_destroy_write_struct(&pngPtr, &infoPtr);
-            std::fclose(f);
-            return 0;
-          });
-          const float loss = bestChain->conversionLoss();
-          return StreamOutputPlan {std::move(strm), *bestChain, loss};
-        }
-
-        // RGBA16
-        if(choice == Choice::RGBA16) {
-          using ViaT = Array<RGBA16Pixel, 2>;
-          auto strm = std::make_unique<StreamOutputCall<ViaT>>([filename = ctx.mFilename, compression, interlace, filter](const ViaT &img, std::streampos pos) -> std::streampos {
-            if(pos != 0) throw std::runtime_error("PNG output does not support seeking.");
-            FILE *f = std::fopen(filename.c_str(), "wb");
-            if(!f) throw std::runtime_error("Failed to open PNG for write");
-            png_structp pngPtr = png_create_write_struct(PNG_LIBPNG_VER_STRING, nullptr, nullptr, nullptr);
-            if(!pngPtr) {
-              std::fclose(f);
-              throw std::runtime_error("png_create_write_struct failed");
-            }
-            png_infop infoPtr = png_create_info_struct(pngPtr);
-            if(!infoPtr) {
-              png_destroy_write_struct(&pngPtr, nullptr);
-              std::fclose(f);
-              throw std::runtime_error("png_create_info_struct failed");
-            }
-            if(setjmp(png_jmpbuf(pngPtr))) {
-              png_destroy_write_struct(&pngPtr, &infoPtr);
-              std::fclose(f);
-              throw std::runtime_error("libpng write error");
-            }
-            png_init_io(pngPtr, f);
-            const auto &rng = img.range();
-            png_set_IHDR(pngPtr, infoPtr, static_cast<png_uint_32>(rng.size(1)), static_cast<png_uint_32>(rng.size(0)), 16, PNG_COLOR_TYPE_RGB_ALPHA,
-                         interlace ? PNG_INTERLACE_ADAM7 : PNG_INTERLACE_NONE, PNG_COMPRESSION_TYPE_DEFAULT, PNG_FILTER_TYPE_DEFAULT);
-#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
-            png_set_swap(pngPtr);
-#endif
-            png_set_compression_level(pngPtr, compression);
-            if(filter != PNG_ALL_FILTERS) png_set_filter(pngPtr, 0, filter);
-            png_write_info(pngPtr, infoPtr);
-            std::vector<png_bytep> rows(static_cast<size_t>(rng.size(0)));
-            for(int y = 0; y < rng.size(0); ++y) rows[static_cast<size_t>(y)] = reinterpret_cast<png_bytep>(const_cast<RGBA16Pixel *>(&img[{y, 0}]));
-            png_write_image(pngPtr, rows.data());
-            png_write_end(pngPtr, nullptr);
-            png_destroy_write_struct(&pngPtr, &infoPtr);
-            std::fclose(f);
-            return 0;
-          });
-          const float loss = bestChain->conversionLoss();
-          return StreamOutputPlan {std::move(strm), *bestChain, loss};
-        }
-
         return std::nullopt;
 #else
         if(ctx.mVerbose) {

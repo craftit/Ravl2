@@ -7,6 +7,7 @@
 #include <typeinfo>
 #include <iostream>
 #include <limits>
+#include "Ravl2/IO/StreamPosition.hh"
 #include <any>
 #include <functional>
 #include <memory>
@@ -24,7 +25,7 @@ namespace Ravl2
     StreamInputBase() = default;
 
     //! Construct a stream with a start and end offset.
-    explicit StreamInputBase(std::streampos start, std::streampos end = std::numeric_limits<std::streampos>::max())
+    explicit StreamInputBase(std::streampos start, std::streampos end = streamPosEnd())
         : mStart(start),
           mEnd(end)
     {}
@@ -70,7 +71,7 @@ namespace Ravl2
     { mEnd = end; }
   private:
     std::streampos mStart = 0;
-    std::streampos mEnd = std::numeric_limits<std::streampos>::max();
+    std::streampos mEnd = streamPosEnd();
   };
 
   //! Plan for getting the output
@@ -100,7 +101,7 @@ namespace Ravl2
     StreamInput() = default;
 
     //! Construct a stream with a start and end offset.
-    explicit StreamInput(std::streampos start, std::streampos end = std::numeric_limits<std::streampos>::max())
+    explicit StreamInput(std::streampos start, std::streampos end = streamPosEnd())
         : StreamInputBase(start, end)
     {}
 
@@ -136,7 +137,7 @@ namespace Ravl2
     //! Get end iterator.
     [[nodiscard]] auto end()
     {
-      return InputStreamIterator<ObjectT>(*this, std::numeric_limits<std::streampos>::max());
+      return InputStreamIterator<ObjectT>(*this, endOffset());
     }
 
   protected:
@@ -152,7 +153,7 @@ namespace Ravl2
     //! @param begin - The start of the stream.
     //! @param end - The end of the stream.
     //! @param callback - The callback to read the object.
-    explicit StreamInputCall(std::function<std::optional<ObjectT>(std::streampos &)> callback, std::streampos begin = 0, std::streampos end = std::numeric_limits<std::streampos>::max())
+    explicit StreamInputCall(std::function<std::optional<ObjectT>(std::streampos &)> callback, std::streampos begin = 0, std::streampos end = streamPosEnd())
         : StreamInput<ObjectT>(begin, end),
           mCallback(std::move(callback))
     {}

@@ -11,6 +11,7 @@
 #include <catch2/catch_test_macros.hpp>
 #include <nlohmann/json.hpp>
 #include <spdlog/spdlog.h>
+#include "Ravl2/Array.hh"
 #include "Ravl2/Assert.hh"
 #include "Ravl2/IndexRangeSet.hh"
 #include "Ravl2/IO/TypeConverter.hh"
@@ -225,5 +226,83 @@ namespace Ravl2
     for(const auto value : stream)
       values.push_back(value);
     CHECK((values == std::vector<int64_t> {1, 2, 3}));
+  }
+
+  TEST_CASE("Input stream with the default end offset iterates until the stream ends")
+  {
+    // streamPosEnd() must not be 0: std::numeric_limits<std::streampos>::max() is, and made begin()==end().
+    CHECK(streamPosEnd() > std::streampos(1000000));
+    StreamInputCall<int> stream([](std::streampos &pos) -> std::optional<int> {
+      if(pos >= std::streampos(4))
+        return std::nullopt;
+      const auto value = static_cast<int>(static_cast<std::streamoff>(pos));
+      pos += std::streamoff(1);
+      return value;
+    });
+    std::vector<int> values;
+    for(const auto value : stream)
+      values.push_back(value);
+    CHECK((values == std::vector<int> {0, 1, 2, 3}));
+  }
+
+  TEST_CASE("Binary cereal stream round trips several objects")
+  {
+    initCerealIO();
+    const std::string filename = "test_cereal_multi.xbs";
+    nlohmann::json hints;
+    hints["verbose"] = false;
+    std::vector<Array<int, 2>> written;
+    for(int i = 0; i < 3; ++i) {
+      Array<int, 2> a({2 + i, 3});
+      fill(a, 10 * i + 1);
+      written.push_back(a);
+    }
+    {
+      auto out = openOutputStream<Array<int, 2>>(filename, hints);
+      REQUIRE(out.valid());
+      for(const auto &a : written)
+        out.put(a);
+    }
+    {
+      auto in = openInputStream<Array<int, 2>>(filename, hints);
+      REQUIRE(in.valid());
+      std::vector<Array<int, 2>> read;
+      for(const auto &a : in) {
+        read.push_back(a);
+        if(read.size() > 10)
+          break;
+      }
+      REQUIRE(read.size() == written.size());
+      for(size_t i = 0; i < read.size(); ++i) {
+        CHECK(read[i].range() == written[i].range());
+        CHECK(read[i][read[i].range().min()] == written[i][written[i].range().min()]);
+      }
+    }
+    CHECK(std::remove(filename.c_str()) == 0);
+  }
+
+  namespace
+  {
+    struct ConvTestA {
+      int v = 0;
+    };
+    struct ConvTestB {
+      int v = 0;
+    };
+    struct ConvTestC {
+      int v = 0;
+    };
+  }// namespace
+
+  TEST_CASE("Type conversion search picks the least lossy chain")
+  {
+    // Two lossless steps A->B->C must beat one very lossy step A->C.
+    registerConversion([](ConvTestA a) { return ConvTestB {a.v}; }, 1.0f);
+    registerConversion([](ConvTestB b) { return ConvTestC {b.v}; }, 1.0f);
+    registerConversion([](ConvTestA a) { return ConvTestC {a.v}; }, 0.1f);
+    auto chain = typeConverterMap().find(typeid(ConvTestC), typeid(ConvTestA));
+    REQUIRE(chain.has_value());
+    CHECK(chain->size() == 2);
+    CHECK(chain->conversionLoss() > 0.9f);
   }
 }// namespace Ravl2

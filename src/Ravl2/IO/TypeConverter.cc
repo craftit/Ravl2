@@ -7,6 +7,7 @@
 
 #include "Ravl2/Assert.hh"
 
+#include <functional>
 #include <map>
 
 namespace Ravl2
@@ -27,7 +28,8 @@ namespace Ravl2
       return it->second;
     }
 
-    std::multimap<float, ConversionChain> solutions;
+    // Keyed on conversion quality (1 = lossless, smaller = lossier); best-first, so the highest key comes first.
+    std::multimap<float, ConversionChain, std::greater<>> solutions;
     std::unordered_map<std::type_index, float> visited;
     for(const auto &x : from) {
       visited[x] = 1.0f;
@@ -52,7 +54,7 @@ namespace Ravl2
         continue;
       }
       for(auto &x : fromList->second) {
-        // Note we want to avoid mLoss, so higher mLoss is better.
+        // conversionLoss() is a quality factor: higher is better.
         if(!x) {
           SPDLOG_WARN("Null converter found in list for {}", typeName(entry.to()));
           continue;

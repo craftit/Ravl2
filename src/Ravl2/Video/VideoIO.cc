@@ -58,10 +58,11 @@ namespace Ravl2::Video
 
       // StreamInputCall simply yields successive frames as ImageT objects.
       auto stream = std::make_shared<StreamInputCall<ImageT>>(
-        [iterator](std::streampos &pos) mutable -> std::optional<ImageT>
+        [iterator, ended = false](std::streampos &pos) mutable -> std::optional<ImageT>
         {
           (void)pos; // Seeking not supported in this simple streaming adapter.
-          if (!iterator->currentFrame()) {
+          // At end of stream the iterator keeps its last frame, so track the end here.
+          if (ended || !iterator->currentFrame()) {
             return std::nullopt;
           }
 
@@ -74,8 +75,11 @@ namespace Ravl2::Video
 
           // Advance for next request. Failure other than EndOfStream is logged and stream ends.
           auto nextRes = iterator->next();
-          if (!nextRes.isSuccess() && nextRes.error() != VideoErrorCode::EndOfStream) {
-            SPDLOG_INFO("FFmpeg: iterator->next() error {}", static_cast<int>(nextRes.error()));
+          if (!nextRes.isSuccess()) {
+            ended = true;
+            if (nextRes.error() != VideoErrorCode::EndOfStream) {
+              SPDLOG_WARN("FFmpeg: iterator->next() error {}, ending stream", static_cast<int>(nextRes.error()));
+            }
           }
           return img;
         }
@@ -261,7 +265,7 @@ namespace Ravl2::Video
             throw std::runtime_error("FFmpeg media writer failed while encoding an object");
           return pos;
         },
-        0, std::numeric_limits<std::streampos>::max(), [writer]() { return writer->close(); });
+        0, streamPosEnd(), [writer]() { return writer->close(); });
     }
 
     [[maybe_unused]] bool g_regFfmpegOutput = outputFormatMap().add(std::make_shared<OutputFormatCall>(

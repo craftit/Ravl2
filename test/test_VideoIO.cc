@@ -6,6 +6,7 @@
 #include "Ravl2/Resource.hh"
 #include "Ravl2/IO/InputSequence.hh"
 #include "Ravl2/Pixel/Pixel.hh"
+#include "Ravl2/Pixel/PixelPlane.hh"
 #include "Ravl2/Video/VideoIO.hh"
 #include "Ravl2/Video/FfmpegMultiStreamIterator.hh"
 #include "Ravl2/Video/FfmpegMediaContainer.hh"
@@ -31,6 +32,26 @@ namespace Ravl2::Video
     CHECK(inputStream.valid());
     auto image = inputStream.get();
     CHECK(!image.empty());
+  }
+
+  TEST_CASE("VideoStreamIO reaches end of stream", "[IO]")
+  {
+    initIO();
+    addResourcePath("data", RAVL_SOURCE_DIR "/data");
+    const std::string fn = Ravl2::findFileResource("data", "sample-5s.mp4", true);
+
+    // The reader used to return the last frame forever once the file ended.
+    // Read the decoder's native type: converting every 1080p frame to RGB is slow in debug builds.
+    using ImageT = Ravl2::YUV420Image<uint8_t>;
+    auto inputStream = Ravl2::openInputStream<ImageT>(fn, defaultLoadFormatHint(false));
+    REQUIRE(inputStream.valid());
+    size_t count = 0;
+    for([[maybe_unused]] const auto &image : inputStream) {
+      if(++count > 1000)
+        break;
+    }
+    // sample-5s.mp4 has 171 video frames.
+    CHECK(count == 171);
   }
 
   TEST_CASE("FfmpegMultiStreamIterator_Basic", "[Video]")

@@ -755,8 +755,8 @@ namespace Ravl2
   template <typename ComponentT>
   using YUV422Image = PlanarImage2D<
     PixelPlane<ComponentT, 2, ImageChannel::Luminance, 1, 1>,   // Y plane (full resolution)
-    PixelPlane<ComponentT, 2, ImageChannel::ChrominanceU, 2, 1>,// U plane (half horizontal resolution)
-    PixelPlane<ComponentT, 2, ImageChannel::ChrominanceV, 2, 1> // V plane (half horizontal resolution)
+    PixelPlane<ComponentT, 2, ImageChannel::ChrominanceU, 1, 2>,// U plane (half horizontal resolution; scales are (row, col))
+    PixelPlane<ComponentT, 2, ImageChannel::ChrominanceV, 1, 2> // V plane (half horizontal resolution; scales are (row, col))
     >;
 
   //! Helper type for creating YUV 4:2:0 planar images (horizontal and vertical subsampling)

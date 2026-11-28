@@ -10,6 +10,11 @@
 #include "Ravl2/IO/Load.hh"
 #include "Ravl2/ImageIO/JpegTurboImageIO.hh"
 
+#include <chrono>
+#include <filesystem>
+#include <fstream>
+#include <string>
+
 namespace Ravl2
 {
   TEST_CASE("JPEG load RGB8 via ImageIO")
@@ -39,5 +44,25 @@ namespace Ravl2
     // CHECK(p[0] <= 255);
     // CHECK(p[1] <= 255);
     // CHECK(p[2] <= 255);
+  }
+
+  TEST_CASE("Corrupt JPEG fails to load without ending the process")
+  {
+    initJpegTurboImageIO();
+    const auto unique = std::chrono::steady_clock::now().time_since_epoch().count();
+    const auto filename = (std::filesystem::temp_directory_path() / ("ravl2-corrupt-" + std::to_string(unique) + ".jpg")).string();
+    {
+      // JPEG start-of-image marker followed by garbage: libjpeg's default handler would call exit().
+      std::ofstream f(filename, std::ios::binary);
+      const char soi[] = {char(0xFF), char(0xD8)};
+      f.write(soi, 2);
+      const std::string junk(200, char(0x55));
+      f.write(junk.data(), std::streamsize(junk.size()));
+    }
+    Array<PixelRGB8, 2> img;
+    bool ok = true;
+    CHECK_NOTHROW(ok = ioLoad(img, filename, defaultLoadFormatHint(false)));
+    CHECK_FALSE(ok);
+    std::filesystem::remove(filename);
   }
 }

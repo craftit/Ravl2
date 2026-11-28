@@ -7,6 +7,7 @@
 #include <typeinfo>
 #include <iostream>
 #include <limits>
+#include "Ravl2/IO/StreamPosition.hh"
 #include <any>
 #include <functional>
 #include <memory>
@@ -25,7 +26,7 @@ namespace Ravl2
     StreamOutputBase() = default;
 
     //! Construct a stream with a start and end offset.
-    explicit StreamOutputBase(std::streampos start, std::streampos end = std::numeric_limits<std::streampos>::max())
+    explicit StreamOutputBase(std::streampos start, std::streampos end = streamPosEnd())
         : mStart(start),
           mEnd(end)
     {}
@@ -73,7 +74,7 @@ namespace Ravl2
 
   protected:
     std::streampos mStart = 0;
-    std::streampos mEnd = std::numeric_limits<std::streampos>::max();
+    std::streampos mEnd = streamPosEnd();
   };
 
   //! Plan for getting the output
@@ -93,7 +94,7 @@ namespace Ravl2
     StreamOutput() = default;
 
     //! Construct a stream with a start and end offset.
-    explicit StreamOutput(std::streampos start, std::streampos end = std::numeric_limits<std::streampos>::max())
+    explicit StreamOutput(std::streampos start, std::streampos end = streamPosEnd())
         : StreamOutputBase(start, end)
     {}
 
@@ -156,7 +157,7 @@ namespace Ravl2
     //! @param end - The end position in the stream.
     explicit StreamOutputCall(std::function<std::streampos(const ObjectT &, std::streampos)> writeCall,
                               std::streampos start = 0,
-                              std::streampos end = std::numeric_limits<std::streampos>::max(),
+                              std::streampos end = streamPosEnd(),
                               std::function<bool()> closeCall = {})
         : StreamOutput<ObjectT>(start, end),
           mWrite(std::move(writeCall)),

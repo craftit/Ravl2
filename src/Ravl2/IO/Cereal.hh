@@ -216,15 +216,20 @@ namespace Ravl2
       m_archive(*m_stream)
     {}
 
+    //! Write an object.
+    //! @param pos - streamPosEnd() to append after the last object written, otherwise (binary archives only)
+    //! a byte offset previously returned by write(); 0 rewrites the file from the header.
+    //! @return The position after the object: a byte offset for binary archives, the object count otherwise.
     std::streampos write(const ObjectT &obj, std::streampos pos) override
     {
       // We can't seek in a JSON or XML stream.
       if constexpr(std::is_same_v<ArchiveT, cereal::BinaryOutputArchive>) {
-	if(pos != std::numeric_limits<std::streampos>::max()) {
+	if(pos != streamPosEnd()) {
 	  m_stream->seekp(pos);
-	}
-	if(pos == 0) {
-	  m_first = true;
+	  if(pos == 0) {
+	    m_first = true;
+	    m_count = 0;
+	  }
 	}
       }
       if(m_first) {
@@ -236,24 +241,19 @@ namespace Ravl2
 	  this->mStart = m_stream->tellp();
 	}
       }
-      if(pos == std::numeric_limits<std::streampos>::max()) {
-	pos = this->mEnd;
-      }
-      m_archive(cereal::make_nvp(fmt::format("body{}",size_t(pos)),obj));
-      if constexpr(std::is_same_v<ArchiveT, cereal::BinaryInputArchive>) {
-	auto at = m_stream->tellp();
-	if(at > this->mEnd) {
-	  this->mEnd = at;
-	}
-	return at;
+      // Body names only matter to text archives, which read them back in the same order.
+      m_archive(cereal::make_nvp(fmt::format("body{}", m_count), obj));
+      ++m_count;
+      if constexpr(std::is_same_v<ArchiveT, cereal::BinaryOutputArchive>) {
+	return m_stream->tellp();
       } else {
-	this->mEnd += 1;
-	return pos + std::streampos(1);
+	return std::streampos(std::streamoff(m_count));
       }
     }
 
   private:
     bool m_first = true;
+    std::size_t m_count = 0; //!< Objects written since the header.
     std::shared_ptr<std::ostream> m_stream; //!< The stream to write to, must be before m_archive to ensure it is destroyed after.
     ArchiveT m_archive;
   };
@@ -274,13 +274,13 @@ namespace Ravl2
     //! @return The object.
     std::optional<ObjectT> next(std::streampos &pos) final
     {
-      if(m_stream->eof())
-        return std::nullopt;
       if constexpr(std::is_same_v<ArchiveT, cereal::BinaryInputArchive>) {
-	if(pos != std::numeric_limits<std::streampos>::max())
+	if(pos != streamPosEnd()) {
 	  m_stream->seekg(pos);
-	if(pos == 0) {
-	  m_isFirst = true;
+	  if(pos == 0) {
+	    m_isFirst = true;
+	    m_count = 0;
+	  }
 	}
       }
       if(m_isFirst) {
@@ -288,18 +288,28 @@ namespace Ravl2
 	m_archive(cereal::make_nvp("header",m_header));
 	m_isFirst = false;
       }
+      if constexpr(std::is_same_v<ArchiveT, cereal::BinaryInputArchive>) {
+	// End of stream: stop cleanly rather than letting cereal throw on a short read.
+	if(m_stream->peek() == std::char_traits<char>::eof())
+	  return std::nullopt;
+      } else {
+	if(m_stream->eof())
+	  return std::nullopt;
+      }
       ObjectT obj;
-      m_archive(cereal::make_nvp(fmt::format("body{}", static_cast<std::size_t>(pos)),obj));
+      m_archive(cereal::make_nvp(fmt::format("body{}", m_count), obj));
+      ++m_count;
       if constexpr(std::is_same_v<ArchiveT, cereal::BinaryInputArchive>) {
 	pos = m_stream->tellg();
       } else {
-	pos += 1;
+	pos = std::streampos(std::streamoff(m_count));
       }
       return obj;
     }
 
   private:
     bool m_isFirst = true;
+    std::size_t m_count = 0; //!< Objects read since the header.
     ArchiveT m_archive;
     CerealArchiveHeader m_header;
     std::shared_ptr<std::istream> m_stream;

@@ -131,6 +131,18 @@ Authoring checklist
 6) Add unit tests (load and save) and wire them into test/CMakeLists.txt.
 7) Document any format‑specific hints (e.g., quality), default values, and ranges.
 
+Compatibility notes
+- 16-bit PNGs written before 2026-11-28 are byte-swapped.
+  - From the first PNG writer (commit 9b41d17, 2025-11-19) until the fix, `png_set_swap()` was called before
+    `png_write_info()`, where libpng ignores it. On little-endian machines (x86, Apple Silicon) every 16-bit sample
+    (Gray16, RGB16, RGBA16) was therefore stored little-endian, but PNG requires big-endian.
+  - The old reader had the matching mistake, so Ravl2 round trips looked correct. Other tools (OpenCV, image
+    viewers, Python) read those files with the bytes swapped, e.g. 1 reads as 256.
+  - With the fix, Ravl2 also reads such files swapped. 8-bit PNGs are not affected.
+  - To repair a file, load it with the current code, swap each sample's bytes and save it again:
+    `for(auto &v : img) v = uint16_t((v >> 8) | (v << 8));`
+    For RGB16/RGBA16, apply the same swap to each channel.
+
 See also
 - Requirements.md in this directory for high‑level goals and supported formats.
 - JpegLoaderPlan.md for a worked design document and rationale.

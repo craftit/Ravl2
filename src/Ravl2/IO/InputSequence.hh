@@ -44,8 +44,14 @@ namespace Ravl2
     //! @return The iterator.
     InputStreamIterator<ObjectT> &operator++()
     {
-      if(mContainer != nullptr && mObject.has_value())
-        mObject = mContainer->next(mPos);
+      if(mContainer == nullptr || !mObject.has_value())
+        return *this;
+      // A stream with an explicit end offset stops there; an unbounded one stops when next() has no object.
+      if(mPos == mContainer->endOffset()) {
+        mObject.reset();
+        return *this;
+      }
+      mObject = mContainer->next(mPos);
       return *this;
     }
 

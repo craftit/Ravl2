@@ -77,6 +77,7 @@ add_library(Ravl2Core
     IO/Url.cc IO/Url.hh
     IO/InputFormat.cc IO/InputFormat.hh
     IO/Cereal.cc IO/Cereal.hh
+    IO/StreamPosition.hh
     IO/StreamInput.hh IO/StreamInput.cc
     IO/StreamOutput.cc IO/StreamOutput.hh
     IO/InputStreamContainer.cc IO/InputStreamContainer.hh

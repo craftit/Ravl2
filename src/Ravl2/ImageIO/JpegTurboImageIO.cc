@@ -26,7 +26,9 @@
 #include <optional>
 #include <string>
 #include <algorithm>
+#include <array>
 #include <cstring>
+#include <stdexcept>
 
 #ifdef RAVL2_HAVE_JPEG
 #include <jpeglib.h>
@@ -46,6 +48,39 @@ namespace Ravl2
     };
 
     using FilePtr = std::unique_ptr<FILE, FileCloser>;
+
+    //! libjpeg's default error_exit calls exit(), which would end the whole program on a corrupt file.
+    //! Throw instead; callers catch and report failure. (libjpeg is built with unwind tables on the
+    //! GCC/Clang targets we support, so the exception can pass through its frames.)
+    [[noreturn]] void jpegErrorExit(j_common_ptr cinfo)
+    {
+      std::array<char, JMSG_LENGTH_MAX> msg {};
+      (*cinfo->err->format_message)(cinfo, msg.data());
+      throw std::runtime_error(std::string("libjpeg: ") + msg.data());
+    }
+
+    //! Route libjpeg warnings to the log rather than stderr.
+    void jpegOutputMessage(j_common_ptr cinfo)
+    {
+      std::array<char, JMSG_LENGTH_MAX> msg {};
+      (*cinfo->err->format_message)(cinfo, msg.data());
+      SPDLOG_WARN("libjpeg: {}", msg.data());
+    }
+
+    //! Set up an error manager that throws rather than exiting.
+    jpeg_error_mgr *setupJpegErrors(jpeg_error_mgr &jerr)
+    {
+      jpeg_error_mgr *err = jpeg_std_error(&jerr);
+      err->error_exit = jpegErrorExit;
+      err->output_message = jpegOutputMessage;
+      return err;
+    }
+
+    //! Destroys a compress struct however the encoder exits.
+    struct JpegCompressGuard {
+      jpeg_compress_struct *cinfo;
+      ~JpegCompressGuard() { jpeg_destroy_compress(cinfo); }
+    };
 
     //! RAII context that keeps the file open and a prepared jpeg_decompress_struct.
     //! Header is read in the constructor so we don't need to reopen/parse again later.
@@ -71,11 +106,16 @@ namespace Ravl2
         if(!file) {
           return;
         }
-        cinfo.err = jpeg_std_error(&jerr);
+        cinfo.err = setupJpegErrors(jerr);
         jpeg_create_decompress(&cinfo);
         created = true;
         jpeg_stdio_src(&cinfo, file.get());
-        headerOk = (jpeg_read_header(&cinfo, TRUE) == JPEG_HEADER_OK);
+        try {
+          headerOk = (jpeg_read_header(&cinfo, TRUE) == JPEG_HEADER_OK);
+        } catch(const std::exception &e) {
+          SPDLOG_WARN("JPEGTurbo: cannot read header of '{}': {}", filename, e.what());
+          headerOk = false;
+        }
         if(headerOk) {
           maxHs = 1;
           maxVs = 1;
@@ -123,132 +163,139 @@ namespace Ravl2
           return std::nullopt;
         }
         auto &cinfo = sharedCtx->cinfo;
+        try {
 
-        // Configure output colorspace based on ViaT
-        if constexpr(std::is_same_v<ViaT, Array<uint8_t, 2>>) {
-          cinfo.out_color_space = JCS_GRAYSCALE;
-        } else if constexpr(std::is_same_v<ViaT, Array<PixelRGB8, 2>>) {
+          // Configure output colorspace based on ViaT
+          if constexpr(std::is_same_v<ViaT, Array<uint8_t, 2>>) {
+            cinfo.out_color_space = JCS_GRAYSCALE;
+          } else if constexpr(std::is_same_v<ViaT, Array<PixelRGB8, 2>>) {
 #ifdef JCS_EXTENSIONS
-          cinfo.out_color_space = JCS_EXT_RGB;
+            cinfo.out_color_space = JCS_EXT_RGB;
 #else
-          cinfo.out_color_space = JCS_RGB;
+            cinfo.out_color_space = JCS_RGB;
 #endif
-        } else if constexpr(std::is_same_v<ViaT, YUV444Image<uint8_t>> || std::is_same_v<ViaT, YUV422Image<uint8_t>> || std::is_same_v<ViaT, YUV420Image<uint8_t>>) {
-          // Planar raw output
-          cinfo.raw_data_out = TRUE;
-          cinfo.out_color_space = JCS_YCbCr;
-        } else {
-          // Unsupported ViaT in this minimal implementation
-          return std::nullopt;
-        }
-
-        if(!jpeg_start_decompress(&cinfo)) {
-          SPDLOG_WARN("JPEGTurbo: failed to start decompression");
-          return std::nullopt;
-        }
-
-        const JDIMENSION width = cinfo.output_width;
-        const JDIMENSION height = cinfo.output_height;
-
-        if constexpr(std::is_same_v<ViaT, Array<uint8_t, 2>>) {
-          ViaT out({int(height), int(width)});
-          for(JDIMENSION y = 0; y < height; ++y) {
-            // Directly decode into destination row buffer
-            JSAMPROW row = reinterpret_cast<JSAMPROW>(&out[{int(y), 0}]);
-            JSAMPARRAY rows = &row;
-            jpeg_read_scanlines(&cinfo, rows, 1);
+          } else if constexpr(std::is_same_v<ViaT, YUV444Image<uint8_t>> || std::is_same_v<ViaT, YUV422Image<uint8_t>> || std::is_same_v<ViaT, YUV420Image<uint8_t>>) {
+            // Planar raw output
+            cinfo.raw_data_out = TRUE;
+            cinfo.out_color_space = JCS_YCbCr;
+          } else {
+            // Unsupported ViaT in this minimal implementation
+            return std::nullopt;
           }
-          jpeg_finish_decompress(&cinfo);
-          sharedCtx->consumed = true;
-          pos = 1;
-          return out;
-        } else if constexpr(std::is_same_v<ViaT, Array<PixelRGB8, 2>>) {
-          ViaT out({static_cast<int>(height), static_cast<int>(width)});
-          static_assert(sizeof(PixelRGB8) == 3, "PixelRGB8 must be 3 bytes");
-          // Whilst we should do this check, the class only has pixel values so it
-          // as the size assert proves, and we don't change their type so we can overwrite them without worry.
-          //static_assert(std::is_trivially_copyable_v<PixelRGB8>, "PixelRGB8 must be trivially copyable");
-          for(JDIMENSION y = 0; y < height; ++y) {
-            JSAMPROW row = reinterpret_cast<JSAMPROW>(&out[{int(y), 0}]);
-            JSAMPARRAY rows = &row;
-            jpeg_read_scanlines(&cinfo, rows, 1);
+
+          if(!jpeg_start_decompress(&cinfo)) {
+            SPDLOG_WARN("JPEGTurbo: failed to start decompression");
+            return std::nullopt;
           }
-          jpeg_finish_decompress(&cinfo);
-          sharedCtx->consumed = true;
-          pos = 1;
-          return out;
-        } else if constexpr(std::is_same_v<ViaT, YUV444Image<uint8_t>> || std::is_same_v<ViaT, YUV422Image<uint8_t>> || std::is_same_v<ViaT, YUV420Image<uint8_t>>) {
-          // Raw planar decode path
-          // Build planar image with master range = height x width
-          ViaT out(IndexRange<2>({height, width}));
-          SPDLOG_INFO("Image size: {} from {} x {} for type {} ", out.range(), height, width, typeName(out));
-          // Compute iMCU-based row counts per component
-          const int max_v = sharedCtx->maxVs;// typically 2 for 420, 2 for 422 (vertical 1), 1 for 444
-          const JDIMENSION y_lines_per_iMCU = static_cast<JDIMENSION>(max_v * DCTSIZE);
-          // Set up JSAMPARRAY arrays for each component with required height per iMCU
-          JSAMPARRAY ybuf = (*cinfo.mem->alloc_sarray)(reinterpret_cast<j_common_ptr>(&cinfo), JPOOL_IMAGE,
-                                                       cinfo.output_width, y_lines_per_iMCU);
-          // For chroma, rows per iMCU depend on v_samp_factor of Cb/Cr
-          const JDIMENSION cb_vs = static_cast<JDIMENSION>((sharedCtx->cinfo.num_components > 1) ? sharedCtx->cinfo.comp_info[1].v_samp_factor : 1);
-          const JDIMENSION cb_hs = static_cast<JDIMENSION>((sharedCtx->cinfo.num_components > 1) ? sharedCtx->cinfo.comp_info[1].h_samp_factor : 1);
-          const JDIMENSION maxHs = static_cast<JDIMENSION>(sharedCtx->maxHs);
-          const JDIMENSION maxVs = static_cast<JDIMENSION>(sharedCtx->maxVs);
+
+          const JDIMENSION width = cinfo.output_width;
+          const JDIMENSION height = cinfo.output_height;
+
+          if constexpr(std::is_same_v<ViaT, Array<uint8_t, 2>>) {
+            ViaT out({int(height), int(width)});
+            for(JDIMENSION y = 0; y < height; ++y) {
+              // Directly decode into destination row buffer
+              JSAMPROW row = reinterpret_cast<JSAMPROW>(&out[{int(y), 0}]);
+              JSAMPARRAY rows = &row;
+              jpeg_read_scanlines(&cinfo, rows, 1);
+            }
+            jpeg_finish_decompress(&cinfo);
+            sharedCtx->consumed = true;
+            pos = 1;
+            return out;
+          } else if constexpr(std::is_same_v<ViaT, Array<PixelRGB8, 2>>) {
+            ViaT out({static_cast<int>(height), static_cast<int>(width)});
+            static_assert(sizeof(PixelRGB8) == 3, "PixelRGB8 must be 3 bytes");
+            // Whilst we should do this check, the class only has pixel values so it
+            // as the size assert proves, and we don't change their type so we can overwrite them without worry.
+            //static_assert(std::is_trivially_copyable_v<PixelRGB8>, "PixelRGB8 must be trivially copyable");
+            for(JDIMENSION y = 0; y < height; ++y) {
+              JSAMPROW row = reinterpret_cast<JSAMPROW>(&out[{int(y), 0}]);
+              JSAMPARRAY rows = &row;
+              jpeg_read_scanlines(&cinfo, rows, 1);
+            }
+            jpeg_finish_decompress(&cinfo);
+            sharedCtx->consumed = true;
+            pos = 1;
+            return out;
+          } else if constexpr(std::is_same_v<ViaT, YUV444Image<uint8_t>> || std::is_same_v<ViaT, YUV422Image<uint8_t>> || std::is_same_v<ViaT, YUV420Image<uint8_t>>) {
+            // Raw planar decode path
+            // Build planar image with master range = height x width
+            ViaT out(IndexRange<2>({height, width}));
+            SPDLOG_DEBUG("Image size: {} from {} x {} for type {} ", out.range(), height, width, typeName(out));
+            // Compute iMCU-based row counts per component
+            const int max_v = sharedCtx->maxVs;// typically 2 for 420, 2 for 422 (vertical 1), 1 for 444
+            const JDIMENSION y_lines_per_iMCU = static_cast<JDIMENSION>(max_v * DCTSIZE);
+            // Set up JSAMPARRAY arrays for each component with required height per iMCU
+            JSAMPARRAY ybuf = (*cinfo.mem->alloc_sarray)(reinterpret_cast<j_common_ptr>(&cinfo), JPOOL_IMAGE,
+                                                         cinfo.output_width, y_lines_per_iMCU);
+            // For chroma, rows per iMCU depend on v_samp_factor of Cb/Cr
+            const JDIMENSION cb_vs = static_cast<JDIMENSION>((sharedCtx->cinfo.num_components > 1) ? sharedCtx->cinfo.comp_info[1].v_samp_factor : 1);
+            const JDIMENSION cb_hs = static_cast<JDIMENSION>((sharedCtx->cinfo.num_components > 1) ? sharedCtx->cinfo.comp_info[1].h_samp_factor : 1);
+            const JDIMENSION maxHs = static_cast<JDIMENSION>(sharedCtx->maxHs);
+            const JDIMENSION maxVs = static_cast<JDIMENSION>(sharedCtx->maxVs);
 #pragma GCC diagnostic push
 #ifndef __clang__
 #pragma GCC diagnostic ignored "-Wuseless-cast"
 #endif
-          // Casts that are useless on one platform, aren't useless on others.
+            // Casts that are useless on one platform, aren't useless on others.
 
-          const JDIMENSION cb_width = static_cast<JDIMENSION>((cinfo.output_width * cb_hs + maxHs - 1) / maxHs);
-          const JDIMENSION cb_lines_per_iMCU = static_cast<JDIMENSION>(cb_vs * DCTSIZE);
-          JSAMPARRAY cbbuf = (*cinfo.mem->alloc_sarray)(reinterpret_cast<j_common_ptr>(&cinfo), JPOOL_IMAGE,
-                                                        cb_width, cb_lines_per_iMCU);
-          JSAMPARRAY crbuf = (*cinfo.mem->alloc_sarray)(reinterpret_cast<j_common_ptr>(&cinfo), JPOOL_IMAGE,
-                                                        cb_width, cb_lines_per_iMCU);
+            const JDIMENSION cb_width = static_cast<JDIMENSION>((cinfo.output_width * cb_hs + maxHs - 1) / maxHs);
+            const JDIMENSION cb_lines_per_iMCU = static_cast<JDIMENSION>(cb_vs * DCTSIZE);
+            JSAMPARRAY cbbuf = (*cinfo.mem->alloc_sarray)(reinterpret_cast<j_common_ptr>(&cinfo), JPOOL_IMAGE,
+                                                          cb_width, cb_lines_per_iMCU);
+            JSAMPARRAY crbuf = (*cinfo.mem->alloc_sarray)(reinterpret_cast<j_common_ptr>(&cinfo), JPOOL_IMAGE,
+                                                          cb_width, cb_lines_per_iMCU);
 
-          JDIMENSION yPos = 0;
-          while(yPos < height) {
-            JSAMPARRAY bufs[3] = {ybuf, cbbuf, crbuf};
-            JDIMENSION nread = jpeg_read_raw_data(&cinfo, bufs, y_lines_per_iMCU);
-            if(nread == 0) break;
+            JDIMENSION yPos = 0;
+            while(yPos < height) {
+              JSAMPARRAY bufs[3] = {ybuf, cbbuf, crbuf};
+              JDIMENSION nread = jpeg_read_raw_data(&cinfo, bufs, y_lines_per_iMCU);
+              if(nread == 0) break;
 
-            // Copy into destination planes
-            // Y plane: nread lines starting at yPos
-            for(JDIMENSION r = 0; r < nread && (yPos + r) < height; ++r) {
-              auto &yPlane = out.template planeByChannel<ImageChannel::Luminance>();
-              uint8_t *dst = &yPlane.data()[{static_cast<int>(yPos + r), 0}];
-              std::memcpy(dst, ybuf[r], static_cast<size_t>(width));
+              // Copy into destination planes
+              // Y plane: nread lines starting at yPos
+              for(JDIMENSION r = 0; r < nread && (yPos + r) < height; ++r) {
+                auto &yPlane = out.template planeByChannel<ImageChannel::Luminance>();
+                uint8_t *dst = &yPlane.data()[{static_cast<int>(yPos + r), 0}];
+                std::memcpy(dst, ybuf[r], static_cast<size_t>(width));
+              }
+              // Compute chroma row count corresponding to these luma lines
+              const JDIMENSION chromaRows = static_cast<JDIMENSION>((nread * cb_vs + maxVs - 1) / maxVs);
+              const JDIMENSION chromaHeight = static_cast<JDIMENSION>((height * cb_vs + maxVs - 1) / maxVs);
+              const JDIMENSION yPosChroma = static_cast<JDIMENSION>((yPos * cb_vs) / maxVs);
+
+              // U and V planes
+              auto &uPlane = out.template planeByChannel<ImageChannel::ChrominanceU>();
+              auto &vPlane = out.template planeByChannel<ImageChannel::ChrominanceV>();
+
+              for(JDIMENSION r = 0; r < chromaRows && (yPosChroma + r) < chromaHeight; ++r) {
+                uint8_t *udst = uPlane.data()[static_cast<int>(yPosChroma + r)].origin_address();
+                uint8_t *vdst = vPlane.data()[static_cast<int>(yPosChroma + r)].origin_address();
+                std::memcpy(udst, cbbuf[r], static_cast<size_t>(cb_width));
+                std::memcpy(vdst, crbuf[r], static_cast<size_t>(cb_width));
+              }
+
+              yPos += nread;
             }
-            // Compute chroma row count corresponding to these luma lines
-            const JDIMENSION chromaRows = static_cast<JDIMENSION>((nread * cb_vs + maxVs - 1) / maxVs);
-            const JDIMENSION chromaHeight = static_cast<JDIMENSION>((height * cb_vs + maxVs - 1) / maxVs);
-            const JDIMENSION yPosChroma = static_cast<JDIMENSION>((yPos * cb_vs) / maxVs);
-
-            // U and V planes
-            auto &uPlane = out.template planeByChannel<ImageChannel::ChrominanceU>();
-            auto &vPlane = out.template planeByChannel<ImageChannel::ChrominanceV>();
-
-            for(JDIMENSION r = 0; r < chromaRows && (yPosChroma + r) < chromaHeight; ++r) {
-              uint8_t *udst = uPlane.data()[static_cast<int>(r)].origin_address();
-              uint8_t *vdst = vPlane.data()[static_cast<int>(r)].origin_address();
-              std::memcpy(udst, cbbuf[r], static_cast<size_t>(cb_width));
-              std::memcpy(vdst, crbuf[r], static_cast<size_t>(cb_width));
-            }
-
-            yPos += nread;
-          }
 #pragma GCC diagnostic pop
 
+            jpeg_finish_decompress(&cinfo);
+            sharedCtx->consumed = true;
+            pos = 1;
+            return out;
+          }
+
+          // Not reached
           jpeg_finish_decompress(&cinfo);
           sharedCtx->consumed = true;
-          pos = 1;
-          return out;
+          return std::nullopt;
+        } catch(const std::exception &e) {
+          // Corrupt or truncated data. The context can't be reused; its destructor tidies libjpeg up.
+          SPDLOG_WARN("JPEGTurbo: decode failed: {}", e.what());
+          sharedCtx->consumed = true;
+          return std::nullopt;
         }
-
-        // Not reached
-        jpeg_finish_decompress(&cinfo);
-        sharedCtx->consumed = true;
-        return std::nullopt;
       });
 
       constexpr float intrinsicLoss = 1.0f;// no implicit conversion loss for basic gray/RGB paths
@@ -485,8 +532,9 @@ namespace Ravl2
 
             jpeg_compress_struct cinfo {};
             jpeg_error_mgr jerr {};
-            cinfo.err = jpeg_std_error(&jerr);
+            cinfo.err = setupJpegErrors(jerr);
             jpeg_create_compress(&cinfo);
+            JpegCompressGuard guard {&cinfo};
             jpeg_stdio_dest(&cinfo, file.get());
 
             const auto &rng = img.range();
@@ -506,13 +554,12 @@ namespace Ravl2
             //const JDIMENSION width = cinfo.image_width;
             const JDIMENSION height = cinfo.image_height;
             for(JDIMENSION y = 0; y < height; ++y) {
-              JSAMPROW row = reinterpret_cast<JSAMPROW>(const_cast<PixelRGB8 *>(&img[{static_cast<int>(y), 0}]));
+              JSAMPROW row = reinterpret_cast<JSAMPROW>(const_cast<PixelRGB8 *>(&img[{rng.min(0) + static_cast<int>(y), rng.min(1)}]));
               JSAMPARRAY rows = &row;
               jpeg_write_scanlines(&cinfo, rows, 1);
             }
 
             jpeg_finish_compress(&cinfo);
-            jpeg_destroy_compress(&cinfo);
             return 0;
           });
 
@@ -532,8 +579,9 @@ namespace Ravl2
 
             jpeg_compress_struct cinfo {};
             jpeg_error_mgr jerr {};
-            cinfo.err = jpeg_std_error(&jerr);
+            cinfo.err = setupJpegErrors(jerr);
             jpeg_create_compress(&cinfo);
+            JpegCompressGuard guard {&cinfo};
             jpeg_stdio_dest(&cinfo, file.get());
 
             const auto &rng = img.range();
@@ -554,13 +602,12 @@ namespace Ravl2
 #pragma GCC diagnostic ignored "-Wuseless-cast"
 #endif
             for(JDIMENSION y = 0; y < height; ++y) {
-              JSAMPROW row = reinterpret_cast<JSAMPROW>(const_cast<uint8_t *>(&img[{static_cast<int>(y), 0}]));
+              JSAMPROW row = reinterpret_cast<JSAMPROW>(const_cast<uint8_t *>(&img[{rng.min(0) + static_cast<int>(y), rng.min(1)}]));
               JSAMPARRAY rows = &row;
               jpeg_write_scanlines(&cinfo, rows, 1);
             }
 #pragma GCC diagnostic pop
             jpeg_finish_compress(&cinfo);
-            jpeg_destroy_compress(&cinfo);
             return 0;
           });
 
