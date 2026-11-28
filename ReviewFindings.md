@@ -95,20 +95,28 @@ Batch 4 notes: GEO-8 partly done — fixed `sumOfSqr(scalar)`, `angle()` clampin
 ## Remaining bugs by area
 
 ### Image
-- [ ] **IMG-1** `Image/Segmentation/SegmentExtrema.cc:54,116` — `mRegionMap` sized area/2; checkerboard/1x1 overflow; negative levels index `mHist`. *(verified)*
-- [ ] **IMG-2** `Image/DrawFrame.hh:111+` — rect overload swaps row/col; breaks `extendImageFill` and `FloodRegionC::GrowRegion` with padding. *(verified)*
-- [ ] **IMG-3** `Image/WarpScale.hh:139,251` — output footprint runs past image edge. *(verified)*
-- [ ] **IMG-4** `Image/WarpScale.hh:276` — index compared with size; non-zero origins. *(verified)*
-- [ ] **IMG-5** `Image/Warp.hh:241` — Clamp/Wrap/Mirror slow path never samples.
-- [ ] **IMG-6** `Image/PeakDetector.hh:190,244` — sub-pixel correction row/col swapped; `test_image.cc:263` asserts the bug. *(verified)*
-- [ ] **IMG-7** `Image/SummedAreaTable2.hh:94`, `MatchNormalisedCorrelation.cc:19,69` — `Sum` ignores decremented min; NCC ignores search area, unreachable threshold, int overflow. *(verified)*
-- [ ] **IMG-8** `Image/EdgeSobel.hh:34,51` — kernel uses `[c-1]` twice. *(verified)*
-- [ ] **IMG-9** `Image/Segmentation/Segmentation.cc:33,84,191` — adjacency/boundary length miss first window per row; `MergeComponents` iter>1 size mismatch. *(verified)*
-- [ ] **IMG-10** `Image/Segmentation/ConnectedComponents.hh:246` — returns provisional label count; 1xN asserts; test masks it. *(verified)*
-- [ ] **IMG-11** `Image/SummedAreaTable.hh:155` — `verticalDifference2` sign flipped. *(verified)*
-- [ ] **IMG-12** `Image/Segmentation/Boundary.hh:225` — `toPolygon` adds half-pixel offset twice to first vertex. *(verified)*
-- [ ] **IMG-13** `Image/CornerDetectorSusan.cc:304` — dVert/dHor swapped.
-- [ ] **IMG-14** `Image/DCT2d.cc:93` — absolute indices in cosine terms; non-zero origins wrong.
+- [x] **IMG-1** `Image/Segmentation/SegmentExtrema.cc:54,116` — `mRegionMap` sized area/2; checkerboard/1x1 overflow; negative levels index `mHist`. *(verified)*
+- [x] **IMG-2** `Image/DrawFrame.hh:111+` — rect overload swaps row/col; breaks `extendImageFill` and `FloodRegionC::GrowRegion` with padding. *(verified)*
+- [x] **IMG-3** `Image/WarpScale.hh:139,251` — output footprint runs past image edge. *(verified)*
+- [x] **IMG-4** `Image/WarpScale.hh:276` — index compared with size; non-zero origins. *(verified)*
+- [x] **IMG-5** `Image/Warp.hh:241` — Clamp/Wrap/Mirror slow path never samples.
+- [x] **IMG-6** `Image/PeakDetector.hh:190,244` — sub-pixel correction row/col swapped; `test_image.cc:263` asserts the bug. *(verified)*
+- [x] **IMG-7** `Image/SummedAreaTable2.hh:94`, `MatchNormalisedCorrelation.cc:19,69` — `Sum` ignores decremented min; NCC ignores search area, unreachable threshold, int overflow. *(verified)*
+- [x] **IMG-8** `Image/EdgeSobel.hh:34,51` — kernel uses `[c-1]` twice. *(verified)*
+- [x] **IMG-9** `Image/Segmentation/Segmentation.cc:33,84,191` — adjacency/boundary length miss first window per row; `MergeComponents` iter>1 size mismatch. *(verified)*
+- [x] **IMG-10** `Image/Segmentation/ConnectedComponents.hh:246` — returns provisional label count; 1xN asserts; test masks it. *(verified)*
+- [x] **IMG-11** `Image/SummedAreaTable.hh:155` — `verticalDifference2` sign flipped. *(verified)*
+- [x] **IMG-12** `Image/Segmentation/Boundary.hh:225` — `toPolygon` adds half-pixel offset twice to first vertex. *(verified)*
+- [x] **IMG-13** `Image/CornerDetectorSusan.cc:304` — dVert/dHor swapped.
+- [x] **IMG-14** `Image/DCT2d.cc:93` — absolute indices in cosine terms; non-zero origins wrong.
+
+Image notes: IMG-1 fixed the region map size; negative pixel levels in the generic `sortPixels` are still unchecked.
+Warp Clamp/Wrap/Mirror had never compiled; `wrapPoint`/`mirrorPoint` were also rewritten (mirror could leave
+the range). The fast DCT classes still need a zero-origin power-of-two square (GAP).
+- [ ] **IMG-15** *(found while fixing)* `Image/MatchPatch.hh:54-55` — `rat = LocatePeakSubPixel(...)` is
+  immediately overwritten by `rat = minAt`, so the sub-pixel result is discarded.
+- [ ] **TEST-1** *(observed)* `VideoStreamIO` and `FfmpegMultiStreamIterator_Successive_Frame_Timecodes` failed
+  once under `ctest -j16` and didn't reproduce in later runs; possibly hardware-decoder contention (see IMP-7).
 
 ### Video / GoPro
 - [ ] **VID-2** `FfmpegMultiStreamIterator.cc:507-516,537-549,741` — single-stream seek no-ops yet reports success; "Precise" doesn't decode forward. *(verified)*

@@ -158,12 +158,12 @@ namespace Ravl2
       auto left = range.range(1).min();
       auto bottom = range.range(0).max();
       auto right = range.range(1).max();
-      // Could speed this up by separating out row accesses ?
+      // (top half) - (bottom half), using the same corner convention as horizontalDifference2().
       return (*this)(top,left)
         + ((*this)(mid,right) - (*this)(mid,left)) * 2
-        - (*this)(bottom,left)
+        + (*this)(bottom,left)
         - (*this)(top,right)
-        + (*this)(bottom,right);
+        - (*this)(bottom,right);
     }
 
     //! Calculate the difference between two halves of the rectangle split horizontally.

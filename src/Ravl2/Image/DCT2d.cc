@@ -73,68 +73,80 @@ namespace Ravl2
       return 0.0f;
   }
 
+  // Reference (O(N^3)) separable DCT-II and its inverse. Indices in the cosine terms are relative to the range's
+  // origin, and each pass uses its own dimension's size, so any range (not just square, zero-origin) works.
+
   void
   forwardDCT(Array<float, 2> &dest, const Array<float, 2> &src)
   {
-    RavlAssertMsg(src.range().size(0) == src.range().size(1), "forwardDCT(): Images must be square.");
-
     if(dest.range() != src.range())
       dest = Array<float, 2>(src.range());
-    // Transform in x direction
-    Array<float, 2> horizontal(src.range());
-    IndexRange<1> rowRange = src.range(0);
-    IndexRange<1> colRange = src.range(1);
-    for(auto it = horizontal.begin(); it.valid(); ++it) {
-      Index<2> at = it.index();
-      int i = at[0];
-      int j = at[1];
-      float sum = 0.0;
-      for(auto k = rowRange.min(); k <= rowRange.max(); k++)
-        sum += src[k][j] * std::cos(float(2 * k + 1) * std::numbers::pi_v<float> * float(i) / (float(2 * src.range().size(1))));
-      *it = sum;
+    const IndexRange<1> rowRange = src.range(0);
+    const IndexRange<1> colRange = src.range(1);
+    const int rows = rowRange.size();
+    const int cols = colRange.size();
+    const float pi = std::numbers::pi_v<float>;
+
+    // Transform down the columns (over rows).
+    Array<float, 2> partial(src.range());
+    for(int i = rowRange.min(); i <= rowRange.max(); ++i) {
+      const int u = i - rowRange.min();
+      for(int j = colRange.min(); j <= colRange.max(); ++j) {
+        float sum = 0.0f;
+        for(int k = rowRange.min(); k <= rowRange.max(); ++k)
+          sum += src[k][j] * std::cos(float(2 * (k - rowRange.min()) + 1) * pi * float(u) / float(2 * rows));
+        partial[i][j] = alpha(u, rows) * sum;
+      }
     }
 
-    // Transform in y direction
-    for(auto it = dest.begin(); it.valid(); it++) {
-      Index<2> at = it.index();
-      int i = at[0];
-      int j = at[1];
-      float sum = 0.0;
-      for(auto k = colRange.min(); k <= colRange.max(); k++)
-        sum += horizontal[i][k] * std::cos(float(2 * k + 1) * std::numbers::pi_v<float> * float(j) / (float(2 * src.range().size(0))));
-      *it = alpha(i, src.range().size(1)) * alpha(j, src.range().size(0)) * sum;
+    // Transform along the rows (over columns).
+    for(int i = rowRange.min(); i <= rowRange.max(); ++i) {
+      for(int j = colRange.min(); j <= colRange.max(); ++j) {
+        const int v = j - colRange.min();
+        float sum = 0.0f;
+        for(int k = colRange.min(); k <= colRange.max(); ++k)
+          sum += partial[i][k] * std::cos(float(2 * (k - colRange.min()) + 1) * pi * float(v) / float(2 * cols));
+        dest[i][j] = alpha(v, cols) * sum;
+      }
     }
   }
 
   void
   inverseDCT(Array<float, 2> &dest, const Array<float, 2> &src)
   {
-    RavlAssertMsg(src.range().size(0) == src.range().size(1), "inverseDCT(): Images must be square.");
     if(dest.range() != src.range())
       dest = Array<float, 2>(src.range());
-    IndexRange<1> rowRange = src.range(0);
-    IndexRange<1> colRange = src.range(1);
-    // Transform in x direction
-    Array<float, 2> horizontal(src.range());
-    for(auto it = horizontal.begin(); it.valid(); it++) {
-      Index<2> at = it.index();
-      int i = at[0];
-      int j = at[1];
-      float sum = 0.0f;
-      for(auto k = rowRange.min(); k <= rowRange.max(); k++)
-        sum += alpha(k, src.range().size(1)) * src[k][j] * std::cos(float(2 * i + 1) * std::numbers::pi_v<float> * float(k) / (float(2 * src.range().size(1))));
-      *it = sum;
+    const IndexRange<1> rowRange = src.range(0);
+    const IndexRange<1> colRange = src.range(1);
+    const int rows = rowRange.size();
+    const int cols = colRange.size();
+    const float pi = std::numbers::pi_v<float>;
+
+    // Inverse down the columns.
+    Array<float, 2> partial(src.range());
+    for(int i = rowRange.min(); i <= rowRange.max(); ++i) {
+      const int x = i - rowRange.min();
+      for(int j = colRange.min(); j <= colRange.max(); ++j) {
+        float sum = 0.0f;
+        for(int k = rowRange.min(); k <= rowRange.max(); ++k) {
+          const int u = k - rowRange.min();
+          sum += alpha(u, rows) * src[k][j] * std::cos(float(2 * x + 1) * pi * float(u) / float(2 * rows));
+        }
+        partial[i][j] = sum;
+      }
     }
 
-    // Transform in y direction
-    for(auto it = dest.begin(); it.valid(); it++) {
-      Index<2> at = it.index();
-      int i = at[0];
-      int j = at[1];
-      float sum = 0.0f;
-      for(auto k = colRange.min(); k <= colRange.max(); k++)
-        sum += alpha(k, src.range().size(0)) * horizontal[i][k] * std::cos(float(2 * j + 1) * std::numbers::pi_v<float> * float(k) / (float(2 * src.range().size(0))));
-      *it = sum;
+    // Inverse along the rows.
+    for(int i = rowRange.min(); i <= rowRange.max(); ++i) {
+      for(int j = colRange.min(); j <= colRange.max(); ++j) {
+        const int y = j - colRange.min();
+        float sum = 0.0f;
+        for(int k = colRange.min(); k <= colRange.max(); ++k) {
+          const int v = k - colRange.min();
+          sum += alpha(v, cols) * partial[i][k] * std::cos(float(2 * y + 1) * pi * float(v) / float(2 * cols));
+        }
+        dest[i][j] = sum;
+      }
     }
   }
 

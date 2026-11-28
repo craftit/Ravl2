@@ -105,6 +105,30 @@ namespace Ravl2
     }
   }
 
+  TEST_CASE("WarpScale stays inside the image")
+  {
+    // 10x10 by 3: output pixel 3 would average source 9..11; only 0..2 fit.
+    Array<float, 2> img({10, 10}, 1.0f);
+    Array<float, 2> sub;
+    warpSubsample(sub, img, toVector<float>(3, 3));
+    CHECK(sub.range() == IndexRange<2>({{0, 2}, {0, 2}}));
+    CHECK(std::abs(sub[2][2] - 1.0f) < 1e-6f);
+
+    // A result larger than the valid output is reallocated rather than filled from outside the image.
+    Array<float, 2> big({5, 5}, -1.0f);
+    warpSubsample(big, img, toVector<float>(3, 3));
+    CHECK(big.range() == IndexRange<2>({{0, 2}, {0, 2}}));
+
+    // Upsampling an image whose rows start at 100: rows used to be compared with the image size.
+    Array<float, 2> rows(IndexRange<2>({{100, 104}, {0, 3}}));
+    for(auto r : rows.range(0))
+      for(auto c : rows.range(1))
+        rows[r][c] = float(r);
+    Array<float, 2> up;
+    REQUIRE(warpScaleBilinear(up, rows, toVector<float>(0.5f, 0.5f)));
+    CHECK(std::abs(up[201][0] - 100.5f) < 1e-5f);
+  }
+
   TEST_CASE("SummedAreaTable")
   {
     SECTION("Simple")

@@ -38,14 +38,21 @@ namespace Ravl2
     //!param: score - Variable to hold the maximum correlation score.
     //!param: at - Position of maximum value.
     // Returns false if no likely match is found.
+    //! A match is reported when the best score exceeds the threshold.
     bool Search(const Array<uint8_t, 2> &templ,
                 const IndexRange<2> &searchArea,
                 RealT &score,
                 Index<2> &at) const;
 
+    //! Minimum normalised correlation (in [-1, 1]) for Search() to report a match. Default 0.5.
+    void SetThreshold(RealT newThreshold)
+    {
+      threshold = newThreshold;
+    }
+
   protected:
-    RealT threshold;
+    RealT threshold = 0.5f;
     Array<uint8_t, 2> searchImg;
-    SummedAreaTable2C<int> sums;// Sums for searchImg
+    SummedAreaTable2C<int64_t> sums;// Sums for searchImg; 64-bit so the sum of squares doesn't overflow
   };
 }// namespace Ravl2

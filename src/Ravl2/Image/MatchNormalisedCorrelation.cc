@@ -16,23 +16,20 @@ namespace Ravl2
   //: 'img' is the image to search.
 
   MatchNormalisedCorrelation::MatchNormalisedCorrelation(const Array<uint8_t, 2> &img)
-      : threshold(10)
   {
     SetSearchImage(img);
   }
 
   //: Default constructor.
 
-  MatchNormalisedCorrelation::MatchNormalisedCorrelation()
-      : threshold(10)
-  {}
+  MatchNormalisedCorrelation::MatchNormalisedCorrelation() = default;
 
   //: Setup search image.
 
   bool MatchNormalisedCorrelation::SetSearchImage(const Array<uint8_t, 2> &img)
   {
     searchImg = img;
-    sums = Ravl2::SummedAreaTable2C<int, int>::BuildTable(img);
+    sums = Ravl2::SummedAreaTable2C<int64_t>::BuildTable(img);
     return true;
   }
 
@@ -66,17 +63,21 @@ namespace Ravl2
     RealT z = std::sqrt(tvar) * tarea;
     auto tsum = RealT(tsums.sum());
 
-    IndexRange<2> clippedSearchArea = searchArea;
-    clippedSearchArea.clipBy(searchImg.range());
-
+    bool found = false;
     for(ScanWindow itr(searchImg, templ.range()); itr.valid(); ++itr) {
+      // searchArea holds the allowed template positions.
+      if(!searchArea.contains(itr.index()))
+        continue;
       auto sumxy = SumOfProducts(templ, itr.window());
 
-      // Calculate mean and variance for search image.
-      Vector<int, 2> rs = sums.Sum(itr.windowRange());
+      // Calculate mean and variance for search image. Population variance, to match the template's, so the
+      // score is a correlation in [-1, 1].
+      Vector<int64_t, 2> rs = sums.Sum(itr.windowRange());
       auto ssum = RealT(rs[0]);
       RealT smean = RealT(rs[0]) / tarea;
-      RealT svar = (RealT(rs[1]) - sqr(RealT(rs[0])) / tarea) / (tarea - 1);
+      RealT svar = (RealT(rs[1]) - sqr(RealT(rs[0])) / tarea) / tarea;
+      if(svar <= 0 || z <= 0)
+        continue;// flat window or template: correlation undefined
 
       // Compute correlation score.
       RealT curScore =
@@ -84,9 +85,10 @@ namespace Ravl2
         / (std::sqrt(svar) * z);
       //cerr << " " << curScore;
       // Compair it to pervious scores.
-      if(curScore > score) {// Best so far ?
+      if(!found || curScore > score) {// Best so far ?
         score = curScore;
         at = itr.index();
+        found = true;
       }
     }
 

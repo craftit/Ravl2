@@ -90,72 +90,24 @@ namespace Ravl2
 
   //! Draw a rectangle in an image of given width
   //! The rectangle is assumed to be the outer one and the image will be filled inside it by 'width' pixels.
+  //! Parts outside the image are clipped. Rows are dimension 0 and columns dimension 1.
   template <typename ArrayT, typename DataT = typename ArrayT::value_type>
     requires WindowedArray<ArrayT, DataT, 2>
   void DrawFrame(ArrayT &dat, const DataT &value, unsigned width, const IndexRange<2> &outerRect)
   {
-    IndexRange<2> innerRect = outerRect.shrink(int(width));
-    IndexRange<2> outerClipped = outerRect;
-    if(!outerClipped.clipBy(dat.range()) || width == 0)
-      return;// Nothing to draw.
-
-    //cerr << "Inner=" << innerRect << "\n";
-    //cerr << "Outer=" << outerRect << "\n";
-    //cerr << "Clipped=" << outerClipped << "\n";
-
-    const DataT *eor;
-    int ColN = outerClipped.range(1).size();                                                                                // Number of columns.
-    if(outerRect.range(0).min() == outerClipped.range(0).min() && outerRect.range(0).max() == outerClipped.range(0).max()) {// The innerRect wasn't clipped.
-      // Do horizontal lines.
-      for(unsigned i = 0; i < width; i++) {
-        DataT *it1 = &(dat[outerClipped.range(1).min() + int(i)][outerClipped.range(0).min()]);
-        DataT *it2 = &(dat[outerClipped.range(1).max() - int(i)][outerClipped.range(0).min()]);
-        eor = &(it1[ColN]);
-        for(; it1 != eor;) {
-          *(it1++) = value;
-          *(it2++) = value;
-        }
-      }
-    } else {
-      // Do top and bottom lines separately
-      for(unsigned i = 0; i < width; i++) {
-        if(dat.range(0).min() <= (outerRect.range(0).min() - int(i))) {
-          // Do top horizontal line.
-          DataT *it1 = &(dat[outerRect.range(1).min() - int(i)][outerClipped.range(0).min()]);
-          eor = &(it1[ColN]);
-          for(; it1 != eor;)
-            *(it1++) = value;
-        }
-        if(dat.range(0).max() >= (outerRect.range(0).max() + int(i))) {
-          // Do bottom horizontal line.
-          DataT *it1 = &(dat[outerRect.range(1).max() + int(i)][outerClipped.range(0).min()]);
-          eor = &(it1[ColN]);
-          for(; it1 != eor;)
-            *(it1++) = value;
-        }
-      }
-    }
-    // Do vertical lines.
-    if(outerClipped.range(0).min() == outerRect.range(0).min() && outerClipped.range(1).max() == outerRect.range(1).max()) {// Not clipped.
-      for(int r = outerRect.range(0).min() + 1; r < outerRect.range(0).max(); r++) {
-        DataT *it1 = &(dat[r][outerRect.range(1).min()]);
-        DataT *it2 = &(dat[r][innerRect.range(1).max() + 1]);
-        eor = &(it1[width]);
-        for(; it1 != eor; it1++, it2++) {
-          *it1 = value;
-          *it2 = value;
-        }
-      }
-    } else {// Clipped.
-      IndexRange<2> r1(Index<2>(innerRect.range(0).min(), outerRect.range(0).min()), Index<2>(innerRect.range(0).max(), innerRect.range(0).min() - 1));
-      if(r1.clipBy(dat.range())) {
-        clipUnsafe(dat, r1) = value;
-      }
-      IndexRange<2> r2(Index<2>(innerRect.range(0).min(), innerRect.range(1).max() + 1), Index<2>(innerRect.range(0).max(), outerRect.range(1).max()));
-      if(r2.clipBy(dat.range())) {
-        clipUnsafe(dat, r2) = value;
-      }
-    }
+    if(width == 0 || outerRect.empty())
+      return;
+    const int w = int(width);
+    const IndexRange<1> rows = outerRect.range(0);
+    const IndexRange<1> cols = outerRect.range(1);
+    // Top and bottom bands span the full width; left and right bands fill the rows between them.
+    DrawFilledFrame(dat, value, IndexRange<2>(IndexRange<1>(rows.min(), rows.min() + w - 1), cols));
+    DrawFilledFrame(dat, value, IndexRange<2>(IndexRange<1>(rows.max() - w + 1, rows.max()), cols));
+    const IndexRange<1> middleRows(rows.min() + w, rows.max() - w);
+    if(middleRows.empty())
+      return;
+    DrawFilledFrame(dat, value, IndexRange<2>(middleRows, IndexRange<1>(cols.min(), cols.min() + w - 1)));
+    DrawFilledFrame(dat, value, IndexRange<2>(middleRows, IndexRange<1>(cols.max() - w + 1, cols.max())));
   }
 
 }// namespace Ravl2

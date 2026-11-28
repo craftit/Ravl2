@@ -79,8 +79,10 @@ namespace Ravl2
     //: Constructor
     // (See handle class ConnectedComponentsC)
 
+    //! Performs the connected component labelling.
+    //! @return The label image, and the number of label values used including the reserved 0: regions are
+    //! labelled 1 .. n-1, so n can size per-label arrays. With ignoreZero, pixels equal to 'zero' are labelled 0.
     std::tuple<Array<unsigned, 2>, unsigned> apply(const Array<DataTypeT, 2> &im);
-    //: Performs the connected component labelling
 
   protected:
     CompareT compare;
@@ -118,6 +120,20 @@ namespace Ravl2
       }
     }
 
+    // Label the other rows. The 2x2 window iterator needs at least two rows and two columns; a single column
+    // is labelled by comparing each pixel with the one above.
+    if(ip.range(1).size() == 1) {
+      const int c = ip.range(1).min();
+      for(int r = ip.range(0).min() + 1; r <= ip.range(0).max(); ++r) {
+        if(compare(ip[r][c], ip[r - 1][c])) {
+          jp[r][c] = jp[r - 1][c];
+        } else {
+          auto newLab = unsigned(labelTable.size());
+          jp[r][c] = newLab;
+          labelTable.push_back(newLab);
+        }
+      }
+    } else if(ip.range(0).size() > 1)
     for(Array2dSqr2Iter2C<DataTypeT, unsigned> it(ip, jp); it.valid();) {
       // Label the first column pixel.
       if(compare(it.DataBL1(), it.DataTL1()))
@@ -219,14 +235,14 @@ namespace Ravl2
       return {jp, unsigned(labelTable.size())};
     }
 
-    // newLastLabel =
-    RelabelTable(labelTable);
+    const unsigned newLastLabel = RelabelTable(labelTable);
     // Change labels in the have been processed area
     for(auto &it : jp) {
       it = labelTable[it];
     }
 
     // The user may have requested to ignore the empty pixels (e.g. zeros) in the original image
+    unsigned labelCount = newLastLabel + 1;
     if(ignoreZero) {
       std::vector<int> arr(labelTable.size() + 1, -1);
       int curr = 1;
@@ -241,9 +257,11 @@ namespace Ravl2
           it.template data<1>() = unsigned(arr[it.template data<1>()]);
         }
       }
+      labelCount = unsigned(curr);
     }
 
-    return {jp, labelTable.size()};
+    // labelTable.size() is the number of provisional labels, not regions.
+    return {jp, labelCount};
   }
 
 }// namespace Ravl2

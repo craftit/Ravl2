@@ -17,6 +17,7 @@
 #include "Ravl2/Image/Segmentation/Crack.hh"
 #include "Ravl2/Image/Array2Sqr2Iter.hh"
 #include "Ravl2/Index.hh"
+#include "Ravl2/Geometry/Polygon.hh"// toPolygon() returns one
 
 namespace Ravl2
 {
@@ -222,7 +223,6 @@ namespace Ravl2
     auto const halfPixelOffset = toPoint<RealT>(-0.5, -0.5);
     polygon.push_back(toPoint<RealT>(et->vertexBegin()) + halfPixelOffset);
     auto lastCode = et->code();
-    polygon.back() += halfPixelOffset;
     for(++et; et != endAt; ++et) {
       if(et->code() == lastCode)
         continue;

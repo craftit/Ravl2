@@ -7,6 +7,7 @@
 #include "Ravl2/Image/Segmentation/FloodRegion.hh"
 #include "Ravl2/Image/Segmentation/SegmentExtrema.hh"
 #include "Ravl2/Image/Segmentation/ConnectedComponents.hh"
+#include "Ravl2/Image/Segmentation/Segmentation.hh"
 
 #define DODEBUG 0
 
@@ -69,6 +70,21 @@ namespace Ravl2
 
   }
 
+
+  TEST_CASE("SegmentExtrema on images with many minima")
+  {
+    // A checkerboard has ceil(area/2) local minima; the region map was sized area/2 rounded down.
+    Array<uint8_t, 2> board({3, 3});
+    for(int r = 0; r < 3; ++r)
+      for(int c = 0; c < 3; ++c)
+        board[r][c] = ((r + c) % 2 == 0) ? 10 : 200;
+    SegmentExtrema<uint8_t> segmentExtrema(1);
+    CHECK_NOTHROW((void)segmentExtrema.apply(board));
+
+    Array<uint8_t, 2> single({1, 1}, 50);
+    SegmentExtrema<uint8_t> segmentSingle(1);
+    CHECK_NOTHROW((void)segmentSingle.apply(single));
+  }
 
   TEST_CASE("SegmentExtrema")
   {
@@ -153,11 +169,11 @@ namespace Ravl2
     test[6][6] = 1;
     test[5][6] = 1;
     //cerr << test;
-    ConnectedComponents<unsigned> conComp(false);
+    // Default label table size. (This passed 'false' as the table size, which hid a wrong count.)
+    ConnectedComponents<unsigned> conComp;
     auto [segMap, regionCount] = conComp.apply(test);
 
-    //cerr << "Regions=" << result.data<1>() << "\n";
-    //cerr << segMap;
+    // Background and two blobs, labelled 1..3, so 4 label values including the reserved 0.
     CHECK(regionCount == 4);
     CHECK(segMap[1][1] == segMap[1][2]);
     CHECK(segMap[1][2] == segMap[2][1]);
@@ -165,6 +181,68 @@ namespace Ravl2
     CHECK(segMap[6][6] != segMap[1][1]);
     CHECK(segMap[6][6] != segMap[0][0]);
     CHECK(segMap[1][2] != segMap[0][0]);
+  }
+
+  TEST_CASE("ConnectedComponents counts regions and handles thin images")
+  {
+    // U shape: one region plus the background.
+    Array<unsigned, 2> u({5, 5}, 0);
+    for(int r = 0; r < 5; ++r) {
+      u[r][0] = 1;
+      u[r][4] = 1;
+    }
+    for(int c = 0; c < 5; ++c)
+      u[4][c] = 1;
+    ConnectedComponents<unsigned> cc;
+    auto [uMap, uCount] = cc.apply(u);
+    CHECK(uCount == 3);// labels 1 and 2, plus 0
+    CHECK(uMap[0][0] == uMap[0][4]);
+
+    ConnectedComponents<unsigned> ccIgnore(10000, true);
+    auto [iMap, iCount] = ccIgnore.apply(u);
+    CHECK(iCount == 2);// the U only
+    CHECK(iMap[2][2] == 0);
+
+    // Single row and single column images used to assert.
+    Array<unsigned, 2> row({1, 6});
+    for(int c = 0; c < 6; ++c)
+      row[0][c] = unsigned(c / 2);
+    auto [rowMap, rowCount] = cc.apply(row);
+    CHECK(rowCount == 4);
+    CHECK(rowMap[0][0] == rowMap[0][1]);
+    CHECK(rowMap[0][1] != rowMap[0][2]);
+
+    Array<unsigned, 2> col({6, 1});
+    for(int r = 0; r < 6; ++r)
+      col[r][0] = unsigned(r / 3);
+    auto [colMap, colCount] = cc.apply(col);
+    CHECK(colCount == 3);
+    CHECK(colMap[2][0] == colMap[0][0]);
+    CHECK(colMap[3][0] != colMap[2][0]);
+  }
+
+  TEST_CASE("Segmentation adjacency and boundary lengths count every edge")
+  {
+    // Column of label 1 next to label 2: the first window of each row used to be skipped.
+    Array<unsigned, 2> seg({3, 3}, 2);
+    for(int r = 0; r < 3; ++r)
+      seg[r][0] = 1;
+    Segmentation s(seg, 3);
+    auto adj = s.Adjacency(false);
+    CHECK(adj[1].count(2) == 1);
+    auto len = s.BoundaryLength(false);
+    CHECK(len[1][2] == 3);
+    auto lenBi = s.BoundaryLength(true);
+    CHECK(lenBi[2][1] == 3);
+    CHECK(s.Areas().size() == 3);
+
+    // An isolated pixel has 4 boundary edges.
+    Array<unsigned, 2> dot({3, 3}, 1);
+    dot[1][1] = 2;
+    Segmentation d(dot, 3);
+    auto local = d.LocalBoundaryLength();
+    CHECK(local[2] == 4);
+    CHECK(local[1] == 4);
   }
 }
 

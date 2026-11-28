@@ -91,33 +91,21 @@ namespace Ravl2
     //: Calculate the sum and sum of squares of the pixel values in the rectangle 'range'.
     [[nodiscard]] Vector<DataT, 2> Sum(IndexRange<2> range) const
     {
-      auto top = range.range(0).min();
-      auto left = range.range(1).min();
-      auto bottom = range.range(0).max();
-      auto right = range.range(1).max();
-      range.clipBy(clipRange);
-      if(range.area() == 0)
-        return (*this)[this->range().min()];// Return 0.
-      range.min(1)--;
-      range.min(0)--;
-      // Could speed this up by separating out row accesses ?
+      if(!range.clipBy(clipRange) || range.area() == 0)
+        return Vector<DataT, 2>::Zero();
+      // Entries are inclusive prefix sums with a zero row and column at min-1, so subtract the entries just
+      // above and to the left of the range.
+      const auto top = range.range(0).min() - 1;
+      const auto left = range.range(1).min() - 1;
+      const auto bottom = range.range(0).max();
+      const auto right = range.range(1).max();
       return (*this)(bottom,right) - (*this)(top,right) - (*this)(bottom,left) + (*this)(top,left);
     }
 
     //: Calculate the sum of the pixel's in the rectangle 'range'.
     [[nodiscard]] RealT Sum1(IndexRange<2> range) const
     {
-      auto top = range.range(0).min();
-      auto left = range.range(1).min();
-      auto bottom = range.range(0).max();
-      auto right = range.range(1).max();
-      range.clipBy(clipRange);
-      if(range.area() == 0)
-        return (*this)[this->range().min()][0];// Return 0.
-      range.min(1)--;
-      range.min(0)--;
-      // Could speed this up by seperating out row accesses ?
-      return (*this)(bottom,right)[0] - (*this)(top,right)[0] - (*this)(bottom,left)[0] + (*this)(top,left)[0];
+      return RealT(Sum(range)[0]);
     }
 
     //: Calculate variance of the image in 'range'.

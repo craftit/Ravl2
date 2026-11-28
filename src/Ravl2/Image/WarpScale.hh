@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include <stdexcept>
 #include "Ravl2/Array.hh"
 #include "Ravl2/Math.hh"
 #include "Ravl2/Image/BilinearInterpolation.hh"
@@ -134,13 +135,15 @@ namespace Ravl2
     }
     using RealT = double;
     const IndexRange<2> &imgFrame = img.range();
+    // Output pixel j averages source [j*scale, (j+1)*scale), which must lie within [min, max+1).
     IndexRange<2> rng(
       IndexRange<1>(intCeil(RealT(imgFrame[0].min()) / RealT(scale[0])),
-                    intFloor(RealT(imgFrame[0].max() - 0) / RealT(scale[0]))),
+                    intFloor(RealT(imgFrame[0].max() + 1) / RealT(scale[0])) - 1),
       IndexRange<1>(intCeil(RealT(imgFrame[1].min()) / RealT(scale[1])),
-                    intFloor(RealT(imgFrame[1].max() - 0) / RealT(scale[1]))));
+                    intFloor(RealT(imgFrame[1].max() + 1) / RealT(scale[1])) - 1));
 
-    if(!result.range().contains(rng)) {
+    // A result window inside 'rng' is filled as given; anything else would read outside the image.
+    if(result.range().empty() || !rng.contains(result.range())) {
       //! Can we resize the result?
       if constexpr(!std::is_same_v<Array2T, Array<OutT, N>>) {
         SPDLOG_WARN("Resulting image is too large");
@@ -244,14 +247,17 @@ namespace Ravl2
     //warpSubsample(Array2T &result, const Array1T &img, Vector2f scale)
 
     //cout << "src frame:" << img.range() << std::endl;
+    // Output pixel j samples the source at j*scale, which must be within [min, max].
+    const IndexRange<2> &imgFrame = img.range();
+    IndexRange<2> rng(
+    IndexRange<1>(intCeil(RealT(imgFrame[0].min()) / scale[0]),
+                    intFloor(RealT(imgFrame[0].max() - 0) / scale[0])),
+    IndexRange<1>(intCeil(RealT(imgFrame[1].min()) / scale[1]),
+                    intFloor(RealT(imgFrame[1].max() - 0) / scale[1])));
     if(result.range().empty()) {
-      const IndexRange<2> &imgFrame = img.range();
-      IndexRange<2> rng(
-      IndexRange<1>(intCeil(RealT(imgFrame[0].min()) / scale[0]),
-                      intFloor(RealT(imgFrame[0].max() - 0) / scale[0])),
-      IndexRange<1>(intCeil(RealT(imgFrame[1].min()) / scale[1]),
-                      intFloor(RealT(imgFrame[1].max() - 0) / scale[1])));
       result = Array<OutT, 2>(rng);
+    } else if(!rng.contains(result.range())) {
+      throw std::out_of_range("warpScaleBilinear: result range samples outside the image");
     }
     //cout << "res frame:" << result.range() << std::endl;
     Point2f origin = toPoint<float>(RealT(result.range().min(0)) * scale[0], RealT(result.range().min(1)) * scale[1]);
@@ -273,7 +279,7 @@ namespace Ravl2
 
       int fx = intFloor(pnt[0]);// Row
       int fxp1 = fx + 1;
-      if(fxp1 >= img.range().size(0)) fxp1 = fx;
+      if(fxp1 > img.range().max(0)) fxp1 = fx;// compare indices: the image origin may not be 0
       RealT u = pnt[0] - RealT(fx);
       if(u < RealT(1e-5)) {
 	do {

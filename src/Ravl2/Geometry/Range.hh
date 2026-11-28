@@ -809,8 +809,8 @@ namespace Ravl2
   constexpr auto clamp(const Point<RealT, N> &pnt, const Range<RealT, unsigned(N)> &rng)
   {
     Point<RealT, N> ret;
-    for(size_t i = 0; i < N; i++)
-      ret[i] = clamp(pnt[i], rng[i]);
+    for(unsigned i = 0; i < unsigned(N); i++)
+      ret[IndexSizeT(i)] = clamp(pnt[IndexSizeT(i)], rng[i]);
     return ret;
   }
 

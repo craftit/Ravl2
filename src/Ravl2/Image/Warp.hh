@@ -87,53 +87,49 @@ namespace Ravl2
   }
 
 
-  //! @brief Wrap a point coordinate to the source image
+  //! @brief Wrap a point coordinate to the source image (periodic tiling).
   //! @param sourcePoint The point to wrap
   //! @param realSourceRange The range of the source image
-  //! @return The wrapped point
+  //! @return The wrapped point, in [min, max) on each axis
   template <typename CoordTypeT, unsigned N>
   Point<CoordTypeT, N> wrapPoint(const Point<CoordTypeT, N> &sourcePoint, const Range<CoordTypeT, N> &realSourceRange)
   {
     Point<CoordTypeT, N> wrappedPoint = sourcePoint;
     for(unsigned i = 0; i < N; i++) {
-      if(sourcePoint[i] < realSourceRange.min(i)) {
-        auto diff = realSourceRange.min(i) - sourcePoint[i];
-        wrappedPoint[i] += realSourceRange.size(i) * (1 + int(diff / realSourceRange.size(i)));
-      } else if(sourcePoint[i] >= realSourceRange.max(i)) {
-        auto diff = sourcePoint[i] - realSourceRange.max(i);
-        wrappedPoint[i] -= realSourceRange.size(i) * (1 + int(diff / realSourceRange.size(i)));
+      const CoordTypeT size = realSourceRange.size(i);
+      if(size <= 0) {
+        wrappedPoint[i] = realSourceRange.min(i);
+        continue;
       }
+      CoordTypeT t = std::fmod(sourcePoint[i] - realSourceRange.min(i), size);
+      if(t < 0)
+        t += size;
+      wrappedPoint[i] = realSourceRange.min(i) + t;
     }
     return wrappedPoint;
   }
 
-  //! @brief Mirror a point coordinate in the source image
+  //! @brief Mirror a point coordinate in the source image (reflect at each edge).
   //! @param sourcePoint The point to mirror
   //! @param realSourceRange The range of the source image
-  //! @return The mirrored point
-
+  //! @return The mirrored point, in [min, max] on each axis
   template <typename CoordTypeT, unsigned N>
   Point<CoordTypeT, N> mirrorPoint(const Point<CoordTypeT, N> &sourcePoint, const Range<CoordTypeT, N> &realSourceRange)
   {
     Point<CoordTypeT, N> mirroredPoint = sourcePoint;
     for(unsigned i = 0; i < N; i++) {
-      if(sourcePoint[i] < realSourceRange.min(i)) {
-        auto diff = realSourceRange.min(i) - sourcePoint[i];
-        auto numWraps = 1 + int(diff / realSourceRange.size(i));
-        if(numWraps % 2 == 0) {
-          mirroredPoint[i] = realSourceRange.min(i) + diff;
-        } else {
-          mirroredPoint[i] = realSourceRange.min(i) + realSourceRange.size(i) - diff;
-        }
-      } else if(sourcePoint[i] >= realSourceRange.max(i)) {
-        auto diff = sourcePoint[i] - realSourceRange.max(i);
-        auto numWraps = 1 + int(diff / realSourceRange.size(i));
-        if(numWraps % 2 == 0) {
-          mirroredPoint[i] = realSourceRange.max(i) - diff;
-        } else {
-          mirroredPoint[i] = realSourceRange.max(i) - realSourceRange.size(i) + diff;
-        }
+      const CoordTypeT size = realSourceRange.size(i);
+      if(size <= 0) {
+        mirroredPoint[i] = realSourceRange.min(i);
+        continue;
       }
+      // Reflection repeats with period 2*size; fold into [0, 2*size) then reflect the upper half.
+      CoordTypeT t = std::fmod(sourcePoint[i] - realSourceRange.min(i), 2 * size);
+      if(t < 0)
+        t += 2 * size;
+      if(t > size)
+        t = 2 * size - t;
+      mirroredPoint[i] = realSourceRange.min(i) + t;
     }
     return mirroredPoint;
   }
@@ -229,15 +225,18 @@ namespace Ravl2
             auto sourcePoint = it.warpedIndex();
 
             // Check if the source point is within the source image
-            if constexpr(wrapMode == WarpWrapMode::Clamp) {
-              // Clamp the point to the source image
-              sourcePoint = clamp(sourcePoint, realSourceRange);
-            } else if constexpr(wrapMode == WarpWrapMode::Wrap) {
-              // Wrap the point to the source image
-              sourcePoint = wrapPoint(sourcePoint, realSourceRange);
-            } else if constexpr(wrapMode == WarpWrapMode::Mirror) {
-              // Mirror the point in the source image
-              sourcePoint = mirrorPoint(sourcePoint, realSourceRange);
+            if constexpr(wrapMode == WarpWrapMode::Clamp || wrapMode == WarpWrapMode::Wrap || wrapMode == WarpWrapMode::Mirror) {
+              // Bring the point into the source image, then sample it.
+              // Explicit template arguments: Point's dimension is Eigen::Index but Eigen's own is int, so they
+              // can't be deduced.
+              if constexpr(wrapMode == WarpWrapMode::Clamp) {
+                sourcePoint = clamp<CoordTypeT, IndexSizeT(N)>(sourcePoint, realSourceRange);
+              } else if constexpr(wrapMode == WarpWrapMode::Wrap) {
+                sourcePoint = wrapPoint<CoordTypeT, N>(sourcePoint, realSourceRange);
+              } else {
+                sourcePoint = mirrorPoint<CoordTypeT, N>(sourcePoint, realSourceRange);
+              }
+              operation(*it, sampler(source, sourcePoint));
             } else if constexpr(wrapMode == WarpWrapMode::Leave || wrapMode == WarpWrapMode::Fill) {
               // Check if the source point is within the source image
               if(realSourceRange.contains(sourcePoint)) {

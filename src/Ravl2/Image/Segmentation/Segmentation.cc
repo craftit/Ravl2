@@ -5,6 +5,7 @@
 // see http://www.gnu.org/copyleft/lesser.html
 // file-header-ends-here
 
+#include <algorithm>
 #include "Ravl2/Image/Segmentation/Segmentation.hh"
 #include "Ravl2/ArrayIterZip.hh"
 //#include "Ravl2/Array2dSqr2Iter.hh"
@@ -28,210 +29,70 @@ namespace Ravl2
     labels++;
   }
 
+  namespace
+  {
+    //! Call fn(a, b) for every pair of 4-connected neighbouring labels a != b, visiting each edge once
+    //! (each pixel's right and lower neighbours).
+    template <typename FnT>
+    void forEachLabelEdge(const Array<unsigned, 2> &segmap, FnT &&fn)
+    {
+      const IndexRange<2> &rng = segmap.range();
+      for(int r = rng.min(0); r <= rng.max(0); ++r) {
+        for(int c = rng.min(1); c <= rng.max(1); ++c) {
+          const unsigned here = segmap[r][c];
+          if(c < rng.max(1) && segmap[r][c + 1] != here)
+            fn(here, segmap[r][c + 1]);
+          if(r < rng.max(0) && segmap[r + 1][c] != here)
+            fn(here, segmap[r + 1][c]);
+        }
+      }
+    }
+  }// namespace
+
   //: Generate a table of region adjacencies.
 
   std::vector<std::set<unsigned>> Segmentation::Adjacency(bool biDir)
   {
     std::vector<std::set<unsigned>> ret(labels);
-    if(biDir) {
-      for(Array2dSqr2IterC<unsigned> it(segmap); it;) {
-        if(it.DataBR() != it.DataTR()) {
-          ret[it.DataBR()].insert(it.DataTR());
-          ret[it.DataTR()].insert(it.DataBR());
-        }
-        for(; it.next();) {// The rest of the image row.
-          if(it.DataBR() != it.DataTR()) {
-            ret[it.DataBR()].insert(it.DataTR());
-            ret[it.DataTR()].insert(it.DataBR());
-          }
-          if(it.DataBR() != it.DataBL()) {
-            ret[it.DataBR()].insert(it.DataBL());
-            ret[it.DataBL()].insert(it.DataBR());
-          }
-        }
+    forEachLabelEdge(segmap, [&](unsigned a, unsigned b) {
+      if(biDir) {
+        ret[a].insert(b);
+        ret[b].insert(a);
+      } else {
+        ret[std::min(a, b)].insert(std::max(a, b));
       }
-    } else {
-      for(Array2dSqr2IterC<unsigned> it(segmap); it;) {
-        if(it.DataBR() != it.DataTR()) {
-          if(it.DataBR() < it.DataTR())
-            ret[it.DataBR()].insert(it.DataTR());
-          else
-            ret[it.DataTR()].insert(it.DataBR());
-        }
-        for(; it.next();) {// The rest of the image row.
-          if(it.DataBR() != it.DataTR()) {
-            if(it.DataBR() < it.DataTR())
-              ret[it.DataBR()].insert(it.DataTR());
-            else
-              ret[it.DataTR()].insert(it.DataBR());
-          }
-          if(it.DataBR() != it.DataBL()) {
-            if(it.DataBR() < it.DataBL())
-              ret[it.DataBR()].insert(it.DataBL());
-            else
-              ret[it.DataBL()].insert(it.DataBR());
-          }
-        }
-      }
-    }
+    });
     return ret;
   }
 
   //: Generate a table of region adjacencies boundary lengths.
   // only adjacenies from regions with a smaller id to those
-  // with a larger ID are generated
+  // with a larger ID are generated, unless biDir is set.
 
   std::vector<std::map<unsigned, unsigned>> Segmentation::BoundaryLength(bool biDir)
   {
     std::vector<std::map<unsigned, unsigned>> ret(labels);
-    if(biDir) {
-      Array2dSqr2IterC<unsigned> it(segmap);
-      if(!it) return ret;
-      // First pixel
-      if(it.DataBL() != it.DataTL()) {
-        ret[it.DataBL()][it.DataTL()]++;
-        ret[it.DataTL()][it.DataBL()]++;
+    forEachLabelEdge(segmap, [&](unsigned a, unsigned b) {
+      if(biDir) {
+        ret[a][b]++;
+        ret[b][a]++;
+      } else {
+        ret[std::min(a, b)][std::max(a, b)]++;
       }
-      // First row.
-      for(; it.next();) {
-        if(it.DataBR() != it.DataTR()) {
-          ret[it.DataBR()][it.DataTR()]++;
-          ret[it.DataTR()][it.DataBR()]++;
-        }
-        if(it.DataBR() != it.DataBL()) {
-          ret[it.DataBR()][it.DataBL()]++;
-          ret[it.DataBL()][it.DataBR()]++;
-        }
-        if(it.DataTR() != it.DataTL()) {
-          ret[it.DataTR()][it.DataTL()]++;
-          ret[it.DataTL()][it.DataTR()]++;
-        }
-      }
-      // Rest of image.
-      for(; it;) {
-        // First pixel in row.
-        if(it.DataBL() != it.DataTL()) {
-          ret[it.DataBL()][it.DataTL()]++;
-          ret[it.DataTL()][it.DataBL()]++;
-        }
-        // The rest of the image row.
-        for(; it.next();) {
-          if(it.DataBR() != it.DataTR()) {
-            ret[it.DataBR()][it.DataTR()]++;
-            ret[it.DataTR()][it.DataBR()]++;
-          }
-          if(it.DataBR() != it.DataBL()) {
-            ret[it.DataBR()][it.DataBL()]++;
-            ret[it.DataBL()][it.DataBR()]++;
-          }
-        }
-      }
-    } else {
-      Array2dSqr2IterC<unsigned> it(segmap);
-      if(!it) return ret;
-      // First pixel
-      if(it.DataBL() != it.DataTL()) {
-        if(it.DataBL() < it.DataTL())
-          ret[it.DataBL()][it.DataTL()]++;
-        else
-          ret[it.DataTL()][it.DataBL()]++;
-      }
-      // First row.
-      for(; it.next();) {
-        if(it.DataBR() != it.DataTR()) {
-          if(it.DataBR() < it.DataTR())
-            ret[it.DataBR()][it.DataTR()]++;
-          else
-            ret[it.DataTR()][it.DataBR()]++;
-        }
-        if(it.DataBR() != it.DataBL()) {
-          if(it.DataBR() < it.DataBL())
-            ret[it.DataBR()][it.DataBL()]++;
-          else
-            ret[it.DataBL()][it.DataBR()]++;
-        }
-        if(it.DataTR() != it.DataTL()) {
-          if(it.DataTR() < it.DataTL())
-            ret[it.DataTR()][it.DataTL()]++;
-          else
-            ret[it.DataTL()][it.DataTR()]++;
-        }
-      }
-      // Rest of image.
-      for(; it;) {
-        // First pixel in row.
-        if(it.DataBL() != it.DataTL()) {
-          if(it.DataBL() < it.DataTL())
-            ret[it.DataBL()][it.DataTL()]++;
-          else
-            ret[it.DataTL()][it.DataBL()]++;
-        }
-        // The rest of the image row.
-        for(; it.next();) {
-          if(it.DataBR() != it.DataTR()) {
-            if(it.DataBR() < it.DataTR())
-              ret[it.DataBR()][it.DataTR()]++;
-            else
-              ret[it.DataTR()][it.DataBR()]++;
-          }
-          if(it.DataBR() != it.DataBL()) {
-            if(it.DataBR() < it.DataBL())
-              ret[it.DataBR()][it.DataBL()]++;
-            else
-              ret[it.DataBL()][it.DataBR()]++;
-          }
-        }
-      }
-    }
+    });
     return ret;
   }
 
   //: Generate a table of the length of the boundary for each region
+  // Counts the pixel edges each region shares with other regions (not the image border).
 
   std::vector<unsigned> Segmentation::LocalBoundaryLength()
   {
     std::vector<unsigned> ret(labels, 0);
-    Array2dSqr2IterC<unsigned> it(segmap);
-    if(!it) return ret;
-    // First pixel
-    if(it.DataBL() != it.DataTL()) {
-      ret[it.DataBL()]++;
-      ret[it.DataTL()]++;
-    }
-    // First row.
-    for(; it.next();) {
-      if(it.DataBR() != it.DataTR()) {
-        ret[it.DataBR()]++;
-        ret[it.DataTR()]++;
-      }
-      if(it.DataBR() != it.DataBL()) {
-        ret[it.DataBR()]++;
-        ret[it.DataBL()]++;
-      }
-      if(it.DataTR() != it.DataTL()) {
-        ret[it.DataTR()]++;
-        ret[it.DataTL()]++;
-      }
-    }
-    // Rest of image.
-    for(; it;) {
-      // First pixel in row.
-      if(it.DataBL() != it.DataTL()) {
-        ret[it.DataBL()]++;
-        ret[it.DataTL()]++;
-      }
-      // The rest of the image row.
-      for(; it.next();) {
-        if(it.DataBR() != it.DataTR()) {
-          ret[it.DataBR()]++;
-          ret[it.DataTR()]++;
-        }
-        if(it.DataBR() != it.DataBL()) {
-          ret[it.DataBR()]++;
-          ret[it.DataBL()]++;
-        }
-      }
-    }
+    forEachLabelEdge(segmap, [&](unsigned a, unsigned b) {
+      ret[a]++;
+      ret[b]++;
+    });
     return ret;
   }
 
@@ -253,7 +114,8 @@ namespace Ravl2
   std::vector<unsigned> Segmentation::Areas() const
   {
     // Compute areas of components
-    std::vector<unsigned> area(labels + 1, 0);
+    // Labels run 0 .. labels-1, so 'labels' entries; RedoArea() requires the sizes to match.
+    std::vector<unsigned> area(labels, 0);
     for(auto pix : segmap)
       area[pix]++;
     return area;

@@ -4,8 +4,7 @@
 // General Public License (LGPL). See the lgpl.licence file for details or
 // see http://www.gnu.org/copyleft/lesser.html
 // file-header-ends-here
-#ifndef RAVL2_EDGESOBEL_HEADER
-#define RAVL2_EDGESOBEL_HEADER 1
+#pragma once
 
 #include "Ravl2/Array.hh"
 #include <stdexcept>
@@ -31,7 +30,7 @@ namespace Ravl2
       out = Array<DataOutT, 3>(outRange);
     for(int r : outRange[0]) {
       for(int c : outRange[1]) {
-        out[r][c][0] = img[r + 1][c - 1] + img[r + 1][c] * 2 + img[r + 1][c - 1] - img[r - 1][c - 1] - img[r - 1][c] * 2 - img[r - 1][c + 1];
+        out[r][c][0] = img[r + 1][c - 1] + img[r + 1][c] * 2 + img[r + 1][c + 1] - img[r - 1][c - 1] - img[r - 1][c] * 2 - img[r - 1][c + 1];
         out[r][c][1] = img[r - 1][c + 1] + img[r][c + 1] * 2 + img[r + 1][c + 1] - img[r - 1][c - 1] - img[r][c - 1] * 2 - img[r + 1][c - 1];
       }
     }
@@ -48,12 +47,10 @@ namespace Ravl2
       outCol = Array<DataOutT, 2>(outRange);
     for(int r : outRange[0]) {
       for(int c : outRange[1]) {
-        outRow[r][c] = img[r + 1][c - 1] + img[r + 1][c] * 2 + img[r + 1][c - 1] - img[r - 1][c - 1] - img[r - 1][c] * 2 - img[r - 1][c + 1];
+        outRow[r][c] = img[r + 1][c - 1] + img[r + 1][c] * 2 + img[r + 1][c + 1] - img[r - 1][c - 1] - img[r - 1][c] * 2 - img[r - 1][c + 1];
         outCol[r][c] = img[r - 1][c + 1] + img[r][c + 1] * 2 + img[r + 1][c + 1] - img[r - 1][c - 1] - img[r][c - 1] * 2 - img[r + 1][c - 1];
       }
     }
   }
 
 }// namespace Ravl2
-
-#endif

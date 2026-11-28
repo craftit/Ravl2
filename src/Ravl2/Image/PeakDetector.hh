@@ -187,7 +187,8 @@ namespace Ravl2
       corr[1] = float(0.5);
     if(corr[1] < float(-0.5))
       corr[1] = float(-0.5);
-    return indf + corr;
+    // The fit's x is the column and y the row; positions are (row, col).
+    return indf + Vector2f {corr[1], corr[0]};
   }
 
   //! @brief Locate peak with sub-pixel precision.
@@ -241,7 +242,8 @@ namespace Ravl2
       corr[1] = RealT(0.5);
     if(corr[1] < RealT(-0.5))
       corr[1] = RealT(-0.5);
-    return fpos + corr;
+    // The fit's x is the column and y the row; positions are (row, col).
+    return fpos + toVector<float>(float(corr[1]), float(corr[0]));
   }
   
   //! Fit a peak in 1 dimension. v1 > v0  and v1 > v2

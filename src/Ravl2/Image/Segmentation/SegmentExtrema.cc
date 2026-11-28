@@ -6,6 +6,7 @@
 // file-header-ends-here
 //! author="Charles Galambos, based on code by Jiri Matas."
 
+#include <stdexcept>
 #include "Ravl2/Image/Segmentation/SegmentExtrema.hh"
 #include "Ravl2/Image/DrawFrame.hh"
 #include "Ravl2/ArrayIterZip.hh"
@@ -50,8 +51,10 @@ namespace Ravl2
     DrawFrame(mPixs, zeroPix, imgRect);
 
     assert(!rect.empty());
-    // Create region map.
-    size_t newSize = size_t(rect.area() / 2);
+    // Create region map. Pixels point into it, so it can't grow later. A region is only created for a pixel with
+    // no labelled 4-neighbour, so creators form an independent set of the grid: at most ceil(area / 2).
+    // (area / 2 rounded down overflowed on checkerboard images and 1x1 images.)
+    size_t newSize = size_t((rect.area() + 1) / 2);
     if(mRegionMap.size() < newSize)
       mRegionMap.resize(newSize);
 
@@ -113,6 +116,8 @@ namespace Ravl2
 
   inline void SegmentExtremaBase::addRegion(ExtremaChainPixel *pix, int level)
   {
+    if(mLabelAlloc >= mRegionMap.size())
+      throw std::logic_error("SegmentExtrema: more regions than the region map allows");
     ExtremaRegion &region = mRegionMap[mLabelAlloc++];
     pix->mRegion = &region;
     region.mTotal = 0;

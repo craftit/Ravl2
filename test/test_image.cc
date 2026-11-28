@@ -9,6 +9,11 @@
 #include "Ravl2/Image/Array2Sqr2Iter2.hh"
 #include "Ravl2/Image/Matching.hh"
 #include "Ravl2/Image/ImageExtend.hh"
+#include "Ravl2/Image/DrawFrame.hh"
+#include "Ravl2/Image/Segmentation/Boundary.hh"
+#include "Ravl2/Image/SummedAreaTable.hh"
+#include "Ravl2/Image/SummedAreaTable2.hh"
+#include "Ravl2/Image/MatchNormalisedCorrelation.hh"
 #include "Ravl2/Image/ImagePyramid.hh"
 #include "Ravl2/Image/ZigZagIter.hh"
 #include "Ravl2/Image/DCT2d.hh"
@@ -115,6 +120,30 @@ namespace Ravl2
 
   TEST_CASE("Warp")
   {
+    SECTION("Clamp, Wrap and Mirror fill pixels that map outside the source")
+    {
+      // Source value = column. Shifting by 5 columns maps the right half of the target outside the source;
+      // these modes used to leave those pixels unwritten.
+      Ravl2::Array<float, 2> img({10, 10});
+      for(int r = 0; r < 10; ++r)
+        for(int c = 0; c < 10; ++c)
+          img[r][c] = float(c);
+      auto transform = [](const Ravl2::Point2f &p) -> Ravl2::Point2f { return p + Ravl2::toPoint<float>(0, 5); };
+
+      Ravl2::Array<float, 2> clamped(img.range(), -1.0f);
+      Ravl2::warp<Ravl2::WarpWrapMode::Clamp>(clamped, img, transform);
+      CHECK(clamped[4][2] == 7.0f);
+      CHECK(clamped[4][9] >= 8.0f);// clamped to the right edge
+
+      Ravl2::Array<float, 2> wrapped(img.range(), -1.0f);
+      Ravl2::warp<Ravl2::WarpWrapMode::Wrap>(wrapped, img, transform);
+      CHECK(wrapped[4][9] >= 0.0f);
+
+      Ravl2::Array<float, 2> mirrored(img.range(), -1.0f);
+      Ravl2::warp<Ravl2::WarpWrapMode::Mirror>(mirrored, img, transform);
+      CHECK(mirrored[4][9] >= 0.0f);
+    }
+
     SECTION("Shift")
     {
       Ravl2::Array<float, 2> img({10, 10}, 0);
@@ -248,6 +277,112 @@ namespace Ravl2
   }
 
 
+  TEST_CASE("Wide frames on non-square images")
+  {
+    // 4 rows x 10 columns: the wide DrawFrame swapped rows and columns, so this went out of bounds.
+    Array<int, 2> img({4, 10}, 0);
+    DrawFrame(img, 1, 1, img.range());
+    int count = 0;
+    for(auto v : img)
+      count += v;
+    CHECK(count == 2 * 10 + 2 * 2);// top and bottom rows, plus both ends of the two middle rows
+    CHECK(img[0][9] == 1);
+    CHECK(img[2][0] == 1);
+    CHECK(img[2][9] == 1);
+    CHECK(img[1][5] == 0);
+
+    // Clipped by the image edge.
+    Array<int, 2> clipped({4, 10}, 0);
+    DrawFrame(clipped, 1, 2, IndexRange<2>({{-1, 5}, {3, 20}}));
+    CHECK(clipped[0][3] == 1);
+    CHECK(clipped[3][4] == 1);
+    CHECK(clipped[3][6] == 0);
+
+    Array<uint8_t, 2> src({4, 10}, 5);
+    Array<uint8_t, 2> extended;
+    extendImageFill(extended, src, 2, uint8_t(0));
+    REQUIRE(extended.range() == IndexRange<2>({{-2, 5}, {-2, 11}}));
+    CHECK(extended[-2][-2] == 0);
+    CHECK(extended[5][11] == 0);
+    CHECK(extended[0][0] == 5);
+  }
+
+  TEST_CASE("Summed area tables and normalised correlation")
+  {
+    // Sum of a 3x3 block of ones was 4: the corners above and left of the range weren't used.
+    Array<uint8_t, 2> ones({6, 6}, 1);
+    auto sat2 = SummedAreaTable2C<int64_t>::BuildTable(ones);
+    CHECK(sat2.Sum(IndexRange<2>({{1, 3}, {2, 4}}))[0] == 9);
+    CHECK(sat2.Sum1(IndexRange<2>({{0, 5}, {0, 5}})) == 36);
+
+    // Top half 1s, bottom half 3s: top minus bottom is 8 - 24 = -16, the same as the horizontal case
+    // on the transposed image. Ranges here are in table-corner coordinates.
+    Array<int, 2> halves({4, 4}, 1);
+    Array<int, 2> halvesT({4, 4}, 1);
+    for(int r = 0; r < 4; ++r)
+      for(int c = 0; c < 4; ++c) {
+        halves[r][c] = r < 2 ? 1 : 3;
+        halvesT[r][c] = c < 2 ? 1 : 3;
+      }
+    auto sat = SummedAreaTable<int>::buildTable(halves);
+    auto satT = SummedAreaTable<int>::buildTable(halvesT);
+    const IndexRange<2> corners({{-1, 3}, {-1, 3}});
+    CHECK(sat.verticalDifference2(corners, 1) == -16);
+    CHECK(satT.horizontalDifference2(corners, 1) == -16);
+
+    // An exact copy of part of the image is found with a score of 1.
+    Array<uint8_t, 2> img({20, 20});
+    for(int r = 0; r < 20; ++r)
+      for(int c = 0; c < 20; ++c)
+        img[r][c] = uint8_t((r * 37 + c * 11 + r * c * 7) % 251);
+    Array<uint8_t, 2> templ({5, 4});
+    for(int r = 0; r < 5; ++r)
+      for(int c = 0; c < 4; ++c)
+        templ[r][c] = img[6 + r][9 + c];
+    MatchNormalisedCorrelation matcher(img);
+    float score = 0;
+    Index<2> at;
+    REQUIRE(matcher.Search(templ, IndexRange<2>({{0, 19}, {0, 19}}), score, at));
+    CHECK(at == Index<2>(6, 9));
+    CHECK(std::abs(score - 1.0f) < 1e-3f);
+
+    // Positions outside the search area are not considered.
+    (void)matcher.Search(templ, IndexRange<2>({{0, 3}, {0, 3}}), score, at);
+    CHECK(IndexRange<2>({{0, 3}, {0, 3}}).contains(at));
+    CHECK(score < 0.999f);
+  }
+
+  TEST_CASE("Reference DCT works for any range")
+  {
+    // Non-square, non-zero origin: the cosine terms used absolute indices and swapped the sizes.
+    Array<float, 2> img(IndexRange<2>({{10, 13}, {20, 25}}));
+    Array<float, 2> img0({4, 6});
+    for(int r = 0; r < 4; ++r)
+      for(int c = 0; c < 6; ++c) {
+        img[10 + r][20 + c] = float((r * 7 + c * 3) % 11);
+        img0[r][c] = img[10 + r][20 + c];
+      }
+    Array<float, 2> coeffs, coeffs0, back;
+    forwardDCT(coeffs, img);
+    forwardDCT(coeffs0, img0);
+    CHECK(std::abs(coeffs[11][23] - coeffs0[1][3]) < 1e-4f);
+    inverseDCT(back, coeffs);
+    for(int r = 0; r < 4; ++r)
+      for(int c = 0; c < 6; ++c)
+        CHECK(std::abs(back[10 + r][20 + c] - img[10 + r][20 + c]) < 1e-3f);
+  }
+
+  TEST_CASE("Boundary to polygon offsets every vertex once")
+  {
+    // A single pixel at (2,3): its polygon corners are the pixel corners, half a pixel from the centre.
+    auto poly = toPolygon<float>(toBoundary(IndexRange<2>({{2, 2}, {3, 3}})));
+    REQUIRE(poly.size() == 4);
+    for(const auto &p : poly) {
+      CHECK(std::abs(std::abs(p[0] - 2.0f) - 0.5f) < 1e-6f);
+      CHECK(std::abs(std::abs(p[1] - 3.0f) - 0.5f) < 1e-6f);
+    }
+  }
+
   TEST_CASE("SubPixelPeakDetection")
   {
     Array<float,2> img({3,3} , 0);
@@ -260,8 +395,9 @@ namespace Ravl2
 
     at = LocatePeakSubPixel(img,Index<2>({1,1}));
     //cerr << "At=" << at << "\n";
-    ASSERT_FALSE(std::abs(at[0] - 0.9f) > 0.000001f);
-    ASSERT_FALSE(std::abs(at[1] - 1.1f) > 0.000001f);
+    // Raised neighbours to the left (col 0) and below (row 2) pull the peak to row 1.1, col 0.9.
+    ASSERT_FALSE(std::abs(at[0] - 1.1f) > 0.000001f);
+    ASSERT_FALSE(std::abs(at[1] - 0.9f) > 0.000001f);
   }
 
   TEST_CASE("SubPixelPeakDetection1")

@@ -300,8 +300,9 @@ namespace Ravl2
           continue;
         cornerMap[i][j] = max_no - n;
         RavlAssert(window.contains(toIndex(i, j)));
+        // x accumulates column (horizontal) offsets and y row (vertical) ones; Corner takes (vertical, horizontal).
         cornerList.emplace_back(toPoint<float>(i, j),
-                                (51 * RealT(x)) / RealT(n), (51 * RealT(y)) / RealT(n),
+                                (51 * RealT(y)) / RealT(n), (51 * RealT(x)) / RealT(n),
                                 img[i][j]);
         ONDEBUG(CCount++);
       }

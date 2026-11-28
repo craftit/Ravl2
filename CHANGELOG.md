@@ -56,6 +56,17 @@ may have relied on or worked around: check code that uses them.
   exceptions). `Ellipse(Vector<.,6>)` throws for a conic that isn't an ellipse. `Affine` division throws
   `std::domain_error` for a singular divisor. `TriMesh` constructors throw `std::out_of_range` for bad face indices.
 - `PinholeCamera1`/`PinholeCamera2` `projectCheck()` reject points nearer than `nearPlane()` (was only z near 0).
+- `LocatePeakSubPixel()` returns (row, col) with the sub-pixel correction on the right axes (they were swapped);
+  this affects Harris, Harris-affine and patch matching positions.
+- `ConnectedComponents::apply()` returns the number of label values used including the reserved 0 (it returned
+  the number of provisional labels); with `ignoreZero` it is the renumbered count.
+- `warpSubsample()` only produces output pixels whose footprint lies inside the image (one fewer at the far edge),
+  and reallocates a result that is larger than that; `warpScaleBilinear()` throws `std::out_of_range` for such a
+  result.
+- `MatchNormalisedCorrelation`: scores are correlations in [-1, 1], `searchArea` restricts the template positions,
+  and the default threshold is 0.5 (it was 10, so no match was ever reported); `SetThreshold()` added.
+- Susan corners report (vertical, horizontal) gradients in that order (they were swapped).
+- `Segmentation::Areas()` has one entry per label (it had one extra).
 - CMake: the Display tests and display examples are only built when the Display stack is enabled; ImGui, ImPlot,
   ImGuizmo and the bgfx ImGui headers are SYSTEM includes.
 - ImGui (`docking`), ImPlot (`master`) and gpmf-parser (`main`) are pinned to commits; see
@@ -93,6 +104,15 @@ may have relied on or worked around: check code that uses them.
   and copy assignment left faces pointing at the source mesh.
 - `PinholeCamera1`: inverse distortion was skipped for barrel distortion and small radii, and the projection
   Jacobian's radial term was wrong.
+- Image: `edgeSobel()` used the wrong pixel in its vertical kernel; `SegmentExtrema` overflowed its region map on
+  checkerboard-like and 1x1 images; the wide `DrawFrame()` swapped rows and columns (breaking `extendImageFill()`
+  and flood-fill padding on non-square images); `warpSubsample()` read past the image edge;
+  `warpScaleBilinear()` didn't interpolate rows when the image origin wasn't 0; Warp Clamp/Wrap/Mirror modes left
+  out-of-source pixels unwritten (and didn't compile); `SummedAreaTable2C::Sum()` returned the wrong sum and
+  `SummedAreaTable::verticalDifference2()` had two signs flipped; segmentation adjacency and boundary lengths
+  missed the first column of each row; `ConnectedComponents` asserted on single-row/column images;
+  `toPolygon(Boundary)` offset the first vertex twice; the reference DCT was wrong for non-square images and
+  non-zero origins.
 - Builds against FFmpeg older than 7.1 (`avcodec_get_supported_config()` is used when available).
 - Configuring with `RAVL2_ENABLE_DISPLAY_STACK=OFF` failed; fetching bgfx failed with a user-level
   `submodule.recurse=true`; ImGui header warnings broke `-Werror` builds.

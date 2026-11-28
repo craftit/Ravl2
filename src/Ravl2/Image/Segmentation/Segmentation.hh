@@ -140,63 +140,31 @@ namespace Ravl2
 
       // Find closest neigbour of small regions.
 
-      for(Array2dSqr2Iter2C<unsigned, PixelT> it(segmap, dat); it;) {
-        // Do up.
-        if(it.DataBR1() != it.DataTR1()) {// Are labels different ?
-          if(area[it.DataBR1()] < thrSize) {
-            RealT d = cmp(it.DataBR2(), it.DataTR2());
-            if(minDist[it.DataBR1()] > d) {
-              minDist[it.DataBR1()] = d;
-              minLab[it.DataBR1()] = it.DataTR1();
-            }
-          }
-          if(area[it.DataTR1()] < thrSize) {
-            RealT d = cmp(it.DataBR2(), it.DataTR2());
-            if(minDist[it.DataTR1()] > d) {
-              minDist[it.DataTR1()] = d;
-              minLab[it.DataTR1()] = it.DataBR1();
-            }
+      // Each 4-connected pair of different labels is considered once; either side may be small.
+      auto consider = [&](unsigned la, unsigned lb, const PixelT &pa, const PixelT &pb) {
+        if(area[la] < thrSize) {
+          RealT d = cmp(pa, pb);
+          if(minDist[la] > d) {
+            minDist[la] = d;
+            minLab[la] = lb;
           }
         }
-
-        for(; it.next();) {// The rest of the image row.
-          // Do up.
-          if(it.DataBR1() != it.DataTR1()) {// Are labels different ?
-            if(area[it.DataBR1()] < thrSize) {
-              if(it.DataBR1() != it.DataTR1()) {
-                RealT d = cmp(it.DataBR2(), it.DataTR2());
-                if(minDist[it.DataBR1()] > d) {
-                  minDist[it.DataBR1()] = d;
-                  minLab[it.DataBR1()] = it.DataTR1();
-                }
-              }
-            }
-            if(area[it.DataTR1()] < thrSize) {
-              RealT d = cmp(it.DataBR2(), it.DataTR2());
-              if(minDist[it.DataTR1()] > d) {
-                minDist[it.DataTR1()] = d;
-                minLab[it.DataTR1()] = it.DataBR1();
-              }
-            }
+        if(area[lb] < thrSize) {
+          RealT d = cmp(pa, pb);
+          if(minDist[lb] > d) {
+            minDist[lb] = d;
+            minLab[lb] = la;
           }
-
-          // Do back.
-          if(it.DataBR1() != it.DataBL1()) {// Are labels different ?
-            if(area[it.DataBR1()] < thrSize) {
-              RealT d = cmp(it.DataBR2(), it.DataBL2());
-              if(minDist[it.DataBR1()] > d) {
-                minDist[it.DataBR1()] = d;
-                minLab[it.DataBR1()] = it.DataBL1();
-              }
-            }
-            if(area[it.DataBL1()] < thrSize) {
-              RealT d = cmp(it.DataBR2(), it.DataBL2());
-              if(minDist[it.DataBL1()] > d) {
-                minDist[it.DataBL1()] = d;
-                minLab[it.DataBL1()] = it.DataBR1();
-              }
-            }
-          }
+        }
+      };
+      const IndexRange<2> &rng = segmap.range();
+      for(int r = rng.min(0); r <= rng.max(0); ++r) {
+        for(int c = rng.min(1); c <= rng.max(1); ++c) {
+          const unsigned here = segmap[r][c];
+          if(c < rng.max(1) && segmap[r][c + 1] != here)
+            consider(here, segmap[r][c + 1], dat[r][c], dat[r][c + 1]);
+          if(r < rng.max(0) && segmap[r + 1][c] != here)
+            consider(here, segmap[r + 1][c], dat[r][c], dat[r + 1][c]);
         }
       }
       CompressAndRelabel(minLab);
