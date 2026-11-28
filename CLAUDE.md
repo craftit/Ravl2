@@ -17,10 +17,17 @@ cmake --build .
 ```
 
 ### Build Types
-- **Default**: Development build with address and undefined sanitizers enabled
-- **Debug**: Standard debug build without sanitizers
+- **Default**: Development build
+- **Debug**: Standard debug build
 - **Release**: Optimized build with LTO/IPO enabled
 - **RelWithDebInfo**: Release with debug symbols
+
+### Sanitizer Builds
+The `RAVL2_ENABLE_SANITIZER_*` options are OFF by default. Every library and dependency must be built with the
+same sanitizer flags, so enable them in a separate, clean build directory for the whole tree:
+```bash
+cmake -DRAVL2_ENABLE_SANITIZER_ADDRESS=ON -DRAVL2_ENABLE_SANITIZER_UNDEFINED=ON ..
+```
 
 ### Running Tests
 ```bash
