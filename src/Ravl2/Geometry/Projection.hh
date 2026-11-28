@@ -200,10 +200,11 @@ namespace Ravl2
       return oz;
     }
 
-    //! Test if projection is near affine.
-    [[nodiscard]] constexpr bool isNearAffine(const RealT tolerance = 1e-6) const
+    //! Test if projection is near affine: the projective row's x terms are small relative to its constant term.
+    [[nodiscard]] constexpr bool isNearAffine(const RealT tolerance = RealT(1e-6)) const
     {
-      return (std::abs(trans(N, N)) + std::abs(trans(N, 0))) * (iz / oz) < tolerance;
+      const Matrix<RealT, N + 1, N + 1> h = homography();
+      return h.template block<1, N>(N, 0).cwiseAbs().sum() <= tolerance * std::abs(h(N, N));
     }
 
     //! Get homography
@@ -250,10 +251,12 @@ namespace Ravl2
       ar(cereal::make_nvp("transform", trans), cereal::make_nvp("iz", iz), cereal::make_nvp("oz", oz));
     }
 
-    //! Line/Plane at infinity
-    [[maybe_unused]] VectorOffset<RealT, N> atInfinity() const
+    //! Line/Plane of input points that map to infinity: where the projective row of the homography is zero.
+    //! For an affine transform the normal is zero, so no finite point lies on it.
+    [[nodiscard]] VectorOffset<RealT, N> atInfinity() const
     {
-      return VectorOffset<RealT, N>(trans.template block<N,1>(0,N), -trans(N, N)/oz);
+      const Matrix<RealT, N + 1, N + 1> h = homography();
+      return VectorOffset<RealT, N>(Vector<RealT, N>(h.template block<1, N>(N, 0).transpose()), h(N, N));
     }
   private:
     Matrix<RealT, N + 1, N + 1> trans = Matrix<RealT, N + 1, N + 1>::Identity();

@@ -93,7 +93,8 @@ namespace Ravl2
     {
       // Distortion-free projection
       Vector<RealT, 3> Rx = (this->m_R * x) + this->m_t;
-      if(isNearZero(Rx[2], RealT(1E-3)))
+      // Points behind (or too close to) the camera don't project.
+      if(Rx[2] < this->nearPlane())
         return false;
       RealT dx = this->m_fx * Rx[0] / Rx[2];
       RealT dy = this->m_fy * Rx[1] / Rx[2];

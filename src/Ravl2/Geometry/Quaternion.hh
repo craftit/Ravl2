@@ -69,9 +69,10 @@ namespace Ravl2
     //! @param axis The axis of rotation
     [[nodiscard]] static Quaternion fromAngleAxis(RealT angle, const Vector<RealT,3> &axis)
     {
+      // Normalise the axis, not the result: scaling (cos, s*axis) would change the angle for a non-unit axis.
+      const Vector<RealT,3> unitAxis = axis / axis.norm();
       auto s = std::sin(angle / 2);
-      Vector<RealT,4> vec {std::cos(angle / 2), axis[0] * s, axis[1] * s, axis[2] * s};
-      vec /= vec.norm();
+      Vector<RealT,4> vec {std::cos(angle / 2), unitAxis[0] * s, unitAxis[1] * s, unitAxis[2] * s};
       return Quaternion(vec);
     }
 

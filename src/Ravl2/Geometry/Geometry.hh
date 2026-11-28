@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include <algorithm>
 #include <cmath>
 #include <span>
 
@@ -99,7 +100,8 @@ namespace Ravl2
   template <typename RealT, IndexSizeT N>
   [[nodiscard]] constexpr RealT angle(const Vector<RealT, N> &a, const Vector<RealT, N> &b)
   {
-    return std::acos((a.dot(b) / (a.norm() * b.norm())));
+    // Rounding can push the cosine just outside [-1, 1], which acos turns into NaN.
+    return std::acos(std::clamp(a.dot(b) / (a.norm() * b.norm()), RealT(-1), RealT(1)));
   }
 
   template <typename RealT>
@@ -170,7 +172,7 @@ namespace Ravl2
     requires std::is_floating_point<RealT>::value
   [[nodiscard]] constexpr RealT sumOfSqr(RealT a)
   {
-    return std::abs(a);
+    return a * a;
   }
 
   template <unsigned N>

@@ -78,8 +78,8 @@ namespace Ravl2
       return false;
     }
 
-    // Compute the scaling.
-    scale = std::sqrt(ps2/ps1);
+    // Compute the scaling. With forceUnitScale the scale is 1, so callers can always apply 'scale'.
+    scale = forceUnitScale ? RealT(1) : std::sqrt(ps2/ps1);
 
     // Compute the rotation from the covariance matrix.
     covar /= n;
@@ -144,10 +144,10 @@ namespace Ravl2
 		     const ContainerOfPointBT &pointsFrom)
   {
     RealT scale = 0;
+    // An isometry has unit scale; fitSimilarity() reports scale == 1 and the matching translation.
     if(!fitSimilarity<RealT,N>(affine.SRMatrix(), affine.translation(), scale, pointsTo, pointsFrom, true)) {
       return false;
     }
-    affine.SRMatrix() *= scale;
     return true;
   }
 

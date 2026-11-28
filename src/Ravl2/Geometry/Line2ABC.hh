@@ -181,23 +181,24 @@ namespace Ravl2
   bool intersects(const Line2ABC<RealT> &line, const Range<RealT, 2> &rng1)
   {
     Point<RealT, 2> here;
+    // Box edges as n.p + c = 0, i.e. p[i] = value needs c = -value.
     // This could be faster...
-    Line2ABC<RealT> lineMin1({0, 1}, rng1.range(1).min());
+    Line2ABC<RealT> lineMin1({0, 1}, -rng1.range(1).min());
     if(line.intersection(lineMin1, here)) {
       if(rng1.range(0).contains(here(0)))
         return true;
     }
-    Line2ABC<RealT> lineMax1({0, 1}, rng1.range(1).max());
+    Line2ABC<RealT> lineMax1({0, 1}, -rng1.range(1).max());
     if(line.intersection(lineMax1, here)) {
       if(rng1.range(0).contains(here(0)))
         return true;
     }
-    Line2ABC<RealT> lineMin0({1, 0}, rng1.range(0).min());
+    Line2ABC<RealT> lineMin0({1, 0}, -rng1.range(0).min());
     if(line.intersection(lineMin0, here)) {
       if(rng1.range(1).contains(here(1)))
         return true;
     }
-    Line2ABC<RealT> lineMax0({1, 0}, rng1.range(0).max());
+    Line2ABC<RealT> lineMax0({1, 0}, -rng1.range(0).max());
     if(line.intersection(lineMax0, here)) {
       if(rng1.range(1).contains(here(1)))
         return true;

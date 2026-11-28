@@ -23,6 +23,11 @@
 #include "Ravl2/Geometry/FitSimilarity.hh"
 #include "Ravl2/Geometry/Plane3PVV.hh"
 #include "Ravl2/Geometry/FitAffine.hh"
+#include "Ravl2/Geometry/Projection.hh"
+#include "Ravl2/Geometry/Line2ABC.hh"
+#include "Ravl2/Geometry/LinePP.hh"
+#include "Ravl2/Geometry/Polygon.hh"
+#include "Ravl2/Geometry/Range.hh"
 #include "Ravl2/Math/FastFourierTransform.hh"
 
 
@@ -607,7 +612,7 @@ namespace Ravl2
     points.push_back(toPoint<RealT>(5,3,2));
 
     // Generate a random rotation.
-    std::mt19937 rng(static_cast<std::mt19937::result_type>(random()));
+    std::mt19937 rng(42);// fixed seed: reproducible runs
     std::uniform_real_distribution<RealT> randomAngle(-std::numbers::pi_v<RealT>,std::numbers::pi_v<RealT>);
     std::uniform_real_distribution<RealT> randomTranslation(-5.0, 5.0);
 
@@ -684,7 +689,7 @@ namespace Ravl2
     points.push_back(toPoint<RealT>(5,3,2));
 
     // Generate a random rotation.
-    std::mt19937 rng(static_cast<std::mt19937::result_type>(random()));
+    std::mt19937 rng(42);// fixed seed: reproducible runs
     std::uniform_real_distribution<RealT> randomAngle(-std::numbers::pi_v<RealT>,std::numbers::pi_v<RealT>);
     std::uniform_real_distribution<RealT> randomTranslation(-5.0, 5.0);
 
@@ -744,6 +749,114 @@ namespace Ravl2
       }
     }
 
+  }
+
+  TEST_CASE("Range, Circle and Line2ABC edge cases")
+  {
+    // mostEmpty() then involving only negative values: max used to stay at the smallest positive float.
+    auto r = Range<float, 1>::mostEmpty();
+    r.involve(-5.0f);
+    r.involve(-3.0f);
+    CHECK(r.min() == -5.0f);
+    CHECK(r.max() == -3.0f);
+    CHECK(Range<float, 1>::largest().contains(-1e30f));
+
+    // Three points on the circle centred (1,2) radius 2. The constructor used to discard its fit.
+    Circle<float> c(toPoint<float>(3, 2), toPoint<float>(1, 4), toPoint<float>(-1, 2));
+    CHECK(std::abs(c.Centre()[0] - 1.0f) < 1e-5f);
+    CHECK(std::abs(c.Centre()[1] - 2.0f) < 1e-5f);
+    CHECK(std::abs(c.Radius() - 2.0f) < 1e-5f);
+    CHECK(std::abs(c.Angle(c.Value(0.7f)) - 0.7f) < 1e-5f);
+    CHECK_THROWS_AS(Circle<float>(toPoint<float>(0, 0), toPoint<float>(1, 1), toPoint<float>(2, 2)), std::invalid_argument);
+
+    // Line through (15,-10) with slope 1 misses the box [10,20]^2; the box edges had the wrong sign.
+    Range<float, 2> box({Range<float, 1>(10, 20), Range<float, 1>(10, 20)});
+    CHECK_FALSE(intersects(Line2ABC<float>(toPoint<float>(15, -10), toPoint<float>(16, -9)), box));
+    CHECK(intersects(Line2ABC<float>(toPoint<float>(15, 15), toPoint<float>(16, 16)), box));
+  }
+
+  TEST_CASE("Projection line at infinity and affine detection")
+  {
+    // A pure translation is affine: nothing maps to infinity.
+    Matrix<float, 3, 3> t = Matrix<float, 3, 3>::Identity();
+    t(0, 2) = 100;
+    t(1, 2) = 100;
+    Projection<float, 2> shift(t);
+    CHECK(shift.isNearAffine());
+    CHECK(shift.atInfinity().normal().norm() == 0.0f);
+
+    // x + 2 = 0 maps to infinity for this one.
+    Matrix<float, 3, 3> p = Matrix<float, 3, 3>::Identity();
+    p(2, 0) = 1;
+    p(2, 2) = 2;
+    Projection<float, 2> proj(p);
+    CHECK_FALSE(proj.isNearAffine());
+    auto inf = proj.atInfinity();
+    CHECK(std::abs(inf.residuum(toPoint<float>(-2, 7))) < 1e-6f);
+  }
+
+  TEST_CASE("Affine division and isometry fitting")
+  {
+    Affine<float, 2> a(Matrix<float, 2, 2> {{2, 1}, {0, 1}}, toVector<float>(3, 4));
+    Affine<float, 2> b(Matrix<float, 2, 2> {{1, 0}, {1, 2}}, toVector<float>(-1, 2));
+    const auto q = a / b;
+    const auto pnt = toPoint<float>(2, 1);
+    CHECK((q(b(pnt)) - a(pnt)).norm() < 1e-5f);
+    const Affine<float, 2> singular(Matrix<float, 2, 2>::Zero(), toVector<float>(0, 0));
+    CHECK_THROWS_AS(a / singular, std::domain_error);
+
+    // Points scaled by 2: the isometry must keep unit scale and the translation consistent with it.
+    std::vector<Point<float, 2>> from {toPoint<float>(0, 0), toPoint<float>(1, 0), toPoint<float>(0, 1), toPoint<float>(1, 1)};
+    std::vector<Point<float, 2>> to;
+    for(const auto &f : from)
+      to.push_back(toPoint<float>(5, 5) + 2.0f * f);
+    Affine<float, 2> iso;
+    REQUIRE(fitIsometry(iso, to, from));
+    CHECK(std::abs(iso.SRMatrix().determinant() - 1.0f) < 1e-5f);
+    // Means: from (0.5,0.5), to (6,6); a unit-scale fit maps one onto the other.
+    CHECK((iso(toPoint<float>(0.5f, 0.5f)) - toPoint<float>(6, 6)).norm() < 1e-4f);
+  }
+
+  TEST_CASE("Polygon containment and self-intersection on concave shapes")
+  {
+    // U shape: two prongs joined at the bottom, open at the top between x = 1 and x = 2.
+    Polygon<float> u;
+    for(auto pt : {toPoint<float>(0, 0), toPoint<float>(3, 0), toPoint<float>(3, 3), toPoint<float>(2, 3), toPoint<float>(2, 1),
+                   toPoint<float>(1, 1), toPoint<float>(1, 3), toPoint<float>(0, 3)})
+      u.push_back(pt);
+    CHECK_FALSE(u.isSelfIntersecting());// a simple concave polygon used to report true
+    CHECK(u.contains(toPoint<float>(0.5f, 2.0f)));
+    CHECK(u.contains(toPoint<float>(1.5f, 0.5f)));
+    CHECK_FALSE(u.contains(toPoint<float>(1.5f, 2.0f)));
+    // On the ray along the top edges: outside, then inside a prong.
+    CHECK_FALSE(u.contains(toPoint<float>(-0.5f, 3.0f)));
+    CHECK_FALSE(u.contains(toPoint<float>(1.5f, 3.0f)));
+    CHECK(u.contains(toPoint<float>(0.5f, 3.0f)));// on the boundary
+
+    Polygon<float> bowtie;
+    for(auto pt : {toPoint<float>(0, 0), toPoint<float>(2, 2), toPoint<float>(2, 0), toPoint<float>(0, 2)})
+      bowtie.push_back(pt);
+    CHECK(bowtie.isSelfIntersecting());
+
+    Polygon<float> twoPoints;
+    twoPoints.push_back(toPoint<float>(0, 0));
+    twoPoints.push_back(toPoint<float>(1, 0));
+    CHECK_FALSE(twoPoints.isSelfIntersecting());
+  }
+
+  TEST_CASE("Small geometry helpers")
+  {
+    CHECK(sumOfSqr(3.0f) == 9.0f);
+    // Parallel vectors: rounding used to give acos(1.0000001) == NaN.
+    const auto v = toVector<float>(0.1f, 0.7f, 0.3f);
+    CHECK_FALSE(std::isnan(angle<float, 3>(v, v * 3.0f)));
+    // A line along z: ParClosest used to ignore the third dimension (and throw).
+    LinePP<float, 3> line(toPoint<float>(0, 0, 0), toPoint<float>(0, 0, 2));
+    CHECK(std::abs(line.ParClosest(toPoint<float>(1, 1, 1)) - 0.5f) < 1e-6f);
+    // A non-unit axis gives the same rotation as the unit one.
+    auto qa = Quaternion<float>::fromAngleAxis(0.6f, toVector<float>(0, 0, 3));
+    auto qb = Quaternion<float>::fromAngleAxis(0.6f, toVector<float>(0, 0, 1));
+    CHECK((qa.toMatrix() - qb.toMatrix()).norm() < 1e-6f);
   }
 }
 

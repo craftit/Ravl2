@@ -23,7 +23,7 @@ namespace Ravl2
     : public NSphere<RealT,2>
   {
   public:
-    //! Construct a circle with radius of 1 centered on the origin.
+    //! Construct a circle of zero radius centred on the origin.
     constexpr Circle() = default;
 
     //! Constructor.
@@ -32,9 +32,13 @@ namespace Ravl2
     {}
 
     //! Generate circle from 3 points on its circumference
+    //! @throws std::invalid_argument if the points are collinear; use fit() to test for that instead.
     constexpr Circle(const Point<RealT, 2> &p1, const Point<RealT, 2> &p2, const Point<RealT, 2> &p3)
     {
-      fit(p1, p2, p3);
+      auto fitted = fit(p1, p2, p3);
+      if(!fitted)
+        throw std::invalid_argument("Circle: the three points are collinear");
+      *this = *fitted;
     }
 
     //! Fit circle to a set of points.
@@ -101,10 +105,10 @@ namespace Ravl2
       return this->mCentre + ((this->mRadius / dir.norm()) * dir.array()).matrix();
     }
 
-    //! Angle between origin and point p.
+    //! Angle of point p about the centre; the inverse of Value().
     [[nodiscard]] constexpr RealT Angle(const Point<RealT, 2> &p) const
     {
-      return angle<RealT,2>(p, this->mCentre);
+      return std::atan2(p[1] - this->mCentre[1], p[0] - this->mCentre[0]);
     }
 
     //! Get point on circle at given angle.

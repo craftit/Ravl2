@@ -7,6 +7,11 @@
 #include "Ravl2/Math/MeanVariance.hh"
 #include "Ravl2/Math/FastFourierTransform.hh"
 #include "Ravl2/Math/Sums1d2.hh"
+#include "Ravl2/Math/PrimeFactors.hh"
+#include <array>
+#include <complex>
+#include <span>
+#include <vector>
 
 namespace Ravl2
 {
@@ -84,7 +89,7 @@ namespace Ravl2
         RealT val = sqr(RealT(i)) - 10;
         sum += val;
         mvinc += val;
-        if(i % 1) {
+        if(i % 2) {
           mva += val;
         } else {
           mvb += val;
@@ -161,5 +166,52 @@ namespace Ravl2
       CHECK(isNearZero(result2[i].real() - result1[i].real()));
       CHECK(isNearZero(result2[i].imag() - result1[i].imag()));
     }
+  }
+
+  TEST_CASE("MeanVariance merge and remove groups with different means")
+  {
+    // {0,0} merged with {2,2}: mean 1, population variance 1. The mean term used to be unsquared.
+    MeanVariance<double> a(2, 0.0, 0.0);
+    MeanVariance<double> b(2, 2.0, 0.0);
+    MeanVariance<double> ab = a;
+    ab += b;
+    CHECK(isNearZero(ab.mean() - 1.0));
+    CHECK(isNearZero(ab.variance() - 1.0));
+    MeanVariance<double> ba = b;
+    ba += a;
+    CHECK(isNearZero(ba.variance() - 1.0));
+
+    // Removing b again gives back a.
+    ab -= b;
+    CHECK(ab.count() == 2);
+    CHECK(isNearZero(ab.mean()));
+    CHECK(isNearZero(ab.variance()));
+  }
+
+  TEST_CASE("Sums1d2 subtraction reduces the count")
+  {
+    Sums1d2C<double> all;
+    for(double v : {1.0, 2.0, 3.0})
+      all += v;
+    Sums1d2C<double> three;
+    three += 3.0;
+    all -= three;
+    CHECK(all.size() == 2);
+    CHECK(isNearZero(all.mean() - 1.5));
+  }
+
+  TEST_CASE("FFT of length 1 and prime factors of small sizes")
+  {
+    std::vector<float> data {3.0f};
+    std::vector<std::complex<float>> result(1);
+    // Used to hang in pfac().
+    fastFourierTransform(std::span(result), std::span<const float>(data));
+    CHECK(result[0] == std::complex<float>(3.0f, 0.0f));
+
+    std::array<int, 32> kk {};
+    CHECK(pfac(size_t(1), kk.data(), 'o') == 1);
+    CHECK(kk[0] == 0);
+    CHECK(pfac(size_t(12), kk.data(), 'o') == 12);
+    CHECK(kk[0] == 3);// 2 * 2 * 3
   }
 }

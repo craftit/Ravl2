@@ -308,6 +308,12 @@ namespace Ravl2
       throw std::runtime_error("fastFourierTransform(), result and data must be the same size.");
     }
     size_t n = data.size();
+    if(n <= 1) {
+      // A transform of length 0 or 1 is the identity (the 1/n scale is 1).
+      for(size_t i = 0; i < n; ++i)
+        result[i] = std::complex<RealT>(data[i]);
+      return;
+    }
     std::array<int, 32> primeFactors {};
     size_t nf = pfac(n, primeFactors.data(), 'o');
     if(nf != n) {
@@ -333,6 +339,12 @@ namespace Ravl2
       throw std::runtime_error("fastFourierTransform(), result and data must be the same size.");
     }
     size_t n = data.size();
+    if(n <= 1) {
+      // A transform of length 0 or 1 is the identity (the 1/n scale is 1).
+      for(size_t i = 0; i < n; ++i)
+        result[i] = std::complex<RealT>(data[i]);
+      return;
+    }
     std::array<int, 32> primeFactors {};
     size_t nf = pfac(n, primeFactors.data(), 'o');
     if(nf != n) {
@@ -356,6 +368,12 @@ namespace Ravl2
       throw std::runtime_error("fastFourierTransform(), result and data must be the same size.");
     }
     size_t n = data.size();
+    if(n <= 1) {
+      // A transform of length 0 or 1 is the identity (the 1/n scale is 1).
+      for(size_t i = 0; i < n; ++i)
+        result[i] = std::complex<RealT>(data[i]);
+      return;
+    }
     std::array<int, 32> primeFactors {};
     size_t nf = pfac(n, primeFactors.data(), 'o');
     if(nf != n) {
@@ -386,6 +404,12 @@ namespace Ravl2
       throw std::runtime_error("fastFourierTransform(), result and data must be the same size.");
     }
     size_t n = data.size();
+    if(n <= 1) {
+      // A transform of length 0 or 1 is the identity (the 1/n scale is 1).
+      for(size_t i = 0; i < n; ++i)
+        result[i] = std::complex<RealT>(data[i]);
+      return;
+    }
     std::array<int, 32> primeFactors {};
     size_t nf = pfac(n, primeFactors.data(), 'o');
     if(nf != n) {

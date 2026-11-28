@@ -57,13 +57,18 @@ namespace Ravl2
       n -= (n % 2);
       dc = 2;
     }
+    // 0 and 1 have no prime factors; without this the search below counts down forever.
+    if(n <= 1) {
+      kk[0] = 0;
+      return n;
+    }
     for(;; n -= dc) {
       size_t num = n;
       size_t j = 0;
       size_t k = 0;
       while(j < 31) {
         if(num % kpf[k] != 0) {
-          if(k == kpf.size())
+          if(k + 1 == kpf.size())
             break;
           ++k;
         } else {
@@ -87,6 +92,11 @@ namespace Ravl2
     if(fe == 'e') {
       n -= (n % 2);
       dc = 2;
+    }
+    // 0 and 1 have no prime factors; without this the search below counts down forever.
+    if(n <= 1) {
+      kk[0] = 0;
+      return size_t(n);
     }
     for(;; n -= dc) {
       num = n;

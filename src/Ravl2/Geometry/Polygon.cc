@@ -73,71 +73,34 @@ namespace Ravl2
   template <typename RealT>
   bool Polygon<RealT>::contains(const Point<RealT, 2> &p) const
   {
-
-    RealT tolerance = 0;//std::numeric_limits<RealT>::epsilon();
-
-    // Check singularities.
-    size_t size = this->size();
+    const size_t size = this->size();
     if(size == 0) return false;
-    Point<RealT, 2> p1 = this->front();
-    if(size == 1) return p == p1;
+    if(size == 1) return p == this->front();
 
-    // Take my test-line arbitrarily as parallel to y=0. Assumption is that
-    // Point<RealT,2>(p[0]+100...) provides enough accuracy for the calculation
-    // - not envisaged that this is a real problem
-    Point<RealT, 2> secondPoint = toPoint<RealT>(p[0] + 100, p[1]);
-    Line2PP testLine(p, secondPoint);
-
-    // Just something useful for later, check whether the last point lies
-    // to the left or left of my test-line
-    bool leftof = testLine.IsPointToLeftOn(this->back());
-
-    // For each edge (k,k+1) of this polygon count the intersection
-    // with the polygon segments.
-    int count = 0;
-
+    // Points on the boundary count as inside.
     auto pLast = this->back();
-    for(auto k : *this) {
-      Line2PP l2(pLast, k);
-      // The point can lie on the boundary of the polygon.
-      // This creates lots of edge cases. To avoid this, if the point is on the boundary
-      // it is considered to be inside the polygon.
-      if(l2.IsPointIn(p, tolerance)) {
+    for(const auto &k : *this) {
+      if(Line2PP<RealT>(pLast, k).IsPointIn(p, RealT(0)))
         return true;
-      }
-
-      RealT intersect = l2.ParIntersection(testLine);
-
-      // If l2 and test line are collinear then either the point lies on an
-      // edge (checked already) or it acts as a vertex. I really
-      // should check for the case, or it could throw ParInterSection
-      if(testLine.IsPointOn(l2.P1(), tolerance)
-         && testLine.IsPointOn(l2.P2(), tolerance)) {
-
-        // Be sure to count each vertex just once
-      } else if(intersect > 0
-                && intersect <= 1
-                && testLine.ParIntersection(l2) > 0) {
-        count++;
-
-        // Examine the case where test-line meets polygon at vertex "cusp"
-        // iff test-line passes through a vertex and yet not into polygon
-        // at that vertex _and_ the vertex lies to the left of my test point
-        // then we count that vertex twice
-      } else if(intersect == 0 && p[0] <= l2.P1()[0]
-                && leftof == testLine.IsPointToLeftOn(l2.P2())) {
-        count++;
-      }
-
-      // Set the flag for the case of the line passing through
-      // the endpoint vertex
-      //Vector<RealT,2> u2P = toVector<RealT>(testLine.P1()[1] - testLine.P2()[1],testLine.P2()[0] - testLine.P1()[0]);
-      if(!std::isnan(intersect) && (intersect == 1))
-        leftof = testLine.IsPointToLeft(l2.P1());
       pLast = k;
     }
 
-    return (count % 2) == 1;
+    // Crossing number along a ray from p in the +dimension-0 direction. Each edge is treated as half-open in
+    // dimension 1, so a vertex on the ray is counted once and edges along the ray are skipped; this handles
+    // the vertex and collinear-edge cases without special-casing them.
+    bool inside = false;
+    pLast = this->back();
+    for(const auto &k : *this) {
+      const bool aAbove = pLast[1] > p[1];
+      const bool bAbove = k[1] > p[1];
+      if(aAbove != bAbove) {
+        const RealT crossing = pLast[0] + (p[1] - pLast[1]) * (k[0] - pLast[0]) / (k[1] - pLast[1]);
+        if(p[0] < crossing)
+          inside = !inside;
+      }
+      pLast = k;
+    }
+    return inside;
   }
 
   template <typename RealT>
@@ -267,38 +230,53 @@ namespace Ravl2
     return ret;
   }
 
+  namespace
+  {
+    //! Twice the signed area of triangle (a, b, c); positive when c is to the left of a->b.
+    template <typename RealT>
+    RealT orientation(const Point<RealT, 2> &a, const Point<RealT, 2> &b, const Point<RealT, 2> &c)
+    {
+      return (b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0]);
+    }
+
+    //! For c collinear with a->b, is it within the segment's bounding box?
+    template <typename RealT>
+    bool withinSegmentBox(const Point<RealT, 2> &a, const Point<RealT, 2> &b, const Point<RealT, 2> &c)
+    {
+      return std::min(a[0], b[0]) <= c[0] && c[0] <= std::max(a[0], b[0]) && std::min(a[1], b[1]) <= c[1] && c[1] <= std::max(a[1], b[1]);
+    }
+
+    //! Do the closed segments p1-p2 and q1-q2 cross or touch?
+    template <typename RealT>
+    bool segmentsIntersect(const Point<RealT, 2> &p1, const Point<RealT, 2> &p2, const Point<RealT, 2> &q1, const Point<RealT, 2> &q2)
+    {
+      const RealT d1 = orientation(q1, q2, p1);
+      const RealT d2 = orientation(q1, q2, p2);
+      const RealT d3 = orientation(p1, p2, q1);
+      const RealT d4 = orientation(p1, p2, q2);
+      if(((d1 > 0 && d2 < 0) || (d1 < 0 && d2 > 0)) && ((d3 > 0 && d4 < 0) || (d3 < 0 && d4 > 0)))
+        return true;
+      return (d1 == 0 && withinSegmentBox(q1, q2, p1)) || (d2 == 0 && withinSegmentBox(q1, q2, p2))
+        || (d3 == 0 && withinSegmentBox(p1, p2, q1)) || (d4 == 0 && withinSegmentBox(p1, p2, q2));
+    }
+  }// namespace
+
   template <typename RealT>
   bool Polygon<RealT>::isSelfIntersecting() const
   {
-    auto ft = this->begin();
-    if(ft == this->end())
+    // Compare every pair of non-adjacent sides as segments. Triangles and smaller can't self-intersect.
+    const size_t n = this->size();
+    if(n < 4)
       return false;
-    auto lt = this->end() - 1;
-    const auto theEnd = this->end();
-    {
-      // first loop does all but last side
-      Line2PP l1(*ft, nextDataCrc(*this, ft));
-      auto it2 = ft;
-      it2++;
-      if(it2 != this->end()) {
-        for(it2++; it2 != lt; it2++) {
-          Line2PP l2(*it2, nextDataCrc(*this, it2));
-          if(l1.HasInnerIntersection(l2))
-            return true;
-        }
-      }
-    }
-    // then go to the last side for all subsequent iterations
-    for(ft++; ft != lt; ft++) {
-      Line2PP l1(*ft, nextDataCrc(*this, ft));
-      auto it2 = ft;
-      it2++;
-      if(it2 != this->end()) {
-        for(it2++; it2 != theEnd; it2++) {
-          Line2PP l2(*it2, nextDataCrc(*this, it2));
-          if(l1.HasInnerIntersection(l2))
-            return true;
-        }
+    const auto &pts = *this;
+    for(size_t i = 0; i < n; ++i) {
+      const auto &a1 = pts[i];
+      const auto &a2 = pts[(i + 1) % n];
+      for(size_t j = i + 2; j < n; ++j) {
+        if(i == 0 && j == n - 1)
+          continue;// sides n-1 and 0 share vertex 0
+        if(segmentsIntersect(a1, a2, pts[j], pts[(j + 1) % n]))
+          return true;
       }
     }
     return false;

@@ -9,6 +9,7 @@
 
 #pragma once
 
+#include <stdexcept>
 #include <vector>
 #include "Ravl2/3D/Tri.hh"
 #include "Ravl2/Index.hh"
@@ -30,6 +31,20 @@ namespace Ravl2
 
     //: Copy constructor
     TriMesh(const TriMesh& oth);
+
+    //: Copy assignment; faces are re-pointed at this mesh's own vertices.
+    TriMesh &operator=(const TriMesh &oth)
+    {
+      if(this != &oth) {
+        TriMesh tmp(oth);
+        *this = std::move(tmp);
+      }
+      return *this;
+    }
+
+    //: Moving a std::vector keeps its buffer, so the faces' vertex pointers stay valid.
+    TriMesh(TriMesh &&) noexcept = default;
+    TriMesh &operator=(TriMesh &&) noexcept = default;
 
     //: Construct a mesh with a number of vertices and faces.
     // The initial values in the mesh are undefined.
@@ -159,6 +174,10 @@ namespace Ravl2
     for(auto it : v) {
       vertices.push_back(Vertex<RealT>(it,zero));
     }
+    for(auto ind : faceInd) {
+      if(ind >= vertices.size())
+        throw std::out_of_range("TriMesh: face refers to a vertex that doesn't exist");
+    }
     auto iit = faceInd.begin();
     for(unsigned i = 0;i < faceInd.size()/3;i++) {
       faces.push_back(Tri<RealT>(vertices[*iit],vertices[*(iit+1)],vertices[*(iit+2)]));
@@ -170,7 +189,7 @@ namespace Ravl2
         face.normal(j) += norm;
       }
     }
-    for(auto it : vertices) {
+    for(auto &it : vertices) {
       it.makeUnitNormal();
     }
   }
@@ -189,7 +208,12 @@ namespace Ravl2
     }
 
     // Create the tri faces from the face vertex indices
-    RavlAssert(faceInd.size() == (faces.size()));
+    for(const auto &ind : faceInd) {
+      for(unsigned k = 0; k < 3; k++) {
+        if(ind[k] < 0 || size_t(ind[k]) >= vertices.size())
+          throw std::out_of_range("TriMesh: face refers to a vertex that doesn't exist");
+      }
+    }
     for(unsigned i = 0;i < faceInd.size();i++) {
       faces.push_back(Tri<RealT>(vertices[unsigned(faceInd[i][0])],vertices[unsigned(faceInd[i][1])],vertices[unsigned(faceInd[i][2])]));
       faces.back().UpdateFaceNormal();
@@ -198,7 +222,7 @@ namespace Ravl2
         faces.back().normal(j) += norm;
       }
     }
-    for(auto it : vertices) {
+    for(auto &it : vertices) {
       it.makeUnitNormal();
     }
   }
@@ -222,7 +246,7 @@ namespace Ravl2
 
   template<class RealT>
   void TriMesh<RealT>::FlipTriangles() {
-    for(auto it : faces) {
+    for(auto &it : faces) {
       it.Flip();
     }
   }
@@ -298,7 +322,7 @@ namespace Ravl2
   template<class RealT>
   void TriMesh<RealT>::UpdateVertexNormals() {
     Vector<RealT,3> zero  {0,0,0};
-    for(auto it : vertices) {
+    for(auto &it : vertices) {
       it.normal() = zero;
     }
     for(auto &it : faces) {
@@ -308,7 +332,7 @@ namespace Ravl2
         it.normal(i) += norm;
       }
     }
-    for(auto it : vertices) {
+    for(auto &it : vertices) {
       it.makeUnitNormal();
     }
   }
@@ -331,22 +355,17 @@ namespace Ravl2
     std::vector<Tri<RealT>> newFaces;
     newFaces.reserve(Faces().size()+t2.Faces().size());
 
-    const Vertex<RealT> *Lv0 = &(Vertices()[0]);
-
-    for(auto it : Faces()) {
-      unsigned i0=unsigned(it.VertexPtr(0)-Lv0);
-      unsigned i1=unsigned(it.VertexPtr(1)-Lv0);
-      unsigned i2=unsigned(it.VertexPtr(2)-Lv0);
-
-      newFaces.push_back(Tri<RealT>(verts[i0],verts[i1],verts[i2]));
+    for(const auto &it : Faces()) {
+      newFaces.push_back(Tri<RealT>(verts[index(it, 0)],verts[index(it, 1)],verts[index(it, 2)]));
       newFaces.back().FaceNormal()=it.FaceNormal();
     }
 
-    unsigned nVerts = unsigned(verts.size());
-    for(auto it : t2.Faces()) {
-      unsigned i0=unsigned(it.VertexPtr(0)-Lv0+nVerts);
-      unsigned i1=unsigned(it.VertexPtr(1)-Lv0+nVerts);
-      unsigned i2=unsigned(it.VertexPtr(2)-Lv0+nVerts);
+    // t2's faces index t2's vertices, which follow this mesh's in 'verts'.
+    const unsigned offset = unsigned(Vertices().size());
+    for(const auto &it : t2.Faces()) {
+      unsigned i0 = t2.index(it, 0) + offset;
+      unsigned i1 = t2.index(it, 1) + offset;
+      unsigned i2 = t2.index(it, 2) + offset;
 
       newFaces.push_back(Tri<RealT>(verts[i0],verts[i1],verts[i2]));
       newFaces.back().FaceNormal()=it.FaceNormal();
@@ -406,15 +425,13 @@ namespace Ravl2
 
   template<class RealT>
   std::ostream &operator<<(std::ostream &s,const TriMesh<RealT> &ts) {
-    RavlAssert(ts.IsValid());
     s << ts.Vertices();
     s << int(ts.HaveTextureCoord()) << '\n';
     s << ts.Faces().size() << '\n';
-    const Vertex<RealT> *x = &(ts.Vertices()[0]);
-    for(auto it : ts.Faces()) {
-      s << (it.VertexPtr(0) - x) << ' '
-        << (it.VertexPtr(1) - x) << ' '
-        << (it.VertexPtr(2) - x) << ' ';
+    for(const auto &it : ts.Faces()) {
+      s << ts.index(it, 0) << ' '
+        << ts.index(it, 1) << ' '
+        << ts.index(it, 2) << ' ';
       s << it.TextureID() << ' ';
       s << it.TextureCoords() << ' ';
       s << it.Colour() << '\n';
@@ -433,8 +450,10 @@ namespace Ravl2
     unsigned nfaces,i1,i2,i3;
     s >> nfaces;
     std::vector<Tri<RealT>> faces(nfaces);
-    for(auto it : faces) {
+    for(auto &it : faces) {
       s >> i1 >> i2 >> i3;
+      if(i1 >= verts.size() || i2 >= verts.size() || i3 >= verts.size())
+        throw std::out_of_range("TriMesh: face refers to a vertex that doesn't exist");
       s >> it.TextureID();
       s >> it.TextureCoords();
       s >> it.Colour();

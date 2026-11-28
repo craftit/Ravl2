@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include <stdexcept>
 #include "Ravl2/Geometry/Geometry.hh"
 #include "Ravl2/Math/LinearAlgebra.hh"
 #include "Ravl2/Geometry/ScaleTranslate.hh"
@@ -89,11 +90,15 @@ namespace Ravl2
       return Affine(mSR * in.SRMatrix(), mSR * in.translation() + mT);
     }
 
-    //! @brief Divide this transform by 'in'
+    //! @brief Divide this transform by 'in': the result r satisfies r(in(x)) == this(x), i.e. r = this o in^-1.
+    //! @throws std::domain_error if 'in' is singular.
     [[nodiscard]] inline constexpr auto divideBy(const Affine &in) const
     {
-      Matrix<DataT, N, N> invSr = *Ravl2::inverse(in.SRMatrix());
-      return Affine(mSR * invSr, invSr * (mT - in.translation()));
+      auto invSrOpt = Ravl2::inverse(in.SRMatrix());
+      if(!invSrOpt)
+        throw std::domain_error("Affine::divideBy: transform is singular");
+      const Matrix<DataT, N, N> sr = mSR * (*invSrOpt);
+      return Affine(sr, mT - sr * in.translation());
     }
 
     //! Serialization support

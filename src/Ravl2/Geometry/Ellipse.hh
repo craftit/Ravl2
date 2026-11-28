@@ -11,6 +11,7 @@
 #pragma once
 
 #if RAVL2_LINUX_NATIVE_EIGEN
+#include <stdexcept>
 #include <eigen3/Eigen/SVD>
 #else
 #pragma GCC diagnostic push
@@ -63,7 +64,10 @@ namespace Ravl2
     constexpr explicit Ellipse(const Vector<RealT, 6> &conicParams)
     {
       Conic2<RealT> conic(conicParams);
-      *this = *toEllipse(conic);// What to do if this fails?
+      auto ellipse = toEllipse(conic);
+      if(!ellipse)
+        throw std::invalid_argument("Ellipse: conic parameters don't describe an ellipse");
+      *this = *ellipse;
     }
 
     //! Construct from affine transform from unit circle centered on the origin

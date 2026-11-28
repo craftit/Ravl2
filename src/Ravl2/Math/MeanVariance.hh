@@ -151,7 +151,8 @@ namespace Ravl2
 
     mVar *= p1;
     mVar += mv.variance() * p2;
-    mVar += ((mv.mean() - mean()) * p1 * p2);
+    // Between-group term: the squared difference of the means.
+    mVar += sqr(mv.mean() - mean()) * p1 * p2;
 
     // Update the mean.
     mMean = mMean * p1 + mv.mean() * p2;
@@ -188,7 +189,8 @@ namespace Ravl2
     mMean = (mMean - mv.mean() * p2) / p1;
 
     // Update the variance.
-    mVar -= ((mv.mean() - mean()) * p1 * p2);
+    // mean() is now the remainder's mean; remove the squared between-group term.
+    mVar -= sqr(mv.mean() - mean()) * p1 * p2;
     mVar -= mv.variance() * p2;
     mVar /= p1;
 

@@ -8,6 +8,7 @@
 //! docentry="Ravl.API.3D.Camera Modelling"
 
 #pragma once
+#include <algorithm>
 #include "Ravl2/3D/PinholeCamera0.hh"
 
 namespace Ravl2
@@ -79,7 +80,8 @@ namespace Ravl2
     bool projectCheck(Vector<RealT, 2> &z, const Vector<RealT, 3> &x) const
     {
       Vector<RealT, 3> Rx = (this->m_R * x) + this->m_t;
-      if(isNearZero(Rx[2], RealT(1E-3)))
+      // Points behind (or too close to) the camera don't project.
+      if(Rx[2] < this->nearPlane())
         return false;
       RealT dx = this->m_fx * Rx[0] / Rx[2];
       RealT dy = this->m_fy * Rx[1] / Rx[2];
@@ -87,6 +89,18 @@ namespace Ravl2
       z[0] = this->m_cx + dx * (1 + this->m_k1 * r);
       z[1] = this->m_cy + dy * (1 + this->m_k1 * r);
       return true;
+    }
+
+    //! Undistorted / distorted radius for a distorted radius rd, inverting rd = r * (1 + k1 * r).
+    //! r = 2 rd / (1 + sqrt(1 + 4 k1 rd)) is the root continuous with r = rd at k1 = 0, works for barrel (k1 < 0)
+    //! and pincushion (k1 > 0) distortion, and avoids cancellation for small k1. For k1 < 0 radii beyond the model's
+    //! maximum, -1/(4 k1), are clamped to it.
+    [[nodiscard]] RealT undistortScale(RealT rd) const
+    {
+      if(rd <= 0)
+        return 1;
+      const RealT disc = std::max(RealT(0), 1 + 4 * this->m_k1 * rd);
+      return 2 / (1 + std::sqrt(disc));
     }
 
     //! Inverse projection up to a scale factor
@@ -97,11 +111,7 @@ namespace Ravl2
       // Map from distorted to undistorted point
       RealT dx = z[0] - this->m_cx;
       RealT dy = z[1] - this->m_cy;
-      RealT r = std::sqrt(dx * dx + dy * dy);
-      RealT rescale(1.0);
-      if(r > 1 && this->m_k1 > 0 && 1 + 4 * this->m_k1 * r >= 0) {
-        rescale = (-1 + std::sqrt(1 + 4 * this->m_k1 * r)) / (2 * this->m_k1 * r);
-      }
+      const RealT rescale = undistortScale(std::sqrt(dx * dx + dy * dy));
       Vector<RealT, 3> Rx;
       Rx[0] = dx * rescale / this->m_fx;
       Rx[1] = dy * rescale / this->m_fy;
@@ -131,13 +141,17 @@ namespace Ravl2
       Jz(1, 0) = dz1dx0 * a;
       Jz(1, 1) = dz1dx1 * a;
       Jz(1, 2) = dz1dx2 * a;
-      if(r > 1 && this->m_k1 > 0) {
-        Jz(0, 0) += dx * this->m_k1 * (dz0dx0 + dz1dx0) / r;
-        Jz(0, 1) += dx * this->m_k1 * (dz0dx1 + dz1dx1) / r;
-        Jz(0, 2) += dx * this->m_k1 * (dz0dx2 + dz1dx2) / r;
-        Jz(1, 0) += dy * this->m_k1 * (dz0dx0 + dz1dx0) / r;
-        Jz(1, 1) += dy * this->m_k1 * (dz0dx1 + dz1dx1) / r;
-        Jz(1, 2) += dy * this->m_k1 * (dz0dx2 + dz1dx2) / r;
+      // Chain rule through r = |(dx, dy)|: dr/dX = (dx * d(dx)/dX + dy * d(dy)/dX) / r.
+      if(r > 0) {
+        const RealT drdx0 = (dx * dz0dx0 + dy * dz1dx0) / r;
+        const RealT drdx1 = (dx * dz0dx1 + dy * dz1dx1) / r;
+        const RealT drdx2 = (dx * dz0dx2 + dy * dz1dx2) / r;
+        Jz(0, 0) += dx * this->m_k1 * drdx0;
+        Jz(0, 1) += dx * this->m_k1 * drdx1;
+        Jz(0, 2) += dx * this->m_k1 * drdx2;
+        Jz(1, 0) += dy * this->m_k1 * drdx0;
+        Jz(1, 1) += dy * this->m_k1 * drdx1;
+        Jz(1, 2) += dy * this->m_k1 * drdx2;
       }
     }
 
@@ -147,11 +161,7 @@ namespace Ravl2
       // Map from distorted to undistorted image
       RealT dx = z[0] - this->m_cx;
       RealT dy = z[1] - this->m_cy;
-      RealT d = std::sqrt(dx * dx + dy * dy);
-      RealT rescale(1.0);
-      if(d > 1 && this->m_k1 > 0 && 1 + 4 * this->m_k1 * d >= 0) {
-        rescale = (-1 + std::sqrt(1 + 4 * this->m_k1 * d)) / (2 * this->m_k1 * d);
-      }
+      const RealT rescale = undistortScale(std::sqrt(dx * dx + dy * dy));
       return toVector<RealT>(this->m_cx + rescale * dx, this->m_cy + rescale * dy);
     }
 

@@ -6,6 +6,7 @@
 #include "Ravl2/3D/PinholeCamera0.hh"
 #include "Ravl2/3D/PinholeCamera3.hh"
 #include "Ravl2/3D/TriMesh.hh"
+#include "Ravl2/3D/PinholeCamera1.hh"
 #include "Ravl2/3D/MeshShapes.hh"
 #include "Ravl2/Geometry/Range.hh"
 #include "Ravl2/Geometry/Polygon.hh"
@@ -314,6 +315,39 @@ namespace Ravl2
       TriMesh<float> mesh = createTriMeshSphere(3,8,1.0);
       CHECK(testTexCoords(mesh));
     }
+
+    SECTION("Edits, copies and joins keep faces pointing at the right vertices")
+    {
+      // Two triangles sharing an edge, in the z=0 plane.
+      std::vector<Vector<float, 3>> verts {toVector<float>(0, 0, 0), toVector<float>(1, 0, 0), toVector<float>(0, 1, 0), toVector<float>(1, 1, 0)};
+      TriMesh<float> mesh(verts, std::vector<Index<3>> {Index<3>(0, 1, 2), Index<3>(1, 3, 2)});
+      // Shared vertices are normalised (they used to keep |n| == 2).
+      CHECK(std::abs(mesh.Vertices()[1].normal().norm() - 1.0f) < 1e-5f);
+      mesh.UpdateVertexNormals();
+      mesh.UpdateVertexNormals();
+      CHECK(std::abs(mesh.Vertices()[1].normal().norm() - 1.0f) < 1e-5f);
+
+      // FlipTriangles used to flip copies.
+      const unsigned before = mesh.index(mesh.Faces()[0], 0);
+      mesh.FlipTriangles();
+      CHECK(mesh.index(mesh.Faces()[0], 2) == before);
+
+      // Copy assignment re-points faces at the copy's own vertices.
+      TriMesh<float> copy;
+      copy = mesh;
+      const auto *facePtr = copy.Faces()[0].VertexPtr(0);
+      CHECK((facePtr >= copy.Vertices().data() && facePtr < copy.Vertices().data() + copy.Vertices().size()));
+      CHECK(copy.index(copy.Faces()[1], 1) == mesh.index(mesh.Faces()[1], 1));
+
+      // Joining: the second mesh's faces refer to its vertices, offset after the first mesh's.
+      TriMesh<float> joined = mesh + mesh;
+      REQUIRE(joined.Vertices().size() == 8);
+      REQUIRE(joined.Faces().size() == 4);
+      CHECK(joined.index(joined.Faces()[2], 0) == mesh.index(mesh.Faces()[0], 0) + 4);
+      CHECK(joined.index(joined.Faces()[3], 2) == mesh.index(mesh.Faces()[1], 2) + 4);
+
+      CHECK_THROWS_AS(TriMesh<float>(verts, std::vector<Index<3>> {Index<3>(0, 1, 9)}), std::out_of_range);
+    }
   }
 
 
@@ -438,6 +472,45 @@ namespace Ravl2
       }
       CHECK(loaded.t().isApprox(cam.t()));
       CHECK(loaded.extrinsicTranslation().isApprox(t));
+    }
+  }
+
+  TEST_CASE("PinholeCamera1 radial distortion inverts and differentiates correctly")
+  {
+    for(double k1 : {-1e-4, 1e-4}) {// barrel and pincushion
+      PinholeCamera1<double> cam(320, 240, 500, 500, k1, Matrix<double, 3, 3>::Identity(), Vector<double, 3>::Zero(), IndexRange<2>({480, 640}));
+      const Vector<double, 3> x = toVector<double>(0.3, -0.2, 2.0);
+
+      // Projecting then unprojecting gives back the ray through x (used to be skipped for k1 <= 0).
+      Vector<double, 2> z;
+      cam.project(z, x);
+      Vector<double, 3> dir;
+      cam.projectInverseDirection(dir, z);
+      CHECK((dir * (x[2] / dir[2]) - x).norm() < 1e-9);
+
+      // undistort() inverts distort().
+      const Vector<double, 2> p = toVector<double>(420.0, 170.0);
+      CHECK((cam.undistort(cam.distort(p)) - p).norm() < 1e-9);
+
+      // Jacobian matches finite differences.
+      Matrix<double, 2, 3> jac;
+      cam.projectJacobian(jac, x);
+      const double h = 1e-6;
+      for(int j = 0; j < 3; ++j) {
+        Vector<double, 3> xp = x;
+        Vector<double, 3> xm = x;
+        xp[j] += h;
+        xm[j] -= h;
+        Vector<double, 2> zp, zm;
+        cam.project(zp, xp);
+        cam.project(zm, xm);
+        const Vector<double, 2> fd = (zp - zm) / (2 * h);
+        CHECK(std::abs(fd[0] - jac(0, j)) < 1e-4);
+        CHECK(std::abs(fd[1] - jac(1, j)) < 1e-4);
+      }
+
+      // Points behind the camera don't project.
+      CHECK_FALSE(cam.projectCheck(z, toVector<double>(0.1, 0.1, -2.0)));
     }
   }
 }

@@ -67,23 +67,29 @@ Also fixed: the default overlay colour was yellow, not the magenta documented.
 
 ## Batch 4 — maths and geometry correctness
 
-- [ ] **MATH-1** `Math/MeanVariance.hh:154,191` — mean-difference term not squared in merge/remove; test at `test_math.cc:87` (`i % 1`) never exercises it. *(verified)*
-- [ ] **MATH-2** `Math/Sums1d2.hh:95` — `operator-=` adds counts. *(verified)*
-- [ ] **MATH-3** `Math/PrimeFactors.cc:91-108,65-66` — n=0/1 never terminates (FFT of size 1 hangs); `kpf[310]` read out of bounds. *(verified)*
-- [ ] **PIX-1** `Pixel/Pixel.hh:142` — unsigned chroma offset 127/32767 not 128/32768. *(verified)*
-- [ ] **GEO-1** `Geometry/Range.hh:121-130` — `mostEmpty()`/`largest()` use `min()` not `lowest()`.
-- [ ] **GEO-2** `Geometry/Circle.hh:37,107` — 3-point ctor discards fit; `Angle()` wrong (NaN). *(verified)*
-- [ ] **GEO-3** `Geometry/Line2ABC.hh:185-200` — `intersects()` boundary lines have wrong sign. *(verified)*
-- [ ] **GEO-4** `Geometry/Projection.hh:254` — `atInfinity()` uses translation column; `projectedBounds()` returns `largest()` for affine warps. *(verified)*
-- [ ] **GEO-5** `Geometry/Affine.hh:93-97` — `operator/` wrong composition; unchecked optional deref. *(verified)*
-- [ ] **GEO-6** `Geometry/FitSimilarity.hh:82,150` — `fitIsometry` still applies computed scale.
-- [ ] **GEO-7** `Geometry/Polygon.cc:271-303,114-130` — `isSelfIntersecting()` tests against infinite lines (and UB for size<3); `contains()` wrong along collinear edges. *(verified)*
+- [x] **MATH-1** `Math/MeanVariance.hh:154,191` — mean-difference term not squared in merge/remove; test at `test_math.cc:87` (`i % 1`) never exercises it. *(verified)*
+- [x] **MATH-2** `Math/Sums1d2.hh:95` — `operator-=` adds counts. *(verified)*
+- [x] **MATH-3** `Math/PrimeFactors.cc:91-108,65-66` — n=0/1 never terminates (FFT of size 1 hangs); `kpf[310]` read out of bounds. *(verified)*
+- [x] **PIX-1** `Pixel/Pixel.hh:142` — unsigned chroma offset 127/32767 not 128/32768. *(verified)*
+- [x] **GEO-1** `Geometry/Range.hh:121-130` — `mostEmpty()`/`largest()` use `min()` not `lowest()`.
+- [x] **GEO-2** `Geometry/Circle.hh:37,107` — 3-point ctor discards fit; `Angle()` wrong (NaN). *(verified)*
+- [x] **GEO-3** `Geometry/Line2ABC.hh:185-200` — `intersects()` boundary lines have wrong sign. *(verified)*
+- [x] **GEO-4** `Geometry/Projection.hh:254` — `atInfinity()` uses translation column; `projectedBounds()` returns `largest()` for affine warps. *(verified)*
+- [x] **GEO-5** `Geometry/Affine.hh:93-97` — `operator/` wrong composition; unchecked optional deref. *(verified)*
+- [x] **GEO-6** `Geometry/FitSimilarity.hh:82,150` — `fitIsometry` still applies computed scale.
+- [x] **GEO-7** `Geometry/Polygon.cc:271-303,114-130` — `isSelfIntersecting()` tests against infinite lines (and UB for size<3); `contains()` wrong along collinear edges. *(verified)*
 - [ ] **GEO-8** Lower impact *(verified)*: `Projection.hh:204` `isNearAffine()` always false; `LinePP.hh:192` `ParClosest` 2-D only; `Geometry.hh:171` `sumOfSqr(scalar)` returns abs; `Geometry.hh:102` `angle()` unclamped acos; `Quaternion.hh:205` `angle()` half-angle; `fromAngleAxis` normalises 4-vector; `Ellipse.hh:66` unchecked optional; `PinholeCameraArray.hh:91` rejects perpendicular rays; `Affine.hh:179` scale axes swapped (check intent).
-- [ ] **3D-1** `3D/TriMesh.hh:173,201,225,301,311,436` — `for(auto it : …)` copies; Flip/normalise/load do nothing. *(verified)*
-- [ ] **3D-2** `3D/TriMesh.hh:347-349` — `operator+` cross-array pointer subtraction. *(verified)*
-- [ ] **3D-3** `3D/TriMesh.hh:32` — copy assignment / move not defined; faces dangle. *(verified)*
-- [ ] **3D-4** `3D/TriMesh.hh:192` — assert on empty `faces`; no index bounds checks.
-- [ ] **3D-5** `3D/PinholeCamera1.hh:82,102,135-140`, `PinholeCamera2.hh:96` — k1 inverse skipped for k1≤0; Jacobian dr/dX wrong; `projectCheck` uses isNearZero not nearPlane.
+- [x] **3D-1** `3D/TriMesh.hh:173,201,225,301,311,436` — `for(auto it : …)` copies; Flip/normalise/load do nothing. *(verified)*
+- [x] **3D-2** `3D/TriMesh.hh:347-349` — `operator+` cross-array pointer subtraction. *(verified)*
+- [x] **3D-3** `3D/TriMesh.hh:32` — copy assignment / move not defined; faces dangle. *(verified)*
+- [x] **3D-4** `3D/TriMesh.hh:192` — assert on empty `faces`; no index bounds checks.
+- [x] **3D-5** `3D/PinholeCamera1.hh:82,102,135-140`, `PinholeCamera2.hh:96` — k1 inverse skipped for k1≤0; Jacobian dr/dX wrong; `projectCheck` uses isNearZero not nearPlane.
+
+Batch 4 notes: GEO-8 partly done — fixed `sumOfSqr(scalar)`, `angle()` clamping, `ParClosest` in N-D,
+`fromAngleAxis` axis normalisation and `Ellipse(Vector6)`. Still open in GEO-8, needing a convention decision:
+`Quaternion::angle()` returns the half angle (and the tests expect it), and `affineFromScaleAngleTranslation`
+applies scale[0] to axis 1. `isNearAffine()` also had a double default argument that didn't compile for float.
+`test_geometry.cc` FitSimilarity/FitIsometry now use fixed seeds (part of GAP-12).
 
 ## Remaining bugs by area
 

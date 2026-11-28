@@ -120,13 +120,13 @@ namespace Ravl2
     //! the rectangle is always covered
     static constexpr auto mostEmpty()
     {
-      return Range<RealT, 1>(std::numeric_limits<RealT>::max(), std::numeric_limits<RealT>::min());
+      return Range<RealT, 1>(std::numeric_limits<RealT>::max(), std::numeric_limits<RealT>::lowest());
     }
 
     //! @brief Create the range which creates the largest positive area.
     static constexpr auto largest()
     {
-      return Range<RealT, 1>(std::numeric_limits<RealT>::min(), std::numeric_limits<RealT>::max());
+      return Range<RealT, 1>(std::numeric_limits<RealT>::lowest(), std::numeric_limits<RealT>::max());
     }
 
     //! Returns true if the minimum limit is smaller than or equal to the maximum value

@@ -192,7 +192,7 @@ namespace Ravl2
     [[nodiscard]] constexpr RealT ParClosest(const Point<RealT, N> &pnt) const
     {
       auto v = direction();
-      RealT l2 = sqr(v[0]) + sqr(v[1]);
+      RealT l2 = v.squaredNorm();// all N dimensions, not just the first two
       if(l2 == RealT(0)) throw std::underflow_error("FLinePPC::ParClosest(): Cannot find line parameter for zero-length line");
       return v.dot(pnt - point[0]) / l2;
     }

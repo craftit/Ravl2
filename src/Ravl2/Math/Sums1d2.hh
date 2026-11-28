@@ -4,6 +4,8 @@
 // General Public License (LGPL). See the lgpl.licence file for details or
 // see http://www.gnu.org/copyleft/lesser.html
 // file-header-ends-here
+
+#pragma once
 //! author="Charles Galambos"
 //! date="26/8/2002"
 
@@ -91,8 +93,8 @@ namespace Ravl2
     //! Subtract another set of sums.
     constexpr void operator-=(const Sums1d2C &s)
     {
-      RavlAssert(s.mN < mN);
-      mN += s.mN;
+      RavlAssert(s.mN <= mN);
+      mN -= s.mN;
       mSum -= s.mSum;
       mSum2 -= s.mSum2;
     }

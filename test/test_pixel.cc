@@ -158,6 +158,21 @@ namespace Ravl2
       REQUIRE_THAT(pixel2.get<ImageChannel::Blue>(), Catch::Matchers::WithinAbs(0,2)  );
     }
 
+    SECTION("Neutral grey survives YUV conversion")
+    {
+      // Zero chroma is 128 for 8-bit; it was 127, which tinted every grey.
+      CHECK(PixelTypeTraits<uint8_t, ImageChannel::ChrominanceU>::offset == 128);
+      CHECK(PixelTypeTraits<uint16_t, ImageChannel::ChrominanceV>::offset == 32768);
+
+      PixelYUV8 yuv;
+      assign(yuv, PixelRGB8(128, 128, 128));
+      CHECK(yuv == PixelYUV8(128, 128, 128));
+
+      PixelRGB8 rgb;
+      assign(rgb, PixelYUV8(100, 128, 128));
+      CHECK(rgb == PixelRGB8(100, 100, 100));
+    }
+
     SECTION("PixelRGBA")
     {
       PixelRGBA8 pixel(1, 2, 3, 4);

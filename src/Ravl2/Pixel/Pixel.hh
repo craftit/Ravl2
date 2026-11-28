@@ -139,7 +139,8 @@ namespace Ravl2
     static constexpr bool isNormalized = PixelChannelTraits<channel>::isNormalized;
     static constexpr DataT min = std::numeric_limits<DataT>::min();
     static constexpr DataT max = std::numeric_limits<DataT>::max();
-    static constexpr DataT offset = std::numeric_limits<DataT>::max() / 2;
+    //! Zero chroma sits at 2^(bits-1): 128 for 8 bits, 32768 for 16 bits (max/2 alone gives 127/32767).
+    static constexpr DataT offset = DataT(std::numeric_limits<DataT>::max() / 2 + 1);
     static constexpr DataT defaultValue = offset;
   };
 
