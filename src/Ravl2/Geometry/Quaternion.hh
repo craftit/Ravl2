@@ -202,11 +202,13 @@ namespace Ravl2
       return m_vec[3];
     }
 
-    //! Compute the rotation angle from an axis angle representation
+    //! The rotation angle, in radians, of the axis-angle form of this rotation; in [0, pi].
+    //! q and -q are the same rotation, so this is the smaller of the two angles. (This used to return half
+    //! the angle.)
     [[nodiscard]] constexpr RealT angle() const
     {
       auto norm = RealT(m_vec.norm());
-      return std::atan2(std::sqrt(sqr(m_vec[1] / norm) + sqr(m_vec[2] / norm) + sqr(m_vec[3] / norm)), m_vec[0] / norm);
+      return 2 * std::atan2(std::sqrt(sqr(m_vec[1] / norm) + sqr(m_vec[2] / norm) + sqr(m_vec[3] / norm)), std::abs(m_vec[0] / norm));
     }
 
     //! Compute a cost that is zero when the quaternion is the identity.

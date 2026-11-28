@@ -108,7 +108,7 @@ namespace Ravl2
       EXPECT_NEAR(tq4.angle(),0,1e-6f);
 
       Quaternion q5 = slerp(q1,q2, 0.5);
-      EXPECT_FLOAT_EQ(q5.angle(),RealT(std::numbers::pi/16.0));
+      EXPECT_FLOAT_EQ(q5.angle(),RealT(std::numbers::pi/8.0));// half of the 45 degree rotation
 
       // At 0.5 we should be halfway between q1 and q2
       const int sampleCount = 10;
@@ -132,7 +132,7 @@ namespace Ravl2
 
       // Setup a 45 degree rotation about the x axis
       Quaternion<RealT> const q1 = Quaternion<RealT>::fromEulerAnglesXYZ((std::numbers::pi / 4.0), 0.0, 0.0);
-      EXPECT_FLOAT_EQ(q1.angle(),RealT(std::numbers::pi/8.0));
+      EXPECT_FLOAT_EQ(q1.angle(),RealT(std::numbers::pi/4.0));
       auto angles1 = q1.eulerAngles();
       EXPECT_FLOAT_EQ(angles1[0],RealT(std::numbers::pi/4.0));
       EXPECT_FLOAT_EQ(angles1[1],0);
@@ -140,7 +140,7 @@ namespace Ravl2
 
       // Setup a 45 degree rotation about the y axis
       Quaternion<RealT> const q2 = Quaternion<RealT>::fromEulerAnglesXYZ(0.0f, RealT(std::numbers::pi / 4.0), 0.0f);
-      EXPECT_FLOAT_EQ(q1.angle(),RealT(std::numbers::pi/8.0));
+      EXPECT_FLOAT_EQ(q2.angle(),RealT(std::numbers::pi/4.0));
       auto angles2 = q2.eulerAngles();
       EXPECT_FLOAT_EQ(angles2[0],0);
       EXPECT_FLOAT_EQ(angles2[1],RealT(std::numbers::pi/4.0));
@@ -148,7 +148,7 @@ namespace Ravl2
 
       // Setup a 45 degree rotation about the z axis
       Quaternion<RealT> const q3 = Quaternion<RealT>::fromEulerAnglesXYZ(0.0f, 0.0f, RealT(std::numbers::pi / 4.0));
-      EXPECT_FLOAT_EQ(q1.angle(),RealT(std::numbers::pi/8.0));
+      EXPECT_FLOAT_EQ(q3.angle(),RealT(std::numbers::pi/4.0));
       auto angles3 = q3.eulerAngles();
       EXPECT_FLOAT_EQ(angles3[0],0);
       EXPECT_FLOAT_EQ(angles3[1],0);

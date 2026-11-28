@@ -858,5 +858,14 @@ namespace Ravl2
     auto qb = Quaternion<float>::fromAngleAxis(0.6f, toVector<float>(0, 0, 1));
     CHECK((qa.toMatrix() - qb.toMatrix()).norm() < 1e-6f);
   }
+
+  TEST_CASE("affineFromScaleAngleTranslation scales axis i by scale[i]")
+  {
+    auto a = affineFromScaleAngleTranslation(toVector<float>(3, 1), 0.0f, toVector<float>(0, 0));
+    CHECK((a(toPoint<float>(1, 1)) - toPoint<float>(3, 1)).norm() < 1e-6f);
+    // Scale, then rotate by 90 degrees: (1,0) -> (3,0) -> (0,3).
+    auto b = affineFromScaleAngleTranslation(toVector<float>(3, 1), std::numbers::pi_v<float> / 2, toVector<float>(1, 2));
+    CHECK((b(toPoint<float>(1, 0)) - toPoint<float>(1, 5)).norm() < 1e-5f);
+  }
 }
 

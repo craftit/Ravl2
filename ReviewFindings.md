@@ -7,6 +7,8 @@ reading the code.
 
 Work order: Batch 1 → 4, then the remaining bugs by area, then gaps/improvements.
 
+Fixes that change APIs, behaviour callers may rely on, or saved data are listed in `CLIENT_CHANGES.md`.
+
 ---
 
 ## Batch 1 — silent failures in IO, Video and image files
@@ -78,7 +80,7 @@ Also fixed: the default overlay colour was yellow, not the magenta documented.
 - [x] **GEO-5** `Geometry/Affine.hh:93-97` — `operator/` wrong composition; unchecked optional deref. *(verified)*
 - [x] **GEO-6** `Geometry/FitSimilarity.hh:82,150` — `fitIsometry` still applies computed scale.
 - [x] **GEO-7** `Geometry/Polygon.cc:271-303,114-130` — `isSelfIntersecting()` tests against infinite lines (and UB for size<3); `contains()` wrong along collinear edges. *(verified)*
-- [ ] **GEO-8** Lower impact *(verified)*: `Projection.hh:204` `isNearAffine()` always false; `LinePP.hh:192` `ParClosest` 2-D only; `Geometry.hh:171` `sumOfSqr(scalar)` returns abs; `Geometry.hh:102` `angle()` unclamped acos; `Quaternion.hh:205` `angle()` half-angle; `fromAngleAxis` normalises 4-vector; `Ellipse.hh:66` unchecked optional; `PinholeCameraArray.hh:91` rejects perpendicular rays; `Affine.hh:179` scale axes swapped (check intent).
+- [x] **GEO-8** Lower impact *(verified)*: `Projection.hh:204` `isNearAffine()` always false; `LinePP.hh:192` `ParClosest` 2-D only; `Geometry.hh:171` `sumOfSqr(scalar)` returns abs; `Geometry.hh:102` `angle()` unclamped acos; `Quaternion.hh:205` `angle()` half-angle; `fromAngleAxis` normalises 4-vector; `Ellipse.hh:66` unchecked optional; `PinholeCameraArray.hh:91` rejects perpendicular rays; `Affine.hh:179` scale axes swapped (check intent).
 - [x] **3D-1** `3D/TriMesh.hh:173,201,225,301,311,436` — `for(auto it : …)` copies; Flip/normalise/load do nothing. *(verified)*
 - [x] **3D-2** `3D/TriMesh.hh:347-349` — `operator+` cross-array pointer subtraction. *(verified)*
 - [x] **3D-3** `3D/TriMesh.hh:32` — copy assignment / move not defined; faces dangle. *(verified)*
@@ -86,9 +88,8 @@ Also fixed: the default overlay colour was yellow, not the magenta documented.
 - [x] **3D-5** `3D/PinholeCamera1.hh:82,102,135-140`, `PinholeCamera2.hh:96` — k1 inverse skipped for k1≤0; Jacobian dr/dX wrong; `projectCheck` uses isNearZero not nearPlane.
 
 Batch 4 notes: GEO-8 partly done — fixed `sumOfSqr(scalar)`, `angle()` clamping, `ParClosest` in N-D,
-`fromAngleAxis` axis normalisation and `Ellipse(Vector6)`. Still open in GEO-8, needing a convention decision:
-`Quaternion::angle()` returns the half angle (and the tests expect it), and `affineFromScaleAngleTranslation`
-applies scale[0] to axis 1. `isNearAffine()` also had a double default argument that didn't compile for float.
+`fromAngleAxis` axis normalisation and `Ellipse(Vector6)`. Also fixed since: `Quaternion::angle()` returns the full angle, and
+`affineFromScaleAngleTranslation` applies scale[i] to axis i. `isNearAffine()` also had a double default argument that didn't compile for float.
 `test_geometry.cc` FitSimilarity/FitIsometry now use fixed seeds (part of GAP-12).
 
 ## Remaining bugs by area
