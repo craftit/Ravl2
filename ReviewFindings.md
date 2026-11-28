@@ -7,7 +7,7 @@ reading the code.
 
 Work order: Batch 1 → 4, then the remaining bugs by area, then gaps/improvements.
 
-Fixes that change APIs, behaviour callers may rely on, or saved data are listed in `CLIENT_CHANGES.md`.
+Fixes that change APIs, behaviour callers may rely on, or saved data are listed in `CHANGELOG.md` (under Changed and Data compatibility).
 
 ---
 

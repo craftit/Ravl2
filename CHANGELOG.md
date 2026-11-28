@@ -1,0 +1,108 @@
+# Changelog
+
+All notable changes to RAVL2 are recorded here. The format follows
+[Keep a Changelog](https://keepachangelog.com/en/1.1.0/). RAVL2 has not made a tagged release yet, so everything
+is under [Unreleased]; when a version is tagged, that heading becomes the version and date.
+
+Entries marked **Breaking** may stop client code compiling. Entries under *Changed* alter results that callers
+may have relied on or worked around: check code that uses them.
+
+## [Unreleased]
+
+### Data compatibility
+- **16-bit PNGs written since 2025-11-19 (9b41d17) are byte-swapped.** On little-endian machines the writer stored
+  Gray16/RGB16/RGBA16 samples little-endian; PNG requires big-endian. The old reader had the matching mistake, so
+  round trips looked correct, but other tools always read these files swapped, and now RAVL2 does too. Repair by
+  loading, swapping each sample's bytes (`v = uint16_t((v >> 8) | (v << 8))`) and saving again. 8-bit PNGs are
+  unaffected. See "Compatibility notes" in `src/Ravl2/ImageIO/ImageIO_Overview.md`.
+- **Binary cereal files holding more than one object** were corrupted when written (the header was overwritten) and
+  can't be read; re-create them. Single-object files are unaffected.
+
+### Changed
+- **Breaking:** array strides, `stride()`, `strides()` and origin offsets are `std::ptrdiff_t` (were `int`), and
+  the `WindowedArray` concept requires `strides() -> const std::ptrdiff_t *`. Strides stay signed (they may be
+  negative). `IndexRange<N>::area()` and `IndexRangeSet::area()` return `std::ptrdiff_t`. Check code that stores
+  strides or areas in `int`.
+- **Breaking:** `ArrayIter::window()` and the zip iterator's `window()` return an `ArrayView`, which owns its
+  range (was an `ArrayAccess` pointing at a temporary).
+- **Breaking:** `ScanWindow<T,N>` for N >= 2 is not copyable; its iterator refers to its own scan area.
+- **Breaking:** Qt `toArrayView(QImage)` returns `ArrayView<const T, 2>` and throws if the format doesn't match the
+  pixel type. (It didn't compile before.)
+- **Breaking:** polyline overlay points sent to the display are (row, col), like other RAVL2 points (were (x, y)).
+  Swap any overlays built as (x, y); boundaries and polygons can now be passed directly.
+- `IndexRange<1>::size()` is 0 for an empty range (was negative, e.g. -3 for `{6,3}`); use `empty()` to test.
+  Iterating an empty range or array now visits nothing, and `end() == begin()` for an empty 1-D range.
+- N-D `copy(dest, src)` writes to the same indices in `dest` (was `dest`'s first rows), and `convert()` only covers
+  `src`'s range. 1-D `copy()` still copies a prefix.
+- `ArrayAccess::operator()` returns a reference for a full index, so `acc(i, j) = v` writes (it wrote a copy).
+- The type converter picks the least lossy conversion chain (it picked the lossiest), so some loads and saves take
+  different routes; e.g. colour no longer goes through grey, and JPEG may decode via planar YUV.
+- `YUV422Image` chroma planes are half width and full height (were half height). FFmpeg yuv422p, JPEG 4:2:2 and
+  webcam YUYV now agree. Check code that indexes 4:2:2 chroma directly.
+- Unsigned chroma zero is 128 / 32768 (was 127 / 32767), so YUV values may differ by one; grey round-trips exactly.
+- OpenCV `toCvMat()` honours the row step of sub-arrays and throws `std::invalid_argument` for negative strides.
+  The registered `Array -> cv::Mat` conversions return deep copies (`toCvMat()` itself still returns a view).
+- Qt `toQImage()` and `toArray()` use rows as height and columns as width (were swapped). `toArray()` in Auto mode
+  shares the QImage's pixels; `toQImage()` keeps the Array alive. Use `CopyModeT::Always` for independent copies.
+- Dlib `set_image_size()` gives the requested size (was one smaller in each dimension).
+- `display://` controls match whole tokens, so `:Clear` no longer also matches `:ClearOverlays`, `:ClearPlot`, etc.
+  Keys and values are case-insensitive (`mode=replace` now works), and `Norm=Pct:low,high` keeps its arguments.
+- Display image updates replace only the base image under overlays, and new float images take the channel's
+  normalisation. The default overlay colour is magenta, as documented (was yellow).
+- `Quaternion::angle()` returns the full rotation angle in [0, pi] (was half the angle).
+- `affineFromScaleAngleTranslation(scale, ...)` applies `scale[i]` to axis i (`scale[0]` was applied to axis 1).
+- `Affine` `a / b` is `a o b^-1`, so `(a / b)(b(x)) == a(x)`.
+- `Circle(p1, p2, p3)` throws `std::invalid_argument` for collinear points (use `Circle::fit()` to test without
+  exceptions). `Ellipse(Vector<.,6>)` throws for a conic that isn't an ellipse. `Affine` division throws
+  `std::domain_error` for a singular divisor. `TriMesh` constructors throw `std::out_of_range` for bad face indices.
+- `PinholeCamera1`/`PinholeCamera2` `projectCheck()` reject points nearer than `nearPlane()` (was only z near 0).
+- CMake: the Display tests and display examples are only built when the Display stack is enabled; ImGui, ImPlot,
+  ImGuizmo and the bgfx ImGui headers are SYSTEM includes.
+- ImGui (`docking`), ImPlot (`master`) and gpmf-parser (`main`) are pinned to commits; see
+  "Pinned dependencies" in `README_dependencies.md` for how to review and update them.
+
+### Fixed
+- Range-for over an input stream with the default end read nothing (`numeric_limits<std::streampos>::max()` is 0).
+- RavlIO video reading never ended; it repeated the last frame.
+- A corrupt JPEG ended the process (libjpeg's default `exit()`); JPEG and PNG errors are now reported as load or
+  save failures.
+- PNG: grey+alpha files corrupted the heap, 16-bit grey was byte-swapped, interlaced files failed, palette and
+  alpha transforms were chosen from the wrong colour type, and images with a non-zero origin were saved from the
+  wrong memory (JPEG too). Planar JPEG decode wrote chroma to the wrong rows.
+- 1-D arrays with a non-zero origin iterated the wrong memory; empty ranges hung or read out of bounds;
+  `elements()` gave 1 for some empty ranges and overflowed for large volumes; copying into a larger array read past
+  the source; N-D iterator distances were wrong; debug bounds checks skipped the last dimension;
+  `ScanWindow<T,1>::index()` was inverted; `ThreadedQueue` could pop an empty queue after a spurious wake-up.
+- OpenCV sub-array views were read with the wrong row pitch; 4-channel images were read with the wrong stride;
+  multi-step save chains could read freed memory.
+- Qt conversions dropped the last row when copying and asserted Grayscale8 for every type; Dlib conversions
+  ignored the array origin and `toArrayView` didn't compile.
+- Display: a crash at exit (bgfx textures destroyed after shutdown), a GUI deadlock when using the Controls panel
+  while streaming, ImGui/ImPlot/3D mouse-wheel scrolling cancelling out, percentile normalisation ignored on the
+  bgfx path, overlays erased by image updates, wrong colours in the SDL fallback, and on macOS a hang at exit for
+  programs that never display anything.
+- `MeanVariance` merge/remove omitted the square of the mean difference; `Sums1d2C::operator-=` increased the
+  count; an FFT of length 1 hung.
+- `Range::mostEmpty()`/`largest()` ignored negative values; `Circle`'s 3-point constructor discarded its fit and
+  `Circle::Angle()` was wrong; `intersects(Line2ABC, Range)` used the wrong box edges; `Projection::atInfinity()`
+  and `isNearAffine()` were wrong (so `projectedBounds()` returned `largest()` for affine warps); `fitIsometry()`
+  applied a scale; `Polygon::contains()` was wrong on rays along edges and `isSelfIntersecting()` reported simple
+  concave polygons; `sumOfSqr(scalar)`, `angle(a, b)` for parallel vectors, 3-D `LinePP::ParClosest` and
+  `Quaternion::fromAngleAxis` with a non-unit axis were wrong.
+- `TriMesh`: flipping, normal normalisation and stream loading had no effect, `operator+` produced garbage indices,
+  and copy assignment left faces pointing at the source mesh.
+- `PinholeCamera1`: inverse distortion was skipped for barrel distortion and small radii, and the projection
+  Jacobian's radial term was wrong.
+- Builds against FFmpeg older than 7.1 (`avcodec_get_supported_config()` is used when available).
+- Configuring with `RAVL2_ENABLE_DISPLAY_STACK=OFF` failed; fetching bgfx failed with a user-level
+  `submodule.recurse=true`; ImGui header warnings broke `-Werror` builds.
+
+### Added
+- `streamPosEnd()` (`IO/StreamPosition.hh`): the "no end / next object" stream position.
+- `Display/UrlControls.hh`: tested parser for `display://` URL controls.
+- `ChannelRegistry::clearAll()` and `baseContentSlot()` for display scene content.
+- Tests: array ranges and iteration, OpenCV and Qt interop, Display commands and URL parsing, stream and video EOF,
+  PNG variants, corrupt JPEG, TriMesh edits, camera distortion, and the maths and geometry fixes.
+
+### Removed
+- `operator-(n, ArrayIter<T,1>)`, which had no sensible meaning; `it - n` now subtracts.
