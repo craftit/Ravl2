@@ -113,10 +113,12 @@ Batch 4 notes: GEO-8 partly done — fixed `sumOfSqr(scalar)`, `angle()` clampin
 Image notes: IMG-1 fixed the region map size; negative pixel levels in the generic `sortPixels` are still unchecked.
 Warp Clamp/Wrap/Mirror had never compiled; `wrapPoint`/`mirrorPoint` were also rewritten (mirror could leave
 the range). The fast DCT classes still need a zero-origin power-of-two square (GAP).
-- [ ] **IMG-15** *(found while fixing)* `Image/MatchPatch.hh:54-55` — `rat = LocatePeakSubPixel(...)` is
-  immediately overwritten by `rat = minAt`, so the sub-pixel result is discarded.
-- [ ] **TEST-1** *(observed)* `VideoStreamIO` and `FfmpegMultiStreamIterator_Successive_Frame_Timecodes` failed
-  once under `ctest -j16` and didn't reproduce in later runs; possibly hardware-decoder contention (see IMP-7).
+- [x] **IMG-15** *(found while fixing)* `Image/MatchPatch.hh:54-55` — `rat = LocatePeakSubPixel(...)` is
+  immediately overwritten by `rat = minAt`, so the sub-pixel result is discarded. Neither this nor
+  `searchMinAbsDifference` (which compared against the whole image) had ever compiled; both fixed and tested.
+- [x] **TEST-1** *(observed; not reproduced)* `VideoStreamIO` and `FfmpegMultiStreamIterator_Successive_Frame_Timecodes`
+  failed once under `ctest -j16`. After the video fixes (seek, EOF, iterator start) it didn't recur in 5 full
+  parallel runs plus 15 parallel runs of the video tests. Cause unconfirmed; reopen if it's seen again.
 
 ### Video / GoPro
 - [x] **VID-2** `FfmpegMultiStreamIterator.cc:507-516,537-549,741` — single-stream seek no-ops yet reports success; "Precise" doesn't decode forward. *(verified)*

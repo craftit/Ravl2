@@ -8,6 +8,7 @@
 #include "Ravl2/Image/Array2Sqr2Iter.hh"
 #include "Ravl2/Image/Array2Sqr2Iter2.hh"
 #include "Ravl2/Image/Matching.hh"
+#include "Ravl2/Image/MatchPatch.hh"
 #include "Ravl2/Image/ImageExtend.hh"
 #include "Ravl2/Image/DrawFrame.hh"
 #include "Ravl2/Image/Segmentation/Boundary.hh"
@@ -510,6 +511,32 @@ namespace Ravl2
       SPDLOG_INFO("Sum {} = {}",imgSize, sum);
       CHECK(sum == int(imgSize * imgSize));
     }
+  }
+
+  TEST_CASE("Patch searches find the template position")
+  {
+    // Smooth blob so the absolute-difference surface has a clear minimum.
+    Array<int, 2> img({30, 30});
+    for(int r = 0; r < 30; ++r)
+      for(int c = 0; c < 30; ++c)
+        img[r][c] = int(200.0 * std::exp(-((r - 14.0) * (r - 14.0) + (c - 16.0) * (c - 16.0)) / 40.0));
+    Array<int, 2> patch({7, 7});
+    for(int r = 0; r < 7; ++r)
+      for(int c = 0; c < 7; ++c)
+        patch[r][c] = img[10 + r][12 + c];
+
+    // These never compiled: the exhaustive search compared with the whole image, and the creep search called a
+    // function that doesn't exist and then discarded its sub-pixel result.
+    auto [at, score] = searchMinAbsDifference<int, int>(patch, img);
+    CHECK(at == Index<2>(10, 12));
+    CHECK(score == 0);
+
+    Point<float, 2> rat;
+    int minScore = 0;
+    (void)searchMinAbsDifferenceCreep<int, int>(patch, img, Index<2>(7, 9), rat, minScore, 3);
+    CHECK(minScore == 0);
+    CHECK(std::abs(rat[0] - 10.0f) < 0.5f);
+    CHECK(std::abs(rat[1] - 12.0f) < 0.5f);
   }
 
   TEST_CASE("imageExtend")

@@ -18,9 +18,10 @@ namespace Ravl2
   //! \param imgTemplate is the template to match.
   //! \param img is the image we're searching.
   //! \param origin is the position in the image to check.
-  template <class DataT, class SumT>
+  //! 'img' may be any 2-D array or view with the template's range (e.g. a ScanWindow window).
+  template <class DataT, class SumT, typename ImageT = Array<DataT, 2>>
   SumT matchSumAbsDifference(const Array<DataT, 2> &imgTemplate,
-                             const Array<DataT, 2> &img)
+                             const ImageT &img)
   {
     SumT diff = 0;
     for(auto it = zip(imgTemplate, img); it.valid();) {
@@ -48,7 +49,8 @@ namespace Ravl2
     Index<2> at;
     for(ScanWindow<DataT, 2> tmplWin(img, tmpl.range()); tmplWin.valid();) {
       do {
-        auto score = matchSumAbsDifference(tmpl, img);
+        // Compare with the window at this position (it compared with the whole image).
+        auto score = matchSumAbsDifference<DataT, SumT>(tmpl, tmplWin.window());
         if(score < minScore) {
           minScore = score;
           at = tmplWin.index();

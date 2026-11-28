@@ -139,6 +139,9 @@ may have relied on or worked around: check code that uses them.
 - `ConfigNode::setValue()` on an empty node recorded the old (void) type.
 - OpenGL: `GLWindow` used its window after `glfwTerminate()`; `View3D` rotated about the wrong point, rendered
   without a null check or lock, and wireframe `DTriMesh` drawing used `GL_LINE` (not a primitive).
+- `searchMinAbsDifference()` and `searchMinAbsDifferenceCreep()` didn't compile; the first compared the template
+  with the whole image rather than each window, and the second discarded its sub-pixel result.
+  `matchSumAbsDifference()` accepts any 2-D view as the image.
 - Builds against FFmpeg older than 7.1 (`avcodec_get_supported_config()` is used when available).
 - Configuring with `RAVL2_ENABLE_DISPLAY_STACK=OFF` failed; fetching bgfx failed with a user-level
   `submodule.recurse=true`; ImGui header warnings broke `-Werror` builds.
