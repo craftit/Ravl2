@@ -157,6 +157,9 @@ may have relied on or worked around: check code that uses them.
 - `streamPosEnd()` (`IO/StreamPosition.hh`): the "no end / next object" stream position.
 - `Display/UrlControls.hh`: tested parser for `display://` URL controls.
 - `ChannelRegistry::clearAll()` and `baseContentSlot()` for display scene content.
+- `Video/FfmpegResource.hh`: `std::unique_ptr` types for FFmpeg frames, packets, codec contexts, scalers,
+  resamplers and audio FIFOs. The writer and the stream iterator now own their FFmpeg objects through them, so
+  error and exception paths no longer leak (e.g. an iterator constructor that threw after allocating).
 - Tests: array ranges and iteration, OpenCV and Qt interop, Display commands and URL parsing, stream and video EOF,
   PNG variants, corrupt JPEG, TriMesh edits, camera distortion, and the maths and geometry fixes.
 

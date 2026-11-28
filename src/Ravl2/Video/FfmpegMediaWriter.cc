@@ -3,6 +3,7 @@
 //
 
 #include "Ravl2/Video/FfmpegMediaWriter.hh"
+#include "Ravl2/Video/FfmpegResource.hh"
 
 #include <algorithm>
 #include <array>
@@ -232,16 +233,16 @@ namespace Ravl2::Video
     nlohmann::json options;
     AVFormatContext *format = nullptr;
     const AVCodec *videoEncoder = nullptr;
-    AVCodecContext *videoCodec = nullptr;
+    AVCodecContextPtr videoCodec;
     AVStream *videoStream = nullptr;
-    AVFrame *videoFrame = nullptr;
-    SwsContext *videoScaler = nullptr;
+    AVFramePtr videoFrame;
+    SwsContextPtr videoScaler;
     const AVCodec *audioEncoder = nullptr;
-    AVCodecContext *audioCodec = nullptr;
+    AVCodecContextPtr audioCodec;
     AVStream *audioStream = nullptr;
-    SwrContext *audioResampler = nullptr;
-    AVAudioFifo *audioFifo = nullptr;
-    std::vector<AVPacket *> pendingPackets;
+    SwrContextPtr audioResampler;
+    AVAudioFifoPtr audioFifo;
+    std::vector<AVPacketPtr> pendingPackets;
     std::string videoCodecName;
     std::string pixelFormatName = "yuv420p";
     std::string preset = "medium";
@@ -270,14 +271,7 @@ namespace Ravl2::Video
 
     ~Impl()
     {
-      for(auto *packet : pendingPackets)
-        av_packet_free(&packet);
-      av_audio_fifo_free(audioFifo);
-      swr_free(&audioResampler);
-      sws_freeContext(videoScaler);
-      av_frame_free(&videoFrame);
-      avcodec_free_context(&videoCodec);
-      avcodec_free_context(&audioCodec);
+      // Codec, frame, scaler, resampler, FIFO and packets are released by their smart pointers.
       if(format) {
         if(format->pb && !(format->oformat->flags & AVFMT_NOFILE))
           avio_closep(&format->pb);
@@ -311,12 +305,12 @@ namespace Ravl2::Video
       if(stream == impl.videoStream && packet->duration <= 0)
         packet->duration = av_rescale_q(1, av_inv_q(codec->framerate), codec->time_base);
       if(!impl.headerWritten) {
-        AVPacket *queued = av_packet_clone(packet);
+        AVPacketPtr queued(av_packet_clone(packet));
         if(!queued) {
           SPDLOG_ERROR("FFmpeg could not queue a packet for '{}'", impl.path);
           return false;
         }
-        impl.pendingPackets.push_back(queued);
+        impl.pendingPackets.push_back(std::move(queued));
         return true;
       }
       return writeMuxPacket(impl, packet);
@@ -324,14 +318,14 @@ namespace Ravl2::Video
 
     bool receivePackets(FfmpegMediaWriter::Impl &impl, AVCodecContext *codec, AVStream *stream)
     {
-      AVPacket *packet = av_packet_alloc();
+      AVPacketPtr packet(av_packet_alloc());
       if(!packet) {
         SPDLOG_ERROR("FFmpeg could not allocate an output packet");
         return false;
       }
       bool success = true;
       for(;;) {
-        const int result = avcodec_receive_packet(codec, packet);
+        const int result = avcodec_receive_packet(codec, packet.get());
         if(result == AVERROR(EAGAIN) || result == AVERROR_EOF)
           break;
         if(result < 0) {
@@ -339,13 +333,12 @@ namespace Ravl2::Video
           success = false;
           break;
         }
-        if(!emitPacket(impl, packet, codec, stream))
+        if(!emitPacket(impl, packet.get(), codec, stream))
           success = false;
-        av_packet_unref(packet);
+        av_packet_unref(packet.get());
         if(!success)
           break;
       }
-      av_packet_free(&packet);
       return success;
     }
 
@@ -369,12 +362,11 @@ namespace Ravl2::Video
         return false;
       }
       impl.headerWritten = true;
-      // Free every queued packet whether or not it was written, so ~Impl can't free any of them twice.
+      // Queued packets are released whether or not they were written.
       bool ok = true;
-      for(auto *&packet : impl.pendingPackets) {
-        if(ok && !writeMuxPacket(impl, packet))
+      for(auto &packet : impl.pendingPackets) {
+        if(ok && !writeMuxPacket(impl, packet.get()))
           ok = false;
-        av_packet_free(&packet);
       }
       impl.pendingPackets.clear();
       return ok;
@@ -390,10 +382,9 @@ namespace Ravl2::Video
       }
       impl.videoWidth = width;
       impl.videoHeight = height;
-      // A previous attempt may have failed part way; don't leak what it allocated.
-      avcodec_free_context(&impl.videoCodec);
-      av_frame_free(&impl.videoFrame);
-      impl.videoCodec = avcodec_alloc_context3(impl.videoEncoder);
+      // A previous attempt may have failed part way; start again from nothing.
+      impl.videoFrame.reset();
+      impl.videoCodec.reset(avcodec_alloc_context3(impl.videoEncoder));
       if(!impl.videoCodec) {
         SPDLOG_ERROR("FFmpeg could not allocate the video encoder context");
         return false;
@@ -411,9 +402,9 @@ namespace Ravl2::Video
         SPDLOG_ERROR("Unknown FFmpeg pixel format '{}'", impl.pixelFormatName);
         return false;
       }
-      impl.videoCodec->pix_fmt = isPixelFormatSupported(impl.videoEncoder, impl.videoCodec, requested)
+      impl.videoCodec->pix_fmt = isPixelFormatSupported(impl.videoEncoder, impl.videoCodec.get(), requested)
                                    ? requested
-                                   : firstSupportedPixelFormat(impl.videoEncoder, impl.videoCodec);
+                                   : firstSupportedPixelFormat(impl.videoEncoder, impl.videoCodec.get());
       if(impl.videoCodec->pix_fmt == AV_PIX_FMT_YUV420P && ((width & 1) != 0 || (height & 1) != 0)) {
         SPDLOG_ERROR("FFmpeg yuv420p encoding requires even dimensions; got {}x{}", width, height);
         return false;
@@ -431,17 +422,17 @@ namespace Ravl2::Video
         const std::string crf = std::to_string(impl.crf);
         av_opt_set(impl.videoCodec->priv_data, "crf", crf.c_str(), AV_OPT_SEARCH_CHILDREN);
       }
-      int result = avcodec_open2(impl.videoCodec, impl.videoEncoder, nullptr);
+      int result = avcodec_open2(impl.videoCodec.get(), impl.videoEncoder, nullptr);
       if(result < 0 && impl.hardware && impl.options.value("hwAccel", std::string("none")) == "auto") {
         SPDLOG_WARN("Hardware encoder '{}' failed to open; falling back to software: {}", impl.videoCodecName, ffmpegError(result));
-        avcodec_free_context(&impl.videoCodec);
+        impl.videoCodec.reset();
         impl.videoEncoder = avcodec_find_encoder(defaultVideoCodec(impl.format->oformat, impl.path.c_str()));
         if(!impl.videoEncoder)
           impl.videoEncoder = avcodec_find_encoder(AV_CODEC_ID_H264);
         impl.hardware = false;
         if(!impl.videoEncoder)
           return false;
-        impl.videoCodec = avcodec_alloc_context3(impl.videoEncoder);
+        impl.videoCodec.reset(avcodec_alloc_context3(impl.videoEncoder));
         if(!impl.videoCodec)
           return false;
         impl.videoCodec->width = width;
@@ -452,12 +443,12 @@ namespace Ravl2::Video
                                        : kVideoTimeBase;
         impl.videoCodec->gop_size = impl.gopSize > 0 ? impl.gopSize : static_cast<int>(std::round(impl.fps * 2.0));
         impl.videoCodec->bit_rate = impl.videoBitrate;
-        impl.videoCodec->pix_fmt = isPixelFormatSupported(impl.videoEncoder, impl.videoCodec, requested)
+        impl.videoCodec->pix_fmt = isPixelFormatSupported(impl.videoEncoder, impl.videoCodec.get(), requested)
                                      ? requested
-                                     : firstSupportedPixelFormat(impl.videoEncoder, impl.videoCodec);
+                                     : firstSupportedPixelFormat(impl.videoEncoder, impl.videoCodec.get());
         if(impl.format->oformat->flags & AVFMT_GLOBALHEADER)
           impl.videoCodec->flags |= AV_CODEC_FLAG_GLOBAL_HEADER;
-        result = avcodec_open2(impl.videoCodec, impl.videoEncoder, nullptr);
+        result = avcodec_open2(impl.videoCodec.get(), impl.videoEncoder, nullptr);
       }
       if(result < 0) {
         SPDLOG_ERROR("FFmpeg could not open video encoder '{}': {}", impl.videoEncoder->name, ffmpegError(result));
@@ -465,18 +456,18 @@ namespace Ravl2::Video
       }
       impl.videoCodecName = impl.videoEncoder->name;
       impl.videoStream->time_base = impl.videoCodec->time_base;
-      result = avcodec_parameters_from_context(impl.videoStream->codecpar, impl.videoCodec);
+      result = avcodec_parameters_from_context(impl.videoStream->codecpar, impl.videoCodec.get());
       if(result < 0) {
         SPDLOG_ERROR("FFmpeg could not copy video stream parameters: {}", ffmpegError(result));
         return false;
       }
-      impl.videoFrame = av_frame_alloc();
+      impl.videoFrame.reset(av_frame_alloc());
       if(!impl.videoFrame)
         return false;
       impl.videoFrame->format = impl.videoCodec->pix_fmt;
       impl.videoFrame->width = width;
       impl.videoFrame->height = height;
-      result = av_frame_get_buffer(impl.videoFrame, 32);
+      result = av_frame_get_buffer(impl.videoFrame.get(), 32);
       if(result < 0) {
         SPDLOG_ERROR("FFmpeg could not allocate the video frame: {}", ffmpegError(result));
         return false;
@@ -524,24 +515,20 @@ namespace Ravl2::Video
         SPDLOG_ERROR("No FFmpeg audio encoder is available for '{}'", impl.path);
         return false;
       }
-      // A previous attempt may have failed part way; don't leak what it allocated.
-      avcodec_free_context(&impl.audioCodec);
-      swr_free(&impl.audioResampler);
-      if(impl.audioFifo) {
-        av_audio_fifo_free(impl.audioFifo);
-        impl.audioFifo = nullptr;
-      }
-      impl.audioCodec = avcodec_alloc_context3(impl.audioEncoder);
+      // A previous attempt may have failed part way; start again from nothing.
+      impl.audioResampler.reset();
+      impl.audioFifo.reset();
+      impl.audioCodec.reset(avcodec_alloc_context3(impl.audioEncoder));
       if(!impl.audioCodec)
         return false;
       impl.audioCodec->sample_rate = impl.audioRate;
       impl.audioCodec->time_base = AVRational {1, impl.audioRate};
       impl.audioCodec->bit_rate = impl.audioBitrate;
-      impl.audioCodec->sample_fmt = firstSupportedSampleFormat(impl.audioEncoder, impl.audioCodec);
+      impl.audioCodec->sample_fmt = firstSupportedSampleFormat(impl.audioEncoder, impl.audioCodec.get());
       av_channel_layout_default(&impl.audioCodec->ch_layout, impl.audioChannels);
       if(impl.format->oformat->flags & AVFMT_GLOBALHEADER)
         impl.audioCodec->flags |= AV_CODEC_FLAG_GLOBAL_HEADER;
-      int result = avcodec_open2(impl.audioCodec, impl.audioEncoder, nullptr);
+      int result = avcodec_open2(impl.audioCodec.get(), impl.audioEncoder, nullptr);
       if(result < 0) {
         SPDLOG_ERROR("FFmpeg could not open audio encoder '{}': {}", impl.audioEncoder->name, ffmpegError(result));
         return false;
@@ -554,7 +541,7 @@ namespace Ravl2::Video
         return false;
       }
       impl.audioStream->time_base = impl.audioCodec->time_base;
-      result = avcodec_parameters_from_context(impl.audioStream->codecpar, impl.audioCodec);
+      result = avcodec_parameters_from_context(impl.audioStream->codecpar, impl.audioCodec.get());
       if(result < 0) {
         SPDLOG_ERROR("FFmpeg could not copy audio stream parameters: {}", ffmpegError(result));
         return false;
@@ -562,20 +549,22 @@ namespace Ravl2::Video
       AVChannelLayout inputLayout {};
       av_channel_layout_default(&inputLayout, impl.audioChannels);
       const AVSampleFormat inputFormat = AV_SAMPLE_FMT_FLT;
-      result = swr_alloc_set_opts2(&impl.audioResampler, &impl.audioCodec->ch_layout, impl.audioCodec->sample_fmt,
+      SwrContext *resampler = nullptr;
+      result = swr_alloc_set_opts2(&resampler, &impl.audioCodec->ch_layout, impl.audioCodec->sample_fmt,
                                    impl.audioCodec->sample_rate, &inputLayout, inputFormat, impl.audioRate, 0, nullptr);
+      impl.audioResampler.reset(resampler);
       av_channel_layout_uninit(&inputLayout);
       if(result < 0 || !impl.audioResampler) {
         SPDLOG_ERROR("FFmpeg could not create the audio resampler: {}", ffmpegError(result));
         return false;
       }
-      result = swr_init(impl.audioResampler);
+      result = swr_init(impl.audioResampler.get());
       if(result < 0) {
         SPDLOG_ERROR("FFmpeg could not initialize the audio resampler: {}", ffmpegError(result));
         return false;
       }
-      impl.audioFifo = av_audio_fifo_alloc(impl.audioCodec->sample_fmt, impl.audioChannels,
-                                           std::max(impl.audioCodec->frame_size, 1));
+      impl.audioFifo.reset(av_audio_fifo_alloc(impl.audioCodec->sample_fmt, impl.audioChannels,
+                                               std::max(impl.audioCodec->frame_size, 1)));
       if(!impl.audioFifo) {
         SPDLOG_ERROR("FFmpeg could not allocate an audio FIFO");
         return false;
@@ -622,59 +611,52 @@ namespace Ravl2::Video
         impl.audioPts = av_rescale_q(relative.count(), kMicrosecondTimeBase, impl.audioCodec->time_base);
         impl.hasAudioStart = true;
       }
-      const int outputSamples = swr_get_out_samples(impl.audioResampler, inputSamples);
-      AVFrame *converted = av_frame_alloc();
+      const int outputSamples = swr_get_out_samples(impl.audioResampler.get(), inputSamples);
+      AVFramePtr converted(av_frame_alloc());
       if(!converted)
         return false;
       converted->format = impl.audioCodec->sample_fmt;
       converted->sample_rate = impl.audioCodec->sample_rate;
       converted->nb_samples = std::max(outputSamples, 1);
       av_channel_layout_copy(&converted->ch_layout, &impl.audioCodec->ch_layout);
-      int result = av_frame_get_buffer(converted, 0);
+      int result = av_frame_get_buffer(converted.get(), 0);
       if(result < 0) {
         SPDLOG_ERROR("FFmpeg could not allocate converted audio samples: {}", ffmpegError(result));
-        av_frame_free(&converted);
         return false;
       }
-      result = swr_convert(impl.audioResampler, converted->extended_data, converted->nb_samples, input, inputSamples);
+      result = swr_convert(impl.audioResampler.get(), converted->extended_data, converted->nb_samples, input, inputSamples);
       if(result < 0) {
         SPDLOG_ERROR("FFmpeg audio resampling failed: {}", ffmpegError(result));
-        av_frame_free(&converted);
         return false;
       }
-      if(result > 0 && av_audio_fifo_realloc(impl.audioFifo, av_audio_fifo_size(impl.audioFifo) + result) >= 0) {
-        const int written = av_audio_fifo_write(impl.audioFifo, reinterpret_cast<void **>(converted->extended_data), result);
+      if(result > 0 && av_audio_fifo_realloc(impl.audioFifo.get(), av_audio_fifo_size(impl.audioFifo.get()) + result) >= 0) {
+        const int written = av_audio_fifo_write(impl.audioFifo.get(), reinterpret_cast<void **>(converted->extended_data), result);
         if(written != result) {
           SPDLOG_ERROR("FFmpeg wrote only {} of {} converted audio samples", written, result);
-          av_frame_free(&converted);
           return false;
         }
       }
-      av_frame_free(&converted);
 
       const int frameSize = impl.audioCodec->frame_size > 0 ? impl.audioCodec->frame_size : 1;
-      while(av_audio_fifo_size(impl.audioFifo) >= frameSize) {
-        AVFrame *frame = av_frame_alloc();
+      while(av_audio_fifo_size(impl.audioFifo.get()) >= frameSize) {
+        AVFramePtr frame(av_frame_alloc());
         if(!frame)
           return false;
         frame->format = impl.audioCodec->sample_fmt;
         frame->sample_rate = impl.audioCodec->sample_rate;
         frame->nb_samples = frameSize;
         av_channel_layout_copy(&frame->ch_layout, &impl.audioCodec->ch_layout);
-        result = av_frame_get_buffer(frame, 0);
+        result = av_frame_get_buffer(frame.get(), 0);
         if(result < 0) {
-          av_frame_free(&frame);
           return false;
         }
-        const int read = av_audio_fifo_read(impl.audioFifo, reinterpret_cast<void **>(frame->extended_data), frameSize);
+        const int read = av_audio_fifo_read(impl.audioFifo.get(), reinterpret_cast<void **>(frame->extended_data), frameSize);
         if(read != frameSize) {
-          av_frame_free(&frame);
           return false;
         }
         frame->pts = impl.audioPts;
         impl.audioPts += frameSize;
-        const bool ok = encodeFrame(impl, impl.audioCodec, impl.audioStream, frame);
-        av_frame_free(&frame);
+        const bool ok = encodeFrame(impl, impl.audioCodec.get(), impl.audioStream, frame.get());
         if(!ok)
           return false;
       }
@@ -780,25 +762,25 @@ namespace Ravl2::Video
       return false;
     if(!initializeVideo(*mImpl, width, height))
       return false;
-    if(av_frame_make_writable(mImpl->videoFrame) < 0)
+    if(av_frame_make_writable(mImpl->videoFrame.get()) < 0)
       return false;
-    mImpl->videoScaler = sws_getCachedContext(mImpl->videoScaler, width, height, static_cast<AVPixelFormat>(pixelFormat),
+    mImpl->videoScaler.reset(sws_getCachedContext(mImpl->videoScaler.release(), width, height, static_cast<AVPixelFormat>(pixelFormat),
                                               width, height, mImpl->videoCodec->pix_fmt, SWS_BICUBIC,
-                                              nullptr, nullptr, nullptr);
+                                              nullptr, nullptr, nullptr));
     if(!mImpl->videoScaler) {
       SPDLOG_ERROR("FFmpeg could not create a pixel format converter");
       return false;
     }
     const uint8_t *sourceData[4] {data, nullptr, nullptr, nullptr};
     const int sourceStride[4] {lineSize, 0, 0, 0};
-    const int rows = sws_scale(mImpl->videoScaler, sourceData, sourceStride, 0, height,
+    const int rows = sws_scale(mImpl->videoScaler.get(), sourceData, sourceStride, 0, height,
                                mImpl->videoFrame->data, mImpl->videoFrame->linesize);
     if(rows != height) {
       SPDLOG_ERROR("FFmpeg converted {} of {} video rows", rows, height);
       return false;
     }
     mImpl->videoFrame->pts = videoPts(*mImpl, timestamp);
-    return encodeFrame(*mImpl, mImpl->videoCodec, mImpl->videoStream, mImpl->videoFrame);
+    return encodeFrame(*mImpl, mImpl->videoCodec.get(), mImpl->videoStream, mImpl->videoFrame.get());
   }
 
   bool FfmpegMediaWriter::writePlanar420(const YUV420Image<uint8_t> &image, std::optional<MediaTime> timestamp)
@@ -816,21 +798,21 @@ namespace Ravl2::Video
     auto y = planePixels(image.plane<0>().data());
     auto u = planePixels(image.plane<1>().data());
     auto v = planePixels(image.plane<2>().data());
-    if(!initializeVideo(*mImpl, width, height) || av_frame_make_writable(mImpl->videoFrame) < 0)
+    if(!initializeVideo(*mImpl, width, height) || av_frame_make_writable(mImpl->videoFrame.get()) < 0)
       return false;
-    mImpl->videoScaler = sws_getCachedContext(mImpl->videoScaler, width, height, AV_PIX_FMT_YUV420P,
+    mImpl->videoScaler.reset(sws_getCachedContext(mImpl->videoScaler.release(), width, height, AV_PIX_FMT_YUV420P,
                                               width, height, mImpl->videoCodec->pix_fmt, SWS_BICUBIC,
-                                              nullptr, nullptr, nullptr);
+                                              nullptr, nullptr, nullptr));
     if(!mImpl->videoScaler)
       return false;
     const uint8_t *sourceData[4] {y.data(), u.data(), v.data(), nullptr};
     const int sourceStride[4] {width, width / 2, width / 2, 0};
-    const int rows = sws_scale(mImpl->videoScaler, sourceData, sourceStride, 0, height,
+    const int rows = sws_scale(mImpl->videoScaler.get(), sourceData, sourceStride, 0, height,
                                mImpl->videoFrame->data, mImpl->videoFrame->linesize);
     if(rows != height)
       return false;
     mImpl->videoFrame->pts = videoPts(*mImpl, timestamp);
-    return encodeFrame(*mImpl, mImpl->videoCodec, mImpl->videoStream, mImpl->videoFrame);
+    return encodeFrame(*mImpl, mImpl->videoCodec.get(), mImpl->videoStream, mImpl->videoFrame.get());
   }
 
   bool FfmpegMediaWriter::writeVideo(const YUV420Image<uint8_t> &image, std::optional<MediaTime> timestamp)
@@ -908,15 +890,15 @@ namespace Ravl2::Video
       return true;
     bool success = true;
     if(mImpl->videoInitialized) {
-      if(!encodeFrame(*mImpl, mImpl->videoCodec, mImpl->videoStream, nullptr))
+      if(!encodeFrame(*mImpl, mImpl->videoCodec.get(), mImpl->videoStream, nullptr))
         success = false;
     }
     if(mImpl->audioInitialized) {
       for(;;) {
-        const int outSamples = swr_get_out_samples(mImpl->audioResampler, 0);
+        const int outSamples = swr_get_out_samples(mImpl->audioResampler.get(), 0);
         if(outSamples <= 0)
           break;
-        AVFrame *converted = av_frame_alloc();
+        AVFramePtr converted(av_frame_alloc());
         if(!converted) {
           success = false;
           break;
@@ -925,30 +907,27 @@ namespace Ravl2::Video
         converted->sample_rate = mImpl->audioCodec->sample_rate;
         converted->nb_samples = outSamples;
         av_channel_layout_copy(&converted->ch_layout, &mImpl->audioCodec->ch_layout);
-        int result = av_frame_get_buffer(converted, 0);
+        int result = av_frame_get_buffer(converted.get(), 0);
         if(result >= 0)
-          result = swr_convert(mImpl->audioResampler, converted->extended_data, outSamples, nullptr, 0);
+          result = swr_convert(mImpl->audioResampler.get(), converted->extended_data, outSamples, nullptr, 0);
         if(result < 0) {
           SPDLOG_ERROR("FFmpeg could not flush the audio resampler: {}", ffmpegError(result));
           success = false;
-          av_frame_free(&converted);
           break;
         }
         if(result == 0) {
-          av_frame_free(&converted);
           break;
         }
-        if(av_audio_fifo_realloc(mImpl->audioFifo, av_audio_fifo_size(mImpl->audioFifo) + result) < 0
-           || av_audio_fifo_write(mImpl->audioFifo, reinterpret_cast<void **>(converted->extended_data), result) != result)
+        if(av_audio_fifo_realloc(mImpl->audioFifo.get(), av_audio_fifo_size(mImpl->audioFifo.get()) + result) < 0
+           || av_audio_fifo_write(mImpl->audioFifo.get(), reinterpret_cast<void **>(converted->extended_data), result) != result)
           success = false;
-        av_frame_free(&converted);
         if(!success)
           break;
       }
-      const int frameSize = mImpl->audioCodec->frame_size > 0 ? mImpl->audioCodec->frame_size : av_audio_fifo_size(mImpl->audioFifo);
-      const int remaining = av_audio_fifo_size(mImpl->audioFifo);
+      const int frameSize = mImpl->audioCodec->frame_size > 0 ? mImpl->audioCodec->frame_size : av_audio_fifo_size(mImpl->audioFifo.get());
+      const int remaining = av_audio_fifo_size(mImpl->audioFifo.get());
       if(remaining > 0) {
-        AVFrame *frame = av_frame_alloc();
+        AVFramePtr frame(av_frame_alloc());
         if(!frame) {
           success = false;
         } else {
@@ -956,22 +935,21 @@ namespace Ravl2::Video
           frame->sample_rate = mImpl->audioCodec->sample_rate;
           frame->nb_samples = std::max(frameSize, remaining);
           av_channel_layout_copy(&frame->ch_layout, &mImpl->audioCodec->ch_layout);
-          int result = av_frame_get_buffer(frame, 0);
+          int result = av_frame_get_buffer(frame.get(), 0);
           if(result >= 0) {
             av_samples_set_silence(frame->extended_data, 0, frame->nb_samples, mImpl->audioChannels,
                                    mImpl->audioCodec->sample_fmt);
-            const int read = av_audio_fifo_read(mImpl->audioFifo, reinterpret_cast<void **>(frame->extended_data), remaining);
+            const int read = av_audio_fifo_read(mImpl->audioFifo.get(), reinterpret_cast<void **>(frame->extended_data), remaining);
             frame->pts = mImpl->audioPts;
             mImpl->audioPts += frame->nb_samples;
-            if(read != remaining || !encodeFrame(*mImpl, mImpl->audioCodec, mImpl->audioStream, frame))
+            if(read != remaining || !encodeFrame(*mImpl, mImpl->audioCodec.get(), mImpl->audioStream, frame.get()))
               success = false;
           } else {
             success = false;
           }
-          av_frame_free(&frame);
         }
       }
-      if(!encodeFrame(*mImpl, mImpl->audioCodec, mImpl->audioStream, nullptr))
+      if(!encodeFrame(*mImpl, mImpl->audioCodec.get(), mImpl->audioStream, nullptr))
         success = false;
     }
     if(mImpl->headerWritten) {

@@ -5,6 +5,7 @@
 
 #pragma once
 
+#include "Ravl2/Video/FfmpegResource.hh"
 #include <memory>
 #include <vector>
 #include <map>
@@ -194,10 +195,10 @@ namespace Ravl2::Video
     std::vector<AVStream *> m_streams;
 
     //! FFmpeg frames - container for decoded data
-    std::vector<AVFrame *> m_frames;
+    std::vector<AVFramePtr> m_frames;// one per stream; null for DATA streams
 
     //! FFmpeg packet - container for compressed data
-    AVPacket* m_packet = nullptr;
+    AVPacketPtr m_packet;
 
     //! Frame ID counters for each stream
     std::vector<StreamItemId> m_nextFrameIds;

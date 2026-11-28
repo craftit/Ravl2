@@ -182,7 +182,7 @@ namespace Ravl2::Video
     }
 
     // Allocate FFmpeg resources
-    m_packet = av_packet_alloc();
+    m_packet.reset(av_packet_alloc());
     if (!m_packet)
     {
       throw std::runtime_error("Failed to allocate packet");
@@ -204,30 +204,22 @@ namespace Ravl2::Video
       if (!codecContext && !isDataStream)
       {
         SPDLOG_WARN("No codec context available for stream {} (type: {} '{}')", streamIndex, static_cast<int>(stream->codecpar->codec_type),fourCC2str(stream->codecpar->codec_tag));
-        // Clean up
-        av_packet_free(&m_packet);
         throw std::runtime_error("No codec context available for stream");
       }
       m_codecContexts.push_back(codecContext);  // May be nullptr for DATA streams
 
       // Allocate a frame for this stream (not needed for DATA streams, but keep consistent)
-      AVFrame* frame = nullptr;
+      AVFramePtr frame;
       if (!isDataStream)
       {
-        frame = av_frame_alloc();
+        frame.reset(av_frame_alloc());
         if (!frame)
         {
           SPDLOG_WARN("Failed to allocate frame for stream {}", streamIndex);
-          // Clean up
-          av_packet_free(&m_packet);
-          for (auto* f : m_frames)
-          {
-            if (f) av_frame_free(&f);
-          }
           throw std::runtime_error("Failed to allocate frame");
         }
       }
-      m_frames.push_back(frame);  // Maybe nullptr for DATA streams
+      m_frames.push_back(std::move(frame));  // Maybe null for DATA streams
 
       // Initialise frame ID counter for this stream
       m_nextFrameIds.push_back(0);
@@ -295,12 +287,6 @@ namespace Ravl2::Video
     auto result = next();
     if (!result.isSuccess() && result.error() != VideoErrorCode::EndOfStream)
     {
-      // Clean up
-      av_packet_free(&m_packet);
-      for (auto* f : m_frames)
-      {
-        if (f) av_frame_free(&f);
-      }
       SPDLOG_WARN("Failed to read first frame: {}", toString(result.error()));
       throw std::runtime_error("Failed to read first frame");
     }
@@ -390,18 +376,7 @@ namespace Ravl2::Video
       m_packetQueue.swap(emptyQueue);
     }
 
-    // Free FFmpeg resources
-    for (auto* frame : m_frames)
-    {
-      if (frame) {
-        av_frame_free(&frame);
-      }
-    }
-
-    if (m_packet)
-    {
-      av_packet_free(&m_packet);
-    }
+    // m_frames and m_packet release themselves; they're destroyed after the queue cleared above.
 
     // We don't free m_streams or m_codecContexts as they're owned by the container.
     // m_activeIterator releases the active iterator count.
@@ -939,7 +914,7 @@ namespace Ravl2::Video
     }
 
     auto* codecContext = m_codecContexts[localIndex];
-    auto* frame = m_frames[localIndex];
+    auto* frame = m_frames[localIndex].get();
 
     if (!packet)
     {
@@ -1148,12 +1123,15 @@ namespace Ravl2::Video
               return createVideoFrame<YUV420Image<uint8_t>>(frame, localIndex, id);
             case AV_PIX_FMT_NV12: {
               // Semi-planar YUV420 from NVDEC: de-interleave UV into separate planes
-              AVFrame* yuv = av_frame_alloc();
+              AVFramePtr yuv(av_frame_alloc());
+              if (!yuv)
+                return nullptr;
               yuv->format = AV_PIX_FMT_YUV420P;
               yuv->width  = frame->width;
               yuv->height = frame->height;
               yuv->pts    = frame->pts;
-              av_frame_get_buffer(yuv, 32);
+              if (av_frame_get_buffer(yuv.get(), 32) < 0)
+                return nullptr;
               for (int r = 0; r < frame->height; ++r)
                 std::memcpy(yuv->data[0] + r * yuv->linesize[0],
                             frame->data[0] + r * frame->linesize[0], static_cast<std::size_t>(frame->width));
@@ -1163,20 +1141,21 @@ namespace Ravl2::Video
                 uint8_t* dV = yuv->data[2] + r * yuv->linesize[2];
                 for (int c = 0; c < frame->width / 2; ++c) { dU[c] = src[c*2]; dV[c] = src[c*2+1]; }
               }
-              auto result = createVideoFrame<YUV420Image<uint8_t>>(yuv, localIndex, id);
-              av_frame_free(&yuv);
-              return result;
+              return createVideoFrame<YUV420Image<uint8_t>>(yuv.get(), localIndex, id);
             }
             case AV_PIX_FMT_YUV420P10LE:
               return createVideoFrame<YUV420Image<uint16_t>>(frame, localIndex, id);
             case AV_PIX_FMT_P010LE: {
               // 10-bit semi-planar from NVDEC: de-interleave UV into separate planes
-              AVFrame* yuv = av_frame_alloc();
+              AVFramePtr yuv(av_frame_alloc());
+              if (!yuv)
+                return nullptr;
               yuv->format = AV_PIX_FMT_YUV420P10LE;
               yuv->width  = frame->width;
               yuv->height = frame->height;
               yuv->pts    = frame->pts;
-              av_frame_get_buffer(yuv, 32);
+              if (av_frame_get_buffer(yuv.get(), 32) < 0)
+                return nullptr;
               for (int r = 0; r < frame->height; ++r)
                 std::memcpy(yuv->data[0] + r * yuv->linesize[0],
                             frame->data[0] + r * frame->linesize[0], static_cast<std::size_t>(frame->width) * 2);
@@ -1186,9 +1165,7 @@ namespace Ravl2::Video
                 uint16_t* dV = reinterpret_cast<uint16_t*>(yuv->data[2] + r * yuv->linesize[2]);
                 for (int c = 0; c < frame->width / 2; ++c) { dU[c] = src[c*2]; dV[c] = src[c*2+1]; }
               }
-              auto result = createVideoFrame<YUV420Image<uint16_t>>(yuv, localIndex, id);
-              av_frame_free(&yuv);
-              return result;
+              return createVideoFrame<YUV420Image<uint16_t>>(yuv.get(), localIndex, id);
             }
             case AV_PIX_FMT_YUV422P:
             case AV_PIX_FMT_YUVJ422P:  // JPEG-range YUV422 (deprecated, treat as YUV422P)
@@ -1273,27 +1250,27 @@ namespace Ravl2::Video
     // 2. We can't track when user code releases frames
     // 3. Device buffer pools are very small (3-8 buffers)
     AVFrame* frameToUse = frame;
-    AVFrame* clonedFrame = nullptr;
+    AVFramePtr clonedFrame;
     if (m_needsFrameClone)
     {
       // Copy the pixels into new buffers: av_frame_clone() would only add a reference to the device's pooled
       // buffers, which frames held by user code would then keep from being reused.
-      clonedFrame = av_frame_alloc();
+      clonedFrame.reset(av_frame_alloc());
       if (clonedFrame)
       {
         clonedFrame->format = frame->format;
         clonedFrame->width = frame->width;
         clonedFrame->height = frame->height;
-        if (av_frame_get_buffer(clonedFrame, 0) < 0 || av_frame_copy(clonedFrame, frame) < 0
-            || av_frame_copy_props(clonedFrame, frame) < 0)
-          av_frame_free(&clonedFrame);
+        if (av_frame_get_buffer(clonedFrame.get(), 0) < 0 || av_frame_copy(clonedFrame.get(), frame) < 0
+            || av_frame_copy_props(clonedFrame.get(), frame) < 0)
+          clonedFrame.reset();
       }
       if (!clonedFrame)
       {
         SPDLOG_ERROR("Failed to copy frame for device input");
         return nullptr;
       }
-      frameToUse = clonedFrame;
+      frameToUse = clonedFrame.get();
       SPDLOG_TRACE("Copied video frame for device capture");
     }
 
@@ -1314,10 +1291,7 @@ namespace Ravl2::Video
 
     // makeImage() takes its own reference to the frame's buffers, so our reference to a copy can go now.
     // (Keeping it leaked every copied frame.)
-    if (clonedFrame)
-    {
-      av_frame_free(&clonedFrame);
-    }
+    clonedFrame.reset();
 
     if (!success)
     {
@@ -1348,16 +1322,16 @@ namespace Ravl2::Video
     // Clone frame if needed for device captures to prevent buffer pool exhaustion
     // We clone all frames from device captures because frames may be held by user code
     AVFrame* frameToUse = frame;
-    AVFrame* clonedFrame = nullptr;
+    AVFramePtr clonedFrame;
     if (m_needsFrameClone)
     {
-      clonedFrame = av_frame_clone(frame);
+      clonedFrame.reset(av_frame_clone(frame));
       if (!clonedFrame)
       {
         SPDLOG_ERROR("Failed to clone frame for device input");
         return nullptr;
       }
-      frameToUse = clonedFrame;
+      frameToUse = clonedFrame.get();
       SPDLOG_TRACE("Cloned audio frame for device capture");
     }
 
@@ -1365,7 +1339,6 @@ namespace Ravl2::Video
     int channels = codecContext->ch_layout.nb_channels;
     if (channels <= 0)
     {
-      if (clonedFrame) av_frame_free(&clonedFrame);
       return nullptr;
     }
 
@@ -1387,16 +1360,12 @@ namespace Ravl2::Video
     if (!copyAudioSamples(frameToUse, audioData, channels, codecContext->sample_fmt))
     {
       SPDLOG_ERROR("Failed to copy audio samples for frame");
-      if (clonedFrame) av_frame_free(&clonedFrame);
       return nullptr;
     }
 
     // Note: Audio data is copied into audioData, so we CAN safely free the cloned frame
     // (unlike video frames where makeImage() creates references to the frame data)
-    if (clonedFrame)
-    {
-      av_frame_free(&clonedFrame);
-    }
+    clonedFrame.reset();
 
     // Create a new audio chunk
     return std::make_shared<FrameData<AudioChunk<SampleT>>>(AudioChunk<SampleT>(audioData), id, timestamp,StreamType::Audio);
@@ -1583,11 +1552,11 @@ namespace Ravl2::Video
     while (m_packetQueue.size() < m_minQueueSize)
     {
       // Clear any previous packet data
-      av_packet_unref(m_packet);
+      av_packet_unref(m_packet.get());
 
       // Read a packet
       auto&container = ffmpegContainer();
-      int result = av_read_frame(container.m_formatContext, m_packet);
+      int result = av_read_frame(container.m_formatContext, m_packet.get());
 
       if (result < 0)
       {
@@ -1605,7 +1574,7 @@ namespace Ravl2::Video
             {
               for (;;)
               {
-                const int receiveResult = avcodec_receive_frame(codecContext, m_frames[localIndex]);
+                const int receiveResult = avcodec_receive_frame(codecContext, m_frames[localIndex].get());
                 if (receiveResult == AVERROR(EAGAIN) || receiveResult == AVERROR_EOF)
                   return;
                 if (receiveResult < 0)
@@ -1615,8 +1584,8 @@ namespace Ravl2::Video
                   return;
                 }
 
-                const StreamItemId id = generateUniqueFrameId(m_frames[localIndex], localIndex);
-                auto decodedFrame = convertFrameToFrame(m_frames[localIndex], localIndex, id);
+                const StreamItemId id = generateUniqueFrameId(m_frames[localIndex].get(), localIndex);
+                auto decodedFrame = convertFrameToFrame(m_frames[localIndex].get(), localIndex, id);
                 if (decodedFrame)
                 {
                   m_packetQueue.push(PacketInfo {
@@ -1629,7 +1598,7 @@ namespace Ravl2::Video
                 {
                   SPDLOG_WARN("Failed to convert a delayed decoder frame at end-of-stream");
                 }
-                av_frame_unref(m_frames[localIndex]);
+                av_frame_unref(m_frames[localIndex].get());
               }
             };
 
@@ -1672,7 +1641,7 @@ namespace Ravl2::Video
         auto localIndex = static_cast<std::size_t>(std::distance(m_streamIndices.begin(), it));
 
         // Try to decode the packet
-        auto frameResult = decodePacket(m_packet, localIndex);
+        auto frameResult = decodePacket(m_packet.get(), localIndex);
 
         if (frameResult.isSuccess())
         {
@@ -1731,7 +1700,7 @@ namespace Ravl2::Video
       }
 
       // Free the packet resources
-      av_packet_unref(m_packet);
+      av_packet_unref(m_packet.get());
     }
 
     return VideoResult<void>();

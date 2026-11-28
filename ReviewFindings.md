@@ -186,7 +186,7 @@ GL notes: GL-1/GL-2 were checked by build and reading only (no display here).
 
 - [ ] **IMP-1** One rule for empty ranges and non-zero origins, plus an offset-origin test per module.
 - [ ] **IMP-2** `inverse()` returns `std::optional` everywhere (Affine, Projection, ScaleTranslate, line intersections).
-- [ ] **IMP-3** RAII for FFmpeg resources (`unique_ptr` + deleters); index-based TriMesh faces; vector-based SegmentExtrema histograms.
+- [ ] **IMP-3** *(FFmpeg part done: `Video/FfmpegResource.hh`, used by the writer and the iterator)* RAII for FFmpeg resources (`unique_ptr` + deleters); index-based TriMesh faces; vector-based SegmentExtrema histograms.
 - [x] **IMP-4** Use `ptrdiff_t`/`size_t` for strides, offsets and element counts. Strides, `stride()`, origin offsets and N-D `area()` are now `std::ptrdiff_t` (signed: strides may be negative); `elements()` is `size_t`; indices and per-dimension `size()` stay `int`.
 - [ ] **IMP-5** Fix `Concepts.hh:23` `IndexType` (accepts any type).
 - [ ] **IMP-6** Display: GUI-thread-only registry, GPU lifetime tied to context, single tokenised URL parser, remove dead code, fewer per-frame copies, bound default plot memory, runtime X11/Wayland selection.
