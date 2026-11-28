@@ -15,6 +15,7 @@
 #include "Ravl2/Video/AudioChunk.hh"
 #include "Ravl2/Video/FfmpegMediaContainer.hh"
 #include "Ravl2/Video/FfmpegMediaWriter.hh"
+#include "Ravl2/IO/InputSequence.hh"
 #include "Ravl2/Video/Frame.hh"
 #include "Ravl2/Video/VideoIO.hh"
 
@@ -207,6 +208,94 @@ namespace Ravl2::Video
       CHECK(writer->writeAudio(AudioChunk<float>(std::move(stereo))));
       CHECK(writer->close());
     }
+    std::filesystem::remove(path);
+  }
+
+  TEST_CASE("Video in many pixel formats is readable", "[Video][IO]")
+  {
+    initIO();
+    struct Case {
+      const char *codec;
+      const char *pixelFormat;
+      const std::type_info &delivered;
+    };
+    // Native types first, then formats that used to be rejected and are now converted.
+    const Case cases[] = {
+      {"ffv1", "gray", typeid(Array<PixelI8, 2>)},
+      {"png", "rgb24", typeid(Array<PixelRGB8, 2>)},
+      {"png", "rgba", typeid(Array<PixelRGBA8, 2>)},
+      {"ffv1", "yuv420p", typeid(YUV420Image<uint8_t>)},
+      {"ffv1", "yuv444p", typeid(YUV444Image<uint8_t>)},
+      {"ffv1", "gray16le", typeid(Array<PixelI8, 2>)},
+      {"ffv1", "gbrp10le", typeid(Array<PixelRGB8, 2>)},
+      {"ffv1", "bgra", typeid(Array<PixelRGBA8, 2>)},
+      {"ffv1", "yuva420p", typeid(Array<PixelRGBA8, 2>)},
+      {"ffv1", "yuv422p10le", typeid(YUV420Image<uint16_t>)},
+      {"ffv1", "yuv440p", typeid(YUV420Image<uint8_t>)},
+    };
+    // A grey ramp survives every format, including grey and alpha ones.
+    Array<PixelRGB8, 2> grey({48, 64});
+    for(int y = 0; y < 48; ++y)
+      for(int x = 0; x < 64; ++x) {
+        const auto v = static_cast<uint8_t>(40 + 2 * x + y);
+        grey(y, x) = PixelRGB8(v, v, v);
+      }
+    for(const auto &tc : cases) {
+      INFO("codec " << tc.codec << " pixel format " << tc.pixelFormat);
+      const auto path = temporaryVideoPath(".mkv");
+      {
+        auto writer = FfmpegMediaWriter::open(path.string(), nlohmann::json {{"fps", 25}, {"codec", tc.codec}, {"pixelFormat", tc.pixelFormat}});
+        REQUIRE(writer.isSuccess());
+        for(int i = 0; i < 3; ++i)
+          REQUIRE(writer.value()->writeVideo(grey));
+        REQUIRE(writer.value()->close());
+      }
+      {
+        auto container = FfmpegMediaContainer::openFile(path.string()).value();
+        auto iterator = container->createIterator(std::size_t(0));
+        REQUIRE(iterator.isSuccess());
+        CHECK(iterator.value()->dataType() == tc.delivered);
+        REQUIRE(iterator.value()->currentFrame());
+        CHECK(iterator.value()->currentFrame()->dataType() == tc.delivered);
+      }
+      {
+        // Through RavlIO as RGB: video's limited-range YUV must be expanded to RAVL2's full range on the way.
+        auto stream = openInputStream<Array<PixelRGB8, 2>>(path.string(), defaultLoadFormatHint(false));
+        REQUIRE(stream.valid());
+        auto image = stream.get();
+        REQUIRE(image.range() == grey.range());
+        double error = 0;
+        for(int y = 0; y < 48; ++y)
+          for(int x = 0; x < 64; ++x)
+            error += std::abs(double(image(y, x).template get<ImageChannel::Green>()) - double(grey(y, x).template get<ImageChannel::Green>()));
+        CHECK(error / (48 * 64) < 1.5);
+      }
+      std::filesystem::remove(path);
+    }
+  }
+
+  TEST_CASE("RAVL2 YUV is full range in video files", "[Video][IO]")
+  {
+    // RAVL2 YUV is full range; video files are limited range. Writing then reading must give back the values
+    // written (each direction used to skip the range conversion, so values came back compressed towards grey).
+    YUV420Image<uint8_t> image(IndexRange<2>({32, 32}));
+    fill(image.plane<0>().data(), uint8_t(10));
+    fill(image.plane<1>().data(), uint8_t(128));
+    fill(image.plane<2>().data(), uint8_t(128));
+    const auto path = temporaryVideoPath(".mkv");
+    {
+      auto writer = FfmpegMediaWriter::open(path.string(), nlohmann::json {{"fps", 25}, {"codec", "ffv1"}, {"pixelFormat", "yuv420p"}});
+      REQUIRE(writer.isSuccess());
+      REQUIRE(writer.value()->writeVideo(image));
+      REQUIRE(writer.value()->close());
+    }
+    auto container = FfmpegMediaContainer::openFile(path.string()).value();
+    auto iterator = container->createIterator(std::size_t(0));
+    REQUIRE(iterator.isSuccess());
+    auto frame = std::dynamic_pointer_cast<FrameData<YUV420Image<uint8_t>>>(iterator.value()->currentFrame());
+    REQUIRE(frame);
+    CHECK(std::abs(int(frame->data().plane<0>().data()(5, 5)) - 10) <= 1);
+    CHECK(std::abs(int(frame->data().plane<1>().data()(5, 5)) - 128) <= 1);
     std::filesystem::remove(path);
   }
 

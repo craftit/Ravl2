@@ -10,7 +10,10 @@
 #include <algorithm>
 #include <stdexcept>
 #include <spdlog/spdlog.h>
+extern "C" {
+#include <libavutil/pixdesc.h>
 #include <libswscale/swscale.h>
+}
 #include <fmt/format.h>
 
 // Optional GoPro GPMF support
@@ -109,6 +112,127 @@ namespace Ravl2::Video
       return copyInterleavedAudioSamples(frame, audioData, channels);
     }
   }
+
+  namespace
+  {
+    //! Image types the iterator delivers for video.
+    enum class VideoDelivery
+    {
+      RGB8,     //!< Array<PixelRGB8, 2>
+      RGBA8,    //!< Array<PixelRGBA8, 2>
+      YUV420_8, //!< YUV420Image<uint8_t>
+      YUV420_16,//!< YUV420Image<uint16_t>, samples scaled to the full 16-bit range like other RAVL2 uint16 pixels
+      YUV422_8, //!< YUV422Image<uint8_t>
+      YUV444_8, //!< YUV444Image<uint8_t>
+      YUYV,     //!< Array<PixelYUYV8, 2>
+      UYVY,     //!< Array<PixelUYVY8, 2>
+      Gray8     //!< Array<PixelI8, 2>
+    };
+
+    //! The pixel format frames are converted to (if they aren't in it already) for each delivered type.
+    AVPixelFormat deliveryFormat(VideoDelivery delivery)
+    {
+      switch(delivery) {
+        case VideoDelivery::RGB8: return AV_PIX_FMT_RGB24;
+        case VideoDelivery::RGBA8: return AV_PIX_FMT_RGBA;
+        case VideoDelivery::YUV420_8: return AV_PIX_FMT_YUV420P;
+        case VideoDelivery::YUV420_16: return AV_PIX_FMT_YUV420P16LE;// 10/12-bit sources are rescaled by sws_scale
+        case VideoDelivery::YUV422_8: return AV_PIX_FMT_YUV422P;
+        case VideoDelivery::YUV444_8: return AV_PIX_FMT_YUV444P;
+        case VideoDelivery::YUYV: return AV_PIX_FMT_YUYV422;
+        case VideoDelivery::UYVY: return AV_PIX_FMT_UYVY422;
+        case VideoDelivery::Gray8: return AV_PIX_FMT_GRAY8;
+      }
+      return AV_PIX_FMT_YUV420P;
+    }
+
+    //! Choose what to deliver for a decoder's pixel format. Formats without a direct type are converted with
+    //! sws_scale: alpha to RGBA, grey to 8-bit grey, other RGB/palette to RGB, YUV above 8 bits to 10-bit 4:2:0,
+    //! other YUV to 8-bit 4:2:0. (Unlisted formats used to throw, and dataType() asserted.)
+    VideoDelivery planVideo(AVPixelFormat format)
+    {
+      switch(format) {
+        case AV_PIX_FMT_RGB24: return VideoDelivery::RGB8;
+        case AV_PIX_FMT_RGBA: return VideoDelivery::RGBA8;
+        case AV_PIX_FMT_YUV420P:
+        case AV_PIX_FMT_YUVJ420P:
+        case AV_PIX_FMT_NV12: return VideoDelivery::YUV420_8;
+        case AV_PIX_FMT_YUV420P10LE:
+        case AV_PIX_FMT_P010LE: return VideoDelivery::YUV420_16;
+        case AV_PIX_FMT_YUV422P:
+        case AV_PIX_FMT_YUVJ422P: return VideoDelivery::YUV422_8;
+        case AV_PIX_FMT_YUV444P:
+        case AV_PIX_FMT_YUVJ444P: return VideoDelivery::YUV444_8;
+        case AV_PIX_FMT_YUYV422: return VideoDelivery::YUYV;
+        case AV_PIX_FMT_UYVY422: return VideoDelivery::UYVY;
+        case AV_PIX_FMT_GRAY8: return VideoDelivery::Gray8;
+        default: break;
+      }
+      const AVPixFmtDescriptor *desc = av_pix_fmt_desc_get(format);
+      if(desc == nullptr)
+        return VideoDelivery::RGB8;
+      const bool rgb = (desc->flags & (AV_PIX_FMT_FLAG_RGB | AV_PIX_FMT_FLAG_PAL)) != 0;
+      if((desc->flags & AV_PIX_FMT_FLAG_ALPHA) != 0)
+        return VideoDelivery::RGBA8;
+      if(!rgb && desc->nb_components <= 2)
+        return VideoDelivery::Gray8;
+      if(rgb)
+        return VideoDelivery::RGB8;
+      if(desc->comp[0].depth > 8)
+        return VideoDelivery::YUV420_16;
+      return VideoDelivery::YUV420_8;
+    }
+
+    //! True for YUV formats (luma plus chroma), as opposed to RGB, palette and grey.
+    bool isYuvFormat(AVPixelFormat format)
+    {
+      const AVPixFmtDescriptor *desc = av_pix_fmt_desc_get(format);
+      return desc != nullptr && (desc->flags & (AV_PIX_FMT_FLAG_RGB | AV_PIX_FMT_FLAG_PAL)) == 0 && desc->nb_components >= 3;
+    }
+
+    //! True if a YUV frame uses the limited (16-235) range: tagged MPEG, or untagged and not a JPEG (yuvj) format,
+    //! since untagged video is limited range by convention.
+    bool isLimitedRange(const AVFrame *frame)
+    {
+      const auto format = static_cast<AVPixelFormat>(frame->format);
+      if(!isYuvFormat(format))
+        return false;
+      if(frame->color_range == AVCOL_RANGE_JPEG)
+        return false;
+      if(frame->color_range == AVCOL_RANGE_MPEG)
+        return true;
+      return format != AV_PIX_FMT_YUVJ420P && format != AV_PIX_FMT_YUVJ422P && format != AV_PIX_FMT_YUVJ444P;
+    }
+
+    //! swscale's coefficient table for a frame's YUV matrix (BT.601 when untagged).
+    const int *swsCoefficients(const AVFrame *frame)
+    {
+      switch(frame->colorspace) {
+        case AVCOL_SPC_BT709: return sws_getCoefficients(SWS_CS_ITU709);
+        case AVCOL_SPC_FCC: return sws_getCoefficients(SWS_CS_FCC);
+        case AVCOL_SPC_SMPTE240M: return sws_getCoefficients(SWS_CS_SMPTE240M);
+        case AVCOL_SPC_BT2020_NCL:
+        case AVCOL_SPC_BT2020_CL: return sws_getCoefficients(SWS_CS_BT2020);
+        default: return sws_getCoefficients(SWS_CS_DEFAULT);
+      }
+    }
+
+    const std::type_info &deliveredType(VideoDelivery delivery)
+    {
+      switch(delivery) {
+        case VideoDelivery::RGB8: return typeid(Array<PixelRGB8, 2>);
+        case VideoDelivery::RGBA8: return typeid(Array<PixelRGBA8, 2>);
+        case VideoDelivery::YUV420_8: return typeid(YUV420Image<uint8_t>);
+        case VideoDelivery::YUV420_16: return typeid(YUV420Image<uint16_t>);
+        case VideoDelivery::YUV422_8: return typeid(YUV422Image<uint8_t>);
+        case VideoDelivery::YUV444_8: return typeid(YUV444Image<uint8_t>);
+        case VideoDelivery::YUYV: return typeid(Array<PixelYUYV8, 2>);
+        case VideoDelivery::UYVY: return typeid(Array<PixelUYVY8, 2>);
+        case VideoDelivery::Gray8: return typeid(Array<PixelI8, 2>);
+      }
+      return typeid(void);
+    }
+  }// namespace
 
   FfmpegMultiStreamIterator::FfmpegMultiStreamIterator(std::shared_ptr<FfmpegMediaContainer> container,
                                                        const std::vector<std::size_t>&streamIndices)
@@ -826,38 +950,7 @@ namespace Ravl2::Video
               // No codec context for this stream
               return typeid(void);
             }
-            // Determine the pixel format to convert to based on FFmpeg's format
-            switch (codecContext->pix_fmt)
-            {
-              case AV_PIX_FMT_RGB24:
-                return typeid(RGBPlanarImage<uint8_t>);
-              case AV_PIX_FMT_RGBA:
-                return typeid(RGBAPlanarImage<uint8_t>);
-              case AV_PIX_FMT_YUV420P:
-              case AV_PIX_FMT_YUVJ420P:
-              case AV_PIX_FMT_NV12:    // 8-bit semi-planar from NVDEC; de-interleaved on decode
-                return typeid(YUV420Image<uint8_t>);
-              case AV_PIX_FMT_YUV420P10LE:
-              case AV_PIX_FMT_P010LE:  // 10-bit semi-planar from NVDEC; de-interleaved on decode
-                return typeid(YUV420Image<uint16_t>);
-              case AV_PIX_FMT_YUV422P:
-              case AV_PIX_FMT_YUVJ422P:
-                return typeid(YUV422Image<uint8_t>);
-              case AV_PIX_FMT_YUV444P:
-              case AV_PIX_FMT_YUVJ444P:
-                return typeid(YUV444Image<uint8_t>);
-              case AV_PIX_FMT_YUYV422:
-                return typeid(Array<PixelYUYV8,2>);
-              case AV_PIX_FMT_UYVY422:
-                return typeid(Array<PixelUYVY8,2>);
-              case AV_PIX_FMT_GRAY8:
-                return typeid(Array<PixelI8,2>);
-              default:
-                SPDLOG_ERROR("Unsupported pixel format {} ", static_cast<int>(codecContext->pix_fmt));
-                RavlAlwaysAssertMsg(false, "Unsupported pixel format");
-                // Default to RGB for other formats
-                return typeid(RGBPlanarImage<uint8_t>);
-            }
+            return deliveredType(planVideo(codecContext->pix_fmt));
           }
         case StreamType::Audio:
           {
@@ -1111,85 +1204,34 @@ namespace Ravl2::Video
             SPDLOG_ERROR("No codec context for video stream");
             return nullptr;
           }
-          // Determine the pixel format to convert to based on FFmpeg's format
-          switch (codecContext->pix_fmt)
+          // Deliver the type dataType() reports. Frames not already in that type's pixel format are converted with
+          // sws_scale; that includes NVDEC's semi-planar NV12/P010 (P010 samples are in the high bits, which the old
+          // hand-written de-interleave copied unchanged, making 10-bit frames 64x too bright). RAVL2 YUV is full
+          // range, so limited-range YUV is expanded even when the format already matches.
+          const VideoDelivery delivery = planVideo(codecContext->pix_fmt);
+          const AVPixelFormat want = deliveryFormat(delivery);
+          AVFrame *source = frame;
+          AVFramePtr converted;
+          if (static_cast<AVPixelFormat>(frame->format) != want || (isYuvFormat(want) && isLimitedRange(frame)))
           {
-            case AV_PIX_FMT_RGB24:
-              return createVideoFrame<RGBPlanarImage<uint8_t>>(frame, localIndex, id);
-            case AV_PIX_FMT_RGBA:
-              return createVideoFrame<RGBAPlanarImage<uint8_t>>(frame, localIndex, id);
-            case AV_PIX_FMT_YUV420P:
-            case AV_PIX_FMT_YUVJ420P:  // JPEG-range YUV420 (deprecated, treat as YUV420P)
-              return createVideoFrame<YUV420Image<uint8_t>>(frame, localIndex, id);
-            case AV_PIX_FMT_NV12: {
-              // Semi-planar YUV420 from NVDEC: de-interleave UV into separate planes
-              AVFramePtr yuv(av_frame_alloc());
-              if (!yuv)
-                return nullptr;
-              yuv->format = AV_PIX_FMT_YUV420P;
-              yuv->width  = frame->width;
-              yuv->height = frame->height;
-              yuv->pts    = frame->pts;
-              if (av_frame_get_buffer(yuv.get(), 32) < 0)
-                return nullptr;
-              for (int r = 0; r < frame->height; ++r)
-                std::memcpy(yuv->data[0] + r * yuv->linesize[0],
-                            frame->data[0] + r * frame->linesize[0], static_cast<std::size_t>(frame->width));
-              for (int r = 0; r < frame->height / 2; ++r) {
-                const uint8_t* src = frame->data[1] + r * frame->linesize[1];
-                uint8_t* dU = yuv->data[1] + r * yuv->linesize[1];
-                uint8_t* dV = yuv->data[2] + r * yuv->linesize[2];
-                for (int c = 0; c < frame->width / 2; ++c) { dU[c] = src[c*2]; dV[c] = src[c*2+1]; }
-              }
-              return createVideoFrame<YUV420Image<uint8_t>>(yuv.get(), localIndex, id);
-            }
-            case AV_PIX_FMT_YUV420P10LE:
-              return createVideoFrame<YUV420Image<uint16_t>>(frame, localIndex, id);
-            case AV_PIX_FMT_P010LE: {
-              // 10-bit semi-planar from NVDEC: de-interleave UV into separate planes
-              AVFramePtr yuv(av_frame_alloc());
-              if (!yuv)
-                return nullptr;
-              yuv->format = AV_PIX_FMT_YUV420P10LE;
-              yuv->width  = frame->width;
-              yuv->height = frame->height;
-              yuv->pts    = frame->pts;
-              if (av_frame_get_buffer(yuv.get(), 32) < 0)
-                return nullptr;
-              for (int r = 0; r < frame->height; ++r)
-                std::memcpy(yuv->data[0] + r * yuv->linesize[0],
-                            frame->data[0] + r * frame->linesize[0], static_cast<std::size_t>(frame->width) * 2);
-              for (int r = 0; r < frame->height / 2; ++r) {
-                const uint16_t* src = reinterpret_cast<const uint16_t*>(frame->data[1] + r * frame->linesize[1]);
-                uint16_t* dU = reinterpret_cast<uint16_t*>(yuv->data[1] + r * yuv->linesize[1]);
-                uint16_t* dV = reinterpret_cast<uint16_t*>(yuv->data[2] + r * yuv->linesize[2]);
-                for (int c = 0; c < frame->width / 2; ++c) { dU[c] = src[c*2]; dV[c] = src[c*2+1]; }
-              }
-              return createVideoFrame<YUV420Image<uint16_t>>(yuv.get(), localIndex, id);
-            }
-            case AV_PIX_FMT_YUV422P:
-            case AV_PIX_FMT_YUVJ422P:  // JPEG-range YUV422 (deprecated, treat as YUV422P)
-              return createVideoFrame<YUV422Image<uint8_t>>(frame, localIndex, id);
-            case AV_PIX_FMT_YUV444P:
-            case AV_PIX_FMT_YUVJ444P:  // JPEG-range YUV444 (deprecated, treat as YUV444P)
-              return createVideoFrame<YUV444Image<uint8_t>>(frame, localIndex, id);
-            case AV_PIX_FMT_YUYV422:
-              return createVideoFrame<Array<PixelYUYV8,2>>(frame, localIndex, id);
-            case AV_PIX_FMT_UYVY422:
-              return createVideoFrame<Array<PixelUYVY8,2>>(frame, localIndex, id);
-            case AV_PIX_FMT_GRAY8:
-              return createVideoFrame<Array<PixelI8,2>>(frame, localIndex, id);
-            default: {
-              std::array<char,128> buff {};
-              const char *strOfType = av_get_pix_fmt_string (buff.data(),buff.size(), codecContext->pix_fmt);
-              if(strOfType == nullptr) {
-                strOfType = "*Unknown*";
-              }
-
-              SPDLOG_ERROR("Unsupported pixel format: {} '{}', {} ", static_cast<int>(codecContext->pix_fmt),av_get_pix_fmt_name(codecContext->pix_fmt),strOfType);
-              throw std::runtime_error("Unsupported pixel format");
-            }
+            converted = convertVideoFrame(frame, want, localIndex);
+            if (!converted)
+              return nullptr;
+            source = converted.get();
           }
+          switch (delivery)
+          {
+            case VideoDelivery::RGB8: return createVideoFrame<Array<PixelRGB8, 2>>(source, localIndex, id);
+            case VideoDelivery::RGBA8: return createVideoFrame<Array<PixelRGBA8, 2>>(source, localIndex, id);
+            case VideoDelivery::YUV420_8: return createVideoFrame<YUV420Image<uint8_t>>(source, localIndex, id);
+            case VideoDelivery::YUV420_16: return createVideoFrame<YUV420Image<uint16_t>>(source, localIndex, id);
+            case VideoDelivery::YUV422_8: return createVideoFrame<YUV422Image<uint8_t>>(source, localIndex, id);
+            case VideoDelivery::YUV444_8: return createVideoFrame<YUV444Image<uint8_t>>(source, localIndex, id);
+            case VideoDelivery::YUYV: return createVideoFrame<Array<PixelYUYV8, 2>>(source, localIndex, id);
+            case VideoDelivery::UYVY: return createVideoFrame<Array<PixelUYVY8, 2>>(source, localIndex, id);
+            case VideoDelivery::Gray8: return createVideoFrame<Array<PixelI8, 2>>(source, localIndex, id);
+          }
+          return nullptr;
         }
       case StreamType::Audio:
         {
@@ -1229,6 +1271,49 @@ namespace Ravl2::Video
         SPDLOG_WARN("Unknown stream type: {}", toString(streamType));
         return nullptr;
     }
+  }
+
+  AVFramePtr FfmpegMultiStreamIterator::convertVideoFrame(const AVFrame *frame, int targetFormat, std::size_t localIndex)
+  {
+    if (localIndex >= m_scalers.size())
+      m_scalers.resize(localIndex + 1);
+    const auto target = static_cast<AVPixelFormat>(targetFormat);
+    const auto sourceFormat = static_cast<AVPixelFormat>(frame->format);
+    const bool limited = isLimitedRange(frame);
+    // Output is always full range, as RAVL2 pixel types assume, and the source range and matrix come from the
+    // frame (swscale otherwise guesses the range from the format name and uses BT.601 for everything). The ranges
+    // must be set when the converter is made (see makeSwsConverter), or limited-range YUV isn't expanded.
+    auto &scaler = m_scalers[localIndex];
+    const ScalerKey key {frame->width, frame->height, int(sourceFormat), targetFormat, limited, int(frame->colorspace)};
+    if (!scaler.context || scaler.key != key)
+    {
+      const int *coefficients = swsCoefficients(frame);
+      scaler.context = makeSwsConverter(frame->width, frame->height, sourceFormat, target, !limited, true,
+                                        coefficients, coefficients);
+      if (!scaler.context)
+      {
+        SPDLOG_ERROR("No conversion from pixel format '{}' to '{}'", av_get_pix_fmt_name(sourceFormat), av_get_pix_fmt_name(target));
+        return nullptr;
+      }
+      scaler.key = key;
+    }
+    AVFramePtr converted(av_frame_alloc());
+    if (!converted)
+      return nullptr;
+    converted->format = target;
+    converted->width = frame->width;
+    converted->height = frame->height;
+    if (av_frame_get_buffer(converted.get(), 32) < 0 || av_frame_copy_props(converted.get(), frame) < 0)
+      return nullptr;
+    converted->color_range = AVCOL_RANGE_JPEG;
+    const int rows = sws_scale(scaler.context.get(), frame->data, frame->linesize, 0, frame->height,
+                               converted->data, converted->linesize);
+    if (rows != frame->height)
+    {
+      SPDLOG_ERROR("Pixel format conversion produced {} of {} rows", rows, frame->height);
+      return nullptr;
+    }
+    return converted;
   }
 
   template<typename ImageT>

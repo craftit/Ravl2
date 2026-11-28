@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include <optional>
 #include <memory>
 #include <tuple>
 #include <utility>
@@ -94,11 +95,14 @@ namespace Ravl2
     //! Calculate plane dimensions based on master dimensions
     [[nodiscard]] static constexpr IndexRange<Dims> calculateRange(const IndexRange<Dims> &masterRange) noexcept
     {
+      // Plane sample p covers master [p*s, p*s + s - 1], so the samples needed are floor(min/s) .. floor(max/s).
+      // (Rounding up gave even-sized images an extra chroma row and column, read past the end of the data.)
+      auto floorDiv = [](int a, int b) { return (a >= 0) ? a / b : -((-a + b - 1) / b); };
       IndexRange<Dims> planeRange;
       for(unsigned i = 0; i < Dims; ++i) {
         const int s = scale(i);
-        planeRange.min(i) = (masterRange.min(i) + s - 1) / s;
-        planeRange.max(i) = (masterRange.max(i) + s - 1) / s;
+        planeRange.min(i) = floorDiv(masterRange.min(i), s);
+        planeRange.max(i) = floorDiv(masterRange.max(i), s);
       }
       return planeRange;
     }
@@ -317,16 +321,21 @@ namespace Ravl2
       return std::tuple_element_t<Index, std::tuple<PlaneTypes...>>::getChannelType();
     }
 
-    //! Get master dimensions that would cover all planes (taking scaling into account)
+    //! Master (full resolution) range covered by every plane, i.e. the image size.
+    //! (This was the union of the planes' coverage, so subsampled planes of odd-sized images added a row/column.)
     [[nodiscard]] IndexRange<Dims> range() const
     {
-      IndexRange<Dims> result = IndexRange<Dims>::mostEmpty();
+      std::optional<IndexRange<Dims>> result;
       using Indices = std::index_sequence_for<PlaneTypes...>;
       applyToEachPlane([&result](const auto &plane) {
-        result.involve(plane.masterRange());
+        const IndexRange<Dims> covered = plane.masterRange();
+        if(!result)
+          result = covered;
+        else
+          (void)result->clipBy(covered);
       },
                        Indices {});
-      return result;
+      return result ? *result : IndexRange<Dims>();
     }
 
     //! Apply a function to each plane

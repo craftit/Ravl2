@@ -105,14 +105,16 @@ namespace Ravl2::Video
       if(ctx.mVerbose) {
         SPDLOG_INFO("FFmpeg: Building video plan for iterator type {} ",Ravl2::typeName(iterator->dataType()));
       }
+      // Every type the FFmpeg iterator can deliver (see planVideo() in FfmpegMultiStreamIterator.cc).
       if (auto p = makePlanForType<YUV420Image<uint8_t>>(ctx, container, iterator)) return p;
+      if (auto p = makePlanForType<YUV420Image<uint16_t>>(ctx, container, iterator)) return p;
       if (auto p = makePlanForType<YUV422Image<uint8_t>>(ctx, container, iterator)) return p;
       if (auto p = makePlanForType<YUV444Image<uint8_t>>(ctx, container, iterator)) return p;
-      if (auto p = makePlanForType<RGBPlanarImage<uint8_t>>(ctx, container, iterator)) return p;
-      if (auto p = makePlanForType<RGBAPlanarImage<uint8_t>>(ctx, container, iterator)) return p;
+      if (auto p = makePlanForType<Array<PixelRGB8,2>>(ctx, container, iterator)) return p;
+      if (auto p = makePlanForType<Array<PixelRGBA8,2>>(ctx, container, iterator)) return p;
       if (auto p = makePlanForType<Array<PixelYUYV8,2>>(ctx, container, iterator)) return p;
       if (auto p = makePlanForType<Array<PixelUYVY8,2>>(ctx, container, iterator)) return p;
-      if (auto p = makePlanForType<Array<PixelY8,2>>(ctx, container, iterator)) return p;
+      if (auto p = makePlanForType<Array<PixelI8,2>>(ctx, container, iterator)) return p;
 
       // Fallback: not a type we currently adapt explicitly.
       if(ctx.mVerbose) {

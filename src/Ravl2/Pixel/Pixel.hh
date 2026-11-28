@@ -8,6 +8,7 @@
 #include <numeric>
 #include <array>
 #include <cstdint>
+#include <type_traits>
 #include <spdlog/spdlog.h>
 #include "Ravl2/Types.hh"
 #include "Ravl2/Array.hh"
@@ -179,7 +180,10 @@ namespace Ravl2
 #pragma GCC diagnostic ignored "-Wdouble-promotion"
       //SPDLOG_INFO("Normalized channel {} -> {}  Type:{} <- {} ",toString(channel), (PixelTypeTraits<CompT, channel>::max - PixelTypeTraits<CompT, channel>::min) / (PixelTypeTraits<PixelValueTypeT, channel>::max - PixelTypeTraits<PixelValueTypeT, channel>::min), typeid(CompT).name(), typeid(PixelValueTypeT).name());
       // If the channel is normalized then we need to scale the value to the correct range.
-      auto raw = (pixel - PixelTypeTraits<PixelValueTypeT, channel>::offset) * (PixelTypeTraits<CompT, channel>::max - PixelTypeTraits<CompT, channel>::min) / (PixelTypeTraits<PixelValueTypeT, channel>::max - PixelTypeTraits<PixelValueTypeT, channel>::min) + PixelTypeTraits<CompT, channel>::offset;
+      // Integer conversions are done in 64 bits: in int, 16-bit values times a 16-bit range overflow (e.g.
+      // 32788 * 65535), which is undefined behaviour and gave wrong pixels.
+      using WorkT = std::conditional_t<std::is_integral_v<PixelValueTypeT> && std::is_integral_v<CompT>, std::int64_t, std::common_type_t<PixelValueTypeT, CompT>>;
+      auto raw = (WorkT(pixel) - WorkT(PixelTypeTraits<PixelValueTypeT, channel>::offset)) * WorkT(PixelTypeTraits<CompT, channel>::max - PixelTypeTraits<CompT, channel>::min) / WorkT(PixelTypeTraits<PixelValueTypeT, channel>::max - PixelTypeTraits<PixelValueTypeT, channel>::min) + WorkT(PixelTypeTraits<CompT, channel>::offset);
       // Check if we're converting to a floating point type.
       if constexpr(std::is_floating_point_v<CompT>) {
         return raw;

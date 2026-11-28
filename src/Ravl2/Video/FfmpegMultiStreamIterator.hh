@@ -200,6 +200,26 @@ namespace Ravl2::Video
     //! FFmpeg packet - container for compressed data
     AVPacketPtr m_packet;
 
+    //! What a pixel format converter was made for; it's remade when any of these change.
+    struct ScalerKey {
+      int width = 0;
+      int height = 0;
+      int sourceFormat = -1;
+      int targetFormat = -1;
+      bool limitedRange = false;
+      int colorspace = -1;
+      bool operator==(const ScalerKey &) const = default;
+    };
+    struct Scaler {
+      SwsContextPtr context;
+      ScalerKey key;
+    };
+    //! Per-stream pixel format converters, created on first use.
+    std::vector<Scaler> m_scalers;
+
+    //! Convert a decoded frame to 'targetFormat' (an AVPixelFormat) with sws_scale; null on failure.
+    AVFramePtr convertVideoFrame(const AVFrame *frame, int targetFormat, std::size_t localIndex);
+
     //! Frame ID counters for each stream
     std::vector<StreamItemId> m_nextFrameIds;
 

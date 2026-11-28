@@ -43,6 +43,28 @@ namespace Ravl2::Video
 {
   namespace
   {
+    //! True for YUV formats (luma plus chroma), as opposed to RGB, palette and grey.
+    bool outputIsYuv(AVPixelFormat format)
+    {
+      const AVPixFmtDescriptor *desc = av_pix_fmt_desc_get(format);
+      return desc != nullptr && (desc->flags & (AV_PIX_FMT_FLAG_RGB | AV_PIX_FMT_FLAG_PAL)) == 0 && desc->nb_components >= 3;
+    }
+
+    //! Make the writer's converter from 'source' to the encoder's format, reusing it while neither changes.
+    //! RAVL2 images are full range (RGB, and YUV by RAVL2's convention); YUV output is the standard limited range
+    //! BT.601. (The range used to be left to swscale, so RAVL2 YUV was written as if already limited range.)
+    template <typename ImplT>
+    SwsContext *videoConverter(ImplT &impl, int width, int height, AVPixelFormat source)
+    {
+      const AVPixelFormat output = impl.videoCodec->pix_fmt;
+      if(!impl.videoScaler || impl.videoScalerSource != source) {
+        const int *bt601 = sws_getCoefficients(SWS_CS_DEFAULT);
+        impl.videoScaler = makeSwsConverter(width, height, source, output, true, !outputIsYuv(output), bt601, bt601);
+        impl.videoScalerSource = impl.videoScaler ? source : AV_PIX_FMT_NONE;
+      }
+      return impl.videoScaler.get();
+    }
+
     constexpr AVRational kVideoTimeBase {1, 90000};
     constexpr AVRational kMicrosecondTimeBase {1, 1000000};
 
@@ -237,6 +259,7 @@ namespace Ravl2::Video
     AVStream *videoStream = nullptr;
     AVFramePtr videoFrame;
     SwsContextPtr videoScaler;
+    AVPixelFormat videoScalerSource = AV_PIX_FMT_NONE; //!< Input format videoScaler converts from.
     const AVCodec *audioEncoder = nullptr;
     AVCodecContextPtr audioCodec;
     AVStream *audioStream = nullptr;
@@ -405,6 +428,11 @@ namespace Ravl2::Video
       impl.videoCodec->pix_fmt = isPixelFormatSupported(impl.videoEncoder, impl.videoCodec.get(), requested)
                                    ? requested
                                    : firstSupportedPixelFormat(impl.videoEncoder, impl.videoCodec.get());
+      if(outputIsYuv(impl.videoCodec->pix_fmt)) {
+        // Standard limited range BT.601, as videoConverter() produces, tagged so players don't guess.
+        impl.videoCodec->color_range = AVCOL_RANGE_MPEG;
+        impl.videoCodec->colorspace = AVCOL_SPC_SMPTE170M;
+      }
       if(impl.videoCodec->pix_fmt == AV_PIX_FMT_YUV420P && ((width & 1) != 0 || (height & 1) != 0)) {
         SPDLOG_ERROR("FFmpeg yuv420p encoding requires even dimensions; got {}x{}", width, height);
         return false;
@@ -764,10 +792,7 @@ namespace Ravl2::Video
       return false;
     if(av_frame_make_writable(mImpl->videoFrame.get()) < 0)
       return false;
-    mImpl->videoScaler.reset(sws_getCachedContext(mImpl->videoScaler.release(), width, height, static_cast<AVPixelFormat>(pixelFormat),
-                                              width, height, mImpl->videoCodec->pix_fmt, SWS_BICUBIC,
-                                              nullptr, nullptr, nullptr));
-    if(!mImpl->videoScaler) {
+    if(videoConverter(*mImpl, width, height, static_cast<AVPixelFormat>(pixelFormat)) == nullptr) {
       SPDLOG_ERROR("FFmpeg could not create a pixel format converter");
       return false;
     }
@@ -800,11 +825,10 @@ namespace Ravl2::Video
     auto v = planePixels(image.plane<2>().data());
     if(!initializeVideo(*mImpl, width, height) || av_frame_make_writable(mImpl->videoFrame.get()) < 0)
       return false;
-    mImpl->videoScaler.reset(sws_getCachedContext(mImpl->videoScaler.release(), width, height, AV_PIX_FMT_YUV420P,
-                                              width, height, mImpl->videoCodec->pix_fmt, SWS_BICUBIC,
-                                              nullptr, nullptr, nullptr));
-    if(!mImpl->videoScaler)
+    if(videoConverter(*mImpl, width, height, AV_PIX_FMT_YUV420P) == nullptr) {
+      SPDLOG_ERROR("FFmpeg could not create a pixel format converter");
       return false;
+    }
     const uint8_t *sourceData[4] {y.data(), u.data(), v.data(), nullptr};
     const int sourceStride[4] {width, width / 2, width / 2, 0};
     const int rows = sws_scale(mImpl->videoScaler.get(), sourceData, sourceStride, 0, height,

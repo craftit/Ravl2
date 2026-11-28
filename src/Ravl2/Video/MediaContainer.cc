@@ -14,6 +14,8 @@ namespace Ravl2::Video
       static std::unordered_map<std::type_index, Video::StreamType>  streamTypeMap = {
         {typeid(RGBPlanarImage<uint8_t>), Video::StreamType::Video },
         {typeid(RGBAPlanarImage<uint8_t>), Video::StreamType::Video},
+        {typeid(Array<PixelRGB8, 2>), Video::StreamType::Video},
+        {typeid(Array<PixelRGBA8, 2>), Video::StreamType::Video},
         {typeid(YUV420Image<uint8_t>), Video::StreamType::Video},
         {typeid(YUV420Image<uint16_t>), Video::StreamType::Video},
         {typeid(YUV422Image<uint8_t>), Video::StreamType::Video},

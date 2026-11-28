@@ -15,10 +15,21 @@ may have relied on or worked around: check code that uses them.
   round trips looked correct, but other tools always read these files swapped, and now RAVL2 does too. Repair by
   loading, swapping each sample's bytes (`v = uint16_t((v >> 8) | (v << 8))`) and saving again. 8-bit PNGs are
   unaffected. See "Compatibility notes" in `src/Ravl2/ImageIO/ImageIO_Overview.md`.
+- **Videos written with RAVL2 `YUV420Image` input** stored RAVL2's full-range YUV as if it were limited range
+  (contrast reduced, blacks lifted, in other players), and full-range video read as YUV came back unexpanded. RGB
+  input was unaffected. Files can't be told apart afterwards; re-encode from source if it matters.
 - **Binary cereal files holding more than one object** were corrupted when written (the header was overwritten) and
   can't be read; re-create them. Single-object files are unaffected.
 
 ### Changed
+- **Breaking:** video read through FFmpeg as YUV is **full range** (0-255), RAVL2's YUV convention, instead of the
+  file's usual limited range (16-235). Pixel values of YUV frames change for nearly all video; code that assumed
+  limited range (or compensated for it) must be checked. The matrix is left as in the file (BT.709 for most HD).
+  Frames delivered as RGB use the file's own range and matrix, so their colours are now correct.
+- **Breaking:** video read through FFmpeg as RGB/RGBA is `Array<PixelRGB8, 2>` / `Array<PixelRGBA8, 2>` (was
+  `RGBPlanarImage`/`RGBAPlanarImage`, which `dataType()` reported but was never what the frames held). 10/12-bit
+  YUV is delivered as `YUV420Image<uint16_t>` scaled to the full 16-bit range (P010 frames were 64x too bright).
+- The FFmpeg writer tags YUV output as limited range BT.601 (`tv`, `smpte170m`), matching what it writes.
 - `warpScale(result, image)` places enlarged samples corner to corner, step (in-1)/(out-1): the first and last
   output pixels sample the first and last image pixels. It threw `std::out_of_range` on every enlargement.
 - **Breaking:** array strides, `stride()`, `strides()` and origin offsets are `std::ptrdiff_t` (were `int`), and
@@ -97,6 +108,10 @@ may have relied on or worked around: check code that uses them.
   "Pinned dependencies" in `README_dependencies.md` for how to review and update them.
 
 ### Fixed
+- `PlanarImage::range()` and subsampled plane ranges: an even-sized 4:2:0 image reported a range one row and column
+  too big (the planes' coverage was unioned and rounded up), and conversions read past the chroma data.
+- Pixel channel conversions between integer types overflowed `int` for 16-bit values (undefined behaviour; wrong
+  pixels converting `uint16_t` YUV).
 - `warpScaleBilinear` could read one column past the image edge (positions accumulated float error, and only the
   row neighbour was clamped). `warpSubsample` and `warpScale` didn't compile for different input and output
   element types.
@@ -156,6 +171,10 @@ may have relied on or worked around: check code that uses them.
   `submodule.recurse=true`; ImGui header warnings broke `-Werror` builds.
 
 ### Added
+- FFmpeg reader: any pixel format FFmpeg decodes is readable (ProRes, 10/12/16-bit, `gbrp`, `gray16`, alpha, palette
+  …): formats without a direct RAVL2 type are converted with swscale (alpha to RGBA, grey to `PixelI8`, other RGB
+  to RGB, high bit depth YUV to `YUV420Image<uint16_t>`, other YUV to `YUV420Image<uint8_t>`). They used to throw
+  "Unsupported pixel format". RavlIO video plans cover every delivered type, including grey and 10-bit.
 - Install and export of the core libraries: `cmake --install` then `find_package(ravl2 CONFIG)` and link
   `ravl2::Ravl2Core`, `ravl2::Ravl2Image`, etc. (see README_building.md). CPM-downloaded fmt, spdlog, Eigen, cereal
   and nlohmann_json install alongside. Display, OpenGL, Qt and Dlib remain build-tree only.
