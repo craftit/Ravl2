@@ -190,3 +190,33 @@ The following compilers should work:
 	Follow instructions here:
 	https://github.com/include-what-you-use/include-what-you-use#how-to-install
 	</details>
+
+### Pinned dependencies
+
+Some libraries that are downloaded at configure time only publish a moving branch, not
+releases. Fetching a branch means a fresh build can break whenever upstream changes (for
+example a new warning in a header, which `-Werror` turns into a build failure), so these
+are pinned to an exact commit instead.
+
+**Review these pins from time to time** (roughly quarterly, or when a newer upstream
+feature or fix is wanted), so the project doesn't drift too far behind upstream.
+
+| Library | Tracks | Pinned commit | Pinned on | Where |
+|---|---|---|---|---|
+| [Dear ImGui](https://github.com/ocornut/imgui) | `docking` | `144727fad6de` | 2026-11-28 | `cmake/SetupImGUI.cmake` |
+| [ImPlot](https://github.com/epezent/implot) | `master` | `72de27832d1e` | 2026-11-28 | `cmake/SetupImPlot.cmake` |
+| [ImGuizmo](https://github.com/CedricGuillemet/ImGuizmo) | `master` | `ff3c0732fbec` | held back, see below | `cmake/SetupImGUI.cmake`, `cmake/SetupImGuizmo.cmake` |
+| [gpmf-parser](https://github.com/gopro/gpmf-parser) | `main` | `40a3826be167` | 2026-11-28 | `Dependencies.cmake` |
+
+ImGuizmo is deliberately held at the last commit before upstream moved its sources into
+`src/` and added a root `CMakeLists.txt` defining a competing `imguizmo` target. Updating it
+needs the build changes described in commit ff287e7, not just a new hash.
+
+Libraries with tagged releases (bgfx.cmake, fmt, Catch2, ...) are pinned to the tag in
+`Dependencies.cmake` and should be reviewed at the same time.
+
+To update a pin:
+1. Find the current head of the tracked branch, e.g. `git ls-remote https://github.com/ocornut/imgui.git refs/heads/docking`.
+2. Replace the `GIT_TAG` hash and its comment, and update the date, in the file listed above.
+3. Do a clean configure and build with the display stack on (the default), then run `ctest`.
+4. Update the table here.

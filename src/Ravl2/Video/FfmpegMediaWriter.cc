@@ -9,6 +9,7 @@
 #include <cmath>
 #include <cstdint>
 #include <limits>
+#include <span>
 #include <string_view>
 #include <utility>
 #include <vector>
@@ -51,36 +52,70 @@ namespace Ravl2::Video
       return buffer.data();
     }
 
-    bool isPixelFormatSupported(const AVCodec *codec, const AVCodecContext *context, AVPixelFormat pixelFormat)
+    // avcodec_get_supported_config() replaced AVCodec::pix_fmts / sample_fmts in FFmpeg 7.1
+    // (libavcodec 61.13.100); the old fields are deprecated there. Use the new API when available.
+#if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(61, 13, 100)
+#define RAVL2_HAVE_AVCODEC_GET_SUPPORTED_CONFIG 1
+#endif
+
+    //! Formats the encoder accepts; empty means unknown (the encoder accepts anything).
+    std::span<const AVPixelFormat> supportedPixelFormats(const AVCodec *codec, const AVCodecContext *context)
     {
+#ifdef RAVL2_HAVE_AVCODEC_GET_SUPPORTED_CONFIG
       const void *supported = nullptr;
       int count = 0;
-      if(avcodec_get_supported_config(context, codec, AV_CODEC_CONFIG_PIX_FORMAT, 0, &supported, &count) < 0 || !supported)
-        return true;
-      const auto *formats = static_cast<const AVPixelFormat *>(supported);
-      return std::find(formats, formats + count, pixelFormat) != formats + count;
+      if(avcodec_get_supported_config(context, codec, AV_CODEC_CONFIG_PIX_FORMAT, 0, &supported, &count) < 0 || !supported || count <= 0)
+        return {};
+      return {static_cast<const AVPixelFormat *>(supported), static_cast<std::size_t>(count)};
+#else
+      (void)context;
+      const AVPixelFormat *formats = codec->pix_fmts;
+      if(!formats)
+        return {};
+      std::size_t count = 0;
+      while(formats[count] != AV_PIX_FMT_NONE)
+        ++count;
+      return {formats, count};
+#endif
+    }
+
+    //! Sample formats the encoder accepts; empty means unknown (the encoder accepts anything).
+    std::span<const AVSampleFormat> supportedSampleFormats(const AVCodec *codec, const AVCodecContext *context)
+    {
+#ifdef RAVL2_HAVE_AVCODEC_GET_SUPPORTED_CONFIG
+      const void *supported = nullptr;
+      int count = 0;
+      if(avcodec_get_supported_config(context, codec, AV_CODEC_CONFIG_SAMPLE_FORMAT, 0, &supported, &count) < 0 || !supported || count <= 0)
+        return {};
+      return {static_cast<const AVSampleFormat *>(supported), static_cast<std::size_t>(count)};
+#else
+      (void)context;
+      const AVSampleFormat *formats = codec->sample_fmts;
+      if(!formats)
+        return {};
+      std::size_t count = 0;
+      while(formats[count] != AV_SAMPLE_FMT_NONE)
+        ++count;
+      return {formats, count};
+#endif
+    }
+
+    bool isPixelFormatSupported(const AVCodec *codec, const AVCodecContext *context, AVPixelFormat pixelFormat)
+    {
+      const auto formats = supportedPixelFormats(codec, context);
+      return formats.empty() || std::ranges::find(formats, pixelFormat) != formats.end();
     }
 
     AVPixelFormat firstSupportedPixelFormat(const AVCodec *codec, const AVCodecContext *context)
     {
-      const void *supported = nullptr;
-      int count = 0;
-      if(avcodec_get_supported_config(context, codec, AV_CODEC_CONFIG_PIX_FORMAT, 0, &supported, &count) >= 0
-         && supported && count > 0) {
-        return *static_cast<const AVPixelFormat *>(supported);
-      }
-      return AV_PIX_FMT_YUV420P;
+      const auto formats = supportedPixelFormats(codec, context);
+      return formats.empty() ? AV_PIX_FMT_YUV420P : formats.front();
     }
 
     AVSampleFormat firstSupportedSampleFormat(const AVCodec *codec, const AVCodecContext *context)
     {
-      const void *supported = nullptr;
-      int count = 0;
-      if(avcodec_get_supported_config(context, codec, AV_CODEC_CONFIG_SAMPLE_FORMAT, 0, &supported, &count) >= 0
-         && supported && count > 0) {
-        return *static_cast<const AVSampleFormat *>(supported);
-      }
-      return AV_SAMPLE_FMT_FLTP;
+      const auto formats = supportedSampleFormats(codec, context);
+      return formats.empty() ? AV_SAMPLE_FMT_FLTP : formats.front();
     }
 
     AVCodecID defaultVideoCodec(const AVOutputFormat *format, const char *path)

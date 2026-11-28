@@ -1,9 +1,11 @@
 
 if(NOT TARGET implot)
 
+    # Pinned dependency: review and update periodically, see README_dependencies.md 'Pinned dependencies'.
+    # Tracks the 'master' branch; pinned 2026-11-28.
     FetchContent_Declare(implot_external
             GIT_REPOSITORY https://github.com/epezent/implot.git
-            GIT_TAG master
+            GIT_TAG 72de27832d1e6299bcc930ce01073d899d420392 # master, 2026-10-25
             EXCLUDE_FROM_ALL
     )
     FetchContent_MakeAvailable(implot_external)
@@ -23,7 +25,7 @@ if(NOT TARGET implot)
     # ImPlot requires ImGui
     target_link_libraries(implot PUBLIC imgui)
 
-    target_include_directories(implot PUBLIC "${IMPLOT_DIR}")
+    target_include_directories(implot SYSTEM PUBLIC "${IMPLOT_DIR}")
 
     # Relax a few warnings for 3rd-party code if your project treats warnings as errors.
     if(MSVC)

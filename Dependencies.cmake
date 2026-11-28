@@ -145,7 +145,9 @@ function(RAVL2_setup_dependencies)
       cpmaddpackage(
         NAME gpmf-parser
         GITHUB_REPOSITORY gopro/gpmf-parser
-        GIT_TAG main
+        # Pinned dependency: review and update periodically, see README_dependencies.md 'Pinned dependencies'.
+        # Tracks the 'main' branch; pinned 2026-11-28.
+        GIT_TAG 40a3826be167b7683a1500d68ef8faad560e7148 # main, 2026-11-17
         OPTIONS
           "BUILD_SHARED_LIBS OFF"
       )
@@ -199,6 +201,9 @@ function(RAVL2_setup_dependencies)
       GITHUB_REPOSITORY bkaradzic/bgfx.cmake
       GIT_TAG  v1.136.9106-504
       GIT_SUBMODULES "bgfx;bx;bimg"
+      # A user-level 'submodule.recurse=true' makes the tag checkout recurse into submodules
+      # that are not cloned yet, failing with "not a git repository: ../.git/modules/bgfx".
+      GIT_CONFIG "submodule.recurse=false"
       OPTIONS
         "BGFX_BUILD_EXAMPLES OFF"
         "BGFX_BUILD_TOOLS ON"

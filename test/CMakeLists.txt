@@ -90,8 +90,6 @@ add_executable(tests
         test_imageio_png.cc
         test_types_duration.cc
         test_types.cc
-        Display_Normalization_tests.cc
-        Display_3D_E2E_tests.cc
         test_gps.cc
 )
 target_compile_definitions(tests PRIVATE -DRAVL_SOURCE_DIR="${PROJECT_SOURCE_DIR}")
@@ -109,8 +107,12 @@ target_link_libraries(
           ravl2::Ravl2Video
           ravl2::Ravl2Optimise
           Catch2::Catch2WithMain
-          Eigen3::Eigen
-          ravl2::Ravl2Display)
+          Eigen3::Eigen)
+# The Display stack is optional (RAVL2_ENABLE_DISPLAY_STACK).
+if(TARGET ravl2::Ravl2Display)
+  target_sources(tests PRIVATE Display_Normalization_tests.cc Display_3D_E2E_tests.cc)
+  target_link_libraries(tests PRIVATE ravl2::Ravl2Display)
+endif()
 # Only test_segmentation's DODEBUG path uses the OpenCV bridge.
 if(TARGET ravl2::Ravl2OpenCV)
   target_link_libraries(tests PRIVATE ravl2::Ravl2OpenCV)

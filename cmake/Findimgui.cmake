@@ -33,7 +33,8 @@ else()
       ${IMGUI_DIR}/imgui_demo.cpp
     )
     add_library(imgui STATIC ${_IMGUI_SRC})
-    target_include_directories(imgui PUBLIC "${IMGUI_DIR}" "${IMGUI_DIR}/backends")
+    # SYSTEM: third-party headers must not trip our -Werror warning set in consumers.
+    target_include_directories(imgui SYSTEM PUBLIC "${IMGUI_DIR}" "${IMGUI_DIR}/backends")
     # Relax a few warnings for 3rd-party code if your project treats warnings as errors.
     if(MSVC)
       target_compile_options(imgui PRIVATE /wd4996)

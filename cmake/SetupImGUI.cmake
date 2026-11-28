@@ -5,9 +5,11 @@ if(NOT TARGET imgui)
     find_package(glfw3 CONFIG QUIET)
     find_package(SDL2 QUIET)
 
+    # Pinned dependency: review and update periodically, see README_dependencies.md 'Pinned dependencies'.
+    # Tracks the 'docking' branch; pinned 2026-11-28.
     FetchContent_Declare(imgui_external
             GIT_REPOSITORY https://github.com/ocornut/imgui.git
-            GIT_TAG docking
+            GIT_TAG 144727fad6ded3055d388dadc4072c9c25ee1891 # docking, 2026-11-26
             EXCLUDE_FROM_ALL
     )
     FetchContent_MakeAvailable(imgui_external)
@@ -62,7 +64,8 @@ if(NOT TARGET imgui)
     endif ()
 
 
-    target_include_directories(imgui PUBLIC "${IMGUI_DIR}" "${IMGUI_DIR}/backends")
+    # SYSTEM: third-party headers must not trip our -Werror warning set in consumers.
+    target_include_directories(imgui SYSTEM PUBLIC "${IMGUI_DIR}" "${IMGUI_DIR}/backends")
     # Relax a few warnings for 3rd-party code if your project treats warnings as errors.
     if(MSVC)
         target_compile_options(imgui PRIVATE /wd4996)
@@ -77,7 +80,7 @@ if(NOT TARGET imgui)
     endif()
     set(IMGUI_FOUND TRUE)
 
-    target_include_directories(imgui PUBLIC
+    target_include_directories(imgui SYSTEM PUBLIC
             ${imgui_external_SOURCE_DIR}
             ${imguizmo_external_SOURCE_DIR}
     )

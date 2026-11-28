@@ -208,7 +208,7 @@ if(TARGET imgui AND TARGET bgfx)
 # ${CMAKE_CURRENT_LIST_DIR}/ThirdParty/bgfx_imgui/bgfx_utils.cpp
   )
 
-  target_include_directories(bgfx_imgui PUBLIC ${bgfx_SOURCE_DIR}/bgfx/3rdparty)
+  target_include_directories(bgfx_imgui SYSTEM PUBLIC ${bgfx_SOURCE_DIR}/bgfx/3rdparty)
   target_link_libraries(bgfx_imgui PUBLIC imgui bimg bx bgfx)
   target_link_libraries(Ravl2Display PUBLIC bgfx_imgui)
 endif()

@@ -27,7 +27,7 @@ if(NOT TARGET imguizmo)
     # ImPlot requires ImGui
     target_link_libraries(imguizmo PUBLIC imgui)
 
-    target_include_directories(imguizmo PUBLIC "${IMGUIZMO_DIR}")
+    target_include_directories(imguizmo SYSTEM PUBLIC "${IMGUIZMO_DIR}")
 
     # Relax a few warnings for 3rd-party code if your project treats warnings as errors.
     if(MSVC)
