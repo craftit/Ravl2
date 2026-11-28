@@ -36,10 +36,10 @@ namespace Ravl2
       throw std::runtime_error("fromCvMat: cv::Mat has wrong data type");
     }
     IndexRange<2> indexRange;
-    std::array<int, 2> strides {};
+    std::array<std::ptrdiff_t, 2> strides {};
     for(unsigned i = 0; i < 2; ++i) {
       indexRange[i] = IndexRange<1>(0, m.size.p[i] - 1);
-      strides[i] = int(m.step[int(i)] / sizeof(PixelBGR8));
+      strides[i] = std::ptrdiff_t(m.step[int(i)] / sizeof(PixelBGR8));
     }
     auto dataPtr = reinterpret_cast<PixelBGR8 *>(m.data);
     return Array<PixelBGR8, 2>(dataPtr, indexRange, strides,
@@ -55,10 +55,10 @@ namespace Ravl2
       throw std::runtime_error("fromCvMat: cv::Mat has wrong data type");
     }
     IndexRange<2> indexRange;
-    std::array<int, 2> strides {};
+    std::array<std::ptrdiff_t, 2> strides {};
     for(unsigned i = 0; i < 2; ++i) {
       indexRange[i] = IndexRange<1>(0, m.size.p[i] - 1);
-      strides[i] = int(m.step[int(i)] / sizeof(PixelBGR8));
+      strides[i] = std::ptrdiff_t(m.step[int(i)] / sizeof(PixelBGR8));
     }
     auto dataPtr = reinterpret_cast<PixelBGRA8 *>(m.data);
     return Array<PixelBGRA8, 2>(dataPtr, indexRange, strides,

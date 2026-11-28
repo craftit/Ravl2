@@ -14,7 +14,7 @@
 namespace Ravl2
 {
   //! Global stride for 1 dimensional arrays. Always has a value of 1.
-  extern const int gStride1;
+  extern const std::ptrdiff_t gStride1;
 
   template <typename DataT, unsigned N>
   class Array;
@@ -223,14 +223,14 @@ namespace Ravl2
     constexpr static unsigned dimensions = 1;
     constexpr ArrayAccess() = default;
 
-    constexpr ArrayAccess(DataT *data, const IndexRange<1> *rng, [[maybe_unused]] const int *strides)
+    constexpr ArrayAccess(DataT *data, const IndexRange<1> *rng, [[maybe_unused]] const std::ptrdiff_t *strides)
         : m_ranges(rng),
           m_data(data)
     {
       assert(*strides == 1);
     }
 
-    constexpr ArrayAccess(DataT *data, const IndexRange<1> &rng, [[maybe_unused]] const int *strides)
+    constexpr ArrayAccess(DataT *data, const IndexRange<1> &rng, [[maybe_unused]] const std::ptrdiff_t *strides)
         : m_ranges(&rng),
           m_data(data)
     {
@@ -344,13 +344,13 @@ namespace Ravl2
     [[nodiscard]] constexpr ArrayIter<const DataT, 1> cend() const;
 
     //! Get stride for dimension
-    [[nodiscard]] constexpr static int stride([[maybe_unused]] unsigned dim)
+    [[nodiscard]] constexpr static std::ptrdiff_t stride([[maybe_unused]] unsigned dim)
     {
       return 1;
     }
 
     //! Access strides
-    [[nodiscard]] constexpr static const int *strides()
+    [[nodiscard]] constexpr static const std::ptrdiff_t *strides()
     {
       return &gStride1;
     }
@@ -415,7 +415,7 @@ namespace Ravl2
     constexpr static unsigned dimensions = 1;
 
     //! Given strides and range compute the offset to the origin from the start of the data.
-    [[nodiscard]] static constexpr int compute_origin_offset(const IndexRange<1> &range)
+    [[nodiscard]] static constexpr std::ptrdiff_t compute_origin_offset(const IndexRange<1> &range)
     {
       return - range.min();
     }
@@ -440,7 +440,7 @@ namespace Ravl2
           m_range(range)
     {}
 
-    explicit constexpr ArrayView(DataT *data, const IndexRange<1> &range, [[maybe_unused]] const int *strides)
+    explicit constexpr ArrayView(DataT *data, const IndexRange<1> &range, [[maybe_unused]] const std::ptrdiff_t *strides)
         : m_data(data),
           m_range(range)
     {
@@ -565,12 +565,12 @@ namespace Ravl2
       return Index<1>({int(ptr - m_data)});
     }
 
-    [[nodiscard]] constexpr static int stride([[maybe_unused]] unsigned dim)
+    [[nodiscard]] constexpr static std::ptrdiff_t stride([[maybe_unused]] unsigned dim)
     {
       return 1;
     }
 
-    [[nodiscard]] constexpr static const int *strides()
+    [[nodiscard]] constexpr static const std::ptrdiff_t *strides()
     {
       return &gStride1;
     }

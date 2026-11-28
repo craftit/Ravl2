@@ -55,8 +55,8 @@ namespace Ravl2::Video
     bool copyPlanarAudioSamples(const AVFrame* frame, Array<SampleT, 2>& audioData, int channels)
     {
       auto* dest = audioData.origin_address();
-      const int sampleStride = audioData.stride(0);
-      const int channelStride = audioData.stride(1);
+      const std::ptrdiff_t sampleStride = audioData.stride(0);
+      const std::ptrdiff_t channelStride = audioData.stride(1);
 
       for (int channel = 0; channel < channels; ++channel)
       {
@@ -78,8 +78,8 @@ namespace Ravl2::Video
     bool copyInterleavedAudioSamples(const AVFrame* frame, Array<SampleT, 2>& audioData, int channels)
     {
       auto* dest = audioData.origin_address();
-      const int sampleStride = audioData.stride(0);
-      const int channelStride = audioData.stride(1);
+      const std::ptrdiff_t sampleStride = audioData.stride(0);
+      const std::ptrdiff_t channelStride = audioData.stride(1);
       const auto* src = reinterpret_cast<const SampleT*>(frame->extended_data[0]);
       if (!src)
       {

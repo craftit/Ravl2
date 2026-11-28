@@ -18,7 +18,7 @@ namespace Ravl2
 
     constexpr SlaveIter() = default;
 
-    constexpr SlaveIter(const IndexRange<1> *rng, ElementT *data, const int *strides) noexcept
+    constexpr SlaveIter(const IndexRange<1> *rng, ElementT *data, const std::ptrdiff_t *strides) noexcept
         : mAccess(data, rng, strides)
     {
       static_assert(N > 1);
@@ -133,7 +133,7 @@ namespace Ravl2
       return mAccess.range();
     }
 
-    [[nodiscard]] constexpr const int *strides() const
+    [[nodiscard]] constexpr const std::ptrdiff_t *strides() const
     {
       return mAccess.strides();
     }

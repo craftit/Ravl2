@@ -545,7 +545,7 @@ namespace Ravl2
 
       auto iter = val.begin();
       auto end = val.end();
-      int count = val.range().area();
+      auto count = val.range().area();
       CHECK_EQ(count, 2 * 3 * 4);
       for(int i = 0; i < count; i++)
       {
@@ -586,7 +586,7 @@ namespace Ravl2
     auto end = view.end();
     //SPDLOG_INFO("Window range: {}  Win:{} ", view.range(),win);
     CHECK_EQ(view.range(), win);
-    int area = win.area();
+    auto area = win.area();
     for(int i = 0;i < area;++i)
     {
       CHECK(it.valid());
@@ -706,7 +706,7 @@ namespace Ravl2
 
     CHECK_EQ(scan.scanArea().area(), 9 * 10);
 
-    int count = 0;
+    std::ptrdiff_t count = 0;
     auto win = scan.window();
     CHECK_EQ(win.range().area(), 2 * 2);
     CHECK_EQ(win.range().size(0), 2);
@@ -812,7 +812,7 @@ namespace Ravl2
     auto subArray = clipUnsafe(narray, nrng);
     auto cit = subArray.begin();
     CHECK(cit.valid());
-    int area = nrng.area();
+    auto area = nrng.area();
     for(int i = 0;i < area;i++)
     {
       CHECK(cit.valid());

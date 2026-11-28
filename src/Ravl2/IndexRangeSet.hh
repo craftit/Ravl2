@@ -173,9 +173,9 @@ namespace Ravl2
     }
 
     //! Total area of the set.
-    [[nodiscard]] constexpr int area() const
+    [[nodiscard]] constexpr std::ptrdiff_t area() const
     {
-      int ret = 0;
+      std::ptrdiff_t ret = 0;
       for(auto it : *this) {
         ret += it.area();
       }

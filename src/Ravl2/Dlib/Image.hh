@@ -132,7 +132,7 @@ namespace Ravl2
       requires WindowedArray<ArrayT, DataT, N>
     long width_step(const ArrayT &img)
     {
-      return img.strides()[0] * sizeof(DataT);
+      return long(img.strides()[0]) * long(sizeof(DataT));
     }
 
     //! Swaps the contents of two images.

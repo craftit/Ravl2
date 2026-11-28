@@ -31,7 +31,7 @@ Work order: Batch 1 → 4, then the remaining bugs by area, then gaps/improvemen
 - [x] **CORE-3** `Array.hh:877-886` — `copy(dest, src)` with dest larger than src overruns src; same in `Pixel/Colour.hh:207-219` `convert()`; `zip()` checks no sizes. *(verified)* — fixed copy/convert; `zip()` size checks still to do (IMP-1).
 - [x] **CORE-4** `Array.hh:377-380`, `ArrayIterZip.hh:94-97` — `window()` stores a pointer to a temporary range; `ScanWindow.hh:104,112` keeps a pointer to its own member (breaks on copy). *(verified for first two)*
 - [x] **CORE-5** Iterator distance: `Array.hh:431`, `IndexRange.hh:631-633` use `range(0).size()` not the row width; `Array1.hh:195-198` `operator-(it,n)` adds n. *(verified)*
-- [x] **CORE-6** `IndexRange.hh:121-148` — `elements()`/`area()` multiply signed sizes (two negative dims → 1); int overflow above 2^31 elements; strides/offsets are int. *(verified sign issue)* — sign issue and `elements()` overflow fixed; int strides/`area()` remain (IMP-4).
+- [x] **CORE-6** `IndexRange.hh:121-148` — `elements()`/`area()` multiply signed sizes (two negative dims → 1); int overflow above 2^31 elements; strides/offsets are int. *(verified sign issue)* — sign issue and `elements()` overflow fixed; strides/`area()` widened in IMP-4.
 - [x] **CORE-7** `Array.hh:127,134` — `ArrayAccess::operator()(i,j)` returns by value; writes lost. *(verified)*
 - [x] **CORE-8** `ScanWindow.hh:82` — `ScanWindow<T,1>::index()` inverted.
 - [x] **CORE-9** `ThreadedQueue.hh:112-114,130-139` — `wait()`/`popWait()` have no predicate loop; spurious wakeup / competing consumer pops empty queue (UB).
@@ -151,7 +151,7 @@ ranges start at the end. 1-D `copy()` still copies a prefix to `dest`'s min rath
 - [ ] **IMP-1** One rule for empty ranges and non-zero origins, plus an offset-origin test per module.
 - [ ] **IMP-2** `inverse()` returns `std::optional` everywhere (Affine, Projection, ScaleTranslate, line intersections).
 - [ ] **IMP-3** RAII for FFmpeg resources (`unique_ptr` + deleters); index-based TriMesh faces; vector-based SegmentExtrema histograms.
-- [ ] **IMP-4** Use `ptrdiff_t`/`size_t` for strides, offsets and element counts.
+- [x] **IMP-4** Use `ptrdiff_t`/`size_t` for strides, offsets and element counts. Strides, `stride()`, origin offsets and N-D `area()` are now `std::ptrdiff_t` (signed: strides may be negative); `elements()` is `size_t`; indices and per-dimension `size()` stay `int`.
 - [ ] **IMP-5** Fix `Concepts.hh:23` `IndexType` (accepts any type).
 - [ ] **IMP-6** Display: GUI-thread-only registry, GPU lifetime tied to context, single tokenised URL parser, remove dead code, fewer per-frame copies, bound default plot memory, runtime X11/Wayland selection.
 - [ ] **IMP-7** Video: one end-of-stream contract for StreamIterator; smaller probe queue; seek via `av_seek_frame` + decode forward; optional hardware decode; `best_effort_timestamp`; less hot-path logging; fix recursive `shared_mutex` lock in `createIterator`.

@@ -132,10 +132,10 @@ namespace Ravl2
     int MeanVariance(IndexRange<2> range, RealT &mean, RealT &var) const
     {
       Vector<DataT, 2> sum = Sum(range);
-      int area = range.area();
+      const auto area = RealT(range.area());
       mean = RealT(sum[0]) / area;
       var = (RealT(sum[1]) - sqr(RealT(sum[0])) / area) / (area - 1);
-      return area;
+      return int(range.area());
     }
 
     //: Calculate the difference between two halves of the rectangle split vertically.

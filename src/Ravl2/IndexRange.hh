@@ -117,10 +117,10 @@ namespace Ravl2
       return m_range[n].size();
     }
 
-    //! Get the area of the range.
-    [[nodiscard]] constexpr int area() const noexcept
+    //! Get the area of the range; 0 if empty. Wider than int so large volumes don't overflow.
+    [[nodiscard]] constexpr std::ptrdiff_t area() const noexcept
     {
-      int a = 1;
+      std::ptrdiff_t a = 1;
       for(unsigned i = 0; i < N; i++)
         a *= m_range[i].size();
       return a;

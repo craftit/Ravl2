@@ -213,7 +213,7 @@ namespace Ravl2
     Array<ExtremaChainPixel *, 1> mLevels;
 
     std::vector<ExtremaRegion> mRegionMap;
-    int mStride = 0;// Image stride.
+    std::ptrdiff_t mStride = 0;// Image stride.
     unsigned mLabelAlloc = 0;
     IndexRange<1> mValueRange;            // Range of pixel values.
     ExtremaChainPixel *mOrigin = nullptr;// Origin of image.

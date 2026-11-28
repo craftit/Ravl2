@@ -29,13 +29,13 @@ namespace Ravl2
 
     ArrayAccess() = default;
 
-    constexpr ArrayAccess(DataT *data, const IndexRange<N> &rng, const int *strides)
+    constexpr ArrayAccess(DataT *data, const IndexRange<N> &rng, const std::ptrdiff_t *strides)
         : m_ranges(rng.range_data()),
           m_data(data),
           m_strides(strides)
     {}
 
-    constexpr ArrayAccess(DataT *data, const IndexRange<1> *rng, const int *strides)
+    constexpr ArrayAccess(DataT *data, const IndexRange<1> *rng, const std::ptrdiff_t *strides)
         : m_ranges(rng),
           m_data(data),
           m_strides(strides)
@@ -189,14 +189,14 @@ namespace Ravl2
     }
 
     //! Get stride for dimension
-    [[nodiscard]] constexpr int stride(unsigned dim) const
+    [[nodiscard]] constexpr std::ptrdiff_t stride(unsigned dim) const
     {
       assert(dim < N);
       return m_strides[dim];
     }
 
     //! Access strides
-    [[nodiscard]] constexpr const int *strides() const
+    [[nodiscard]] constexpr const std::ptrdiff_t *strides() const
     {
       return m_strides;
     }
@@ -225,7 +225,7 @@ namespace Ravl2
   protected:
     const IndexRange<1> *m_ranges {nullptr};
     DataT *m_data {nullptr};
-    const int *m_strides {nullptr};//! Strides of each dimension of the array.
+    const std::ptrdiff_t *m_strides {nullptr};//! Strides of each dimension of the array.
   };
 
   //! Iterator for N dimensional array.
@@ -240,7 +240,7 @@ namespace Ravl2
 
     constexpr ArrayIter() = default;
 
-    constexpr ArrayIter(DataT *data, const IndexRange<1> *rng, const int *strides) noexcept
+    constexpr ArrayIter(DataT *data, const IndexRange<1> *rng, const std::ptrdiff_t *strides) noexcept
         : m_access(data, rng, strides)
     {
       bool isEmpty = false;
@@ -259,16 +259,16 @@ namespace Ravl2
       }
     }
 
-    constexpr ArrayIter(DataT *data, const IndexRange<N> &rng, const int *strides) noexcept
+    constexpr ArrayIter(DataT *data, const IndexRange<N> &rng, const std::ptrdiff_t *strides) noexcept
         : ArrayIter(data, rng.ranges().data(), strides)
     {}
 
-    constexpr ArrayIter(DataT *data, const IndexRange<N> &rng, const std::array<int, N> &strides) noexcept
+    constexpr ArrayIter(DataT *data, const IndexRange<N> &rng, const std::array<std::ptrdiff_t, N> &strides) noexcept
         : ArrayIter(data, rng.ranges().data(), strides.data())
     {}
 
     //! Construct end iterator
-    static constexpr ArrayIter<DataT, N> end(const IndexRange<1> *rng, DataT *data, const int *strides) noexcept
+    static constexpr ArrayIter<DataT, N> end(const IndexRange<1> *rng, DataT *data, const std::ptrdiff_t *strides) noexcept
     {
       ArrayIter<DataT, N> iter(data, rng, strides);
       iter.mPtr += strides[0] * rng[0].size();
@@ -277,7 +277,7 @@ namespace Ravl2
     }
 
     //! Construct end iterator
-    static constexpr ArrayIter<DataT, N> end(const IndexRange<N> &rng, DataT *data, const std::array<int, N> &strides) noexcept
+    static constexpr ArrayIter<DataT, N> end(const IndexRange<N> &rng, DataT *data, const std::array<std::ptrdiff_t, N> &strides) noexcept
     {
       return end(rng.ranges().data(), data, strides.data());
     }
@@ -369,7 +369,7 @@ namespace Ravl2
     }
 
     //! Access strides
-    [[nodiscard]] constexpr const int *strides() const noexcept
+    [[nodiscard]] constexpr const std::ptrdiff_t *strides() const noexcept
     {
       return m_access.strides();
     }
@@ -483,9 +483,9 @@ namespace Ravl2
     constexpr static unsigned dimensions = N;
 
     //! Given strides and range compute the offset to the origin from the start of the data.
-    [[nodiscard]] static constexpr int compute_origin_offset(const IndexRange<N> &range, const std::array<int, N> &strides)
+    [[nodiscard]] static constexpr std::ptrdiff_t compute_origin_offset(const IndexRange<N> &range, const std::array<std::ptrdiff_t, N> &strides)
     {
-      int off = 0;
+      std::ptrdiff_t off = 0;
       for(unsigned i = 0; i < N; i++) {
         off -= range[i].min() * strides[i];
       }
@@ -496,7 +496,7 @@ namespace Ravl2
     //! Generate strides
     constexpr void make_strides(const IndexRange<N> &range)
     {
-      int s = 1;
+      std::ptrdiff_t s = 1;
       for(unsigned i = N - 1; i > 0; --i) {
         //std::cout << " " << i << " s=" << s << "\n";
         m_strides[i] = s;
@@ -505,10 +505,10 @@ namespace Ravl2
       m_strides[0] = s;
     }
 
-    [[nodiscard]] constexpr int compute_origin_offset(const IndexRange<N> &range) const
+    [[nodiscard]] constexpr std::ptrdiff_t compute_origin_offset(const IndexRange<N> &range) const
     { return compute_origin_offset(range,m_strides); }
 
-    explicit constexpr ArrayView(const IndexRange<N> &range, const std::array<int, N> &strides)
+    explicit constexpr ArrayView(const IndexRange<N> &range, const std::array<std::ptrdiff_t, N> &strides)
         : m_range(range),
           m_strides(strides)
     {
@@ -520,7 +520,7 @@ namespace Ravl2
     {}
 
   public:
-    explicit constexpr ArrayView(DataT *data, const IndexRange<N> &range, const std::array<int, N> &strides)
+    explicit constexpr ArrayView(DataT *data, const IndexRange<N> &range, const std::array<std::ptrdiff_t, N> &strides)
         : m_data(data),
           m_range(range),
           m_strides(strides)
@@ -528,11 +528,11 @@ namespace Ravl2
       assert(m_strides[N-1] == 1);
     }
 
-    explicit constexpr ArrayView(DataT *data, const IndexRange<N> &range, const int *strides)
+    explicit constexpr ArrayView(DataT *data, const IndexRange<N> &range, const std::ptrdiff_t *strides)
         : m_data(data),
           m_range(range)
     {
-      memcpy(m_strides.data(), strides, sizeof(int) * N);
+      memcpy(m_strides.data(), strides, sizeof(std::ptrdiff_t) * N);
       assert(m_strides[N-1] == 1);
     }
 
@@ -616,7 +616,7 @@ namespace Ravl2
     //! Access next dimension of array.
     [[nodiscard]] constexpr DataT &operator[](const Index<N> &ind)
     {
-      int dind = 0;
+      std::ptrdiff_t dind = 0;
       for(unsigned i = 0; i < N - 1; i++) {
         assert(m_range[i].contains(ind.index(i)));
         dind += m_strides[i] * ind.index(i);
@@ -629,7 +629,7 @@ namespace Ravl2
     //! Access next dimension of array.
     [[nodiscard]] constexpr const DataT &operator[](const Index<N> &ind) const
     {
-      int dind = 0;
+      std::ptrdiff_t dind = 0;
       for(unsigned i = 0; i < N - 1; i++) {
         assert(m_range[i].contains(ind.index(i)));
         dind += m_strides[i] * ind.index(i);
@@ -734,13 +734,13 @@ namespace Ravl2
     }
 
     //! Access stride size for given dimension
-    [[nodiscard]] constexpr int stride(unsigned dim) const
+    [[nodiscard]] constexpr std::ptrdiff_t stride(unsigned dim) const
     {
       return m_strides[dim];
     }
 
     //! Access strides for each dimension
-    [[nodiscard]] constexpr const int *strides() const
+    [[nodiscard]] constexpr const std::ptrdiff_t *strides() const
     {
       return m_strides.data();
     }
@@ -755,7 +755,7 @@ namespace Ravl2
   protected:
     DataT *m_data = nullptr;
     IndexRange<N> m_range;
-    std::array<int, N> m_strides {};
+    std::array<std::ptrdiff_t, N> m_strides {};
   };
 
   //! Access for an N dimensional element of an array.
@@ -786,13 +786,13 @@ namespace Ravl2
     }
 
     //! Construct with an existing buffer
-    explicit constexpr Array(DataT *data, const IndexRange<N> &range, const std::array<int, N> &strides, const std::shared_ptr<DataT[]> &buffer)
+    explicit constexpr Array(DataT *data, const IndexRange<N> &range, const std::array<std::ptrdiff_t, N> &strides, const std::shared_ptr<DataT[]> &buffer)
         : ArrayView<DataT, N>(data, range, strides),
           m_buffer(buffer)
     {}
 
     //! Construct with an existing buffer
-    explicit constexpr Array(DataT *data, const IndexRange<N> &range, const std::array<int, N> &strides, std::shared_ptr<DataT[]> &&buffer)
+    explicit constexpr Array(DataT *data, const IndexRange<N> &range, const std::array<std::ptrdiff_t, N> &strides, std::shared_ptr<DataT[]> &&buffer)
         : ArrayView<DataT, N>(data, range, strides),
           m_buffer(std::move(buffer))
     {}

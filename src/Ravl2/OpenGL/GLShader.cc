@@ -272,7 +272,7 @@ namespace Ravl2
   void GLTexture::setArray(size_t ind,const Array<uint8_t,2> &data)
   {
     glBindTexture(GL_TEXTURE_2D, mTextures.at(ind));
-    glPixelStorei(GL_UNPACK_ROW_LENGTH, data.stride(0) * GLint(sizeof(uint8_t)));
+    glPixelStorei(GL_UNPACK_ROW_LENGTH, GLint(data.stride(0)) * GLint(sizeof(uint8_t)));
     glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, GLsizei(data.range().size(1)), GLsizei(data.range().size(0)), 0, GL_LUMINANCE, GL_UNSIGNED_BYTE, addressOfMin(data));
     // Restore the default row length to 0, as it may affect other operations. 0=use the width of the image.
     glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
@@ -282,7 +282,7 @@ namespace Ravl2
   void GLTexture::setArray(size_t ind,const Array<PixelBGR8,2> &data)
   {
     glBindTexture(GL_TEXTURE_2D, mTextures.at(ind));
-    glPixelStorei(GL_UNPACK_ROW_LENGTH, data.stride(0) * GLint(sizeof(PixelBGR8)));
+    glPixelStorei(GL_UNPACK_ROW_LENGTH, GLint(data.stride(0)) * GLint(sizeof(PixelBGR8)));
     glTexImage2D(GL_TEXTURE_2D, 0, GL_BGR, GLsizei(data.range().size(1)), GLsizei(data.range().size(0)), 0, GL_BGR, GL_UNSIGNED_BYTE, addressOfMin(data));
     // Restore the default row length to 0, as it may affect other operations. 0=use the width of the image.
     glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
@@ -292,7 +292,7 @@ namespace Ravl2
   void GLTexture::setArray(size_t ind,const Array<PixelBGRA8,2> &data)
   {
     glBindTexture(GL_TEXTURE_2D, mTextures.at(ind));
-    glPixelStorei(GL_UNPACK_ROW_LENGTH, data.stride(0) * GLint(sizeof(PixelBGRA8)));
+    glPixelStorei(GL_UNPACK_ROW_LENGTH, GLint(data.stride(0)) * GLint(sizeof(PixelBGRA8)));
     glTexImage2D(GL_TEXTURE_2D, 0, GL_BGRA, GLsizei(data.range().size(1)), GLsizei(data.range().size(0)), 0, GL_BGRA, GL_UNSIGNED_BYTE, addressOfMin(data));
     // Restore the default row length to 0, as it may affect other operations. 0=use the width of the image.
     glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);

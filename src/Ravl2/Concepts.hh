@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include <cstddef>
 #include <concepts>
 #include <cereal/cereal.hpp>
 
@@ -66,7 +67,7 @@ namespace Ravl2
     { a[ind] } -> std::convertible_to<DataT>;
     { a.range() } -> std::convertible_to<IndexRange<N>>;
     { a.origin_address() } -> std::convertible_to<DataT *>;
-    { a.strides() } -> std::convertible_to<const int *>;
+    { a.strides() } -> std::convertible_to<const std::ptrdiff_t *>;
   };
 
   //! Define the WindowedIterator concept
