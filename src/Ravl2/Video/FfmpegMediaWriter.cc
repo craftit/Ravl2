@@ -197,7 +197,8 @@ namespace Ravl2::Video
       const auto dimensions = range.size();
       height = dimensions[0];
       width = dimensions[1];
-      std::vector<uint8_t> pixels(static_cast<std::size_t>(width) * static_cast<std::size_t>(height) * 3);
+      // Padded: sws_scale's SIMD paths read past the last pixel.
+      std::vector<uint8_t> pixels(static_cast<std::size_t>(width) * static_cast<std::size_t>(height) * 3 + AV_INPUT_BUFFER_PADDING_SIZE);
       std::size_t offset = 0;
       for(int y = range.min(0); y <= range.max(0); ++y) {
         for(int x = range.min(1); x <= range.max(1); ++x) {
@@ -214,7 +215,8 @@ namespace Ravl2::Video
     {
       const auto range = plane.range();
       const auto dimensions = range.size();
-      std::vector<uint8_t> pixels(static_cast<std::size_t>(dimensions[0]) * static_cast<std::size_t>(dimensions[1]));
+      // Padded: sws_scale's SIMD paths read past the last pixel.
+      std::vector<uint8_t> pixels(static_cast<std::size_t>(dimensions[0]) * static_cast<std::size_t>(dimensions[1]) + AV_INPUT_BUFFER_PADDING_SIZE);
       std::size_t offset = 0;
       for(int y = range.min(0); y <= range.max(0); ++y) {
         for(int x = range.min(1); x <= range.max(1); ++x)
@@ -367,13 +369,15 @@ namespace Ravl2::Video
         return false;
       }
       impl.headerWritten = true;
-      for(auto *packet : impl.pendingPackets) {
-        if(!writeMuxPacket(impl, packet))
-          return false;
+      // Free every queued packet whether or not it was written, so ~Impl can't free any of them twice.
+      bool ok = true;
+      for(auto *&packet : impl.pendingPackets) {
+        if(ok && !writeMuxPacket(impl, packet))
+          ok = false;
         av_packet_free(&packet);
       }
       impl.pendingPackets.clear();
-      return true;
+      return ok;
     }
 
     bool initializeVideo(FfmpegMediaWriter::Impl &impl, int width, int height)
@@ -386,6 +390,9 @@ namespace Ravl2::Video
       }
       impl.videoWidth = width;
       impl.videoHeight = height;
+      // A previous attempt may have failed part way; don't leak what it allocated.
+      avcodec_free_context(&impl.videoCodec);
+      av_frame_free(&impl.videoFrame);
       impl.videoCodec = avcodec_alloc_context3(impl.videoEncoder);
       if(!impl.videoCodec) {
         SPDLOG_ERROR("FFmpeg could not allocate the video encoder context");
@@ -480,8 +487,13 @@ namespace Ravl2::Video
 
     bool initializeAudioEncoder(FfmpegMediaWriter::Impl &impl, int channels)
     {
-      if(impl.audioInitialized)
-        return channels == impl.audioChannels;
+      if(impl.audioInitialized) {
+        if(channels != impl.audioChannels) {
+          SPDLOG_ERROR("Audio chunk has {} channels, but the encoder was set up for {}", channels, impl.audioChannels);
+          return false;
+        }
+        return true;
+      }
       if(impl.headerWritten) {
         SPDLOG_ERROR("Cannot add an audio stream after the FFmpeg container header was written");
         return false;
@@ -512,6 +524,13 @@ namespace Ravl2::Video
         SPDLOG_ERROR("No FFmpeg audio encoder is available for '{}'", impl.path);
         return false;
       }
+      // A previous attempt may have failed part way; don't leak what it allocated.
+      avcodec_free_context(&impl.audioCodec);
+      swr_free(&impl.audioResampler);
+      if(impl.audioFifo) {
+        av_audio_fifo_free(impl.audioFifo);
+        impl.audioFifo = nullptr;
+      }
       impl.audioCodec = avcodec_alloc_context3(impl.audioEncoder);
       if(!impl.audioCodec)
         return false;
@@ -527,7 +546,9 @@ namespace Ravl2::Video
         SPDLOG_ERROR("FFmpeg could not open audio encoder '{}': {}", impl.audioEncoder->name, ffmpegError(result));
         return false;
       }
-      impl.audioStream = avformat_new_stream(impl.format, nullptr);
+      // Only one audio stream, even if an earlier attempt got this far.
+      if(!impl.audioStream)
+        impl.audioStream = avformat_new_stream(impl.format, nullptr);
       if(!impl.audioStream) {
         SPDLOG_ERROR("FFmpeg could not create an audio stream");
         return false;
@@ -825,7 +846,8 @@ namespace Ravl2::Video
     const int channels = dimensions[1];
     if(samples <= 0 || channels <= 0)
       return false;
-    if(!mImpl->audioInitialized && !initializeAudio(channels))
+    // Checks the channel count against the encoder on every chunk, not just the first.
+    if(!initializeAudio(channels))
       return false;
     std::vector<float> packed(static_cast<std::size_t>(samples) * static_cast<std::size_t>(channels));
     std::size_t offset = 0;
@@ -845,7 +867,8 @@ namespace Ravl2::Video
     const int channels = dimensions[1];
     if(samples <= 0 || channels <= 0)
       return false;
-    if(!mImpl->audioInitialized && !initializeAudio(channels))
+    // Checks the channel count against the encoder on every chunk, not just the first.
+    if(!initializeAudio(channels))
       return false;
     std::vector<float> packed(static_cast<std::size_t>(samples) * static_cast<std::size_t>(channels));
     std::size_t offset = 0;

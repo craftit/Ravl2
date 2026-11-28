@@ -149,6 +149,10 @@ namespace Ravl2::Video
     //! future if per-iterator codec contexts are implemented.
     std::atomic<int> m_activeIteratorCount {0};
 
+    //! Set once an iterator has read from the demuxer. Later iterators rewind seekable inputs, so each starts at
+    //! the beginning rather than wherever the shared demuxer was left.
+    bool m_demuxerUsed = false;
+
     //! Friend class declaration to allow the iterator to access private members
     friend class FfmpegStreamIterator;
     friend class FfmpegMultiStreamIterator;

@@ -147,12 +147,17 @@ namespace Ravl2::GoPro
       return;
     }
 
-    // All values are scaled integers
-    float scale = getScaleFactor(stream, fourcc);
-    if(scale == 0) {
-      SPDLOG_WARN("parseGps: invalid scale factor, using default 1.0");
-      scale = 1.0f;
-    }
+    // All values are scaled integers, each field with its own SCAL divisor (GPS5: 1e7, 1e7, 1000, 1000, 100).
+    (void)fourcc;
+    const std::vector<double> divisors = getScaleDivisors(stream);
+    auto fieldScale = [&divisors](size_t field) {
+      double d = 1.0;
+      if(field < divisors.size())
+        d = divisors[field];
+      else if(divisors.size() == 1)
+        d = divisors[0];
+      return d != 0 ? 1.0 / d : 1.0;
+    };
 
     // Get sample rate
     float sampleRate = getSampleRate(stream);
@@ -186,11 +191,11 @@ namespace Ravl2::GoPro
 
       // IMPORTANT: GPMF data is big-endian, must byte-swap all int32_t values!
       // Common fields (present in both GPS5 and GPS9):
-      double latitude = static_cast<double>(BYTESWAP32(rawData[offset + 0])) * static_cast<double>(scale);
-      double longitude = static_cast<double>(BYTESWAP32(rawData[offset + 1])) * static_cast<double>(scale);
-      double altitude = static_cast<double>(BYTESWAP32(rawData[offset + 2])) * static_cast<double>(scale);
-      float speed2d = static_cast<float>(BYTESWAP32(rawData[offset + 3])) * scale;
-      float speed3d = static_cast<float>(BYTESWAP32(rawData[offset + 4])) * scale;
+      double latitude = static_cast<double>(BYTESWAP32(rawData[offset + 0])) * fieldScale(0);
+      double longitude = static_cast<double>(BYTESWAP32(rawData[offset + 1])) * fieldScale(1);
+      double altitude = static_cast<double>(BYTESWAP32(rawData[offset + 2])) * fieldScale(2);
+      auto speed2d = static_cast<float>(static_cast<double>(BYTESWAP32(rawData[offset + 3])) * fieldScale(3));
+      auto speed3d = static_cast<float>(static_cast<double>(BYTESWAP32(rawData[offset + 4])) * fieldScale(4));
 
       // Create GpsFix
       GpsFix fix;
@@ -201,7 +206,7 @@ namespace Ravl2::GoPro
         fix.days = BYTESWAP32(rawData[offset + 5]);   // Not used yet
         fix.seconds = BYTESWAP32(rawData[offset + 6]);// Not used yet
         int32_t dopRaw = BYTESWAP32(rawData[offset + 7]);
-        fix.precision = static_cast<float>(dopRaw) * scale;
+        fix.precision = static_cast<float>(static_cast<double>(dopRaw) * fieldScale(7));
         // Fix type is NOT scaled - it's a raw integer (0=no lock, 2=2D, 3=3D)
         fix.fix = BYTESWAP32(rawData[offset + 8]);
       }
@@ -722,37 +727,62 @@ namespace Ravl2::GoPro
     return frames;
   }
 
+  std::vector<double> GpmfParser::getScaleDivisors(GPMF_stream *stream) const
+  {
+    std::vector<double> divisors;
+    if(stream == nullptr)
+      return divisors;
+    GPMF_stream tempStream = *stream;
+    if(GPMF_FindPrev(&tempStream, MAKEID('S', 'C', 'A', 'L'), GPMF_RECURSE_LEVELS) != GPMF_OK)
+      return divisors;
+    const void *raw = GPMF_RawData(&tempStream);
+    const uint32_t count = GPMF_Repeat(&tempStream) * std::max(1u, GPMF_ElementsInStruct(&tempStream));
+    if(raw == nullptr || count == 0)
+      return divisors;
+    // SCAL's type varies: GPS uses 32-bit 'l', IMU streams 16-bit 's'. GPMF data is big-endian.
+    divisors.reserve(count);
+    for(uint32_t i = 0; i < count; i++) {
+      double value = 0;
+      switch(GPMF_Type(&tempStream)) {
+        case GPMF_TYPE_SIGNED_SHORT: {
+          const uint16_t v = static_cast<const uint16_t *>(raw)[i];
+          value = static_cast<int16_t>(BYTESWAP16(v));
+        } break;
+        case GPMF_TYPE_UNSIGNED_SHORT: {
+          const uint16_t v = static_cast<const uint16_t *>(raw)[i];
+          value = static_cast<uint16_t>(BYTESWAP16(v));
+        } break;
+        case GPMF_TYPE_SIGNED_LONG: {
+          const uint32_t v = static_cast<const uint32_t *>(raw)[i];
+          value = static_cast<int32_t>(BYTESWAP32(v));
+        } break;
+        case GPMF_TYPE_UNSIGNED_LONG: {
+          const uint32_t v = static_cast<const uint32_t *>(raw)[i];
+          value = BYTESWAP32(v);
+        } break;
+        case GPMF_TYPE_FLOAT: {
+          uint32_t v = static_cast<const uint32_t *>(raw)[i];
+          v = BYTESWAP32(v);
+          float f = 0;
+          std::memcpy(&f, &v, sizeof(f));
+          value = f;
+        } break;
+        default:
+          SPDLOG_WARN("getScaleDivisors: unsupported SCAL type '{}'", char(GPMF_Type(&tempStream)));
+          return {};
+      }
+      divisors.push_back(value);
+    }
+    return divisors;
+  }
+
   float GpmfParser::getScaleFactor(GPMF_stream *stream, [[maybe_unused]] uint32_t fourcc) const
   {
-    if(stream == nullptr) {
+    // Multiplier from the first SCAL value (sensor streams use one for every component).
+    const auto divisors = getScaleDivisors(stream);
+    if(divisors.empty() || divisors.front() == 0)
       return 1.0f;
-    }
-
-    // Save the current position
-    GPMF_stream tempStream = *stream;
-
-    // Look for SCAL (scale) field at the current level (sibling of current FourCC)
-    // GPMF_RECURSE_LEVELS allows searching within the current container
-    if(GPMF_FindPrev(&tempStream, MAKEID('S', 'C', 'A', 'L'), GPMF_RECURSE_LEVELS) == GPMF_OK) {
-      auto *scaleData = static_cast<uint32_t *>(GPMF_RawData(&tempStream));
-      if(scaleData != nullptr) {
-        uint32_t scaleCount = GPMF_Repeat(&tempStream);
-        if(scaleCount > 0) {
-          // Scale is typically stored as an integer divisor
-          // For multi-component data (e.g., XYZ), SCAL may have multiple values
-          // Use the first scale value (they're usually all the same for sensor data)
-          // IMPORTANT: GPMF data is big-endian, must byte-swap!
-          uint32_t scaleDivisor = BYTESWAP32(scaleData[0]);
-          float scale = 1.0f / static_cast<float>(scaleDivisor);
-          SPDLOG_DEBUG("getScaleFactor: found SCAL with {} values, using first: 1/{} = {}",
-                       scaleCount, scaleDivisor, scale);
-          return scale;
-        }
-      }
-    }
-
-    SPDLOG_DEBUG("getScaleFactor: no SCAL found at current level, using default 1.0");
-    return 1.0f;
+    return static_cast<float>(1.0 / divisors.front());
   }
 
   float GpmfParser::getSampleRate(GPMF_stream *stream) const
@@ -893,37 +923,10 @@ namespace Ravl2::GoPro
   std::vector<int32_t> GpmfParser::getScaleFactors(GPMF_stream *stream, uint32_t expectedCount) const
   {
     std::vector<int32_t> scales;
-
-    if(stream == nullptr) {
-      return scales;
-    }
-
-    // Save the current position
-    GPMF_stream tempStream = *stream;
-
-    // Look for SCAL (scale) field at the current level
-    if(GPMF_FindPrev(&tempStream, MAKEID('S', 'C', 'A', 'L'), GPMF_RECURSE_LEVELS) == GPMF_OK) {
-      auto *scaleData = static_cast<int32_t *>(GPMF_RawData(&tempStream));
-      if(scaleData != nullptr) {
-        uint32_t scaleCount = GPMF_Repeat(&tempStream);
-        if(scaleCount > 0) {
-          scales.reserve(scaleCount);
-          for(uint32_t i = 0; i < scaleCount; i++) {
-            // IMPORTANT: GPMF data is big-endian, must byte-swap!
-            scales.push_back(BYTESWAP32(scaleData[i]));
-          }
-          SPDLOG_DEBUG("getScaleFactors: found {} scale values", scaleCount);
-
-          // Warn if count doesn't match expected
-          if(expectedCount > 0 && scaleCount != expectedCount) {
-            SPDLOG_WARN("getScaleFactors: expected {} scale values, found {}", expectedCount, scaleCount);
-          }
-        }
-      }
-    } else {
-      SPDLOG_DEBUG("getScaleFactors: no SCAL found at current level");
-    }
-
+    for(double d : getScaleDivisors(stream))
+      scales.push_back(static_cast<int32_t>(d));
+    if(expectedCount > 0 && !scales.empty() && scales.size() != expectedCount)
+      SPDLOG_WARN("getScaleFactors: expected {} scale values, found {}", expectedCount, scales.size());
     return scales;
   }
 

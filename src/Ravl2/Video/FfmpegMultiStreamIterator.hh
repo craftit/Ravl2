@@ -110,8 +110,6 @@ namespace Ravl2::Video
     //! Generate a unique frame ID based on PTS and stream index
     [[nodiscard]] StreamItemId generateUniqueFrameId(AVFrame* frame, std::size_t localIndex);
 
-    //! Traditional seek implementation (used internally)
-    VideoResult<void> traditionalSeek(MediaTime timestamp, SeekFlags flags);
 
     //! Create a video frame from FFmpeg data
     template<typename ImageT> [[nodiscard]] std::shared_ptr<FrameData<ImageT>> createVideoFrame(
@@ -145,6 +143,19 @@ namespace Ravl2::Video
 
     //! Container for the media file
     std::shared_ptr<FfmpegMediaContainer> m_ffmpegContainer;
+
+    //! Counts this iterator in the container's active-iterator count for as long as it exists. A member, so the
+    //! count is released even if the constructor throws (the destructor wouldn't run then).
+    struct ActiveIteratorGuard
+    {
+      explicit ActiveIteratorGuard(const std::shared_ptr<FfmpegMediaContainer> &container);
+      ~ActiveIteratorGuard();
+      ActiveIteratorGuard(const ActiveIteratorGuard &) = delete;
+      ActiveIteratorGuard &operator=(const ActiveIteratorGuard &) = delete;
+      FfmpegMediaContainer *mContainer = nullptr;
+      int mPreviousCount = 0;//!< Iterators already active when this one was created
+    };
+    ActiveIteratorGuard m_activeIterator;
 
     //! Structure to store keyframe information for seeking
     struct KeyframeInfo

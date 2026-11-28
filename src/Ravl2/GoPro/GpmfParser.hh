@@ -109,6 +109,9 @@ namespace Ravl2::GoPro
     //! @return Scale factor (1.0 if not found)
     [[nodiscard]] float getScaleFactor(GPMF_stream* stream, uint32_t fourcc) const;
 
+    //! SCAL divisors for each field, decoded according to SCAL's stored type; empty if there is no SCAL.
+    [[nodiscard]] std::vector<double> getScaleDivisors(GPMF_stream* stream) const;
+
     //! Get the sample rate for a stream
     //! @param stream GPMF stream
     //! @return Sample rate in Hz (0 if not found)

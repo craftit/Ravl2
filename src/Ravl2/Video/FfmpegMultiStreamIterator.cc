@@ -114,13 +114,14 @@ namespace Ravl2::Video
                                                        const std::vector<std::size_t>&streamIndices)
     : StreamIterator(container, 0) // Temporary stream index, will be updated when we get the first frame
       , m_ffmpegContainer(std::move(container))
+      , m_activeIterator(m_ffmpegContainer)
       , m_packetQueue() // Initialize the packet queue
   {
     Ravl2::initPixel();
 
     // Track active iterators - multiple concurrent iterators on the same container
     // are not thread-safe because they share the demuxer and codec contexts.
-    int previousCount = m_ffmpegContainer->m_activeIteratorCount.fetch_add(1);
+    const int previousCount = m_activeIterator.mPreviousCount;
     if (previousCount > 0)
     {
       SPDLOG_WARN("Creating iterator #{} on the same FfmpegMediaContainer. "
@@ -268,6 +269,18 @@ namespace Ravl2::Video
     SPDLOG_DEBUG("GPMF parser initialized");
 #endif
 
+    // Start from the beginning: an earlier iterator on this container may have moved the shared demuxer.
+    // Live inputs can't seek; they just continue.
+    auto *formatContext = m_ffmpegContainer->m_formatContext;
+    if (m_ffmpegContainer->m_demuxerUsed && formatContext && formatContext->pb && formatContext->pb->seekable)
+    {
+      if (av_seek_frame(formatContext, -1, 0, AVSEEK_FLAG_BACKWARD) >= 0)
+        flushAllCodecs();
+      else
+        SPDLOG_WARN("Could not rewind the container for a new iterator");
+    }
+    m_ffmpegContainer->m_demuxerUsed = true;
+
     // Pre-fill the packet queue before reading the first frame
     auto queueResult = fillPacketQueue();
     if (!queueResult.isSuccess() && queueResult.error() != VideoErrorCode::EndOfStream)
@@ -390,15 +403,27 @@ namespace Ravl2::Video
       av_packet_free(&m_packet);
     }
 
-    // We don't free m_streams or m_codecContexts as they're owned by the container
+    // We don't free m_streams or m_codecContexts as they're owned by the container.
+    // m_activeIterator releases the active iterator count.
+  }
 
-    // Decrement active iterator count
-    m_ffmpegContainer->m_activeIteratorCount.fetch_sub(1);
+  FfmpegMultiStreamIterator::ActiveIteratorGuard::ActiveIteratorGuard(const std::shared_ptr<FfmpegMediaContainer> &container)
+    : mContainer(container.get())
+  {
+    if(mContainer)
+      mPreviousCount = mContainer->m_activeIteratorCount.fetch_add(1);
+  }
+
+  FfmpegMultiStreamIterator::ActiveIteratorGuard::~ActiveIteratorGuard()
+  {
+    if(mContainer)
+      mContainer->m_activeIteratorCount.fetch_sub(1);
   }
 
   bool FfmpegMultiStreamIterator::isAtEnd() const
   {
-    return m_isAtEnd;
+    // m_isAtEnd means the demuxer has reached end of file; decoded frames may still be queued for delivery.
+    return m_isAtEnd && m_packetQueue.empty();
   }
 
   VideoResult<void> FfmpegMultiStreamIterator::next()
@@ -478,296 +503,72 @@ namespace Ravl2::Video
 
   VideoResult<void> FfmpegMultiStreamIterator::seek(MediaTime timestamp, SeekFlags flags)
   {
-    auto&container = ffmpegContainer();
-
+    auto &container = ffmpegContainer();
     if (!container.isOpen())
     {
       SPDLOG_ERROR("Failed to seek: container is not open");
       return VideoResult<void>(VideoErrorCode::InvalidOperation);
     }
 
-    // Build keyframe index if needed and get the nearest keyframe
-    KeyframeInfo keyframe = findNearestKeyframe(timestamp, flags);
-
-    // If we couldn't find a suitable keyframe, fall back to traditional seeking
-    if (keyframe.pts < 0 || keyframe.pos < 0)
+    // Let the demuxer find a keyframe: at or after the target for Next, otherwise at or before it. (A byte seek on
+    // the IO context behind the demuxer's back did nothing for mov/mkv, and AVSEEK_FLAG_ANY decoded from
+    // non-keyframes.) MediaTime is in AV_TIME_BASE units, which is what stream index -1 expects.
+    const int64_t target = timestamp.count();
+    int result = (flags == SeekFlags::Next)
+                   ? avformat_seek_file(container.m_formatContext, -1, target, target, INT64_MAX, 0)
+                   : avformat_seek_file(container.m_formatContext, -1, INT64_MIN, target, target, 0);
+    if (result < 0 && flags != SeekFlags::Next)
+      result = av_seek_frame(container.m_formatContext, -1, target, AVSEEK_FLAG_BACKWARD);
+    if (result < 0)
     {
-      SPDLOG_DEBUG("Keyframe-aware seeking failed, falling back to traditional seeking");
-      return traditionalSeek(timestamp, flags);
-    }
-
-    // Log the found keyframe for debugging
-    SPDLOG_DEBUG("Found keyframe at PTS: {}, position: {}, stream: {}",
-                 keyframe.pts,
-                 keyframe.pos,
-                 m_streamIndices[keyframe.streamIndex]
-    );
-
-    // Use direct byte position seeking if the format supports it
-    if (container.m_formatContext->pb && container.m_formatContext->pb->seekable)
-    {
-      // Seek to the file position of the keyframe
-      SPDLOG_DEBUG("Performing byte-position seeking to position {}", keyframe.pos);
-      auto seek_result = avio_seek(container.m_formatContext->pb, keyframe.pos, SEEK_SET);
-
-      if (seek_result < 0)
-      {
-        SPDLOG_WARN("Byte position seeking failed, falling back to traditional seeking");
-        return traditionalSeek(timestamp, flags);
-      }
-
-      // Flush buffers for all codec contexts
-      flushAllCodecs();
-
-      // Set the flag indicating we've just performed a seek
-      m_wasSeekOperation = true;
-      m_isAtEnd = false;
-
-      // Clear packet queue after seeking
-      std::priority_queue<PacketInfo, std::vector<PacketInfo>, PacketInfoComparator> emptyQueue;
-      m_packetQueue.swap(emptyQueue);
-
-#ifndef NDEBUG
-      // Reset timestamp validation after seek
-      m_lastDeliveredPts = -1;
-#endif
-
-      // If we're seeking to a specific keyframe but not exactly at the requested timestamp,
-      // we may need to advance to get closer to the target
-      if (MediaTime(keyframe.pts) < timestamp && flags != SeekFlags::Previous)
-      {
-        // Read frames until we reach or exceed the target timestamp
-        SPDLOG_DEBUG("Advancing to target timestamp {}", timestamp.count());
-
-        // Read the first frame at the new position
-        auto nextResult = next();
-        if (!nextResult.isSuccess())
-        {
-          // If next() fails immediately after seeking, it might be due to a corrupt frame or
-          // invalid data at the seek position. Try seeking to a slightly different position.
-          SPDLOG_DEBUG("Failed to get first frame after byte-position seeking, trying alternate approach");
-          return traditionalSeek(timestamp, flags);
-        }
-
-        // Keep advancing until we reach or exceed the target timestamp
-        while (currentFrame() && currentFrame()->timestamp() < timestamp && !m_isAtEnd)
-        {
-          nextResult = next();
-          if (!nextResult.isSuccess() && nextResult.error() != VideoErrorCode::EndOfStream)
-          {
-            return nextResult;
-          }
-        }
-
-        return VideoResult<void>();
-      }
-
-      SPDLOG_DEBUG("Get frame for seek to {}. Seekable: {}", timestamp.count(), container.m_formatContext->pb->seekable);
-
-      // Read the first frame at the new position
-      auto nextResult = next();
-
-      // If next() fails immediately after seeking, it might be due to a corrupt frame or
-      // invalid data at the seek position. Try seeking to a slightly different position.
-      if (!nextResult.isSuccess())
-      {
-        SPDLOG_DEBUG("Failed to get frame after byte-position seeking, trying traditional seeking");
-        return traditionalSeek(timestamp, flags);
-      }
-
-      return VideoResult<void>();
-    }
-
-    // If byte position seeking isn't supported, fall back to timestamp-based seeking
-    SPDLOG_DEBUG("Format doesn't support byte position seeking, falling back to timestamp-based seeking");
-    return traditionalSeek(MediaTime(keyframe.pts), flags);
-  }
-
-  VideoResult<void> FfmpegMultiStreamIterator::traditionalSeek(MediaTime timestamp, SeekFlags flags)
-  {
-    auto& container = ffmpegContainer();
-
-    // MediaTime is already in microseconds (AV_TIME_BASE units)
-    int64_t timestamp_tb = timestamp.count();
-
-    // Seek in the container
-    // FFmpeg defaults to keyframe seeking, so we only need AVSEEK_FLAG_ANY for precise seeking
-    int avFlags = 0;
-    if (flags == SeekFlags::Precise)
-    {
-      avFlags |= AVSEEK_FLAG_ANY; // Allow seeking to non-keyframe positions
-    }
-    if (flags == SeekFlags::Previous)
-    {
-      avFlags |= AVSEEK_FLAG_BACKWARD; // Seek backwards
-    }
-
-    // Define a range for seeking
-    // For precise seeking, we create a small window around the target timestamp
-    int64_t min_ts = timestamp_tb - (AV_TIME_BASE / 10); // 100ms before
-    int64_t max_ts = timestamp_tb + (AV_TIME_BASE / 10); // 100ms after
-
-    // Ensure min timestamp is not negative
-    min_ts = std::max(int64_t(0), min_ts);
-
-    // Track if we had a successful seek
-    bool seekSuccess = false;
-    int result = -1;
-
-    // First try with avformat_seek_file for better precision
-    result = avformat_seek_file(
-      container.m_formatContext,
-      -1,                // stream index, -1 for auto selection
-      min_ts,            // minimum timestamp
-      timestamp_tb,      // target timestamp
-      max_ts,            // maximum timestamp
-      avFlags            // flags
-    );
-
-    if (result >= 0) {
-      seekSuccess = true;
-    } else {
-      SPDLOG_DEBUG("avformat_seek_file failed, falling back to av_seek_frame: {}",
-                   toString(FfmpegMediaContainer::convertFfmpegError(result))
-      );
-
-      // Try av_seek_frame with -1 for auto stream selection
-      result = av_seek_frame(container.m_formatContext, -1, timestamp_tb, avFlags);
-
-      if (result >= 0) {
-        seekSuccess = true;
-      } else {
-        SPDLOG_DEBUG("av_seek_frame with auto stream selection failed: {}",
-                    toString(FfmpegMediaContainer::convertFfmpegError(result))
-        );
-
-        // Try seeking on each stream individually
-        for (size_t i = 0; i < m_streamIndices.size() && !seekSuccess; ++i) {
-          int streamIndex = static_cast<int>(m_streamIndices[i]);
-          auto* stream = m_streams[i];
-
-          // Convert timestamp to stream time base
-          int64_t stream_ts = av_rescale_q(timestamp.count(),
-                                           AVRational{1, AV_TIME_BASE},
-                                           stream->time_base);
-
-          result = av_seek_frame(container.m_formatContext, streamIndex, stream_ts, avFlags);
-          if (result >= 0) {
-            SPDLOG_DEBUG("Successfully seeked using stream {}", streamIndex);
-            seekSuccess = true;
-            break;
-          }
-        }
-
-        // If still not successful, try one more approach with different flags
-        if (!seekSuccess) {
-          // Try with different flags - add AVSEEK_FLAG_BACKWARD to find the nearest keyframe
-          int fallbackFlags = avFlags | AVSEEK_FLAG_BACKWARD;
-
-          result = av_seek_frame(container.m_formatContext, -1, timestamp_tb, fallbackFlags);
-          if (result >= 0) {
-            SPDLOG_DEBUG("Successfully seeked with fallback flags");
-            seekSuccess = true;
-          } else {
-            // One final attempt: try seeking to the beginning as a last resort
-            if (timestamp.count() <= 0 || timestamp.count() < AV_TIME_BASE) // If very close to beginning
-            {
-              SPDLOG_DEBUG("Seeking to beginning as fallback");
-              result = av_seek_frame(container.m_formatContext, -1, 0, AVSEEK_FLAG_BACKWARD);
-
-              if (result >= 0) {
-                seekSuccess = true;
-              }
-            }
-          }
-        }
-      }
-    }
-
-    // If all seek attempts failed, return the error
-    if (!seekSuccess) {
-      SPDLOG_ERROR("All seeking attempts failed for timestamp: {} - error code: {}",
-                   timestamp.count(),
-                   toString(FfmpegMediaContainer::convertFfmpegError(result))
-      );
+      SPDLOG_WARN("Seek to {} us failed: {}", target, toString(FfmpegMediaContainer::convertFfmpegError(result)));
       return VideoResult<void>(FfmpegMediaContainer::convertFfmpegError(result));
     }
 
-    // Flush buffers for all codec contexts regardless of seek result
     flushAllCodecs();
-
-    // Set the flag indicating we've just performed a seek
     m_wasSeekOperation = true;
     m_isAtEnd = false;
-
-    // Clear packet queue after seeking
-    std::priority_queue<PacketInfo, std::vector<PacketInfo>, PacketInfoComparator> emptyQueue;
-    m_packetQueue.swap(emptyQueue);
-
+    {
+      std::priority_queue<PacketInfo, std::vector<PacketInfo>, PacketInfoComparator> emptyQueue;
+      m_packetQueue.swap(emptyQueue);
+    }
 #ifndef NDEBUG
-    // Reset timestamp validation after seek
     m_lastDeliveredPts = -1;
 #endif
 
-    // Reset frame ID counters for frames without PTS after seeking
-    // This ensures we generate appropriate frame IDs that reflect the new position
+    // Estimate counters for frames without a PTS from the target position.
     for (size_t i = 0; i < m_nextFrameIds.size(); ++i)
     {
-      // Estimate the new counter value based on the target timestamp
-      // If we know the average frame rate, we could calculate a more precise value
-      auto* stream = m_streams[i];
+      auto *stream = m_streams[i];
       if (stream && stream->avg_frame_rate.num > 0 && stream->avg_frame_rate.den > 0)
       {
-        // Calculate approximate frame number based on timestamp and framerate
-        double seconds = static_cast<double>(timestamp.count()) / AV_TIME_BASE;
-        double fps = static_cast<double>(stream->avg_frame_rate.num) / stream->avg_frame_rate.den;
+        const double seconds = static_cast<double>(target) / AV_TIME_BASE;
+        const double fps = static_cast<double>(stream->avg_frame_rate.num) / stream->avg_frame_rate.den;
         m_nextFrameIds[i] = static_cast<StreamItemId>(seconds * fps);
-        SPDLOG_DEBUG("Reset frame ID counter for stream {} to {} based on seek to {} seconds",
-                    i, m_nextFrameIds[i], seconds);
       }
-      else if (timestamp.count() <= 0)
+      else if (target <= 0)
       {
-        // If seeking to the beginning, reset to 0
         m_nextFrameIds[i] = 0;
-        SPDLOG_DEBUG("Reset frame ID counter for stream {} to 0", i);
       }
-      // Otherwise leave the counter as is, which might be better than an arbitrary value
     }
 
-    // Read the next frame at the new position
+    // Read the first frame at the new position. Running off the end is a failure, not a successful seek.
     auto nextResult = next();
-
-    // If reading the next frame fails, try a different approach
-    if (!nextResult.isSuccess() && nextResult.error() != VideoErrorCode::EndOfStream) {
-      SPDLOG_DEBUG("Failed to get frame after traditional seeking, trying one more approach");
-
-      // Try seeking to a slightly different timestamp (1 second earlier)
-      if (timestamp.count() > AV_TIME_BASE) {
-        MediaTime earlierTime(timestamp.count() - AV_TIME_BASE);
-        result = av_seek_frame(container.m_formatContext, -1,
-                              av_rescale_q(earlierTime.count(), AVRational{1, AV_TIME_BASE}, AVRational{1, AV_TIME_BASE}),
-                              AVSEEK_FLAG_BACKWARD);
-
-        if (result >= 0) {
-          // Flush codecs again
-          flushAllCodecs();
-
-          // Try to get a frame at this position
-          nextResult = next();
-
-          // If we got a frame, we consider the seek successful even if it's not at the exact time
-          if (nextResult.isSuccess()) {
-            SPDLOG_DEBUG("Successfully got frame at earlier position");
-            return VideoResult<void>();
-          }
-        }
-      }
-
-      // If all recovery attempts failed, return error
-      SPDLOG_ERROR("All seeking and recovery attempts failed");
+    if (!nextResult.isSuccess())
       return nextResult;
-    }
+    if (!currentFrame())
+      return VideoResult<void>(VideoErrorCode::EndOfStream);
 
+    // Precise: decode forward from the keyframe to the first frame at or after the target.
+    if (flags == SeekFlags::Precise)
+    {
+      while (currentFrame() && currentFrame()->timestamp() < timestamp)
+      {
+        nextResult = next();
+        if (!nextResult.isSuccess())
+          return nextResult;
+      }
+    }
     return VideoResult<void>();
   }
 
@@ -808,7 +609,7 @@ namespace Ravl2::Video
     }
 
     // Move forward index times
-    for (int64_t i = 0; i < index && !m_isAtEnd; ++i)
+    for (int64_t i = 0; i < index && !isAtEnd(); ++i)
     {
       result = next();
       if (!result.isSuccess() && result.error() != VideoErrorCode::EndOfStream)
@@ -837,14 +638,18 @@ namespace Ravl2::Video
       return VideoResult<std::shared_ptr<Frame>>(VideoErrorCode::InvalidArgument);
     }
 
-    // Create a temporary iterator to perform seeking and reading.
-    // This avoids changing the state of the original iterator.
-    // Temporarily suppress the concurrent iterator warning: decrement before
-    // creating the copy (so the copy sees count=0), then re-increment.
-    // This is safe because getFrameById is a single-threaded internal operation.
-    m_ffmpegContainer->m_activeIteratorCount.fetch_sub(1);
-    auto iteratorCopy = std::make_shared<FfmpegMultiStreamIterator>(m_ffmpegContainer, m_streamIndices);
-    m_ffmpegContainer->m_activeIteratorCount.fetch_add(1);
+    // Look the frame up through a second container opened on the same file. An iterator on this container would
+    // share its demuxer and decoders, and seeking it would move this iterator's position too. Frame IDs depend only
+    // on the PTS and the stream index list, so they mean the same thing in the second container.
+    if (!m_ffmpegContainer->m_formatContext || !m_ffmpegContainer->m_formatContext->url)
+      return VideoResult<std::shared_ptr<Frame>>(VideoErrorCode::NotImplemented);
+    auto lookupResult = FfmpegMediaContainer::openFile(m_ffmpegContainer->m_formatContext->url);
+    if (!lookupResult.isSuccess())
+      return VideoResult<std::shared_ptr<Frame>>(lookupResult.error());
+    auto lookupContainer = std::dynamic_pointer_cast<FfmpegMediaContainer>(lookupResult.value());
+    if (!lookupContainer)
+      return VideoResult<std::shared_ptr<Frame>>(VideoErrorCode::ResourceAllocationError);
+    auto iteratorCopy = std::make_shared<FfmpegMultiStreamIterator>(lookupContainer, m_streamIndices);
 
     // Create a MediaTime from the PTS
     MediaTime targetTime(pts);
@@ -1085,27 +890,27 @@ namespace Ravl2::Video
               // No codec context for this stream
               return typeid(void);
             }
-            // Determine the sample format to convert to based on FFmpeg's format
+            // Frames hold AudioChunk<SampleT> (see createAudioChunk), so report that type.
             switch (codecContext->sample_fmt)
             {
               case AV_SAMPLE_FMT_U8:
               case AV_SAMPLE_FMT_U8P:
-                return typeid(Ravl2::Array<uint8_t, 2>);
+                return typeid(AudioChunk<uint8_t>);
               case AV_SAMPLE_FMT_S16:
               case AV_SAMPLE_FMT_S16P:
-                return typeid(Ravl2::Array<int16_t, 2>);
+                return typeid(AudioChunk<int16_t>);
               case AV_SAMPLE_FMT_S32:
               case AV_SAMPLE_FMT_S32P:
-                return typeid(Ravl2::Array<int32_t, 2>);
+                return typeid(AudioChunk<int32_t>);
               case AV_SAMPLE_FMT_FLT:
               case AV_SAMPLE_FMT_FLTP:
-                return typeid(Ravl2::Array<float, 2>);
+                return typeid(AudioChunk<float>);
               case AV_SAMPLE_FMT_DBL:
               case AV_SAMPLE_FMT_DBLP:
-                return typeid(Ravl2::Array<double, 2>);
+                return typeid(AudioChunk<double>);
               default:
                 // Default to 16-bit PCM for other formats
-                return typeid(Ravl2::Array<int16_t, 2>);
+                return typeid(AudioChunk<int16_t>);
             }
           }
         default:
@@ -1471,14 +1276,25 @@ namespace Ravl2::Video
     AVFrame* clonedFrame = nullptr;
     if (m_needsFrameClone)
     {
-      clonedFrame = av_frame_clone(frame);
+      // Copy the pixels into new buffers: av_frame_clone() would only add a reference to the device's pooled
+      // buffers, which frames held by user code would then keep from being reused.
+      clonedFrame = av_frame_alloc();
+      if (clonedFrame)
+      {
+        clonedFrame->format = frame->format;
+        clonedFrame->width = frame->width;
+        clonedFrame->height = frame->height;
+        if (av_frame_get_buffer(clonedFrame, 0) < 0 || av_frame_copy(clonedFrame, frame) < 0
+            || av_frame_copy_props(clonedFrame, frame) < 0)
+          av_frame_free(&clonedFrame);
+      }
       if (!clonedFrame)
       {
-        SPDLOG_ERROR("Failed to clone frame for device input");
+        SPDLOG_ERROR("Failed to copy frame for device input");
         return nullptr;
       }
       frameToUse = clonedFrame;
-      SPDLOG_TRACE("Cloned video frame for device capture");
+      SPDLOG_TRACE("Copied video frame for device capture");
     }
 
     // Get the timestamp in our MediaTime format
@@ -1496,18 +1312,16 @@ namespace Ravl2::Video
     ImageT frameData;
     bool success = makeImage(frameData, frameToUse);
 
-    // Note: If we cloned the frame, DON'T free it here - makeImage() creates shared_ptr
-    // references that will manage the frame's lifetime. The frame will be freed when
-    // the last reference (in the ImageT) is destroyed.
+    // makeImage() takes its own reference to the frame's buffers, so our reference to a copy can go now.
+    // (Keeping it leaked every copied frame.)
+    if (clonedFrame)
+    {
+      av_frame_free(&clonedFrame);
+    }
 
     if (!success)
     {
       SPDLOG_ERROR("Failed to create image from frame");
-      // On error, free the cloned frame if we created one
-      if (clonedFrame)
-      {
-        av_frame_free(&clonedFrame);
-      }
       return nullptr;
     }
 

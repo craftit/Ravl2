@@ -67,6 +67,16 @@ may have relied on or worked around: check code that uses them.
   and the default threshold is 0.5 (it was 10, so no match was ever reported); `SetThreshold()` added.
 - Susan corners report (vertical, horizontal) gradients in that order (they were swapped).
 - `Segmentation::Areas()` has one entry per label (it had one extra).
+- Video seeking finds the keyframe at or before the target (at or after for `SeekFlags::Next`); `Precise` then
+  decodes forward to the first frame at or after the target. Seeking past the end fails (it reported success).
+- A new `FfmpegMultiStreamIterator` on a container that has already been read starts at the beginning (seekable
+  inputs); `isAtEnd()` is only true once no decoded frames remain; `getFrameById()` opens the file again rather
+  than disturbing the calling iterator.
+- FFmpeg audio streams report `AudioChunk<SampleT>` as their data type (was `Array<SampleT, 2>`), matching the
+  frames, so typed audio iterators work.
+- The FFmpeg writer rejects audio chunks whose channel count doesn't match the encoder.
+- GoPro GPS fields use their own SCAL divisors (altitude and speeds were 10^4-10^5 too small), and gyro/accel
+  SCAL is read with its 16-bit type (values were about 65536x too small).
 - CMake: the Display tests and display examples are only built when the Display stack is enabled; ImGui, ImPlot,
   ImGuizmo and the bgfx ImGui headers are SYSTEM includes.
 - ImGui (`docking`), ImPlot (`master`) and gpmf-parser (`main`) are pinned to commits; see
@@ -113,6 +123,9 @@ may have relied on or worked around: check code that uses them.
   missed the first column of each row; `ConnectedComponents` asserted on single-row/column images;
   `toPolygon(Boundary)` offset the first vertex twice; the reference DCT was wrong for non-square images and
   non-zero origins.
+- FFmpeg writer: a failed packet flush freed packets twice, a failed first frame leaked its encoder and a retry
+  added a second audio stream, and `sws_scale` read past unpadded pixel buffers. FFmpeg iterators: a constructor
+  that threw left the container's iterator count raised; on macOS every captured frame leaked a buffer reference.
 - Builds against FFmpeg older than 7.1 (`avcodec_get_supported_config()` is used when available).
 - Configuring with `RAVL2_ENABLE_DISPLAY_STACK=OFF` failed; fetching bgfx failed with a user-level
   `submodule.recurse=true`; ImGui header warnings broke `-Werror` builds.

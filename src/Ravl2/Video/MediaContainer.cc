@@ -21,11 +21,11 @@ namespace Ravl2::Video
         {typeid(Array<PixelYUYV8, 2>), Video::StreamType::Video},
         {typeid(Array<PixelUYVY8, 2>), Video::StreamType::Video},
         {typeid(Array<PixelI8, 2>), Video::StreamType::Video},
-        {typeid(AudioChunk<Array<uint8_t, 2>>), Video::StreamType::Audio},
-        {typeid(AudioChunk<Array<int16_t, 2>>), Video::StreamType::Audio},
-        {typeid(AudioChunk<Array<int32_t, 2>>), Video::StreamType::Audio},
-        {typeid(AudioChunk<Array<float, 2>>), Video::StreamType::Audio},
-        {typeid(AudioChunk<Array<double, 2>>), Video::StreamType::Audio}
+        {typeid(AudioChunk<uint8_t>), Video::StreamType::Audio},
+        {typeid(AudioChunk<int16_t>), Video::StreamType::Audio},
+        {typeid(AudioChunk<int32_t>), Video::StreamType::Audio},
+        {typeid(AudioChunk<float>), Video::StreamType::Audio},
+        {typeid(AudioChunk<double>), Video::StreamType::Audio}
       };
       return streamTypeMap;
     }

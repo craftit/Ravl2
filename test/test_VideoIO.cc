@@ -91,6 +91,69 @@ namespace Ravl2::Video
     SPDLOG_INFO("Test complete");
   }
 
+  TEST_CASE("FfmpegMultiStreamIterator getFrameById leaves the iterator where it was", "[Video]")
+  {
+    initIO();
+    const std::string fn = RAVL_SOURCE_DIR "/../data/sample-5s.mp4";
+    auto containerResult = FfmpegMediaContainer::openFile(fn);
+    REQUIRE(containerResult.isSuccess());
+    auto container = std::dynamic_pointer_cast<FfmpegMediaContainer>(containerResult.value());
+    REQUIRE(container != nullptr);
+
+    // Reference: ids of the first 12 frames read straight through, from a separate container (a second iterator on
+    // the same container starts wherever the shared demuxer was left).
+    std::vector<StreamItemId> ids;
+    {
+      auto refContainer = std::dynamic_pointer_cast<FfmpegMediaContainer>(FfmpegMediaContainer::openFile(fn).value());
+      REQUIRE(refContainer != nullptr);
+      FfmpegMultiStreamIterator ref(refContainer);
+      for(int i = 0; i < 12 && ref.currentFrame(); ++i) {
+        ids.push_back(ref.currentFrame()->id());
+        (void)ref.next();
+      }
+    }
+    REQUIRE(ids.size() == 12);
+
+    FfmpegMultiStreamIterator it(container);
+    for(int i = 0; i < 8; ++i)
+      (void)it.next();
+    REQUIRE(it.currentFrame()->id() == ids[8]);
+    // Looking up an earlier frame used to seek this iterator's shared demuxer.
+    auto found = it.getFrameById(ids[3]);
+    REQUIRE(found.isSuccess());
+    CHECK(found.value()->id() == ids[3]);
+    CHECK(it.currentFrame()->id() == ids[8]);
+    (void)it.next();
+    CHECK(it.currentFrame()->id() == ids[9]);
+  }
+
+  TEST_CASE("Single-stream iterator seeks to frames", "[Video]")
+  {
+    initIO();
+    const std::string fn = RAVL_SOURCE_DIR "/../data/sample-5s.mp4";
+    auto container = FfmpegMediaContainer::openFile(fn).value();
+    std::size_t videoIndex = container->streamCount();
+    for(std::size_t i = 0; i < container->streamCount(); ++i)
+      if(container->streamType(i) == StreamType::Video)
+        videoIndex = i;
+    REQUIRE(videoIndex < container->streamCount());
+    auto itResult = container->createIterator(videoIndex);
+    REQUIRE(itResult.isSuccess());
+    auto it = itResult.value();
+    // Forward and backward precise seeks land on the first frame at or after the target (they used to report
+    // success and stay on the first frame).
+    for(int64_t targetUs : {2500000, 1000000, 4000000, 500000}) {
+      REQUIRE(it->seek(MediaTime(targetUs), SeekFlags::Precise).isSuccess());
+      REQUIRE(it->currentFrame());
+      const auto ts = it->currentFrame()->timestamp().count();
+      CHECK(ts >= targetUs);
+      CHECK(ts < targetUs + 50000);// within about a frame at 30 fps
+      CHECK_FALSE(it->isAtEnd());
+    }
+    // Seeking past the end fails rather than reporting success.
+    CHECK_FALSE(it->seek(MediaTime(60000000), SeekFlags::Precise).isSuccess());
+  }
+
   TEST_CASE("FfmpegMultiStreamIterator_Frame_Presentation_Order", "[Video]")
   {
     initIO();

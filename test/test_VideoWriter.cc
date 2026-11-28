@@ -14,6 +14,7 @@
 #include "Ravl2/Pixel/Pixel.hh"
 #include "Ravl2/Video/AudioChunk.hh"
 #include "Ravl2/Video/FfmpegMediaContainer.hh"
+#include "Ravl2/Video/FfmpegMediaWriter.hh"
 #include "Ravl2/Video/Frame.hh"
 #include "Ravl2/Video/VideoIO.hh"
 
@@ -173,7 +174,39 @@ namespace Ravl2::Video
     CHECK(container->duration() <= MediaTime(1200000));
     auto audioIterator = container->createIterator(audioIndex);
     REQUIRE(audioIterator.isSuccess());
+    // Audio frames hold AudioChunk<SampleT>; dataType() used to report Array<SampleT, 2>, so typed access failed.
+    CHECK(audioIterator.value()->dataType() == typeid(AudioChunk<float>));
+    audioIterator = VideoResult<std::shared_ptr<StreamIterator>>(VideoErrorCode::NotFound);
+    {
+      auto typed = container->createIterator<AudioChunk<float>>(audioIndex);
+      CHECK(typed.isValid());
+      CHECK(typed.currentFrame().data().data().range().size(0) > 0);
+    }
+    CHECK(container->createIterator(typeid(AudioChunk<float>), audioIndex).isSuccess());
     container.reset();
+    std::filesystem::remove(path);
+  }
+
+  TEST_CASE("VideoWriter rejects bad input and recovers", "[Video][IO]")
+  {
+    const auto path = temporaryVideoPath(".mp4");
+    {
+      auto writerResult = FfmpegMediaWriter::open(path.string(), nlohmann::json {{"fps", 25}, {"audio", {{"channels", 2}}}});
+      REQUIRE(writerResult.isSuccess());
+      auto writer = writerResult.value();
+
+      // Odd dimensions can't be encoded as yuv420p; a later valid frame must still work (the failed attempt used
+      // to leak its encoder and leave state behind).
+      CHECK_FALSE(writer->writeVideo(makeImage(63, 47, 0)));
+      CHECK(writer->writeVideo(makeImage(64, 48, 0)));
+
+      // A mono chunk for a stereo encoder is rejected (it used to be accepted and read past the buffer).
+      Array<float, 2> mono({100, 1}, 0.0f);
+      CHECK_FALSE(writer->writeAudio(AudioChunk<float>(std::move(mono))));
+      Array<float, 2> stereo({100, 2}, 0.0f);
+      CHECK(writer->writeAudio(AudioChunk<float>(std::move(stereo))));
+      CHECK(writer->close());
+    }
     std::filesystem::remove(path);
   }
 

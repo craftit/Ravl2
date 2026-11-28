@@ -119,16 +119,21 @@ the range). The fast DCT classes still need a zero-origin power-of-two square (G
   once under `ctest -j16` and didn't reproduce in later runs; possibly hardware-decoder contention (see IMP-7).
 
 ### Video / GoPro
-- [ ] **VID-2** `FfmpegMultiStreamIterator.cc:507-516,537-549,741` — single-stream seek no-ops yet reports success; "Precise" doesn't decode forward. *(verified)*
-- [ ] **VID-3** `FfmpegMediaWriter.cc:828,848` — channel count checked only on first chunk; mono after stereo init over-reads. *(verified, valgrind)*
-- [ ] **VID-4** `FfmpegMediaWriter.cc:370-375` — packets freed but left in `pendingPackets` on failure; double free.
-- [ ] **VID-5** `FfmpegMultiStreamIterator.cc:845-853` — `getFrameById` temp iterator mutates shared demuxer/decoders.
-- [ ] **VID-6** `FfmpegMediaWriter.cc:389,515,530` — failed init leaks codec context; audio retry adds a second stream. *(verified, valgrind)*
-- [ ] **VID-7** `FfmpegMultiStreamIterator.cc:123` — active-iterator count leaks when the constructor throws.
-- [ ] **VID-8** `FfmpegMultiStreamIterator.cc:1474-1500` — macOS cloned frame leaked every frame.
-- [ ] **VID-9** `MediaContainer.cc:24-28`, `FfmpegMultiStreamIterator.cc:1089-1108` — audio type registration/dataType mismatch; typed audio iteration throws.
-- [ ] **VID-10** `FfmpegMediaWriter.cc:200,773` — sws_scale reads past unpadded buffer. *(verified, valgrind)*
-- [ ] **GOPRO-1** `GoPro/GpmfParser.cc:151,725-756` — GPS5 uses one SCAL for all fields; SCAL read as uint32 for int16 data.
+- [x] **VID-2** `FfmpegMultiStreamIterator.cc:507-516,537-549,741` — single-stream seek no-ops yet reports success; "Precise" doesn't decode forward. *(verified)*
+- [x] **VID-3** `FfmpegMediaWriter.cc:828,848` — channel count checked only on first chunk; mono after stereo init over-reads. *(verified, valgrind)*
+- [x] **VID-4** `FfmpegMediaWriter.cc:370-375` — packets freed but left in `pendingPackets` on failure; double free.
+- [x] **VID-5** `FfmpegMultiStreamIterator.cc:845-853` — `getFrameById` temp iterator mutates shared demuxer/decoders.
+- [x] **VID-6** `FfmpegMediaWriter.cc:389,515,530` — failed init leaks codec context; audio retry adds a second stream. *(verified, valgrind)*
+- [x] **VID-7** `FfmpegMultiStreamIterator.cc:123` — active-iterator count leaks when the constructor throws.
+- [x] **VID-8** `FfmpegMultiStreamIterator.cc:1474-1500` — macOS cloned frame leaked every frame.
+- [x] **VID-9** `MediaContainer.cc:24-28`, `FfmpegMultiStreamIterator.cc:1089-1108` — audio type registration/dataType mismatch; typed audio iteration throws.
+- [x] **VID-10** `FfmpegMediaWriter.cc:200,773` — sws_scale reads past unpadded buffer. *(verified, valgrind)*
+- [x] **GOPRO-1** `GoPro/GpmfParser.cc:151,725-756` — GPS5 uses one SCAL for all fields; SCAL read as uint32 for int16 data.
+
+Video notes: VID-8 and GOPRO-1 were checked by reading only (macOS capture, and no GoPro sample file). Fixing
+these also showed that a new iterator on a container started wherever the shared demuxer was left, and that
+`isAtEnd()` was true while decoded frames were still queued; both fixed. The keyframe index used by the old seek
+(`buildKeyframeIndex`, `findNearestKeyframe`) is now unused.
 
 ### Display / OpenGL
 - [ ] **GL-1** `OpenGL/GLWindow.cc:132,252`, `GLWindow.hh:37-50` — use after `glfwTerminate`; move ops leave stale user pointer and leak.
