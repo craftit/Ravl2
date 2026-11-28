@@ -62,8 +62,8 @@ by older code; **Throws** = now throws where it used to return garbage.
 
 | What | Kind | Commit | Check |
 |---|---|---|---|
-| `Quaternion::angle()` returns the full rotation angle in [0, pi] (was half the angle) | Behaviour | this commit | Any caller of `angle()`; values double. |
-| `affineFromScaleAngleTranslation(scale, ...)` applies `scale[i]` to axis i (scale[0] was applied to axis 1) | Behaviour | this commit | Callers with unequal scales. |
+| `Quaternion::angle()` returns the full rotation angle in [0, pi] (was half the angle) | Behaviour | 833632d | Any caller of `angle()`; values double. |
+| `affineFromScaleAngleTranslation(scale, ...)` applies `scale[i]` to axis i (scale[0] was applied to axis 1) | Behaviour | 833632d | Callers with unequal scales. |
 | `MeanVariance` `+=` / `-=` of another MeanVariance include the squared mean difference | Behaviour | 4488c41 | Merged variances were wrong whenever the means differed. |
 | `Sums1d2C::operator-=` reduces the count | Behaviour | 4488c41 | |
 | FFT of length 0 or 1 returns the input (used to hang) | Behaviour | 4488c41 | |
