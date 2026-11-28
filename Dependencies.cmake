@@ -45,7 +45,8 @@ function(RAVL2_setup_dependencies)
   # already been provided to us by a parent project
 
   if(NOT TARGET fmt::fmt)
-    cpmaddpackage("gh:fmtlib/fmt#12.1.0")
+    # Installed with RAVL2 so the exported targets can find it.
+    cpmaddpackage(NAME fmt GITHUB_REPOSITORY fmtlib/fmt GIT_TAG 12.1.0 OPTIONS "FMT_INSTALL ON")
   else()
     message(STATUS "Found native fmt::fmt")
 #    if (NOT TARGET libfmt::libfmt)
@@ -62,7 +63,8 @@ function(RAVL2_setup_dependencies)
       GITHUB_REPOSITORY
       "gabime/spdlog"
       OPTIONS
-      "SPDLOG_FMT_EXTERNAL ON")
+      "SPDLOG_FMT_EXTERNAL ON"
+      "SPDLOG_INSTALL ON")
   else ()
     message(STATUS "Found native spdlog::spdlog")
   endif()
@@ -96,13 +98,15 @@ function(RAVL2_setup_dependencies)
             5.0.0
             GIT_TAG
             "5.0.0"
+            OPTIONS
+            "EIGEN_BUILD_CMAKE_PACKAGE ON"
     )
   else()
     message(STATUS "Found native Eigen3::Eigen")
   endif()
 
   if(NOT TARGET nlohmann_json::nlohmann_json)
-    CPMAddPackage("gh:nlohmann/json@3.10.5")
+    CPMAddPackage(NAME nlohmann_json GITHUB_REPOSITORY nlohmann/json VERSION 3.10.5 OPTIONS "JSON_Install ON")
   else()
     message(STATUS "Found native nlohmann_json::nlohmann_json")
   endif()
@@ -115,6 +119,9 @@ function(RAVL2_setup_dependencies)
       "USCiLab/cereal"
       GIT_TAG
       "v1.3.2"
+      OPTIONS
+      "JUST_INSTALL_CEREAL ON"
+      "CEREAL_INSTALL ON"
     )
   else()
     message(STATUS "Found native cereal::cereal")

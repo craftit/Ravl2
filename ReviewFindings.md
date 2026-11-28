@@ -171,7 +171,7 @@ GL notes: GL-1/GL-2 were checked by build and reading only (no display here).
 
 - [ ] **GAP-1** Region growing stack (`RegionGrow*.hh`, `RegionSet.hh`, `SegmentRegion.hh`, `PixelClassify*`, `PixelSelectStack`, `BlueScreen`, `ChromaThreshold`) is unported RAVL1 code, not built.
 - [ ] **GAP-2** Templates that don't compile when instantiated: `forEachIndexFirst`, `fft2`/`fftgr` for double, `Types.hh:87` `span(const Vector&)`, `Sums1d2 operator<<`, `ArrayView<T,1>(const vector&)`, `PixelY8(uint8_t)`, `PinholeCameraArray::Triangulate`, `ImagePyramid::findLevel`, OpenCV `toAffine`/`toCvAffine`, several geometry `operator<<`/`>>`, SegmentExtrema ROI overloads.
-- [ ] **GAP-3** Build: install/export of library targets is a stub; `BUILD_SHARED_LIBS` not viable (no export macros, shared `Ravl2Core_export.hpp`); static link drops PSO/Bayes/RandomSearch registration.
+- [ ] **GAP-3** *(install/export of the core done — see README_building.md; shared libs and static registration remain)* Build: install/export of library targets is a stub; `BUILD_SHARED_LIBS` not viable (no export macros, shared `Ravl2Core_export.hpp`); static link drops PSO/Bayes/RandomSearch registration.
 - [ ] **GAP-4** Video: no sws_scale fallback for unsupported pixel formats (ProRes, gbrp, gray16, …); no `YUV420Image<uint16_t>` plan; grey video unreadable; `previous()` unimplemented; RavlIO video ignores `pos`; no audio/Frame via RavlIO; writer assumes sample rate.
 - [ ] **GAP-5** OpenCV IO: video/camera input only single-channel and reuses one buffer; RGBA loads drop alpha; 16-bit colour unsupported.
 - [ ] **GAP-6** Math: `LeastSquares` QR/fixed-rank `#if 0`; FFT limited to primes ≤2053, 1/n scaling undocumented; `SobolSequence<double>` UB; "Sobol" generator is Halton with 15 primes.

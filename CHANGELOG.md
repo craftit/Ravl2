@@ -83,6 +83,10 @@ may have relied on or worked around: check code that uses them.
   a type with no default constructor registered is a clear `std::runtime_error`.
 - **Breaking:** `GLWindow` is not movable (the old moves left GLFW callbacks pointing at the moved-from window).
 - `RAVL2_MIN_DEPS` disables the Qt, dlib and Display modules even when those libraries are installed.
+- CMake no longer reads or writes the user package registry (`~/.cmake/packages`); Eigen's build used to register
+  its build directory there.
+- `Ravl2Core` links `nlohmann_json::nlohmann_json` publicly (its headers include it; it only worked because a system
+  copy was on the default include path).
 - GoPro GPS fields use their own SCAL divisors (altitude and speeds were 10^4-10^5 too small), and gyro/accel
   SCAL is read with its 16-bit type (values were about 65536x too small).
 - CMake: the Display tests and display examples are only built when the Display stack is enabled; ImGui, ImPlot,
@@ -147,6 +151,9 @@ may have relied on or worked around: check code that uses them.
   `submodule.recurse=true`; ImGui header warnings broke `-Werror` builds.
 
 ### Added
+- Install and export of the core libraries: `cmake --install` then `find_package(ravl2 CONFIG)` and link
+  `ravl2::Ravl2Core`, `ravl2::Ravl2Image`, etc. (see README_building.md). CPM-downloaded fmt, spdlog, Eigen, cereal
+  and nlohmann_json install alongside. Display, OpenGL, Qt and Dlib remain build-tree only.
 - `streamPosEnd()` (`IO/StreamPosition.hh`): the "no end / next object" stream position.
 - `Display/UrlControls.hh`: tested parser for `display://` URL controls.
 - `ChannelRegistry::clearAll()` and `baseContentSlot()` for display scene content.

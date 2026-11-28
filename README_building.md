@@ -190,3 +190,33 @@ cd ../
 ```
 
 
+
+### Installing and using RAVL2 from another project
+
+The core libraries can be installed and then found with CMake:
+
+```bash
+cmake -S . -B build -DCMAKE_INSTALL_PREFIX=$HOME/ravl2-install
+cmake --build build
+cmake --install build
+```
+
+In the consuming project:
+
+```cmake
+find_package(ravl2 CONFIG REQUIRED)
+target_link_libraries(myapp PRIVATE ravl2::Ravl2Image ravl2::Ravl2ImageIO)
+```
+
+and configure it with `-DCMAKE_PREFIX_PATH=$HOME/ravl2-install` (or your chosen prefix).
+
+- **Installed targets:** `Ravl2Core`, `Ravl2Math`, `Ravl2Geometry`, `Ravl2Image`, `Ravl2ImageSegmentation`,
+  `Ravl2ImageIO`, `Ravl2x3D`, `Ravl2Optimise`, `Ravl2Video`, `Ravl2GoPro` and `Ravl2OpenCV`, whichever were built.
+  Display, OpenGL, Qt and Dlib are not installed (their dependencies are built in-tree); use them from the build tree.
+- **Dependencies:** fmt, spdlog and Eigen are installed into the same prefix when RAVL2 downloaded them; cereal and
+  nlohmann_json are too, unless system copies were used. OpenCV, FFmpeg, libjpeg and libpng must be available to the
+  consuming project as they were to the RAVL2 build.
+- **Static libraries:** the default build is static, so consumers link RAVL2's private dependencies (libjpeg,
+  libpng, FFmpeg) too; the package config finds them.
+- **Initialisation:** file formats register themselves from static initialisers. In a static link, call the
+  module's `init...()` function (e.g. `initPngImageIO()`, `Video::initIO()`) so those objects are linked in.

@@ -36,6 +36,12 @@ configure_logging_level()
 
 
 RAVL2_global_options()
+# Don't use, or write to, the user-wide CMake package registry (~/.cmake/packages). Eigen's CMake registers its
+# build directory there by default, which leaves stale entries that other projects (and later configures of this
+# one) then find instead of the intended package.
+set(CMAKE_EXPORT_PACKAGE_REGISTRY OFF)
+set(CMAKE_FIND_PACKAGE_NO_PACKAGE_REGISTRY ON)
+
 include(Dependencies.cmake)
 RAVL2_setup_dependencies()
 
@@ -111,16 +117,46 @@ if(CMAKE_SKIP_INSTALL_RULES)
 endif()
 
 include(cmake/PackageProject.cmake)
+include(GNUInstallDirs)
 
-# Add other targets that you want installed here, by default we just package the one executable
-# we know we want to ship
+# Installed core: `cmake --install` then `find_package(ravl2 CONFIG)` and link ravl2::<target>.
+# Display, OpenGL, Qt and Dlib aren't installed (their dependencies are built in-tree); use them from the build tree.
+set(RAVL2_INSTALL_TARGETS)
+foreach(_t Ravl2Core Ravl2Math Ravl2Geometry Ravl2Image Ravl2ImageSegmentation Ravl2ImageIO Ravl2x3D Ravl2Optimise
+        Ravl2Video Ravl2GoPro Ravl2OpenCV)
+  if(TARGET ${_t})
+    list(APPEND RAVL2_INSTALL_TARGETS ${_t})
+    # Build-tree include paths are BUILD_INTERFACE only; installed consumers find headers here.
+    target_include_directories(${_t} PUBLIC $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
+  endif()
+endforeach()
+# The GPMF parser is built in-tree and linked privately by Ravl2GoPro, so a static install has to carry it.
+if(TARGET GPMF_PARSER_LIB AND TARGET Ravl2GoPro)
+  list(APPEND RAVL2_INSTALL_TARGETS GPMF_PARSER_LIB)
+endif()
+
+install(DIRECTORY src/Ravl2/ DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/Ravl2
+        FILES_MATCHING PATTERN "*.hh"
+        PATTERN "Display" EXCLUDE PATTERN "OpenGL" EXCLUDE PATTERN "Qt" EXCLUDE PATTERN "Dlib" EXCLUDE
+        PATTERN "ThirdParty" EXCLUDE)
+# Generated headers: export macros and the configured Ravl2/config.hh.
+install(DIRECTORY ${PROJECT_BINARY_DIR}/include/ DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+
+set(RAVL2_PUBLIC_DEPENDENCIES "fmt" "spdlog" "Eigen3" "cereal" "nlohmann_json")
+if(TARGET Ravl2OpenCV)
+  list(APPEND RAVL2_PUBLIC_DEPENDENCIES "OpenCV")
+endif()
+
 RAVL2_package_project(
+  # Lower case, to match the ravl2:: aliases used in the build tree.
+  NAME ravl2
   TARGETS
-#  intro
+  ${RAVL2_INSTALL_TARGETS}
   RAVL2_options
   RAVL2_warnings
-  # FIXME: this does not work! CK
-  # PRIVATE_DEPENDENCIES_CONFIGURED project_options project_warnings
+  PUBLIC_DEPENDENCIES ${RAVL2_PUBLIC_DEPENDENCIES}
+  # Linked privately; only needed by consumers of static libraries.
+  PRIVATE_DEPENDENCIES "JPEG" "PNG"
 )
 
 # Experience shows that explicit package naming can help make it easier to sort
