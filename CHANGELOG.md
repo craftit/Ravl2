@@ -19,6 +19,8 @@ may have relied on or worked around: check code that uses them.
   can't be read; re-create them. Single-object files are unaffected.
 
 ### Changed
+- `warpScale(result, image)` places enlarged samples corner to corner, step (in-1)/(out-1): the first and last
+  output pixels sample the first and last image pixels. It threw `std::out_of_range` on every enlargement.
 - **Breaking:** array strides, `stride()`, `strides()` and origin offsets are `std::ptrdiff_t` (were `int`), and
   the `WindowedArray` concept requires `strides() -> const std::ptrdiff_t *`. Strides stay signed (they may be
   negative). `IndexRange<N>::area()` and `IndexRangeSet::area()` return `std::ptrdiff_t`. Check code that stores
@@ -95,6 +97,9 @@ may have relied on or worked around: check code that uses them.
   "Pinned dependencies" in `README_dependencies.md` for how to review and update them.
 
 ### Fixed
+- `warpScaleBilinear` could read one column past the image edge (positions accumulated float error, and only the
+  row neighbour was clamped). `warpSubsample` and `warpScale` didn't compile for different input and output
+  element types.
 - Range-for over an input stream with the default end read nothing (`numeric_limits<std::streampos>::max()` is 0).
 - RavlIO video reading never ended; it repeated the last frame.
 - A corrupt JPEG ended the process (libjpeg's default `exit()`); JPEG and PNG errors are now reported as load or

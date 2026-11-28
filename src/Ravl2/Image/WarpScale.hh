@@ -7,6 +7,10 @@
 
 #pragma once
 
+#include <vector>
+
+#include <algorithm>
+
 #include <stdexcept>
 #include "Ravl2/Array.hh"
 #include "Ravl2/Math.hh"
@@ -124,7 +128,7 @@ namespace Ravl2
   template <typename Array1T, typename InT = typename Array1T::value_type,
             typename Array2T = Array1T, typename OutT = Array2T::value_type, unsigned N = Array1T::dimensions,
             typename RealAccumT = double>
-    requires WindowedArray<Array1T, InT, N> && WindowedArray<Array1T, OutT, N> && (N >= 2)
+    requires WindowedArray<Array1T, InT, N> && WindowedArray<Array2T, OutT, N> && (N >= 2)
     void
     warpSubsample(Array2T &result, const Array1T &img, Vector2f scale)
   {
@@ -247,80 +251,58 @@ namespace Ravl2
     //warpSubsample(Array2T &result, const Array1T &img, Vector2f scale)
 
     //cout << "src frame:" << img.range() << std::endl;
-    // Output pixel j samples the source at j*scale, which must be within [min, max].
+    // Output pixel j samples the source at j*scale, which must be within [min, max]. The tolerance stops float
+    // rounding in the step (e.g. warpScale's (in-1)/(out-1)) from excluding the pixel that lands on the edge.
     const IndexRange<2> &imgFrame = img.range();
+    constexpr RealT tolerance = RealT(1e-3);
     IndexRange<2> rng(
-    IndexRange<1>(intCeil(RealT(imgFrame[0].min()) / scale[0]),
-                    intFloor(RealT(imgFrame[0].max() - 0) / scale[0])),
-    IndexRange<1>(intCeil(RealT(imgFrame[1].min()) / scale[1]),
-                    intFloor(RealT(imgFrame[1].max() - 0) / scale[1])));
+    IndexRange<1>(intCeil(RealT(imgFrame[0].min()) / scale[0] - tolerance),
+                    intFloor(RealT(imgFrame[0].max()) / scale[0] + tolerance)),
+    IndexRange<1>(intCeil(RealT(imgFrame[1].min()) / scale[1] - tolerance),
+                    intFloor(RealT(imgFrame[1].max()) / scale[1] + tolerance)));
     if(result.range().empty()) {
       result = Array<OutT, 2>(rng);
     } else if(!rng.contains(result.range())) {
       throw std::out_of_range("warpScaleBilinear: result range samples outside the image");
     }
-    //cout << "res frame:" << result.range() << std::endl;
-    Point2f origin = toPoint<float>(RealT(result.range().min(0)) * scale[0], RealT(result.range().min(1)) * scale[1]);
-    //cout << "origin:" << origin << std::endl;
 
-    // Reference implementation
-    //    Point2f rowStart = origin;
-    //    for(Array2dIterC<OutT> it(result);it;) {
-    //      Point2f pnt = rowStart;
-    //      do {
-    //        BilinearInterpolation(img,pnt,*it);
-    //        pnt[1] += scale[1];
-    //      } while(it.next_col()); // True while in same row.
-    //      rowStart[0] += scale[0];
-    //    }
-    Point2f rowStart = origin;
-    for(auto it = result.begin(); it.valid();) {
-      Point2f pnt = rowStart;
-
-      int fx = intFloor(pnt[0]);// Row
-      int fxp1 = fx + 1;
-      if(fxp1 > img.range().max(0)) fxp1 = fx;// compare indices: the image origin may not be 0
-      RealT u = pnt[0] - RealT(fx);
-      if(u < RealT(1e-5)) {
-	do {
-	  int fy = intFloor(pnt[1]);// Col
-	  RealT t = pnt[1] - RealT(fy);
-	  if(t < RealT(1e-5)) {
-	    const InT *pixel1 = &(img)[fx][fy];
-	    *it = OutT(pixel1[0]);
-	    pnt[1] += scale[1];
-	  } else {
-	    RealT onemt = (1.0f - t);
-
-	    //printf("x:%g  y:%g  fx:%i  fy:%i\n", pnt[0], pnt[1], fx, fy);
-	    const InT *pixel1 = &(img)[fx][fy];
-	    *it = OutT((pixel1[0] * onemt) + (pixel1[1] * t));
-	    pnt[1] += scale[1];
-	  }
-	} while(it.next());// True while in same row.
-      } else {
-	RealT onemu = (RealT(1.0) - u);
-	do {
-	  int fy = intFloor(pnt[1]);// Col
-	  RealT t = pnt[1] - RealT(fy);
-	  if(t < RealT(1e-5)) {
-	    const InT *pixel1 = &(img)[fx][fy];
-	    const InT *pixel2 = &(img)[fxp1][fy];
-	    *it = OutT((pixel1[0] * onemu) + (pixel2[0] * u));
-	    pnt[1] += scale[1];
-	  } else {
-	    RealT onemt = (1.0f - t);
-
-	    //printf("x:%g  y:%g  fx:%i  fy:%i\n", pnt[0], pnt[1], fx, fy);
-	    const InT *pixel1 = &(img)[fx][fy];
-	    const InT *pixel2 = &(img)[fxp1][fy];
-	    *it = OutT((pixel1[0] * (onemt * onemu)) + (pixel1[1] * (t * onemu)) + (pixel2[0] * (onemt * u)) + (pixel2[1] * (t * u)));
-	    pnt[1] += scale[1];
-	  }
-	} while(it.next());// True while in same row.
+    // Each position is computed from its index (not accumulated, which drifts) and clamped to the image, and the
+    // second neighbour is clamped in both dimensions, so no read leaves the image.
+    struct Tap {
+      int i0;
+      int i1;
+      RealT w;
+    };
+    auto tap = [](RealT pos, int lo, int hi) {
+      pos = std::clamp(pos, RealT(lo), RealT(hi));
+      int i0 = std::min(intFloor(pos), hi);
+      RealT w = pos - RealT(i0);
+      if(w < RealT(1e-5)) w = 0;
+      return Tap {i0, std::min(i0 + 1, hi), w};
+    };
+    std::vector<Tap> cols;
+    cols.reserve(size_t(result.range(1).size()));
+    for(int c = result.range(1).min(); c <= result.range(1).max(); ++c)
+      cols.push_back(tap(RealT(c) * scale[1], imgFrame[1].min(), imgFrame[1].max()));
+    for(int r = result.range(0).min(); r <= result.range(0).max(); ++r) {
+      const Tap row = tap(RealT(r) * scale[0], imgFrame[0].min(), imgFrame[0].max());
+      const RealT u = row.w;
+      const RealT onemu = RealT(1) - u;
+      auto out = result[r];
+      auto row0 = img[row.i0];
+      auto row1 = img[row.i1];
+      size_t k = 0;
+      for(int c = result.range(1).min(); c <= result.range(1).max(); ++c, ++k) {
+        const Tap &col = cols[k];
+        const RealT t = col.w;
+        if(u == 0 && t == 0) {
+          out[c] = OutT(row0[col.i0]);
+        } else {
+          const RealT onemt = RealT(1) - t;
+          out[c] = OutT((row0[col.i0] * (onemt * onemu)) + (row0[col.i1] * (t * onemu))
+                        + (row1[col.i0] * (onemt * u)) + (row1[col.i1] * (t * u)));
+        }
       }
-
-      rowStart[0] += scale[0];
     }
     return true;
   }
@@ -334,10 +316,17 @@ namespace Ravl2
   bool
   warpScale(Array<OutT, 2> &result, const Array<InT, 2> &img)
   {
-    if(result.range().empty()) return false;
-    // Distance between samples in the input image.
-    Vector2f scale({float(img.range(0).size()) / float(result.range(0).size()),
-		    float(img.range(1).size()) / float(result.range(1).size())});
+    if(result.range().empty() || img.range().empty()) return false;
+    // Distance between samples in the input image, per dimension. Reducing uses in/out, so the subsampler's
+    // averaging windows tile the image exactly. Enlarging uses (in-1)/(out-1), which puts the first and last
+    // output samples on the first and last input pixels: with in/out the last sample fell past the image edge.
+    auto step = [](int in, int out) {
+      if(out > in && out > 1)
+        return float(in - 1) / float(out - 1);
+      return float(in) / float(out);
+    };
+    Vector2f scale({step(img.range(0).size(), result.range(0).size()),
+		    step(img.range(1).size(), result.range(1).size())});
     // This wil call warpSubsample if needed.
     return warpScaleBilinear(result, img,scale);
   }

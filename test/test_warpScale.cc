@@ -1,3 +1,4 @@
+#include <array>
 //
 // Created by charles galambos on 02/09/2024.
 //
@@ -127,6 +128,28 @@ namespace Ravl2
     Array<float, 2> up;
     REQUIRE(warpScaleBilinear(up, rows, toVector<float>(0.5f, 0.5f)));
     CHECK(std::abs(up[201][0] - 100.5f) < 1e-5f);
+  }
+
+  TEST_CASE("warpScale enlarges to any size")
+  {
+    // Enlarging used in/out as the step, so the last output pixel sampled past the image and warpScale threw.
+    // A ramp shows the corners map onto the corners and the edge pixels are read, not ones beyond them.
+    for(auto [inRows, inCols, outRows, outCols] : {std::array {41, 61, 64, 64}, std::array {3, 7, 1000, 999},
+                                                   std::array {2, 2, 64, 3}, std::array {64, 10, 32, 100}}) {
+      INFO(inRows << "x" << inCols << " -> " << outRows << "x" << outCols);
+      Array<uint8_t, 2> img({inRows, inCols});
+      for(int r = 0; r < inRows; ++r)
+        for(int c = 0; c < inCols; ++c)
+          img[r][c] = uint8_t(r + 2 * c);
+      Array<float, 2> result({outRows, outCols});
+      REQUIRE(warpScale(result, img));
+      CHECK(result.range() == IndexRange<2>({outRows, outCols}));
+      CHECK(std::abs(result[0][0] - 0.0f) < 1e-3f);
+      if(outCols > inCols)
+        CHECK(std::abs(result[0][outCols - 1] - float(2 * (inCols - 1))) < 1e-2f);
+      if(outRows > inRows && outCols > inCols)
+        CHECK(std::abs(result[outRows - 1][outCols - 1] - float(inRows - 1 + 2 * (inCols - 1))) < 1e-2f);
+    }
   }
 
   TEST_CASE("SummedAreaTable")
